@@ -90,6 +90,16 @@ void OS_Exec(int *execq, int *arq, Eventinfo *lf, active_response *ar)
             do_free_filename = 1;
     }
 
+    /* Get the filename */
+    if(lf->filename && (ar->ar_cmd->expect & FILENAME))
+    {
+            filename = os_shell_escape(lf->filename);
+    }
+    else
+    {
+            filename = "-";
+    }
+
 
     /* active response on the server.
      * The response must be here if the ar->location is set to AS
