@@ -94,10 +94,7 @@ void OS_Exec(int *execq, int *arq, Eventinfo *lf, active_response *ar)
     if(lf->filename && (ar->ar_cmd->expect & FILENAME))
     {
             filename = os_shell_escape(lf->filename);
-    }
-    else
-    {
-            filename = "-";
+            do_free_filename = 1;
     }
 
 
