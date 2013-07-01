@@ -13,6 +13,7 @@
 
 #include "shared.h"
 #include "rootcheck.h"
+#include <sys/statfs.h>
 
 static int _sys_errors;
 static int _sys_total;
@@ -175,8 +176,9 @@ static int read_sys_dir(const char *dir_name, int do_read)
     int did_changed = 0;
     DIR *dp;
 
-	struct dirent *entry;
+    struct dirent *entry;
     struct stat statbuf;
+    struct statfs stfs;
 
     #ifndef WIN32
     const char *(dirs_to_doread[]) = { "/bin", "/sbin", "/usr/bin",
@@ -205,6 +207,15 @@ static int read_sys_dir(const char *dir_name, int do_read)
         i = 0;
     }
 
+
+    /* ignore NFS (0x6969) or CIFS (0xFF534D42) mounts */
+    if ( ! statfs(dir_name, &stfs) ) {
+      if ( (stfs.f_type == 0x6969) || (stfs.f_type == 0xFF534D42) ) {
+        return(1); /* NFS/CIFS path */
+      }
+    } else {
+      /* do something with the error? */
+    }
 
 
     /* Getting the number of nodes. The total number on opendir
