@@ -13,6 +13,7 @@
 
 #include "shared.h"
 #include "rootcheck.h"
+#include <sys/statfs.h>
 
 static int _sys_errors;
 static int _sys_total;
