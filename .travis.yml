@@ -17,7 +17,12 @@ compiler:
 
 before_script:
   - if [[ "$DB" == "mysql"  ]]; then ( cd src && make setdb  ); fi
+  - if [[ "$GEOIP" == "yes"  ]]; then ( wget http://www.maxmind.com/download/geoip/api/c/GeoIP-1.4.8.tar.gz ); fi
+  - if [[ "$GEOIP" == "yes"  ]]; then ( tar xzvf GeoIP-1.4.8.tar.gz  ); fi
+  - if [[ "$GEOIP" == "yes"  ]]; then ( cd GeoIP-1.4.8 && ./configure  && make && sudo make install  ); fi
   - if [[ "$GEOIP" == "yes"  ]]; then ( cd src && make setgeoip ); fi
+
+
 
 script: 
   - ( cd src && make $OSSEC_TYPE )
