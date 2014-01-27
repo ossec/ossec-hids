@@ -1,3 +1,23 @@
 language: c
 
-script: ( cd src && make all )
+env:
+  - DB=mysql OSSEC_TYPE=server GEOIP=yes
+  - DB=mysql OSSEC_TYPE=server GEOIP=no
+  - DB=none OSSEC_TYPE=server GEOIP=yes
+  - DB=none OSSEC_TYPE=server GEOIP=no
+  - DB=mysql OSSEC_TYPE=all GEOIP=yes
+  - DB=mysql OSSEC_TYPE=all GEOIP=no
+  - DB=none OSSEC_TYPE=all GEOIP=yes
+  - DB=none OSSEC_TYPE=all GEOIP=no
+  - DB=none OSSEC_TYPE=agent
+
+compiler:
+  - clang
+  - gcc
+
+before_script:
+  - if [[ "$DB" == "mysql"  ]]; then ( cd src && make setdb  ); fi
+  - if [[ "$GEOIP" == "yes"  ]]; then ( cd src && make setgeoip ); fi
+
+script: 
+  - ( cd src && make $OSSEC_TYPE )
