@@ -12,7 +12,6 @@ env:
   - DB=none OSSEC_TYPE=agent
 
 compiler:
-  - clang
   - gcc
 
 before_script:
