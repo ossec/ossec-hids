@@ -24,6 +24,7 @@ clean:
 		@/bin/sh ./Makeall clean
 		rm -f ../bin/ossec*
 		rm -f ../bin/manage_agents
+		rm -f isbigendian
 
 all:
 		@/bin/sh ./Makeall all
