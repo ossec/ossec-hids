@@ -12,7 +12,7 @@
 
 static int cdb_make_write(struct cdb_make *c, char *buf, uint32 sz) {
   fwrite(buf, sz, 1, c->fp);
-  return ferror(c->fp);
+  return (ferror(c->fp));
 }
 
 int cdb_make_start(struct cdb_make *c, FILE * f)
@@ -25,17 +25,17 @@ int cdb_make_start(struct cdb_make *c, FILE * f)
   c->pos = sizeof c->final;
   if (fseek(f,c->pos,SEEK_SET) == -1) {
     perror("fseek failed");
-    return -1;
+    return (-1);
   }
-  return ftell(c->fp);
+  return (ftell(c->fp));
 }
 
 static int posplus(struct cdb_make *c,uint32 len)
 {
   uint32 newpos = c->pos + len;
-  if (newpos < len) { errno = ENOMEM; return -1; }
+  if (newpos < len) { errno = ENOMEM; return (-1); }
   c->pos = newpos;
-  return 0;
+  return (0);
 }
 
 int cdb_make_addend(struct cdb_make *c,unsigned int keylen,unsigned int datalen,uint32 h)
@@ -45,7 +45,7 @@ int cdb_make_addend(struct cdb_make *c,unsigned int keylen,unsigned int datalen,
   head = c->head;
   if (!head || (head->num >= CDB_HPLIST)) {
     head = (struct cdb_hplist *) malloc(sizeof(struct cdb_hplist));
-    if (!head) return -1;
+    if (!head) return (-1);
     head->num = 0;
     head->next = c->head;
     c->head = head;
@@ -54,34 +54,34 @@ int cdb_make_addend(struct cdb_make *c,unsigned int keylen,unsigned int datalen,
   head->hp[head->num].p = c->pos;
   ++head->num;
   ++c->numentries;
-  if (posplus(c,8) == -1) return -1;
-  if (posplus(c,keylen) == -1) return -1;
-  if (posplus(c,datalen) == -1) return -1;
-  return 0;
+  if (posplus(c,8) == -1) return (-1);
+  if (posplus(c,keylen) == -1) return (-1);
+  if (posplus(c,datalen) == -1) return (-1);
+  return (0);
 }
 
 int cdb_make_addbegin(struct cdb_make *c,unsigned int keylen,unsigned int datalen)
 {
   char buf[8];
 
-  if (keylen > 0xffffffff) { errno = ENOMEM; return -1; }
-  if (datalen > 0xffffffff) { errno = ENOMEM; return -1; }
+  if (keylen > 0xffffffff) { errno = ENOMEM; return (-1); }
+  if (datalen > 0xffffffff) { errno = ENOMEM; return (-1); }
 
   uint32_pack(buf,keylen);
   uint32_pack(buf + 4,datalen);
-  if (cdb_make_write(c,buf,8) != 0) return -1;
-  /* if (buffer_putalign(&c->b,buf,8) == -1) return -1; */
-  return 0;
+  if (cdb_make_write(c,buf,8) != 0) return (-1);
+  /* if (buffer_putalign(&c->b,buf,8) == -1) return (-1); */
+  return (0);
 }
 
 int cdb_make_add(struct cdb_make *c,char *key,unsigned int keylen,char *data,unsigned int datalen)
 {
-  if (cdb_make_addbegin(c,keylen,datalen) == -1) return -1;
-  if (cdb_make_write(c,key,keylen) != 0) return -1;
-  if (cdb_make_write(c,data,datalen) != 0) return -1;
-  /* if (buffer_putalign(&c->b,key,keylen) == -1) return -1; */
-  /* if (buffer_putalign(&c->b,data,datalen) == -1) return -1; */
-  return cdb_make_addend(c,keylen,datalen,cdb_hash(key,keylen));
+  if (cdb_make_addbegin(c,keylen,datalen) == -1) return (-1);
+  if (cdb_make_write(c,key,keylen) != 0) return (-1);
+  if (cdb_make_write(c,data,datalen) != 0) return (-1);
+  /* if (buffer_putalign(&c->b,key,keylen) == -1) return (-1); */
+  /* if (buffer_putalign(&c->b,data,datalen) == -1) return (-1); */
+  return (cdb_make_addend(c,keylen,datalen,cdb_hash(key,keylen)));
 }
 
 int cdb_make_finish(struct cdb_make *c)
@@ -115,10 +115,10 @@ int cdb_make_finish(struct cdb_make *c)
   memsize += c->numentries; /* no overflow possible up to now */
   u = (uint32) 0 - (uint32) 1;
   u /= sizeof(struct cdb_hp);
-  if (memsize > u) { errno = ENOMEM; return -1; }
+  if (memsize > u) { errno = ENOMEM; return (-1); }
 
   c->split = (struct cdb_hp *) malloc(memsize * sizeof(struct cdb_hp));
-  if (!c->split) return -1;
+  if (!c->split) return (-1);
 
   c->hash = c->split + c->numentries;
 
@@ -156,9 +156,9 @@ int cdb_make_finish(struct cdb_make *c)
     for (u = 0;u < len;++u) {
       uint32_pack(buf,c->hash[u].h);
       uint32_pack(buf + 4,c->hash[u].p);
-      if (cdb_make_write(c,buf,8) != 0) return -1;
-      /* if (buffer_putalign(&c->b,buf,8) == -1) return -1; */
-      if (posplus(c,8) == -1) return -1;
+      if (cdb_make_write(c,buf,8) != 0) return (-1);
+      /* if (buffer_putalign(&c->b,buf,8) == -1) return (-1); */
+      if (posplus(c,8) == -1) return (-1);
     }
   }
 
@@ -169,12 +169,12 @@ int cdb_make_finish(struct cdb_make *c)
     free(c->head);
   }
 
-  if (fflush(c->fp) != 0) return -1;
-  /* if (buffer_flush(&c->b) == -1) return -1; */
+  if (fflush(c->fp) != 0) return (-1);
+  /* if (buffer_flush(&c->b) == -1) return (-1); */
   rewind(c->fp);
-  if (ftell(c->fp) != 0) return -1;
-  /* if (seek_begin(c->fd) == -1) return -1; */
-  if (cdb_make_write(c,c->final,sizeof c->final) != 0) return -1;
-  return fflush(c->fp);
-  /* return buffer_putflush(&c->b,c->final,sizeof c->final); */
+  if (ftell(c->fp) != 0) return (-1);
+  /* if (seek_begin(c->fd) == -1) return (-1); */
+  if (cdb_make_write(c,c->final,sizeof c->final) != 0) return (-1);
+  return (fflush(c->fp));
+  /* return (buffer_putflush(&c->b,c->final,sizeof c->final)); */
 }

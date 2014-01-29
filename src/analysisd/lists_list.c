@@ -48,7 +48,7 @@ ListNode *OS_GetFirstList()
 ListRule *OS_GetFirstListRule()
 {
     ListRule *listrule_pt = global_listrule;
-    return listrule_pt;
+    return (listrule_pt);
 }
 
 void OS_ListLoadRules()
@@ -138,7 +138,7 @@ ListNode *OS_FindList(char *listname)
 {
     ListNode *matched = NULL;
     matched = _OS_FindList(global_listnode, listname);
-    return matched;
+    return (matched);
 }
 
 ListRule *OS_AddListRule(ListRule *first_rule_list,
@@ -178,7 +178,7 @@ ListRule *OS_AddListRule(ListRule *first_rule_list,
                new_rulelist_pt->lookup_type);
         first_rule_list->next = new_rulelist_pt;
     }
-    return first_rule_list;
+    return (first_rule_list);
 }
 
 int _OS_CDBOpen(ListNode *lnode)
@@ -189,12 +189,12 @@ int _OS_CDBOpen(ListNode *lnode)
         if((fd = open(lnode->cdb_filename, O_RDONLY)) == -1)
         {
             merror(OPEN_ERROR, ARGV0, lnode->cdb_filename, strerror (errno));
-            return -1;
+            return (-1);
         }
         cdb_init(&lnode->cdb, fd);
         lnode->loaded = 1;
     }
-    return 0;
+    return (0);
 }
 
 int OS_DBSearchKeyValue(ListRule *lrule, char *key)
@@ -204,7 +204,7 @@ int OS_DBSearchKeyValue(ListRule *lrule, char *key)
     unsigned vlen, vpos;
     if (lrule->db!= NULL)
     {
-        if(_OS_CDBOpen(lrule->db) == -1) return 0;
+        if(_OS_CDBOpen(lrule->db) == -1) return (0);
         if(cdb_find(&lrule->db->cdb, key, strlen(key)) > 0 ) {
             vpos = cdb_datapos(&lrule->db->cdb);
             vlen = cdb_datalen(&lrule->db->cdb);
@@ -212,12 +212,12 @@ int OS_DBSearchKeyValue(ListRule *lrule, char *key)
             cdb_read(&lrule->db->cdb, val, vlen, vpos);
             result = OSMatch_Execute(val, vlen, lrule->matcher);
             free(val);
-            return result;
+            return (result);
         } else {
-            return 0;
+            return (0);
         }
     }
-    return 0;
+    return (0);
 }
 
 
@@ -226,10 +226,10 @@ int OS_DBSeachKey(ListRule *lrule, char *key)
 {
     if (lrule->db != NULL)
     {
-        if(_OS_CDBOpen(lrule->db) == -1) return -1;
-        if( cdb_find(&lrule->db->cdb, key, strlen(key)) > 0 ) return 1;
+        if(_OS_CDBOpen(lrule->db) == -1) return (-1);
+        if( cdb_find(&lrule->db->cdb, key, strlen(key)) > 0 ) return (1);
     }
-    return 0;
+    return (0);
 }
 
 int OS_DBSeachKeyAddress(ListRule *lrule, char *key)
@@ -238,12 +238,12 @@ int OS_DBSeachKeyAddress(ListRule *lrule, char *key)
     //_ip[127] = "\0";
     if (lrule->db != NULL)
     {
-        if(_OS_CDBOpen(lrule->db) == -1) return -1;
+        if(_OS_CDBOpen(lrule->db) == -1) return (-1);
         //snprintf(_ip,128,"%s",key);
         //XXX Breka apart string on the . boundtrys a loop over to longest match.
 
         if( cdb_find(&lrule->db->cdb, key, strlen(key)) > 0 ) {
-            return 1;
+            return (1);
         }
         else
         {
@@ -255,7 +255,7 @@ int OS_DBSeachKeyAddress(ListRule *lrule, char *key)
                 {
                     if( cdb_find(&lrule->db->cdb, tmpkey, strlen(tmpkey)) > 0 ) {
                         free(tmpkey);
-                        return 1;
+                        return (1);
                     }
                 }
                 tmpkey[strlen(tmpkey) - 1] = '\0';
@@ -263,7 +263,7 @@ int OS_DBSeachKeyAddress(ListRule *lrule, char *key)
             free(tmpkey);
         }
     }
-    return 0;
+    return (0);
 }
 
 int OS_DBSearchKeyAddressValue(ListRule *lrule, char *key)
@@ -273,7 +273,7 @@ int OS_DBSearchKeyAddressValue(ListRule *lrule, char *key)
     unsigned vlen, vpos;
     if (lrule->db!= NULL)
     {
-        if(_OS_CDBOpen(lrule->db) == -1) return 0;
+        if(_OS_CDBOpen(lrule->db) == -1) return (0);
 
         // First lookup for a single IP address
         if(cdb_find(&lrule->db->cdb, key, strlen(key)) > 0 ) {
@@ -283,7 +283,7 @@ int OS_DBSearchKeyAddressValue(ListRule *lrule, char *key)
             cdb_read(&lrule->db->cdb, val, vlen, vpos);
             result = OSMatch_Execute(val, vlen, lrule->matcher);
             free(val);
-            return result;
+            return (result);
         } else {
             // IP address not found, look for matching subnets
             char *tmpkey;
@@ -300,16 +300,16 @@ int OS_DBSearchKeyAddressValue(ListRule *lrule, char *key)
                         result = OSMatch_Execute(val, vlen, lrule->matcher);
                         free(val);
                         free(tmpkey);
-                        return result;
+                        return (result);
                     }
                 }
                 tmpkey[strlen(tmpkey) - 1] = '\0';
             }
             free(tmpkey);
-            return 0;
+            return (0);
         }
     }
-    return 0;
+    return (0);
 }
 
 int OS_DBSearch(ListRule *lrule, char *key)
@@ -325,46 +325,46 @@ int OS_DBSearch(ListRule *lrule, char *key)
         case LR_STRING_MATCH:
             //debug1("LR_STRING_MATCH");
             if(OS_DBSeachKey(lrule, key) == 1)
-                return 1;
+                return (1);
             else
-                return 0;
+                return (0);
             break;
         case LR_STRING_NOT_MATCH:
             //debug1("LR_STRING_NOT_MATCH");
             if(OS_DBSeachKey(lrule, key) == 1)
-                return 0;
+                return (0);
             else
-                return 1;
+                return (1);
             break;
         case LR_STRING_MATCH_VALUE:
             //debug1("LR_STRING_MATCH_VALUE");
            if (OS_DBSearchKeyValue(lrule, key) == 1)
-                return 1;
+                return (1);
             else
-                return 0;
+                return (0);
             break;
         case LR_ADDRESS_MATCH:
             //debug1("LR_ADDRESS_MATCH");
-            return OS_DBSeachKeyAddress(lrule, key);
+            return (OS_DBSeachKeyAddress(lrule, key));
             break;
         case LR_ADDRESS_NOT_MATCH:
             //debug1("LR_ADDRESS_NOT_MATCH");
             if (OS_DBSeachKeyAddress(lrule, key) == 0)
-                return 1;
+                return (1);
             else
-                return 0;
+                return (0);
             break;
         case LR_ADDRESS_MATCH_VALUE:
             //debug1("LR_ADDRESS_MATCH_VALUE");
             if (OS_DBSearchKeyAddressValue(lrule, key) == 0)
-                return 1;
+                return (1);
             else
-                return 0;
+                return (0);
             break;
         default:
             debug1("lists_list.c::OS_DBSearch should never hit default");
-            return 0;
+            return (0);
     }
-    return 0;
+    return (0);
 }
 

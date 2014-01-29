@@ -336,7 +336,7 @@ int pt_check_negate(char *pattern)
         if(*tmp_pattern != '!')
         {
             free(mypattern);
-            return 0;
+            return (0);
         }
 
         tmp_pattern = tmp_pt;
@@ -511,7 +511,7 @@ char *normalize_string(char *str)
     unsigned int str_sz = strlen(str);
     // return zero-length str as is
     if (str_sz == 0) {
-       return str;
+       return (str);
     } else {
         str_sz--;
     }

@@ -178,17 +178,17 @@ char *__local_name;
 /*** These functions will exit on error. No need to check return code ***/
 
 /* for calloc: x = calloc(4,sizeof(char)) -> os_calloc(4,sizeof(char),x) */
-#define os_calloc(x,y,z) (z = calloc(x,y))?(void)1:ErrorExit(MEM_ERROR, ARGV0)
+#define os_calloc(x,y,z) (z) = calloc(x,y);(z)?(void)1:ErrorExit(MEM_ERROR, ARGV0)
 
-#define os_strdup(x,y) (y = strdup(x))?(void)1:ErrorExit(MEM_ERROR, ARGV0)
+#define os_strdup(x,y) (y) = strdup(x);(y)?(void)1:ErrorExit(MEM_ERROR, ARGV0)
 
-#define os_malloc(x,y) (y = malloc(x))?(void)1:ErrorExit(MEM_ERROR, ARGV0)
+#define os_malloc(x,y) (y) = malloc(x);(y)?(void)1:ErrorExit(MEM_ERROR, ARGV0)
 
 #define os_free(x) (x)?free(x):merror("free a null")
 
-#define os_realloc(x,y,z) (z = realloc(x,y))?(void)1:ErrorExit(MEM_ERROR, ARGV0)
+#define os_realloc(x,y,z) (z) = realloc(x,y);(z)?(void)1:ErrorExit(MEM_ERROR, ARGV0)
 
-#define os_clearnl(x,p) if((p = strrchr(x, '\n')))*p = '\0';
+#define os_clearnl(x,p) (p) = strrchr(x, '\n');if(p)*(p) = '\0';
 
 #ifdef CLIENT
     #define isAgent 1
@@ -229,5 +229,5 @@ char *__local_name;
 
 
 #endif /* __SHARED_H */
-			
+
 /* EOF */

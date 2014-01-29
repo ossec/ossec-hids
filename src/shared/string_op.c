@@ -64,7 +64,7 @@ char *os_strip_char(char *source, char remove) {
         }
     }
 
-    return clean;
+    return (clean);
 }
 
 /* Do a substring */
@@ -73,18 +73,18 @@ int os_substr(char *dest, const char *src, int position, int length) {
 
     if( length <= 0  ) {
         // Unsupported negative length string
-        return -3;
+        return (-3);
     }
     if( src == NULL ) {
-        return -2;
+        return (-2);
     }
     if( position >= strlen(src) ) {
-        return -1;
+        return (-1);
     }
 
     strncat(dest, (src + position), length);
     // Return Success
-    return 0;
+    return (0);
 }
 
 

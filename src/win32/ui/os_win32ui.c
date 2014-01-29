@@ -29,7 +29,7 @@ BOOL CALLBACK AboutDlgProc(HWND hwnd, UINT Message,
         case WM_CREATE:
         case WM_INITDIALOG:
 
-            return TRUE;
+            return (TRUE);
         case WM_COMMAND:
             switch(LOWORD(wParam))
             {
@@ -43,9 +43,9 @@ BOOL CALLBACK AboutDlgProc(HWND hwnd, UINT Message,
             EndDialog(hwnd, IDOK);
             break;
         default:
-            return FALSE;
+            return (FALSE);
     }
-    return TRUE;
+    return (TRUE);
 }
 
 
@@ -109,7 +109,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
                     (LPARAM)statwidths);
             SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)"http://www.ossec.net");
 
-	
+
 
             /* Initializing config */
             config_read(hwnd);
@@ -457,9 +457,9 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
             break;
 
         default:
-            return FALSE;
+            return (FALSE);
     }
-    return TRUE;
+    return (TRUE);
 }
 
 

@@ -165,7 +165,7 @@ int HASH_INIT (SHA_CTX *c)
 	c->Nl=0;
 	c->Nh=0;
 	c->num=0;
-	return 1;
+	return (1);
 	}
 
 #define K_00_19	0x5a827999UL
@@ -344,7 +344,7 @@ void HASH_BLOCK_HOST_ORDER (SHA_CTX *c, const void *d, size_t num)
 	BODY_60_79(77,B,C,D,E,T,A,X(13),X(15),X( 5),X(10));
 	BODY_60_79(78,A,B,C,D,E,T,X(14),X( 0),X( 6),X(11));
 	BODY_60_79(79,T,A,B,C,D,E,X(15),X( 1),X( 7),X(12));
-	
+
 	c->h0=(c->h0+E)&0xffffffffL;
 	c->h1=(c->h1+T)&0xffffffffL;
 	c->h2=(c->h2+A)&0xffffffffL;
@@ -471,7 +471,7 @@ void HASH_BLOCK_DATA_ORDER (SHA_CTX *c, const void *p, size_t num)
 	BODY_60_79(77,B,C,D,E,T,A,X(13),X(15),X( 5),X(10));
 	BODY_60_79(78,A,B,C,D,E,T,X(14),X( 0),X( 6),X(11));
 	BODY_60_79(79,T,A,B,C,D,E,X(15),X( 1),X( 7),X(12));
-	
+
 	c->h0=(c->h0+E)&0xffffffffL;
 	c->h1=(c->h1+T)&0xffffffffL;
 	c->h2=(c->h2+A)&0xffffffffL;
@@ -547,7 +547,7 @@ void HASH_BLOCK_HOST_ORDER (SHA_CTX *c, const void *d, size_t num)
 	{ BODY_40_59(X[(i+8)&15],X[(i+10)&15],X[i&15],    X[(i+5)&15]);  }
 	for (i=4;i<24;i++)
 	{ BODY_60_79(X[(i+8)&15],X[(i+10)&15],X[i&15],    X[(i+5)&15]);  }
-	
+
 	c->h0=(c->h0+A)&0xffffffffL;
 	c->h1=(c->h1+B)&0xffffffffL;
 	c->h2=(c->h2+C)&0xffffffffL;

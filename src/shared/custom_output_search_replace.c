@@ -16,7 +16,7 @@ char * searchAndReplace2(char* orig, char* search, char*value)
   {
     os_strdup(orig,tmp);
 
-    return tmp;
+    return (tmp);
   }
   if (value==NULL)
   {
@@ -75,7 +75,7 @@ char * searchAndReplace2(char* orig, char* search, char*value)
   }
   tmp[total_bytes_allocated]='\0';
 
-  return tmp;
+  return (tmp);
 }
 #include "shared.h"
 char * searchAndReplace(char* orig, char* search, char*value)
@@ -95,7 +95,7 @@ char * searchAndReplace(char* orig, char* search, char*value)
   {
     os_strdup(orig,tmp);
 
-    return tmp;
+    return (tmp);
   }
   if (value==NULL)
   {
@@ -154,7 +154,7 @@ char * searchAndReplace(char* orig, char* search, char*value)
   }
   tmp[total_bytes_allocated]='\0';
 
-  return tmp;
+  return (tmp);
 }
 
 //escape newlines characters. Returns a new allocated string.
@@ -197,5 +197,5 @@ char* escape_newlines(char *orig)
   }
   *retptr = '\0';
 
-  return ret;
+  return (ret);
 }

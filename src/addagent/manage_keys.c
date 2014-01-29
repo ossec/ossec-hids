@@ -30,7 +30,7 @@ char *trimwhitespace(char *str)
   while(isspace(*str)) str++;
 
   if(*str == 0)  // All spaces?
-    return str;
+    return (str);
 
   // Trim trailing space
   end = str + strlen(str) - 1;
@@ -39,7 +39,7 @@ char *trimwhitespace(char *str)
   // Write new null terminator
   *(end+1) = 0;
 
-  return str;
+  return (str);
 }
 
 /* Import a key */
@@ -301,7 +301,7 @@ int k_bulkload(char *cmdbulk)
 		memset(name, '\0', FILE_SIZE +1);
 		token = strtok(NULL, delims);
 		strncpy(name, trimwhitespace(token),FILE_SIZE -1);
-			
+
     		#ifndef WIN32
     		chmod(AUTH_FILE, 0440);
     		#endif
