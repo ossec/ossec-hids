@@ -63,3 +63,7 @@ src/analysisd/ossec-makelists
 src/isbigendian
 src/util/ossec-regex
 src/util/verify-agent-conf
+
+# eclipse project files
+.project
+.cproject
