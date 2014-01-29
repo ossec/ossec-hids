@@ -392,17 +392,16 @@ void start_daemon()
 
                 /* Checking for changes */
                 run_dbcheck();
-            }
 
+                /* Sending scan ending message */
+                sleep(syscheck.tsleep + 20);
+                if(syscheck.dir[0])
+                {
+                    merror("%s: INFO: Ending syscheck scan.", ARGV0);
+                    send_rootcheck_msg("Ending syscheck scan.");
 
-            /* Sending scan ending message */
-            sleep(syscheck.tsleep + 20);
-            if(syscheck.dir[0])
-            {
-                merror("%s: INFO: Ending syscheck scan.", ARGV0);
-                send_rootcheck_msg("Ending syscheck scan.");
-
-                OSHash_ForEach(syscheck.fp, (OSHash_Function) &check_if_deleted);
+                    OSHash_ForEach(syscheck.fp, (OSHash_Function) &check_if_deleted);
+                }
             }
 
             prev_time_sk = time(0);
