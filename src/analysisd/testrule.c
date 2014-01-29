@@ -122,8 +122,8 @@ int main(int argc, char **argv)
     char *ut_str = NULL;
 
     char *dir = DEFAULTDIR;
-    char *user = USER;
-    char *group = GROUPGLOBAL;
+    /*char *user = USER;
+    char *group = GROUPGLOBAL;*/
 
     char *cfg = DEFAULTCPATH;
 
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -U needs an argument",ARGV0);
                 ut_str = optarg;
                 break;
-            case 'u':
+            /*case 'u':
                 if(!optarg)
                     ErrorExit("%s: -u needs an argument",ARGV0);
                 user = optarg;
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
                 if(!optarg)
                     ErrorExit("%s: -g needs an argument",ARGV0);
                 group = optarg;
-                break;
+                break;*/
             case 'D':
                 if(!optarg)
                     ErrorExit("%s: -D needs an argument",ARGV0);

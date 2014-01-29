@@ -169,7 +169,7 @@ void OS_Store(Eventinfo *lf)
             lf->full_log);
 
     fflush(_eflog);
-    return;	
+    return;
 }
 
 
@@ -254,7 +254,7 @@ void OS_LogOutput(Eventinfo *lf)
     printf("\n");
 
     fflush(stdout);
-    return;	
+    return;
 }
 
 
@@ -342,7 +342,7 @@ void OS_Log(Eventinfo *lf)
     fprintf(_aflog,"\n");
 
     fflush(_aflog);
-    return;	
+    return;
 }
 
 /* OS_CustomLog: v0.1, 2012/10/10*/
@@ -461,7 +461,7 @@ void OS_CustomLog(Eventinfo *lf,char* format)
   }
 
 
-  fprintf(_aflog,log);
+  fprintf(_aflog,"%s",log);
   fprintf(_aflog,"\n");
   fflush(_aflog);
 

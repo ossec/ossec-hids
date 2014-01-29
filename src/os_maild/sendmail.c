@@ -65,7 +65,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
     char final_to[512];
 
 
-    /* Connecting to the smtp server */	
+    /* Connecting to the smtp server */
     socket = OS_ConnectTCP(SMTP_DEFAULT_PORT, mail->smtpserver, 0);
     if(socket < 0)
     {
@@ -81,7 +81,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     MAIL_DEBUG("DEBUG: Received banner: '%s' %s", msg, "");
     free(msg);
@@ -131,7 +131,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
     }
 
     MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", HELOMSG, msg);
-    free(msg);	
+    free(msg);
 
 
     /* Building "Mail from" msg */
@@ -145,10 +145,10 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", snd_msg, msg);
-    free(msg);	
+    free(msg);
 
 
     /* Additional RCPT to */
@@ -203,7 +203,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", DATAMSG, msg);
     free(msg);
@@ -245,7 +245,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
 
 
     /* Sending end of data \r\n.\r\n */
-    OS_SendTCP(socket,ENDDATA);	
+    OS_SendTCP(socket,ENDDATA);
     msg = OS_RecvTCP(socket, OS_SIZE_1024);
     if(mail->strict_checking && ((msg == NULL)||(!OS_Match(VALIDMAIL, msg))))
     {
@@ -253,7 +253,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     /* Checking msg in here, since it may be null */
     if(msg)
@@ -267,7 +267,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg)
     if(msg)
         free(msg);
 
-    memset(snd_msg,'\0',128);	
+    memset(snd_msg,'\0',128);
 
 
     /* Returning 0 (success) */
@@ -285,11 +285,11 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     int socket,i=0;
     char *msg;
     char snd_msg[128];
-    char additional_to[512];
+    /*char additional_to[512];*/
 
     MailNode *mailmsg;
 
-    additional_to[0] = '\0';
+    /*additional_to[0] = '\0';*/
 
     /* If there is no sms message, we attempt to get from the
      * email list.
@@ -302,7 +302,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     }
 
 
-    /* Connecting to the smtp server */	
+    /* Connecting to the smtp server */
     socket = OS_ConnectTCP(SMTP_DEFAULT_PORT, mail->smtpserver, 0);
     if(socket < 0)
     {
@@ -318,7 +318,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     MAIL_DEBUG("DEBUG: Received banner: '%s' %s", msg, "");
     free(msg);
@@ -368,7 +368,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     }
 
     MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", HELOMSG, msg);
-    free(msg);	
+    free(msg);
 
 
     /* Building "Mail from" msg */
@@ -382,10 +382,10 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", snd_msg, msg);
-    free(msg);	
+    free(msg);
 
 
     /* Building "RCPT TO" msg */
@@ -411,7 +411,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
             if(msg)
                 free(msg);
             close(socket);
-            return(OS_INVALID);	
+            return(OS_INVALID);
         }
         MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", snd_msg, msg);
         free(msg);
@@ -461,7 +461,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", DATAMSG, msg);
     free(msg);
@@ -539,7 +539,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     /* Checking if global subject is available */
     if((_g_subject_level != 0) && (_g_subject[0] != '\0'))
     {
-        snprintf(snd_msg, 127, SUBJECT, _g_subject);	
+        snprintf(snd_msg, 127, SUBJECT, _g_subject);
 
         /* Clearing global values */
         _g_subject[0] = '\0';
@@ -565,7 +565,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
 
 
     /* Sending end of data \r\n.\r\n */
-    OS_SendTCP(socket,ENDDATA);	
+    OS_SendTCP(socket,ENDDATA);
     msg = OS_RecvTCP(socket, OS_SIZE_1024);
     if(mail->strict_checking && ((msg == NULL)||(!OS_Match(VALIDMAIL, msg))))
     {
@@ -573,7 +573,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         if(msg)
             free(msg);
         close(socket);
-        return(OS_INVALID);	
+        return(OS_INVALID);
     }
     /* Checking msg in here, since it may be null */
     if(msg)
@@ -587,7 +587,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     if(msg)
         free(msg);
 
-    memset(snd_msg,'\0',128);	
+    memset(snd_msg,'\0',128);
 
 
     /* Returning 0 (success) */
