@@ -26,6 +26,7 @@ int Read_Syscheck_Config(char * cfgfile)
     syscheck.rootcheck = 0;
     syscheck.disabled = 0;
     syscheck.scan_on_start = 1;
+    syscheck.time = 21600;
     syscheck.ignore = NULL;
     syscheck.ignore_regex = NULL;
     syscheck.scan_day = NULL;

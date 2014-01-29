@@ -42,7 +42,6 @@ void read_internal()
     syscheck.tsleep = getDefine_Int("syscheck","sleep",0,64);
     syscheck.sleep_after = getDefine_Int("syscheck","sleep_after",1,9999);
     syscheck.wait = getDefine_Int("syscheck","wait",1,9999);
-    syscheck.time = syscheck.wait * 2;
 
     return;
 }
