@@ -142,7 +142,7 @@ void send_sk_db()
         send_syscheck_msg(HC_SK_DB_COMPLETED);
         debug2("%s: DEBUG: Sending database completed message.", ARGV0);
 
-        OSHash_ForEach(syscheck.fp, &mark_as_unscanned);
+        OSHash_ForEach(syscheck.fp, (OSHash_Function) &mark_as_unscanned);
     }
 }
 
@@ -402,7 +402,7 @@ void start_daemon()
                 merror("%s: INFO: Ending syscheck scan.", ARGV0);
                 send_rootcheck_msg("Ending syscheck scan.");
 
-                OSHash_ForEach(syscheck.fp, &check_if_deleted);
+                OSHash_ForEach(syscheck.fp, (OSHash_Function) &check_if_deleted);
             }
 
             prev_time_sk = time(0);
