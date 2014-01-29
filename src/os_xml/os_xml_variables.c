@@ -116,7 +116,8 @@ int OS_ApplyVariables(OS_XML *_lxml)
         if(((_lxml->tp[i] == XML_ELEM) || (_lxml->tp[i] == XML_ATTR))&&
             (_lxml->ct[i]))
         {
-            int tp = 0,init = 0,final = 0;
+            int tp = 0,init = 0;
+            /*int final = 0;*/
             char *p = NULL;
             char *p2= NULL;
             char lvar[256]; /* MAX Var size */
@@ -157,7 +158,7 @@ int OS_ApplyVariables(OS_XML *_lxml)
                         {
                             lvar[tp]='\0';
 
-                            final = init+tp;
+                            /*final = init+tp;*/
 
                             /* Looking for var */
                             for(j=0; j<s; j++)

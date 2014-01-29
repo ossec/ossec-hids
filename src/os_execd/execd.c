@@ -77,9 +77,9 @@ int main(int argc, char **argv)
     int test_config = 0,run_foreground = 0;
     int gid = 0,m_queue = 0;
 
-    char *dir  = DEFAULTDIR;
+    /*char *dir  = DEFAULTDIR;*/
     char *group = GROUPGLOBAL;
-    char *cfg = DEFAULTARPATH;
+    /*char *cfg = DEFAULTARPATH;*/
     char *xmlcfg = DEFAULTCPATH;
 
 
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -g needs an argument.",ARGV0);
                 group = optarg;
                 break;
-            case 'D':
+            /*case 'D':
                 if(!optarg)
                     ErrorExit("%s: -D needs an argument.",ARGV0);
                 dir = optarg;
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
                 if(!optarg)
                     ErrorExit("%s: -c needs an argument.",ARGV0);
                 cfg = optarg;
-                break;
+                break;*/
             case 't':
                 test_config = 1;
                 break;

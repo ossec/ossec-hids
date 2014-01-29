@@ -313,7 +313,7 @@ int pt_check_negate(char *pattern)
     os_strdup(pattern, mypattern);
     char *tmp_pt = mypattern;
     char *tmp_pattern = mypattern;
-    char *tmp_ret = NULL;
+    /*char *tmp_ret = NULL;*/
 
 
     while(tmp_pt != NULL)
@@ -323,7 +323,7 @@ int pt_check_negate(char *pattern)
         if(tmp_pt && tmp_pt[1] == '&' && tmp_pt[2] == '&' && tmp_pt[3] == ' ')
         {
             /* Marking pointer to clean it up */
-            tmp_ret = tmp_pt;
+            /*tmp_ret = tmp_pt;*/
 
             *tmp_pt = '\0';
             tmp_pt += 4;
@@ -336,7 +336,7 @@ int pt_check_negate(char *pattern)
         if(*tmp_pattern != '!')
         {
             free(mypattern);
-            return 0;
+            return (0);
         }
 
         tmp_pattern = tmp_pt;
@@ -511,7 +511,7 @@ char *normalize_string(char *str)
     unsigned int str_sz = strlen(str);
     // return zero-length str as is
     if (str_sz == 0) {
-       return str;
+       return (str);
     } else {
         str_sz--;
     }

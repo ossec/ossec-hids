@@ -62,7 +62,7 @@ int OS_Bindport(unsigned int _port, unsigned int _proto, char *_ip, int ipv6)
     {
         if((ossock = socket(ipv6 == 1?PF_INET6:PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
         {
-            return OS_SOCKTERR;
+            return (OS_SOCKTERR);
         }
     }
     else if(_proto == IPPROTO_TCP)
@@ -70,7 +70,7 @@ int OS_Bindport(unsigned int _port, unsigned int _proto, char *_ip, int ipv6)
         int flag = 1;
         if((ossock = socket(ipv6 == 1?PF_INET6:PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
         {
-            return(int)(OS_SOCKTERR);
+            return(OS_SOCKTERR);
         }
 
         if(setsockopt(ossock, SOL_SOCKET, SO_REUSEADDR,
@@ -211,7 +211,7 @@ int OS_ConnectUnixDomain(char * path, int max_msg_size)
     n_us.sun_family = AF_UNIX;
 
     /* Setting up path */
-    strncpy(n_us.sun_path,path,sizeof(n_us.sun_path)-1);	
+    strncpy(n_us.sun_path,path,sizeof(n_us.sun_path)-1);
 
     if((ossock = socket(AF_UNIX, SOCK_DGRAM,0)) < 0)
         return(OS_SOCKTERR);
@@ -237,7 +237,7 @@ int OS_ConnectUnixDomain(char * path, int max_msg_size)
     }
 
 
-    /* Returning the socket */	
+    /* Returning the socket */
     return(ossock);
 }
 
@@ -407,7 +407,7 @@ int OS_AcceptTCP(int socket, char *srcip, int addrsize)
 
     if((clientsocket = accept(socket, (struct sockaddr *) &_nc,
                     &_ncl)) < 0)
-        return(-1);	
+        return(-1);
 
     strncpy(srcip, inet_ntoa(_nc.sin_addr),addrsize -1);
     srcip[addrsize -1]='\0';

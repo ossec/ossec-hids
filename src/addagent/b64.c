@@ -105,7 +105,7 @@ char *encode_base64(int size, char *src) {
 
     }
 
-    return out;
+    return (out);
 
 }
 
@@ -198,12 +198,12 @@ char *decode_base64(const char *src)
 
 static char encode(unsigned char u) {
 
-    if(u < 26)  return 'A'+u;
-    if(u < 52)  return 'a'+(u-26);
-    if(u < 62)  return '0'+(u-52);
-    if(u == 62) return '+';
+    if(u < 26)  return ('A'+u);
+    if(u < 52)  return ('a'+(u-26));
+    if(u < 62)  return ('0'+(u-52));
+    if(u == 62) return ('+');
 
-    return '/';
+    return ('/');
 
 }
 
@@ -216,9 +216,9 @@ static unsigned char decode(char c) {
     if(c >= 'A' && c <= 'Z') return(c - 'A');
     if(c >= 'a' && c <= 'z') return(c - 'a' + 26);
     if(c >= '0' && c <= '9') return(c - '0' + 52);
-    if(c == '+')             return 62;
+    if(c == '+')             return (62);
 
-    return 63;
+    return (63);
 
 }
 
@@ -232,11 +232,11 @@ static int is_base64(char c) {
             (c >= '0' && c <= '9') || (c == '+')             ||
             (c == '/')             || (c == '=')) {
 
-        return TRUE;
+        return (TRUE);
 
     }
 
-    return FALSE;
+    return (FALSE);
 
 }
 

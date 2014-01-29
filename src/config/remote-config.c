@@ -16,7 +16,7 @@
 
 /* Read_Remote: Reads remote config
  */
-int Read_Remote(XML_NODE node, void *d1, void *d2)
+int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 {
     int i = 0;
     int pl = 0;
@@ -31,7 +31,7 @@ int Read_Remote(XML_NODE node, void *d1, void *d2)
     char *xml_allowips = "allowed-ips";
     char *xml_denyips = "denied-ips";
 
-    /* Remote options */	
+    /* Remote options */
     char *xml_remote_port = "port";
     char *xml_remote_proto = "protocol";
     char *xml_remote_ipv6 = "ipv6";

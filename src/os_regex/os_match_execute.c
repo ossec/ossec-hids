@@ -58,7 +58,7 @@ int _OS_Match(char *pattern, char *str, int str_len, int size)
 
 
 /** Internal matching **/
-int _os_strncmp(char *pattern, char *str, int str_len, int size)
+int _os_strncmp(char *pattern, char *str, __attribute__((unused)) int str_len, int size)
 {
     if(strncasecmp(pattern, str, size) == 0)
         return(TRUE);
@@ -67,7 +67,7 @@ int _os_strncmp(char *pattern, char *str, int str_len, int size)
 }
 
 /** Internal matching **/
-int _os_strcmp(char *pattern, char *str, int str_len, int size)
+int _os_strcmp(char *pattern, char *str, __attribute__((unused)) int str_len, __attribute__((unused)) int size)
 {
     if(strcasecmp(pattern, str) == 0)
         return(TRUE);
@@ -75,12 +75,13 @@ int _os_strcmp(char *pattern, char *str, int str_len, int size)
     return(FALSE);
 }
 
-int _os_strmatch(char *pattern, char *str, int str_len, int size)
+int _os_strmatch(__attribute__((unused)) char *pattern, __attribute__((unused)) char *str,
+			__attribute__((unused)) int str_len, __attribute__((unused)) int size)
 {
     return(TRUE);
 }
 
-int _os_strstr(char *pattern, char *str, int str_len, int size)
+int _os_strstr(char *pattern, char *str, __attribute__((unused)) int str_len, __attribute__((unused)) int size)
 {
     if(strstr(str, pattern) != NULL)
     {

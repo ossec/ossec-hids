@@ -75,7 +75,7 @@ int OSHash_Update(OSHash *hash, char *key, void *data);
  */
 void *OSHash_Get(OSHash *self, char *key);
 
-int OSHash_setSize(OSHash *self, int new_size);
+int OSHash_setSize(OSHash *self, unsigned int new_size);
 
 #endif
 

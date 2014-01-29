@@ -238,11 +238,12 @@ void ExecCmd(char **cmd)
     return;
 }
 
-
+#ifndef WIN32
+void ExecCmd_Win32(__attribute__((unused)) char *cmd) { return; }
+#else
 void ExecCmd_Win32(char *cmd)
 {
     /* Windows code now. */
-    #ifdef WIN32
 
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -267,10 +268,9 @@ void ExecCmd_Win32(char *cmd)
     CloseHandle( pi.hThread );
 
 
-    #endif
-
     return;
 }
+#endif
 
 
 /* EOF */

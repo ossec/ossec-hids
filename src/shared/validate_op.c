@@ -138,7 +138,7 @@ static char *_read_file(char *high_name, char *low_name, char *defines_file)
 
 
 /* Getting the netmask based on the integer value. */
-int getNetmask(int mask, char *strmask, int size)
+int getNetmask(unsigned int mask, char *strmask, int size)
 {
     int i = 0;
 

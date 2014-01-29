@@ -72,7 +72,7 @@ int run_netstat(int proto, int port)
 int conn_port(int proto, int port)
 {
     int rc = 0;
-    int ossock;
+    int ossock = 0;
     struct sockaddr_in server;
 
     if(proto == IPPROTO_UDP)

@@ -16,7 +16,7 @@
 #include "os_net/os_net.h"
 
 
-int Read_Client(XML_NODE node, void *d1, void *d2)
+int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 {
     int i = 0;
 

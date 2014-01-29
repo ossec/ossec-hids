@@ -52,7 +52,7 @@
 
 
 /** Internal Functions **/
-void OS_ReadMSG(int m_queue, char *ut_str);
+void OS_ReadMSG(char *ut_str);
 RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node);
 
 
@@ -76,16 +76,12 @@ int OS_CleanMSG(char *msg, Eventinfo *lf);
 
 /* for FTS */
 int FTS_Init();
-int FTS(Eventinfo *lf);
 int AddtoIGnore(Eventinfo *lf);
 int IGnore(Eventinfo *lf);
 
 
 /* For decoders */
 void DecodeEvent(Eventinfo *lf);
-int DecodeSyscheck(Eventinfo *lf);
-int DecodeRootcheck(Eventinfo *lf);
-int DecodeHostinfo(Eventinfo *lf);
 
 
 /* For Decoders */
@@ -122,12 +118,12 @@ void logtest_help(const char *prog)
 int main(int argc, char **argv)
 {
     int t_config = 0;
-    int c = 0, m_queue = 0;
+    int c = 0;
     char *ut_str = NULL;
 
     char *dir = DEFAULTDIR;
-    char *user = USER;
-    char *group = GROUPGLOBAL;
+    /*char *user = USER;
+    char *group = GROUPGLOBAL;*/
 
     char *cfg = DEFAULTCPATH;
 
@@ -137,8 +133,10 @@ int main(int argc, char **argv)
     thishour = 0;
     today = 0;
     prev_year = 0;
+	#ifdef TESTRULE
     full_output = 0;
     alert_only = 0;
+	#endif
 
     active_responses = NULL;
     memset(prev_month, '\0', 4);
@@ -162,7 +160,7 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -U needs an argument",ARGV0);
                 ut_str = optarg;
                 break;
-            case 'u':
+            /*case 'u':
                 if(!optarg)
                     ErrorExit("%s: -u needs an argument",ARGV0);
                 user = optarg;
@@ -171,7 +169,7 @@ int main(int argc, char **argv)
                 if(!optarg)
                     ErrorExit("%s: -g needs an argument",ARGV0);
                 group = optarg;
-                break;
+                break;*/
             case 'D':
                 if(!optarg)
                     ErrorExit("%s: -D needs an argument",ARGV0);
@@ -182,12 +180,14 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -c needs an argument",ARGV0);
                 cfg = optarg;
                 break;
+			#ifdef TESTRULE
             case 'a':
                 alert_only = 1;
                 break;
             case 'v':
                 full_output = 1;
                 break;
+			#endif
             default:
                 logtest_help(ARGV0);
                 break;
@@ -363,8 +363,8 @@ int main(int argc, char **argv)
     verbose(STARTUP_MSG, ARGV0, getpid());
 
 
-    /* Going to main loop */	
-    OS_ReadMSG(m_queue, ut_str);
+    /* Going to main loop */
+    OS_ReadMSG(ut_str);
 
 
     exit(0);
@@ -377,7 +377,7 @@ int main(int argc, char **argv)
  * Main function. Receives the messages(events)
  * and analyze them all.
  */
-void OS_ReadMSG(int m_queue, char *ut_str)
+void OS_ReadMSG(char *ut_str)
 {
     int i;
     char msg[OS_MAXSTR +1];
@@ -443,10 +443,10 @@ void OS_ReadMSG(int m_queue, char *ut_str)
     /* Doing some cleanup */
     memset(msg, '\0', OS_MAXSTR +1);
 
-
+	#ifdef TESTRULE
     if(!alert_only)
     print_out("%s: Type one log per line.\n", ARGV0);
-
+	#endif
 
     /* Daemon loop */
     while(1)
@@ -485,9 +485,9 @@ void OS_ReadMSG(int m_queue, char *ut_str)
                 continue;
             }
 
-
+			#ifdef TESTRULE
             if(!alert_only)print_out("\n");
-
+			#endif
 
             /* Default values for the log info */
             Zero_Eventinfo(lf);
@@ -625,7 +625,7 @@ void OS_ReadMSG(int m_queue, char *ut_str)
                     AddtoIGnore(lf);
                 }
 
-
+				#ifdef TESTRULE
                 /* Log the alert if configured to ... */
                 if(currently_rule->alert_opts & DO_LOGALERT)
                 {
@@ -639,7 +639,7 @@ void OS_ReadMSG(int m_queue, char *ut_str)
                         print_out("**Alert to be generated.\n\n");
                     }
                 }
-
+				#endif
 
                 /* Copy the structure to the state memory of if_matched_sid */
                 if(currently_rule->sid_prev_matched)

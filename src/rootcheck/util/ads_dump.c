@@ -50,7 +50,7 @@ int os_get_streams(char *full_path)
 
     if (file_h == INVALID_HANDLE_VALUE)
     {
-        return 0;
+        return (0);
     }
 
 
@@ -94,7 +94,7 @@ int os_get_streams(char *full_path)
             }
         }
 
-        /* Getting next */			
+        /* Getting next */
         if(!BackupSeek(file_h, sid.Size.LowPart, sid.Size.HighPart,
                     &dw1, &dw2, &context))
         {
@@ -138,7 +138,7 @@ int read_sys_dir(char *dir_name)
     DIR *dp;
 
     struct dirent *entry;
-    struct stat statbuf;	
+    struct stat statbuf;
 
 
     /* Getting the number of nodes. The total number on opendir

@@ -95,6 +95,7 @@ int main(int argc, char **argv)
                 break;
             case 's':
                 csv_output = 1;
+                break;
             case 'c':
                 active_only++;
                 break;
@@ -142,7 +143,7 @@ int main(int argc, char **argv)
     {
 	    ErrorExit(USER_ERROR, ARGV0, user, group);
     }
-	
+
 
     /* Setting the group */
     if(Privsep_SetGroup(gid) < 0)
@@ -322,7 +323,7 @@ int main(int argc, char **argv)
             }
 
             print_syscheck(NULL,
-                           NULL, fname, 0, 0,
+                           NULL, fname, 0,
                            csv_output, zero_counter);
         }
         else if(strchr(agent_id, '@'))
@@ -332,7 +333,7 @@ int main(int argc, char **argv)
                 printf("Detailed information for entries matching: '%s'\n",
                        fname);
             }
-            print_syscheck(agent_id, NULL, fname, registry_only, 0,
+            print_syscheck(agent_id, NULL, fname, registry_only,
                            csv_output, zero_counter);
         }
         else
@@ -376,7 +377,7 @@ int main(int argc, char **argv)
             }
             print_syscheck(keys.keyentries[i]->name,
                     keys.keyentries[i]->ip->ip, fname,
-                    registry_only, 0, csv_output, zero_counter);
+                    registry_only, csv_output, zero_counter);
 
         }
 

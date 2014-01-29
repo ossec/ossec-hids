@@ -27,7 +27,7 @@
  */
 OSHash *OSHash_Create()
 {
-    int i = 0;
+    unsigned int i = 0;
     OSHash *self;
 
     /* Allocating memory for the hash */
@@ -79,7 +79,7 @@ OSHash *OSHash_Create()
  */
 void *OSHash_Free(OSHash *self)
 {
-    int i = 0;
+    unsigned int i = 0;
     OSHashNode *curr_node;
     OSHashNode *next_node;
 
@@ -130,13 +130,13 @@ int _os_genhash(OSHash *self, char *key)
 
 
 
-/** int OSHash_setSize(OSHash *self, int size)
+/** int OSHash_setSize(OSHash *self, unsigned int size)
  * Sets new size for hash.
  * Returns 0 on error (out of memory).
  */
-int OSHash_setSize(OSHash *self, int new_size)
+int OSHash_setSize(OSHash *self, unsigned int new_size)
 {
-    int i = 0;
+    unsigned int i = 0;
 
     /* We can't decrease the size */
     if(new_size <= self->rows)

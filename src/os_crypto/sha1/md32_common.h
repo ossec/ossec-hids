@@ -412,7 +412,7 @@ int HASH_UPDATE (HASH_CTX *c, const void *data_, size_t len)
 	register HASH_LONG l;
 	size_t sw,sc,ew,ec;
 
-	if (len==0) return 1;
+	if (len==0) return (1);
 
 	l=(c->Nl+(((HASH_LONG)len)<<3))&0xffffffffUL;
 	/* 95-05-24 eay Fixed a bug with the overflow handling, thanks to
@@ -464,7 +464,7 @@ int HASH_UPDATE (HASH_CTX *c, const void *data_, size_t len)
 					HOST_c2l_p(data,l,ec); p[sw]=l;
 					}
 				}
-			return 1;
+			return (1);
 			}
 		}
 
@@ -518,7 +518,7 @@ int HASH_UPDATE (HASH_CTX *c, const void *data_, size_t len)
 		HOST_c2l_p(data,l,ec);
 		*p=l;
 		}
-	return 1;
+	return (1);
 	}
 
 
@@ -603,7 +603,7 @@ int HASH_FINAL (unsigned char *md, HASH_CTX *c)
 	 * but I'm not worried :-)
 	OPENSSL_cleanse((void *)c,sizeof(HASH_CTX));
 	 */
-	return 1;
+	return (1);
 	}
 
 #ifndef MD32_REG_T

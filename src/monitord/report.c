@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     char *dir  = DEFAULTDIR;
     char *user = USER;
     char *group = GROUPGLOBAL;
-    char *cfg = DEFAULTCPATH;
+    /*char *cfg = DEFAULTCPATH;*/
 
     char *filter_by = NULL;
     char *filter_value = NULL;
@@ -135,11 +135,11 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -D needs an argument",ARGV0);
                 dir=optarg;
                 break;
-            case 'c':
+            /*case 'c':
                 if(!optarg)
                     ErrorExit("%s: -c needs an argument",ARGV0);
                 cfg = optarg;
-                break;
+                break;*/
             case 't':
                 test_config = 1;
                 break;
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
         exit(0);
 
 
-    /* Privilege separation */	
+    /* Privilege separation */
     if(Privsep_SetGroup(gid) < 0)
         ErrorExit(SETGID_ERROR,ARGV0,group);
 
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
-    /* the real stuff now */	
+    /* the real stuff now */
     os_ReportdStart(&r_filter);
     exit(0);
 }

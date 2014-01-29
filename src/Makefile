@@ -24,6 +24,7 @@ clean:
 		@/bin/sh ./Makeall clean
 		rm -f ../bin/ossec*
 		rm -f ../bin/manage_agents
+		rm -f isbigendian
 
 all:
 		@/bin/sh ./Makeall all
@@ -60,7 +61,8 @@ setprelude:
 		@echo "CPRELUDE=-DPRELUDE -lprelude `libprelude-config --pthread-cflags` `libprelude-config --libs`" >> ./Config.OS
         
 setgeoip:
-		@echo "CGEOIP=-DGEOIP -I/usr/local/include -L/usr/local/lib -lGeoIP" >> ./Config.OS
+		@echo "CGEOIP=-DGEOIP" >> ./Config.OS
+		@echo "CGEOIPLIB=-I/usr/local/include -L/usr/local/lib -lGeoIP" >> ./Config.OS
 
 setdb:
 		@cd ./os_dbd; echo "CDB=`./dbmake.sh`" >> ../Config.OS;

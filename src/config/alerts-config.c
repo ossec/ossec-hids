@@ -17,7 +17,7 @@
 #include "global-config.h"
 
 
-int Read_Alerts(XML_NODE node, void *configp, void *mailp)
+int Read_Alerts(XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
 {
     int i = 0;
 

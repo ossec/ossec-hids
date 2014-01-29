@@ -88,7 +88,7 @@ void win_read_vista_sec();
 
 int loop_timeout;
 int logr_queue;
-int open_file_attempts;
+unsigned int open_file_attempts;
 logreader *logff;
 
 

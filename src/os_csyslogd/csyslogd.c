@@ -110,11 +110,11 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 int field_add_string(char *dest, int size, const char *format, const char *value ) {
     char buffer[OS_SIZE_2048];
     int len = 0;
-    int dest_sz = size - strlen(dest); 
+    int dest_sz = size - strlen(dest);
 
     if(dest_sz <= 0 ) {
         // Not enough room in the buffer
-        return -1;
+        return (-1);
     }
 
     if(value != NULL &&
@@ -128,7 +128,7 @@ int field_add_string(char *dest, int size, const char *format, const char *value
         strncat(dest, buffer, dest_sz);
     }
 
-    return len;
+    return (len);
 }
 
 /* Add a field, but truncate if too long */
@@ -141,11 +141,11 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
 
     int len = 0;
     char trailer[] = "...";
-    char *truncated;
+    char *truncated = NULL;
 
     if(available_sz <= 0 ) {
         // Not enough room in the buffer
-        return -1;
+        return (-1);
     }
 
     if(value != NULL &&
@@ -177,7 +177,7 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
     // Free the temporary pointer
     free(truncated);
 
-    return len;
+    return (len);
 }
 
 /* Handle integers in the second position */
@@ -188,7 +188,7 @@ int field_add_int(char *dest, int size, const char *format, const int value ) {
 
     if(dest_sz <= 0 ) {
         // Not enough room in the buffer
-        return -1;
+        return (-1);
     }
 
     if( value > 0 ) {
@@ -196,6 +196,6 @@ int field_add_int(char *dest, int size, const char *format, const int value ) {
         strncat(dest, buffer, dest_sz);
     }
 
-    return len;
+    return (len);
 }
 /* EOF */

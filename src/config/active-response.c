@@ -349,7 +349,7 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 
 /** int ReadActiveCommands(XML_NODE node, void *d1, void *d2)
  */
-int ReadActiveCommands(XML_NODE node, void *d1, void *d2)
+int ReadActiveCommands(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 {
     int i = 0;
 

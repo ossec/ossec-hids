@@ -35,7 +35,7 @@ void AssignIgnore_Global(char **ignores, void *configp)
 /* GlobalConfSK v0.1: 2006/04/26
  * v0.1 Getting the ignore fields.
  */
-int Read_GlobalSK(XML_NODE node, void *configp, void *mailp)
+int Read_GlobalSK(XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
 {
     int i = 0;
     int ign_size = 1;

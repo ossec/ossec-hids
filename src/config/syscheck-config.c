@@ -17,7 +17,7 @@
 
 
 
-int dump_syscheck_entry(config *syscheck, char *entry, int vals, int reg, char *restrictfile)
+int dump_syscheck_entry(syscheck_config *syscheck, char *entry, int vals, int reg, char *restrictfile)
 {
     int pl = 0;
 
@@ -193,7 +193,7 @@ int read_reg(config *syscheck, char *entries)
 
 
 /* Read directories attributes */
-int read_attr(config *syscheck, char *dirs, char **g_attrs, char **g_values)
+int read_attr(syscheck_config *syscheck, char *dirs, char **g_attrs, char **g_values)
 {
     char *xml_check_all = "check_all";
     char *xml_check_sum = "check_sum";
@@ -555,12 +555,12 @@ out_free:
 
     free(dir_org);
 
-    return ret;
+    return (ret);
 }
 
 
 
-int Read_Syscheck(XML_NODE node, void *configp, void *mailp)
+int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
 {
     int i = 0;
 
@@ -584,9 +584,9 @@ int Read_Syscheck(XML_NODE node, void *configp, void *mailp)
     check_sum="yes">/var/log</directories>
     */
 
-    config *syscheck;
+    syscheck_config *syscheck;
 
-    syscheck = (config *)configp;
+    syscheck = (syscheck_config *)configp;
 
 
     while(node[i])

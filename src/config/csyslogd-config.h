@@ -23,8 +23,8 @@ typedef struct _SyslogConfig
 {
     unsigned int port;
     unsigned int format;
-    unsigned int level;
-    unsigned int *rule_id;
+    int level;
+    int *rule_id;
     unsigned int priority;
     int socket;
 

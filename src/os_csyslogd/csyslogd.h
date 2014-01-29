@@ -25,8 +25,7 @@
 /** Prototypes **/
 
 /* Read syslog config */
-void *OS_ReadSyslogConf(int test_config, char *cfgfile,
-                        SyslogConfig **sys_config);
+void *OS_ReadSyslogConf(char *cfgfile, SyslogConfig **sys_config);
 
 
 /* Send alerts via syslog */

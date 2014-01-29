@@ -360,8 +360,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
     /* Old format */
     else if(cleartext[0] == ':')
     {
-        int msg_count;
-        time_t msg_time;
+        unsigned int msg_time, msg_count;
 
         /* Closing string */
         cleartext[buffer_size] = '\0';
@@ -488,7 +487,7 @@ int CreateSecMSG(keystore *keys, char *msg, char *msg_encrypted, int id)
     local_count++;
 
 
-    snprintf(_tmpmsg, OS_MAXSTR,"%05hu%010u:%04hu:%s",
+    snprintf(_tmpmsg, OS_MAXSTR,"%05hu%010u:%04u:%s",
                               rand1, global_count, local_count,
                               msg);
 

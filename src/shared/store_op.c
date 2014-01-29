@@ -355,10 +355,10 @@ int OSStore_NCaseCheck(OSStore *list, char *key)
 /* Delete this node from list
  * Pointer goes to the next node available.
  */
-void OSStore_Delete(OSStore *list, char *key)
+/*void OSStore_Delete(OSStore *list, char *key)
 {
     return;
-}
+}*/
 
 
 

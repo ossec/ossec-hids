@@ -56,6 +56,7 @@ int main(int argc, char **argv)
 {
     int c, test_config = 0, run_foreground = 0;
     int uid = 0,gid = 0;
+    unsigned int d = 0;
 
     /* Using MAILUSER (read only) */
     char *dir  = DEFAULTDIR;
@@ -135,7 +136,7 @@ int main(int argc, char **argv)
 
 
     /* Reading configuration */
-    if((c = OS_ReadDBConf(test_config, cfg, &db_config)) < 0)
+    if((c = OS_ReadDBConf(cfg, &db_config)) < 0)
     {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }
@@ -179,8 +180,7 @@ int main(int argc, char **argv)
 
 
     /* Connecting to the database */
-    c = 0;
-    while(c <= (db_config.maxreconnect * 10))
+    while(d <= (db_config.maxreconnect * 10))
     {
         db_config.conn = osdb_connect(db_config.host, db_config.user,
                                       db_config.pass, db_config.db,
@@ -192,8 +192,8 @@ int main(int argc, char **argv)
             break;
         }
 
-        c++;
-        sleep(c * 60);
+        d++;
+        sleep(d * 60);
 
     }
 
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
             ARGV0, db_config.db, db_config.host);
 
 
-    /* Privilege separation */	
+    /* Privilege separation */
     if(Privsep_SetGroup(gid) < 0)
         ErrorExit(SETGID_ERROR,ARGV0,group);
 
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
 
-    /* the real daemon now */	
+    /* the real daemon now */
     OS_DBD(&db_config);
     exit(0);
 }

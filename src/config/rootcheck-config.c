@@ -28,7 +28,7 @@ short eval_bool(char *str)
 
 /* Read_Rootcheck: Reads the rootcheck config
  */
-int Read_Rootcheck(XML_NODE node, void *configp, void *mailp)
+int Read_Rootcheck(XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
 {
     int i = 0;
 

@@ -26,7 +26,7 @@
 /** Prototypes **/
 
 /* Read database config */
-int OS_ReadDBConf(int test_config, char *cfgfile, DBConfig *db_config);
+int OS_ReadDBConf(char *cfgfile, DBConfig *db_config);
 
 
 /* Inserts server info to the db. */

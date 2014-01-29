@@ -60,5 +60,5 @@ int Lists_OP_LoadList(char * listfile)
     os_strdup(b_filename, tmp_listnode_pt->cdb_filename);
     tmp_listnode_pt->loaded = 0;
     OS_AddList(tmp_listnode_pt);
-    return 0;
+    return (0);
 }
