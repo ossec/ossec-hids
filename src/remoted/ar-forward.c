@@ -23,7 +23,7 @@
  * Start of a new thread. Only returns
  * on unrecoverable errors.
  */
-void *AR_Forward(void *arg)
+void *AR_Forward(__attribute__((unused)) void *arg)
 {
     int i = 0;
     int arq = 0;

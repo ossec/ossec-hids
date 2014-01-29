@@ -18,7 +18,7 @@
 #include "dbd-config.h"
 
 
-int Read_DB(XML_NODE node, void *config1, void *config2)
+int Read_DB(XML_NODE node, __attribute__((unused)) void *config1, void *config2)
 {
     int i = 0;
     DBConfig *db_config;

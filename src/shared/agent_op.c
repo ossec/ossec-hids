@@ -255,12 +255,12 @@ char* os_read_agent_profile()
 /* cmoraes: end add */
 
 
-/** int os_write_agent_info(char *agent_name, char *agent_ip, char *agent_id)
+/** int os_write_agent_info(char *agent_name, char *agent_id, char *cfg_profile_name)
  *  Writes the agent info inside the queue, for the other processes to read.
  *  Returns 1 on success or <= 0 on failure.
  */
 /* cmoraes: changed function. added cfg_profile_name parameter */
-int os_write_agent_info(char *agent_name, char *agent_ip,
+int os_write_agent_info(char *agent_name,
                         char *agent_id,   char *cfg_profile_name)
 {
     FILE *fp;

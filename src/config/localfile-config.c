@@ -16,7 +16,7 @@
 #include "localfile-config.h"
 
 
-int Read_Localfile(XML_NODE node, void *d1, void *d2)
+int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 {
     int pl = 0;
     int i = 0;

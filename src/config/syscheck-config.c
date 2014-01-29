@@ -560,7 +560,7 @@ out_free:
 
 
 
-int Read_Syscheck(XML_NODE node, void *configp, void *mailp)
+int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
 {
     int i = 0;
 

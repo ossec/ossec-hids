@@ -67,8 +67,8 @@ int _xml_wfgetc(FILE *fp_in, FILE *fp_out)
 /* OS_WriteXML
  * Write an XML file, based on the input and values to change.
  */
-int OS_WriteXML(char *infile, char *outfile, char **nodes, char *attr,
-                char *oldval, char *newval,  int type)
+int OS_WriteXML(char *infile, char *outfile, char **nodes,
+                char *oldval, char *newval)
 {
     int r = 0;
     int node_pos = 0;
@@ -359,7 +359,7 @@ int _WReadElem(FILE *fp_in, FILE *fp_out,
             memset(closedelem,'\0',XML_MAXSIZE);
             memset(cont,'\0',XML_MAXSIZE);
 
-            count = 0;	
+            count = 0;
             location = -1;
             if(parent > 0)
             {
@@ -377,7 +377,7 @@ int _WReadElem(FILE *fp_in, FILE *fp_out,
                 cont[count] = '\0';
                 count = 0;
                 location = 2;
-            }	
+            }
             else
             {
                 int wret_code;
@@ -424,7 +424,7 @@ int _WReadElem(FILE *fp_in, FILE *fp_out,
 
 
     return(-1);
-}				
+}
 
 
 

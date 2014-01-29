@@ -37,7 +37,7 @@ static int file_in_list(int list_size, char *f_name, char *d_name, char **alist)
     return(0);
 }
 
-int Read_Rules(XML_NODE node, void *configp, void *mailp)
+int Read_Rules(XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
 {
     int i = 0;
     int ii = 0;

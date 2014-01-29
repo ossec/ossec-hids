@@ -84,9 +84,9 @@ void AgentdStart(char *dir, int uid, int gid, char *user, char *group)
     OS_StartCounter(&keys);
 
     /* cmoraes : changed the following call to
-    os_write_agent_info(keys.keyentries[0]->name, NULL, keys.keyentries[0]->id);
+    os_write_agent_info(keys.keyentries[0]->name, keys.keyentries[0]->id);
     */
-    os_write_agent_info(keys.keyentries[0]->name, NULL, keys.keyentries[0]->id,
+    os_write_agent_info(keys.keyentries[0]->name, keys.keyentries[0]->id,
                         agt->profile);
 
 

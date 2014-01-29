@@ -301,7 +301,7 @@ int DeletePID(char *name)
 int UnmergeFiles(char *finalpath, char *optdir)
 {
     int i = 0, n = 0, ret = 1;
-    long files_size = 0;
+    unsigned long files_size = 0;
 
     char *files;
     char final_name[2048 +1];

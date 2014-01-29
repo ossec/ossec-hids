@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
 
     /* Reading configuration */
-    syslog_config = OS_ReadSyslogConf(test_config, cfg, syslog_config);
+    syslog_config = OS_ReadSyslogConf(cfg, syslog_config);
 
 
     /* Getting servers hostname */
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 
 
 
-    /* Privilege separation */	
+    /* Privilege separation */
     if(Privsep_SetGroup(gid) < 0)
         ErrorExit(SETGID_ERROR,ARGV0,group);
 
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
 
-    /* the real daemon now */	
+    /* the real daemon now */
     OS_CSyslogD(syslog_config);
     exit(0);
 }

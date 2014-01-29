@@ -28,7 +28,7 @@
 typedef struct _logreader
 {
     unsigned int size;
-    int ign;
+    unsigned int ign;
 
     #ifdef WIN32
     HANDLE h;
@@ -48,7 +48,7 @@ typedef struct _logreader
     char *djb_program_name;
     char *command;
     char *alias;
-	
+
     void (*read)(int i, int *rc, int drop_it);
 
     FILE *fp;

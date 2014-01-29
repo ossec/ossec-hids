@@ -255,7 +255,7 @@ int local_start()
 
     OS_ReadKeys(&keys);
     OS_StartCounter(&keys);
-    os_write_agent_info(keys.keyentries[0]->name, NULL, keys.keyentries[0]->id, NULL);
+    os_write_agent_info(keys.keyentries[0]->name, keys.keyentries[0]->id, NULL);
 
 
     /* Initial random numbers */

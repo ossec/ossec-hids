@@ -18,7 +18,7 @@
 #include "mail-config.h"
 
 
-int Read_EmailAlerts(XML_NODE node, void *configp, void *mailp)
+int Read_EmailAlerts(XML_NODE node, __attribute__((unused)) void *configp, void *mailp)
 {
     int i = 0;
     int granto_size = 1;

@@ -360,8 +360,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
     /* Old format */
     else if(cleartext[0] == ':')
     {
-        int msg_count;
-        time_t msg_time;
+        unsigned int msg_time, msg_count;
 
         /* Closing string */
         cleartext[buffer_size] = '\0';

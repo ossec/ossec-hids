@@ -23,8 +23,7 @@
                         SyslogConfig **syslog_config)
  * Reads configuration.
  */
-void *OS_ReadSyslogConf(int test_config, char *cfgfile,
-                        SyslogConfig **syslog_config)
+void *OS_ReadSyslogConf(char *cfgfile, SyslogConfig **syslog_config)
 {
     int modules = 0;
     GeneralConfig gen_config;

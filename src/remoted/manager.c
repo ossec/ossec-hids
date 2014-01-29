@@ -536,7 +536,7 @@ void read_controlmsg(int agentid, char *msg)
  * Wait for new messages to read.
  * The messages are going to be sent from save_controlmsg.
  */
-void *wait_for_msgs(void *none)
+void *wait_for_msgs(__attribute__((unused)) void *none)
 {
     int id, i;
     char msg[OS_SIZE_1024 +2];

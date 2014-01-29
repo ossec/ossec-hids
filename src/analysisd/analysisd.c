@@ -113,7 +113,7 @@ void HostinfoInit();
 
 /* For stats */
 int Start_Hour();
-int Check_Hour(Eventinfo *lf);
+int Check_Hour();
 void Update_Hour();
 void DumpLogstats();
 
@@ -215,7 +215,7 @@ int main_analysisd(int argc, char **argv)
 
     /* Initializing Active response */
     AR_Init();
-    if(AR_ReadConfig(test_config, cfg) < 0)
+    if(AR_ReadConfig(cfg) < 0)
     {
         ErrorExit(CONFIG_ERROR,ARGV0, cfg);
     }
@@ -277,7 +277,7 @@ int main_analysisd(int argc, char **argv)
         chown(Config.picviz_socket, uid, gid);
     }
 
-    /* Setting the group */	
+    /* Setting the group */
     if(Privsep_SetGroup(gid) < 0)
         ErrorExit(SETGID_ERROR,ARGV0,group);
 
@@ -525,7 +525,7 @@ int main_analysisd(int argc, char **argv)
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
 
-    /* Going to main loop */	
+    /* Going to main loop */
     OS_ReadMSG(m_queue);
 
     if (Config.picviz)
@@ -885,7 +885,7 @@ void OS_ReadMSG_analysisd(int m_queue)
             /* Stats checking */
             if(Config.stats)
             {
-                if(Check_Hour(lf) == 1)
+                if(Check_Hour() == 1)
                 {
                     void *saved_rule = lf->generated_rule;
                     char *saved_log;
@@ -1130,7 +1130,7 @@ void OS_ReadMSG_analysisd(int m_queue)
                 OS_Store(lf);
 
 
-            /* Cleaning the memory */	
+            /* Cleaning the memory */
             CLMEM:
 
 
@@ -1236,7 +1236,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
     {
         if(!OSMatch_Execute(lf->log, lf->size, currently_rule->match))
             return(NULL);
-    }	   	
+    }
 
 
 

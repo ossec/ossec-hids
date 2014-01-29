@@ -67,7 +67,7 @@ char * searchAndReplace2(char* orig, char* search, char*value)
     }
 
   }
-  if ((from  < total_len) && from>0)
+  if (from>0 && ((unsigned)from  < total_len))
   {
     total_bytes_allocated += total_len - from;//((from - (int)token_len) + (int)value_len);
     tmp = (char*) realloc(tmp, total_bytes_allocated+1);
@@ -146,7 +146,7 @@ char * searchAndReplace(char* orig, char* search, char*value)
     }
 
   }
-  if ((from  < total_len) && from>0)
+  if (from>0 && ((unsigned)from  < total_len))
   {
     total_bytes_allocated += total_len - from;//((from - (int)token_len) + (int)value_len);
     tmp = (char*) realloc(tmp, total_bytes_allocated+1);

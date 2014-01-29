@@ -116,7 +116,7 @@ int OS_AddList(ListNode *new_listnode)
     return(0);
 }
 
-ListNode *_OS_FindList(ListNode *_listnode, char *listname)
+ListNode *_OS_FindList(char *listname)
 {
     ListNode *last_list_node = OS_GetFirstList();
     if (last_list_node != NULL) {
@@ -137,7 +137,7 @@ ListNode *_OS_FindList(ListNode *_listnode, char *listname)
 ListNode *OS_FindList(char *listname)
 {
     ListNode *matched = NULL;
-    matched = _OS_FindList(global_listnode, listname);
+    matched = _OS_FindList(listname);
     return (matched);
 }
 
