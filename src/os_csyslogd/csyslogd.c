@@ -141,7 +141,7 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
 
     int len = 0;
     char trailer[] = "...";
-    char *truncated;
+    char *truncated = NULL;
 
     if(available_sz <= 0 ) {
         // Not enough room in the buffer

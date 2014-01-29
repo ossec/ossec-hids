@@ -27,7 +27,7 @@ int connect_to_port(int proto, int port)
 {
     int rc = 0;
 
-    int ossock;
+    int ossock = 0;
     struct sockaddr_in server;
 
     if(proto == IPPROTO_UDP)
