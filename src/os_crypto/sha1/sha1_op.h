@@ -20,6 +20,8 @@ typedef char os_sha1[65];
 
 int OS_SHA1_File(char *fname, char * output);
 
+int OS_SHA1_File_Prefilter(char *fname, char *prefilter_cmd, char * output);
+
 #endif
 
 /* EOF */

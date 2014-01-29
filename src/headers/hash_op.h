@@ -40,6 +40,7 @@ typedef struct _OSHash
 }OSHash;
 
 
+typedef int (*OSHash_Function)(void*, void*);
 
 /** Prototypes **/
 
@@ -57,6 +58,11 @@ OSHash *OSHash_Create();
 void *OSHash_Free(OSHash *self);
 
 
+/** void OSHash_ForEach(OSHash *self, OSHash_Function fun)
+ *  Iterate over hash elements and call fun on it
+ *  If fun returns '-1', the element is removed
+ */
+void OSHash_ForEach(OSHash *self, OSHash_Function fun);
 
 /** void OSHash_Add(OSHash *hash, char *key, void *data)
  * Returns 0 on error.

@@ -19,6 +19,8 @@
 
 typedef char os_md5[33];
 
+int OS_MD5_File_Prefilter(char *fname, char *prefilter_cmd, char * output);
+
 int OS_MD5_File(char *fname, char * output);
 
 int OS_MD5_Str(char * str, char * output);
