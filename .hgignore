@@ -67,3 +67,4 @@ src/util/verify-agent-conf
 # eclipse project files
 .project
 .cproject
+.settings/
