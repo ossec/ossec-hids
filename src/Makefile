@@ -8,6 +8,7 @@ none:
 		@echo "\"make server\" to build the server."
 		@echo "\"make local\" to build the local."
 		@echo "\"make agent\" to build the agent."
+		@echo "\"make windows_agent\" to cross build the windows agent."
 		@echo "\"make libs\" to build the libraries only."
 		@echo "\"make clean\" to clean anything built."
 		@echo "\"make setagent\" to set agent install."
@@ -22,6 +23,7 @@ none:
 
 clean:
 		@/bin/sh ./Makeall clean
+		rm -rf win-pkg
 		rm -f ../bin/ossec*
 		rm -f ../bin/manage_agents
 
@@ -42,6 +44,10 @@ local:
         
 agent:
 		@/bin/sh ./InstallAgent.sh
+
+windows_agent:
+		@( cd win32 && /bin/sh ./gen_win.sh )
+		@( cd win-pkg && /bin/sh ./make.sh )
         
 setagent:
 		@echo "CEXTRA=-DCLIENT" >> ./Config.OS
