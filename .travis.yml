@@ -21,6 +21,4 @@ before_script:
 
 
 script: 
-  - if [[ "$OSSEC_TYPE" == "windows_agent" ]]; then ( cd src/win32 && sh ./gen_win.sh  ); fi
-  - if [[ "$OSSEC_TYPE" == "windows_agent" ]]; then ( cd src/win-pkg && sh make.sh  ); fi
-  - if [[ "$OSSEC_TYPE" != "windows_agent" ]]; then ( cd src && make all && sudo make $OSSEC_TYPE ); fi
+  - ( cd src && make $OSSEC_TYPE )
