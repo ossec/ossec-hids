@@ -1,5 +1,6 @@
 
-syntax: glob
+#syntax: glob
+
 
 *.so
 *.o
@@ -63,3 +64,12 @@ src/analysisd/ossec-makelists
 src/isbigendian
 src/util/ossec-regex
 src/util/verify-agent-conf
+src/win-pkg/
+src/win32/LICENSE.txt
+src/win32/help_win.txt
+src/win32/icon.o
+src/win32/internal_options-win.conf
+src/win32/ossec-win.conf
+src/win32/restart-ossec.cmd
+src/win32/route-null.cmd
+src/win32/win32ui.exe
