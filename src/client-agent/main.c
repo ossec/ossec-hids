@@ -35,6 +35,7 @@
 int main(int argc, char **argv)
 {
     int c = 0;
+    int debug_level = 0;
     int test_config = 0;
     int debug_level = 0;
 
