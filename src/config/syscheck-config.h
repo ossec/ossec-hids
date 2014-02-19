@@ -17,7 +17,6 @@
 
 #define MAX_DIR_SIZE    64
 #define MAX_DIR_ENTRY   128
-#define SYSCHECK_WAIT   300
 
 
 /* Checking options */
@@ -32,6 +31,13 @@
 
 
 #include <stdio.h>
+
+typedef struct _dbrecord
+{
+    unsigned char scanned;
+    char alert_msg[256];
+}dbrecord;
+
 typedef struct _rtfim
 {
     int fd;
@@ -50,6 +56,7 @@ typedef struct _config
     int scan_on_start;
     int realtime_count;
 
+    int wait;              /* time to wait between two syscheck wakeups */
     int time;              /* frequency (secs) for syscheck to run */
     int queue;             /* file descriptor of socket to write to queue */
 

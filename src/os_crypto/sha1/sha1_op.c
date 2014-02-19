@@ -26,23 +26,18 @@
 */
 
 #include "sha_locl.h"
+#include "../shared/prefilter.h"
 
 
-
-int OS_SHA1_File(char * fname, char * output)
+int OS_SHA1_Stream(FILE *fp, char * output)
 {
     SHA_CTX c;
-    FILE *fp;
     unsigned char buf[2048 +2];
     unsigned char md[SHA_DIGEST_LENGTH];
     int n;
 
     memset(output,0, 65);
     buf[2049] = '\0';
-
-    fp = fopen(fname,"r");
-    if(!fp)
-        return(-1);
 
     SHA1_Init(&c);
     while((n = fread(buf, 1, 2048, fp)) > 0)
@@ -58,6 +53,35 @@ int OS_SHA1_File(char * fname, char * output)
         snprintf(output, 3, "%02x", md[n]);
         output+=2;
     }
+
+    return(0);
+}
+
+int OS_SHA1_File_Prefilter(char * fname, char *prefilter_cmd, char * output)
+{
+    FILE *fp;
+ 
+    fp = prefilter(fname, prefilter_cmd);
+    if(!fp)
+        return(-1);
+
+    OS_SHA1_Stream(fp, output);
+
+    /* Closing it */
+    prefilter_close(fp, prefilter_cmd);
+
+    return(0);
+}
+
+int OS_SHA1_File(char * fname, char * output)
+{
+    FILE *fp;
+ 
+    fp = fopen(fname, "r");
+    if(!fp)
+        return(-1);
+
+    OS_SHA1_Stream(fp, output);
 
     /* Closing it */
     fclose(fp);

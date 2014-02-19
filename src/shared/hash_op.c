@@ -106,6 +106,42 @@ void *OSHash_Free(OSHash *self)
     return(NULL);
 }
 
+/** void OSHash_ForEach(OSHash *self, OSHash_Function fun)
+ *  Iterate over hash elements and call fun on it
+ *  If fun returns '-1', the element is removed
+ */
+void OSHash_ForEach(OSHash *self, OSHash_Function fun)
+{
+    int i = 0;
+    OSHashNode *prev_node;
+    OSHashNode *curr_node;
+    OSHashNode *deleted_node;
+
+    for (i = 0; i <= self->rows; i++)
+    {
+        curr_node = self->table[i];
+        prev_node = NULL;
+        while (curr_node)
+        {
+            if (fun(curr_node->key, curr_node->data) == -1)
+            {
+                if (prev_node == NULL) {
+                    self->table[i] = curr_node->next;
+                }
+                else {
+                    prev_node->next = curr_node->next;
+                }
+                deleted_node = curr_node;
+                curr_node = curr_node->next;
+                free(deleted_node);
+            }
+            else {
+                prev_node = curr_node;
+                curr_node = curr_node->next;
+            }
+        }
+    }
+}
 
 
 /** int _os_genhash(OSHash *self, char *key)

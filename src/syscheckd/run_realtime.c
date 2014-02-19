@@ -54,10 +54,10 @@ int c_read_file(char *file_name, char *oldsum, char *newsum);
 /* Checking sum of the realtime file being monitored. */
 int realtime_checksumfile(char *file_name)
 {
-    char *buf;
+    dbrecord *record;
 
-    buf = OSHash_Get(syscheck.fp, file_name);
-    if(buf != NULL)
+    record = OSHash_Get(syscheck.fp, file_name);
+    if(record != NULL)
     {
         char c_sum[256 +2];
 
@@ -66,18 +66,18 @@ int realtime_checksumfile(char *file_name)
 
 
          /* If it returns < 0, we will already have alerted. */
-         if(c_read_file(file_name, buf, c_sum) < 0)
+         if(c_read_file(file_name, record->alert_msg, c_sum) < 0)
          {
              return(0);
          }
 
 
-         if(strcmp(c_sum, buf+6) != 0)
+         if(strcmp(c_sum, record->alert_msg+6) != 0)
          {
              char *fullalert = NULL;
              char alert_msg[OS_MAXSTR +1];
              alert_msg[OS_MAXSTR] = '\0';
-             if(buf[5] == 's' || buf[5] == 'n')
+             if(record->alert_msg[5] == 's' || record->alert_msg[5] == 'n')
              {
                  fullalert = seechanges_addfile(file_name);
                  if(fullalert)
