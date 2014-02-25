@@ -28,6 +28,8 @@ fi
 
 ZLIBV="external/zlib-1.2.3/"
 CJSONV="external/cJSON/"
+LUA_DIR="external/lua"
+LUA_PLAT="posix"
 
 # CPU information
 #CPU=`uname -p`
@@ -91,6 +93,7 @@ if [ "X${ARGV}" = "Xall" -o "X${ARGV}" = "Xrootcheck" -o "X${ARGV}" = "Xlibs" ];
         echo "EEXTRA=-DAIX -DHIGHFIRST" >> Config.OS
         PATH=$PATH:/usr/vac/bin
         export  PATH
+        LUA_PLAT="aix"
 
     elif [ "X$OS" = "XSunOS" ]; then
         # Set CPU optimization for Sun UltraSparc
@@ -103,6 +106,7 @@ if [ "X${ARGV}" = "Xall" -o "X${ARGV}" = "Xrootcheck" -o "X${ARGV}" = "Xlibs" ];
         #fi
         echo "EEXTRA=-DSOLARIS -DHIGHFIRST">>Config.OS
         echo "IEXTRA=-lsocket -lnsl -lresolv" >> Config.OS
+        LUA_PLAT="solaris"
 
     elif [ "X$OS" = "XHP-UX" ]; then
         echo "EEXTRA=-DHPUX -D_XOPEN_SOURCE_EXTENDED -DHIGHFIRST -D_REENTRANT" >> Config.OS
@@ -110,8 +114,11 @@ if [ "X${ARGV}" = "Xall" -o "X${ARGV}" = "Xrootcheck" -o "X${ARGV}" = "Xlibs" ];
     elif [ "X$OS" = "XDarwin" ]; then
         echo "EEXTRA=-DDarwin -DHIGHFIRST" >> Config.OS
 
+
     elif [ "X$OS" = "XFreeBSD" ]; then
         echo "EEXTRA=-DFreeBSD" >> Config.OS
+        LUA_PLAT="freebsd"
+
     
     else
         
@@ -146,10 +153,12 @@ if [ "X${ARGV}" = "Xall" ]; then
     DIRECTORIES="${LIBS} ${SOURCES} ${BINARIES}" 
     DOZLIB="x"
     DOCJSON="x"
+    DO_LUA="x"
 elif [ "X${ARGV}" = "Xlibs" ]; then
     DIRECTORIES="${LIBS} ${SOURCES}"
     DOZLIB="x"
     DOCJSON="x"
+    DO_LUA="x"
 elif [ "X${ARGV}" = "Xrootcheck" ]; then
     DIRECTORIES="os_xml os_regex os_net ${SOURCES} ${ROOTCHECKBIN}"    
 elif [ "X${ARGV}" = "Xbuild" ]; then
@@ -189,11 +198,29 @@ if [ "X${DOCJSON}" = "Xx" ]; then
     echo ""
 fi    
 
+if [ "X${DO_LUA}" = "Xx" ]; then
+    # Build LUA here
+    echo ""
+    echo " *** Making LUA (Copyright 1994–2014 Lua.org, PUC-Rio.)  *** "
+    echo ""
+
+    cd ${LUA_DIR}; make ${LUA_PLAT};
+    if [ $? != 0 ]; then
+        echo ""
+        echo "Error Making LUA"
+        exit 1;
+    fi
+    cd ../../
+    echo ""
+fi    
+
 if [ "X${ARGV}" = "Xclean" ]; then
     # Cleaning zlib
     cd ${ZLIBV}; make clean;
     cd ../../
     cd ${CJSONV}; make clean;
+    cd ../../
+    cd ${LUA_DIR}; make clean;
     cd ../../
 fi    
 
