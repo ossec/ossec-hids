@@ -7,8 +7,10 @@ NAME=ossec-execd
 include ../Config.Make
 
 LOCAL = execd.c exec.c config.c
+LUA = -I ${PT}external/lua/src ${PT}external/lua/src/liblua.a -lm
 
-OBJS = ${OS_SHARED} ${OS_NET} ${OS_REGEX} ${OS_XML}
+
+OBJS = ${OS_SHARED} ${OS_NET} ${OS_REGEX} ${OS_XML} ${LUA}
 
 addclient:
 		${CC} ${CFLAGS} ${OS_LINK} ${LOCAL} ${OBJS} -o ${NAME}
