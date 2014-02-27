@@ -7,14 +7,14 @@
 #include "lualib.h"
 
 typedef struct _lua_handler_t {
-  lua_State *L;
-  char *name;
-  int init; 
-  int adder;
-  int deleter;
-  int timer;
-  double timer_freq;
-}lua_handler_t;
+    lua_State *L;
+    char *name;
+    int init;
+    int adder;
+    int deleter;
+    int timer;
+    double timer_freq;
+} lua_handler_t;
 
 
 void lua_handler_destroy(lua_handler_t **self);
