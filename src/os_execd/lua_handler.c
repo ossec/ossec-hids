@@ -2,9 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
 #include "lua_handler.h"
 
 static void stack_dump(lua_State *L) {
@@ -45,6 +42,15 @@ static int *ar_register_timer(lua_State *L)
 
 }
 
+static int *ar_register_init(lua_State *L)
+{
+  printf("ar_reg_init\n");
+  int l_fun = luaL_ref(L, LUA_REGISTRYINDEX);
+  lua_handler_t *self = getself(L);
+  self->init = l_fun; 
+
+  return 0; 
+}
 static int *ar_register_add(lua_State *L)
 {
   printf("ar_reg_add\n");
@@ -68,9 +74,9 @@ static const luaL_Reg ar_functs[] = {
   {"register_timer", ar_register_timer},
   {"register_add", ar_register_add},
   {"register_delete", ar_register_delete},
+  {"register_init", ar_register_init},
   {NULL, NULL},
 };
-
 
 
 lua_handler_t *lua_handler_new(const char *name)
@@ -110,10 +116,11 @@ lua_handler_t *lua_handler_new(const char *name)
     goto error; 
   }
 
-/*
+  /*
   printf("\n\n------[ running init  ]---------\n\n");
 
   lua_getfield(self->L, LUA_REGISTRYINDEX, "init");
+
   printf("======statc before pcall=====\n");
   stack_dump(self->L);
   printf("=============================\n");
@@ -188,21 +195,3 @@ int lua_handler_delete(lua_handler_t *self, const char *user, const char *ipaddr
 
 
 
-int main()
-{
-  printf ("starting new\n");
-  lua_handler_t *tester = lua_handler_new("test/test_1.lua");
-  if (tester) {
-    printf ("tester-starting add\n");
-    lua_handler_add(tester, "jrossi","1.1.1.1");
-    printf ("tester-starting delete\n");
-    lua_handler_delete(tester, "jrossi", "1.1.1.1");
-    printf ("tester-starting destory\n");
-    lua_handler_destroy(&tester);
-    return 0;
-  } else { 
-    return 1; 
-  }
-
-  return 0;
-}

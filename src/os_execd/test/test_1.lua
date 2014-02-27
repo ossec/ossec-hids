@@ -13,9 +13,10 @@ end
 
 function init()
   print("---LUA: starting lua init")
-  ar.register_add(adder)
-  ar.register_delete(deleter)
   print("---LUA: ending lua init")
 end
-init()
-print("---LUA: lua ending ")
+
+ar.register_add(adder)
+ar.register_delete(deleter)
+ar.register_init(init)
+
