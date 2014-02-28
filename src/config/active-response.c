@@ -64,14 +64,12 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if((os_group = getgrnam(USER)) == NULL)
     {
       merror("Could not get ossec gid.");
-      fclose(fp);
       return(-1);
     }
 
     if((chown(DEFAULTARPATH, -1, os_group->gr_gid)) == -1)
     {
       merror("Could not change the group to ossec: %d", errno);
-      fclose(fp);
       return(-1);
     }
 #endif
@@ -79,7 +77,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if((chmod(DEFAULTARPATH, 0440)) == -1)
     {
       merror("Could not chmod to 0440: %d", errno);
-      fclose(fp);
       return(-1);
     }
 
@@ -89,7 +86,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if(!tmp_ar)
     {
         merror(MEM_ERROR, ARGV0);
-        fclose(fp);
         return(-1);
     }
 
@@ -113,12 +109,12 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         if(!node[i]->element)
         {
             merror(XML_ELEMNULL, ARGV0);
-            goto error_invalid;
+            return(OS_INVALID);
         }
         else if(!node[i]->content)
         {
             merror(XML_VALUENULL, ARGV0, node[i]->element);
-            goto error_invalid;
+            return(OS_INVALID);
         }
 
         /* Command */
@@ -149,7 +145,7 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
             if(!OS_StrIsNum(node[i]->content))
             {
                 merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
-                goto error_invalid;
+                return(OS_INVALID);
             }
 
             tmp_ar->level = atoi(node[i]->content);
@@ -158,7 +154,7 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
             if((tmp_ar->level < 0) || (tmp_ar->level > 20))
             {
                 merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
-                goto error_invalid;
+                return(OS_INVALID);
             }
         }
         else if(strcmp(node[i]->element, xml_ar_timeout) == 0)
@@ -178,7 +174,7 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
             else
             {
                 merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
-                goto error_invalid;
+                return(OS_INVALID);
             }
         }
         else if(strcmp(node[i]->element, xml_ar_repeated) == 0)
@@ -189,7 +185,7 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         else
         {
             merror(XML_INVELEM, ARGV0, node[i]->element);
-            goto error_invalid;
+            return(OS_INVALID);
         }
         i++;
     }
@@ -198,7 +194,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if(ar_flag == -1)
     {
         fclose(fp);
-        free(tmp_ar);
         return(0);
     }
 
@@ -208,12 +203,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         if(rpt == 1)
         {
             fclose(fp);
-            free(tmp_ar);
             return(0);
         }
         merror(AR_MISS, ARGV0);
-        fclose(fp);
-        free(tmp_ar);
         return(-1);
     }
 
@@ -233,9 +225,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         if(!tmp_ar->agent_id)
         {
             merror(AR_DEF_AGENT, ARGV0);
-            fclose(fp);
-            free(tmp_ar);
-            free(tmp_location);
             return(-1);
         }
 
@@ -251,9 +240,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if(tmp_ar->location == 0)
     {
         merror(AR_INV_LOC, ARGV0, tmp_location);
-        fclose(fp);
-        free(tmp_ar);
-        free(tmp_location);
         return(-1);
     }
 
@@ -286,8 +272,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         if(tmp_ar->ar_cmd == NULL)
         {
             merror(AR_INV_CMD, ARGV0, tmp_ar->command);
-            fclose(fp);
-            free(tmp_ar);
             return(-1);
         }
     }
@@ -296,8 +280,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if(tmp_ar->timeout && !tmp_ar->ar_cmd->timeout_allowed)
     {
         merror(AR_NO_TIMEOUT, ARGV0, tmp_ar->ar_cmd->name);
-        fclose(fp);
-        free(tmp_ar);
         return(-1);
     }
 
@@ -305,8 +287,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if(!OSList_AddData(d2, (void *)tmp_ar))
     {
         merror(LIST_ADD_ERROR, ARGV0);
-        fclose(fp);
-        free(tmp_ar);
         return(-1);
     }
 
@@ -363,12 +343,6 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 
     /* Done over here */
     return(0);
-
-    /* in case of an error clean up first*/
-    error_invalid:
-    fclose(fp);
-    free(tmp_ar);
-    return(OS_INVALID);
 }
 
 
@@ -410,13 +384,11 @@ int ReadActiveCommands(XML_NODE node, void *d1, void *d2)
         if(!node[i]->element)
         {
             merror(XML_ELEMNULL, ARGV0);
-            free(tmp_command);
             return(OS_INVALID);
         }
         else if(!node[i]->content)
         {
             merror(XML_VALUENULL, ARGV0, node[i]->element);
-            free(tmp_command);
             return(OS_INVALID);
         }
         if(strcmp(node[i]->element, command_name) == 0)
@@ -440,14 +412,12 @@ int ReadActiveCommands(XML_NODE node, void *d1, void *d2)
             else
             {
                 merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
-                free(tmp_command);
                 return(OS_INVALID);
             }
         }
         else
         {
             merror(XML_INVELEM, ARGV0, node[i]->element);
-            free(tmp_command);
             return(OS_INVALID);
         }
         i++;
@@ -456,7 +426,6 @@ int ReadActiveCommands(XML_NODE node, void *d1, void *d2)
     if(!tmp_command->name || !tmp_str || !tmp_command->executable)
     {
         merror(AR_CMD_MISS, ARGV0);
-        free(tmp_command);
         return(-1);
     }
 
@@ -480,9 +449,9 @@ int ReadActiveCommands(XML_NODE node, void *d1, void *d2)
     if(!OSList_AddData(d1, (void *)tmp_command))
     {
         merror(LIST_ADD_ERROR, ARGV0);
-        free(tmp_command);
         return(-1);
     }
+
 
     /* Done over here */
     return(0);
