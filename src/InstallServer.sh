@@ -246,6 +246,8 @@ cp -pr addagent/manage_agents agentlessd/ossec-agentlessd \
 	os_auth/ossec-authd os_dbd/ossec-dbd analysisd/ossec-makelists \
 	${DIR}/bin/
 
+cp -pr external/lua/ossec-lua ${DIR}/bin
+cp -pr external/lua/ossec-luac ${DIR}/bin
 cp -pr util/verify-agent-conf ${DIR}/bin/
 cp -pr util/clear_stats ${DIR}/bin/
 cp -pr util/list_agents ${DIR}/bin/
