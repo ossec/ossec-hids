@@ -1,6 +1,10 @@
 ; include Modern UI
 !include "MUI.nsh"
 
+; standard NSIS includes
+!include "LogicLib.nsh"
+!include "WinVer.nsh"
+
 ; include nsProcess
 !addincludedir "nsProcess"
 !addplugindir "nsProcess"
