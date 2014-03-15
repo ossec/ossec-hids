@@ -8,13 +8,13 @@
   - chrome log
   -  Examples:
   - kernel[0]: USBMSC Identifier (non-unique): 00001680D775EA97 0x781 0x5408 0x10, 2
-Feb 15 20:21:34 Nadesico kernel[0]: USBMSC Identifier (non-unique): 574343344530333937333935 0x1058 0x1230 0x1050, 2
+Feb 15 20:21:34 HOST kernel[0]: USBMSC Identifier (non-unique): 574343344530333937333935 0x1058 0x1230 0x1050, 2
   - Google Chrome Helper[50583]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd. : LSXPCClient.cp #426 ___ZN26LSClientToServerConnection21setupServerConnectionEiPK14__CFDictionary_block_invoke() q=com.apple.main-thread
   - Google Chrome Helper[50583]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
   - Google Chrome Helper[50583]: CGSLookupServerRootPort: Failed to look up the port for "com.apple.windowserver.active" 
-Feb 20 11:20:36 Nadesico Google Chrome Helper[59050]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
+Feb 20 11:20:36 HOST Google Chrome Helper[59050]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
   - Preview
-Feb 20 10:51:20 Nadesico Preview[33917]: It does not make sense to draw an image when [NSGraphicsContext currentContext] is nil.  This is a programming error. Break on void _NSWarnForDrawingImageWithNoCurrentContext() to debug.  This will be logged only once.  This may break in the future.
+Feb 20 10:51:20 HOST Preview[33917]: It does not make sense to draw an image when [NSGraphicsContext currentContext] is nil.  This is a programming error. Break on void _NSWarnForDrawingImageWithNoCurrentContext() to debug.  This will be logged only once.  This may break in the future.
 
   -->
 
@@ -71,7 +71,7 @@ http://ossec-docs.readthedocs.org/en/latest/syntax/head_decoders.html#element-de
 </decoder>
 
 <!-- BUG: match 
-Feb 26 20:24:56 Nadesico com.apple.authd[71]: Succeeded authorizing right 'com.apple.ServiceManagement.daemons.modify' by client '/usr/libexec/UserEventAgent' [11] for authorization created by '/usr/libexec/UserEventAgent' [11] (12,0)
+Feb 26 20:24:56 HOST com.apple.authd[71]: Succeeded authorizing right 'com.apple.ServiceManagement.daemons.modify' by client '/usr/libexec/UserEventAgent' [11] for authorization created by '/usr/libexec/UserEventAgent' [11] (12,0)
 -->
 <decoder name="SecurityServer">
   <program_name>^SecurityServer</program_name>

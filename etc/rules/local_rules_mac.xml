@@ -59,7 +59,7 @@
     <description>apple.appkot.xpc log noise</description>
   </rule>
 <!-- multi-line...
-Mar  4 23:32:07 Nadesico com.apple.appkit.xpc.openAndSavePanelService[20708]: Bogus event received by listener connection:
+Mar  4 23:32:07 HOST com.apple.appkit.xpc.openAndSavePanelService[20708]: Bogus event received by listener connection:
         <error: 0x7fff75dbfb50> { count = 1, contents =
                 "XPCErrorDescription" => <string: 0x7fff75dbfe60> { length = 18, contents = "Connection invalid" }
         }
@@ -95,28 +95,28 @@ Mar  4 23:32:07 Nadesico com.apple.appkit.xpc.openAndSavePanelService[20708]: Bo
   </rule>
   <rule id="102011" level="6">
 <!--
-Mar 11 12:16:16 Nadesico TextEdit[47944]: socket(PF_ROUTE) failed: Operation not permitted
+Mar 11 12:16:16 HOST TextEdit[47944]: socket(PF_ROUTE) failed: Operation not permitted
 -->
     <match>socket(PF_ROUTE) failed: Operation not permitted</match>
     <description>socket(PF_ROUTE) failed: Operation not permitted</description>
   </rule>
   <rule id="102012" level="6">
 <!--
-Mar 11 12:16:17 Nadesico TextEdit[47944]: __tcp_connection_register_reachability_block_invoke 1 networkd reported net_helper_connection_start failed
+Mar 11 12:16:17 HOST TextEdit[47944]: __tcp_connection_register_reachability_block_invoke 1 networkd reported net_helper_connection_start failed
 -->
     <regex>__tcp_connection_register_reachability_block_invoke \d+ networkd reported net_helper_connection_start failed</regex>
     <description>tcp connection failed??? (1)</description>
   </rule>
   <rule id="102013" level="6">
 <!--
-Mar 11 12:16:17 Nadesico TextEdit[47944]: tcp_connection_destination_prepare_complete 1 connectx to 23.34.194.70#443 failed: 1 - Operation not permitted
+Mar 11 12:16:17 HOST TextEdit[47944]: tcp_connection_destination_prepare_complete 1 connectx to 23.34.194.70#443 failed: 1 - Operation not permitted
 -->
     <regex>tcp_connection_destination_prepare_complete \d+ connectx to \S+ failed: 1 - Operation not permitted</regex>
     <description>tcp connection failed??? (2)</description>
   </rule>
   <rule id="102014" level="6">
 <!--
-Mar 11 12:16:17 Nadesico TextEdit[47944]: tcp_connection_handle_destination_prepare_complete 1 failed to connect
+Mar 11 12:16:17 HOST TextEdit[47944]: tcp_connection_handle_destination_prepare_complete 1 failed to connect
 -->
     <regex>tcp_connection_handle_destination_prepare_complete \d+ failed to connect</regex>
     <description>tcp connection failed??? (3)</description>
@@ -306,7 +306,7 @@ OK
     <description>Preview log noise</description>
   </rule>
 <!--
-Mar  7 15:05:38 Nadesico Preview[8520]: view service marshal for <NSRemoteView: 0x7f9d61e84ba0> failed to forget accessibility connection due to Error Domain=NSCocoaErrorDomain Code=4099 "Impossible de communiquer avec un utilitaire." (The connection was invalidated from this process.) UserInfo=0x7f9d61dc7170 {NSDebugDescription=The connection was invalidated from this process.}
+Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f9d61e84ba0> failed to forget accessibility connection due to Error Domain=NSCocoaErrorDomain Code=4099 "Impossible de communiquer avec un utilitaire." (The connection was invalidated from this process.) UserInfo=0x7f9d61dc7170 {NSDebugDescription=The connection was invalidated from this process.}
         timestamp: 15:05:38.126 Friday 07 March 2014
         process/thread/queue: Preview (8520) / 0x110293000 / com.apple.NSXPCConnection.user.endpoint
         code: line 2972 of /SourceCache/ViewBridge/ViewBridge-46.2/NSRemoteView.m in __57-[NSRemoteView viewServiceMarshalProxy:withErrorHandler:]_block_invoke
@@ -482,14 +482,14 @@ com.apple.internetaccounts[6930]: An instance 0x7ffe51729420 of class IMAPMailbo
 <group name="syslog,com.apple.imfoundation.IMRemoteURLConnectionAgent,">
   <rule id="101071" level="1">
 <!--
-Mar  7 16:20:37 Nadesico com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.
+Mar  7 16:20:37 HOST com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.
 -->
     <match>ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.</match>
     <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: disk I/O error</description>
   </rule>
   <rule id="101072" level="1">
 <!--
-Mar  7 16:20:37 Nadesico com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: __CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.
+Mar  7 16:20:37 HOST com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: __CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.
 -->
     <match>__CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.</match>
     <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: create tables and index failed</description>
@@ -513,7 +513,7 @@ Mar  7 16:20:37 Nadesico com.apple.imfoundation.IMRemoteURLConnectionAgent[12644
 <group name="syslog,PTPCamera,">
   <rule id="101101" level="0">
 <!--
-Mar 11 12:10:10 Nadesico PTPCamera[67998]: waitForCallbackThreadConditionSignalWithTimeout: pthread_cond_timedwait() failed, status = 60
+Mar 11 12:10:10 HOST PTPCamera[67998]: waitForCallbackThreadConditionSignalWithTimeout: pthread_cond_timedwait() failed, status = 60
 -->
     <match>waitForCallbackThreadConditionSignalWithTimeout: pthread_cond_timedwait() failed, status =</match>
     <description>PTPCamera log noise</description>
@@ -523,7 +523,7 @@ Mar 11 12:10:10 Nadesico PTPCamera[67998]: waitForCallbackThreadConditionSignalW
 <group name="syslog,installer,">
   <rule id="101111" level="3">
 <!--
-Mar 11 22:54:43 Nadesico installer[6982]: JS: Flash Player Install: Error: Non-OS Volume detected.
+Mar 11 22:54:43 HOST installer[6982]: JS: Flash Player Install: Error: Non-OS Volume detected.
 -->
     <match>JS: Flash Player Install: Error: Non-OS Volume detected.</match>
     <description>installer: JS: Flash Player Install: Error: Non-OS Volume detected.</description>
@@ -583,7 +583,7 @@ Mar 11 22:54:43 Nadesico installer[6982]: JS: Flash Player Install: Error: Non-O
   </rule>
   <rule id="120005" level="0">
 <!--
-Mar  6 18:44:23 Nadesico Google Chrome Helper[50187]: CarbonCore: getattrlist(/private/var/folders/tt/tky8gycd2fn8s276sjk9gmb00000gp/T/.truecrypt_aux_mnt1, ATTR_VOL_CAPABILITIES, ...) failed (-1) with errno 1
+Mar  6 18:44:23 HOST Google Chrome Helper[50187]: CarbonCore: getattrlist(/private/var/folders/tt/tky8gycd2fn8s276sjk9gmb00000gp/T/.truecrypt_aux_mnt1, ATTR_VOL_CAPABILITIES, ...) failed (-1) with errno 1
 -->
     <match>CarbonCore: getattrlist(/private/var/folders</match>
     <description>Google Chrome log noise (CarbonCore: getattrlist)</description>
