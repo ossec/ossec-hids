@@ -1,0 +1,192 @@
+<!-- @(#) $Id: decoder.xml,v 1.166 2010/06/15 12:52:01 dcid Exp $
+  -  OSSEC log decoder.
+  -->
+        
+
+<!-- Macos log decoder
+  - extract usb devices use
+  - chrome log
+  -  Examples:
+  - kernel[0]: USBMSC Identifier (non-unique): 00001680D775EA97 0x781 0x5408 0x10, 2
+Feb 15 20:21:34 Nadesico kernel[0]: USBMSC Identifier (non-unique): 574343344530333937333935 0x1058 0x1230 0x1050, 2
+  - Google Chrome Helper[50583]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd. : LSXPCClient.cp #426 ___ZN26LSClientToServerConnection21setupServerConnectionEiPK14__CFDictionary_block_invoke() q=com.apple.main-thread
+  - Google Chrome Helper[50583]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
+  - Google Chrome Helper[50583]: CGSLookupServerRootPort: Failed to look up the port for "com.apple.windowserver.active" 
+Feb 20 11:20:36 Nadesico Google Chrome Helper[59050]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
+  - Preview
+Feb 20 10:51:20 Nadesico Preview[33917]: It does not make sense to draw an image when [NSGraphicsContext currentContext] is nil.  This is a programming error. Break on void _NSWarnForDrawingImageWithNoCurrentContext() to debug.  This will be logged only once.  This may break in the future.
+
+  -->
+
+<!-- 'iptables' parent just refer to prefix 'kernel' -->
+<decoder name="usb-insert">
+  <parent>iptables</parent>
+  <prematch>USBMSC Identifier</prematch>
+  <regex offset="after_prematch">: (\S+) (\S+) (\S+) (\S+), \d+$</regex>
+<!-- Note: not sure why, but get 'decode-xml: Wrong field ' devicerelease' in the order of decoder 'usb-insert''
+http://ossec-docs.readthedocs.org/en/latest/syntax/head_decoders.html#element-decoder.order
+
+  <order>extra_data, extra_data, extra_data, extra_data,</order> NOK logtest
+  <order>extra_data, extra_data, extra_data, extra_data</order> OK logtest/NOK match
+  <order>serialid, vendorid, productid, devicerelease,</order> NOK
+  <order>serialid, vendorid, productid, devicerelease</order> NOK
+  <order>serialid, vendorid, productid, extra_data</order> OK logtest/NOK match
+-->
+  <order>extra_data, extra_data, extra_data, extra_data</order>
+</decoder>
+
+<decoder name="code-signing">
+ <parent>iptables</parent>
+ <prematch>^CODE SIGNING: cs_invalid_page</prematch>
+ <regex offset="after_prematch">p=\d+[(\S+)] final status 0x0, allowing (remove VALID) page </regex>
+ <order>extra_data</order>
+</decoder>
+
+<decoder name="WindowServer">
+  <program_name>^WindowServer</program_name>
+</decoder>
+
+<decoder name="console">
+  <program_name>^Console</program_name>
+</decoder>
+
+<decoder name="xpcproxy">
+  <program_name>^xpcproxy</program_name>
+</decoder>
+
+<decoder name="com.apple.appkit.xpc.openAndSavePanelService">
+  <program_name>^com.apple.appkit.xpc.openAndSavePanelService</program_name>
+</decoder>
+
+<decoder name="launchd">
+  <program_name>^com.apple.launchd.peruser</program_name>
+</decoder>
+
+<decoder name="secd">
+  <program_name>^secd</program_name>
+</decoder>
+
+<decoder name="com.apple.authd">
+  <program_name>^com.apple.authd</program_name>
+</decoder>
+
+<!-- BUG: match 
+Feb 26 20:24:56 Nadesico com.apple.authd[71]: Succeeded authorizing right 'com.apple.ServiceManagement.daemons.modify' by client '/usr/libexec/UserEventAgent' [11] for authorization created by '/usr/libexec/UserEventAgent' [11] (12,0)
+-->
+<decoder name="SecurityServer">
+  <program_name>^SecurityServer</program_name>
+</decoder>
+
+<decoder name="universalaccessd">
+  <program_name>^universalaccessd</program_name>
+</decoder>
+
+<decoder name="preview">
+  <program_name>^Preview</program_name>
+</decoder>
+
+<decoder name="itunes">
+  <program_name>iTunes</program_name>
+</decoder>
+
+<decoder name="iconservices">
+  <program_name>com.apple.IconServicesAgent</program_name>
+</decoder>
+
+<decoder name="speechrecognition">
+  <program_name>com.apple.SpeechRecognitionCore.speechrecognitiond</program_name>
+</decoder>
+
+<decoder name="loginwindow">
+  <program_name>loginwindow</program_name>
+</decoder>
+
+<decoder name="UserEventAgent">
+  <program_name>UserEventAgent</program_name>
+</decoder>
+
+<decoder name="SecurityAgent">
+  <program_name>SecurityAgent</program_name>
+</decoder>
+
+<decoder name="usernoted">
+  <program_name>usernoted</program_name>
+</decoder>
+
+<decoder name="usbmuxd">
+  <program_name>com.apple.usbmuxd</program_name>
+</decoder>
+
+<decoder name="storeagent">
+  <program_name>storeagent</program_name>
+</decoder>
+
+<decoder name="ManagedClient">
+  <program_name>ManagedClient</program_name>
+</decoder>
+
+<decoder name="mds">
+  <program_name>mds</program_name>
+</decoder>
+
+<decoder name="appleeventsd">
+  <program_name>appleeventsd</program_name>
+</decoder>
+
+<decoder name="fseventsd">
+  <program_name>fseventsd</program_name>
+</decoder>
+
+<decoder name="ReportCrash">
+  <program_name>ReportCrash</program_name>
+</decoder>
+
+<decoder name="com.apple.internetaccounts">
+  <program_name>com.apple.internetaccounts</program_name>
+</decoder>
+
+<decoder name="com.apple.imfoundation.IMRemoteURLConnectionAgent">
+  <program_name>com.apple.imfoundation.IMRemoteURLConnectionAgent</program_name>
+</decoder>
+
+<decoder name="Dock">
+  <program_name>^Dock</program_name>
+</decoder>
+
+<decoder name="FileMerge">
+  <program_name>FileMerge</program_name>
+</decoder>
+
+<decoder name="PTPCamera">
+  <program_name>PTPCamera</program_name>
+</decoder>
+
+<decoder name="installer">
+  <program_name>installer</program_name>
+</decoder>
+
+<decoder name="chrome">
+<!-- Note: not supported (program_name w space): https://groups.google.com/forum/#!topic/ossec-dev/_yD5W-axGG0
+  <program_name>Google Chrome Helper</program_name>
+  <prematch>^Google Chrome Helper</prematch>
+-->
+  <prematch>^Google</prematch>
+</decoder>
+
+<decoder name="GoogleSoftwareUpdateDaemon">
+  <program_name>GoogleSoftwareUpdateDaemon</program_name>
+</decoder>
+
+<decoder name="Dropbox">
+  <program_name>Dropbox</program_name>
+</decoder>
+
+<decoder name="soffice">
+  <program_name>soffice</program_name>
+</decoder>
+
+<decoder name="snort">
+  <program_name>snort</program_name>
+</decoder>
+
+<!-- EOF -->

@@ -1,0 +1,622 @@
+<!-- @(#) $Id: ./etc/rules/local_rules_mac.xml, 2011/09/08 dcid Exp $
+
+  -  Rules for a MacOS X (10.9)
+  -
+  -->
+
+
+<!-- Modify it at your will. -->
+
+  <!-- Some "Classical" messages we ignore -->
+
+<group name="syslog,itunes">
+  <rule id="102001" level="0">
+<!--
+    <match>Could not securely send message size</match> OK/OK
+    <regex>_send_message \(thread 0x[0-9a-f]+\): Could not securely send message size \d+: SSL_ERROR_SYSCALL errno (Broken pipe).</regex> OK/NOK
+    <regex>_send_message \(thread 0x[0-9a-f]+\): Could not securely send message size \d+: SSL_ERROR_SYSCALL errno \(Broken pipe\).</regex> OK/NOK
+    <regex>_send_message \(thread 0x[0-9a-f].+\): Could not securely send message size \d+: SSL_ERROR_SYSCALL errno \(Broken pipe\).</regex> OK/NOK
+    <regex>_send_message (thread 0x\w+): Could not securely send message size \d+: SSL_ERROR_SYSCALL errno (Broken pipe).</regex> OK/NOK
+    <regex>_send_message \(thread 0x.+\): Could not securely send message size \d+: SSL_ERROR_SYSCALL errno \(Broken pipe\).</regex> OK/NOK
+-->
+    <match>Could not securely send message size </match>
+    <description>iTunes log noise</description>
+  </rule>
+  
+  <rule id="102002" level="0">
+<!--
+    <regex>AMDeviceStopSession (thread 0x\w+): Could not stop session with device \d+: kAMDSendMessageError</regex>
+    <regex>AMDeviceStopSession \(thread 0x[0-9a-f]+\): Could not stop session with device \d+: kAMDSendMessageError</regex>
+    <match>Could not stop session with device</regex>
+-->
+    <match>Could not stop session with device </match>
+    <description>iTunes log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,com.apple.appkit.xpc.openAndSavePanelService,">
+  <rule id="102003" level="0">
+<!-- Error: ossec-analysisd(1450): ERROR: Syntax error on regex: '' 6
+    <regex>com.apple.appkit.xpc.openAndSavePanelService\[\d+\]: ERROR: CGSSetWindowTransformAtPlacement returned \d+</regex>
+    <regex>com.apple.appkit.xpc.openAndSavePanelService\[\d+\]: ERROR: CGSSetWindowTransformAtPlacement returned (\d+)</regex>
+    <regex>com.apple.appkit.xpc.openAndSavePanelService[\d+]: ERROR: CGSSetWindowTransformAtPlacement returned \d+</regex>
+    <regex>com.apple.appkit.xpc.openAndSavePanelService\[.+\]: ERROR: CGSSetWindowTransformAtPlacement returned</regex>
+    <regex>com.apple.appkit.xpc.openAndSavePanelService\[\d+\]: </regex>
+-->
+    <regex>com.apple.appkit.xpc.openAndSavePanelService</regex>
+    <description>apple.appkot.xpc log noise</description>
+  </rule>
+  
+  <rule id="102004" level="0">
+<!-- Error: ossec-analysisd(1450): ERROR: Syntax error on regex: '' 6
+    <regex>com.apple.appkit.xpc.openAndSavePanelService\[\d+\]: CGSSetWindowTransformAtPlacement: Failed</regex>
+-->
+    <match>CGSSetWindowTransformAtPlacement: Failed</match>
+    <description>apple.appkot.xpc log noise</description>
+  </rule>
+  <rule id="102005" level="0">
+    <match>ERROR: CGSSetWindowTransformAtPlacement() returned 1001</match>
+    <description>apple.appkot.xpc log noise</description>
+  </rule>
+<!-- multi-line...
+Mar  4 23:32:07 Nadesico com.apple.appkit.xpc.openAndSavePanelService[20708]: Bogus event received by listener connection:
+        <error: 0x7fff75dbfb50> { count = 1, contents =
+                "XPCErrorDescription" => <string: 0x7fff75dbfe60> { length = 18, contents = "Connection invalid" }
+        }
+-->
+  <rule id="102006" level="0">
+    <match>{ count = 1, contents =</match>
+    <description>apple.appkot.xpc log noise</description>
+  </rule>
+  <rule id="102007" level="0">
+    <match>"XPCErrorDescription" => </match>
+    <description>apple.appkot.xpc log noise</description>
+  </rule>
+</group>
+  
+<group name="syslog,console,">
+  <rule id="102008" level="0">
+    <match>Metadata.framework [Error]: void _MDItemMarkAsUsedForPath(CFStringRef): was called with a NULL path</match>
+    <description>Console log noise</description>
+  </rule>
+</group>
+  
+<group name="syslog,">
+  <rule id="102009" level="0">
+<!--
+    <regex>assertion failed: [0-9A-F]+: xpcproxy \+ \d+ \[[0-9A-F]+\]: 0x[0-9a-f]+</regex>
+-->
+    <match>assertion failed: </match>
+    <description>general log noise: assertion failed</description>
+  </rule>
+  <rule id="102010" level="6">
+    <match>All available displays report that they are mirrors.  This seems wrong.  Please comment in \<rdar://problem/14731307\> if you see this log</match>
+    <description>Apple Bug with window</description>
+  </rule>
+  <rule id="102011" level="6">
+<!--
+Mar 11 12:16:16 Nadesico TextEdit[47944]: socket(PF_ROUTE) failed: Operation not permitted
+-->
+    <match>socket(PF_ROUTE) failed: Operation not permitted</match>
+    <description>socket(PF_ROUTE) failed: Operation not permitted</description>
+  </rule>
+  <rule id="102012" level="6">
+<!--
+Mar 11 12:16:17 Nadesico TextEdit[47944]: __tcp_connection_register_reachability_block_invoke 1 networkd reported net_helper_connection_start failed
+-->
+    <regex>__tcp_connection_register_reachability_block_invoke \d+ networkd reported net_helper_connection_start failed</regex>
+    <description>tcp connection failed??? (1)</description>
+  </rule>
+  <rule id="102013" level="6">
+<!--
+Mar 11 12:16:17 Nadesico TextEdit[47944]: tcp_connection_destination_prepare_complete 1 connectx to 23.34.194.70#443 failed: 1 - Operation not permitted
+-->
+    <regex>tcp_connection_destination_prepare_complete \d+ connectx to \S+ failed: 1 - Operation not permitted</regex>
+    <description>tcp connection failed??? (2)</description>
+  </rule>
+  <rule id="102014" level="6">
+<!--
+Mar 11 12:16:17 Nadesico TextEdit[47944]: tcp_connection_handle_destination_prepare_complete 1 failed to connect
+-->
+    <regex>tcp_connection_handle_destination_prepare_complete \d+ failed to connect</regex>
+    <description>tcp connection failed??? (3)</description>
+  </rule>
+</group>
+  
+<group name="syslog,iptables,">
+  <rule id="110000" level="7">
+    <if_sid>5100</if_sid>
+    <decoded_as>usb-insert</decoded_as>
+    <description>USB device app group.</description>
+  </rule>
+  <rule id="110001" level="5">
+    <match>AirPort_Brcm43xx::powerChange: System Sleep</match>
+    <description>System going to sleep (wifi card)</description>
+  </rule>
+<!--
+  <rule id="110002" level="5">
+    <regex>\[0x[0-9a-f]+, 0x[0-9a-f]+\]</regex>
+    <description>System useless log noise</description>
+  </rule>
+-->
+  <rule id="110003" level="5">
+    <match>Wake reason: EC LID0</match>
+    <description>System: Waking up (lid opened)</description>
+  </rule>
+  <rule id="110004" level="2">
+    <match>memorystatus_thread: idle exiting pid</match>
+    <description>System: memorystatus_thread: idle exiting pid</description>
+  </rule>
+  <!-- normal rule: FIXME! catch everything, whatever being before or after the two exceptions rules -->
+<!--
+  <rule id="110005" level="7">
+    <match>CODE SIGNING: cs_invalid_page(0x1000): </match>
+    <description>System: Code signing error</description>
+  </rule>
+-->
+  <!-- Google software: chrome & the like not signed it seems (or not everything) 
+	https://discussions.apple.com/message/24570797#24570797
+-->
+  <rule id="110006" level="6">
+<!-- NOK???
+    <regex>CODE SIGNING: cs_invalid_page\(0x1000\): p=\d+[GoogleSoftwareUp] final status 0x0, allowing \(remove VALID\)</regex>
+    <regex>[GoogleSoftwareUp] final status 0x0, allowing \(remove VALID\)</regex>
+    <match>[GoogleSoftwareUp] final status 0x0, allowing (remove VALID)</match>
+    <match>[GoogleSoftwareUp] final status 0x0, allowing</match>
+    <match>\[GoogleSoftwareUp\] final status 0x0, allowing</match>
+OK
+    <regex>\.GoogleSoftwareUp\. final status 0x0, allowing</regex>
+-->
+    <regex>CODE SIGNING: cs_invalid_page\(0x1000\): p=\d+\.GoogleSoftwareUp\. final status 0x0, allowing \(remove VALID\)</regex>
+    <description>System: Code signing error - GoogleSoftwareUp</description>
+  </rule>
+  <rule id="110007" level="6">
+    <regex>CODE SIGNING: cs_invalid_page\(0x1000\): p=\d+\.ksadmin\. final status 0x0, allowing \(remove VALID\)</regex>
+    <description>System: Code signing error - Google ksadmin</description>
+  </rule>
+</group>
+
+<group name="syslog,launchd,">
+  <rule id="103000" level="0">
+    <match>assertion failed: </match>
+    <description>launchd log noise: assertion failed</description>
+  </rule>
+  <rule id="103001" level="5">
+    <match>Background: Aqua: Registering new GUI session.</match>
+    <description>Restarted Aqua session???</description>
+  </rule>
+  <rule id="103002" level="5">
+    <match>Job appears to have crashed: </match>
+    <description>launchd: some apps crashed</description>
+  </rule>
+</group>
+
+<group name="syslog,secd,">
+  <rule id="103010" level="0">
+<!-- https://discussions.apple.com/message/23571041#23571041 ? -->
+<!--
+    <match>SecErrorGetOSStatus unknown error domain: com.apple.security.sos.error for error: The operation couldn't be completed.</match> NOK
+-->
+    <match>SecErrorGetOSStatus unknown error domain: com.apple.security.sos.error for error: The operation couldn</match>
+    <options>no_email_alert</options>
+    <description>secd log noise: (keychain error???)</description>
+  </rule>
+  <rule id="103011" level="0">
+    <match>securityd_xpc_dictionary_handler WiFiKeychainProx</match>
+    <description>secd log noise: (wifi error???)</description>
+  </rule>
+  <rule id="103012" level="0">
+<!--
+    <match>securityd_xpc_dictionary_handler EscrowSecurityAl[20289] DeviceInCircle The operation couldn’t be completed. (com.apple.security.sos.error error 2 - Public Key not available - failed to register before call)</match>
+-->
+    <match>be completed. (com.apple.security.sos.error error 2 - Public Key not available - failed to register before call)</match>
+    <description>secd log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,SecurityServer,">
+  <rule id="102020" level="4">
+    <match>created</match>
+    <description>SecurityServer: Session created</description>
+  </rule>
+  <rule id="102021" level="4">
+    <match>destroyed</match>
+    <description>SecurityServer: Session destroyed</description>
+  </rule>
+</group>
+
+<group name="syslog,loginwindow,">
+  <rule id="102030" level="5">
+    <match>ERROR | -[LWBuiltInScreenLockAuthLion askForPasswordBuiltIn:] | Attempted to add an observer when already observing</match>
+    <description>SecurityServer: Session created</description>
+  </rule>
+</group>
+
+<group name="syslog,usernoted,">
+  <rule id="102040" level="3">
+    <match>Connection does not have the proper entitlement (com.apple.developer.notificationcenter-identifiers) to connect on behalf of com.apple.appstore. All communication will be denied.</match>
+    <description>usernoted?</description>
+  </rule>
+</group>
+
+<group name="syslog,universalaccessd,">
+  <rule id="102050" level="0">
+    <match>CGSConnectionByID: 0 is not a valid connection ID.</match>
+    <description>universalaccessd log noise</description>
+  </rule>
+  <rule id="102051" level="0">
+    <match>CGSSetHotKeyEnabled: Invalid connection</match>
+    <description>universalaccessd log noise</description>
+  </rule>
+</group>
+<group name="syslog,">
+  <rule id="103020" level="0">
+<!--
+    <match>XPC error messaging com.apple.IconServicesAgent: Connection interrupted</match>
+    <regex>XPC error messaging com.apple.IconServicesAgent: Connection (interrupted|invalid)</regex>	NOK
+-->
+    <match>XPC error messaging com.apple.IconServicesAgent: Connection interrupted</match>
+    <description>xpc messaging error</description>
+  </rule>
+  <rule id="103021" level="0">
+    <match>XPC error messaging com.apple.IconServicesAgent: Connection invalid</match>
+    <description>xpc messaging error</description>
+  </rule>
+<!-- appstore.log noise 
+                "XPCErrorDescription" => <string: 0x7fff75dbfe60> { length = 18, contents = "Connection invalid" }
+    <match>"XPCErrorDescription" => \<string: </match> NOK
+-->
+  <rule id="103031" level="2">
+    <match>"XPCErrorDescription" => </match>
+    <description>appstore.log noise: XPCErrorDescription</description>
+  </rule>
+</group>
+
+<group name="syslog,storeagent,">
+  <rule id="102060" level="0">
+    <match>AutoUpdateOperation: Skipping purchase of update jp.ogihara.typist because it previously failed to auto-update with the same reason as it would fail now (501) (userInitiated=0, shouldCheckForAndStageAppUpdates=0)</match>
+    <description>storeagent?</description>
+  </rule>
+</group>
+
+<group name="syslog,appleeventsd,">
+  <rule id="102070" level="0">
+<!--
+    <match>\<rdar://problem/11489077\> A sandboxed application with pid</match>
+-->
+    <match>checked in with appleeventsd, but its code signature could not be validated ( either because it was corrupt, or could not be read by appleeventsd ) and so it cannot receive AppleEvents targeted by name, bundle id, or signature. Error=ERROR: </match>
+    <description>appleevents: sandbox problem?</description>
+  </rule>
+</group>
+
+<group name="syslog,com.apple.authd,">
+  <rule id="102080" level="0">
+    <match>Succeeded authorizing right</match>
+    <description>com.apple.authd: Succeeded authorizing right</description>
+  </rule>
+</group>
+
+<group name="syslog,preview,">
+  <rule id="130000" level="0">
+    <match>It does not make sense to draw an image when [NSGraphicsContext currentContext] is nil.  This is a programming error. Break on void _NSWarnForDrawingImageWithNoCurrentContext() to debug.  This will be logged only once.  This may break in the future.</match>
+    <description>Preview log noise</description>
+  </rule>
+  <rule id="130001" level="0">
+    <match>Failure to de-serialize bookmark data file</match>
+    <description>Preview log noise</description>
+  </rule>
+<!--
+Mar  7 15:05:38 Nadesico Preview[8520]: view service marshal for <NSRemoteView: 0x7f9d61e84ba0> failed to forget accessibility connection due to Error Domain=NSCocoaErrorDomain Code=4099 "Impossible de communiquer avec un utilitaire." (The connection was invalidated from this process.) UserInfo=0x7f9d61dc7170 {NSDebugDescription=The connection was invalidated from this process.}
+        timestamp: 15:05:38.126 Friday 07 March 2014
+        process/thread/queue: Preview (8520) / 0x110293000 / com.apple.NSXPCConnection.user.endpoint
+        code: line 2972 of /SourceCache/ViewBridge/ViewBridge-46.2/NSRemoteView.m in __57-[NSRemoteView viewServiceMarshalProxy:withErrorHandler:]_block_invoke
+        domain: communications-failure
+
+
+-->
+  <rule id="130002" level="0">
+    <match>failed to forget accessibility connection due to Error Domain=NSCocoaErrorDomain Code=4099</match>
+    <description>Preview log noise</description>
+  </rule>
+  <rule id="130003" level="0">
+    <match>process/thread/queue: Preview</match>
+    <description>Preview log noise</description>
+  </rule>
+  <rule id="130004" level="0">
+    <match>code: line 2972 of /SourceCache/ViewBridge/ViewBridge-46.2/NSRemoteView.m in __57-[NSRemoteView viewServiceMarshalProxy:withErrorHandler:]_block_invoke</match>
+    <description>Preview log noise</description>
+  </rule>
+  <rule id="130005" level="0">
+    <match>domain: communications-failure</match>
+    <description>Preview log noise</description>
+  </rule>
+  <rule id="130006" level="0">
+    <match>Layout still needs update after calling -[NSToolbarView layout].  NSToolbarView or one of its superclasses may have overridden -layout without calling super. Or, something may have dirtied layout in the middle of updating it.  Both are programming errors in Cocoa Autolayout.  The former is pretty likely to arise if some pre-Cocoa Autolayout class had a method called layout, but it should be fixed.</match>
+    <description>Preview log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,iconservices,">
+  <rule id="100401" level="0">
+    <match>Error: Failed to add value to tree: Invalid node at index:</match>
+    <description>IconServices log noise</description>
+  </rule>
+  <rule id="100402" level="0">
+    <match>main Failed to composit image for binding VariantBinding</match>
+    <description>IconServices log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,speechrecognition,">
+  <rule id="100501" level="0">
+    <match>DSX Error 9: ParamSetStringValue("EnxRescoringRulesCall","-1")</match>
+    <description>Speech recognition log noise</description>
+  </rule>
+  <rule id="100502" level="0">
+<!--
+    <match>S2: Error: cannot open preference file '/System/Library/Speech/Recognizers/SpeechRecognitionCoreLanguages/fr_FR.SpeechRecognition/Contents/Resources/config/s2/server/1shot/si/server.ini': Read error.</match> OK/NOK
+-->
+    <match>S2: Error: cannot open preference file </match>
+    <description>Speech recognition log noise</description>
+  </rule>
+  <rule id="100503" level="0">
+    <match>DSX Error 102: DSXFileSystem_CreateAcousticsWithFlags(fFileSystem, kSpeaker, "voice", baseModel, DSXCreateAcoustics_Sig)</match>
+    <description>Speech recognition log noise</description>
+  </rule>
+  <rule id="100504" level="0">
+    <match>S2: Loading Flavor </match>
+    <description>Speech recognition log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,UserEventAgent,">
+  <rule id="100601" level="0">
+    <match>Failed to copy info dictionary for bundle /System/Library/UserEventPlugins/alfUIplugin.plugin</match>
+    <description>UserEventAgent log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,SecurityAgent,">
+  <rule id="100701" level="0">
+    <match>CGError CGSGetDisplaySystemState(uint64_t, CGSDisplaySystemState **): MIG error</match>
+    <description>SecurityAgent log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,WindowServer,">
+  <rule id="100801" level="5">
+    <regex>Session \d+ retained (\d+ references)</regex>
+    <description>WindowServer: suspending/locking/waking up???</description>
+  </rule>
+  <rule id="100802" level="5">
+    <regex>Session \d+ released (\d+ references)</regex>
+    <description>WindowServer: suspending/locking/waking up???</description>
+  </rule>
+  <rule id="100803" level="0">
+<!--
+    <match>CGError post_notification(const CGSNotificationType, void *const, const size_t, const bool, const CGSRealTimeDelta, const int, const CGSConnectionID *const, const pid_t): Timed out 1.000 second wait for reply from "Google Chrome" for synchronous notification type 102 (kCGSDisplayWillSleep)</match>
+    <regex>CGError post_notification(const CGSNotificationType, void *const, const size_t, const bool, const CGSRealTimeDelta, const int, const CGSConnectionID *const, const pid_t): Timed out [0-9.]+ second wait for reply from ".+" for synchronous notification type 102 (kCGSDisplayWillSleep)</regex>
+-->
+    <match>CGError post_notification(const CGSNotificationType, void *const, const size_t, const bool, const CGSRealTimeDelta, const int, const CGSConnectionID *const, const pid_t): Timed out </match>
+    <description>WindowServer: suspending/locking on application???</description>
+  </rule>
+  <rule id="100804" level="0">
+    <match>Failed setting the front application to</match>
+    <description>WindowServer: Failed setting the front application</description>
+  </rule>
+</group>
+
+<group name="syslog,usbmuxd,">
+  <rule id="101001" level="0">
+    <match>DeviceRequestAsync failed:</match>
+    <description>usbmuxd log noise</description>
+  </rule>
+  <rule id="101002" level="0">
+<!--
+    <regex>ClientSendDictionary to client 0x\S+-iTunes/com.apple.iTunes failed to send header: \d+, \d+ Broken pipe</regex> NOK
+    <regex>ClientSendDictionary to client 0x\S+-iTunes/com.apple.iTunes failed to send header: </regex>
+    <regex>ClientSendDictionary to client 0x\S+-iTunes/com.apple.iTunes failed to send header: </regex> OK
+-->
+    <regex>ClientSendDictionary to client 0x\S+-iTunes/com.apple.iTunes failed to send header: -\d+, \d+ Broken pipe</regex>
+    <description>usbmuxd log noise ? (2)</description>
+  </rule>
+</group>
+
+<group name="syslog,ManagedClient,">
+  <rule id="101021" level="0">
+    <match>MCX.createConnection bootstrap_register failed = 1100</match>
+    <description>ManagedClient log?</description>
+  </rule>
+</group>
+
+<group name="syslog,mds,">
+  <rule id="101031" level="0">
+    <match>(Normal) ImportServer: Ignoring blacklisted Spotlight importer plugin:</match>
+    <description>mds/spotlight: ignoring some importer plugin</description>
+  </rule>
+  <rule id="101032" level="3">
+    <match>(Error) Import: sandbox_extension_issue_file: 2</match>
+    <description>mds/spotlight: sandbox_extension_issue_file</description>
+  </rule>
+</group>
+
+<group name="syslog,fsevents,">
+  <rule id="101041" level="0">
+<!--
+Mar  2 08:57:06 HOST fseventsd[42]: SLOWDOWN: client 0x7fe9c3038000 (pid 21063) sleeping due to too many errors (num usleeps 5859)
+=> FIXME/BUG: match 101031 ???
+-->
+    <match>sleeping due to too many errors (num usleeps </match>
+    <description>fseventsd: sleeping</description>
+  </rule>
+</group>
+
+<group name="syslog,ReportCrash,">
+  <rule id="101051" level="0">
+    <match>Metadata.framework [Error]: couldn't get the client port</match>
+    <description>ReportCrash error</description>
+  </rule>
+</group>
+
+<group name="syslog,com.apple.internetaccounts,">
+  <rule id="101061" level="0">
+<!--
+com.apple.internetaccounts[6930]: An instance 0x7ffe51729420 of class IMAPMailbox was deallocated while key value observers were still registered with it. Observation info was leaked, and may even become mistakenly attached to some other object. Set a breakpoint on NSKVODeallocateBreak to stop here in the debugger. Here's the current observation info:
+        <NSKeyValueObservationInfo 0x7ffe5168f730> (
+        <NSKeyValueObservance 0x7ffe5168f880: Observer: 0x7ffe51685770, Key path: uidNext, Options: <New: NO, Old: NO, Prior: NO> Context: 0x7fff8efca43b, Property: 0x7ffe5168f700>
+        )
+-->
+    <match>of class IMAPMailbox was deallocated while key value observers were still registered with it. Observation info was leaked, and may even become mistakenly attached to some other object. Set a breakpoint on NSKVODeallocateBreak to stop here in the debugger. Here's the current observation info:</match>
+    <description>com.apple.internetaccounts: deallocation/leak (part1 - multiline)</description>
+  </rule>
+  <rule id="101062" level="0">
+    <match>NSKeyValueObservationInfo</match>
+    <description>com.apple.internetaccounts: deallocation/leak (part2 - multiline)</description>
+  </rule>
+  <rule id="101063" level="0">
+    <match>NSKeyValueObservance </match>
+    <description>com.apple.internetaccounts: deallocation/leak (part3 - multiline)</description>
+  </rule>
+</group>
+
+<group name="syslog,com.apple.imfoundation.IMRemoteURLConnectionAgent,">
+  <rule id="101071" level="1">
+<!--
+Mar  7 16:20:37 Nadesico com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.
+-->
+    <match>ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.</match>
+    <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: disk I/O error</description>
+  </rule>
+  <rule id="101072" level="1">
+<!--
+Mar  7 16:20:37 Nadesico com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: __CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.
+-->
+    <match>__CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.</match>
+    <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: create tables and index failed</description>
+  </rule>
+</group>
+
+<group name="syslog,FileMerge,">
+  <rule id="101081" level="0">
+    <match>WARNING: Failed to load plugin at: /Developer/Library/Xcode/Plug-ins/XcodeSubversionPlugin.xcplugin, skipping.  Could not load bundle.</match>
+    <description>FileMerge: could not load bundle/plugin</description>
+  </rule>
+</group>
+
+<group name="syslog,Dock,">
+  <rule id="101091" level="0">
+    <match>CGSSetWindowListSystemAlpha: Failed</match>
+    <description>Dock log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,PTPCamera,">
+  <rule id="101101" level="0">
+<!--
+Mar 11 12:10:10 Nadesico PTPCamera[67998]: waitForCallbackThreadConditionSignalWithTimeout: pthread_cond_timedwait() failed, status = 60
+-->
+    <match>waitForCallbackThreadConditionSignalWithTimeout: pthread_cond_timedwait() failed, status =</match>
+    <description>PTPCamera log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,installer,">
+  <rule id="101111" level="3">
+<!--
+Mar 11 22:54:43 Nadesico installer[6982]: JS: Flash Player Install: Error: Non-OS Volume detected.
+-->
+    <match>JS: Flash Player Install: Error: Non-OS Volume detected.</match>
+    <description>installer: JS: Flash Player Install: Error: Non-OS Volume detected.</description>
+  </rule>
+</group>
+
+<!-- command rules -->
+
+<group name="local,command,">
+<rule id="140123" level="7">
+    <if_sid>530</if_sid>
+    <match>ossec: output: "netstat -tan |awk '/LISTEN/ && !/(127.0.0.1|::1)/'"</match>
+    <check_diff />
+    <description>Listened ports have changed (no localhost).</description>
+</rule>
+<rule id="140124" level="7">
+    <if_sid>530</if_sid>
+    <match>ossec: output: 'ipfw -t list'</match>
+    <check_diff />
+    <description>Firewall rules list</description>
+</rule>
+<!--
+<rule id="140125" level="7">
+    <if_sid>530</if_sid>
+    <match>ossec: output: 'dscl . list /users'</match>
+    <check_diff />
+    <description>List of users.</description>
+</rule>
+-->
+</group>
+
+<!-- Non-Apple Applications -->
+
+<group name="syslog,chrome,">
+  <rule id="120000" level="0">
+    <match>Process unable to create connection because the sandbox denied the right to lookup</match>
+    <description>Google Chrome log noise</description>
+  </rule>
+  <rule id="120001" level="0">
+    <match>CGSLookupServerRootPort: Failed to look up the port for "com.apple.windowserver.active"</match>
+    <description>Google Chrome log noise</description>
+  </rule>
+  <rule id="120002" level="0">
+<!--
+    <match>CoreText CopyFontsForRequest received mig IPC error (FFFFFECC) from font server</match>
+-->
+    <match>CoreText CopyFontsForRequest received mig IPC error </match>
+    <description>Google Chrome log noise</description>
+  </rule>
+  <rule id="120003" level="0">
+    <match>HIToolbox: received notification of WindowServer event port death.</match>
+    <description>Google Chrome log noise (system waking up?)</description>
+  </rule>
+  <rule id="120004" level="0">
+    <match>port matched the WindowServer port created in BindCGSToRunLoop</match>
+    <description>Google Chrome log noise (system waking up?)</description>
+  </rule>
+  <rule id="120005" level="0">
+<!--
+Mar  6 18:44:23 Nadesico Google Chrome Helper[50187]: CarbonCore: getattrlist(/private/var/folders/tt/tky8gycd2fn8s276sjk9gmb00000gp/T/.truecrypt_aux_mnt1, ATTR_VOL_CAPABILITIES, ...) failed (-1) with errno 1
+-->
+    <match>CarbonCore: getattrlist(/private/var/folders</match>
+    <description>Google Chrome log noise (CarbonCore: getattrlist)</description>
+  </rule>
+</group>
+
+<group name="syslog,GoogleSoftwareUpdateDaemon,">
+  <rule id="100911" level="0">
+    <match>-[KSMultiUpdateAction(KSActionProcessorDelegate) processingDone:] KSSilentUpdateAction updates complete (errors: 0).</match>
+    <description>GoogleSoftwareUpdateDaemon: ?</description>
+  </rule>
+</group>
+
+<group name="syslog,Dropbox,">
+  <rule id="100901" level="0">
+    <match>CGSAddSurface failed - error 268435459 (windowID:63)</match>
+    <description>Dropbox log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,soffice,">
+  <rule id="100921" level="0">
+    <match>Failed to create connection to the daemon: connection timeout: did not receive reply</match>
+    <description>soffice log noise</description>
+  </rule>
+</group>
+
+<group name="syslog,snort,">
+  <rule id="101011" level="0">
+    <match>Check for Bounce Attacks: YES alert: YES</match>
+    <description>snort log noise</description>
+  </rule>
+</group>
+
+<!-- EOF -->
+<!-- EOF -->
