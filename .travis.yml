@@ -1,4 +1,4 @@
-language: c
+# language: c
 
 notifications:
   irc:
@@ -32,6 +32,8 @@ before_script:
 
 script:
 - ( cd src && sudo make $OSSEC_TYPE )
+- if [[ "$OSSEC_TYPE" == "all" ]]; then ( cp ./etc/travis-preloaded-vars.conf ./etc/preloaded-vars.conf && sudo ./install.sh ); fi
+- if [[ "$OSSEC_TYPE" == "all" ]]; then ( cd ./contrib/ossec-testing && sudo python runtests.py ); fi
 
 before_deploy:
 - mkdir travis-builds
