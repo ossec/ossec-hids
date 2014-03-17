@@ -1,3 +1,7 @@
+#!/bin/sh
+
+set -e
+
 echo Making windows agent
 BASES="${MING_BASE} i686-w64-mingw32 x86_w64-w64-mingw32-gcc"
 

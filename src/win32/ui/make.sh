@@ -1,3 +1,7 @@
+#!/bin/sh
+
+set -e
+
 echo Making windows agent UI
 
 ${MING_BASE}-windres -o resource.o win32ui.rc
