@@ -1,4 +1,4 @@
-<!-- @(#) $Id: ./etc/rules/local_rules_mac.xml, 2011/09/08 dcid Exp $
+<!-- @(#) $Id$
 
   -  Rules for a MacOS X (10.9)
   -
@@ -94,32 +94,24 @@ Mar  4 23:32:07 HOST com.apple.appkit.xpc.openAndSavePanelService[20708]: Bogus 
     <description>Apple Bug with window</description>
   </rule>
   <rule id="102011" level="6">
-<!--
-Mar 11 12:16:16 HOST TextEdit[47944]: socket(PF_ROUTE) failed: Operation not permitted
--->
     <match>socket(PF_ROUTE) failed: Operation not permitted</match>
     <description>socket(PF_ROUTE) failed: Operation not permitted</description>
   </rule>
   <rule id="102012" level="6">
-<!--
-Mar 11 12:16:17 HOST TextEdit[47944]: __tcp_connection_register_reachability_block_invoke 1 networkd reported net_helper_connection_start failed
--->
     <regex>__tcp_connection_register_reachability_block_invoke \d+ networkd reported net_helper_connection_start failed</regex>
     <description>tcp connection failed??? (1)</description>
   </rule>
   <rule id="102013" level="6">
-<!--
-Mar 11 12:16:17 HOST TextEdit[47944]: tcp_connection_destination_prepare_complete 1 connectx to 23.34.194.70#443 failed: 1 - Operation not permitted
--->
     <regex>tcp_connection_destination_prepare_complete \d+ connectx to \S+ failed: 1 - Operation not permitted</regex>
     <description>tcp connection failed??? (2)</description>
   </rule>
   <rule id="102014" level="6">
-<!--
-Mar 11 12:16:17 HOST TextEdit[47944]: tcp_connection_handle_destination_prepare_complete 1 failed to connect
--->
     <regex>tcp_connection_handle_destination_prepare_complete \d+ failed to connect</regex>
     <description>tcp connection failed??? (3)</description>
+  </rule>
+  <rule id="102015" level="0">
+    <match>ApplePushService: Timed out making blocking call, failed to perform call via XPC connection to 'com.apple.apsd'</match>
+    <description>ApplePushService time out</description>
   </rule>
 </group>
   
@@ -420,6 +412,10 @@ Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f
     <regex>ClientSendDictionary to client 0x\S+-iTunes/com.apple.iTunes failed to send header: -\d+, \d+ Broken pipe</regex>
     <description>usbmuxd log noise ? (2)</description>
   </rule>
+  <rule id="101003" level="0">
+    <match>Could not start session: kAMDInvalidHostIDError</match>
+    <description>usbmuxd log noise</description>
+  </rule>
 </group>
 
 <group name="syslog,ManagedClient,">
@@ -442,12 +438,12 @@ Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f
 
 <group name="syslog,fsevents,">
   <rule id="101041" level="0">
-<!--
-Mar  2 08:57:06 HOST fseventsd[42]: SLOWDOWN: client 0x7fe9c3038000 (pid 21063) sleeping due to too many errors (num usleeps 5859)
-=> FIXME/BUG: match 101031 ???
--->
     <match>sleeping due to too many errors (num usleeps </match>
     <description>fseventsd: sleeping</description>
+  </rule>
+  <rule id="101042" level="0">
+    <regex>client_buffer_flush: failed to send \d+ events to client pid: \d+ (status: \d+)</regex>
+    <description>fseventsd: buffer failed</description>
   </rule>
 </group>
 
@@ -481,16 +477,10 @@ com.apple.internetaccounts[6930]: An instance 0x7ffe51729420 of class IMAPMailbo
 
 <group name="syslog,com.apple.imfoundation.IMRemoteURLConnectionAgent,">
   <rule id="101071" level="1">
-<!--
-Mar  7 16:20:37 HOST com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.
--->
     <match>ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.</match>
     <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: disk I/O error</description>
   </rule>
   <rule id="101072" level="1">
-<!--
-Mar  7 16:20:37 HOST com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: __CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.
--->
     <match>__CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.</match>
     <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: create tables and index failed</description>
   </rule>
@@ -512,9 +502,6 @@ Mar  7 16:20:37 HOST com.apple.imfoundation.IMRemoteURLConnectionAgent[12644]: _
 
 <group name="syslog,PTPCamera,">
   <rule id="101101" level="0">
-<!--
-Mar 11 12:10:10 HOST PTPCamera[67998]: waitForCallbackThreadConditionSignalWithTimeout: pthread_cond_timedwait() failed, status = 60
--->
     <match>waitForCallbackThreadConditionSignalWithTimeout: pthread_cond_timedwait() failed, status =</match>
     <description>PTPCamera log noise</description>
   </rule>
@@ -522,11 +509,48 @@ Mar 11 12:10:10 HOST PTPCamera[67998]: waitForCallbackThreadConditionSignalWithT
 
 <group name="syslog,installer,">
   <rule id="101111" level="3">
-<!--
-Mar 11 22:54:43 HOST installer[6982]: JS: Flash Player Install: Error: Non-OS Volume detected.
--->
     <match>JS: Flash Player Install: Error: Non-OS Volume detected.</match>
     <description>installer: JS: Flash Player Install: Error: Non-OS Volume detected.</description>
+  </rule>
+</group>
+
+<group name="syslog,librariand,">
+  <rule id="101121" level="0">
+    <match>default-qu framework_client.c:103 IPCSendMessageTimed() Could not send a message to ubd: Operation timed out</match>
+    <description>librariand: ipc error</description>
+  </rule>
+  <rule id="101122" level="0">
+    <match>default-qu framework_client.c:737 IPCSyncingEnabled() failed to contact ubd: </match>
+    <description>librariand: ipc error</description>
+  </rule>
+</group>
+
+<group name="syslog,authorizationhost,">
+  <rule id="101131" level="7">
+    <match>Failed to authenticate user </match>
+    <description>authorizationhost: Authentication failure</description>
+  </rule>
+</group>
+
+<group name="syslog,mdworker,">
+  <rule id="101141" level="1">
+<!-- NOK?
+    <match>ENSpotlightImporter:importFileAtPath:attributes:error: caught exception: Cannot create an NSPersistentStoreCoordinator with a nil model</match>
+-->
+    <match>ENSpotlightImporter:importFileAtPath:attributes:error: caught exception: Cannot create an NSPersistentStoreCoordinator</match>
+    <description>mdworker: ENSpotlightImporter error</description>
+  </rule>
+</group>
+
+<group name="syslog,mtmd,">
+  <rule id="101151" level="1">
+<!-- NOK
+    <match>Failed to get the path for fd</match>
+    <regex>Failed to get the path for fd \d+ \(Invalid argument\)</regex>
+    <regex>Failed to get the path for fd \d+ (Invalid argument)</regex>
+-->
+    <regex>Failed to get the path for fd \d+ (Invalid argument)</regex>
+    <description>mtmd error</description>
   </rule>
 </group>
 
@@ -582,11 +606,12 @@ Mar 11 22:54:43 HOST installer[6982]: JS: Flash Player Install: Error: Non-OS Vo
     <description>Google Chrome log noise (system waking up?)</description>
   </rule>
   <rule id="120005" level="0">
-<!--
-Mar  6 18:44:23 HOST Google Chrome Helper[50187]: CarbonCore: getattrlist(/private/var/folders/tt/tky8gycd2fn8s276sjk9gmb00000gp/T/.truecrypt_aux_mnt1, ATTR_VOL_CAPABILITIES, ...) failed (-1) with errno 1
--->
     <match>CarbonCore: getattrlist(/private/var/folders</match>
     <description>Google Chrome log noise (CarbonCore: getattrlist)</description>
+  </rule>
+  <rule id="120006" level="0">
+    <match>CreateWithFileInfo failed to create URL with FSRef, falling back to blank icon.</match>
+    <description>Google Chrome log noise</description>
   </rule>
 </group>
 
@@ -618,5 +643,4 @@ Mar  6 18:44:23 HOST Google Chrome Helper[50187]: CarbonCore: getattrlist(/priva
   </rule>
 </group>
 
-<!-- EOF -->
 <!-- EOF -->

@@ -115,6 +115,7 @@ Feb 26 20:24:56 HOST com.apple.authd[71]: Succeeded authorizing right 'com.apple
 
 <decoder name="usbmuxd">
   <program_name>com.apple.usbmuxd</program_name>
+  <program_name>usbmuxd</program_name>
 </decoder>
 
 <decoder name="storeagent">
@@ -164,6 +165,33 @@ Feb 26 20:24:56 HOST com.apple.authd[71]: Succeeded authorizing right 'com.apple
 <decoder name="installer">
   <program_name>installer</program_name>
 </decoder>
+
+<decoder name="librariand">
+  <program_name>librariand</program_name>
+</decoder>
+
+<decoder name="authorizationhost">
+  <program_name>authorizationhost</program_name>
+</decoder>
+
+<decoder name="authorizationhost-failure">
+  <parent>authorizationhost</parent>
+<!--
+  <regex>Failed to authenticate user \<(\S+)\></regex>
+-->
+  <regex>Failed to authenticate user &lt;(\S+)&gt;</regex>
+  <order>user</order>
+</decoder>
+
+<decoder name="mdworker">
+  <program_name>mdworker</program_name>
+</decoder>
+
+<decoder name="mtmd">
+  <program_name>com.apple.mtmd</program_name>
+</decoder>
+
+<!-- Non-Apple programs -->
 
 <decoder name="chrome">
 <!-- Note: not supported (program_name w space): https://groups.google.com/forum/#!topic/ossec-dev/_yD5W-axGG0
