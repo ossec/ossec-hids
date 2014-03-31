@@ -1118,6 +1118,10 @@ main()
 
     else
         INSTYPE=${USER_INSTALL_TYPE}
+        if [ "X${USER_INSTALL_TYPE}" = "Xhybrid" ]; then
+                INSTYPE="local"
+                HYBID="go"
+        fi
     fi
 
 
