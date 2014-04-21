@@ -8,13 +8,13 @@
   - chrome log
   -  Examples:
   - kernel[0]: USBMSC Identifier (non-unique): 00001680D775EA97 0x781 0x5408 0x10, 2
-Feb 15 20:21:34 HOST kernel[0]: USBMSC Identifier (non-unique): 574343344530333937333935 0x1058 0x1230 0x1050, 2
+Feb 15 20:21:34 somemac kernel[0]: USBMSC Identifier (non-unique): 574343344530333937333935 0x1058 0x1230 0x1050, 2
   - Google Chrome Helper[50583]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd. : LSXPCClient.cp #426 ___ZN26LSClientToServerConnection21setupServerConnectionEiPK14__CFDictionary_block_invoke() q=com.apple.main-thread
   - Google Chrome Helper[50583]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
   - Google Chrome Helper[50583]: CGSLookupServerRootPort: Failed to look up the port for "com.apple.windowserver.active" 
-Feb 20 11:20:36 HOST Google Chrome Helper[59050]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
+Feb 20 11:20:36 somemac Google Chrome Helper[59050]: Process unable to create connection because the sandbox denied the right to lookup com.apple.coreservices.launchservicesd and so this process cannot talk to launchservicesd.
   - Preview
-Feb 20 10:51:20 HOST Preview[33917]: It does not make sense to draw an image when [NSGraphicsContext currentContext] is nil.  This is a programming error. Break on void _NSWarnForDrawingImageWithNoCurrentContext() to debug.  This will be logged only once.  This may break in the future.
+Feb 20 10:51:20 somemac Preview[33917]: It does not make sense to draw an image when [NSGraphicsContext currentContext] is nil.  This is a programming error. Break on void _NSWarnForDrawingImageWithNoCurrentContext() to debug.  This will be logged only once.  This may break in the future.
 
   -->
 
@@ -62,6 +62,10 @@ http://ossec-docs.readthedocs.org/en/latest/syntax/head_decoders.html#element-de
   <program_name>^com.apple.launchd.peruser</program_name>
 </decoder>
 
+<decoder name="launchd">
+  <program_name>^com.apple.launchd</program_name>
+</decoder>
+
 <decoder name="secd">
   <program_name>^secd</program_name>
 </decoder>
@@ -71,7 +75,7 @@ http://ossec-docs.readthedocs.org/en/latest/syntax/head_decoders.html#element-de
 </decoder>
 
 <!-- BUG: match 
-Feb 26 20:24:56 HOST com.apple.authd[71]: Succeeded authorizing right 'com.apple.ServiceManagement.daemons.modify' by client '/usr/libexec/UserEventAgent' [11] for authorization created by '/usr/libexec/UserEventAgent' [11] (12,0)
+Feb 26 20:24:56 somemac com.apple.authd[71]: Succeeded authorizing right 'com.apple.ServiceManagement.daemons.modify' by client '/usr/libexec/UserEventAgent' [11] for authorization created by '/usr/libexec/UserEventAgent' [11] (12,0)
 -->
 <decoder name="SecurityServer">
   <program_name>^SecurityServer</program_name>
@@ -115,6 +119,9 @@ Feb 26 20:24:56 HOST com.apple.authd[71]: Succeeded authorizing right 'com.apple
 
 <decoder name="usbmuxd">
   <program_name>com.apple.usbmuxd</program_name>
+</decoder>
+
+<decoder name="usbmuxd">
   <program_name>usbmuxd</program_name>
 </decoder>
 
@@ -128,6 +135,10 @@ Feb 26 20:24:56 HOST com.apple.authd[71]: Succeeded authorizing right 'com.apple
 
 <decoder name="mds">
   <program_name>mds</program_name>
+</decoder>
+
+<decoder name="mds_stores">
+  <program_name>mds_stores</program_name>
 </decoder>
 
 <decoder name="appleeventsd">
@@ -189,6 +200,41 @@ Feb 26 20:24:56 HOST com.apple.authd[71]: Succeeded authorizing right 'com.apple
 
 <decoder name="mtmd">
   <program_name>com.apple.mtmd</program_name>
+</decoder>
+
+<decoder name="CalendarAgent">
+  <program_name>CalendarAgent</program_name>
+</decoder>
+
+<!-- "BezelServices 240.49" http://cocoadev.com/BezelServices -->
+<decoder name="BezelServices">
+<!-- NOK
+  <program_name>BezelServices</program_name>
+-->
+  <program_name>^BezelServices</program_name>
+</decoder>
+
+<decoder name="mDNSResponder">
+  <program_name>mDNSResponder</program_name>
+</decoder>
+
+<decoder name="iCloudHelper">
+  <program_name>com.apple.iCloudHelper</program_name>
+</decoder>
+
+<decoder name="ImageCaptureExtension">
+<!--
+  <program_name>Image Capture Extension</program_name>
+-->
+  <program_name>^Image</program_name>
+</decoder>
+
+<decoder name="ubd">
+  <program_name>ubd</program_name>
+</decoder>
+
+<decoder name="com.apple.preference.network.remoteservice">
+  <program_name>com.apple.preference.network.remoteservice</program_name>
 </decoder>
 
 <!-- Non-Apple programs -->

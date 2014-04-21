@@ -59,7 +59,7 @@
     <description>apple.appkot.xpc log noise</description>
   </rule>
 <!-- multi-line...
-Mar  4 23:32:07 HOST com.apple.appkit.xpc.openAndSavePanelService[20708]: Bogus event received by listener connection:
+Mar  4 23:32:07 somemac com.apple.appkit.xpc.openAndSavePanelService[20708]: Bogus event received by listener connection:
         <error: 0x7fff75dbfb50> { count = 1, contents =
                 "XPCErrorDescription" => <string: 0x7fff75dbfe60> { length = 18, contents = "Connection invalid" }
         }
@@ -102,10 +102,12 @@ Mar  4 23:32:07 HOST com.apple.appkit.xpc.openAndSavePanelService[20708]: Bogus 
     <description>tcp connection failed??? (1)</description>
   </rule>
   <rule id="102013" level="6">
+<!-- NOK? -->
     <regex>tcp_connection_destination_prepare_complete \d+ connectx to \S+ failed: 1 - Operation not permitted</regex>
     <description>tcp connection failed??? (2)</description>
   </rule>
   <rule id="102014" level="6">
+<!-- NOK? -->
     <regex>tcp_connection_handle_destination_prepare_complete \d+ failed to connect</regex>
     <description>tcp connection failed??? (3)</description>
   </rule>
@@ -181,6 +183,10 @@ OK
     <match>Job appears to have crashed: </match>
     <description>launchd: some apps crashed</description>
   </rule>
+  <rule id="103003" level="3">
+    <match>Failed to add kevent for PI</match>
+    <description>launchd: failed to add kevent</description>
+  </rule>
 </group>
 
 <group name="syslog,secd,">
@@ -226,6 +232,7 @@ OK
 
 <group name="syslog,usernoted,">
   <rule id="102040" level="3">
+<!-- NOK? -->
     <match>Connection does not have the proper entitlement (com.apple.developer.notificationcenter-identifiers) to connect on behalf of com.apple.appstore. All communication will be denied.</match>
     <description>usernoted?</description>
   </rule>
@@ -298,7 +305,7 @@ OK
     <description>Preview log noise</description>
   </rule>
 <!--
-Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f9d61e84ba0> failed to forget accessibility connection due to Error Domain=NSCocoaErrorDomain Code=4099 "Impossible de communiquer avec un utilitaire." (The connection was invalidated from this process.) UserInfo=0x7f9d61dc7170 {NSDebugDescription=The connection was invalidated from this process.}
+Mar  7 15:05:38 somemac Preview[8520]: view service marshal for <NSRemoteView: 0x7f9d61e84ba0> failed to forget accessibility connection due to Error Domain=NSCocoaErrorDomain Code=4099 "Impossible de communiquer avec un utilitaire." (The connection was invalidated from this process.) UserInfo=0x7f9d61dc7170 {NSDebugDescription=The connection was invalidated from this process.}
         timestamp: 15:05:38.126 Friday 07 March 2014
         process/thread/queue: Preview (8520) / 0x110293000 / com.apple.NSXPCConnection.user.endpoint
         code: line 2972 of /SourceCache/ViewBridge/ViewBridge-46.2/NSRemoteView.m in __57-[NSRemoteView viewServiceMarshalProxy:withErrorHandler:]_block_invoke
@@ -324,6 +331,10 @@ Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f
   </rule>
   <rule id="130006" level="0">
     <match>Layout still needs update after calling -[NSToolbarView layout].  NSToolbarView or one of its superclasses may have overridden -layout without calling super. Or, something may have dirtied layout in the middle of updating it.  Both are programming errors in Cocoa Autolayout.  The former is pretty likely to arise if some pre-Cocoa Autolayout class had a method called layout, but it should be fixed.</match>
+    <description>Preview log noise</description>
+  </rule>
+  <rule id="130007" level="0">
+    <match>Assertion failure in void runningApplicationNotificationCallback(LSNotificationCode, CFAbsoluteTime, CFTypeRef, LSASNRef, const void *, LSSessionID, LSNotificationID)()</match>
     <description>Preview log noise</description>
   </rule>
 </group>
@@ -413,6 +424,7 @@ Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f
     <description>usbmuxd log noise ? (2)</description>
   </rule>
   <rule id="101003" level="0">
+<!-- NOK? -->
     <match>Could not start session: kAMDInvalidHostIDError</match>
     <description>usbmuxd log noise</description>
   </rule>
@@ -434,6 +446,14 @@ Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f
     <match>(Error) Import: sandbox_extension_issue_file: 2</match>
     <description>mds/spotlight: sandbox_extension_issue_file</description>
   </rule>
+<!--
+	http://apple.stackexchange.com/questions/56071/what-does-this-mean-mds-warning-fmw-event1-had-an-arg-mismatch-ac2-am5
+	https://discussions.apple.com/thread/2014732?threadID=2014732
+-->
+  <rule id="101033" level="4">
+    <match>(Error) FMW: WE ARE DROPPING FMW EVENTS!</match>
+    <description>mds: FMW: WE ARE DROPPING FMW EVENTS</description>
+  </rule>
 </group>
 
 <group name="syslog,fsevents,">
@@ -442,7 +462,11 @@ Mar  7 15:05:38 HOST Preview[8520]: view service marshal for <NSRemoteView: 0x7f
     <description>fseventsd: sleeping</description>
   </rule>
   <rule id="101042" level="0">
+<!-- NOK
     <regex>client_buffer_flush: failed to send \d+ events to client pid: \d+ (status: \d+)</regex>
+    <match>client_buffer_flush: failed to send </match>
+-->
+    <match>client_buffer_flush: failed to send </match>
     <description>fseventsd: buffer failed</description>
   </rule>
 </group>
@@ -477,10 +501,12 @@ com.apple.internetaccounts[6930]: An instance 0x7ffe51729420 of class IMAPMailbo
 
 <group name="syslog,com.apple.imfoundation.IMRemoteURLConnectionAgent,">
   <rule id="101071" level="1">
+<!-- NOK? -->
     <match>ERROR: __CFURLCache:CreateTablesAndIndexes version create - disk I/O error. ErrCode: 10.</match>
     <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: disk I/O error</description>
   </rule>
   <rule id="101072" level="1">
+<!-- NOK? -->
     <match>__CFURLCache:RecreateEmptyPersistentStoreOnDiskAndOpen: create tables and index failed.</match>
     <description>com.apple.imfoundation.IMRemoteURLConnectionAgent: create tables and index failed</description>
   </rule>
@@ -536,9 +562,18 @@ com.apple.internetaccounts[6930]: An instance 0x7ffe51729420 of class IMAPMailbo
   <rule id="101141" level="1">
 <!-- NOK?
     <match>ENSpotlightImporter:importFileAtPath:attributes:error: caught exception: Cannot create an NSPersistentStoreCoordinator with a nil model</match>
+    <match>ENSpotlightImporter:importFileAtPath:attributes:error: caught exception: Cannot create an NSPersistentStoreCoordinator</match>
 -->
     <match>ENSpotlightImporter:importFileAtPath:attributes:error: caught exception: Cannot create an NSPersistentStoreCoordinator</match>
     <description>mdworker: ENSpotlightImporter error</description>
+  </rule>
+  <rule id="101142" level="1">
+<!-- NOK?
+    <match>(Warning) Import: Bad path:</match>
+    <match> Import: Bad path:</match>
+-->
+    <match> Import: Bad path:</match>
+    <description>mdworker: Bad path</description>
   </rule>
 </group>
 
@@ -552,7 +587,105 @@ com.apple.internetaccounts[6930]: An instance 0x7ffe51729420 of class IMAPMailbo
     <regex>Failed to get the path for fd \d+ (Invalid argument)</regex>
     <description>mtmd error</description>
   </rule>
+  <rule id="101152" level="1">
+<!-- NOK
+    <match>handler unblock failed. (status=</match>
+    <match>handler unblock failed.</match>
+-->
+    <match>handler unblock failed.</match>
+    <description>mtmd error (handler)</description>
+  </rule>
 </group>
+
+<group name="syslog,CalendarAgent,">
+  <rule id="101161" level="0">
+<!-- NOK? -->
+    <match>[com.apple.calendar.store.log.caldav.queue] [Adding [&lt;CalDAVAccountRefreshQueueableOperation: </match>
+    <description>CalendarAgent error</description>
+  </rule>
+</group>
+
+<group name="syslog,BezelServices,">
+  <rule id="101171" level="0">
+<!-- NOK? -->
+    <match>HIDMonitor : IOHIDManagerOpen returned an error, but continuing anyway.</match>
+    <description>BezelServices log</description>
+  </rule>
+</group>
+
+<group name="syslog,mDNSResponder,">
+  <rule id="101181" level="0">
+    <match>send_msg ERROR: failed to write</match>
+    <description>mDNSResponder log</description>
+  </rule>
+</group>
+
+<group name="syslog,mds_stores,">
+  <rule id="101191" level="0">
+    <match>(Error) IndexCI in _Bool indexMarkDirty(ContentIndexPtr):indexMarkDirty failed - state</match>
+    <description>mds_stores log error</description>
+  </rule>
+  <rule id="101192" level="0">
+    <match>(Error) IndexCI in int setDocumentAttributes(ContentIndexPtr, int, StoreOID *, int, StoreOID *, StoreOID, char, CFDictionaryRef, CFTypeRef, CFDictionaryRef, DocID, DocID *, int, _Bool (*)(void *), void *, _Bool):indexMarkDirty failed</match>
+    <description>mds_stores log error</description>
+  </rule>
+  <rule id="101193" level="0">
+    <match>(Error) IndexGeneral in int si_writeBackAndIndex(SIRef, ContentIndexRef, CFDictionaryRef, CFDictionaryRef, oid_t, db_obj **, CFStringRef, CFDataRef, int, _Bool, _Bool, _Bool, _Bool, SIUserCtxRef, CFStringRef, CFStringRef, int32_t, _Bool, _Bool, _Bool, _Bool, _Bool, _Bool, off_t, uint8_t, _Bool):ContentIndexUpdateContent failed</match>
+    <description>mds_stores log error</description>
+  </rule>
+  <rule id="101194" level="0">
+<!-- NOK? -->
+    <match>(Error) IndexGeneral in void setAttributes(si_set_attr_ctx *, Boolean):Couldn't update index oid:</match>
+    <description>mds_stores log error</description>
+  </rule>
+  <rule id="101195" level="0">
+<!-- NOK? -->
+    <match>(Error) IndexStore in int computePath(SIRef, db_obj *, oid_t *, ssize_t *):SIPersistentIDStoreGetParentForOid error:</match>
+    <description>mds_stores log error</description>
+  </rule>
+</group>
+
+<group name="syslog,iCloudHelper,">
+  <rule id="101201" level="1">
+<!-- NOK
+    <match>AOSKit ERROR: ((null)) Cannot refresh account bag, missing acct info</match>
+-->
+    <match> Cannot refresh account bag, missing acct info</match>
+    <description>iCloudHelper log</description>
+  </rule>
+</group>
+
+<group name="syslog,ImageCaptureExtension,">
+  <rule id="101211" level="1">
+<!-- NOK? -->
+    <match>Failed to register for death of process with pid:</match>
+    <description>ImageCaptureExtension log</description>
+  </rule>
+</group>
+
+<group name="syslog,ubd,">
+  <rule id="101221" level="0">
+    <match>ApplePushService: Failed to flush connection during shutdown</match>
+    <description>ubd log</description>
+  </rule>
+</group>
+
+<group name="syslog,com.apple.preference.network.remoteservice,">
+  <rule id="101231" level="0">
+    <match>*** Assertion failure in void assertCGError(CGError, const char *)(), /SourceCache/ViewBridge/ViewBridge-46.2/ViewBridgeUtilities.m:346</match>
+    <description>mds log</description>
+  </rule>
+</group>
+
+<!-- TEMPLATE
+<group name="syslog,mds,">
+  <rule id="101031" level="0">
+    <match></match>
+    <description>mds log</description>
+  </rule>
+</group>
+
+-->
 
 <!-- command rules -->
 
