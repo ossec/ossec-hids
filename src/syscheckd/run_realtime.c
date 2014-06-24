@@ -322,7 +322,7 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
         }
 
         final_path[MAX_LINE] = '\0';
-        snprintf(final_path, MAX_LINE, "%s/%s", rtlocald->dir, finalfile);
+        snprintf(final_path, MAX_LINE, "%s\\%s", rtlocald->dir, finalfile);
 
 
         /* Checking the change. */
