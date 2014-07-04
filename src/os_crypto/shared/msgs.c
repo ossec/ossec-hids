@@ -166,7 +166,7 @@ void OS_StartCounter(keystore *keys)
 /** OS_RemoveCounter(char *id)
  * Remove the ID counter.
  */
-void OS_RemoveCounter(char *id)
+void OS_RemoveCounter(const char *id)
 {
     char rids_file[OS_FLSIZE +1];
     snprintf(rids_file, OS_FLSIZE, "%s/%s",RIDS_DIR, id);
@@ -177,7 +177,7 @@ void OS_RemoveCounter(char *id)
 /** StoreSenderCounter((keystore *keys, int global, int local)
  * Store sender counter.
  */
-void StoreSenderCounter(keystore *keys, int global, int local)
+void StoreSenderCounter(const keystore *keys, int global, int local)
 {
     /* Writting at the beginning of the file */
     fseek(keys->keyentries[keys->keysize]->fp, 0, SEEK_SET);
@@ -188,7 +188,7 @@ void StoreSenderCounter(keystore *keys, int global, int local)
 /* StoreCount(keystore *keys, int id, int global, int local)
  * Store the global and local count of events.
  */
-void StoreCounter(keystore *keys, int id, int global, int local)
+void StoreCounter(const keystore *keys, int id, int global, int local)
 {
     /* Writting at the beginning of the file */
     fseek(keys->keyentries[id]->fp, 0, SEEK_SET);
@@ -360,7 +360,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
     /* Old format */
     else if(cleartext[0] == ':')
     {
-        int msg_count;
+        unsigned int msg_count;
         time_t msg_time;
 
         /* Closing string */
@@ -398,6 +398,11 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
                 f_msg++;
                 return(f_msg);
             }
+            else
+            {
+                merror(ENCFORMAT_ERROR, __local_name,keys->keyentries[id]->ip->ip);
+                return (NULL);
+            }
         }
 
 
@@ -414,6 +419,11 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
             {
                 f_msg++;
                 return(f_msg);
+            }
+            else
+            {
+                merror(ENCFORMAT_ERROR, __local_name,keys->keyentries[id]->ip->ip);
+                return (NULL);
             }
         }
 
@@ -447,7 +457,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
 /* Creat a encrypted message.
  * Returns the size of it
  */
-int CreateSecMSG(keystore *keys, char *msg, char *msg_encrypted, int id)
+int CreateSecMSG(const keystore *keys, const char *msg, char *msg_encrypted, int id)
 {
     int bfsize;
     int msg_size;
