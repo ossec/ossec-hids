@@ -12,7 +12,7 @@
 # online at: http://www.ossec.net/en/licensing.html
 
 
-CREATE TABLE category
+CREATE TABLE IF NOT EXISTS category
     (
     cat_id      SMALLINT    UNSIGNED NOT NULL   AUTO_INCREMENT,
     cat_name    VARCHAR(32) NOT NULL            UNIQUE,
@@ -20,7 +20,7 @@ CREATE TABLE category
     INDEX       (cat_name)
     );
 
-CREATE TABLE signature 
+CREATE TABLE IF NOT EXISTS signature 
     ( 
     id          SMALLINT    UNSIGNED NOT NULL   AUTO_INCREMENT,
     rule_id     MEDIUMINT   UNSIGNED NOT NULL   UNIQUE,
@@ -31,7 +31,7 @@ CREATE TABLE signature
     INDEX       (rule_id)
     );
 
-CREATE TABLE signature_category_mapping
+CREATE TABLE IF NOT EXISTS  signature_category_mapping
     (
     id          SMALLINT    UNSIGNED NOT NULL   AUTO_INCREMENT,
     rule_id     MEDIUMINT   UNSIGNED NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE signature_category_mapping
     PRIMARY KEY  (id, rule_id, cat_id)       
     );    
 
-CREATE TABLE server 
+CREATE TABLE IF NOT EXISTS  server 
     (
     id              SMALLINT    UNSIGNED NOT NULL   AUTO_INCREMENT,
     last_contact    INT         UNSIGNED NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE server
     PRIMARY KEY  (id) 
     ); 
 
-CREATE TABLE agent 
+CREATE TABLE IF NOT EXISTS  agent 
     (
     id              SMALLINT    UNSIGNED NOT NULL   AUTO_INCREMENT,
     server_id       SMALLINT    UNSIGNED NOT NULL,        
@@ -61,7 +61,7 @@ CREATE TABLE agent
     PRIMARY KEY  (id, server_id) 
     );
 
-CREATE TABLE location
+CREATE TABLE IF NOT EXISTS  location
     (
     id              SMALLINT        UNSIGNED NOT NULL   AUTO_INCREMENT,
     server_id       SMALLINT        UNSIGNED NOT NULL,        
@@ -69,7 +69,7 @@ CREATE TABLE location
     PRIMARY KEY  (id, server_id)
     );        
 
-CREATE TABLE data
+CREATE TABLE IF NOT EXISTS data
     (
     id              INT         UNSIGNED NOT NULL,
     server_id       SMALLINT    UNSIGNED NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE data
     );
 
     
-CREATE TABLE alert 
+CREATE TABLE IF NOT EXISTS alert 
     (
     id              INT         UNSIGNED NOT NULL, 
     server_id       SMALLINT    UNSIGNED NOT NULL,
