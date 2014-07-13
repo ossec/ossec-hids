@@ -75,6 +75,7 @@ CREATE TABLE data
     server_id       SMALLINT    UNSIGNED NOT NULL,
     user            TEXT        NOT NULL,
     full_log        TEXT        NOT NULL,
+    is_hidden       tinyint     NOT NULL DEFAULT '0',
     timestamp       TIMESTAMP   NOT NULL,
     PRIMARY KEY  (id, server_id),
     INDEX time (timestamp)
