@@ -18,6 +18,7 @@
 
 #define __OS_NET_H
 
+#include <stdint.h> /* uint16_t */
 
 /* OS_Bindport*
  * Bind a specific port (protocol and a ip).
