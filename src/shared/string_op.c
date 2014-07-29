@@ -22,7 +22,7 @@
  */
 void os_trimcrlf(char *str)
 {
-    int len;
+    size_t len;
 
     len=strlen(str);
     len--;
@@ -35,10 +35,10 @@ void os_trimcrlf(char *str)
 }
 
 /* Remove offending char (e.g., double quotes) from source */
-char *os_strip_char(char *source, char remove) {
+char *os_strip_char(const char *source, char remove) {
     char *clean;
-    char *iterator = source;
-    int length = 0;
+    const char *iterator = source;
+    size_t length = 0;
     int i;
 
     // Figure out how much memory to allocate
@@ -68,7 +68,7 @@ char *os_strip_char(char *source, char remove) {
 }
 
 /* Do a substring */
-int os_substr(char *dest, const char *src, int position, int length) {
+int os_substr(char *dest, const char *src, size_t position, ssize_t length) {
     dest[0]='\0';
 
     if( length <= 0  ) {
@@ -82,7 +82,7 @@ int os_substr(char *dest, const char *src, int position, int length) {
         return -1;
     }
 
-    strncat(dest, (src + position), length);
+    strncat(dest, (src + position), (size_t) length);
     // Return Success
     return 0;
 }
@@ -94,7 +94,7 @@ char *os_shell_escape(const char *src) {
                             '*', '[', ']', '{', '}', '&', '$', '!', ':', '(', ')' };
 
     char *escaped_string;
-    int length = 0;
+    size_t length = 0;
     int i = 0;
 
     if (src == NULL)

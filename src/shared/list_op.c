@@ -64,7 +64,7 @@ int OSList_SetMaxSize(OSList *list, int max_size)
 /* Set the pointer to the function to free the memory
  * data.
  */
-int OSList_SetFreeDataPointer(OSList *list, void *free_data_function)
+int OSList_SetFreeDataPointer(OSList *list, void (free_data_function)(void *))
 {
     if(!list)
     {
@@ -303,7 +303,7 @@ int OSList_AddData(OSList *list, void *data)
      */
     if(list->max_size)
     {
-        if(list->currently_size > list->max_size)
+        if(list->currently_size > list->max_size && list->first_node->next)
         {
             /* Remove first node */
             newnode = list->first_node->next;

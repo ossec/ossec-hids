@@ -171,7 +171,7 @@ typedef unsigned char u_int8_t;
 
 
 /* Local name */
-char *__local_name;
+extern const char *__local_name;
 
 
 /*** Global prototypes ***/
