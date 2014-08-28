@@ -24,12 +24,12 @@ void l_print_out(const char *msg, ...)
     if(__g_rtype)
     {
         (void)vfprintf(__g_rtype, msg, args);
-        (void)fprintf(__g_rtype, "\n");
+        (void)fprintf(__g_rtype, "\r\n");
     }
     else
     {
         (void)vfprintf(stderr, msg, args);
-        (void)fprintf(stderr, "\n");
+        (void)fprintf(stderr, "\r\n");
     }
     va_end(args);
 }
@@ -343,13 +343,13 @@ int _os_report_print_related(int print_related, OSList *st_data)
                 l_print_out("   group: '%s'", saved_aldata->group);
             else if(print_related & REPORT_REL_RULE)
                 l_print_out("   rule: '%d'", saved_aldata->rule);
-            else if(print_related & REPORT_REL_SRCIP && saved_aldata->srcip)
+            else if((print_related & REPORT_REL_SRCIP) && saved_aldata->srcip)
                 l_print_out("   srcip: '%s'", saved_aldata->srcip);
-            else if(print_related & REPORT_REL_USER && saved_aldata->user)
+            else if((print_related & REPORT_REL_USER) && saved_aldata->user)
                 l_print_out("   user: '%s'", saved_aldata->user);
             else if(print_related & REPORT_REL_LEVEL)
                 l_print_out("   level: '%d'", saved_aldata->level);
-            else if(print_related & REPORT_REL_FILE && saved_aldata->filename)
+            else if((print_related & REPORT_REL_FILE) && saved_aldata->filename)
                 l_print_out("   filename: '%s'", saved_aldata->filename);
         }
 
@@ -482,7 +482,7 @@ void os_ReportdStart(report_filter *r_filter)
 
     /* Getting current time before starting */
     tm = time(NULL);
-    p = localtime(&tm);	
+    p = localtime(&tm);
 
 
 
