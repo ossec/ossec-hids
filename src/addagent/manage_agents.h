@@ -124,7 +124,7 @@ fpos_t fp_pos;
 #define ERROR_KEYS      "Unable to handle keys file. Exiting.\n"
 #define EXTRACT_ERROR   "Unable to extract agent key.\n"
 #define INPUT_LARGE     ARGV0 ": Input too large. Not adding it.\n"
-#define EXIT            ARGV0 ": Exiting\n"
+#define EXIT            ARGV0 ": Exiting.\n"
 
 #define BANNER          "\n****************************************" \
                         "\n* %s %s Agent manager.     *" \
