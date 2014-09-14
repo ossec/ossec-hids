@@ -20,9 +20,7 @@
 
 
 
-/* receiver_thread:
- * Receive events from the server.
- */
+/* Receive events from the server */
 void *receiver_thread(void *none)
 {
     int recv_b;
@@ -41,7 +39,7 @@ void *receiver_thread(void *none)
     FILE *fp;
 
 
-    /* Setting FP to null, before starting */
+    /* Setting FP to null before starting */
     fp = NULL;
 
     memset(cleartext, '\0', OS_MAXSTR +1);
@@ -63,7 +61,7 @@ void *receiver_thread(void *none)
         FD_SET(agt->sock, &fdset);
 
 
-        /* Wait for 30 seconds. */
+        /* How long to wait */
         selecttime.tv_sec = 30;
         selecttime.tv_usec = 0;
 
@@ -110,7 +108,7 @@ void *receiver_thread(void *none)
                     tmp_msg+=strlen(EXECD_HEADER);
 
 
-                    /* Run on windows. */
+                    /* Run on windows */
                     if(agt->execdq >= 0)
                     {
                         WinExecdRun(tmp_msg);
@@ -121,7 +119,7 @@ void *receiver_thread(void *none)
                 }
 
 
-                /* Restart syscheck. */
+                /* Restart syscheck */
                 else if(strcmp(tmp_msg, HC_SK_RESTART) == 0)
                 {
                     os_set_restart_syscheck();
@@ -196,7 +194,7 @@ void *receiver_thread(void *none)
                                          strlen(FILE_CLOSE_HEADER)) == 0)
                 {
                     /* no error */
-                    os_md5 currently_md5;
+                    os_md5 current_md5;
 
                     /* Making sure to close for the rename to work */
                     if(fp)
@@ -210,7 +208,7 @@ void *receiver_thread(void *none)
                         /* nada */
                     }
 
-                    else if(OS_MD5_File(file, currently_md5) < 0)
+                    else if(OS_MD5_File(file, current_md5) < 0)
                     {
                         /* Removing file */
                         unlink(file);
@@ -218,7 +216,7 @@ void *receiver_thread(void *none)
                     }
                     else
                     {
-                        if(strcmp(currently_md5, file_sum) != 0)
+                        if(strcmp(current_md5, file_sum) != 0)
                         {
                             debug1("%s: Failed md5 for: %s -- deleting.",
                                    ARGV0, file);

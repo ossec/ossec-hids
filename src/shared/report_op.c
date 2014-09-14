@@ -43,7 +43,7 @@ void *_os_report_sort_compare(void *d1, void *d2)
    OSList *d1l = (OSList *)d1;
    OSList *d2l = (OSList *)d2;
 
-   if(d1l->currently_size > d2l->currently_size)
+   if(d1l->current_size > d2l->current_size)
    {
        return(d1l);
    }
@@ -418,7 +418,7 @@ void os_report_printtop(void *topstore_pt, char *hname, int print_related)
                 _os_header_print(print_related, hname);
                 dopdout = 1;
             }
-            l_print_out("%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
+            l_print_out("%-78s|%-8d|", (char *)next_node->key, st_data->current_size);
         }
 
 
@@ -430,7 +430,7 @@ void os_report_printtop(void *topstore_pt, char *hname, int print_related)
                 _os_header_print(print_related, hname);
                 dopdout = 1;
             }
-            l_print_out("%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
+            l_print_out("%-78s|%-8d|", (char *)next_node->key, st_data->current_size);
 
             if(print_related & REPORT_REL_LOCATION)
                 _os_report_print_related(REPORT_REL_LOCATION, st_data);

@@ -14,7 +14,7 @@ if [ "X$1" = "Xlocal" ]; then
     # Setting local install
     LOCAL="local"
 fi
-    
+
 UNAME=`uname`;
 
 # Getting default variables
@@ -25,19 +25,18 @@ USER_MAIL="ossecm"
 USER_REM="ossecr"
 subdirs="logs logs/archives logs/alerts logs/firewall bin stats rules queue queue/alerts queue/ossec queue/fts queue/syscheck queue/rootcheck queue/diff queue/agent-info queue/agentless queue/rids tmp var var/run etc etc/shared active-response active-response/bin agentless .ssh"
 
-# ${DIR} must be set 
+# ${DIR} must be set
 if [ "X${DIR}" = "X" ]; then
     echo "Error building OSSEC HIDS."
     exit 1;
-fi    
+fi
 
-    
 # Creating root directory
-ls ${DIR} > /dev/null 2>&1    
+ls ${DIR} > /dev/null 2>&1
 if [ $? != 0 ]; then mkdir -m 700 -p ${DIR}; fi
-ls ${DIR} > /dev/null 2>&1    
-if [ $? != 0 ]; then 
-    echo "You do not have permissions to create ${DIR}. Exiting..."
+ls ${DIR} > /dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "You do not have permissions to create ${DIR}. Exiting."
     exit 1;
 fi
 
@@ -76,7 +75,7 @@ elif [ "$UNAME" = "AIX" ]; then
     /usr/sbin/useradd -d ${DIR} ${AIXSH} -g ${GROUP} ${USER_REM}
     fi
 
-# Thanks Chuck L. for the mac addusers    
+# Thanks Chuck L. for the mac addusers
 elif [ "$UNAME" = "Darwin" ]; then
     id -u ${USER} > /dev/null 2>&1
     if [ ! $? = 0 ]; then
@@ -85,12 +84,12 @@ elif [ "$UNAME" = "Darwin" ]; then
         /usr/bin/sw_vers 2>/dev/null| grep "ProductVersion" | grep -E "10.2.|10.3|10.4" > /dev/null 2>&1
         if [ $? = 0 ]; then
             chmod +x ./init/darwin-addusers.pl
-            ./init/darwin-addusers.pl    
+            ./init/darwin-addusers.pl
         else
             chmod +x ./init/osx105-addusers.sh
             ./init/osx105-addusers.sh
-        fi        
-    fi    
+        fi
+    fi
 else
     grep "^${USER_REM}" /etc/passwd > /dev/null 2>&1
     if [ ! $? = 0 ]; then
@@ -105,8 +104,8 @@ else
         ls -la /bin/false > /dev/null 2>&1
         if [ $? = 0 ]; then
             OSMYSHELL="/bin/false"
-        fi    
-    fi    
+        fi
+    fi
 	/usr/sbin/useradd -d ${DIR} -s ${OSMYSHELL} -g ${GROUP} ${USER}
 	/usr/sbin/useradd -d ${DIR} -s ${OSMYSHELL} -g ${GROUP} ${USER_MAIL}
 	/usr/sbin/useradd -d ${DIR} -s ${OSMYSHELL} -g ${GROUP} ${USER_REM}
@@ -187,14 +186,14 @@ ls ${DIR}/rules/*.xml > /dev/null 2>&1
 if [ $? = 0 ]; then
     mkdir ${DIR}/rules/backup-rules.$$
     cp -pr ${DIR}/rules/*.xml ${DIR}/rules/backup-rules.$$/
-    
+
     # Checking for the local rules
     ls ${DIR}/rules/local_rules.xml > /dev/null 2>&1
     if [ $? = 0 ]; then
         cp -pr ${DIR}/rules/local_rules.xml ${DIR}/rules/saved_local_rules.xml.$$
-    fi    
+    fi
 fi
-    
+
 cp -pr ../etc/rules/* ${DIR}/rules/
 find ${DIR}/rules/ -type f -exec chmod 440 {} \;
 
@@ -202,7 +201,7 @@ find ${DIR}/rules/ -type f -exec chmod 440 {} \;
 ls ${DIR}/rules/saved_local_rules.xml.$$ > /dev/null 2>&1
 if [ $? = 0 ]; then
     mv ${DIR}/rules/saved_local_rules.xml.$$ ${DIR}/rules/local_rules.xml
-fi    
+fi
 
 chown -R root:${GROUP} ${DIR}/rules
 chmod -R 550 ${DIR}/rules
@@ -215,7 +214,7 @@ ls /etc/localtime > /dev/null 2>&1
 if [ $? = 0 ]; then
     cp -pL /etc/localtime ${DIR}/etc/;
     chmod 440 ${DIR}/etc/localtime
-    chown root:${GROUP} ${DIR}/etc/localtime 
+    chown root:${GROUP} ${DIR}/etc/localtime
 fi
 
 # Solaris Needs some extra files
@@ -230,7 +229,6 @@ if [ $? = 0 ]; then
     cp -p /etc/TIMEZONE ${DIR}/etc/;
     chmod 550 ${DIR}/etc/TIMEZONE
 fi
-                        
 
 # For the /var/run
 chmod 770 ${DIR}/var/run
@@ -263,28 +261,28 @@ chmod +x ${DIR}/bin/util.sh
 # Local install chosen
 if [ "X$LOCAL" = "Xlocal" ]; then
     cp -pr ./init/ossec-local.sh ${DIR}/bin/ossec-control
-else    
+else
     cp -pr ./init/ossec-server.sh ${DIR}/bin/ossec-control
 fi
 
-# Moving the decoders/internal_conf file.
+# Moving the decoders/internal_conf file
 cp -pr ../etc/decoder.xml ${DIR}/etc/
 
-# Copying local files.
+# Copying local files
 cp -pr ../etc/local_decoder.xml ${DIR}/etc/ > /dev/null 2>&1
 cp -pr ../etc/local_internal_options.conf ${DIR}/etc/ > /dev/null 2>&1
 cp -pr ../etc/client.keys ${DIR}/etc/ > /dev/null 2>&1
 
-# Copying agentless files.
+# Copying agentless files
 cp -pr agentlessd/scripts/* ${DIR}/agentless/
 
 
-# Backup currently internal_options file.
+# Backup current internal_options file
 ls ${DIR}/etc/internal_options.conf > /dev/null 2>&1
 if [ $? = 0 ]; then
   cp -pr ${DIR}/etc/internal_options.conf ${DIR}/etc/backup-internal_options.$$
 fi
-  
+
 cp -pr ../etc/internal_options.conf ${DIR}/etc/
 cp -pr rootcheck/db/*.txt ${DIR}/etc/shared/
 chown root:${GROUP} ${DIR}/etc/decoder.xml
@@ -329,7 +327,7 @@ fi
 ls ../etc/ossec.mc > /dev/null 2>&1
 if [ $? = 0 ]; then
     cp -pr ../etc/ossec.mc ${DIR}/etc/ossec.conf
-else    
+else
     cp -pr ../etc/ossec-server.conf ${DIR}/etc/ossec.conf
 fi
 chown root:${GROUP} ${DIR}/etc/ossec.conf

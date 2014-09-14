@@ -19,8 +19,8 @@
  */
 
 
-/* ossec-analysisd.
- * Responsible for correlation and log decoding.
+/* ossec-analysisd
+ * Responsible for correlation and log decoding
  */
 
 #ifdef ARGV0
@@ -110,8 +110,6 @@ void help_logtest()
     exit(1);
 }
 
-/** int main(int argc, char **argv)
- */
 int main(int argc, char **argv)
 {
     int test_config = 0;
@@ -353,10 +351,7 @@ int main(int argc, char **argv)
 
 
 
-/* OS_ReadMSG.
- * Main function. Receives the messages(events)
- * and analyze them all.
- */
+/* Receives the messages (events) and analyze them all */
 void OS_ReadMSG(int m_queue, char *ut_str)
 {
     int i;
@@ -398,8 +393,8 @@ void OS_ReadMSG(int m_queue, char *ut_str)
     Eventinfo *lf;
 
 
-    /* Null to global currently pointers */
-    currently_rule = NULL;
+    /* Null to global current pointers */
+    current_rule = NULL;
 
 
     /* Creating the event list */
@@ -421,7 +416,7 @@ void OS_ReadMSG(int m_queue, char *ut_str)
     __crt_ftell = 1;
 
 
-    /* Getting currently time before starting */
+    /* Getting current time before starting */
     c_time = time(NULL);
 
 
@@ -489,8 +484,8 @@ void OS_ReadMSG(int m_queue, char *ut_str)
             }
 
 
-            /* Currently rule must be null in here */
-            currently_rule = NULL;
+            /* Current rule must be null in here */
+            current_rule = NULL;
 
 
             /***  Running decoders ***/
@@ -499,7 +494,7 @@ void OS_ReadMSG(int m_queue, char *ut_str)
             lf->size = strlen(lf->log);
 
 
-            /* Decoding event. */
+            /* Decoding event */
             DecodeEvent(lf);
 
             /* Run accumulator */
@@ -532,8 +527,8 @@ void OS_ReadMSG(int m_queue, char *ut_str)
                         break;
                     }
 
-                    /* We go ahead in here and process the alert. */
-                    currently_rule = lf->generated_rule;
+                    /* We go ahead in here and process the alert */
+                    current_rule = lf->generated_rule;
                 }
 
                 /* The categories must match */
@@ -544,8 +539,8 @@ void OS_ReadMSG(int m_queue, char *ut_str)
                 }
 
 
-                /* Checking each rule. */
-                else if((currently_rule = OS_CheckIfRuleMatch(lf, rulenode_pt))
+                /* Checking each rule */
+                else if((current_rule = OS_CheckIfRuleMatch(lf, rulenode_pt))
                         == NULL)
                 {
                     continue;
@@ -556,10 +551,10 @@ void OS_ReadMSG(int m_queue, char *ut_str)
                 {
                   char *(ruleinfodetail_text[])={"Text","Link","CVE","OSVDB","BUGTRACKID"};
                   print_out("\n**Phase 3: Completed filtering (rules).");
-                  print_out("       Rule id: '%d'", currently_rule->sigid);
-                  print_out("       Level: '%d'", currently_rule->level);
-                  print_out("       Description: '%s'",currently_rule->comment);
-                  for (last_info_detail = currently_rule->info_details; last_info_detail != NULL; last_info_detail = last_info_detail->next)
+                  print_out("       Rule id: '%d'", current_rule->sigid);
+                  print_out("       Level: '%d'", current_rule->level);
+                  print_out("       Description: '%s'",current_rule->comment);
+                  for (last_info_detail = current_rule->info_details; last_info_detail != NULL; last_info_detail = last_info_detail->next)
                   {
                       print_out("       Info - %s: '%s'", ruleinfodetail_text[last_info_detail->type], last_info_detail->data);
                   }
@@ -569,40 +564,40 @@ void OS_ReadMSG(int m_queue, char *ut_str)
 
 
                 /* Ignore level 0 */
-                if(currently_rule->level == 0)
+                if(current_rule->level == 0)
                 {
                     break;
                 }
 
 
                 /* Checking ignore time */
-                if(currently_rule->ignore_time)
+                if(current_rule->ignore_time)
                 {
-                    if(currently_rule->time_ignored == 0)
+                    if(current_rule->time_ignored == 0)
                     {
-                        currently_rule->time_ignored = lf->time;
+                        current_rule->time_ignored = lf->time;
                     }
-                    /* If the currently time - the time the rule was ignored
+                    /* If the current time - the time the rule was ignored
                      * is less than the time it should be ignored,
                      * leave (do not alert again).
                      */
-                    else if((lf->time - currently_rule->time_ignored)
-                            < currently_rule->ignore_time)
+                    else if((lf->time - current_rule->time_ignored)
+                            < current_rule->ignore_time)
                     {
                         break;
                     }
                     else
                     {
-                        currently_rule->time_ignored = 0;
+                        current_rule->time_ignored = 0;
                     }
                 }
 
                 /* Pointer to the rule that generated it */
-                lf->generated_rule = currently_rule;
+                lf->generated_rule = current_rule;
 
 
                 /* Checking if we should ignore it */
-                if(currently_rule->ckignore && IGnore(lf))
+                if(current_rule->ckignore && IGnore(lf))
                 {
                     /* Ignoring rule */
                     lf->generated_rule = NULL;
@@ -610,14 +605,14 @@ void OS_ReadMSG(int m_queue, char *ut_str)
                 }
 
                 /* Checking if we need to add to ignore list */
-                if(currently_rule->ignore)
+                if(current_rule->ignore)
                 {
                     AddtoIGnore(lf);
                 }
 
 
-                /* Log the alert if configured to ... */
-                if(currently_rule->alert_opts & DO_LOGALERT)
+                /* Log the alert if configured to */
+                if(current_rule->alert_opts & DO_LOGALERT)
                 {
                     if(alert_only)
                     {
@@ -632,27 +627,27 @@ void OS_ReadMSG(int m_queue, char *ut_str)
 
 
                 /* Copy the structure to the state memory of if_matched_sid */
-                if(currently_rule->sid_prev_matched)
+                if(current_rule->sid_prev_matched)
                 {
-                    if(!OSList_AddData(currently_rule->sid_prev_matched, lf))
+                    if(!OSList_AddData(current_rule->sid_prev_matched, lf))
                     {
                         merror("%s: Unable to add data to sig list.", ARGV0);
                     }
                     else
                     {
                         lf->sid_node_to_delete =
-                            currently_rule->sid_prev_matched->last_node;
+                            current_rule->sid_prev_matched->last_node;
                     }
                 }
                 /* Group list */
-                else if(currently_rule->group_prev_matched)
+                else if(current_rule->group_prev_matched)
                 {
                     i = 0;
 
-                    while(i < currently_rule->group_prev_matched_sz)
+                    while(i < current_rule->group_prev_matched_sz)
                     {
                         if(!OSList_AddData(
-                                currently_rule->group_prev_matched[i],
+                                current_rule->group_prev_matched[i],
                                 lf))
                         {
                            merror("%s: Unable to add data to grp list.",ARGV0);
@@ -669,18 +664,18 @@ void OS_ReadMSG(int m_queue, char *ut_str)
 
             if(ut_str)
             {
-                /*setup exit code if we are doing unit testing*/
+                /* setup exit code if we are doing unit testing */
                 char holder[1024];
                 holder[1] = '\0';
                 exit_code = 3;
                 if(lf->decoder_info->name != NULL && strcasecmp(ut_decoder_name, lf->decoder_info->name) == 0)
                 {
                     exit_code--;
-                    snprintf(holder, 1023, "%d", currently_rule->sigid);
+                    snprintf(holder, 1023, "%d", current_rule->sigid);
                     if(strcasecmp(ut_rulelevel, holder) == 0)
                     {
                         exit_code--;
-                        snprintf(holder, 1023, "%d", currently_rule->level);
+                        snprintf(holder, 1023, "%d", current_rule->level);
                         if(strcasecmp(ut_alertlevel, holder) == 0)
                         {
                             exit_code--;

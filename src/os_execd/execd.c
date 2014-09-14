@@ -75,9 +75,9 @@ void execd_shutdown()
 
         ExecCmd(list_entry->command);
 
-        /* Delete currently node - already sets the pointer to next */
-        OSList_DeleteCurrentlyNode(timeout_list);
-        timeout_node = OSList_GetCurrentlyNode(timeout_list);
+        /* Delete current node - already sets the pointer to next */
+        OSList_DeleteCurrentNode(timeout_list);
+        timeout_node = OSList_GetCurrentNode(timeout_list);
     }
 
     #ifndef WIN32
@@ -333,11 +333,11 @@ void ExecdStart(int q)
         }
 
 
-        /* Getting currently time */
+        /* Getting current time */
         curr_time = time(0);
 
 
-        /* Checking if there is any timeouted command to execute. */
+        /* Checking if there is any commands that have timed out to execute. */
         timeout_node = OSList_GetFirstNode(timeout_list);
         while(timeout_node)
         {
@@ -351,9 +351,9 @@ void ExecdStart(int q)
             {
                 ExecCmd(list_entry->command);
 
-                /* Deletecurrently node already sets the pointer to next */
-                OSList_DeleteCurrentlyNode(timeout_list);
-                timeout_node = OSList_GetCurrentlyNode(timeout_list);
+                /* Delete current node and sets the pointer to next */
+                OSList_DeleteCurrentNode(timeout_list);
+                timeout_node = OSList_GetCurrentNode(timeout_list);
 
                 /* Clearing the memory */
                 FreeTimeoutEntry(list_entry);
@@ -381,7 +381,7 @@ void ExecdStart(int q)
         /* Adding timeout */
         if(select(q+1, &fdset, NULL, NULL, &socket_timeout) == 0)
         {
-            /* Timeout .. */
+            /* Timeout */
             continue;
         }
 
@@ -402,7 +402,7 @@ void ExecdStart(int q)
         }
 
 
-        /* Currently time */
+        /* Current time */
         curr_time = time(0);
 
 

@@ -9,7 +9,7 @@ if [ $? != 0 ]; then
     echo "Cannot execute. Wrong directory"
     exit 1;
 fi
-            
+
 UNAME=`uname`;
 # Getting default variables
 DIR=`grep DIR ${LOCATION} | cut -f2 -d\"`
@@ -18,19 +18,19 @@ USER="ossec"
 subdirs="logs bin queue queue/ossec queue/alerts queue/syscheck queue/rids queue/diff var var/run etc etc/shared active-response active-response/bin agentless .ssh"
 
 
-# ${DIR} must be set 
+# ${DIR} must be set
 if [ "X${DIR}" = "X" ]; then
     echo "Error building OSSEC HIDS."
     exit 1;
-fi    
+fi
 
 
 # Creating root directory
-ls ${DIR} > /dev/null 2>&1    
+ls ${DIR} > /dev/null 2>&1
 if [ $? != 0 ]; then mkdir -m 700 -p ${DIR}; fi
-ls ${DIR} > /dev/null 2>&1    
-if [ $? != 0 ]; then 
-    echo "You do not have permissions to create ${DIR}. Exiting..."
+ls ${DIR} > /dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "You do not have permissions to create ${DIR}. Exiting."
     exit 1;
 fi
 
@@ -76,7 +76,7 @@ elif [ "$UNAME" = "Darwin" ]; then
 	else
             chmod +x ./init/osx105-addusers.sh
             ./init/osx105-addusers.sh
-        fi        
+        fi
     fi
 else
     grep "^${USER}" /etc/passwd > /dev/null 2>&1
@@ -93,7 +93,7 @@ else
         if [ $? = 0 ]; then
             OSMYSHELL="/bin/false"
         fi
-    fi        
+    fi
 	/usr/sbin/useradd -d ${DIR} -s ${OSMYSHELL} -g ${GROUP} ${USER}
     fi
 fi
@@ -143,7 +143,7 @@ if [ "$UNAME" = "SunOS" ]; then
     chmod -R 555 ${DIR}/usr/
     cp -pr /usr/share/lib/zoneinfo/* ${DIR}/usr/share/lib/zoneinfo/
     chown -R root:${GROUP} ${DIR}/usr/
-fi    
+fi
 
 ls /etc/TIMEZONE > /dev/null 2>&1
 if [ $? = 0 ]; then
@@ -151,18 +151,16 @@ if [ $? = 0 ]; then
     chown root:${GROUP} ${DIR}/etc/TIMEZONE
     chmod 555 ${DIR}/etc/TIMEZONE
 fi
-            
-        
 
 # For the /etc/shared
 cp -pr rootcheck/db/*.txt ${DIR}/etc/shared/
 
-# Backup currently internal_options file.
+# Backup current internal_options file
 ls ${DIR}/etc/internal_options.conf > /dev/null 2>&1
 if [ $? = 0 ]; then
   cp -pr ${DIR}/etc/internal_options.conf ${DIR}/etc/backup-internal_options.$$
 fi
-      
+
 cp -pr ../etc/internal_options.conf ${DIR}/etc/
 cp -pr ../etc/local_internal_options.conf ${DIR}/etc/ > /dev/null 2>&1
 cp -pr ../etc/client.keys ${DIR}/etc/ > /dev/null 2>&1
@@ -220,11 +218,11 @@ if [ $? = 0 ]; then
     exit 0;
 fi
 
-        
+
 ls ../etc/ossec.mc > /dev/null 2>&1
 if [ $? = 0 ]; then
     cp -pr ../etc/ossec.mc ${DIR}/etc/ossec.conf
-else    
+else
     cp -pr ../etc/ossec-agent.conf ${DIR}/etc/ossec.conf
 fi
 chown root:${GROUP} ${DIR}/etc/ossec.conf

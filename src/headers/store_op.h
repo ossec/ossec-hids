@@ -33,7 +33,7 @@ typedef struct _OSStore
     OSStoreNode *last_node;
     OSStoreNode *cur_node;
 
-    int currently_size;
+    int current_size;
     int max_size;
 
     void (*free_data_function)(void *data);

@@ -111,9 +111,9 @@ void WinTimeoutRun(int curr_time)
         {
             ExecCmd_Win32(list_entry->command[0]);
 
-            /* Deletecurrently node already sets the pointer to next */
-            OSList_DeleteCurrentlyNode(timeout_list);
-            timeout_node = OSList_GetCurrentlyNode(timeout_list);
+            /* Deletecurrent node and sets the pointer to next */
+            OSList_DeleteCurrentNode(timeout_list);
+            timeout_node = OSList_GetCurrentNode(timeout_list);
 
             /* Clearing the memory */
             FreeTimeoutEntry(list_entry);
@@ -154,7 +154,7 @@ void WinExecdRun(char *exec_msg)
 
 
 
-    /* Currently time */
+    /* Current time */
     curr_time = time(0);
 
 

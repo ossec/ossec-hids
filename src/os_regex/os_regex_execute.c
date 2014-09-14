@@ -214,7 +214,7 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
 
                 /* If our regex matches and we have a "+" set, we will
                  * try the next one to see if it matches. If yes, we
-                 * can jump to it, but saving our currently location
+                 * can jump to it, but saving our current location
                  * in case of error.
                  * _regex_matched will set set to true after the first
                  * round of matches

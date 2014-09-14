@@ -19,8 +19,8 @@
  */
 
 
-/* ossec-analysisd.
- * Responsible for correlation and log decoding.
+/* ossec-analysisd
+ * Responsible for correlation and log decoding
  */
 
 #ifndef ARGV0
@@ -89,12 +89,12 @@ int AddHash_Rule(RuleNode *node);
 int OS_CleanMSG(char *msg, Eventinfo *lf);
 
 
-/* for FTS */
+/* For FTS */
 int FTS_Init();
 int FTS(Eventinfo *lf);
 int AddtoIGnore(Eventinfo *lf);
 int IGnore(Eventinfo *lf);
-int doDiff(RuleInfo *currently_rule, Eventinfo *lf);
+int doDiff(RuleInfo *current_rule, Eventinfo *lf);
 
 
 /* For decoders */
@@ -147,8 +147,6 @@ void help_analysisd()
     exit(1);
 }
 
-/** int main(int argc, char **argv)
- */
 #ifndef TESTRULE
 int main(int argc, char **argv)
 #else
@@ -585,10 +583,7 @@ int main_analysisd(int argc, char **argv)
 
 
 
-/* OS_ReadMSG.
- * Main function. Receives the messages(events)
- * and analyze them all.
- */
+/* Receives the messages (events) and analyze them all */
 #ifndef TESTRULE
 void OS_ReadMSG(int m_queue)
 #else
@@ -602,8 +597,8 @@ void OS_ReadMSG_analysisd(int m_queue)
     RuleInfo *stats_rule;
 
 
-    /* Null to global currently pointers */
-    currently_rule = NULL;
+    /* Null to global current pointers */
+    current_rule = NULL;
 
     /* Initiating the logs */
     OS_InitLog();
@@ -710,7 +705,7 @@ void OS_ReadMSG_analysisd(int m_queue)
     debug1("%s: DEBUG: Active response Init completed.", ARGV0);
 
 
-    /* Getting currently time before starting */
+    /* Getting current time before starting */
     c_time = time(NULL);
 
 
@@ -814,8 +809,8 @@ void OS_ReadMSG_analysisd(int m_queue)
             DEBUG_MSG("%s: DEBUG: Msg cleanup: %s ", ARGV0, lf->log);
 
 
-            /* Currently rule must be null in here */
-            currently_rule = NULL;
+            /* Current rule must be null in here */
+            current_rule = NULL;
 
 
             /** Checking the date/hour changes **/
@@ -998,8 +993,8 @@ void OS_ReadMSG_analysisd(int m_queue)
                         goto CLMEM;
                     }
 
-                    /* We go ahead in here and process the alert. */
-                    currently_rule = lf->generated_rule;
+                    /* Process the alert */
+                    current_rule = lf->generated_rule;
                 }
 
                 /* The categories must match */
@@ -1009,8 +1004,8 @@ void OS_ReadMSG_analysisd(int m_queue)
                     continue;
                 }
 
-                /* Checking each rule. */
-                else if((currently_rule = OS_CheckIfRuleMatch(lf, rulenode_pt))
+                /* Checking each rule */
+                else if((current_rule = OS_CheckIfRuleMatch(lf, rulenode_pt))
                         == NULL)
                 {
                     continue;
@@ -1018,41 +1013,41 @@ void OS_ReadMSG_analysisd(int m_queue)
 
 
                 /* Ignore level 0 */
-                if(currently_rule->level == 0)
+                if(current_rule->level == 0)
                 {
                     break;
                 }
 
 
                 /* Checking ignore time */
-                if(currently_rule->ignore_time)
+                if(current_rule->ignore_time)
                 {
-                    if(currently_rule->time_ignored == 0)
+                    if(current_rule->time_ignored == 0)
                     {
-                        currently_rule->time_ignored = lf->time;
+                        current_rule->time_ignored = lf->time;
                     }
-                    /* If the currently time - the time the rule was ignored
+                    /* If the current time - the time the rule was ignored
                      * is less than the time it should be ignored,
                      * leave (do not alert again).
                      */
-                    else if((lf->time - currently_rule->time_ignored)
-                            < currently_rule->ignore_time)
+                    else if((lf->time - current_rule->time_ignored)
+                            < current_rule->ignore_time)
                     {
                         break;
                     }
                     else
                     {
-                        currently_rule->time_ignored = lf->time;
+                        current_rule->time_ignored = lf->time;
                     }
                 }
 
 
                 /* Pointer to the rule that generated it */
-                lf->generated_rule = currently_rule;
+                lf->generated_rule = current_rule;
 
 
                 /* Checking if we should ignore it */
-                if(currently_rule->ckignore && IGnore(lf))
+                if(current_rule->ckignore && IGnore(lf))
                 {
                     /* Ignoring rule */
                     lf->generated_rule = NULL;
@@ -1061,14 +1056,14 @@ void OS_ReadMSG_analysisd(int m_queue)
 
 
                 /* Checking if we need to add to ignore list */
-                if(currently_rule->ignore)
+                if(current_rule->ignore)
                 {
                     AddtoIGnore(lf);
                 }
 
 
-                /* Log the alert if configured to ... */
-                if(currently_rule->alert_opts & DO_LOGALERT)
+                /* Log the alert if configured to */
+                if(current_rule->alert_opts & DO_LOGALERT)
                 {
                     __crt_ftell = ftell(_aflog);
 
@@ -1087,7 +1082,7 @@ void OS_ReadMSG_analysisd(int m_queue)
                 #ifdef PRELUDE
                 if(Config.prelude)
                 {
-                    if(Config.prelude_log_level <= currently_rule->level)
+                    if(Config.prelude_log_level <= current_rule->level)
                     {
                         OS_PreludeLog(lf);
                     }
@@ -1111,12 +1106,12 @@ void OS_ReadMSG_analysisd(int m_queue)
 
 
                 /* Execute an active response */
-                if(currently_rule->ar)
+                if(current_rule->ar)
                 {
                     int do_ar;
                     active_response **rule_ar;
 
-                    rule_ar = currently_rule->ar;
+                    rule_ar = current_rule->ar;
 
                     while(*rule_ar)
                     {
@@ -1159,27 +1154,27 @@ void OS_ReadMSG_analysisd(int m_queue)
 
 
                 /* Copy the structure to the state memory of if_matched_sid */
-                if(currently_rule->sid_prev_matched)
+                if(current_rule->sid_prev_matched)
                 {
-                    if(!OSList_AddData(currently_rule->sid_prev_matched, lf))
+                    if(!OSList_AddData(current_rule->sid_prev_matched, lf))
                     {
                         merror("%s: Unable to add data to sig list.", ARGV0);
                     }
                     else
                     {
                         lf->sid_node_to_delete =
-                            currently_rule->sid_prev_matched->last_node;
+                            current_rule->sid_prev_matched->last_node;
                     }
                 }
                 /* Group list */
-                else if(currently_rule->group_prev_matched)
+                else if(current_rule->group_prev_matched)
                 {
                     i = 0;
 
-                    while(i < currently_rule->group_prev_matched_sz)
+                    while(i < current_rule->group_prev_matched_sz)
                     {
                         if(!OSList_AddData(
-                                currently_rule->group_prev_matched[i],
+                                current_rule->group_prev_matched[i],
                                 lf))
                         {
                            merror("%s: Unable to add data to grp list.",ARGV0);
@@ -1221,9 +1216,7 @@ void OS_ReadMSG_analysisd(int m_queue)
 }
 
 
-/* CheckIfRuleMatch v0.1
- * Will check if the currently_rule matches the event information
- */
+/* Will check if the current_rule matches the event information */
 RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 {
     /* We check for:
@@ -1244,47 +1237,47 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
      * weekday,
      * status,
      */
-    RuleInfo *currently_rule = curr_node->ruleinfo;
+    RuleInfo *current_rule = curr_node->ruleinfo;
 
 
     /* Can't be null */
-    if(!currently_rule)
+    if(!current_rule)
     {
-        merror("%s: Inconsistent state. currently rule NULL", ARGV0);
+        merror("%s: Inconsistent state. current rule NULL", ARGV0);
         return(NULL);
     }
 
 
     #ifdef TESTRULE
     if(full_output && !alert_only)
-    print_out("    Trying rule: %d - %s", currently_rule->sigid,
-                                          currently_rule->comment);
+    print_out("    Trying rule: %d - %s", current_rule->sigid,
+                                          current_rule->comment);
     #endif
 
 
     /* Checking if any decoder pre-matched here */
-    if(currently_rule->decoded_as &&
-       currently_rule->decoded_as != lf->decoder_info->id)
+    if(current_rule->decoded_as &&
+       current_rule->decoded_as != lf->decoder_info->id)
     {
         return(NULL);
     }
 
 
     /* Checking program name */
-    if(currently_rule->program_name)
+    if(current_rule->program_name)
     {
         if(!lf->program_name)
             return(NULL);
 
         if(!OSMatch_Execute(lf->program_name,
                             lf->p_name_size,
-                            currently_rule->program_name))
+                            current_rule->program_name))
                         return(NULL);
     }
 
 
     /* Checking for the id */
-    if(currently_rule->id)
+    if(current_rule->id)
     {
         if(!lf->id)
         {
@@ -1293,7 +1286,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
         if(!OSMatch_Execute(lf->id,
                             strlen(lf->id),
-                            currently_rule->id))
+                            current_rule->id))
             return(NULL);
         #ifdef CDBLOOKUP
 
@@ -1302,41 +1295,41 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
     /* Checking if any word to match exists */
-    if(currently_rule->match)
+    if(current_rule->match)
     {
-        if(!OSMatch_Execute(lf->log, lf->size, currently_rule->match))
+        if(!OSMatch_Execute(lf->log, lf->size, current_rule->match))
             return(NULL);
     }
 
 
     /* Checking if exist any regex for this rule */
-    if(currently_rule->regex)
+    if(current_rule->regex)
     {
-        if(!OSRegex_Execute(lf->log, currently_rule->regex))
+        if(!OSRegex_Execute(lf->log, current_rule->regex))
             return(NULL);
     }
 
 
     /* Checking for actions */
-    if(currently_rule->action)
+    if(current_rule->action)
     {
         if(!lf->action)
             return(NULL);
 
-        if(strcmp(currently_rule->action,lf->action) != 0)
+        if(strcmp(current_rule->action,lf->action) != 0)
             return(NULL);
     }
 
 
     /* Checking for the url */
-    if(currently_rule->url)
+    if(current_rule->url)
     {
         if(!lf->url)
         {
             return(NULL);
         }
 
-        if(!OSMatch_Execute(lf->url, strlen(lf->url), currently_rule->url))
+        if(!OSMatch_Execute(lf->url, strlen(lf->url), current_rule->url))
         {
             return(NULL);
         }
@@ -1348,17 +1341,17 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
     /* Getting tcp/ip packet information */
-    if(currently_rule->alert_opts & DO_PACKETINFO)
+    if(current_rule->alert_opts & DO_PACKETINFO)
     {
         /* Checking for the srcip */
-        if(currently_rule->srcip)
+        if(current_rule->srcip)
         {
             if(!lf->srcip)
             {
                 return(NULL);
             }
 
-            if(!OS_IPFoundList(lf->srcip, currently_rule->srcip))
+            if(!OS_IPFoundList(lf->srcip, current_rule->srcip))
             {
                 return(NULL);
             }
@@ -1368,14 +1361,14 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
         }
 
         /* Checking for the dstip */
-        if(currently_rule->dstip)
+        if(current_rule->dstip)
         {
             if(!lf->dstip)
             {
                 return(NULL);
             }
 
-            if(!OS_IPFoundList(lf->dstip, currently_rule->dstip))
+            if(!OS_IPFoundList(lf->dstip, current_rule->dstip))
             {
                 return(NULL);
             }
@@ -1384,7 +1377,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             #endif
         }
 
-        if(currently_rule->srcport)
+        if(current_rule->srcport)
         {
             if(!lf->srcport)
             {
@@ -1393,7 +1386,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
             if(!OSMatch_Execute(lf->srcport,
                                 strlen(lf->srcport),
-                                currently_rule->srcport))
+                                current_rule->srcport))
             {
                 return(NULL);
             }
@@ -1401,7 +1394,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
             #endif
         }
-        if(currently_rule->dstport)
+        if(current_rule->dstport)
         {
             if(!lf->dstport)
             {
@@ -1410,7 +1403,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
             if(!OSMatch_Execute(lf->dstport,
                                 strlen(lf->dstport),
-                                currently_rule->dstport))
+                                current_rule->dstport))
             {
                 return(NULL);
             }
@@ -1422,12 +1415,12 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
     /* Extra information from event */
-    if(currently_rule->alert_opts & DO_EXTRAINFO)
+    if(current_rule->alert_opts & DO_EXTRAINFO)
     {
         /* Checking compiled rule. */
-        if(currently_rule->compiled_rule)
+        if(current_rule->compiled_rule)
         {
-            if(!currently_rule->compiled_rule(lf))
+            if(!current_rule->compiled_rule(lf))
             {
                 return(NULL);
             }
@@ -1435,20 +1428,20 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
         /* Checking if exist any user to match */
-        if(currently_rule->user)
+        if(current_rule->user)
         {
             if(lf->dstuser)
             {
                 if(!OSMatch_Execute(lf->dstuser,
                             strlen(lf->dstuser),
-                            currently_rule->user))
+                            current_rule->user))
                     return(NULL);
             }
             else if(lf->srcuser)
             {
                 if(!OSMatch_Execute(lf->srcuser,
                             strlen(lf->srcuser),
-                            currently_rule->user))
+                            current_rule->user))
                     return(NULL);
             }
             else
@@ -1463,17 +1456,17 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
         /* Checking if any rule related to the size exist */
-        if(currently_rule->maxsize)
+        if(current_rule->maxsize)
         {
-            if(lf->size < currently_rule->maxsize)
+            if(lf->size < current_rule->maxsize)
                 return(NULL);
         }
 
 
         /* Checking if we are in the right time */
-        if(currently_rule->day_time)
+        if(current_rule->day_time)
         {
-            if(!OS_IsonTime(lf->hour, currently_rule->day_time))
+            if(!OS_IsonTime(lf->hour, current_rule->day_time))
             {
                 return(NULL);
             }
@@ -1481,9 +1474,9 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
         /* Checking week day */
-        if(currently_rule->week_day)
+        if(current_rule->week_day)
         {
-            if(!OS_IsonDay(__crt_wday, currently_rule->week_day))
+            if(!OS_IsonDay(__crt_wday, current_rule->week_day))
             {
                 return(NULL);
             }
@@ -1491,48 +1484,48 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
         /* Getting extra data */
-        if(currently_rule->extra_data)
+        if(current_rule->extra_data)
         {
             if(!lf->data)
                 return(NULL);
 
             if(!OSMatch_Execute(lf->data,
                         strlen(lf->data),
-                        currently_rule->extra_data))
+                        current_rule->extra_data))
                 return(NULL);
         }
 
 
         /* Checking hostname */
-        if(currently_rule->hostname)
+        if(current_rule->hostname)
         {
             if(!lf->hostname)
                 return(NULL);
 
             if(!OSMatch_Execute(lf->hostname,
                         strlen(lf->hostname),
-                        currently_rule->hostname))
+                        current_rule->hostname))
                 return(NULL);
         }
 
 
         /* Checking for status */
-        if(currently_rule->status)
+        if(current_rule->status)
         {
             if(!lf->status)
                 return(NULL);
 
             if(!OSMatch_Execute(lf->status,
                         strlen(lf->status),
-                        currently_rule->status))
+                        current_rule->status))
                 return(NULL);
         }
 
 
-        /* Do diff check. */
-        if(currently_rule->context_opts & SAME_DODIFF)
+        /* Do diff check */
+        if(current_rule->context_opts & SAME_DODIFF)
         {
-            if(!doDiff(currently_rule, lf))
+            if(!doDiff(current_rule, lf))
             {
                 return(NULL);
             }
@@ -1540,14 +1533,14 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
     }
 
     /* Checking for the FTS flag */
-    if(currently_rule->alert_opts & DO_FTS)
+    if(current_rule->alert_opts & DO_FTS)
     {
         /** FTS CHECKS **/
         if(lf->decoder_info->fts)
         {
             if(lf->decoder_info->fts & FTS_DONE)
             {
-                /* We already did the fts in here. */
+                /* We already did the fts in here */
             }
             else if(!FTS(lf))
             {
@@ -1561,9 +1554,9 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
     }
 
     /* List lookups */
-    if(currently_rule->lists != NULL)
+    if(current_rule->lists != NULL)
     {
-        ListRule *list_holder=currently_rule->lists;
+        ListRule *list_holder=current_rule->lists;
         while(list_holder)
         {
             switch(list_holder->field)
@@ -1654,15 +1647,15 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
     /* If it is a context rule, search for it */
-    if(currently_rule->context == 1)
+    if(current_rule->context == 1)
     {
-        if(!currently_rule->event_search(lf, currently_rule))
+        if(!current_rule->event_search(lf, current_rule))
             return(NULL);
     }
 
     #ifdef TESTRULE
     if(full_output && !alert_only)
-    print_out("       *Rule %d matched.", currently_rule->sigid);
+    print_out("       *Rule %d matched.", current_rule->sigid);
     #endif
 
 
@@ -1691,22 +1684,20 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
 
     /* If we are set to no alert, keep going */
-    if(currently_rule->alert_opts & NO_ALERT)
+    if(current_rule->alert_opts & NO_ALERT)
     {
         return(NULL);
     }
 
 
     hourly_alerts++;
-    currently_rule->firedtimes++;
+    current_rule->firedtimes++;
 
-    return(currently_rule);  /* Matched */
+    return(current_rule);  /* Matched */
 }
 
 
-/** void LoopRule(RuleNode *curr_node);
- *  Update each rule and print it to the logs.
- */
+/* Update each rule and print it to the logs */
 void LoopRule(RuleNode *curr_node, FILE *flog)
 {
     if(curr_node->ruleinfo->firedtimes)
@@ -1733,9 +1724,7 @@ void LoopRule(RuleNode *curr_node, FILE *flog)
 }
 
 
-/** void DumpLogstats();
- *  Dump the hourly stats about each rule.
- */
+/* Dump the hourly stats about each rule */
 void DumpLogstats()
 {
     RuleNode *rulenode_pt;

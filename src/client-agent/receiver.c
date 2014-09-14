@@ -30,9 +30,7 @@ char file_sum[34] = "";
 char file[OS_SIZE_1024 +1] = "";
 
 
-/* receive_msg:
- * Receive events from the server.
- */
+/* Receive events from the server */
 void *receive_msg()
 {
     int recv_b;
@@ -68,7 +66,7 @@ void *receive_msg()
 
 
             #ifdef WIN32
-            /* Run timeout commands. */
+            /* Run timeout commands */
             if(agt->execdq >= 0)
                 WinTimeoutRun(available_server);
             #endif
@@ -92,7 +90,7 @@ void *receive_msg()
                 #else
 
 
-                /* Run on windows. */
+                /* Run on windows */
                 if(agt->execdq >= 0)
                 {
                     WinExecdRun(tmp_msg);
@@ -105,7 +103,7 @@ void *receive_msg()
             }
 
 
-            /* Restart syscheck. */
+            /* Restart syscheck */
             else if(strcmp(tmp_msg, HC_SK_RESTART) == 0)
             {
                 os_set_restart_syscheck();
@@ -184,7 +182,7 @@ void *receive_msg()
                         strlen(FILE_CLOSE_HEADER)) == 0)
             {
                 /* no error */
-                os_md5 currently_md5;
+                os_md5 current_md5;
 
                 /* Making sure to close for the rename to work */
                 if(fp)
@@ -198,7 +196,7 @@ void *receive_msg()
                     /* nada */
                 }
 
-                else if(OS_MD5_File(file, currently_md5) < 0)
+                else if(OS_MD5_File(file, current_md5) < 0)
                 {
                     /* Removing file */
                     unlink(file);
@@ -206,7 +204,7 @@ void *receive_msg()
                 }
                 else
                 {
-                    if(strcmp(currently_md5, file_sum) != 0)
+                    if(strcmp(current_md5, file_sum) != 0)
                     {
                         debug1("%s: ERROR: Failed md5 for: %s -- deleting.",
                                 ARGV0, file);

@@ -134,9 +134,9 @@ int alert_only;
 /** Functions for events **/
 
 /* Search for matches in the last events */
-Eventinfo *Search_LastEvents(Eventinfo *lf, RuleInfo *currently_rule);
-Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *currently_rule);
-Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *currently_rule);
+Eventinfo *Search_LastEvents(Eventinfo *lf, RuleInfo *current_rule);
+Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *current_rule);
+Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *current_rule);
 
 /* Zero the eventinfo structure */
 void Zero_Eventinfo(Eventinfo *lf);
@@ -150,7 +150,7 @@ void OS_AddEvent(Eventinfo *lf);
 /* Return the last event from the Event list */
 EventNode *OS_GetLastEvent();
 
-/* Create the event list. Maxsize must be specified */
+/* Create the event list where maxsize must be specified */
 void OS_CreateEventList(int maxsize);
 
 

@@ -22,7 +22,7 @@
 #include "lists.h"
 
 
-/* Event context  - stored on a uint8 */
+/* Event context - stored on a uint8 */
 #define SAME_USER       0x001 /* 1   */
 #define SAME_SRCIP      0x002 /* 2   */
 #define SAME_ID         0x004 /* 4   */
@@ -36,7 +36,7 @@
 #define NOT_SAME_ID     0xffb /* 0xfff - 0x004  */
 #define NOT_SAME_AGENT  0xff7 /* 0xfff - 0x008 */
 
-/* Alert options  - store on a uint8 */
+/* Alert options - store on a uint8 */
 #define DO_FTS          0x001
 #define DO_MAILALERT    0x002
 #define DO_LOGALERT     0x004
@@ -178,7 +178,7 @@ typedef struct _RuleNode
 }RuleNode;
 
 
-RuleInfo *currently_rule; /* */
+RuleInfo *current_rule; /* */
 
 RuleInfoDetail *zeroinfodetails(int type, char *data);
 int get_info_attributes(char **attributes, char **values);

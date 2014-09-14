@@ -328,7 +328,7 @@ static char **_GetElementContent(OS_XML *_lxml, const char **element_name, const
          */
         if((_lxml->tp[l] != XML_ELEM) || (_lxml->rl[l] != j))
         {
-            /* If the node relation is higher than we currently xml
+            /* If the node relation is higher than the current xml
              * node, zero the position and look at it again (i--).
              */
             if(j > _lxml->rl[l])

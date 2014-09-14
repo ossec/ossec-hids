@@ -164,9 +164,6 @@ int read_sys_file(char *file_name, int do_read)
     return(0);
 }
 
-/* read_dir v0.1
- *
- */
 int read_sys_dir(char *dir_name, int do_read)
 {
     int i = 0;
@@ -175,7 +172,7 @@ int read_sys_dir(char *dir_name, int do_read)
     DIR *dp;
 
 	struct dirent *entry;
-    struct stat statbuf;	
+    struct stat statbuf;
 
     #ifndef WIN32
     char *(dirs_to_doread[]) = { "/bin", "/sbin", "/usr/bin",
@@ -190,7 +187,7 @@ int read_sys_dir(char *dir_name, int do_read)
     }
 
 
-    /* Ignoring user-supplied list. */
+    /* Ignoring user-supplied list */
     if(rootcheck.ignore)
     {
         while(rootcheck.ignore[i])
@@ -215,7 +212,7 @@ int read_sys_dir(char *dir_name, int do_read)
     }
 
 
-    /* Currently device id */
+    /* Current device id */
     if(did != statbuf.st_dev)
     {
         if(did != 0)
@@ -268,7 +265,7 @@ int read_sys_dir(char *dir_name, int do_read)
         char f_name[PATH_MAX +2];
         struct stat statbuf_local;
 
-        /* Just ignore . and ..  */
+        /* Ignore these */
         if((strcmp(entry->d_name,".") == 0) ||
            (strcmp(entry->d_name,"..") == 0))
         {
@@ -290,7 +287,7 @@ int read_sys_dir(char *dir_name, int do_read)
         if(lstat(f_name, &statbuf_local) == 0)
         {
             /* On all the systems, except darwin, the
-             * link count is only increased on directories.
+             * link count is only increased on directories
              */
 	        #ifndef Darwin
             if(S_ISDIR(statbuf_local.st_mode))
@@ -324,7 +321,7 @@ int read_sys_dir(char *dir_name, int do_read)
             }
         }
 
-        /* Ignoring /proc */
+        /* Ignore /proc */
         if((strcmp(f_name, "/proc") == 0) || (strcmp(f_name, "/sys") == 0))
             continue;
 
@@ -332,7 +329,7 @@ int read_sys_dir(char *dir_name, int do_read)
     }
 
     /* Entry count for directory different than the actual
-     * link count from stats.
+     * link count from stats
      */
     if((entry_count != statbuf.st_nlink) &&
        ((did_changed == 0) || ((entry_count + 1) != statbuf.st_nlink)))
@@ -379,9 +376,7 @@ int read_sys_dir(char *dir_name, int do_read)
 }
 
 
-/*  check_rc_sys: v0.1
- *  Scan the whole filesystem looking for possible issues
- */
+/* Scan the whole filesystem looking for possible issues */
 void check_rc_sys(char *basedir)
 {
     char file_path[OS_SIZE_1024 +1];
