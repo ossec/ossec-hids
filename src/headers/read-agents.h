@@ -65,7 +65,7 @@ int get_agent_status(char *agent_name, char *agent_ip);
 /** agent_info *get_agent_info(char *agent_name, char *agent_ip)
  * Get information from an agent.
  */
-agent_info *get_agent_info(char *agent_name, char *agent_ip);
+agent_info *get_agent_info(char *agent_name, char *agent_ip, int truncate);
 
 
 /** int connect_to_remoted()
