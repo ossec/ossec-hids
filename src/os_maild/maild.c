@@ -222,7 +222,7 @@ void OS_Run(MailConfig *mail)
     file_queue *fileq;
 
 
-    /* Getting currently time before starting */
+    /* Getting current time before starting */
     tm = time(NULL);
     p = localtime(&tm);
     thishour = p->tm_hour;

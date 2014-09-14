@@ -47,7 +47,7 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     char *tmp_location;
 
 
-    /* Currently active response */
+    /* Current active response */
     active_response *tmp_ar;
 
 

@@ -39,9 +39,9 @@ void OS_DBD(DBConfig *db_config)
     alert_data *al_data;
 
 
-    /* Getting currently time before starting */
+    /* Getting current time before starting */
     tm = time(NULL);
-    p = localtime(&tm);	
+    p = localtime(&tm);
 
 
     /* Initating file queue - to read the alerts */
@@ -62,14 +62,14 @@ void OS_DBD(DBConfig *db_config)
     db_config->alert_id++;
 
 
-    /* Infinite loop reading the alerts and inserting them. */
+    /* Infinite loop reading the alerts and inserting them */
     while(1)
     {
         tm = time(NULL);
         p = localtime(&tm);
 
 
-        /* Get message if available (timeout of 5 seconds) */
+        /* Get message if available */
         al_data = Read_FileMon(fileq, p, 5);
         if(!al_data)
         {

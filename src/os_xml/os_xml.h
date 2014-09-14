@@ -33,12 +33,12 @@ typedef enum _XML_TYPE { XML_ATTR, XML_ELEM, XML_VARIABLE_BEGIN = '$' } XML_TYPE
 /* XML structure */
 typedef struct _OS_XML
 {
-    unsigned int cur;		/* Currently position (and last after reading) */
-    int fol;		/* Currently position for the xml_access */
-    XML_TYPE *tp;		/* Item type	*/
+    unsigned int cur;		/* Current position (and last after reading) */
+    int fol;		/* Current position for the xml_access */
+    XML_TYPE *tp;		/* Item type */
     unsigned int *rl;		/* Relation in the XML */
     int *ck;		/* If the item was closed or not */
-    unsigned int *ln;        /* Currently xml file line */
+    unsigned int *ln;        /* Current xml file line */
     unsigned int err_line;   /* Line number of the possible error */
     char **ct;		/* Content is stored */
     char **el;		/* The element/attribute name is stored */

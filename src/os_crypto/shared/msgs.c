@@ -46,9 +46,7 @@ static unsigned int _s_recv_flush = 0;
 static int _s_verify_counter = 1;
 
 
-/** OS_StartCounter.
- * Read counters for each agent.
- */
+/* Read counters for each agent */
 void OS_StartCounter(keystore *keys)
 {
     unsigned int i;
@@ -64,7 +62,7 @@ void OS_StartCounter(keystore *keys)
     for(i = 0; i<=keys->keysize; i++)
     {
         /* On i == keysize, we deal with the
-         * sender counter.
+         * sender counter
          */
         if(i == keys->keysize)
         {
@@ -167,9 +165,7 @@ void OS_StartCounter(keystore *keys)
 
 
 
-/** OS_RemoveCounter(char *id)
- * Remove the ID counter.
- */
+/* Remove the ID counter */
 void OS_RemoveCounter(const char *id)
 {
     char rids_file[OS_FLSIZE +1];
@@ -178,9 +174,7 @@ void OS_RemoveCounter(const char *id)
 }
 
 
-/** StoreSenderCounter((keystore *keys, int global, int local)
- * Store sender counter.
- */
+/* Store sender counter */
 static void StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local)
 {
     /* Writting at the beginning of the file */
@@ -189,9 +183,7 @@ static void StoreSenderCounter(const keystore *keys, unsigned int global, unsign
 }
 
 
-/* StoreCount(keystore *keys, int id, int global, int local)
- * Store the global and local count of events.
- */
+/* Store the global and local count of events */
 static void StoreCounter(const keystore *keys, int id, unsigned int global, unsigned int local)
 {
     /* Writting at the beginning of the file */
@@ -200,9 +192,9 @@ static void StoreCounter(const keystore *keys, int id, unsigned int global, unsi
 }
 
 
-/* CheckSum v0.1: 2005/02/15
- * Verify the checksum of the message.
- * Returns NULL on error or the message on success.
+/*
+ * Verify the checksum of the message
+ * Returns NULL on error or the message on success
  */
 static char *CheckSum(char *msg)
 {
@@ -305,10 +297,10 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
         f_msg+=5;
 
 
-        /* Returning the message if we don't need to verify the counbter. */
+        /* Returning the message if we don't need to verify the counter */
         if(!_s_verify_counter)
         {
-            /* Updating currently counts */
+            /* Updating current counts */
             keys->keyentries[id]->global = msg_global;
             keys->keyentries[id]->local = msg_local;
             if(rcv_count >= _s_recv_flush)
@@ -325,7 +317,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
            ((msg_global == keys->keyentries[id]->global) &&
             (msg_local > keys->keyentries[id]->local)))
         {
-            /* Updating currently counts */
+            /* Updating current counts */
             keys->keyentries[id]->global = msg_global;
             keys->keyentries[id]->local = msg_local;
 
@@ -387,10 +379,10 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
         f_msg+=5;
 
 
-        /* Returning the message if we don't need to verify the counbter. */
+        /* Returning the message if we don't need to verify the counter */
         if(!_s_verify_counter)
         {
-            /* Updating currently counts */
+            /* Updating current counts */
             keys->keyentries[id]->global = msg_time;
             keys->keyentries[id]->local = msg_local;
 
@@ -412,7 +404,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
            ((msg_time == keys->keyentries[id]->global)&&
             (msg_count > keys->keyentries[id]->local)))
         {
-            /* Updating currently time and count */
+            /* Updating current time and count */
             keys->keyentries[id]->global = msg_time;
             keys->keyentries[id]->local = msg_count;
 
@@ -456,7 +448,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
 
 
 
-/* Creat a encrypted message.
+/* Create an encrypted message
  * Returns the size of it
  */
 size_t CreateSecMSG(const keystore *keys, const char *msg, char *msg_encrypted, int id)
@@ -516,7 +508,7 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, char *msg_encrypted, 
 
 
     /* Compressing message.
-     * We assing the first 8 bytes for padding.
+     * We passing the first 8 bytes for padding.
      */
     cmp_size = os_zlib_compress(_finmsg, _tmpmsg + 8, msg_size, OS_MAXSTR - 12);
     if(!cmp_size)
@@ -559,8 +551,8 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, char *msg_encrypted, 
     }
     evt_count++;
 
-    /* If the ip is dynamic (not single host, append agent id
-     * to the message.
+    /* If the ip is dynamic (not single host), append agent id
+     * to the message
      */
     if(!isSingleHost(keys->keyentries[id]->ip) && isAgent)
     {
@@ -580,14 +572,14 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, char *msg_encrypted, 
      * include the agent id.
      */
 
-    /* Encrypting everything */
+    /* Encrypt everything */
     OS_BF_Str(_tmpmsg + (7 - bfsize), msg_encrypted + msg_size,
                                       keys->keyentries[id]->key,
                                       (long) cmp_size,
                                       OS_ENCRYPT);
 
 
-    /* Storing before leaving */
+    /* Store before leaving */
     StoreSenderCounter(keys, global_count, local_count);
 
     return(cmp_size + msg_size);

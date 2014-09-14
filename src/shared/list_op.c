@@ -30,7 +30,7 @@ OSList *OSList_Create()
     my_list->first_node = NULL;
     my_list->last_node = NULL;
     my_list->cur_node = NULL;
-    my_list->currently_size = 0;
+    my_list->current_size = 0;
     my_list->max_size = 0;
     my_list->free_data_function = NULL;
 
@@ -125,10 +125,10 @@ OSListNode *OSList_GetPrevNode(OSList *list)
 }
 
 
-/* Get the currently node.
- * Returns null when no currently node is available
+/* Get the current node
+ * Returns null when no current node is available
  */
-OSListNode *OSList_GetCurrentlyNode(OSList *list)
+OSListNode *OSList_GetCurrentNode(OSList *list)
 {
     return(list->cur_node);
 }
@@ -201,18 +201,18 @@ void OSList_DeleteThisNode(OSList *list, OSListNode *thisnode)
     /* Freeing the node memory */
     free(thisnode);
 
-    /* Setting the currently node to the next one */
+    /* Setting the current node to the next one */
     list->cur_node = next;
 
-    list->currently_size--;
+    list->current_size--;
 }
 
 
-/* Delete currently node from list
+/* Delete current node from list
  * Pointer goes to the next node available.
  * Returns void
  */
-void OSList_DeleteCurrentlyNode(OSList *list)
+void OSList_DeleteCurrentNode(OSList *list)
 {
     OSListNode *prev;
     OSListNode *next;
@@ -251,10 +251,10 @@ void OSList_DeleteCurrentlyNode(OSList *list)
     /* Freeing the node memory */
     free(list->cur_node);
 
-    /* Setting the currently node to the next one */
+    /* Setting the current node to the next one */
     list->cur_node = next;
 
-    list->currently_size--;
+    list->current_size--;
 }
 
 
@@ -296,14 +296,14 @@ int OSList_AddData(OSList *list, void *data)
     list->last_node = newnode;
 
     /* Increment list size */
-    list->currently_size++;
+    list->current_size++;
 
-    /* if currently_size higher than the maximum size, remove the
+    /* if current_size higher than the maximum size, remove the
      * oldest node (first one)
      */
     if(list->max_size)
     {
-        if(list->currently_size > list->max_size)
+        if(list->current_size > list->max_size)
         {
             /* Remove first node */
             newnode = list->first_node->next;
@@ -323,7 +323,7 @@ int OSList_AddData(OSList *list, void *data)
             list->first_node = newnode;
 
             /* Reduce list size */
-            list->currently_size--;
+            list->current_size--;
         }
     }
 

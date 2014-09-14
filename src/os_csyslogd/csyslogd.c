@@ -35,7 +35,7 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
     alert_data *al_data;
 
 
-    /* Getting currently time before starting */
+    /* Getting current time before starting */
     tm = time(NULL);
     p = localtime(&tm);
 
@@ -55,7 +55,7 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
     debug1("%s: INFO: File queue connected.", ARGV0 );
 
 
-    /* Connecting to syslog. */
+    /* Connecting to syslog */
     s = 0;
     while(syslog_config[s])
     {
@@ -76,14 +76,14 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 
 
 
-    /* Infinite loop reading the alerts and inserting them. */
+    /* Infinite loop reading the alerts and inserting them */
     while(1)
     {
         tm = time(NULL);
         p = localtime(&tm);
 
 
-        /* Get message if available (timeout of 5 seconds) */
+        /* Get message if available */
         al_data = Read_FileMon(fileq, p, 5);
         if(!al_data)
         {
@@ -113,7 +113,7 @@ int field_add_string(char *dest, int size, const char *format, const char *value
     int dest_sz = size - strlen(dest);
 
     if(dest_sz <= 0 ) {
-        // Not enough room in the buffer
+        /* Not enough room in the buffer */
         return -1;
     }
 
@@ -144,7 +144,7 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
     char *truncated = NULL;
 
     if(available_sz <= 0 ) {
-        // Not enough room in the buffer
+        /* Not enough room in the buffer */
         return -1;
     }
 
@@ -158,7 +158,7 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
 
         if( (truncated=malloc(field_sz + 1)) != NULL ) {
             if( total_sz > available_sz ) {
-                // Truncate and add a trailer
+                /* Truncate and add a trailer */
                 os_substr(truncated, value, 0, field_sz - strlen(trailer));
                 strcat(truncated, trailer);
             }
@@ -170,11 +170,11 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
             strncat(dest, buffer, available_sz);
         }
         else {
-            // Memory Error
+            /* Memory Error */
             len = -3;
         }
     }
-    // Free the temporary pointer
+    /* Free the temporary pointer */
     free(truncated);
 
     return len;
@@ -187,7 +187,7 @@ int field_add_int(char *dest, int size, const char *format, const int value ) {
     int dest_sz = size - strlen(dest);
 
     if(dest_sz <= 0 ) {
-        // Not enough room in the buffer
+        /* Not enough room in the buffer */
         return -1;
     }
 

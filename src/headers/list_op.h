@@ -30,7 +30,7 @@ typedef struct _OSList
     OSListNode *last_node;
     OSListNode *cur_node;
 
-    int currently_size;
+    int current_size;
     int max_size;
 
     void (*free_data_function)(void *data);
@@ -46,9 +46,9 @@ OSListNode *OSList_GetFirstNode(OSList *);
 OSListNode *OSList_GetLastNode(OSList *);
 OSListNode *OSList_GetPrevNode(OSList *);
 OSListNode *OSList_GetNextNode(OSList *);
-OSListNode *OSList_GetCurrentlyNode(OSList *list);
+OSListNode *OSList_GetCurrentNode(OSList *list);
 
-void OSList_DeleteCurrentlyNode(OSList *list);
+void OSList_DeleteCurrentNode(OSList *list);
 void OSList_DeleteThisNode(OSList *list, OSListNode *thisnode);
 void OSList_DeleteOldestNode(OSList *list);
 

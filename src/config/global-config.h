@@ -39,7 +39,7 @@ typedef struct __Config
     char *prelude_profile;
 
     /* ZEROMQ Export */
-    u_int8_t zeromq_output; 
+    u_int8_t zeromq_output;
     char *zeromq_output_uri;
 
     /* Picviz support */

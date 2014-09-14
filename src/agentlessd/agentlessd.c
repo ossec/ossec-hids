@@ -18,7 +18,7 @@
 
 
 
-/* Saves agentless entry for the control tools to gather. */
+/* Saves agentless entry for the control tools to gather */
 int save_agentless_entry(char *host, char *script, char *agttype)
 {
     FILE *fp;
@@ -44,7 +44,7 @@ int save_agentless_entry(char *host, char *script, char *agttype)
 
 
 
-/* send integrity checking message. */
+/* send integrity checking message */
 int send_intcheck_msg(char *script, char *host, char *msg)
 {
     char sys_location[1024 +1];
@@ -61,7 +61,7 @@ int send_intcheck_msg(char *script, char *host, char *msg)
             ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
         }
 
-        /* If we reach here, we can try to send it again */
+        /* If here, try to send message again */
         SendMSG(lessdc.queue, msg, sys_location, SYSCHECK_MQ);
     }
 
@@ -70,7 +70,7 @@ int send_intcheck_msg(char *script, char *host, char *msg)
 
 
 
-/* Send generic log message. */
+/* Send generic log message */
 int send_log_msg(char *script, char *host, char *msg)
 {
     char sys_location[1024 +1];
@@ -86,7 +86,7 @@ int send_log_msg(char *script, char *host, char *msg)
             ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
         }
 
-        /* If we reach here, we can try to send it again */
+        /* If here, try to send message again */
         SendMSG(lessdc.queue, msg, sys_location, LOCALFILE_MQ);
     }
     return(0);
@@ -94,7 +94,7 @@ int send_log_msg(char *script, char *host, char *msg)
 
 
 
-/* Generate diffs alerts. */
+/* Generate diffs alerts */
 int gen_diff_alert(char *host, char *script, int alert_diff_time)
 {
     int n = 0;
@@ -125,14 +125,14 @@ int gen_diff_alert(char *host, char *script, int alert_diff_time)
     }
     else if(n >= 2040)
     {
-        /* We need to clear the last new line. */
+        /* We need to clear the last new line */
         buf[n] = '\0';
         tmp_str = strrchr(buf, '\n');
         if(tmp_str)
             *tmp_str = '\0';
         else
         {
-            /* Weird diff with only one large line. */
+            /* Weird diff with only one large line */
             buf[256] = '\0';
         }
     }
@@ -144,7 +144,7 @@ int gen_diff_alert(char *host, char *script, int alert_diff_time)
     n = 0;
 
 
-    /* Getting up to 8 line changes. */
+    /* Getting up to 8 line changes */
     tmp_str = buf;
 
     while(tmp_str && (*tmp_str != '\0'))
@@ -162,7 +162,7 @@ int gen_diff_alert(char *host, char *script, int alert_diff_time)
     }
 
 
-    /* Creating alert. */
+    /* Creating alert */
     snprintf(diff_alert, 4096 -1, "ossec: agentless: Change detected:\n%s%s",
              buf, n>=7?
              "\nMore changes..":
@@ -180,7 +180,7 @@ int gen_diff_alert(char *host, char *script, int alert_diff_time)
             ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
         }
 
-        /* If we reach here, we can try to send it again */
+        /* If here, try to message again */
         SendMSG(lessdc.queue, diff_alert, buf, LOCALFILE_MQ);
     }
 
@@ -215,7 +215,7 @@ int check_diff_file(char *host, char *script)
              DIFF_LAST_FILE);
 
 
-    /* If the file is not there, rename new location to last location. */
+    /* If the file is not there, rename new location to last location */
     if(OS_MD5_File(old_location, md5sum_old) != 0)
     {
         if(rename(new_location, old_location) != 0)
@@ -225,7 +225,7 @@ int check_diff_file(char *host, char *script)
         return(0);
     }
 
-    /* Get md5sum of the new file. */
+    /* Get md5sum of the new file */
     if(OS_MD5_File(new_location, md5sum_new) != 0)
     {
         merror("%s: ERROR: Invalid internal state (missing '%s').",
@@ -233,7 +233,7 @@ int check_diff_file(char *host, char *script)
         return(0);
     }
 
-    /* If they match, keep the old file and remove the new. */
+    /* If they match, keep the old file and remove the new */
     if(strcmp(md5sum_new, md5sum_old) == 0)
     {
         unlink(new_location);
@@ -241,7 +241,7 @@ int check_diff_file(char *host, char *script)
     }
 
 
-    /* Saving the old file at timestamp and renaming new to last. */
+    /* Saving the old file at timestamp and renaming new to last */
     date_of_change = File_DateofChange(old_location);
     snprintf(tmp_location, 1024, "%s/%s->%s/state.%d", DIFF_DIR_PATH, host, script,
              date_of_change);
@@ -249,7 +249,7 @@ int check_diff_file(char *host, char *script)
     rename(new_location, old_location);
 
 
-    /* Run diff. */
+    /* Run diff */
     date_of_change = File_DateofChange(old_location);
     snprintf(diff_cmd, 2048, "diff \"%s\" \"%s\" > \"%s/%s->%s/diff.%d\" "
              "2>/dev/null",
@@ -263,7 +263,7 @@ int check_diff_file(char *host, char *script)
     }
 
 
-    /* Generate alert. */
+    /* Generate alert */
     gen_diff_alert(host, script, date_of_change);
 
 
@@ -272,7 +272,7 @@ int check_diff_file(char *host, char *script)
 
 
 
-/* get the diff file. */
+/* get the diff of file */
 FILE *open_diff_file(char *host, char *script)
 {
     FILE *fp = NULL;
@@ -285,7 +285,7 @@ FILE *open_diff_file(char *host, char *script)
 
     fp = fopen(sys_location, "w");
 
-    /* If we can't open, try creating the directory. */
+    /* If we can't open, try creating the directory */
     if(!fp)
     {
         snprintf(sys_location, 1024, "%s/%s->%s", DIFF_DIR_PATH, host, script);
@@ -313,7 +313,7 @@ FILE *open_diff_file(char *host, char *script)
 
 
 
-/* Run periodic commands. */
+/* Run periodic commands */
 int run_periodic_cmd(agentlessd_entries *entry, int test_it)
 {
     int i = 0;
@@ -331,7 +331,7 @@ int run_periodic_cmd(agentlessd_entries *entry, int test_it)
 
     while(entry->server[i])
     {
-        /* Ignored entry. */
+        /* Ignored entry */
         if(entry->server[i][0] == '\0')
         {
             i++;
@@ -339,7 +339,7 @@ int run_periodic_cmd(agentlessd_entries *entry, int test_it)
         }
 
 
-        /* We only test for the first server entry. */
+        /* We only test for the first server entry */
         else if(test_it)
         {
             int ret_code = 0;
@@ -348,7 +348,7 @@ int run_periodic_cmd(agentlessd_entries *entry, int test_it)
                     AGENTLESSDIRPATH, entry->type);
             ret_code = system(command);
 
-            /* Checking if the test worked. */
+            /* Checking if the test worked */
             if(ret_code != 0)
             {
                 if(ret_code == 32512)
@@ -391,7 +391,7 @@ int run_periodic_cmd(agentlessd_entries *entry, int test_it)
         {
             while(fgets(buf, OS_SIZE_2048, fp) != NULL)
             {
-                /* Removing new lines or carriage returns. */
+                /* Removing new lines or carriage returns */
                 tmp_str = strchr(buf, '\r');
                 if(tmp_str)
                     *tmp_str = '\0';
@@ -490,16 +490,14 @@ void Agentlessd()
     memset(str, '\0', OS_SIZE_1024 +1);
 
 
-    /* Getting currently time before starting */
+    /* Getting current time before starting */
     tm = time(NULL);
     p = localtime(&tm);
 
     today = p->tm_mday;
 
 
-    /* Connecting to the message queue
-     * Exit if it fails.
-     */
+    /* Connect to the message queue */
     if((lessdc.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0)
     {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
@@ -539,7 +537,7 @@ void Agentlessd()
             }
 
 
-            /* Run the check again if the frequency has elapsed. */
+            /* Run the check again if the frequency has elapsed */
             if((lessdc.entries[i]->state & LESSD_STATE_PERIODIC) &&
                ((lessdc.entries[i]->current_state +
                  lessdc.entries[i]->frequency) < tm))
@@ -554,7 +552,7 @@ void Agentlessd()
             sleep(i);
         }
 
-        /* We only check every minute */
+        /* Sleep before checking again */
         test_it = 0;
         sleep(60);
     }

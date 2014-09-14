@@ -28,7 +28,7 @@ static int _add2last(char *str, int strsize, char *file)
     fp = fopen(file, "w");
     if(!fp)
     {
-        /* Try to create the directories. */
+        /* Try to create the directories */
         char *dirrule = NULL;
         char *diragent = NULL;
 
@@ -50,7 +50,7 @@ static int _add2last(char *str, int strsize, char *file)
         }
         *diragent = '\0';
 
-        /* Checking if the diragent exists. */
+        /* Checking if the diragent exists */
         if(IsDir(file) != 0)
         {
             if(mkdir(file, 0770) == -1)
@@ -85,7 +85,7 @@ static int _add2last(char *str, int strsize, char *file)
 }
 
 
-int doDiff(RuleInfo *currently_rule, Eventinfo *lf)
+int doDiff(RuleInfo *current_rule, Eventinfo *lf)
 {
     int date_of_change;
     char *htpt = NULL;
@@ -93,10 +93,10 @@ int doDiff(RuleInfo *currently_rule, Eventinfo *lf)
     char flastcontent[OS_SIZE_8192 +1];
 
 
-    /* Cleaning up global. */
+    /* Cleaning up global */
     flastcontent[0] = '\0';
     flastcontent[OS_SIZE_8192] = '\0';
-    currently_rule->last_events[0] = NULL;
+    current_rule->last_events[0] = NULL;
 
 
 
@@ -108,7 +108,7 @@ int doDiff(RuleInfo *currently_rule, Eventinfo *lf)
             *htpt = '\0';
         }
         snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->hostname+1,
-                 currently_rule->sigid, DIFF_LAST_FILE);
+                 current_rule->sigid, DIFF_LAST_FILE);
 
         if(htpt)
         {
@@ -119,10 +119,10 @@ int doDiff(RuleInfo *currently_rule, Eventinfo *lf)
     else
     {
         snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->hostname,
-                 currently_rule->sigid, DIFF_LAST_FILE);
+                 current_rule->sigid, DIFF_LAST_FILE);
     }
 
-    /* lf->size can't be too long. */
+    /* lf->size can't be too long */
     if(lf->size >= OS_SIZE_8192)
     {
         merror("%s: ERROR: event size (%d) too long for diff.", ARGV0, lf->size);
@@ -130,7 +130,7 @@ int doDiff(RuleInfo *currently_rule, Eventinfo *lf)
     }
 
 
-    /* Checking if last diff exists. */
+    /* Checking if last diff exists */
     date_of_change = File_DateofChange(flastfile);
     if(date_of_change <= 0)
     {
@@ -166,7 +166,7 @@ int doDiff(RuleInfo *currently_rule, Eventinfo *lf)
         fclose(fp);
     }
 
-    /* Nothing changed. */
+    /* Nothing changed */
     if(strcmp(flastcontent, lf->log) == 0)
     {
         return(0);
@@ -178,8 +178,8 @@ int doDiff(RuleInfo *currently_rule, Eventinfo *lf)
         merror("%s: ERROR: unable to create last file: %s", ARGV0, flastfile);
     }
 
-    currently_rule->last_events[0] = fmsglast;
-    currently_rule->last_events[1] = flastcontent;
+    current_rule->last_events[0] = fmsglast;
+    current_rule->last_events[1] = flastcontent;
     return(1);
 
 }

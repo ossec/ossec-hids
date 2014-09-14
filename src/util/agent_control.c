@@ -66,7 +66,7 @@ int main(int argc, char **argv)
     OS_SetName(ARGV0);
 
 
-    /* user arguments */
+    /* User arguments */
     if(argc < 2)
     {
         helpmsg();
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
                 break;
             case 'i':
                 info_agent++;
-                // no break;
+                /* no break; */
             case 'u':
                 if(!optarg)
                 {
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     }
 
 
-    /* Listing responses. */
+    /* Listing responses */
     if(list_responses)
     {
         FILE *fp;
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
     }
 
 
-    /* Listing available agents. */
+    /* Listing available agents */
     if(list_agents)
     {
         if(!csv_output)
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 
 
 
-    /* Checking if the provided ID is valid. */
+    /* Checking if the provided ID is valid */
     if(agent_id != NULL)
     {
         if(strcmp(agent_id, "000") != 0)
@@ -287,14 +287,14 @@ int main(int argc, char **argv)
         }
         else
         {
-            /* server. */
+            /* server */
             agt_id = -1;
         }
     }
 
 
 
-    /* Printing information from an agent. */
+    /* Printing information from an agent */
     if(info_agent)
     {
         int agt_status = 0;
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
             agt_info = get_agent_info(keys.keyentries[agt_id]->name,
                                       keys.keyentries[agt_id]->ip->ip);
 
-            /* Getting netmask from ip. */
+            /* Getting netmask from IP */
             getNetmask(keys.keyentries[agt_id]->ip->netmask, final_mask, 128);
             snprintf(final_ip, 128, "%s%s",keys.keyentries[agt_id]->ip->ip,
                                            final_mask);
@@ -397,11 +397,11 @@ int main(int argc, char **argv)
 
 
 
-    /* Restarting syscheck every where. */
+    /* Restarting syscheck every where */
     if(restart_all_agents && restart_syscheck)
     {
 
-        /* Connecting to remoted. */
+        /* Connecting to remoted */
         debug1("%s: DEBUG: Connecting to remoted...", ARGV0);
         arq = connect_to_remoted();
         if(arq < 0)
@@ -432,7 +432,7 @@ int main(int argc, char **argv)
     if(restart_syscheck && agent_id)
     {
 
-        /* Restart on the server. */
+        /* Restart on the server */
         if(strcmp(agent_id, "000") == 0)
         {
             os_set_restart_syscheck();
@@ -445,7 +445,7 @@ int main(int argc, char **argv)
 
 
 
-        /* Connecting to remoted. */
+        /* Connecting to remoted */
         debug1("%s: DEBUG: Connecting to remoted...", ARGV0);
         arq = connect_to_remoted();
         if(arq < 0)
@@ -473,7 +473,7 @@ int main(int argc, char **argv)
 
     if(restart_agent && agent_id)
     {
-        /* Connecting to remoted. */
+        /* Connecting to remoted */
         debug1("%s: DEBUG: Connecting to remoted...", ARGV0);
         arq = connect_to_remoted();
         if(arq < 0)
@@ -499,10 +499,10 @@ int main(int argc, char **argv)
     }
 
 
-    /* running active response on the specified agent id. */
+    /* Running active response on the specified agent ID */
     if(ip_address && ar && agent_id)
     {
-        /* Connecting to remoted. */
+        /* Connecting to remoted */
         debug1("%s: DEBUG: Connecting to remoted...", ARGV0);
         arq = connect_to_remoted();
         if(arq < 0)

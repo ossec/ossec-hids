@@ -70,7 +70,7 @@ void monitor_agents()
     }
 
 
-    /* Removing old agent list and adding currently one */
+    /* Removing old agent list and adding current one */
     free_agents(mond.agents);
     mond.agents = av_agents;
     return;

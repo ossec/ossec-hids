@@ -22,7 +22,7 @@ void Monitord()
     time_t tm;
     struct tm *p;
 
-    int today = 0;		
+    int today = 0;
     int thismonth = 0;
     int thisyear = 0;
 
@@ -34,9 +34,9 @@ void Monitord()
     memset(str, '\0', OS_SIZE_1024 +1);
 
 
-    /* Getting currently time before starting */
+    /* Getting current time before starting */
     tm = time(NULL);
-    p = localtime(&tm);	
+    p = localtime(&tm);
 
     today = p->tm_mday;
     thismonth = p->tm_mon;
@@ -78,7 +78,7 @@ void Monitord()
         /* Day changed, deal with log files */
         if(today != p->tm_mday)
         {
-            /* Generate reports. */
+            /* Generate reports */
             generate_reports(today, thismonth, thisyear, p);
 
             manage_files(today, thismonth, thisyear);
@@ -88,7 +88,7 @@ void Monitord()
             thisyear = p->tm_year+1900;
         }
 
-        /* We only check every two minutes */
+        /* Sleep before checking again */
         sleep(120);
     }
 }

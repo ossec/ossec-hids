@@ -32,7 +32,7 @@ OSStore *OSStore_Create()
     my_list->first_node = NULL;
     my_list->last_node = NULL;
     my_list->cur_node = NULL;
-    my_list->currently_size = 0;
+    my_list->current_size = 0;
     my_list->max_size = 0;
     my_list->free_data_function = NULL;
 
@@ -438,7 +438,7 @@ int OSStore_Put(OSStore *list, char *key, void *data)
 
 
     /* Increment list size */
-    list->currently_size++;
+    list->current_size++;
 
     return(1);
 }

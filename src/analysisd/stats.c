@@ -175,7 +175,7 @@ void Update_Hour()
                 else
                 {
                     /* The average is going to be the number of interactions +
-                     * the currently hourly rate, divided by 4 */
+                     * the current hourly rate, divided by 4 */
                     _RHour[i]=((_CHour[i]+(inter*_RHour[i]))/(inter+1))+5;
                 }
             }
@@ -188,13 +188,12 @@ void Update_Hour()
             fprintf(fp,"%d",_RHour[i]);
             fclose(fp);
         }
-        	
         else
         {
             merror(FOPEN_ERROR, "logstats", _hourly);
         }
 
-        _CHour[i] = 0; /* Zeroing the currently  hour */
+        _CHour[i] = 0; /* Zeroing the current hour */
     }
 
     /* Weekly */
@@ -226,7 +225,7 @@ void Update_Hour()
                     }
                     else
                     {
-                        _RWHour[i][j]=((_CWHour[i][j]+(inter*_RWHour[i][j]))/(inter+1))+5;	
+                        _RWHour[i][j]=((_CWHour[i][j]+(inter*_RWHour[i][j]))/(inter+1))+5;
                     }
                 }
             }
@@ -243,7 +242,7 @@ void Update_Hour()
                 merror(FOPEN_ERROR, "logstats", _weekly);
             }
 
-            _CWHour[i][j] = 0;	
+            _CWHour[i][j] = 0;
         }
     }
 
@@ -256,7 +255,7 @@ void Update_Hour()
 int Check_Hour(Eventinfo *lf)
 {
     _CHour[__crt_hour]++;
-    _CWHour[__crt_wday][__crt_hour]++;	
+    _CWHour[__crt_wday][__crt_hour]++;
 
     if(_RHour[24] <= 2)
     {
@@ -324,7 +323,7 @@ int Check_Hour(Eventinfo *lf)
             }
         }
     }
-    return(0);	
+    return(0);
 }
 
 /* Starting hourly stats and other necessary variables */
@@ -412,7 +411,7 @@ int Start_Hour()
         char _hourly[128];
         snprintf(_hourly,128,"%s/%d",STATQUEUE,i);
 
-        _CHour[i]=0;	
+        _CHour[i]=0;
         if(File_DateofChange(_hourly) < 0)
             _RHour[i] = 0;
 
@@ -430,7 +429,7 @@ int Start_Hour()
                 if(_RHour[i] < 0)
                     _RHour[i] = 0;
                 fclose(fp);
-            }	
+            }
         }
     }
 
@@ -467,9 +466,9 @@ int Start_Hour()
                     if(_RWHour[i][j] < 0)
                         _RWHour[i][j] = 0;
                     fclose(fp);
-                }	
-            }	
-        }	
+                }
+            }
+        }
     }
     return(0);
 }
@@ -484,14 +483,14 @@ int Start_Hour()
 int LastMsg_Stats(char *log)
 {
 	if(strcmp(log,_lastmsg) == 0)
-		return(1);		
-		
+		return(1);
+
 	else if(strcmp(log,_prevlast) == 0)
 		return(1);
 
 	else if(strcmp(log,_pprevlast) == 0)
 		return(1);
-	
+
 	return(0);
 }
 

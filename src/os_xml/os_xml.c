@@ -32,7 +32,7 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml) __attribute__
 static int _getattributes(FILE *fp, unsigned int parent,OS_XML *_lxml) __attribute__((nonnull));
 static void xml_error(OS_XML *_lxml, const char *msg,...) __attribute__((format(printf, 2, 3), nonnull));
 
-/* Currently line */
+/* Current line */
 static unsigned int _line;
 
 /* Local fgetc */
@@ -191,7 +191,7 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
 {
     int c;
     unsigned int count = 0;
-    unsigned int _currentlycont = 0;
+    unsigned int _currentcont = 0;
     short int location = -1;
 
     int prevv = 0;
@@ -272,7 +272,7 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
             {
                 return(-1);
             }
-            _currentlycont=_lxml->cur-1;
+            _currentcont=_lxml->cur-1;
             if(isspace(c))
             {
                 if((_ga = _getattributes(fp,parent,_lxml)) < 0)
@@ -282,12 +282,12 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
             /* If the element is closed already (finished in />) */
             if((_ge == '/') || (_ga == '/'))
             {
-                if(_writecontent("\0", 2, _currentlycont,_lxml) < 0)
+                if(_writecontent("\0", 2, _currentcont,_lxml) < 0)
                 {
                     return(-1);
                 }
-                _lxml->ck[_currentlycont] = 1;
-                _currentlycont = 0;
+                _lxml->ck[_currentcont] = 1;
+                _currentcont = 0;
                 count = 0;
                 location = -1;
 
@@ -313,15 +313,15 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
                 xml_error(_lxml,"XMLERR: Element '%s' not closed.",elem);
                 return(-1);
             }
-            if(_writecontent(cont,strlen(cont)+1,_currentlycont,_lxml) < 0)
+            if(_writecontent(cont,strlen(cont)+1,_currentcont,_lxml) < 0)
             {
                 return(-1);
             }
-            _lxml->ck[_currentlycont]=1;
+            _lxml->ck[_currentcont]=1;
             memset(elem,'\0',XML_MAXSIZE);
             memset(closedelem,'\0',XML_MAXSIZE);
             memset(cont,'\0',XML_MAXSIZE);
-            _currentlycont = 0;
+            _currentcont = 0;
             count = 0;
             location = -1;
             if(parent > 0)

@@ -331,10 +331,10 @@ int DB_Search(char *f_name, char *c_sum, Eventinfo *lf)
             saved_name[sn_size] = '\0';
 
 
-        /* If name is different, go to next one. */
+        /* If name is different, go to next one */
         if(strcmp(f_name,saved_name) != 0)
         {
-            /* Saving currently location */
+            /* Saving current location */
             fgetpos(fp, &sdb.init_pos);
             continue;
         }
@@ -355,7 +355,7 @@ int DB_Search(char *f_name, char *c_sum, Eventinfo *lf)
         }
 
 
-        /* If we reached here, the checksum of the file has changed */
+        /* If here, the checksum of the file has changed */
         if(saved_sum[-3] == '!')
         {
             p++;
@@ -686,10 +686,10 @@ int DB_Search(char *f_name, char *c_sum, Eventinfo *lf)
 
         return(1);
 
-    } /* continuiing... */
+    } /* continuing */
 
 
-    /* If we reach here, this file is not present on our database */
+    /* If here, this file is not present in the database */
     fseek(fp, 0, SEEK_END);
 
     fprintf(fp,"+++%s !%d %s\n", c_sum, lf->time, f_name);

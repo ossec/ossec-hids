@@ -192,7 +192,7 @@ alert_data *Read_FileMon(file_queue *fileq, struct tm *p, int timeout)
     }
 
 
-    /* Getting currently file */
+    /* Getting current file */
     if(p->tm_mday != fileq->day)
     {
         /* If the day changes, we need to get all remaining alerts. */
@@ -219,7 +219,7 @@ alert_data *Read_FileMon(file_queue *fileq, struct tm *p, int timeout)
     }
 
 
-    /* Try up to timeout times to get an event */
+    /* Try to up timeout times to get an event */
     while(i < timeout)
     {
         al_data = GetAlertData(fileq->flags, fileq->fp);
