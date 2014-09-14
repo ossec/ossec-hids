@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     int gid = 0;
     int uid = 0;
     int c = 0, restart_syscheck = 0, restart_all_agents = 0, list_agents = 0;
-    int info_agent = 0, agt_id = 0, active_only = 0, csv_output = 0;
+    int info_agent = 0, agt_id = 0, active_only = 0, csv_output = 0, truncate = 1;
     int list_responses = 0, end_time = 0, restart_agent = 0;
 
     char shost[512];
@@ -99,6 +99,7 @@ int main(int argc, char **argv)
                 break;
             case 's':
                 csv_output = 1;
+                truncate = 0;
                 break;
             case 'c':
                 active_only++;
@@ -315,7 +316,8 @@ int main(int argc, char **argv)
                                           keys.keyentries[agt_id]->ip->ip);
 
             agt_info = get_agent_info(keys.keyentries[agt_id]->name,
-                                      keys.keyentries[agt_id]->ip->ip);
+                                      keys.keyentries[agt_id]->ip->ip,
+                                      truncate);
 
             /* Getting netmask from ip. */
             getNetmask(keys.keyentries[agt_id]->ip->netmask, final_mask, 128);
@@ -342,7 +344,7 @@ int main(int argc, char **argv)
         else
         {
             agt_status = get_agent_status(NULL, NULL);
-            agt_info = get_agent_info(NULL, "127.0.0.1");
+            agt_info = get_agent_info(NULL, "127.0.0.1", truncate);
 
             if(!csv_output)
             {

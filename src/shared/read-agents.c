@@ -1176,7 +1176,7 @@ char *_get_agent_keepalive(char *agent_name, char *agent_ip)
 
 
 /* Internal funtion. Extracts operating system. */
-int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
+int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info, int truncate)
 {
     FILE *fp;
     char buf[1024 +1];
@@ -1203,7 +1203,7 @@ int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
         }
 
 
-        if(strlen(agt_info->os) > 55)
+        if(truncate && strlen(agt_info->os) > 55)
         {
             agt_info->os[52] = '.';
             agt_info->os[53] = '.';
@@ -1246,7 +1246,7 @@ int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
         }
 
 
-        if(strlen(buf) > 55)
+        if(truncate && strlen(buf) > 55)
         {
             buf[52] = '.';
             buf[53] = '.';
@@ -1272,7 +1272,7 @@ int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
 /** agent_info *get_agent_info(char *agent_name, char *agent_ip)
  * Get information from an agent.
  */
-agent_info *get_agent_info(char *agent_name, char *agent_ip)
+agent_info *get_agent_info(char *agent_name, char *agent_ip, int truncate)
 {
     char *agent_ip_pt = NULL;
     char *tmp_str = NULL;
@@ -1301,7 +1301,7 @@ agent_info *get_agent_info(char *agent_name, char *agent_ip)
 
 
     /* Getting information about the OS. */
-    _get_agent_os(agent_name, agent_ip, agt_info);
+    _get_agent_os(agent_name, agent_ip, agt_info, truncate);
     _get_time_rkscan(agent_name, agent_ip, agt_info);
     agt_info->last_keepalive = _get_agent_keepalive(agent_name, agent_ip);
 
