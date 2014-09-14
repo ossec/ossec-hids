@@ -15,8 +15,7 @@
 #include "os_net/os_net.h"
 
 
-/* Free the agent list in memory
- */
+/* Free the agent list in memory */
 void free_agents(char **agent_list)
 {
     int i;
@@ -39,7 +38,7 @@ void free_agents(char **agent_list)
 
 #ifndef WIN32
 
-/* Print syscheck attributes. */
+/* Print syscheck attributes */
 #define sk_strchr(x,y,z) z = strchr(x, y); if(z == NULL) return(0); else { *z = '\0'; z++; }
 int _do_print_attrs_syscheck(char *prev_attrs, char *attrs, int csv_output,
                              int is_win, int number_of_changes)
@@ -50,14 +49,14 @@ int _do_print_attrs_syscheck(char *prev_attrs, char *attrs, int csv_output,
     char perm_str[36];
 
 
-    /* a deleted file has no attributes */
+    /* A deleted file has no attributes */
     if(strcmp(attrs, "-1") == 0)
     {
         printf("File deleted.\n");
         return(0);
     }
 
-    /* Setting each value. */
+    /* Setting each value */
     size = attrs;
     sk_strchr(size, ':', perm);
     sk_strchr(perm, ':', uid);
@@ -92,7 +91,7 @@ int _do_print_attrs_syscheck(char *prev_attrs, char *attrs, int csv_output,
     }
 
 
-    /* Fixing number of changes. */
+    /* Fixing number of changes */
     if(prev_attrs && !number_of_changes)
     {
         number_of_changes = 1;
@@ -159,7 +158,7 @@ int _do_print_attrs_syscheck(char *prev_attrs, char *attrs, int csv_output,
     printf("   Sha1:%s%s\n", (strcmp(sha1,p_sha1) == 0)? " ": " >", sha1);
 
 
-    /* Fixing entries. */
+    /* Fixing entries */
     perm[-1] = ':';
     uid[-1] = ':';
     gid[-1] = ':';
@@ -171,7 +170,7 @@ int _do_print_attrs_syscheck(char *prev_attrs, char *attrs, int csv_output,
 
 
 
-/* Print information about a specific file. */
+/* Print information about a specific file */
 int _do_print_file_syscheck(FILE *fp, char *fname,
                             int update_counter, int csv_output)
 {
@@ -198,7 +197,7 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
     }
 
 
-    /* Creating list with files. */
+    /* Creating list with files */
     files_list = OSStore_Create();
     if(!files_list)
     {
@@ -207,7 +206,7 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
     }
 
 
-    /* Getting initial position. */
+    /* Getting initial position */
     if(fgetpos(fp, &init_pos) != 0)
     {
         printf("\n** ERROR: fgetpos failed.\n");
@@ -232,11 +231,11 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
                 continue;
             }
 
-            /* Removing new line. */
+            /* Removing new line */
             buf[strlen(buf) -1] = '\0';
 
 
-            /* with update counter, we only modify the last entry. */
+            /* With update counter, we only modify the last entry */
             if(update_counter && buf[0] == '#')
             {
                 fgetpos(fp, &init_pos);
@@ -244,7 +243,7 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
             }
 
 
-            /* Checking number of changes. */
+            /* Checking number of changes */
             if(buf[1] == '!')
             {
                 number_changes = 2;
@@ -269,7 +268,7 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
             }
 
 
-            /* Getting time of change. */
+            /* Getting time of change */
             changed_file_name[-1] = '\0';
             changed_file_name++;
             change_time = (time_t)atoi(changed_file_name);
@@ -278,7 +277,7 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
             changed_file_name++;
 
 
-            /* Checking if the name should be printed. */
+            /* Checking if the name should be printed */
             if(!OSMatch_Execute(changed_file_name, strlen(changed_file_name),
                                 &reg))
             {
@@ -290,7 +289,7 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
             f_found = 1;
 
 
-            /* Reset the values. */
+            /* Reset the values */
             if(update_counter)
             {
                 if(fsetpos(fp, &init_pos) != 0)
@@ -379,7 +378,7 @@ int _do_print_file_syscheck(FILE *fp, char *fname,
 
 
 
-/* Print syscheck db (of modified files. */
+/* Print syscheck DB (of modified files) */
 int _do_print_syscheck(FILE *fp, int all_files, int csv_output)
 {
     int f_found = 0;
@@ -406,11 +405,11 @@ int _do_print_syscheck(FILE *fp, int all_files, int csv_output)
             if(strlen(buf) < 16)
                 continue;
 
-            /* Removing new line. */
+            /* Removing new line */
             buf[strlen(buf) -1] = '\0';
 
 
-            /* Checking number of changes. */
+            /* Checking number of changes */
             if(buf[1] == '!')
             {
                 number_changes = 2;
@@ -433,7 +432,7 @@ int _do_print_syscheck(FILE *fp, int all_files, int csv_output)
             f_found = 1;
 
 
-            /* Getting time of change. */
+            /* Getting time of change */
             changed_file_name++;
             change_time = atoi(changed_file_name);
 
@@ -468,7 +467,7 @@ int _do_print_syscheck(FILE *fp, int all_files, int csv_output)
 }
 
 
-/* Print syscheck db (of modified files. */
+/* Print syscheck DB (of modified files) */
 int print_syscheck(char *sk_name, char *sk_ip, char *fname, int print_registry,
                    int all_files, int csv_output, int update_counter)
 {
@@ -508,7 +507,7 @@ int print_syscheck(char *sk_name, char *sk_ip, char *fname, int print_registry,
 
     else
     {
-        /* Printing database for the windows registry. */
+        /* Printing database for the windows registry */
         snprintf(tmp_file, 512, "%s/(%s) %s->syscheck-registry",
                 SYSCHECK_DIR,
                 sk_name,
@@ -560,14 +559,14 @@ int _do_get_rootcheckscan(FILE *fp)
 
 
 
-/* Print syscheck db (of modified files. */
+/* Print syscheck DB (of modified files) */
 int _do_print_rootcheck(FILE *fp, int resolved, int time_last_scan,
                         int csv_output, int show_last)
 {
     int i = 0;
     int f_found = 0;
 
-   /* Time from the message. */
+   /* Time from the message */
     time_t s_time = 0;
     time_t i_time = 0;
     struct tm *tm_time;
@@ -621,13 +620,13 @@ int _do_print_rootcheck(FILE *fp, int resolved, int time_last_scan,
         s_time = (time_t)atoi(tmp_str);
 
 
-        /* Removing new line. */
+        /* Removing new line */
         tmp_str = strchr(buf, '\n');
         if(tmp_str)
             *tmp_str = '\0';
 
 
-        /* Getting initial time. */
+        /* Getting initial time */
         tmp_str = strchr(buf + 1, '!');
         if(!tmp_str)
             continue;
@@ -636,7 +635,7 @@ int _do_print_rootcheck(FILE *fp, int resolved, int time_last_scan,
         i_time = (time_t)atoi(tmp_str);
 
 
-        /* Getting the actual message. */
+        /* Getting the actual message */
         tmp_str = strchr(tmp_str, ' ');
         if(!tmp_str)
             continue;
@@ -644,7 +643,7 @@ int _do_print_rootcheck(FILE *fp, int resolved, int time_last_scan,
 
 
 
-        /* Checking for resolved. */
+        /* Checking for resolved */
         if(time_last_scan > (s_time + 86400))
         {
             if(!resolved)
@@ -661,7 +660,7 @@ int _do_print_rootcheck(FILE *fp, int resolved, int time_last_scan,
         }
 
 
-        /* Checking events to ignore. */
+        /* Checking events to ignore */
         i = 0;
         while(ig_events[i])
         {
@@ -673,7 +672,7 @@ int _do_print_rootcheck(FILE *fp, int resolved, int time_last_scan,
             continue;
 
 
-        /* Checking events that are not system audit. */
+        /* Checking events that are not system audit */
         i = 0;
         while(ns_events[i])
         {
@@ -726,7 +725,7 @@ int _do_print_rootcheck(FILE *fp, int resolved, int time_last_scan,
 
 
 
-/* Print rootcheck db */
+/* Print rootcheck DB */
 int print_rootcheck(char *sk_name, char *sk_ip, char *fname, int resolved,
                     int csv_output, int show_last)
 {
@@ -760,7 +759,7 @@ int print_rootcheck(char *sk_name, char *sk_ip, char *fname, int resolved,
 
     if(fp)
     {
-        /* Getting last time of scan. */
+        /* Getting last time of scan */
         ltime = _do_get_rootcheckscan(fp);
         if(!fname)
         {
@@ -790,7 +789,7 @@ int print_rootcheck(char *sk_name, char *sk_ip, char *fname, int resolved,
 #endif
 
 
-/* Delete syscheck db */
+/* Delete syscheck DB */
 int delete_syscheck(char *sk_name, char *sk_ip, int full_delete)
 {
     FILE *fp;
@@ -853,7 +852,7 @@ int delete_syscheck(char *sk_name, char *sk_ip, int full_delete)
 
 
 
-/* Delete rootcheck db */
+/* Delete rootcheck DB */
 int delete_rootcheck(char *sk_name, char *sk_ip, int full_delete)
 {
     FILE *fp;
@@ -880,8 +879,7 @@ int delete_rootcheck(char *sk_name, char *sk_ip, int full_delete)
 
 
 
-/* Delete agent.
- */
+/* Delete agent */
 int delete_agentinfo(char *name)
 {
     char *sk_name;
@@ -914,9 +912,7 @@ int delete_agentinfo(char *name)
 
 
 
-/** char *print_agent_status(int status)
- * Prints the text representation of the agent status.
- */
+/* Prints the text representation of the agent status */
 char *print_agent_status(int status)
 {
     char *status_str = "Never connected";
@@ -934,14 +930,11 @@ char *print_agent_status(int status)
 }
 
 
-/* non-windows functions from now on. */
+/* Non-windows functions from now on */
 #ifndef WIN32
 
 
-/** int send_msg_to_agent(int socket, char *msg)
- * Sends a message to an agent.
- * returns -1 on error.
- */
+/* Sends a message to an agent and returns -1 on error */
 int send_msg_to_agent(int msocket, char *msg, char *agt_id, char *exec)
 {
     int rc;
@@ -996,7 +989,7 @@ int send_msg_to_agent(int msocket, char *msg, char *agt_id, char *exec)
 
 
 
-/** int connect_to_remoted()
+/*
  * Connects to remoted to be able to send messages to the agents.
  * Returns the socket on success or -1 on failure.
  */
@@ -1024,7 +1017,7 @@ int _get_time_rkscan(char *agent_name, char *agent_ip, agent_info *agt_info)
     char buf[1024 +1];
 
 
-    /* Agent name of null, means it is the server info. */
+    /* Agent name of null, means it is the server info */
     if(agent_name == NULL)
     {
         snprintf(buf, 1024, "%s/rootcheck",
@@ -1037,7 +1030,7 @@ int _get_time_rkscan(char *agent_name, char *agent_ip, agent_info *agt_info)
     }
 
 
-    /* If file is not there, set to unknown. */
+    /* If file is not there, set to unknown */
     fp = fopen(buf, "r");
     if(!fp)
     {
@@ -1087,7 +1080,7 @@ int _get_time_rkscan(char *agent_name, char *agent_ip, agent_info *agt_info)
 
             os_strdup(ctime(&s_time), agt_info->syscheck_endtime);
 
-            /* Removing new line. */
+            /* Removing new line */
             tmp_str = strchr(agt_info->syscheck_endtime, '\n');
             if(tmp_str)
                 *tmp_str = '\0';
@@ -1106,7 +1099,7 @@ int _get_time_rkscan(char *agent_name, char *agent_ip, agent_info *agt_info)
 
             os_strdup(ctime(&s_time), agt_info->rootcheck_time);
 
-            /* Removing new line. */
+            /* Removing new line */
             tmp_str = strchr(agt_info->rootcheck_time, '\n');
             if(tmp_str)
                 *tmp_str = '\0';
@@ -1124,7 +1117,7 @@ int _get_time_rkscan(char *agent_name, char *agent_ip, agent_info *agt_info)
 
             os_strdup(ctime(&s_time), agt_info->rootcheck_endtime);
 
-            /* Removing new line. */
+            /* Removing new line */
             tmp_str = strchr(agt_info->rootcheck_endtime, '\n');
             if(tmp_str)
                 *tmp_str = '\0';
@@ -1134,7 +1127,7 @@ int _get_time_rkscan(char *agent_name, char *agent_ip, agent_info *agt_info)
     }
 
 
-    /* Setting unknown values. */
+    /* Setting unknown values */
     if(!agt_info->rootcheck_time)
         os_strdup("Unknown", agt_info->rootcheck_time);
     if(!agt_info->rootcheck_endtime)
@@ -1157,7 +1150,7 @@ char *_get_agent_keepalive(char *agent_name, char *agent_ip)
     struct stat file_status;
 
 
-    /* No keep alive for the server. */
+    /* No keep alive for the server */
     if(!agent_name)
     {
         return(strdup("Not available"));
@@ -1182,7 +1175,7 @@ int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
     char buf[1024 +1];
 
 
-    /* Getting server info. */
+    /* Getting server info */
     if(!agent_name)
     {
         char *ossec_version = NULL;
@@ -1190,7 +1183,7 @@ int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
         os_strdup(__ossec_name " " __version, agt_info->version);
 
 
-        /* Removing new line. */
+        /* Removing new line */
         ossec_version = strchr(agt_info->os, '\n');
         if(ossec_version)
             *ossec_version = '\0';
@@ -1229,7 +1222,7 @@ int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
     {
         char *ossec_version = NULL;
 
-        /* Removing new line. */
+        /* Removing new line */
         ossec_version = strchr(buf, '\n');
         if(ossec_version)
             *ossec_version = '\0';
@@ -1269,9 +1262,7 @@ int _get_agent_os(char *agent_name, char *agent_ip, agent_info *agt_info)
 
 
 
-/** agent_info *get_agent_info(char *agent_name, char *agent_ip)
- * Get information from an agent.
- */
+/* Get information from an agent */
 agent_info *get_agent_info(char *agent_name, char *agent_ip)
 {
     char *agent_ip_pt = NULL;
@@ -1279,18 +1270,18 @@ agent_info *get_agent_info(char *agent_name, char *agent_ip)
 
     agent_info *agt_info = NULL;
 
-    /* Removing the  "/", since it is not present on the file. */
+    /* Removing the "/", since it is not present on the file */
     if((agent_ip_pt = strchr(agent_ip, '/')))
     {
         *agent_ip_pt = '\0';
     }
 
 
-    /* Allocating memory for the info structure. */
+    /* Allocating memory for the info structure */
     agt_info = calloc(1, sizeof(agent_info));
 
 
-    /* Zeroing the values. */
+    /* Zeroing the values */
     agt_info->rootcheck_time = NULL;
     agt_info->rootcheck_endtime = NULL;
     agt_info->syscheck_time = NULL;
@@ -1300,20 +1291,20 @@ agent_info *get_agent_info(char *agent_name, char *agent_ip)
     agt_info->last_keepalive = NULL;
 
 
-    /* Getting information about the OS. */
+    /* Getting information about the OS */
     _get_agent_os(agent_name, agent_ip, agt_info);
     _get_time_rkscan(agent_name, agent_ip, agt_info);
     agt_info->last_keepalive = _get_agent_keepalive(agent_name, agent_ip);
 
 
-    /* Removing new line from keep alive. */
+    /* Removing new line from keep alive */
     tmp_str = strchr(agt_info->last_keepalive, '\n');
     if(tmp_str)
         *tmp_str = '\0';
 
 
 
-    /* Setting back the ip address. */
+    /* Setting back the IP address */
     if(agent_ip_pt)
     {
         *agent_ip_pt = '/';
@@ -1325,9 +1316,7 @@ agent_info *get_agent_info(char *agent_name, char *agent_ip)
 
 
 
-/** int get_agent_status(char *agent_name, char *agent_ip)
- * Gets the status of an agent, based on the name/ip.
- */
+/* Gets the status of an agent, based on the name/IP */
 int get_agent_status(char *agent_name, char *agent_ip)
 {
     char tmp_file[513];
@@ -1338,14 +1327,14 @@ int get_agent_status(char *agent_name, char *agent_ip)
     tmp_file[512] = '\0';
 
 
-    /* Server info. */
+    /* Server info */
     if(agent_name == NULL)
     {
         return(GA_STATUS_ACTIVE);
     }
 
 
-    /* Removing the  "/", since it is not present on the file. */
+    /* Removing the "/", since it is not present on the file */
     if((agent_ip_pt = strchr(agent_ip, '/')))
     {
         *agent_ip_pt = '\0';
@@ -1354,7 +1343,7 @@ int get_agent_status(char *agent_name, char *agent_ip)
     snprintf(tmp_file, 512, "%s/%s-%s", AGENTINFO_DIR, agent_name, agent_ip);
 
 
-    /* Setting back the ip address. */
+    /* Setting back the IP address */
     if(agent_ip_pt)
     {
         *agent_ip_pt = '/';
@@ -1377,8 +1366,7 @@ int get_agent_status(char *agent_name, char *agent_ip)
 
 
 
-/* List available agents.
- */
+/* List available agents */
 char **get_agents(int flag)
 {
     int f_size = 0;
@@ -1407,7 +1395,7 @@ char **get_agents(int flag)
         char tmp_file[513];
         tmp_file[512] = '\0';
 
-        /* Just ignore . and ..  */
+        /* Ignore these */
         if((strcmp(entry->d_name,".") == 0) ||
            (strcmp(entry->d_name,"..") == 0))
             continue;
