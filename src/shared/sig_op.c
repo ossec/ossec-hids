@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <time.h>
 
 #include "sig_op.h"
 #include "file_op.h"
