@@ -46,30 +46,26 @@ int main(int argc, char **argv)
 
 
     /* user arguments */
-    if(argc < 2)
-    {
+    if(argc < 2) {
         helpmsg();
     }
 
     /* Getting the group name */
     gid = Privsep_GetGroup(group);
     uid = Privsep_GetUser(user);
-    if(gid < 0)
-    {
-	    ErrorExit(USER_ERROR, ARGV0, user, group);
+    if(gid < 0) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
     }
-	
+
 
     /* Setting the group */
-    if(Privsep_SetGroup(gid) < 0)
-    {
-	    ErrorExit(SETGID_ERROR,ARGV0, group);
+    if(Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group);
     }
 
 
     /* Chrooting to the default directory */
-    if(Privsep_Chroot(dir) < 0)
-    {
+    if(Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir);
     }
 
@@ -79,64 +75,50 @@ int main(int argc, char **argv)
 
 
     /* Setting the user */
-    if(Privsep_SetUser(uid) < 0)
-    {
+    if(Privsep_SetUser(uid) < 0) {
         ErrorExit(SETUID_ERROR, ARGV0, user);
     }
 
     /* User options */
-    if(strcmp(argv[1], "-h") == 0)
-    {
+    if(strcmp(argv[1], "-h") == 0) {
         helpmsg();
-    }
-    else if(strcmp(argv[1], "-l") == 0)
-    {
+    } else if(strcmp(argv[1], "-l") == 0) {
         printf("\nOSSEC HIDS %s: Updates the integrity check database.",
-                                 ARGV0);
+               ARGV0);
         print_agents(0, 0, 0);
         printf("\n");
         exit(0);
-    }
-    else if(strcmp(argv[1], "-u") == 0)
-    {
-        if(argc != 3)
-        {
+    } else if(strcmp(argv[1], "-u") == 0) {
+        if(argc != 3) {
             printf("\n** Option -u requires an extra argument\n");
             helpmsg();
         }
-    }
-    else if(strcmp(argv[1], "-a") == 0)
-    {
+    } else if(strcmp(argv[1], "-a") == 0) {
         DIR *sys_dir;
         struct dirent *entry;
 
         sys_dir = opendir(SYSCHECK_DIR);
-        if(!sys_dir)
-        {
+        if(!sys_dir) {
             ErrorExit("%s: Unable to open: '%s'", ARGV0, SYSCHECK_DIR);
         }
 
-        while((entry = readdir(sys_dir)) != NULL)
-        {
+        while((entry = readdir(sys_dir)) != NULL) {
             FILE *fp;
-            char full_path[OS_MAXSTR +1];
+            char full_path[OS_MAXSTR + 1];
 
             /* Do not even attempt to delete . and .. :) */
-            if((strcmp(entry->d_name,".") == 0)||
-               (strcmp(entry->d_name,"..") == 0))
-            {
+            if((strcmp(entry->d_name, ".") == 0) ||
+                    (strcmp(entry->d_name, "..") == 0)) {
                 continue;
             }
 
-            snprintf(full_path, OS_MAXSTR,"%s/%s", SYSCHECK_DIR, entry->d_name);
+            snprintf(full_path, OS_MAXSTR, "%s/%s", SYSCHECK_DIR, entry->d_name);
 
             fp = fopen(full_path, "w");
-            if(fp)
-            {
+            if(fp) {
                 fclose(fp);
             }
-            if(entry->d_name[0] == '.')
-            {
+            if(entry->d_name[0] == '.') {
                 unlink(full_path);
             }
         }
@@ -144,24 +126,20 @@ int main(int argc, char **argv)
         closedir(sys_dir);
         printf("\n** Integrity check database updated.\n\n");
         exit(0);
-    }
-    else
-    {
+    } else {
         printf("\n** Invalid option '%s'.\n", argv[1]);
         helpmsg();
     }
 
 
     /* local */
-    if(strcmp(argv[2],"local") == 0)
-    {
+    if(strcmp(argv[2], "local") == 0) {
         char final_dir[1024];
         FILE *fp;
         snprintf(final_dir, 1020, "/%s/syscheck", SYSCHECK_DIR);
 
         fp = fopen(final_dir, "w");
-        if(fp)
-        {
+        if(fp) {
             fclose(fp);
         }
         unlink(final_dir);
@@ -171,30 +149,27 @@ int main(int argc, char **argv)
         snprintf(final_dir, 1020, "/%s/.syscheck.cpt", SYSCHECK_DIR);
 
         fp = fopen(final_dir, "w");
-        if(fp)
-        {
+        if(fp) {
             fclose(fp);
         }
         /* unlink(final_dir); */
     }
 
     /* external agents */
-    else
-    {
+    else {
         int i;
         keystore keys;
 
         OS_ReadKeys(&keys);
 
         i = OS_IsAllowedID(&keys, argv[2]);
-        if(i < 0)
-        {
+        if(i < 0) {
             printf("\n** Invalid agent id '%s'.\n", argv[2]);
             helpmsg();
         }
 
         /* Deleting syscheck */
-        delete_syscheck(keys.keyentries[i]->name,keys.keyentries[i]->ip->ip,0);
+        delete_syscheck(keys.keyentries[i]->name, keys.keyentries[i]->ip->ip, 0);
     }
 
     printf("\n** Integrity check database updated.\n\n");

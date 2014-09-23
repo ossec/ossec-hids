@@ -41,36 +41,39 @@ void AgentdStart(char *dir, int uid, int gid, char *user, char *group)
 
 
     /* Going Daemon */
-    if (!run_foreground)
-    {
-       nowDaemon();
-       goDaemon();
+    if (!run_foreground) {
+        nowDaemon();
+        goDaemon();
     }
 
 
     /* Setting group ID */
-    if(Privsep_SetGroup(gid) < 0)
+    if(Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group);
+    }
 
 
     /* chrooting */
-    if(Privsep_Chroot(dir) < 0)
+    if(Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir);
+    }
 
 
     nowChroot();
 
 
-    if(Privsep_SetUser(uid) < 0)
+    if(Privsep_SetUser(uid) < 0) {
         ErrorExit(SETUID_ERROR, ARGV0, user);
+    }
 
 
     /* Create the queue. In this case we are going to create
      * and read from it
      * Exit if fails.
      */
-    if((agt->m_queue = StartMQ(DEFAULTQUEUE, READ)) < 0)
+    if((agt->m_queue = StartMQ(DEFAULTQUEUE, READ)) < 0) {
         ErrorExit(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
+    }
 
     maxfd = agt->m_queue;
     agt->sock = -1;
@@ -78,8 +81,9 @@ void AgentdStart(char *dir, int uid, int gid, char *user, char *group)
 
 
     /* Creating PID file */
-    if(CreatePID(ARGV0, getpid()) < 0)
-        merror(PID_ERROR,ARGV0);
+    if(CreatePID(ARGV0, getpid()) < 0) {
+        merror(PID_ERROR, ARGV0);
+    }
 
 
     /* Reading the private keys  */
@@ -100,43 +104,38 @@ void AgentdStart(char *dir, int uid, int gid, char *user, char *group)
 
 
     /* Initial random numbers */
-    #ifdef __OpenBSD__
+#ifdef __OpenBSD__
     srandomdev();
-    #else
-    srandom( time(0) + getpid()+ pid + getppid());
-    #endif
+#else
+    srandom( time(0) + getpid() + pid + getppid());
+#endif
 
     random();
 
 
     /* Connecting UDP */
     rc = 0;
-    while(rc < agt->rip_id)
-    {
+    while(rc < agt->rip_id) {
         verbose("%s: INFO: Server IP Address: %s", ARGV0, agt->rip[rc]);
         rc++;
     }
 
 
     /* Trying to connect to the server */
-    if(!connect_server(0))
-    {
+    if(!connect_server(0)) {
         ErrorExit(UNABLE_CONN, ARGV0);
     }
 
 
     /* Setting max fd for select */
-    if(agt->sock > maxfd)
-    {
+    if(agt->sock > maxfd) {
         maxfd = agt->sock;
     }
 
 
     /* Connecting to the execd queue */
-    if(agt->execdq == 0)
-    {
-        if((agt->execdq = StartMQ(EXECQUEUE, WRITE)) < 0)
-        {
+    if(agt->execdq == 0) {
+        if((agt->execdq = StartMQ(EXECQUEUE, WRITE)) < 0) {
             merror("%s: INFO: Unable to connect to the active response "
                    "queue (disabled).", ARGV0);
             agt->execdq = -1;
@@ -167,8 +166,7 @@ void AgentdStart(char *dir, int uid, int gid, char *user, char *group)
 
 
     /* monitor loop */
-    while(1)
-    {
+    while(1) {
         /* Monitoring all available sockets from here */
         FD_ZERO(&fdset);
         FD_SET(agt->sock, &fdset);
@@ -182,28 +180,24 @@ void AgentdStart(char *dir, int uid, int gid, char *user, char *group)
 
         /* Wait with a timeout for any descriptor */
         rc = select(maxfd, &fdset, NULL, NULL, &fdtimeout);
-        if(rc == -1)
-        {
+        if(rc == -1) {
             ErrorExit(SELECT_ERROR, ARGV0);
         }
 
 
-        else if(rc == 0)
-        {
+        else if(rc == 0) {
             continue;
         }
 
 
         /* For the receiver */
-        if(FD_ISSET(agt->sock, &fdset))
-        {
+        if(FD_ISSET(agt->sock, &fdset)) {
             receive_msg();
         }
 
 
         /* For the forwarder */
-        if(FD_ISSET(agt->m_queue, &fdset))
-        {
+        if(FD_ISSET(agt->m_queue, &fdset)) {
             EventForward();
         }
     }

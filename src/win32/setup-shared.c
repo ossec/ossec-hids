@@ -32,8 +32,9 @@ int fileexist(char *file)
 
     /* Opening file */
     fp = fopen(file, "r");
-    if(!fp)
+    if(!fp) {
         return(0);
+    }
 
     fclose(fp);
     return(1);
@@ -43,22 +44,21 @@ int fileexist(char *file)
 /* Grep for a string in a file. */
 int dogrep(char *file, char *str)
 {
-    char line[OS_MAXSTR +1];
+    char line[OS_MAXSTR + 1];
     FILE *fp;
 
     /* Opening file */
     fp = fopen(file, "r");
-    if(!fp)
+    if(!fp) {
         return(0);
+    }
 
     /* Clearing memory */
-    memset(line, '\0', OS_MAXSTR +1);
+    memset(line, '\0', OS_MAXSTR + 1);
 
     /* Reading file and looking for str */
-    while(fgets(line, OS_MAXSTR, fp) != NULL)
-    {
-        if(OS_Match(str, line))
-        {
+    while(fgets(line, OS_MAXSTR, fp) != NULL) {
+        if(OS_Match(str, line)) {
             fclose(fp);
             return(1);
         }
@@ -76,8 +76,9 @@ int direxist(char *dir)
 
     /* Opening dir */
     dp = opendir(dir);
-    if(dp == NULL)
+    if(dp == NULL) {
         return(0);
+    }
 
     closedir(dp);
     return(1);
@@ -89,8 +90,7 @@ void get_win_dir(char *file, int f_size)
 {
     ExpandEnvironmentStrings("%WINDIR%", file, f_size);
 
-    if(!direxist(file))
-    {
+    if(!direxist(file)) {
         strncpy(file, "C:\\WINDOWS", f_size);
     }
 }

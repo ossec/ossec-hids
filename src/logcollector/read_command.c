@@ -23,11 +23,11 @@ void *read_command(int pos, int *rc, int drop_it)
 {
     int cmd_size = 0;
     char *p;
-    char str[OS_MAXSTR+1];
+    char str[OS_MAXSTR + 1];
 
     FILE *cmd_output;
 
-    str[OS_MAXSTR]= '\0';
+    str[OS_MAXSTR] = '\0';
     *rc = 0;
 
 
@@ -35,8 +35,7 @@ void *read_command(int pos, int *rc, int drop_it)
 
 
     cmd_output = popen(logff[pos].command, "r");
-    if(!cmd_output)
-    {
+    if(!cmd_output) {
         merror("%s: ERROR: Unable to execute command: '%s'.",
                ARGV0, logff[pos].command);
 
@@ -51,23 +50,19 @@ void *read_command(int pos, int *rc, int drop_it)
     cmd_size = strlen(str);
 
 
-    while(fgets(str + cmd_size, OS_MAXSTR - OS_LOG_HEADER - 256, cmd_output) != NULL)
-    {
+    while(fgets(str + cmd_size, OS_MAXSTR - OS_LOG_HEADER - 256, cmd_output) != NULL) {
         /* Getting the last occurence of \n */
-        if ((p = strrchr(str, '\n')) != NULL)
-        {
+        if ((p = strrchr(str, '\n')) != NULL) {
             *p = '\0';
         }
 
         /* Removing empty lines. */
-        #ifdef WIN32
-        if(str[0] == '\r' && str[1] == '\0')
-        {
+#ifdef WIN32
+        if(str[0] == '\r' && str[1] == '\0') {
             continue;
         }
-        #endif
-        if(str[0] == '\0')
-        {
+#endif
+        if(str[0] == '\0') {
             continue;
         }
 
@@ -76,15 +71,12 @@ void *read_command(int pos, int *rc, int drop_it)
 
 
         /* Sending message to queue */
-        if(drop_it == 0)
-        {
-            if(SendMSG(logr_queue,str,
-                        (NULL != logff[pos].alias) ? logff[pos].alias : logff[pos].command,
-                        LOCALFILE_MQ) < 0)
-            {
+        if(drop_it == 0) {
+            if(SendMSG(logr_queue, str,
+                       (NULL != logff[pos].alias) ? logff[pos].alias : logff[pos].command,
+                       LOCALFILE_MQ) < 0) {
                 merror(QUEUE_SEND, ARGV0);
-                if((logr_queue = StartMQ(DEFAULTQPATH,WRITE)) < 0)
-                {
+                if((logr_queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
                     ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
                 }
             }

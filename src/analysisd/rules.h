@@ -69,15 +69,13 @@
 
 #define MAX_RULEINFODETAIL  32
 
-typedef struct _RuleInfoDetail
-{
+typedef struct _RuleInfoDetail {
     int type;
     char *data;
     struct _RuleInfoDetail *next;
-}RuleInfoDetail;
+} RuleInfoDetail;
 
-typedef struct _RuleInfo
-{
+typedef struct _RuleInfo {
     int sigid;  /* id attribute -- required*/
     int level;  /* level attribute --required */
     int maxsize;
@@ -167,15 +165,14 @@ typedef struct _RuleInfo
     void *(*compiled_rule)(void *lf);
     active_response **ar;
 
-}RuleInfo;
+} RuleInfo;
 
 
-typedef struct _RuleNode
-{
+typedef struct _RuleNode {
     RuleInfo *ruleinfo;
     struct _RuleNode *next;
     struct _RuleNode *child;
-}RuleNode;
+} RuleNode;
 
 
 RuleInfo *currently_rule; /* */

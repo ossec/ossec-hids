@@ -27,8 +27,8 @@ void *receiver_thread(void *none)
 {
     int recv_b;
 
-    char file[OS_SIZE_1024 +1];
-    char buffer[OS_MAXSTR +1];
+    char file[OS_SIZE_1024 + 1];
+    char buffer[OS_MAXSTR + 1];
 
     char cleartext[OS_MAXSTR + 1];
     char *tmp_msg;
@@ -44,17 +44,15 @@ void *receiver_thread(void *none)
     /* Setting FP to null, before starting */
     fp = NULL;
 
-    memset(cleartext, '\0', OS_MAXSTR +1);
-    memset(buffer, '\0', OS_MAXSTR +1);
-    memset(file, '\0', OS_SIZE_1024 +1);
+    memset(cleartext, '\0', OS_MAXSTR + 1);
+    memset(buffer, '\0', OS_MAXSTR + 1);
+    memset(file, '\0', OS_SIZE_1024 + 1);
     memset(file_sum, '\0', 34);
 
 
-    while(1)
-    {
+    while(1) {
         /* sock must be set. */
-        if(agt->sock == -1)
-        {
+        if(agt->sock == -1) {
             sleep(5);
             continue;
         }
@@ -70,49 +68,42 @@ void *receiver_thread(void *none)
 
         /* Wait with a timeout for any descriptor */
         recv_b = select(0, &fdset, NULL, NULL, &selecttime);
-        if(recv_b == -1)
-        {
+        if(recv_b == -1) {
             merror(SELECT_ERROR, ARGV0);
             sleep(30);
             continue;
-        }
-        else if(recv_b == 0)
-        {
+        } else if(recv_b == 0) {
             continue;
         }
 
         /* Read until no more messages are available */
-        while((recv_b = recv(agt->sock,buffer,OS_SIZE_1024, 0))>0)
-        {
+        while((recv_b = recv(agt->sock, buffer, OS_SIZE_1024, 0)) > 0) {
             /* Id of zero -- only one key allowed */
-            tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b -1);
-            if(tmp_msg == NULL)
-            {
-                merror(MSG_ERROR,ARGV0,agt->rip[agt->rip_id]);
+            tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1);
+            if(tmp_msg == NULL) {
+                merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
                 continue;
             }
 
 
             /* Check for commands */
-            if(IsValidHeader(tmp_msg))
-            {
+            if(IsValidHeader(tmp_msg)) {
                 /* This is the only thread that modifies it */
                 available_server = (int)time(NULL);
 
 
                 /* Run timeout commands. */
-                if(agt->execdq >= 0)
+                if(agt->execdq >= 0) {
                     WinTimeoutRun(available_server);
+                }
 
                 /* If it is an active response message */
-                if(strncmp(tmp_msg, EXECD_HEADER, strlen(EXECD_HEADER)) == 0)
-                {
-                    tmp_msg+=strlen(EXECD_HEADER);
+                if(strncmp(tmp_msg, EXECD_HEADER, strlen(EXECD_HEADER)) == 0) {
+                    tmp_msg += strlen(EXECD_HEADER);
 
 
                     /* Run on windows. */
-                    if(agt->execdq >= 0)
-                    {
+                    if(agt->execdq >= 0) {
                         WinExecdRun(tmp_msg);
                     }
 
@@ -122,37 +113,32 @@ void *receiver_thread(void *none)
 
 
                 /* Restart syscheck. */
-                else if(strcmp(tmp_msg, HC_SK_RESTART) == 0)
-                {
+                else if(strcmp(tmp_msg, HC_SK_RESTART) == 0) {
                     os_set_restart_syscheck();
                     continue;
                 }
 
 
                 /* Ack from server */
-                else if(strcmp(tmp_msg, HC_ACK) == 0)
-                {
+                else if(strcmp(tmp_msg, HC_ACK) == 0) {
                     continue;
                 }
 
                 /* Close any open file pointer if it was being written to */
-                if(fp)
-                {
+                if(fp) {
                     fclose(fp);
                     fp = NULL;
                 }
 
                 /* File update message */
                 if(strncmp(tmp_msg, FILE_UPDATE_HEADER,
-                                    strlen(FILE_UPDATE_HEADER)) == 0)
-                {
+                           strlen(FILE_UPDATE_HEADER)) == 0) {
                     char *validate_file;
-                    tmp_msg+=strlen(FILE_UPDATE_HEADER);
+                    tmp_msg += strlen(FILE_UPDATE_HEADER);
 
                     /* Going to after the file sum */
                     validate_file = strchr(tmp_msg, ' ');
-                    if(!validate_file)
-                    {
+                    if(!validate_file) {
                         continue;
                     }
 
@@ -167,78 +153,63 @@ void *receiver_thread(void *none)
                     tmp_msg = validate_file;
 
 
-                    if((validate_file = strchr(tmp_msg, '\n')) != NULL)
-                    {
+                    if((validate_file = strchr(tmp_msg, '\n')) != NULL) {
                         *validate_file = '\0';
                     }
 
-                    while((validate_file = strchr(tmp_msg, '/')) != NULL)
-                    {
+                    while((validate_file = strchr(tmp_msg, '/')) != NULL) {
                         *validate_file = '-';
                     }
 
-                    if(tmp_msg[0] == '.')
+                    if(tmp_msg[0] == '.') {
                         tmp_msg[0] = '-';
+                    }
 
 
                     snprintf(file, OS_SIZE_1024, "%s/%s",
-                            SHAREDCFG_DIR,
-                            tmp_msg);
+                             SHAREDCFG_DIR,
+                             tmp_msg);
 
                     fp = fopen(file, "w");
-                    if(!fp)
-                    {
+                    if(!fp) {
                         merror(FOPEN_ERROR, ARGV0, file);
                     }
                 }
 
                 else if(strncmp(tmp_msg, FILE_CLOSE_HEADER,
-                                         strlen(FILE_CLOSE_HEADER)) == 0)
-                {
+                                strlen(FILE_CLOSE_HEADER)) == 0) {
                     /* no error */
                     os_md5 currently_md5;
 
                     /* Making sure to close for the rename to work */
-                    if(fp)
-                    {
+                    if(fp) {
                         fclose(fp);
                         fp = NULL;
                     }
 
-                    if(file[0] == '\0')
-                    {
+                    if(file[0] == '\0') {
                         /* nada */
                     }
 
-                    else if(OS_MD5_File(file, currently_md5) < 0)
-                    {
+                    else if(OS_MD5_File(file, currently_md5) < 0) {
                         /* Removing file */
                         unlink(file);
                         file[0] = '\0';
-                    }
-                    else
-                    {
-                        if(strcmp(currently_md5, file_sum) != 0)
-                        {
+                    } else {
+                        if(strcmp(currently_md5, file_sum) != 0) {
                             debug1("%s: Failed md5 for: %s -- deleting.",
                                    ARGV0, file);
                             unlink(file);
-                        }
-                        else
-                        {
+                        } else {
                             char *final_file;
 
                             /* Renaming the file to its orignal name */
                             final_file = strrchr(file, '/');
-                            if(final_file)
-                            {
-                                if(strcmp(final_file + 1, SHAREDCFG_FILENAME) == 0)
-                                {
+                            if(final_file) {
+                                if(strcmp(final_file + 1, SHAREDCFG_FILENAME) == 0) {
                                     UnmergeFiles(file, SHAREDCFG_DIR);
                                 }
-                            }
-                            else
-                            {
+                            } else {
                                 unlink(file);
                             }
                         }
@@ -247,20 +218,17 @@ void *receiver_thread(void *none)
                     }
                 }
 
-                else
-                {
+                else {
                     merror("%s: WARN: Unknown message received from server.", ARGV0);
                 }
             }
 
-            else if(fp)
-            {
+            else if(fp) {
                 available_server = (int)time(NULL);
                 fprintf(fp, "%s", tmp_msg);
             }
 
-            else
-            {
+            else {
                 merror("%s: WARN: Unknown message received. No action defined.",
                        ARGV0);
             }
@@ -269,11 +237,11 @@ void *receiver_thread(void *none)
 
 
     /* Cleaning up */
-    if(fp)
-    {
+    if(fp) {
         fclose(fp);
-        if(file[0] != '\0')
+        if(file[0] != '\0') {
             unlink(file);
+        }
     }
 
     return(NULL);

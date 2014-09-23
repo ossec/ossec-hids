@@ -23,13 +23,14 @@
  */
 int OS_StrIsNum(const char *str)
 {
-    if(str == NULL)
+    if(str == NULL) {
         return(FALSE);
+    }
 
-    while(*str != '\0')
-    {
-        if(!_IsD(*str))
-            return(FALSE); /* 0 */
+    while(*str != '\0') {
+        if(!_IsD(*str)) {
+            return(FALSE);    /* 0 */
+        }
         str++;
     }
 
@@ -46,20 +47,17 @@ size_t OS_StrHowClosedMatch(const char *str1, const char *str2)
     size_t count = 0;
 
     /* They don't match if any of them is null */
-    if(!str1 || !str2)
-    {
+    if(!str1 || !str2) {
         return(0);
     }
 
-    do
-    {
-        if(str1[count] != str2[count])
-        {
+    do {
+        if(str1[count] != str2[count]) {
             break;
         }
 
         count++;
-    }while((str1[count] != '\0') && (str2[count] != '\0'));
+    } while((str1[count] != '\0') && (str2[count] != '\0'));
 
     return(count);
 }

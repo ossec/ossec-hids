@@ -6,8 +6,7 @@
 
 int main(int argc, char **argv)
 {
-    if(!argv[1])
-    {
+    if(!argv[1]) {
         printf("%s <int>\n", argv[0]);
         exit(1);
     }

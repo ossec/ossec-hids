@@ -26,17 +26,16 @@
 
 
 /* Logreader config */
-typedef struct _logreader
-{
+typedef struct _logreader {
     unsigned int size;
     int ign;
 
-    #ifdef WIN32
+#ifdef WIN32
     HANDLE h;
     int fd;
-    #else
+#else
     ino_t fd;
-    #endif
+#endif
 
 
     /* ffile - format file is only used when
@@ -51,17 +50,16 @@ typedef struct _logreader
     char *alias;
     char future;
     char *query;
-	
+
     void (*read)(int i, int *rc, int drop_it);
 
     FILE *fp;
-}logreader;
+} logreader;
 
-typedef struct _logreader_config
-{
+typedef struct _logreader_config {
     int agent_cfg;
     int accept_remote;
     logreader *config;
-}logreader_config;
+} logreader_config;
 
 #endif

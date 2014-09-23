@@ -25,11 +25,9 @@
 void OSRegex_FreeSubStrings(OSRegex *reg)
 {
     /* Freeing the sub strings */
-    if(reg->sub_strings)
-    {
+    if(reg->sub_strings) {
         int i = 0;
-        while(reg->sub_strings[i])
-        {
+        while(reg->sub_strings[i]) {
             free(reg->sub_strings[i]);
             reg->sub_strings[i] = NULL;
             i++;

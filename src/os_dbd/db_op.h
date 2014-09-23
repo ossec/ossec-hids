@@ -52,8 +52,7 @@ void osdb_escapestr(char *str);
  *            050-176 (oct)
  * 8/27/2012: Modified to allow new lines - \012
  */
-static const unsigned char insert_map[] =
-{
+static const unsigned char insert_map[] = {
     '\000', '\000', '\002', '\003', '\004', '\005', '\006', '\007',
     '\010', '\011', '\001', '\013', '\014', '\015', '\016', '\017',
     '\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',

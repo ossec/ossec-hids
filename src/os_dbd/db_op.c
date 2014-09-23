@@ -43,32 +43,24 @@ DBConfig *db_config_pt = NULL;
  */
 void osdb_escapestr(char *str)
 {
-    if(!str)
-    {
+    if(!str) {
         return;
     }
 
-    while(*str)
-    {
-        if(*str == '\'')
-        {
+    while(*str) {
+        if(*str == '\'') {
             *str = '`';
-        }
-        else if(*str == '\\')
-        {
+        } else if(*str == '\\') {
             *str = '/';
-        }
-        else if(insert_map[(unsigned char)*str] != '\001')
-        {
+        } else if(insert_map[(unsigned char)*str] != '\001') {
             *str = ' ';
         }
         str++;
     }
 
     /* It can not end with \\ */
-    if(*(str -1) == '\\')
-    {
-        *(str-1) = '\0';
+    if(*(str - 1) == '\\') {
+        *(str - 1) = '\0';
     }
 }
 
@@ -80,24 +72,20 @@ void osdb_escapestr(char *str)
 void osdb_checkerror()
 {
     int sleep_time = 2;
-    if(!db_config_pt || db_config_pt->error_count > 20)
-    {
+    if(!db_config_pt || db_config_pt->error_count > 20) {
         ErrorExit(DB_MAINERROR, ARGV0);
     }
 
 
     /* If error count is too large, we try to reconnect. */
-    if(db_config_pt->error_count > 0)
-    {
+    if(db_config_pt->error_count > 0) {
         int i = 0;
-        if(db_config_pt->conn)
-        {
+        if(db_config_pt->conn) {
             osdb_close(db_config_pt->conn);
             db_config_pt->conn = NULL;
         }
 
-        while(i <= db_config_pt->maxreconnect)
-        {
+        while(i <= db_config_pt->maxreconnect) {
             merror(DB_ATTEMPT, ARGV0);
             db_config_pt->conn = osdb_connect(db_config_pt->host,
                                               db_config_pt->user,
@@ -107,8 +95,7 @@ void osdb_checkerror()
                                               db_config_pt->sock);
 
             /* If we were able to reconnect, keep going. */
-            if(db_config_pt->conn)
-            {
+            if(db_config_pt->conn) {
                 break;
             }
             sleep(sleep_time);
@@ -118,8 +105,7 @@ void osdb_checkerror()
 
 
         /* If we weren't able to connect, exit */
-        if(!db_config_pt->conn)
-        {
+        if(!db_config_pt->conn) {
             ErrorExit(DB_MAINERROR, ARGV0);
         }
 
@@ -163,8 +149,7 @@ void *mysql_osdb_connect(char *host, char *user, char *pass, char *db,
 {
     MYSQL *conn;
     conn = mysql_init(NULL);
-    if (conn == NULL)
-    {
+    if (conn == NULL) {
         merror(DBINIT_ERROR, ARGV0);
         return(NULL);
     }
@@ -172,21 +157,16 @@ void *mysql_osdb_connect(char *host, char *user, char *pass, char *db,
 
     /* If host is 127.0.0.1 or localhost, use tcp socket */
     if((strcmp(host, "127.0.0.1") == 0) ||
-       (strcmp(host, "localhost") == 0))
-    {
-        if(sock != NULL)
-        {
+            (strcmp(host, "localhost") == 0)) {
+        if(sock != NULL) {
             mysql_options(conn, MYSQL_OPT_NAMED_PIPE, NULL);
-        }
-        else
-        {
+        } else {
             unsigned int p_type = MYSQL_PROTOCOL_TCP;
             mysql_options(conn, MYSQL_OPT_PROTOCOL, (char *)&p_type);
         }
     }
     if(mysql_real_connect(conn, host, user, pass, db,
-                          port, sock, 0) == NULL)
-    {
+                          port, sock, 0) == NULL) {
         merror(DBCONN_ERROR, ARGV0, host, db, mysql_error(conn));
         mysql_close(conn);
         return(NULL);
@@ -213,8 +193,7 @@ void *mysql_osdb_close(void *db_conn)
  */
 int mysql_osdb_query_insert(void *db_conn, char *query)
 {
-    if(mysql_query(db_conn, query) != 0)
-    {
+    if(mysql_query(db_conn, query) != 0) {
         /* failure; report error */
         merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
         osdb_seterror();
@@ -238,8 +217,7 @@ int mysql_osdb_query_select(void *db_conn, char *query)
 
 
     /* Sending the query. It can not fail. */
-    if(mysql_query(db_conn, query) != 0)
-    {
+    if(mysql_query(db_conn, query) != 0) {
         /* failure; report error */
         merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
         osdb_seterror();
@@ -249,8 +227,7 @@ int mysql_osdb_query_select(void *db_conn, char *query)
 
     /* Getting result */
     result_data = mysql_use_result(db_conn);
-    if(result_data == NULL)
-    {
+    if(result_data == NULL) {
         /* failure; report error */
         merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
         osdb_seterror();
@@ -260,8 +237,7 @@ int mysql_osdb_query_select(void *db_conn, char *query)
 
     /* Getting row. We only care about the first result. */
     result_row = mysql_fetch_row(result_data);
-    if(result_row && (result_row[0] != NULL))
-    {
+    if(result_row && (result_row[0] != NULL)) {
         result_int = atoi(result_row[0]);
     }
 
@@ -292,8 +268,7 @@ void *postgresql_osdb_connect(char *host, char *user, char *pass, char *db,
 
 
     conn = PQsetdbLogin(host, NULL, NULL, NULL, db, user, pass);
-    if(PQstatus(conn) == CONNECTION_BAD)
-    {
+    if(PQstatus(conn) == CONNECTION_BAD) {
         merror(DBCONN_ERROR, ARGV0, host, db, PQerrorMessage(conn));
         PQfinish(conn);
         return(NULL);
@@ -324,17 +299,15 @@ int postgresql_osdb_query_insert(void *db_conn, char *query)
     PGresult *result;
 
 
-    result = PQexec(db_conn,query);
-    if(!result)
-    {
+    result = PQexec(db_conn, query);
+    if(!result) {
         merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
         osdb_seterror();
         return(0);
     }
 
 
-    if(PQresultStatus(result) != PGRES_COMMAND_OK)
-    {
+    if(PQresultStatus(result) != PGRES_COMMAND_OK) {
         merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
         PQclear(result);
         osdb_seterror();
@@ -357,23 +330,18 @@ int postgresql_osdb_query_select(void *db_conn, char *query)
     int result_int = 0;
     PGresult *result;
 
-    result = PQexec(db_conn,query);
-    if(!result)
-    {
+    result = PQexec(db_conn, query);
+    if(!result) {
         merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
         osdb_seterror();
         return(0);
     }
 
-    if((PQresultStatus(result) == PGRES_TUPLES_OK))
-    {
-        if(PQntuples(result) == 1)
-        {
-            result_int = atoi(PQgetvalue(result,0,0));
+    if((PQresultStatus(result) == PGRES_TUPLES_OK)) {
+        if(PQntuples(result) == 1) {
+            result_int = atoi(PQgetvalue(result, 0, 0));
         }
-    }
-    else
-    {
+    } else {
         merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
         osdb_seterror();
         return(0);
@@ -409,7 +377,7 @@ void *none_osdb_close(void *db_conn)
 }
 void *none_osdb_query_insert(void *db_conn, char *query)
 {
-   merror("%s: ERROR: Database support not enabled. Exiting.", ARGV0);
+    merror("%s: ERROR: Database support not enabled. Exiting.", ARGV0);
     return(0);
 }
 void *none_osdb_query_select(void *db_conn, char *query)

@@ -54,8 +54,7 @@ MailNode *OS_PopLastMail()
 
     oldlast = lastnode;
 
-    if(lastnode == NULL)
-    {
+    if(lastnode == NULL) {
         n_node = NULL;
         return(NULL);
     }
@@ -71,14 +70,17 @@ MailNode *OS_PopLastMail()
 
 void FreeMailMsg(MailMsg *ml)
 {
-    if(ml == NULL)
+    if(ml == NULL) {
         return;
+    }
 
-    if(ml->subject)
+    if(ml->subject) {
         free(ml->subject);
+    }
 
-    if(ml->body)
+    if(ml->body) {
         free(ml->body);
+    }
 
     free(ml);
 }
@@ -87,13 +89,16 @@ void FreeMailMsg(MailMsg *ml)
 /* Free mail node */
 void FreeMail(MailNode *ml)
 {
-    if(ml == NULL)
+    if(ml == NULL) {
         return;
-    if(ml->mail->subject)
+    }
+    if(ml->mail->subject) {
         free(ml->mail->subject);
+    }
 
-    if(ml->mail->body)
+    if(ml->mail->body) {
         free(ml->mail->body);
+    }
 
     free(ml->mail);
     free(ml);
@@ -105,14 +110,12 @@ void OS_AddMailtoList(MailMsg *ml)
 {
     MailNode *tmp_node = n_node;
 
-    if(tmp_node)
-    {
+    if(tmp_node) {
         MailNode *new_node;
-        new_node = (MailNode *)calloc(1,sizeof(MailNode));
+        new_node = (MailNode *)calloc(1, sizeof(MailNode));
 
-        if(new_node == NULL)
-        {
-            ErrorExit(MEM_ERROR,ARGV0);
+        if(new_node == NULL) {
+            ErrorExit(MEM_ERROR, ARGV0);
         }
 
         /* Always adding to the beginning of the list
@@ -131,8 +134,7 @@ void OS_AddMailtoList(MailMsg *ml)
         _memoryused++;
 
         /* Need to remove the last node */
-        if(_memoryused > _memorymaxsize)
-        {
+        if(_memoryused > _memorymaxsize) {
             MailNode *oldlast;
 
             oldlast = lastnode;
@@ -145,13 +147,11 @@ void OS_AddMailtoList(MailMsg *ml)
         }
     }
 
-    else
-    {
+    else {
         /* Adding first node */
-        n_node = (MailNode *)calloc(1,sizeof(MailNode));
-        if(n_node == NULL)
-        {
-            ErrorExit(MEM_ERROR,ARGV0);
+        n_node = (MailNode *)calloc(1, sizeof(MailNode));
+        if(n_node == NULL) {
+            ErrorExit(MEM_ERROR, ARGV0);
         }
 
         n_node->prev = NULL;

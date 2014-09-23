@@ -15,8 +15,7 @@
 #define __CAGENTD_H
 
 /* Configuration structure */
-typedef struct _agent
-{
+typedef struct _agent {
     int port;
     int m_queue;
     int sock;
@@ -27,7 +26,7 @@ typedef struct _agent
     int notify_time;
     int max_time_reconnect_try;
     char *profile;
-}agent;
+} agent;
 
 
 #endif

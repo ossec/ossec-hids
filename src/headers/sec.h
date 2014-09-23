@@ -16,8 +16,7 @@
 
 
 /* Unique key for each agent. */
-typedef struct _keyentry
-{
+typedef struct _keyentry {
     unsigned int rcvd;
     unsigned int local;
     unsigned int keyid;
@@ -30,12 +29,11 @@ typedef struct _keyentry
     os_ip *ip;
     struct sockaddr_in peer_info;
     FILE *fp;
-}keyentry;
+} keyentry;
 
 
 /* Key storage. */
-typedef struct _keystore
-{
+typedef struct _keystore {
     /* Array with all the keys */
     keyentry **keyentries;
 
@@ -50,7 +48,7 @@ typedef struct _keystore
 
     /* Key file stat */
     time_t file_change;
-}keystore;
+} keystore;
 
 
 
@@ -109,9 +107,9 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, char *msg_encrypted, 
 
 /** Remote IDs directories and internal definitions */
 #ifndef WIN32
-    #define RIDS_DIR        "/queue/rids"
+#define RIDS_DIR        "/queue/rids"
 #else
-    #define RIDS_DIR        "rids"
+#define RIDS_DIR        "rids"
 #endif
 
 #define SENDER_COUNTER  "sender_counter"

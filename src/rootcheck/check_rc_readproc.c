@@ -30,14 +30,12 @@ int read_proc_file(char *file_name, char *pid, int position)
 {
     struct stat statbuf;
 
-    if(lstat(file_name, &statbuf) < 0)
-    {
+    if(lstat(file_name, &statbuf) < 0) {
         return(-1);
     }
 
     /* If directory, read the directory */
-    else if(S_ISDIR(statbuf.st_mode))
-    {
+    else if(S_ISDIR(statbuf.st_mode)) {
         return(read_proc_dir(file_name, pid, position));
     }
 
@@ -51,73 +49,65 @@ int read_proc_dir(char *dir_name, char *pid, int position)
 {
     DIR *dp;
 
-	struct dirent *entry;
-	
+    struct dirent *entry;
 
-    if((dir_name == NULL)||(strlen(dir_name) > PATH_MAX))
-    {
-        merror("%s: Invalid directory given",ARGV0);
+
+    if((dir_name == NULL) || (strlen(dir_name) > PATH_MAX)) {
+        merror("%s: Invalid directory given", ARGV0);
         return(-1);
     }
 
     /* Opening the directory given */
     dp = opendir(dir_name);
-	if(!dp)
-    {
+    if(!dp) {
         return(0);
     }
 
-    while((entry = readdir(dp)) != NULL)
-    {
-        char f_name[PATH_MAX +2];
+    while((entry = readdir(dp)) != NULL) {
+        char f_name[PATH_MAX + 2];
 
         /* Just ignore . and ..  */
-        if((strcmp(entry->d_name,".") == 0) ||
-           (strcmp(entry->d_name,"..") == 0))
+        if((strcmp(entry->d_name, ".") == 0) ||
+                (strcmp(entry->d_name, "..") == 0)) {
             continue;
+        }
 
-        if(position == PROC)
-        {
+        if(position == PROC) {
             char *tmp_str;
 
             tmp_str = entry->d_name;
 
-            while(*tmp_str != '\0')
-            {
-                if(!isdigit((int)*tmp_str))
+            while(*tmp_str != '\0') {
+                if(!isdigit((int)*tmp_str)) {
                     break;
+                }
                 tmp_str++;
             }
 
-            if(*tmp_str != '\0')
+            if(*tmp_str != '\0') {
                 continue;
+            }
 
 
-            snprintf(f_name, PATH_MAX +1, "%s/%s",dir_name, entry->d_name);
+            snprintf(f_name, PATH_MAX + 1, "%s/%s", dir_name, entry->d_name);
 
-            read_proc_file(f_name, pid, position+1);
+            read_proc_file(f_name, pid, position + 1);
         }
 
-        else if(position == PID)
-        {
-            if(strcmp(entry->d_name, "task") == 0)
-            {
-                snprintf(f_name, PATH_MAX +1, "%s/%s",dir_name, entry->d_name);
-                read_proc_file(f_name, pid, position+1);
+        else if(position == PID) {
+            if(strcmp(entry->d_name, "task") == 0) {
+                snprintf(f_name, PATH_MAX + 1, "%s/%s", dir_name, entry->d_name);
+                read_proc_file(f_name, pid, position + 1);
             }
         }
 
-        else if(position == TASK)
-        {
+        else if(position == TASK) {
             /* checking under proc/pid/task/lwp */
-            if(strcmp(entry->d_name, pid) == 0)
-            {
+            if(strcmp(entry->d_name, pid) == 0) {
                 proc_pid_found = 1;
                 break;
             }
-        }
-        else
-        {
+        } else {
             break;
         }
     }
@@ -140,8 +130,9 @@ int check_rc_readproc(int pid)
 
     /* NL threads */
     snprintf(char_pid, 31, "/proc/.%d", pid);
-    if(is_file(char_pid))
+    if(is_file(char_pid)) {
         return(1);
+    }
 
 
     snprintf(char_pid, 31, "%d", pid);

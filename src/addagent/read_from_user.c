@@ -14,18 +14,17 @@
 
 #include "manage_agents.h"
 
-char __user_buffer[USER_SIZE +1];
+char __user_buffer[USER_SIZE + 1];
 char *__user_buffer_pt;
 
 
 /** read_from_user **/
 char *read_from_user()
 {
-    memset(__user_buffer, '\0', USER_SIZE +1);
+    memset(__user_buffer, '\0', USER_SIZE + 1);
 
-    if((fgets(__user_buffer, USER_SIZE -1, stdin) == NULL) ||
-       (strlen(__user_buffer) >= (USER_SIZE -2)))
-    {
+    if((fgets(__user_buffer, USER_SIZE - 1, stdin) == NULL) ||
+            (strlen(__user_buffer) >= (USER_SIZE - 2))) {
         printf(INPUT_LARGE);
         exit(1);
     }

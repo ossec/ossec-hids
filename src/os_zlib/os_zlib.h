@@ -22,7 +22,7 @@
  * @return 0 on failure, else the length of the compressed string
  */
 unsigned long int os_zlib_compress(const char *src, char *dst, unsigned long int src_size,
-		unsigned long int dst_size);
+                                   unsigned long int dst_size);
 
 /**
  * @brief Uncompress a string with zlib.
@@ -33,7 +33,7 @@ unsigned long int os_zlib_compress(const char *src, char *dst, unsigned long int
  * @return 0 on failure, else the length of the uncompressed string
  */
 unsigned long int os_zlib_uncompress(const char *src, char *dst, unsigned long int src_size,
-		unsigned long int dst_size);
+                                     unsigned long int dst_size);
 
 #endif /* __OS_ZLIB_H */
 

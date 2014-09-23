@@ -20,16 +20,14 @@ int main(int argc, char **argv)
     /* Setting the name */
     OS_SetName(ARGV0);
 
-    if(argc < 2)
-    {
+    if(argc < 2) {
         printf("%s: Invalid syntax.\n", argv[0]);
         printf("Try: '%s directory'\n\n", argv[0]);
         return(0);
     }
 
     /* Trying to chdir to ossec directory. */
-    if(chdir(argv[1]) != 0)
-    {
+    if(chdir(argv[1]) != 0) {
         printf("%s: Invalid directory: '%s'.\n", argv[0], argv[1]);
         return(0);
     }
@@ -43,9 +41,8 @@ int main(int argc, char **argv)
     checkVista();
 
 
-    if(isVista)
-    {
-        char cmd[OS_MAXSTR +1];
+    if(isVista) {
+        char cmd[OS_MAXSTR + 1];
 
         /* Copy some files to outside */
         snprintf(cmd, OS_MAXSTR, "move os_win32ui.exe ../");
@@ -83,9 +80,7 @@ int main(int argc, char **argv)
 
         snprintf(cmd, OS_MAXSTR, "move ..\\help.txt .");
         system(cmd);
-    }
-    else
-    {
+    } else {
         system("echo y|cacls . /T /G Administrators:f ");
     }
 

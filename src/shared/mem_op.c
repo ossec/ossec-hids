@@ -21,10 +21,8 @@ void **os_AddPtArray(void *pt, void **array)
     size_t i = 0;
     void **ret = NULL;
 
-    if(array)
-    {
-        while(array[i])
-        {
+    if(array) {
+        while(array[i]) {
             i++;
         }
     }
@@ -42,10 +40,8 @@ char **os_AddStrArray(const char *str, char **array)
 {
     size_t i = 0;
     char **ret = NULL;
-    if(array)
-    {
-        while(array[i])
-        {
+    if(array) {
+        while(array[i]) {
             i++;
         }
     }
@@ -61,15 +57,12 @@ char **os_AddStrArray(const char *str, char **array)
 /* Check if String is on array (Must be NULL terminated) */
 int os_IsStrOnArray(const char *str, char **array)
 {
-    if(!str || !array)
-    {
+    if(!str || !array) {
         return(0);
     }
 
-    while(*array)
-    {
-        if(strcmp(*array, str) == 0)
-        {
+    while(*array) {
+        if(strcmp(*array, str) == 0) {
             return(1);
         }
         array++;
@@ -82,19 +75,16 @@ int os_IsStrOnArray(const char *str, char **array)
 void os_FreeArray(char *ch1, char **ch2)
 {
     /* Cleaning char * */
-    if(ch1)
-    {
+    if(ch1) {
         free(ch1);
         ch1 = NULL;
     }
 
     /* Cleaning chat ** */
-    if(ch2)
-    {
+    if(ch2) {
         char **nch2 = ch2;
 
-        while(*ch2 != NULL)
-        {
+        while(*ch2 != NULL) {
             free(*ch2);
             ch2++;
         }
@@ -115,32 +105,27 @@ void os_FreeArray(char *ch1, char **ch2)
  */
 char *os_LoadString(char *at, const char *str)
 {
-    if(at == NULL)
-    {
+    if(at == NULL) {
         at = strdup(str);
-        if(!at)
-        {
-            merror(MEM_ERROR,ARGV0);
+        if(!at) {
+            merror(MEM_ERROR, ARGV0);
         }
         return(at);
-    }
-    else /*at is not null. Need to reallocat its memory and copy str to it*/
-    {
+    } else { /*at is not null. Need to reallocat its memory and copy str to it*/
         char *newat;
         size_t strsize = strlen(str);
         size_t finalsize = strsize + strlen(at) + 1;
 
-        newat = (char *) realloc(at, finalsize*sizeof(char));
-        if(newat == NULL)
-        {
+        newat = (char *) realloc(at, finalsize * sizeof(char));
+        if(newat == NULL) {
             free(at);
-            merror(MEM_ERROR,ARGV0);
+            merror(MEM_ERROR, ARGV0);
             return(NULL);
         }
         at = newat;
 
         strncat(at, str, strsize);
-        at[finalsize -1] = '\0';
+        at[finalsize - 1] = '\0';
 
         return(at);
     }

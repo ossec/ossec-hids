@@ -38,23 +38,22 @@ int os_check_ads(char *full_path)
     WIN32_STREAM_ID sid;
     void *context = NULL;
 
-    char stream_name[MAX_PATH +1];
-    char final_name[MAX_PATH +1];
+    char stream_name[MAX_PATH + 1];
+    char final_name[MAX_PATH + 1];
 
     DWORD dwRead, shs, dw1, dw2;
 
 
     /* Opening file */
     file_h = CreateFile(full_path,
-            GENERIC_READ,
-            FILE_SHARE_READ,
-            NULL,
-            OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_POSIX_SEMANTICS,
-            NULL);
+                        GENERIC_READ,
+                        FILE_SHARE_READ,
+                        NULL,
+                        OPEN_EXISTING,
+                        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_POSIX_SEMANTICS,
+                        NULL);
 
-    if (file_h == INVALID_HANDLE_VALUE)
-    {
+    if (file_h == INVALID_HANDLE_VALUE) {
         return 0;
     }
 
@@ -63,32 +62,27 @@ int os_check_ads(char *full_path)
     ZeroMemory(&sid, sizeof(WIN32_STREAM_ID));
 
     /* Getting stream header size -- should be 20 bytes */
-    shs = (LPBYTE)&sid.cStreamName - (LPBYTE)&sid+ sid.dwStreamNameSize;
+    shs = (LPBYTE)&sid.cStreamName - (LPBYTE)&sid + sid.dwStreamNameSize;
 
 
-    while(1)
-    {
+    while(1) {
         if(BackupRead(file_h, (LPBYTE) &sid, shs, &dwRead,
-                    FALSE, FALSE, &context) == 0)
-        {
+                      FALSE, FALSE, &context) == 0) {
             break;
         }
-        if(dwRead == 0)
-        {
+        if(dwRead == 0) {
             break;
         }
 
         stream_name[0] = '\0';
         stream_name[MAX_PATH] = '\0';
         if(BackupRead(file_h, (LPBYTE)stream_name,
-                    sid.dwStreamNameSize,
-                    &dwRead, FALSE, FALSE, &context))
-        {
-            if(dwRead != 0)
-            {
+                      sid.dwStreamNameSize,
+                      &dwRead, FALSE, FALSE, &context)) {
+            if(dwRead != 0) {
                 int i = 0, max_path_size = 0;
                 char *tmp_pt;
-                char op_msg[OS_SIZE_1024 +1];
+                char op_msg[OS_SIZE_1024 + 1];
 
                 snprintf(final_name, MAX_PATH, "%s", full_path);
 
@@ -96,10 +90,8 @@ int os_check_ads(char *full_path)
 
 
                 /* Copying from wide char to char. */
-                while((i < dwRead) && (max_path_size < MAX_PATH))
-                {
-                    if(stream_name[i] != 0)
-                    {
+                while((i < dwRead) && (max_path_size < MAX_PATH)) {
+                    if(stream_name[i] != 0) {
                         final_name[max_path_size] = stream_name[i];
                         max_path_size++;
                         final_name[max_path_size] = '\0';
@@ -109,23 +101,21 @@ int os_check_ads(char *full_path)
 
 
                 tmp_pt = strrchr(final_name, ':');
-                if(tmp_pt)
-                {
+                if(tmp_pt) {
                     *tmp_pt = '\0';
                 }
 
                 snprintf(op_msg, OS_SIZE_1024, "NTFS Alternate data stream "
-                                               "found: '%s'. Possible hidden"
-                                               " content.",
-                                               final_name);
+                         "found: '%s'. Possible hidden"
+                         " content.",
+                         final_name);
                 notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
             }
         }
 
-        /* Getting next */			
+        /* Getting next */
         if(!BackupSeek(file_h, sid.Size.LowPart, sid.Size.HighPart,
-                    &dw1, &dw2, &context))
-        {
+                       &dw1, &dw2, &context)) {
             break;
         }
     }
@@ -146,53 +136,44 @@ char *__os_winreg_getkey(char *reg_entry)
 
     /* Getting only the sub tree first */
     tmp_str = strchr(reg_entry, '\\');
-    if(tmp_str)
-    {
+    if(tmp_str) {
         *tmp_str = '\0';
-        ret = tmp_str+1;
+        ret = tmp_str + 1;
     }
 
     /* Setting sub tree */
     if((strcmp(reg_entry, "HKEY_LOCAL_MACHINE") == 0) ||
-       (strcmp(reg_entry, "HKLM") == 0))
-    {
+            (strcmp(reg_entry, "HKLM") == 0)) {
         rk_sub_tree = HKEY_LOCAL_MACHINE;
-    }
-    else if(strcmp(reg_entry, "HKEY_CLASSES_ROOT") == 0)
-    {
+    } else if(strcmp(reg_entry, "HKEY_CLASSES_ROOT") == 0) {
         rk_sub_tree = HKEY_CLASSES_ROOT;
-    }
-    else if(strcmp(reg_entry, "HKEY_CURRENT_CONFIG") == 0)
-    {
+    } else if(strcmp(reg_entry, "HKEY_CURRENT_CONFIG") == 0) {
         rk_sub_tree = HKEY_CURRENT_CONFIG;
-    }
-    else if(strcmp(reg_entry, "HKEY_USERS") == 0)
-    {
+    } else if(strcmp(reg_entry, "HKEY_USERS") == 0) {
         rk_sub_tree = HKEY_USERS;
-    }
-    else if((strcmp(reg_entry, "HKCU") == 0) ||
-            (strcmp(reg_entry, "HKEY_CURRENT_USER") == 0))
-    {
+    } else if((strcmp(reg_entry, "HKCU") == 0) ||
+              (strcmp(reg_entry, "HKEY_CURRENT_USER") == 0)) {
         rk_sub_tree = HKEY_CURRENT_USER;
-    }
-    else
-    {
+    } else {
         /* Setting sub tree to null */
         rk_sub_tree = NULL;
 
         /* Returning tmp_str to the previous value */
-        if(tmp_str && (*tmp_str == '\0'))
+        if(tmp_str && (*tmp_str == '\0')) {
             *tmp_str = '\\';
+        }
         return(NULL);
     }
 
     /* Checking if ret has nothing else. */
-    if(ret && (*ret == '\0'))
+    if(ret && (*ret == '\0')) {
         ret = NULL;
+    }
 
     /* fixing tmp_str and the real name of the registry */
-    if(tmp_str && (*tmp_str == '\0'))
+    if(tmp_str && (*tmp_str == '\0')) {
         *tmp_str = '\\';
+    }
 
     return(ret);
 }
@@ -203,14 +184,14 @@ char *__os_winreg_getkey(char *reg_entry)
  * Query the key and get the value of a specific entry.
   */
 int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
-                                    char *reg_option, char *reg_value)
+                         char *reg_option, char *reg_value)
 {
     int i, rc;
     DWORD j;
 
     /* QueryInfo and EnumKey variables */
-    TCHAR sub_key_name_b[MAX_KEY_LENGTH +1];
-    TCHAR class_name_b[MAX_PATH +1];
+    TCHAR sub_key_name_b[MAX_KEY_LENGTH + 1];
+    TCHAR class_name_b[MAX_PATH + 1];
     DWORD class_name_s = MAX_PATH;
 
     /* Number of sub keys */
@@ -220,8 +201,8 @@ int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
     DWORD value_count;
 
     /* Variables for RegEnumValue */
-    TCHAR value_buffer[MAX_VALUE_NAME +1];
-    TCHAR data_buffer[MAX_VALUE_NAME +1];
+    TCHAR value_buffer[MAX_VALUE_NAME + 1];
+    TCHAR data_buffer[MAX_VALUE_NAME + 1];
     DWORD value_size;
     DWORD data_size;
 
@@ -230,7 +211,7 @@ int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
 
 
     /* Storage var */
-    char var_storage[MAX_VALUE_NAME +1];
+    char var_storage[MAX_VALUE_NAME + 1];
 
 
     /* Initializing the memory for some variables */
@@ -242,21 +223,19 @@ int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
 
     /* We use the class_name, subkey_count and the value count. */
     rc = RegQueryInfoKey(hKey, class_name_b, &class_name_s, NULL,
-            &subkey_count, NULL, NULL, &value_count,
-            NULL, NULL, NULL, NULL);
+                         &subkey_count, NULL, NULL, &value_count,
+                         NULL, NULL, NULL, NULL);
 
 
     /* Check return code of QueryInfo */
-    if(rc != ERROR_SUCCESS)
-    {
+    if(rc != ERROR_SUCCESS) {
         return(0);
     }
 
 
 
     /* Getting Values (if available) */
-    if (value_count)
-    {
+    if (value_count) {
         char *mt_data;
 
 
@@ -267,8 +246,7 @@ int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
 
 
         /* Getting each value */
-        for(i=0;i<value_count;i++)
-        {
+        for(i = 0; i < value_count; i++) {
             value_size = MAX_VALUE_NAME;
             data_size = MAX_VALUE_NAME;
 
@@ -281,22 +259,19 @@ int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
 
 
             /* No more values available */
-            if(rc != ERROR_SUCCESS)
-            {
+            if(rc != ERROR_SUCCESS) {
                 break;
             }
 
             /* Checking if no value name is specified */
-            if(value_buffer[0] == '\0')
-            {
+            if(value_buffer[0] == '\0') {
                 value_buffer[0] = '@';
                 value_buffer[1] = '\0';
             }
 
 
             /* Check if the entry name matches the reg_option */
-            if(strcasecmp(value_buffer, reg_option) != 0)
-            {
+            if(strcasecmp(value_buffer, reg_option) != 0) {
                 continue;
             }
 
@@ -304,17 +279,15 @@ int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
             /* If a value is not present and the option matches,
              * we can return ok.
              */
-            if(!reg_value)
-            {
+            if(!reg_value) {
                 return(1);
             }
 
 
 
             /* Writing value into a string */
-            switch(data_type)
-            {
-                int size_available;
+            switch(data_type) {
+                    int size_available;
 
                 case REG_SZ:
                 case REG_EXPAND_SZ:
@@ -323,49 +296,44 @@ int __os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name,
                 case REG_MULTI_SZ:
 
                     /* Printing multiple strings */
-                    size_available = MAX_VALUE_NAME -3;
+                    size_available = MAX_VALUE_NAME - 3;
                     mt_data = data_buffer;
 
-                    while(*mt_data)
-                    {
-                        if(size_available > 2)
-                        {
+                    while(*mt_data) {
+                        if(size_available > 2) {
                             strncat(var_storage, mt_data, size_available);
                             strncat(var_storage, " ", 2);
                             size_available = MAX_VALUE_NAME -
-                                             (strlen(var_storage) +2);
+                                             (strlen(var_storage) + 2);
                         }
-                        mt_data += strlen(mt_data) +1;
+                        mt_data += strlen(mt_data) + 1;
                     }
 
                     break;
                 case REG_DWORD:
                     snprintf(var_storage, MAX_VALUE_NAME,
-                            "%x",(unsigned int)*data_buffer);
+                             "%x", (unsigned int)*data_buffer);
                     break;
                 default:
 
-                    size_available = MAX_VALUE_NAME -2;
-                    for(j = 0;j<data_size;j++)
-                    {
+                    size_available = MAX_VALUE_NAME - 2;
+                    for(j = 0; j < data_size; j++) {
                         char tmp_c[12];
 
                         snprintf(tmp_c, 12, "%02x",
-                                (unsigned int)data_buffer[j]);
+                                 (unsigned int)data_buffer[j]);
 
-                        if(size_available > 2)
-                        {
+                        if(size_available > 2) {
                             strncat(var_storage, tmp_c, size_available);
                             size_available = MAX_VALUE_NAME -
-                                (strlen(var_storage) +2);
+                                             (strlen(var_storage) + 2);
                         }
                     }
                     break;
             }
 
             /* Checking if value matches */
-            if(pt_matches(var_storage, reg_value))
-            {
+            if(pt_matches(var_storage, reg_value)) {
                 return(1);
             }
 
@@ -388,15 +356,13 @@ int __os_winreg_open_key(char *subkey, char *full_key_name,
     HKEY oshkey;
 
 
-    if(RegOpenKeyEx(rk_sub_tree, subkey, 0, KEY_READ,&oshkey) != ERROR_SUCCESS)
-    {
+    if(RegOpenKeyEx(rk_sub_tree, subkey, 0, KEY_READ, &oshkey) != ERROR_SUCCESS) {
         return(0);
     }
 
 
     /* If option is set, return the value of query key */
-    if(reg_option)
-    {
+    if(reg_option) {
         ret = __os_winreg_querykey(oshkey, subkey, full_key_name,
                                    reg_option, reg_value);
     }
@@ -416,14 +382,12 @@ int is_registry(char *entry_name, char *reg_option, char *reg_value)
     char *rk;
 
     rk = __os_winreg_getkey(entry_name);
-    if(rk_sub_tree == NULL || rk == NULL)
-    {
+    if(rk_sub_tree == NULL || rk == NULL) {
         merror(SK_INV_REG, ARGV0, entry_name);
         return(0);
     }
 
-    if(__os_winreg_open_key(rk, entry_name, reg_option, reg_value) == 0)
-    {
+    if(__os_winreg_open_key(rk, entry_name, reg_option, reg_value) == 0) {
         return(0);
     }
 

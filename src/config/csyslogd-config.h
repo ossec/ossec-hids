@@ -19,8 +19,7 @@
 
 
 /* Database config structure */
-typedef struct _SyslogConfig
-{
+typedef struct _SyslogConfig {
     unsigned int port;
     unsigned int format;
     unsigned int level;
@@ -31,7 +30,7 @@ typedef struct _SyslogConfig
     char *server;
     OSMatch *group;
     OSMatch *location;
-}SyslogConfig;
+} SyslogConfig;
 
 
 /* Syslog formats. */

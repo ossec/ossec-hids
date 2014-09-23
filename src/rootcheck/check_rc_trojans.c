@@ -22,23 +22,22 @@
 void check_rc_trojans(char *basedir, FILE *fp)
 {
     int i = 0, _errors = 0, _total = 0;
-    char buf[OS_SIZE_1024 +1];
-    char file_path[OS_SIZE_1024 +1];
+    char buf[OS_SIZE_1024 + 1];
+    char file_path[OS_SIZE_1024 + 1];
 
     char *file;
     char *string_to_look;
 
-    #ifndef WIN32
-    char *(all_paths[]) = {"bin","sbin","usr/bin","usr/sbin", NULL};
-    #else
+#ifndef WIN32
+    char *(all_paths[]) = {"bin", "sbin", "usr/bin", "usr/sbin", NULL};
+#else
     char *(all_paths[]) = {"C:\\Windows\\", "D:\\Windows\\", NULL};
-    #endif
+#endif
 
     debug1("%s: DEBUG: Starting on check_rc_trojans", ARGV0);
 
 
-    while(fgets(buf, OS_SIZE_1024, fp) != NULL)
-    {
+    while(fgets(buf, OS_SIZE_1024, fp) != NULL) {
         char *nbuf;
         char *message = NULL;
 
@@ -46,8 +45,7 @@ void check_rc_trojans(char *basedir, FILE *fp)
 
         /* Removing end of line */
         nbuf = strchr(buf, '\n');
-        if(nbuf)
-        {
+        if(nbuf) {
             *nbuf = '\0';
         }
 
@@ -56,8 +54,7 @@ void check_rc_trojans(char *basedir, FILE *fp)
         nbuf = normalize_string(buf);
 
 
-        if(*nbuf == '\0' || *nbuf == '#')
-        {
+        if(*nbuf == '\0' || *nbuf == '#') {
             continue;
         }
 
@@ -66,8 +63,7 @@ void check_rc_trojans(char *basedir, FILE *fp)
         file = nbuf;
 
         string_to_look = strchr(file, '!');
-        if(!string_to_look)
-        {
+        if(!string_to_look) {
             continue;
         }
 
@@ -75,8 +71,7 @@ void check_rc_trojans(char *basedir, FILE *fp)
         string_to_look++;
 
         message = strchr(string_to_look, '!');
-        if(!message)
-        {
+        if(!message) {
             continue;
         }
         *message = '\0';
@@ -87,8 +82,7 @@ void check_rc_trojans(char *basedir, FILE *fp)
         message = normalize_string(message);
 
 
-        if(*file == '\0' || *string_to_look == '\0')
-        {
+        if(*file == '\0' || *string_to_look == '\0') {
             continue;
         }
 
@@ -96,38 +90,32 @@ void check_rc_trojans(char *basedir, FILE *fp)
 
 
         /* Trying with all possible paths */
-        while(all_paths[i] != NULL)
-        {
-            if(*file != '/')
-            {
-                snprintf(file_path, OS_SIZE_1024, "%s/%s/%s",basedir,
-                        all_paths[i],
-                        file);
-            }
-            else
-            {
+        while(all_paths[i] != NULL) {
+            if(*file != '/') {
+                snprintf(file_path, OS_SIZE_1024, "%s/%s/%s", basedir,
+                         all_paths[i],
+                         file);
+            } else {
                 strncpy(file_path, file, OS_SIZE_1024);
-                file_path[OS_SIZE_1024 -1] = '\0';
+                file_path[OS_SIZE_1024 - 1] = '\0';
             }
 
             /* Checking if entry is found */
-            if(is_file(file_path) && os_string(file_path, string_to_look))
-            {
-                char op_msg[OS_SIZE_1024 +1];
+            if(is_file(file_path) && os_string(file_path, string_to_look)) {
+                char op_msg[OS_SIZE_1024 + 1];
                 _errors = 1;
 
                 snprintf(op_msg, OS_SIZE_1024, "Trojaned version of file "
-                        "'%s' detected. Signature used: '%s' (%s).",
-                                        file_path,
-                                        string_to_look,
-                                        *message == '\0'?
-                                        "Generic":message);
+                         "'%s' detected. Signature used: '%s' (%s).",
+                         file_path,
+                         string_to_look,
+                         *message == '\0' ?
+                         "Generic" : message);
 
                 notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
             }
 
-            if(*file == '/')
-            {
+            if(*file == '/') {
                 break;
             }
             i++;
@@ -136,11 +124,10 @@ void check_rc_trojans(char *basedir, FILE *fp)
     }
 
 
-    if(_errors == 0)
-    {
-        char op_msg[OS_SIZE_1024 +1];
-        snprintf(op_msg,OS_SIZE_1024, "No binaries with any trojan detected. "
-                                    "Analyzed %d files.", _total);
+    if(_errors == 0) {
+        char op_msg[OS_SIZE_1024 + 1];
+        snprintf(op_msg, OS_SIZE_1024, "No binaries with any trojan detected. "
+                 "Analyzed %d files.", _total);
         notify_rk(ALERT_OK, op_msg);
     }
 }

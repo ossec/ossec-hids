@@ -17,11 +17,11 @@
 
 char *SYSCHECK_EMPTY[] = { NULL };
 
-int Read_Syscheck_Config(char * cfgfile)
+int Read_Syscheck_Config(char *cfgfile)
 {
     int modules = 0;
 
-    modules|= CSYSCHECK;
+    modules |= CSYSCHECK;
 
     syscheck.rootcheck = 0;
     syscheck.disabled = 0;
@@ -34,50 +34,53 @@ int Read_Syscheck_Config(char * cfgfile)
     syscheck.dir = NULL;
     syscheck.opts = NULL;
     syscheck.realtime = NULL;
-    #ifdef WIN32
+#ifdef WIN32
     syscheck.registry = NULL;
     syscheck.reg_fp = NULL;
-    #endif
+#endif
     syscheck.prefilter_cmd = NULL;
 
 
     debug2("%s: Reading Configuration [%s]", "syscheckd", cfgfile);
 
     /* Reading config */
-    if(ReadConfig(modules, cfgfile, &syscheck, NULL) < 0)
+    if(ReadConfig(modules, cfgfile, &syscheck, NULL) < 0) {
         return(OS_INVALID);
+    }
 
 
-    #ifdef CLIENT
+#ifdef CLIENT
     debug2("%s: Reading Client Configuration [%s]", "syscheckd", cfgfile);
 
     /* Reading shared config */
-    modules|= CAGENT_CONFIG;
+    modules |= CAGENT_CONFIG;
     ReadConfig(modules, AGENTCONFIG, &syscheck, NULL);
-    #endif
+#endif
 
 
-    #ifndef WIN32
+#ifndef WIN32
     /* We must have at least one directory to check */
-    if(!syscheck.dir || syscheck.dir[0] == NULL)
-    {
+    if(!syscheck.dir || syscheck.dir[0] == NULL) {
         return(1);
     }
 
-    #else
+#else
     /* We must have at least one directory or registry key to check. Since
        it's possible on Windows to have syscheck enabled but only monitoring
        either the filesystem or the registry, both lists must be valid,
        even if empty.
      */
-    if(!syscheck.dir) syscheck.dir = SYSCHECK_EMPTY;
-    if(!syscheck.registry) syscheck.registry = SYSCHECK_EMPTY;
+    if(!syscheck.dir) {
+        syscheck.dir = SYSCHECK_EMPTY;
+    }
+    if(!syscheck.registry) {
+        syscheck.registry = SYSCHECK_EMPTY;
+    }
 
-    if((syscheck.dir[0] == NULL) && (syscheck.registry[0] == NULL))
-    {
+    if((syscheck.dir[0] == NULL) && (syscheck.registry[0] == NULL)) {
         return(1);
     }
-    #endif
+#endif
 
 
     return(0);

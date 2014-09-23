@@ -27,14 +27,15 @@
 #include "privsep_op.h"
 #include "headers/os_err.h"
 
-int Privsep_GetUser(const char * name)
+int Privsep_GetUser(const char *name)
 {
     int os_uid = -1;
 
     struct passwd *pw;
     pw = getpwnam(name);
-    if(pw == NULL)
+    if(pw == NULL) {
         return(OS_INVALID);
+    }
 
     os_uid = (int)pw->pw_uid;
     endpwent();
@@ -42,14 +43,15 @@ int Privsep_GetUser(const char * name)
     return(os_uid);
 }
 
-int Privsep_GetGroup(const char * name)
+int Privsep_GetGroup(const char *name)
 {
     int os_gid = -1;
 
     struct group *grp;
     grp = getgrnam(name);
-    if(grp == NULL)
+    if(grp == NULL) {
         return(OS_INVALID);
+    }
 
     os_gid = (int)grp->gr_gid;
     endgrent();
@@ -59,40 +61,47 @@ int Privsep_GetGroup(const char * name)
 
 int Privsep_SetUser(uid_t uid)
 {
-    if(setuid(uid) < 0)
+    if(setuid(uid) < 0) {
         return(OS_INVALID);
+    }
 
-    #ifndef HPUX
-    if(seteuid(uid) < 0)
+#ifndef HPUX
+    if(seteuid(uid) < 0) {
         return(OS_INVALID);
-    #endif
+    }
+#endif
 
     return(OS_SUCCESS);
 }
 
 int Privsep_SetGroup(gid_t gid)
 {
-    if (setgroups(1, &gid) == -1)
+    if (setgroups(1, &gid) == -1) {
         return(OS_INVALID);
+    }
 
-    #ifndef HPUX
-    if(setegid(gid) < 0)
+#ifndef HPUX
+    if(setegid(gid) < 0) {
         return(OS_INVALID);
-    #endif
+    }
+#endif
 
-    if(setgid(gid) < 0)
+    if(setgid(gid) < 0) {
         return(OS_INVALID);
+    }
 
     return(OS_SUCCESS);
 }
 
-int Privsep_Chroot(const char * path)
+int Privsep_Chroot(const char *path)
 {
-    if(chdir(path) < 0)
+    if(chdir(path) < 0) {
         return(OS_INVALID);
+    }
 
-    if(chroot(path) < 0)
+    if(chroot(path) < 0) {
         return(OS_INVALID);
+    }
 
     chdir("/");
 

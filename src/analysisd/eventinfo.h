@@ -21,8 +21,7 @@
 
 
 /* Event Information structure */
-typedef struct _Eventinfo
-{
+typedef struct _Eventinfo {
     /* Extracted from the event */
     char *log;
     char *full_log;
@@ -85,16 +84,15 @@ typedef struct _Eventinfo
     char *owner_after;
     char *gowner_before;
     char *gowner_after;
-}Eventinfo;
+} Eventinfo;
 
 
 /* Events List structure */
-typedef struct _EventNode
-{
+typedef struct _EventNode {
     Eventinfo *event;
     struct _EventNode *next;
     struct _EventNode *prev;
-}EventNode;
+} EventNode;
 
 
 

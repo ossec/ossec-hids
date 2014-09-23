@@ -49,30 +49,26 @@ int main(int argc, char **argv)
 
 
     /* user arguments */
-    if(argc < 2)
-    {
+    if(argc < 2) {
         helpmsg();
     }
 
     /* Getting the group name */
     gid = Privsep_GetGroup(group);
     uid = Privsep_GetUser(user);
-    if(gid < 0)
-    {
-	    ErrorExit(USER_ERROR, ARGV0, user, group);
+    if(gid < 0) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
     }
 
 
     /* Setting the group */
-    if(Privsep_SetGroup(gid) < 0)
-    {
-	    ErrorExit(SETGID_ERROR,ARGV0, group);
+    if(Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group);
     }
 
 
     /* Chrooting to the default directory */
-    if(Privsep_Chroot(dir) < 0)
-    {
+    if(Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir);
     }
 
@@ -82,53 +78,39 @@ int main(int argc, char **argv)
 
 
     /* Setting the user */
-    if(Privsep_SetUser(uid) < 0)
-    {
+    if(Privsep_SetUser(uid) < 0) {
         ErrorExit(SETUID_ERROR, ARGV0, user);
     }
 
     /* User options */
-    if(strcmp(argv[1], "-h") == 0)
-    {
+    if(strcmp(argv[1], "-h") == 0) {
         helpmsg();
-    }
-    else if(strcmp(argv[1], "-a") == 0)
-    {
+    } else if(strcmp(argv[1], "-a") == 0) {
         flag = GA_ALL;
         msg = "is available.";
-    }
-    else if(strcmp(argv[1], "-c") == 0)
-    {
+    } else if(strcmp(argv[1], "-c") == 0) {
         flag = GA_ACTIVE;
         msg = "is active.";
-    }
-    else if(strcmp(argv[1], "-n") == 0)
-    {
+    } else if(strcmp(argv[1], "-n") == 0) {
         flag = GA_NOTACTIVE;
         msg = "is not active.";
-    }
-    else
-    {
+    } else {
         printf("\n** Invalid option '%s'.\n", argv[1]);
         helpmsg();
     }
 
 
     agent_list = get_agents(flag);
-    if(agent_list)
-    {
+    if(agent_list) {
         char **agent_list_pt = agent_list;
 
-        while(*agent_list)
-        {
+        while(*agent_list) {
             printf("%s %s\n", *agent_list, msg);
             agent_list++;
         }
 
         free_agents(agent_list_pt);
-    }
-    else
-    {
+    } else {
         printf("** No agent available.\n");
     }
     return(0);

@@ -24,8 +24,7 @@ void AR_Init()
     active_responses = OSList_Create();
     ar_flag = 0;
 
-    if(!ar_commands || !active_responses)
-    {
+    if(!ar_commands || !active_responses) {
         ErrorExit(LIST_ERROR, ARGV0);
     }
 }
@@ -40,13 +39,12 @@ int AR_ReadConfig(int test_config, char *cfgfile)
     FILE *fp;
     int modules = 0;
 
-    modules|= CAR;
+    modules |= CAR;
 
 
     /* Cleaning ar file */
     fp = fopen(DEFAULTARPATH, "w");
-    if(!fp)
-    {
+    if(!fp) {
         merror(FOPEN_ERROR, ARGV0, DEFAULTARPATH);
         return(OS_INVALID);
     }
@@ -60,8 +58,7 @@ int AR_ReadConfig(int test_config, char *cfgfile)
 
 
     /* Reading configuration */
-    if(ReadConfig(modules, cfgfile, ar_commands, active_responses) < 0)
-    {
+    if(ReadConfig(modules, cfgfile, ar_commands, active_responses) < 0) {
         return(OS_INVALID);
     }
 

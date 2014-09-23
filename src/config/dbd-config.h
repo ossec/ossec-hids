@@ -17,8 +17,7 @@
 
 
 /* Database config structure */
-typedef struct _DBConfig
-{
+typedef struct _DBConfig {
     unsigned int db_type;
     unsigned int alert_id;
     unsigned int server_id;
@@ -36,7 +35,7 @@ typedef struct _DBConfig
     void *location_hash;
 
     char **includes;
-}DBConfig;
+} DBConfig;
 
 
 #define MYSQLDB 0x002

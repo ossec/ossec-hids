@@ -16,9 +16,9 @@
 
 /* Accumulator queues */
 #ifdef TESTRULE
-  #define ACM_CACHE "var/accumulator-cache"
+#define ACM_CACHE "var/accumulator-cache"
 #else
-  #define ACM_CACHE "/var/accumulator-queue"
+#define ACM_CACHE "/var/accumulator-queue"
 #endif
 
 #include "eventinfo.h"
@@ -46,11 +46,11 @@ typedef struct _OS_ACM_Store {
 
 /* Accumulator Functions */
 int Accumulate_Init();
-Eventinfo* Accumulate(Eventinfo *lf);
+Eventinfo *Accumulate(Eventinfo *lf);
 void Accumulate_CleanUp();
 
 /* Internal Functions */
-int acm_str_replace(char **dst, const char* src);
+int acm_str_replace(char **dst, const char *src);
 OS_ACM_Store *InitACMStore();
 void FreeACMStore(OS_ACM_Store *obj);
 

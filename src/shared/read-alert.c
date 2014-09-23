@@ -63,77 +63,62 @@ void FreeAlertData(alert_data *al_data)
 {
     char **p;
 
-    if(al_data->alertid)
-    {
+    if(al_data->alertid) {
         free(al_data->alertid);
         al_data->alertid = NULL;
     }
-    if(al_data->date)
-    {
+    if(al_data->date) {
         free(al_data->date);
         al_data->date = NULL;
     }
-    if(al_data->location)
-    {
+    if(al_data->location) {
         free(al_data->location);
         al_data->location = NULL;
     }
-    if(al_data->comment)
-    {
+    if(al_data->comment) {
         free(al_data->comment);
         al_data->comment = NULL;
     }
-    if(al_data->group)
-    {
+    if(al_data->group) {
         free(al_data->group);
         al_data->group = NULL;
     }
-    if(al_data->srcip)
-    {
+    if(al_data->srcip) {
         free(al_data->srcip);
         al_data->srcip = NULL;
     }
-    if(al_data->dstip)
-    {
+    if(al_data->dstip) {
         free(al_data->dstip);
         al_data->dstip = NULL;
     }
-    if(al_data->user)
-    {
+    if(al_data->user) {
         free(al_data->user);
         al_data->user = NULL;
     }
-    if(al_data->filename)
-    {
+    if(al_data->filename) {
         free(al_data->filename);
         al_data->filename = NULL;
     }
-    if(al_data->old_md5)
-    {
+    if(al_data->old_md5) {
         free(al_data->old_md5);
         al_data->old_md5 = NULL;
     }
-    if(al_data->new_md5)
-    {
+    if(al_data->new_md5) {
         free(al_data->new_md5);
         al_data->new_md5 = NULL;
     }
-    if(al_data->old_sha1)
-    {
+    if(al_data->old_sha1) {
         free(al_data->old_sha1);
         al_data->old_sha1 = NULL;
     }
-    if(al_data->new_sha1)
-    {
+    if(al_data->new_sha1) {
         free(al_data->new_sha1);
         al_data->new_sha1 = NULL;
     }
-    if(al_data->log)
-    {
+    if(al_data->log) {
         p = al_data->log;
 
-        while(*(p))
-        {
+        while(*(p)) {
             free(*(p));
             *(p) = NULL;
             p++;
@@ -142,14 +127,12 @@ void FreeAlertData(alert_data *al_data)
         al_data->log = NULL;
     }
 #ifdef GEOIP
-    if (al_data->geoipdatasrc)
-    {
-	free(al_data->geoipdatasrc);
+    if (al_data->geoipdatasrc) {
+        free(al_data->geoipdatasrc);
         al_data->geoipdatasrc = NULL;
     }
-    if (al_data->geoipdatadst)
-    {
-	free(al_data->geoipdatadst);
+    if (al_data->geoipdatadst) {
+        free(al_data->geoipdatadst);
         al_data->geoipdatadst = NULL;
     }
 #endif
@@ -188,19 +171,16 @@ alert_data *GetAlertData(int flag, FILE *fp)
     int level = 0, rule = 0, srcport = 0, dstport = 0;
 
 
-    char str[OS_BUFFER_SIZE+1];
-    str[OS_BUFFER_SIZE]='\0';
+    char str[OS_BUFFER_SIZE + 1];
+    str[OS_BUFFER_SIZE] = '\0';
 
 
-    while(fgets(str, OS_BUFFER_SIZE, fp) != NULL)
-    {
+    while(fgets(str, OS_BUFFER_SIZE, fp) != NULL) {
 
         /* Enf of alert */
-        if(strcmp(str, "\n") == 0 && log_size > 0)
-        {
+        if(strcmp(str, "\n") == 0 && log_size > 0) {
             /* Found in here */
-            if(_r == 2)
-            {
+            if(_r == 2) {
                 alert_data *al_data;
                 os_calloc(1, sizeof(alert_data), al_data);
                 al_data->alertid = alertid;
@@ -234,15 +214,13 @@ alert_data *GetAlertData(int flag, FILE *fp)
 
 
         /* Checking for the header */
-        if(strncmp(ALERT_BEGIN, str, ALERT_BEGIN_SZ) == 0)
-        {
+        if(strncmp(ALERT_BEGIN, str, ALERT_BEGIN_SZ) == 0) {
             char *m;
             size_t z = 0;
             p = str + ALERT_BEGIN_SZ + 1;
 
             m = strstr(p, ":");
-            if (!m)
-            {
+            if (!m) {
                 continue;
             }
 
@@ -253,8 +231,7 @@ alert_data *GetAlertData(int flag, FILE *fp)
 
             /* Searching for email flag */
             p = strchr(p, ' ');
-            if(!p)
-            {
+            if(!p) {
                 continue;
             }
 
@@ -263,22 +240,19 @@ alert_data *GetAlertData(int flag, FILE *fp)
 
             /* Checking for the flags */
             if((flag & CRALERT_MAIL_SET) &&
-               (strncmp(ALERT_MAIL, p, ALERT_MAIL_SZ) != 0))
-            {
+                    (strncmp(ALERT_MAIL, p, ALERT_MAIL_SZ) != 0)) {
                 continue;
             }
 
             p = strchr(p, '-');
-            if(p)
-            {
+            if(p) {
                 p++;
                 free(group);
                 os_strdup(p, group);
 
                 /* Cleaning new line from group */
                 os_clearnl(group, p);
-                if(group != NULL && strstr(group, "syscheck") != NULL)
-                {
+                if(group != NULL && strstr(group, "syscheck") != NULL) {
                     issyscheck = 1;
                 }
             }
@@ -289,29 +263,25 @@ alert_data *GetAlertData(int flag, FILE *fp)
             continue;
         }
 
-        if(_r < 1)
+        if(_r < 1) {
             continue;
+        }
 
 
         /*** Extract information from the event ***/
 
         /* r1 means: 2006 Apr 13 16:15:17 /var/log/auth.log */
-        if(_r == 1)
-        {
+        if(_r == 1) {
             /* Clear new line */
             os_clearnl(str, p);
 
             p = strchr(str, ':');
-            if(p)
-            {
+            if(p) {
                 p = strchr(p, ' ');
-                if(p)
-                {
+                if(p) {
                     *p = '\0';
                     p++;
-                }
-                else
-                {
+                } else {
                     /* If p is null it is because strchr failed */
                     merror("ZZZ: 1() Merror date or location not NULL");
                     goto l_error;
@@ -320,8 +290,7 @@ alert_data *GetAlertData(int flag, FILE *fp)
 
 
             /* If not, str is date and p is the location */
-            if(date || location || !p)
-            {
+            if(date || location || !p) {
                 merror("ZZZ Merror date or location not NULL or p is NULL");
                 goto l_error;
             }
@@ -334,159 +303,141 @@ alert_data *GetAlertData(int flag, FILE *fp)
         }
 
 
-        else if(_r == 2)
-        {
+        else if(_r == 2) {
             /* Rule begin */
-            if(strncmp(RULE_BEGIN, str, RULE_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            if(strncmp(RULE_BEGIN, str, RULE_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + RULE_BEGIN_SZ;
                 rule = atoi(p);
 
                 p = strchr(p, ' ');
-                if(p)
-                {
+                if(p) {
                     p++;
                     p = strchr(p, ' ');
-                    if(p)
+                    if(p) {
                         p++;
+                    }
                 }
 
-                if(!p)
+                if(!p) {
                     goto l_error;
+                }
 
                 level = atoi(p);
 
                 /* Getting the comment */
                 p = strchr(p, '\'');
-                if(!p)
+                if(!p) {
                     goto l_error;
+                }
 
                 p++;
                 os_strdup(p, comment);
 
                 /* Must have the closing \' */
                 p = strrchr(comment, '\'');
-                if(p)
-                {
+                if(p) {
                     *p = '\0';
-                }
-                else
-                {
+                } else {
                     goto l_error;
                 }
             }
 
             /* srcip */
-            else if(strncmp(SRCIP_BEGIN, str, SRCIP_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(SRCIP_BEGIN, str, SRCIP_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + SRCIP_BEGIN_SZ;
                 os_strdup(p, srcip);
             }
 #ifdef GEOIP
             /* GeoIP Source Location */
-            else if (strncmp(GEOIP_BEGIN_SRC, str, GEOIP_BEGIN_SRC_SZ) == 0)
-            {
-		os_clearnl(str,p);
-		p = str + GEOIP_BEGIN_SRC_SZ;
-		os_strdup(p, geoipdatasrc);
+            else if (strncmp(GEOIP_BEGIN_SRC, str, GEOIP_BEGIN_SRC_SZ) == 0) {
+                os_clearnl(str, p);
+                p = str + GEOIP_BEGIN_SRC_SZ;
+                os_strdup(p, geoipdatasrc);
             }
 #endif
             /* srcport */
-            else if(strncmp(SRCPORT_BEGIN, str, SRCPORT_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(SRCPORT_BEGIN, str, SRCPORT_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + SRCPORT_BEGIN_SZ;
                 srcport = atoi(p);
             }
             /* dstip */
-            else if(strncmp(DSTIP_BEGIN, str, DSTIP_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(DSTIP_BEGIN, str, DSTIP_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + DSTIP_BEGIN_SZ;
                 os_strdup(p, dstip);
             }
 #ifdef GEOIP
             /* GeoIP Destination Location */
-            else if (strncmp(GEOIP_BEGIN_DST, str, GEOIP_BEGIN_DST_SZ) == 0)
-            {
-		os_clearnl(str,p);
-		p = str + GEOIP_BEGIN_DST_SZ;
-		os_strdup(p, geoipdatadst);
+            else if (strncmp(GEOIP_BEGIN_DST, str, GEOIP_BEGIN_DST_SZ) == 0) {
+                os_clearnl(str, p);
+                p = str + GEOIP_BEGIN_DST_SZ;
+                os_strdup(p, geoipdatadst);
             }
 #endif
             /* dstport */
-            else if(strncmp(DSTPORT_BEGIN, str, DSTPORT_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(DSTPORT_BEGIN, str, DSTPORT_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + DSTPORT_BEGIN_SZ;
                 dstport = atoi(p);
             }
             /* username */
-            else if(strncmp(USER_BEGIN, str, USER_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(USER_BEGIN, str, USER_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + USER_BEGIN_SZ;
                 os_strdup(p, user);
             }
             /* Old MD5 */
-            else if(strncmp(OLDMD5_BEGIN, str, OLDMD5_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(OLDMD5_BEGIN, str, OLDMD5_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + OLDMD5_BEGIN_SZ;
                 os_strdup(p, old_md5);
             }
             /* New MD5 */
-            else if(strncmp(NEWMD5_BEGIN, str, NEWMD5_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(NEWMD5_BEGIN, str, NEWMD5_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + NEWMD5_BEGIN_SZ;
                 os_strdup(p, new_md5);
             }
             /* Old SHA1 */
-            else if(strncmp(OLDSHA1_BEGIN, str, OLDSHA1_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(OLDSHA1_BEGIN, str, OLDSHA1_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + OLDSHA1_BEGIN_SZ;
                 os_strdup(p, old_sha1);
             }
             /* New SHA1 */
-            else if(strncmp(NEWSHA1_BEGIN, str, NEWSHA1_BEGIN_SZ) == 0)
-            {
-                os_clearnl(str,p);
+            else if(strncmp(NEWSHA1_BEGIN, str, NEWSHA1_BEGIN_SZ) == 0) {
+                os_clearnl(str, p);
 
                 p = str + NEWSHA1_BEGIN_SZ;
                 os_strdup(p, new_sha1);
             }
             /* It is a log message */
-            else if(log_size < 20)
-            {
-                os_clearnl(str,p);
+            else if(log_size < 20) {
+                os_clearnl(str, p);
 
-                if(str != NULL && issyscheck == 1)
-                {
-                    if(strncmp(str, "Integrity checksum changed for: '",33) == 0)
-                    {
-                        filename = strdup(str+33);
-                        if(filename)
-                        {
-                            filename[strlen(filename) -1] = '\0';
+                if(str != NULL && issyscheck == 1) {
+                    if(strncmp(str, "Integrity checksum changed for: '", 33) == 0) {
+                        filename = strdup(str + 33);
+                        if(filename) {
+                            filename[strlen(filename) - 1] = '\0';
                         }
                     }
                     issyscheck = 0;
                 }
 
-                os_realloc(log, (log_size +2)*sizeof(char *), log);
+                os_realloc(log, (log_size + 2)*sizeof(char *), log);
                 os_strdup(str, log[log_size]);
                 log_size++;
                 log[log_size] = NULL;
@@ -494,108 +445,89 @@ alert_data *GetAlertData(int flag, FILE *fp)
         }
 
         continue;
-        l_error:
+l_error:
 
         /* Freeing the memory */
         _r = 0;
-        if(date)
-        {
+        if(date) {
             free(date);
             date = NULL;
         }
-        if(location)
-        {
+        if(location) {
             free(location);
             location = NULL;
         }
-        if(comment)
-        {
+        if(comment) {
             free(comment);
             comment = NULL;
         }
-        if(srcip)
-        {
+        if(srcip) {
             free(srcip);
             srcip = NULL;
         }
 #ifdef GEOIP
-        if(geoipdatasrc)
-	{
-	    free(geoipdatasrc);
-	    geoipdatasrc = NULL;
-	}
-        if(geoipdatadst)
-	{
-	    free(geoipdatadst);
-	    geoipdatadst = NULL;
-	}
+        if(geoipdatasrc) {
+            free(geoipdatasrc);
+            geoipdatasrc = NULL;
+        }
+        if(geoipdatadst) {
+            free(geoipdatadst);
+            geoipdatadst = NULL;
+        }
 #endif
-        if(user)
-        {
+        if(user) {
             free(user);
             user = NULL;
         }
-        if(filename)
-        {
+        if(filename) {
             free(filename);
             filename = NULL;
         }
-        if(group)
-        {
+        if(group) {
             free(group);
             group = NULL;
         }
-        if(old_md5)
-        {
+        if(old_md5) {
             free(old_md5);
             old_md5 = NULL;
         }
 
-        if(new_md5)
-        {
+        if(new_md5) {
             free(new_md5);
             new_md5 = NULL;
         }
 
-        if(old_sha1)
-        {
+        if(old_sha1) {
             free(old_sha1);
             old_sha1 = NULL;
         }
 
-        if(new_sha1)
-        {
+        if(new_sha1) {
             free(new_sha1);
             new_sha1 = NULL;
         }
-        while(log_size > 0)
-        {
+        while(log_size > 0) {
             log_size--;
-            if(log[log_size])
-            {
+            if(log[log_size]) {
                 free(log[log_size]);
                 log[log_size] = NULL;
             }
         }
     }
 
-    if(alertid)
-	{
-		free(alertid);
-		alertid = NULL;
-	}
-    if(group)
-    {
+    if(alertid) {
+        free(alertid);
+        alertid = NULL;
+    }
+    if(group) {
         free(group);
         group = NULL;
     }
-    if(location)
-    {
+    if(location) {
         free(location);
         location = NULL;
     }
-    if(date)
-    {
+    if(date) {
         free(date);
         date = NULL;
     }

@@ -31,8 +31,8 @@ int OS_Bindportudp(u_int16_t _port, const char *_ip, int ipv6);
  * Bind to a specific file, using the "mode" permissions in
  * a Unix Domain socket.
  */
-int OS_BindUnixDomain(const char * path, mode_t mode, int max_msg_size) __attribute__((nonnull));
-int OS_ConnectUnixDomain(const char * path, int max_msg_size) __attribute__((nonnull));
+int OS_BindUnixDomain(const char *path, mode_t mode, int max_msg_size) __attribute__((nonnull));
+int OS_ConnectUnixDomain(const char *path, int max_msg_size) __attribute__((nonnull));
 int OS_getsocketsize(int ossock);
 
 
@@ -69,7 +69,7 @@ int OS_RecvTCPBuffer(int socket, char *buffer, int sizet) __attribute__((nonnull
 int OS_SendTCP(int socket, const char *msg) __attribute__((nonnull));
 int OS_SendTCPbySize(int socket, int size, const char *msg) __attribute__((nonnull));
 
-int OS_SendUnix(int socket, const char * msg, int size) __attribute__((nonnull));
+int OS_SendUnix(int socket, const char *msg, int size) __attribute__((nonnull));
 
 //int OS_SendUDP(int socket, char *msg);
 int OS_SendUDPbySize(int socket, int size, const char *msg) __attribute__((nonnull));

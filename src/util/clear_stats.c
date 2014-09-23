@@ -50,30 +50,26 @@ int main(int argc, char **argv)
 
 
     /* user arguments */
-    if(argc != 2)
-    {
+    if(argc != 2) {
         helpmsg();
     }
 
     /* Getting the group name */
     gid = Privsep_GetGroup(group);
     uid = Privsep_GetUser(user);
-    if(gid < 0)
-    {
-	    ErrorExit(USER_ERROR, ARGV0, user, group);
+    if(gid < 0) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
     }
-	
+
 
     /* Setting the group */
-    if(Privsep_SetGroup(gid) < 0)
-    {
-	    ErrorExit(SETGID_ERROR,ARGV0, group);
+    if(Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group);
     }
 
 
     /* Chrooting to the default directory */
-    if(Privsep_Chroot(dir) < 0)
-    {
+    if(Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir);
     }
 
@@ -83,57 +79,43 @@ int main(int argc, char **argv)
 
 
     /* Setting the user */
-    if(Privsep_SetUser(uid) < 0)
-    {
+    if(Privsep_SetUser(uid) < 0) {
         ErrorExit(SETUID_ERROR, ARGV0, user);
     }
 
     /* User options */
-    if(strcmp(argv[1], "-h") == 0)
-    {
+    if(strcmp(argv[1], "-h") == 0) {
         helpmsg();
-    }
-    else if(strcmp(argv[1], "-a") == 0)
-    {
+    } else if(strcmp(argv[1], "-a") == 0) {
         clear_daily = 1;
         clear_weekly = 1;
-    }
-    else if(strcmp(argv[1], "-d") == 0)
-    {
+    } else if(strcmp(argv[1], "-d") == 0) {
         clear_daily = 1;
-    }
-    else if(strcmp(argv[1], "-w") == 0)
-    {
+    } else if(strcmp(argv[1], "-w") == 0) {
         clear_weekly = 1;
-    }
-    else
-    {
+    } else {
         printf("\n** Invalid option '%s'.\n", argv[1]);
         helpmsg();
     }
 
 
     /* Clear daily files */
-    if(clear_daily)
-    {
+    if(clear_daily) {
         char *daily_dir = STATQUEUE;
         DIR *daily;
         struct dirent *entry;
 
         daily = opendir(daily_dir);
-        if(!daily)
-        {
+        if(!daily) {
             ErrorExit("%s: Unable to open: '%s'", ARGV0, daily_dir);
         }
 
-        while((entry = readdir(daily)) != NULL)
-        {
-            char full_path[OS_MAXSTR +1];
+        while((entry = readdir(daily)) != NULL) {
+            char full_path[OS_MAXSTR + 1];
 
             /* Do not even attempt to delete . and .. :) */
-            if((strcmp(entry->d_name,".") == 0)||
-               (strcmp(entry->d_name,"..") == 0))
-            {
+            if((strcmp(entry->d_name, ".") == 0) ||
+                    (strcmp(entry->d_name, "..") == 0)) {
                 continue;
             }
 
@@ -148,39 +130,34 @@ int main(int argc, char **argv)
 
 
     /* Clear weekly averages */
-    if(clear_weekly)
-    {
+    if(clear_weekly) {
         int i = 0;
-        while(i <= 6)
-        {
+        while(i <= 6) {
             char *daily_dir = STATWQUEUE;
-            char dir_path[OS_MAXSTR +1];
+            char dir_path[OS_MAXSTR + 1];
             DIR *daily;
             struct dirent *entry;
 
             snprintf(dir_path, OS_MAXSTR, "%s/%d", daily_dir, i);
             daily = opendir(dir_path);
-            if(!daily)
-            {
+            if(!daily) {
                 ErrorExit("%s: Unable to open: '%s' (no stats)",
-                           ARGV0, dir_path);
+                          ARGV0, dir_path);
             }
 
-            while((entry = readdir(daily)) != NULL)
-            {
-                char full_path[OS_MAXSTR +1];
+            while((entry = readdir(daily)) != NULL) {
+                char full_path[OS_MAXSTR + 1];
 
                 /* Do not even attempt to delete . and .. :) */
-                if((strcmp(entry->d_name,".") == 0)||
-                        (strcmp(entry->d_name,"..") == 0))
-                {
+                if((strcmp(entry->d_name, ".") == 0) ||
+                        (strcmp(entry->d_name, "..") == 0)) {
                     continue;
                 }
 
                 /* Remove file */
                 full_path[OS_MAXSTR] = '\0';
                 snprintf(full_path, OS_MAXSTR, "%s/%s", dir_path,
-                                                        entry->d_name);
+                         entry->d_name);
                 unlink(full_path);
             }
 

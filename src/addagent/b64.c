@@ -54,53 +54,59 @@ static unsigned char decode(char c);
  * @param src The data to be base64 encode
  * @return encoded string otherwise NULL
  */
-char *encode_base64(int size, char *src) {
+char *encode_base64(int size, char *src)
+{
 
     int i;
     char *out, *p;
 
-    if(!src)
+    if(!src) {
         return NULL;
+    }
 
-    if(!size)
-        size= strlen((char *)src);
+    if(!size) {
+        size = strlen((char *)src);
+    }
 
-    out = (char *)calloc(sizeof(char), size*4/3+4);
-    if(!out)
+    out = (char *)calloc(sizeof(char), size * 4 / 3 + 4);
+    if(!out) {
         return NULL;
+    }
 
     p = out;
 
-    for(i = 0; i < size; i+=3) {
+    for(i = 0; i < size; i += 3) {
 
-        unsigned char b1=0, b2=0, b3=0, b4=0, b5=0, b6=0, b7=0;
+        unsigned char b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, b7 = 0;
 
         b1 = src[i];
 
-        if(i+1<size)
-            b2 = src[i+1];
-
-        if(i+2<size)
-            b3 = src[i+2];
-
-        b4= b1>>2;
-        b5= ((b1&0x3)<<4)|(b2>>4);
-        b6= ((b2&0xf)<<2)|(b3>>6);
-        b7= b3&0x3f;
-
-        *p++= encode(b4);
-        *p++= encode(b5);
-
-        if(i+1<size) {
-            *p++= encode(b6);
-        } else {
-            *p++= '=';
+        if(i + 1 < size) {
+            b2 = src[i + 1];
         }
 
-        if(i+2<size) {
-            *p++= encode(b7);
+        if(i + 2 < size) {
+            b3 = src[i + 2];
+        }
+
+        b4 = b1 >> 2;
+        b5 = ((b1 & 0x3) << 4) | (b2 >> 4);
+        b6 = ((b2 & 0xf) << 2) | (b3 >> 6);
+        b7 = b3 & 0x3f;
+
+        *p++ = encode(b4);
+        *p++ = encode(b5);
+
+        if(i + 1 < size) {
+            *p++ = encode(b6);
         } else {
-            *p++= '=';
+            *p++ = '=';
+        }
+
+        if(i + 2 < size) {
+            *p++ = encode(b7);
+        } else {
+            *p++ = '=';
         }
 
     }
@@ -116,68 +122,65 @@ char *encode_base64(int size, char *src) {
  */
 char *decode_base64(const char *src)
 {
-    if(src && *src)
-    {
+    if(src && *src) {
         char *dest;
         unsigned char *p;
-        int k, l = strlen(src)+1;
+        int k, l = strlen(src) + 1;
         unsigned char *buf;
 
         /* The size of the dest will always be less than
          * the source
          */
         dest = (char *)calloc(sizeof(char), l + 13);
-        if(!dest)
+        if(!dest) {
             return(NULL);
+        }
 
         p = (unsigned char *)dest;
 
         buf = malloc(l);
-        if(!buf)
+        if(!buf) {
             return(NULL);
+        }
 
         /* Ignore non base64 chars as per the POSIX standard */
-        for(k=0, l=0; src[k]; k++)
-        {
-            if(is_base64(src[k]))
-            {
-                buf[l++]= src[k];
+        for(k = 0, l = 0; src[k]; k++) {
+            if(is_base64(src[k])) {
+                buf[l++] = src[k];
             }
         }
 
-        for(k=0; k<l; k+=4)
-        {
-            char c1='A', c2='A', c3='A', c4='A';
-            unsigned char b1=0, b2=0, b3=0, b4=0;
+        for(k = 0; k < l; k += 4) {
+            char c1 = 'A', c2 = 'A', c3 = 'A', c4 = 'A';
+            unsigned char b1 = 0, b2 = 0, b3 = 0, b4 = 0;
 
-            c1= buf[k];
+            c1 = buf[k];
 
-            if(k+1<l)
-            {
-                c2= buf[k+1];
+            if(k + 1 < l) {
+                c2 = buf[k + 1];
             }
 
-            if(k+2<l) {
-                c3= buf[k+2];
+            if(k + 2 < l) {
+                c3 = buf[k + 2];
             }
 
-            if(k+3<l) {
-                c4= buf[k+3];
+            if(k + 3 < l) {
+                c4 = buf[k + 3];
             }
 
-            b1= decode(c1);
-            b2= decode(c2);
-            b3= decode(c3);
-            b4= decode(c4);
+            b1 = decode(c1);
+            b2 = decode(c2);
+            b3 = decode(c3);
+            b4 = decode(c4);
 
-            *p++=((b1<<2)|(b2>>4) );
+            *p++ = ((b1 << 2) | (b2 >> 4) );
 
             if(c3 != '=') {
-                *p++=(((b2&0xf)<<4)|(b3>>2) );
+                *p++ = (((b2 & 0xf) << 4) | (b3 >> 2) );
             }
 
             if(c4 != '=') {
-                *p++=(((b3&0x3)<<6)|b4 );
+                *p++ = (((b3 & 0x3) << 6) | b4 );
             }
 
         }
@@ -194,14 +197,23 @@ char *decode_base64(const char *src)
 }
 
 
- /* ----------------------------------------------------------------- Private */
+/* ----------------------------------------------------------------- Private */
 
-static char encode(unsigned char u) {
+static char encode(unsigned char u)
+{
 
-    if(u < 26)  return 'A'+u;
-    if(u < 52)  return 'a'+(u-26);
-    if(u < 62)  return '0'+(u-52);
-    if(u == 62) return '+';
+    if(u < 26) {
+        return 'A' + u;
+    }
+    if(u < 52) {
+        return 'a' + (u - 26);
+    }
+    if(u < 62) {
+        return '0' + (u - 52);
+    }
+    if(u == 62) {
+        return '+';
+    }
 
     return '/';
 
@@ -211,12 +223,21 @@ static char encode(unsigned char u) {
 /**
  * Decode a base64 character
  */
-static unsigned char decode(char c) {
+static unsigned char decode(char c)
+{
 
-    if(c >= 'A' && c <= 'Z') return(c - 'A');
-    if(c >= 'a' && c <= 'z') return(c - 'a' + 26);
-    if(c >= '0' && c <= '9') return(c - '0' + 52);
-    if(c == '+')             return 62;
+    if(c >= 'A' && c <= 'Z') {
+        return(c - 'A');
+    }
+    if(c >= 'a' && c <= 'z') {
+        return(c - 'a' + 26);
+    }
+    if(c >= '0' && c <= '9') {
+        return(c - '0' + 52);
+    }
+    if(c == '+') {
+        return 62;
+    }
 
     return 63;
 
@@ -226,7 +247,8 @@ static unsigned char decode(char c) {
 /**
  * Return TRUE if 'c' is a valid base64 character, otherwise FALSE
  */
-static int is_base64(char c) {
+static int is_base64(char c)
+{
 
     if((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
             (c >= '0' && c <= '9') || (c == '+')             ||

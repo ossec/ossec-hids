@@ -309,8 +309,9 @@ time_t File_DateofChange(const char *file)
 {
     struct stat file_status;
 
-    if(stat(file, &file_status) < 0)
+    if(stat(file, &file_status) < 0) {
         return(-1);
+    }
 
     return (file_status.st_mtime);
 }
@@ -318,10 +319,12 @@ time_t File_DateofChange(const char *file)
 int IsDir(const char *file)
 {
     struct stat file_status;
-    if(stat(file,&file_status) < 0)
+    if(stat(file, &file_status) < 0) {
         return(-1);
-    if(S_ISDIR(file_status.st_mode))
+    }
+    if(S_ISDIR(file_status.st_mode)) {
         return(0);
+    }
     return(-1);
 }
 
@@ -331,24 +334,21 @@ int CreatePID(const char *name, int pid)
     char file[256];
     FILE *fp;
 
-    if(isChroot())
-    {
-        snprintf(file,255,"%s/%s-%d.pid",OS_PIDFILE,name,pid);
-    }
-    else
-    {
-        snprintf(file,255,"%s%s/%s-%d.pid",DEFAULTDIR,
-                OS_PIDFILE,name,pid);
+    if(isChroot()) {
+        snprintf(file, 255, "%s/%s-%d.pid", OS_PIDFILE, name, pid);
+    } else {
+        snprintf(file, 255, "%s%s/%s-%d.pid", DEFAULTDIR,
+                 OS_PIDFILE, name, pid);
     }
 
-    fp = fopen(file,"a");
-    if(!fp)
+    fp = fopen(file, "a");
+    if(!fp) {
         return(-1);
+    }
 
-    fprintf(fp,"%d\n",pid);
+    fprintf(fp, "%d\n", pid);
 
-    if(chmod(file, 0640) != 0)
-    {
+    if(chmod(file, 0640) != 0) {
         fclose(fp);
         return(-1);
     }
@@ -362,18 +362,16 @@ int DeletePID(const char *name)
 {
     char file[256];
 
-    if(isChroot())
-    {
-        snprintf(file,255,"%s/%s-%d.pid",OS_PIDFILE,name,(int)getpid());
-    }
-    else
-    {
-        snprintf(file,255,"%s%s/%s-%d.pid",DEFAULTDIR,
-                OS_PIDFILE,name,(int)getpid());
+    if(isChroot()) {
+        snprintf(file, 255, "%s/%s-%d.pid", OS_PIDFILE, name, (int)getpid());
+    } else {
+        snprintf(file, 255, "%s%s/%s-%d.pid", DEFAULTDIR,
+                 OS_PIDFILE, name, (int)getpid());
     }
 
-    if(File_DateofChange(file) < 0)
+    if(File_DateofChange(file) < 0) {
         return(-1);
+    }
 
     unlink(file);
 
@@ -387,111 +385,95 @@ int UnmergeFiles(const char *finalpath, const char *optdir)
     size_t i = 0, n = 0, files_size = 0;
 
     char *files;
-    char final_name[2048 +1];
+    char final_name[2048 + 1];
     char buf[2048 + 1];
     FILE *fp;
     FILE *finalfp;
 
     finalfp = fopen(finalpath, "r");
-    if(!finalfp)
-    {
+    if(!finalfp) {
         merror("%s: ERROR: Unable to read merged file: '%s'.",
-                __local_name, finalpath);
+               __local_name, finalpath);
         return(0);
     }
 
-    while(1)
-    {
+    while(1) {
         /* Reading header portion. */
-        if(fgets(buf, sizeof(buf) -1, finalfp) == NULL)
-        {
+        if(fgets(buf, sizeof(buf) - 1, finalfp) == NULL) {
             break;
         }
 
 
         /* Initiator. */
-        if(buf[0] != '!')
+        if(buf[0] != '!') {
             continue;
+        }
 
 
         /* Getting file size and name. */
-        files_size = (size_t) atol(buf +1);
+        files_size = (size_t) atol(buf + 1);
 
         files = strchr(buf, '\n');
-        if(files)
+        if(files) {
             *files = '\0';
+        }
 
         files = strchr(buf, ' ');
-        if(!files)
-        {
+        if(!files) {
             ret = 0;
             continue;
         }
         files++;
 
 
-        if(optdir)
-        {
+        if(optdir) {
             snprintf(final_name, 2048, "%s/%s", optdir, files);
-        }
-        else
-        {
+        } else {
             strncpy(final_name, files, 2048);
             final_name[2048] = '\0';
         }
 
 
         /* Opening file name. */
-        fp = fopen(final_name,"w");
-        if(!fp)
-        {
+        fp = fopen(final_name, "w");
+        if(!fp) {
             ret = 0;
             merror("%s: ERROR: Unable to unmerge file '%s'.",
-                    __local_name, final_name);
+                   __local_name, final_name);
         }
 
 
-        if(files_size < sizeof(buf) -1)
-        {
+        if(files_size < sizeof(buf) - 1) {
             i = files_size;
             files_size = 0;
-        }
-        else
-        {
-            i = sizeof(buf) -1;
-            files_size -= sizeof(buf) -1;
+        } else {
+            i = sizeof(buf) - 1;
+            files_size -= sizeof(buf) - 1;
         }
 
-        while((n = fread(buf, 1, i, finalfp)) > 0)
-        {
+        while((n = fread(buf, 1, i, finalfp)) > 0) {
             buf[n] = '\0';
 
-            if(fp)
-            {
+            if(fp) {
                 fwrite(buf, n, 1, fp);
             }
 
-            if(files_size == 0)
-            {
+            if(files_size == 0) {
                 break;
-            }
-            else
-            {
-                if(files_size < sizeof(buf) -1)
-                {
+            } else {
+                if(files_size < sizeof(buf) - 1) {
                     i = files_size;
                     files_size = 0;
-                }
-                else
-                {
-                    i = sizeof(buf) -1;
-                    files_size -= sizeof(buf) -1;
+                } else {
+                    i = sizeof(buf) - 1;
+                    files_size -= sizeof(buf) - 1;
                 }
             }
         }
 
-        if(fp)
+        if(fp) {
             fclose(fp);
+        }
     }
 
     fclose(finalfp);
@@ -511,13 +493,11 @@ int MergeAppendFile(const char *finalpath, const char *files)
 
 
     /* Creating a new entry. */
-    if(files == NULL)
-    {
+    if(files == NULL) {
         finalfp = fopen(finalpath, "w");
-        if(!finalfp)
-        {
+        if(!finalfp) {
             merror("%s: ERROR: Unable to create merged file: '%s'.",
-                    __local_name, finalpath);
+                   __local_name, finalpath);
             return(0);
         }
         fclose(finalfp);
@@ -527,17 +507,15 @@ int MergeAppendFile(const char *finalpath, const char *files)
 
 
     finalfp = fopen(finalpath, "a");
-    if(!finalfp)
-    {
+    if(!finalfp) {
         merror("%s: ERROR: Unable to append merged file: '%s'.",
-                __local_name, finalpath);
+               __local_name, finalpath);
         return(0);
     }
 
 
-    fp = fopen(files,"r");
-    if(!fp)
-    {
+    fp = fopen(files, "r");
+    if(!fp) {
         merror("%s: ERROR: Unable to merge file '%s'.", __local_name, files);
         fclose(finalfp);
         return(0);
@@ -548,20 +526,16 @@ int MergeAppendFile(const char *finalpath, const char *files)
     files_size = ftell(fp);
 
     tmpfile = strrchr(files, '/');
-    if(tmpfile)
-    {
+    if(tmpfile) {
         tmpfile++;
-    }
-    else
-    {
+    } else {
         tmpfile = files;
     }
     fprintf(finalfp, "!%ld %s\n", files_size, tmpfile);
 
     fseek(fp, 0, SEEK_SET);
 
-    while((n = fread(buf, 1, sizeof(buf) -1, fp)) > 0)
-    {
+    while((n = fread(buf, 1, sizeof(buf) - 1, fp)) > 0) {
         buf[n] = '\0';
         fwrite(buf, n, 1, finalfp);
     }
@@ -586,18 +560,15 @@ int MergeFiles(const char *finalpath, char **files)
     FILE *finalfp;
 
     finalfp = fopen(finalpath, "w");
-    if(!finalfp)
-    {
+    if(!finalfp) {
         merror("%s: ERROR: Unable to create merged file: '%s'.",
                __local_name, finalpath);
         return(0);
     }
 
-    while(files[i])
-    {
-        fp = fopen(files[i],"r");
-        if(!fp)
-        {
+    while(files[i]) {
+        fp = fopen(files[i], "r");
+        if(!fp) {
             merror("%s: ERROR: Unable to merge file '%s'.", __local_name, files[i]);
             i++;
             ret = 0;
@@ -609,12 +580,9 @@ int MergeFiles(const char *finalpath, char **files)
 
         /* Removing last entry. */
         tmpfile = strrchr(files[i], '/');
-        if(tmpfile)
-        {
+        if(tmpfile) {
             tmpfile++;
-        }
-        else
-        {
+        } else {
             tmpfile = files[i];
         }
 
@@ -622,8 +590,7 @@ int MergeFiles(const char *finalpath, char **files)
 
         fseek(fp, 0, SEEK_SET);
 
-        while((n = fread(buf, 1, sizeof(buf) -1, fp)) > 0)
-        {
+        while((n = fread(buf, 1, sizeof(buf) - 1, fp)) > 0) {
             buf[n] = '\0';
             fwrite(buf, n, 1, finalfp);
         }
@@ -645,33 +612,32 @@ char *getuname()
 {
     struct utsname uts_buf;
 
-    if(uname(&uts_buf) >= 0)
-    {
+    if(uname(&uts_buf) >= 0) {
         char *ret;
 
         ret = (char *) calloc(256, sizeof(char));
-        if(ret == NULL)
+        if(ret == NULL) {
             return(NULL);
+        }
 
         snprintf(ret, 255, "%s %s %s %s %s - %s %s",
-                                 uts_buf.sysname,
-                                 uts_buf.nodename,
-                                 uts_buf.release,
-                                 uts_buf.version,
-                                 uts_buf.machine,
-                                 __ossec_name, __version);
+                 uts_buf.sysname,
+                 uts_buf.nodename,
+                 uts_buf.release,
+                 uts_buf.version,
+                 uts_buf.machine,
+                 __ossec_name, __version);
 
         return(ret);
-    }
-    else
-    {
+    } else {
         char *ret;
         ret = (char *) calloc(256, sizeof(char));
-        if(ret == NULL)
+        if(ret == NULL) {
             return(NULL);
+        }
 
         snprintf(ret, 255, "No system info available -  %s %s",
-                           __ossec_name, __version);
+                 __ossec_name, __version);
 
         return(ret);
     }
@@ -690,20 +656,16 @@ void goDaemonLight()
 
     pid = fork();
 
-    if(pid < 0)
-    {
+    if(pid < 0) {
         merror(FORK_ERROR, __local_name);
         return;
-    }
-    else if(pid)
-    {
+    } else if(pid) {
         exit(0);
     }
 
 
     /* becoming session leader */
-    if(setsid() < 0)
-    {
+    if(setsid() < 0) {
         merror(SETSID_ERROR, __local_name);
         return;
     }
@@ -711,13 +673,10 @@ void goDaemonLight()
 
     /* forking again */
     pid = fork();
-    if(pid < 0)
-    {
+    if(pid < 0) {
         merror(FORK_ERROR, __local_name);
         return;
-    }
-    else if(pid)
-    {
+    } else if(pid) {
         exit(0);
     }
 
@@ -744,39 +703,31 @@ void goDaemon()
 
     pid = fork();
 
-    if(pid < 0)
-    {
+    if(pid < 0) {
         merror(FORK_ERROR, __local_name);
         return;
-    }
-    else if(pid)
-    {
+    } else if(pid) {
         exit(0);
     }
 
     /* becoming session leader */
-    if(setsid() < 0)
-    {
+    if(setsid() < 0) {
         merror(SETSID_ERROR, __local_name);
         return;
     }
 
     /* forking again */
     pid = fork();
-    if(pid < 0)
-    {
+    if(pid < 0) {
         merror(FORK_ERROR, __local_name);
         return;
-    }
-    else if(pid)
-    {
+    } else if(pid) {
         exit(0);
     }
 
 
     /* Dup stdin, stdout and stderr to /dev/null */
-    if((fd = open("/dev/null", O_RDWR)) >= 0)
-    {
+    if((fd = open("/dev/null", O_RDWR)) >= 0) {
         dup2(fd, 0);
         dup2(fd, 1);
         dup2(fd, 2);
@@ -812,8 +763,7 @@ int checkVista()
     isVista = 0;
 
     m_uname = getuname();
-    if(!m_uname)
-    {
+    if(!m_uname) {
         merror(MEM_ERROR, __local_name);
         return(0);
     }
@@ -821,17 +771,14 @@ int checkVista()
 
     /* We check if the system is vista (must be called during the startup.) */
     if(strstr(m_uname, "Windows Server 2008") ||
-       strstr(m_uname, "Vista") ||
-       strstr(m_uname, "Windows 7") ||
-       strstr(m_uname, "Windows 8") ||
-       strstr(m_uname, "Windows Server 2012"))
-    {
+            strstr(m_uname, "Vista") ||
+            strstr(m_uname, "Windows 7") ||
+            strstr(m_uname, "Windows 8") ||
+            strstr(m_uname, "Windows Server 2012")) {
         isVista = 1;
         verbose("%s: INFO: System is Vista or newer (%s).",
                 __local_name, m_uname);
-    }
-    else
-    {
+    } else {
         verbose("%s: INFO: System is older than Vista (%s).",
                 __local_name, m_uname);
     }
@@ -846,12 +793,12 @@ int checkVista()
 /** get uname for windows **/
 char *getuname()
 {
-    int ret_size = OS_SIZE_1024 -2;
+    int ret_size = OS_SIZE_1024 - 2;
     char *ret = NULL;
-    char os_v[128 +1];
+    char os_v[128 + 1];
 
-    typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
-    typedef BOOL (WINAPI *PGPI)(DWORD, DWORD, DWORD, DWORD, PDWORD);
+    typedef void (WINAPI * PGNSI)(LPSYSTEM_INFO);
+    typedef BOOL (WINAPI * PGPI)(DWORD, DWORD, DWORD, DWORD, PDWORD);
 
 
     /* Extracted from ms web site
@@ -867,379 +814,348 @@ char *getuname()
     ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
-    if(!(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi)))
-    {
+    if(!(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi))) {
         osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        if (!GetVersionEx((OSVERSIONINFO *)&osvi))
+        if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
             return(NULL);
+        }
     }
 
     /* Allocating the memory */
-    os_calloc(OS_SIZE_1024 +1, sizeof(char), ret);
+    os_calloc(OS_SIZE_1024 + 1, sizeof(char), ret);
     ret[OS_SIZE_1024] = '\0';
 
-    switch(osvi.dwPlatformId)
-    {
+    switch(osvi.dwPlatformId) {
         /* Test for the Windows NT product family. */
         case VER_PLATFORM_WIN32_NT:
-            if(osvi.dwMajorVersion == 6)
-            {
-                if(osvi.dwMinorVersion == 0)
-                {
-                    if(osvi.wProductType == VER_NT_WORKSTATION )
-                        strncat(ret, "Microsoft Windows Vista ", ret_size -1);
-                    else
-                    {
-                        strncat(ret, "Microsoft Windows Server 2008 ", ret_size -1);
+            if(osvi.dwMajorVersion == 6) {
+                if(osvi.dwMinorVersion == 0) {
+                    if(osvi.wProductType == VER_NT_WORKSTATION ) {
+                        strncat(ret, "Microsoft Windows Vista ", ret_size - 1);
+                    } else {
+                        strncat(ret, "Microsoft Windows Server 2008 ", ret_size - 1);
                     }
-                }
-                else if(osvi.dwMinorVersion == 1)
-                {
-                    if(osvi.wProductType == VER_NT_WORKSTATION )
-                        strncat(ret, "Microsoft Windows 7 ", ret_size -1);
-                    else
-                    {
-                        strncat(ret, "Microsoft Windows Server 2008 R2 ", ret_size -1);
+                } else if(osvi.dwMinorVersion == 1) {
+                    if(osvi.wProductType == VER_NT_WORKSTATION ) {
+                        strncat(ret, "Microsoft Windows 7 ", ret_size - 1);
+                    } else {
+                        strncat(ret, "Microsoft Windows Server 2008 R2 ", ret_size - 1);
                     }
-                }
-                else if(osvi.dwMinorVersion == 2)
-                {
-                    if(osvi.wProductType == VER_NT_WORKSTATION )
-                        strncat(ret, "Microsoft Windows 8 ", ret_size -1);
-                    else
-                    {
-                        strncat(ret, "Microsoft Windows Server 2012 ", ret_size -1);
+                } else if(osvi.dwMinorVersion == 2) {
+                    if(osvi.wProductType == VER_NT_WORKSTATION ) {
+                        strncat(ret, "Microsoft Windows 8 ", ret_size - 1);
+                    } else {
+                        strncat(ret, "Microsoft Windows Server 2012 ", ret_size - 1);
                     }
-                }
-                else if(osvi.dwMinorVersion == 3)
-                {
-                    if(osvi.wProductType == VER_NT_WORKSTATION )
-                        strncat(ret, "Microsoft Windows 8.1 ", ret_size -1);
-                    else
-                    {
-                        strncat(ret, "Microsoft Windows Server 2012 R2 ", ret_size -1);
+                } else if(osvi.dwMinorVersion == 3) {
+                    if(osvi.wProductType == VER_NT_WORKSTATION ) {
+                        strncat(ret, "Microsoft Windows 8.1 ", ret_size - 1);
+                    } else {
+                        strncat(ret, "Microsoft Windows Server 2012 R2 ", ret_size - 1);
                     }
                 }
 
-                ret_size-=strlen(ret) +1;
+                ret_size -= strlen(ret) + 1;
 
 
                 /* Getting product version. */
                 pGPI = (PGPI) GetProcAddress(
-                              GetModuleHandle(TEXT("kernel32.dll")),
-                                                   "GetProductInfo");
+                           GetModuleHandle(TEXT("kernel32.dll")),
+                           "GetProductInfo");
 
                 pGPI( 6, 0, 0, 0, &dwType);
 
-                switch(dwType)
-                {
+                switch(dwType) {
                     case PRODUCT_UNLICENSED:
-                        strncat(ret, PRODUCT_UNLICENSED_C, ret_size -1);
+                        strncat(ret, PRODUCT_UNLICENSED_C, ret_size - 1);
                         break;
                     case PRODUCT_BUSINESS:
-                        strncat(ret, PRODUCT_BUSINESS_C, ret_size -1);
+                        strncat(ret, PRODUCT_BUSINESS_C, ret_size - 1);
                         break;
                     case PRODUCT_BUSINESS_N:
-                        strncat(ret, PRODUCT_BUSINESS_N_C, ret_size -1);
+                        strncat(ret, PRODUCT_BUSINESS_N_C, ret_size - 1);
                         break;
                     case PRODUCT_CLUSTER_SERVER:
-                        strncat(ret, PRODUCT_CLUSTER_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_CLUSTER_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_DATACENTER_SERVER:
-                        strncat(ret, PRODUCT_DATACENTER_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_DATACENTER_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_DATACENTER_SERVER_CORE:
-                        strncat(ret, PRODUCT_DATACENTER_SERVER_CORE_C, ret_size -1);
+                        strncat(ret, PRODUCT_DATACENTER_SERVER_CORE_C, ret_size - 1);
                         break;
                     case PRODUCT_DATACENTER_SERVER_CORE_V:
-                        strncat(ret, PRODUCT_DATACENTER_SERVER_CORE_V_C, ret_size -1);
+                        strncat(ret, PRODUCT_DATACENTER_SERVER_CORE_V_C, ret_size - 1);
                         break;
                     case PRODUCT_DATACENTER_SERVER_V:
-                        strncat(ret, PRODUCT_DATACENTER_SERVER_V_C, ret_size -1);
+                        strncat(ret, PRODUCT_DATACENTER_SERVER_V_C, ret_size - 1);
                         break;
                     case PRODUCT_ENTERPRISE:
-                        strncat(ret, PRODUCT_ENTERPRISE_C, ret_size -1);
+                        strncat(ret, PRODUCT_ENTERPRISE_C, ret_size - 1);
                         break;
                     case PRODUCT_ENTERPRISE_N:
-                        strncat(ret, PRODUCT_ENTERPRISE_N_C, ret_size -1);
+                        strncat(ret, PRODUCT_ENTERPRISE_N_C, ret_size - 1);
                         break;
                     case PRODUCT_ENTERPRISE_SERVER:
-                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_ENTERPRISE_SERVER_CORE:
-                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_CORE_C, ret_size -1);
+                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_CORE_C, ret_size - 1);
                         break;
                     case PRODUCT_ENTERPRISE_SERVER_CORE_V:
-                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_CORE_V_C, ret_size -1);
+                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_CORE_V_C, ret_size - 1);
                         break;
                     case PRODUCT_ENTERPRISE_SERVER_IA64:
-                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_IA64_C, ret_size -1);
+                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_IA64_C, ret_size - 1);
                         break;
                     case PRODUCT_ENTERPRISE_SERVER_V:
-                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_V_C, ret_size -1);
+                        strncat(ret, PRODUCT_ENTERPRISE_SERVER_V_C, ret_size - 1);
                         break;
                     case PRODUCT_HOME_BASIC:
-                        strncat(ret, PRODUCT_HOME_BASIC_C, ret_size -1);
+                        strncat(ret, PRODUCT_HOME_BASIC_C, ret_size - 1);
                         break;
                     case PRODUCT_HOME_BASIC_N:
-                        strncat(ret, PRODUCT_HOME_BASIC_N_C, ret_size -1);
+                        strncat(ret, PRODUCT_HOME_BASIC_N_C, ret_size - 1);
                         break;
                     case PRODUCT_HOME_PREMIUM:
-                        strncat(ret, PRODUCT_HOME_PREMIUM_C, ret_size -1);
+                        strncat(ret, PRODUCT_HOME_PREMIUM_C, ret_size - 1);
                         break;
                     case PRODUCT_HOME_PREMIUM_N:
-                        strncat(ret, PRODUCT_HOME_PREMIUM_N_C, ret_size -1);
+                        strncat(ret, PRODUCT_HOME_PREMIUM_N_C, ret_size - 1);
                         break;
                     case PRODUCT_HOME_SERVER:
-                        strncat(ret, PRODUCT_HOME_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_HOME_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT:
-                        strncat(ret, PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT_C, ret_size -1);
+                        strncat(ret, PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT_C, ret_size - 1);
                         break;
                     case PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING:
-                        strncat(ret, PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING_C, ret_size -1);
+                        strncat(ret, PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING_C, ret_size - 1);
                         break;
                     case PRODUCT_MEDIUMBUSINESS_SERVER_SECURITY:
-                        strncat(ret, PRODUCT_MEDIUMBUSINESS_SERVER_SECURITY_C, ret_size -1);
+                        strncat(ret, PRODUCT_MEDIUMBUSINESS_SERVER_SECURITY_C, ret_size - 1);
                         break;
                     case PRODUCT_SERVER_FOR_SMALLBUSINESS:
-                        strncat(ret, PRODUCT_SERVER_FOR_SMALLBUSINESS_C, ret_size -1);
+                        strncat(ret, PRODUCT_SERVER_FOR_SMALLBUSINESS_C, ret_size - 1);
                         break;
                     case PRODUCT_SMALLBUSINESS_SERVER:
-                        strncat(ret, PRODUCT_SMALLBUSINESS_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_SMALLBUSINESS_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM:
-                        strncat(ret, PRODUCT_SMALLBUSINESS_SERVER_PREMIUM_C, ret_size -1);
+                        strncat(ret, PRODUCT_SMALLBUSINESS_SERVER_PREMIUM_C, ret_size - 1);
                         break;
                     case PRODUCT_STANDARD_SERVER:
-                        strncat(ret, PRODUCT_STANDARD_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_STANDARD_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_STANDARD_SERVER_CORE:
-                        strncat(ret, PRODUCT_STANDARD_SERVER_CORE_C, ret_size -1);
+                        strncat(ret, PRODUCT_STANDARD_SERVER_CORE_C, ret_size - 1);
                         break;
                     case PRODUCT_STANDARD_SERVER_CORE_V:
-                        strncat(ret, PRODUCT_STANDARD_SERVER_CORE_V_C, ret_size -1);
+                        strncat(ret, PRODUCT_STANDARD_SERVER_CORE_V_C, ret_size - 1);
                         break;
                     case PRODUCT_STANDARD_SERVER_V:
-                        strncat(ret, PRODUCT_STANDARD_SERVER_V_C, ret_size -1);
+                        strncat(ret, PRODUCT_STANDARD_SERVER_V_C, ret_size - 1);
                         break;
                     case PRODUCT_STARTER:
-                        strncat(ret, PRODUCT_STARTER_C, ret_size -1);
+                        strncat(ret, PRODUCT_STARTER_C, ret_size - 1);
                         break;
                     case PRODUCT_STORAGE_ENTERPRISE_SERVER:
-                        strncat(ret, PRODUCT_STORAGE_ENTERPRISE_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_STORAGE_ENTERPRISE_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_STORAGE_EXPRESS_SERVER:
-                        strncat(ret, PRODUCT_STORAGE_EXPRESS_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_STORAGE_EXPRESS_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_STORAGE_STANDARD_SERVER:
-                        strncat(ret, PRODUCT_STORAGE_STANDARD_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_STORAGE_STANDARD_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_STORAGE_WORKGROUP_SERVER:
-                        strncat(ret, PRODUCT_STORAGE_WORKGROUP_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_STORAGE_WORKGROUP_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_ULTIMATE:
-                        strncat(ret, PRODUCT_ULTIMATE_C, ret_size -1);
+                        strncat(ret, PRODUCT_ULTIMATE_C, ret_size - 1);
                         break;
                     case PRODUCT_ULTIMATE_N:
-                        strncat(ret, PRODUCT_ULTIMATE_N_C, ret_size -1);
+                        strncat(ret, PRODUCT_ULTIMATE_N_C, ret_size - 1);
                         break;
                     case PRODUCT_WEB_SERVER:
-                        strncat(ret, PRODUCT_WEB_SERVER_C, ret_size -1);
+                        strncat(ret, PRODUCT_WEB_SERVER_C, ret_size - 1);
                         break;
                     case PRODUCT_WEB_SERVER_CORE:
-                        strncat(ret, PRODUCT_WEB_SERVER_CORE_C, ret_size -1);
+                        strncat(ret, PRODUCT_WEB_SERVER_CORE_C, ret_size - 1);
                         break;
                 }
 
 
-                ret_size-=strlen(ret) +1;
+                ret_size -= strlen(ret) + 1;
             }
 
-            else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2)
-            {
+            else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2) {
                 pGNSI = (PGNSI) GetProcAddress(
-                        GetModuleHandle("kernel32.dll"),
-                        "GetNativeSystemInfo");
-                if(NULL != pGNSI)
+                            GetModuleHandle("kernel32.dll"),
+                            "GetNativeSystemInfo");
+                if(NULL != pGNSI) {
                     pGNSI(&si);
+                }
 
                 if( GetSystemMetrics(89) )
                     strncat(ret, "Microsoft Windows Server 2003 R2 ",
-                                 ret_size -1);
+                            ret_size - 1);
                 else if(osvi.wProductType == VER_NT_WORKSTATION &&
-                        si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64)
-                {
+                        si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
                     strncat(ret,
                             "Microsoft Windows XP Professional x64 Edition ",
-                           ret_size -1 );
-                }
-                else
-                {
-                    strncat(ret, "Microsoft Windows Server 2003, ",ret_size-1);
+                            ret_size - 1 );
+                } else {
+                    strncat(ret, "Microsoft Windows Server 2003, ", ret_size - 1);
                 }
 
-                ret_size-=strlen(ret) +1;
+                ret_size -= strlen(ret) + 1;
             }
 
-            else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1)
-            {
-                strncat(ret, "Microsoft Windows XP ", ret_size -1);
+            else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1) {
+                strncat(ret, "Microsoft Windows XP ", ret_size - 1);
 
-                ret_size-=strlen(ret) +1;
+                ret_size -= strlen(ret) + 1;
             }
 
-            else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0)
-            {
-                strncat(ret, "Microsoft Windows 2000 ", ret_size -1);
+            else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0) {
+                strncat(ret, "Microsoft Windows 2000 ", ret_size - 1);
 
-                ret_size-=strlen(ret) +1;
+                ret_size -= strlen(ret) + 1;
             }
 
-            else if (osvi.dwMajorVersion <= 4)
-            {
-                strncat(ret, "Microsoft Windows NT ", ret_size -1);
+            else if (osvi.dwMajorVersion <= 4) {
+                strncat(ret, "Microsoft Windows NT ", ret_size - 1);
 
-                ret_size-=strlen(ret) +1;
-            }
-            else
-            {
-                strncat(ret, "Microsoft Windows Unknown ", ret_size -1);
+                ret_size -= strlen(ret) + 1;
+            } else {
+                strncat(ret, "Microsoft Windows Unknown ", ret_size - 1);
 
-                ret_size-=strlen(ret) +1;
+                ret_size -= strlen(ret) + 1;
             }
 
             /* Test for specific product on Windows NT 4.0 SP6 and later. */
-            if(bOsVersionInfoEx)
-            {
+            if(bOsVersionInfoEx) {
                 /* Test for the workstation type. */
                 if (osvi.wProductType == VER_NT_WORKSTATION &&
-                    si.wProcessorArchitecture!=PROCESSOR_ARCHITECTURE_AMD64)
-                {
-                    if( osvi.dwMajorVersion == 4 )
-                        strncat(ret, "Workstation 4.0 ", ret_size -1);
-                    else if( osvi.wSuiteMask & VER_SUITE_PERSONAL )
-                        strncat(ret, "Home Edition ", ret_size -1);
-                    else
-                        strncat(ret, "Professional ",ret_size -1);
+                        si.wProcessorArchitecture != PROCESSOR_ARCHITECTURE_AMD64) {
+                    if( osvi.dwMajorVersion == 4 ) {
+                        strncat(ret, "Workstation 4.0 ", ret_size - 1);
+                    } else if( osvi.wSuiteMask & VER_SUITE_PERSONAL ) {
+                        strncat(ret, "Home Edition ", ret_size - 1);
+                    } else {
+                        strncat(ret, "Professional ", ret_size - 1);
+                    }
 
                     /* Fixing size */
-                    ret_size-=strlen(ret) +1;
+                    ret_size -= strlen(ret) + 1;
                 }
 
                 /* Test for the server type. */
                 else if( osvi.wProductType == VER_NT_SERVER ||
-                        osvi.wProductType == VER_NT_DOMAIN_CONTROLLER )
-                {
-                    if(osvi.dwMajorVersion==5 && osvi.dwMinorVersion==2)
-                    {
-                        if (si.wProcessorArchitecture==
-                            PROCESSOR_ARCHITECTURE_IA64 )
-                        {
+                         osvi.wProductType == VER_NT_DOMAIN_CONTROLLER ) {
+                    if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2) {
+                        if (si.wProcessorArchitecture ==
+                                PROCESSOR_ARCHITECTURE_IA64 ) {
                             if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
                                 strncat(ret,
-                                "Datacenter Edition for Itanium-based Systems ",
-                                ret_size -1);
+                                        "Datacenter Edition for Itanium-based Systems ",
+                                        ret_size - 1);
                             else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
                                 strncat(ret,
-                                "Enterprise Edition for Itanium-based Systems ",
-                                 ret_size -1);
+                                        "Enterprise Edition for Itanium-based Systems ",
+                                        ret_size - 1);
 
-                            ret_size-=strlen(ret) +1;
+                            ret_size -= strlen(ret) + 1;
                         }
 
-                        else if ( si.wProcessorArchitecture==
-                                PROCESSOR_ARCHITECTURE_AMD64 )
-                        {
+                        else if ( si.wProcessorArchitecture ==
+                                  PROCESSOR_ARCHITECTURE_AMD64 ) {
                             if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
                                 strncat(ret, "Datacenter x64 Edition ",
-                                             ret_size -1 );
+                                        ret_size - 1 );
                             else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
                                 strncat(ret, "Enterprise x64 Edition ",
-                                             ret_size -1 );
+                                        ret_size - 1 );
                             else
                                 strncat(ret, "Standard x64 Edition ",
-                                             ret_size -1 );
+                                        ret_size - 1 );
 
-                            ret_size-=strlen(ret) +1;
+                            ret_size -= strlen(ret) + 1;
                         }
 
-                        else
-                        {
+                        else {
                             if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
                                 strncat(ret, "Datacenter Edition ",
-                                              ret_size -1 );
-                            else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
-                                strncat(ret,"Enterprise Edition ",ret_size -1);
-                            else if ( osvi.wSuiteMask == VER_SUITE_BLADE )
-                                strncat(ret,"Web Edition ",ret_size -1 );
-                            else
-                                strncat(ret, "Standard Edition ",ret_size -1);
+                                        ret_size - 1 );
+                            else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE ) {
+                                strncat(ret, "Enterprise Edition ", ret_size - 1);
+                            } else if ( osvi.wSuiteMask == VER_SUITE_BLADE ) {
+                                strncat(ret, "Web Edition ", ret_size - 1 );
+                            } else {
+                                strncat(ret, "Standard Edition ", ret_size - 1);
+                            }
 
-                            ret_size-=strlen(ret) +1;
+                            ret_size -= strlen(ret) + 1;
                         }
-                    }
-                    else if(osvi.dwMajorVersion==5 && osvi.dwMinorVersion==0)
-                    {
-                        if( osvi.wSuiteMask & VER_SUITE_DATACENTER )
-                            strncat(ret, "Datacenter Server ",ret_size -1);
-                        else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
-                            strncat(ret, "Advanced Server ",ret_size -1 );
-                        else
-                            strncat(ret, "Server ",ret_size -1);
+                    } else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0) {
+                        if( osvi.wSuiteMask & VER_SUITE_DATACENTER ) {
+                            strncat(ret, "Datacenter Server ", ret_size - 1);
+                        } else if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE ) {
+                            strncat(ret, "Advanced Server ", ret_size - 1 );
+                        } else {
+                            strncat(ret, "Server ", ret_size - 1);
+                        }
 
-                        ret_size-=strlen(ret) +1;
-                    }
-                    else if(osvi.dwMajorVersion <= 4)  /* Windows NT 4.0  */
-                    {
+                        ret_size -= strlen(ret) + 1;
+                    } else if(osvi.dwMajorVersion <= 4) { /* Windows NT 4.0  */
                         if( osvi.wSuiteMask & VER_SUITE_ENTERPRISE )
                             strncat(ret, "Server 4.0, Enterprise Edition ",
-                                         ret_size -1 );
-                        else
-                            strncat(ret, "Server 4.0 ",ret_size -1);
+                                    ret_size - 1 );
+                        else {
+                            strncat(ret, "Server 4.0 ", ret_size - 1);
+                        }
 
-                        ret_size-=strlen(ret) +1;
+                        ret_size -= strlen(ret) + 1;
                     }
                 }
             }
             /* Test for specific product on Windows NT 4.0 SP5 and earlier */
-            else
-            {
+            else {
                 HKEY hKey;
                 char szProductType[81];
-                DWORD dwBufLen=80;
+                DWORD dwBufLen = 80;
                 LONG lRet;
 
                 lRet = RegOpenKeyEx( HKEY_LOCAL_MACHINE,
-                        "SYSTEM\\CurrentControlSet\\Control\\ProductOptions",
-                        0, KEY_QUERY_VALUE, &hKey );
-                if(lRet == ERROR_SUCCESS)
-                {
+                                     "SYSTEM\\CurrentControlSet\\Control\\ProductOptions",
+                                     0, KEY_QUERY_VALUE, &hKey );
+                if(lRet == ERROR_SUCCESS) {
                     char __wv[32];
 
                     lRet = RegQueryValueEx( hKey, "ProductType", NULL, NULL,
-                            (LPBYTE) szProductType, &dwBufLen);
+                                            (LPBYTE) szProductType, &dwBufLen);
                     RegCloseKey( hKey );
 
-                    if((lRet == ERROR_SUCCESS) && (dwBufLen < 80) )
-                    {
-                        if (lstrcmpi( "WINNT", szProductType) == 0 )
-                            strncat(ret, "Workstation ",ret_size -1);
-                        else if(lstrcmpi( "LANMANNT", szProductType) == 0 )
-                            strncat(ret, "Server ",ret_size -1);
-                        else if(lstrcmpi( "SERVERNT", szProductType) == 0 )
-                            strncat(ret, "Advanced Server " ,ret_size -1);
+                    if((lRet == ERROR_SUCCESS) && (dwBufLen < 80) ) {
+                        if (lstrcmpi( "WINNT", szProductType) == 0 ) {
+                            strncat(ret, "Workstation ", ret_size - 1);
+                        } else if(lstrcmpi( "LANMANNT", szProductType) == 0 ) {
+                            strncat(ret, "Server ", ret_size - 1);
+                        } else if(lstrcmpi( "SERVERNT", szProductType) == 0 ) {
+                            strncat(ret, "Advanced Server " , ret_size - 1);
+                        }
 
-                        ret_size-=strlen(ret) +1;
+                        ret_size -= strlen(ret) + 1;
 
                         memset(__wv, '\0', 32);
                         snprintf(__wv, 31,
-                                "%d.%d ",
-                                (int)osvi.dwMajorVersion,
-                                (int)osvi.dwMinorVersion);
+                                 "%d.%d ",
+                                 (int)osvi.dwMajorVersion,
+                                 (int)osvi.dwMinorVersion);
 
-                        strncat(ret, __wv, ret_size -1);
-                        ret_size-=strlen(__wv) +1;
+                        strncat(ret, __wv, ret_size - 1);
+                        ret_size -= strlen(__wv) + 1;
                     }
                 }
             }
@@ -1247,8 +1163,7 @@ char *getuname()
             /* Display service pack (if any) and build number. */
 
             if( osvi.dwMajorVersion == 4 &&
-                    lstrcmpi( osvi.szCSDVersion, "Service Pack 6" ) == 0 )
-            {
+                    lstrcmpi( osvi.szCSDVersion, "Service Pack 6" ) == 0 ) {
                 HKEY hKey;
                 LONG lRet;
                 char __wp[64];
@@ -1256,72 +1171,66 @@ char *getuname()
                 memset(__wp, '\0', 64);
                 /* Test for SP6 versus SP6a. */
                 lRet = RegOpenKeyEx( HKEY_LOCAL_MACHINE,
-                        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Hotfix\\Q246009",
-                        0, KEY_QUERY_VALUE, &hKey );
+                                     "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Hotfix\\Q246009",
+                                     0, KEY_QUERY_VALUE, &hKey );
                 if( lRet == ERROR_SUCCESS )
                     snprintf(__wp, 63, "Service Pack 6a (Build %d)",
-                            (int)osvi.dwBuildNumber & 0xFFFF );
-                else /* Windows NT 4.0 prior to SP6a */
-                {
+                             (int)osvi.dwBuildNumber & 0xFFFF );
+                else { /* Windows NT 4.0 prior to SP6a */
                     snprintf(__wp, 63, "%s (Build %d)",
-                            osvi.szCSDVersion,
-                            (int)osvi.dwBuildNumber & 0xFFFF);
+                             osvi.szCSDVersion,
+                             (int)osvi.dwBuildNumber & 0xFFFF);
                 }
 
-                strncat(ret, __wp, ret_size -1);
-                ret_size-=strlen(__wp) +1;
+                strncat(ret, __wp, ret_size - 1);
+                ret_size -= strlen(__wp) + 1;
                 RegCloseKey( hKey );
-            }
-            else
-            {
+            } else {
                 char __wp[64];
 
                 memset(__wp, '\0', 64);
 
                 snprintf(__wp, 63, "%s (Build %d)",
-                        osvi.szCSDVersion,
-                        (int)osvi.dwBuildNumber & 0xFFFF);
+                         osvi.szCSDVersion,
+                         (int)osvi.dwBuildNumber & 0xFFFF);
 
-                strncat(ret, __wp, ret_size -1);
-                ret_size-=strlen(__wp) +1;
+                strncat(ret, __wp, ret_size - 1);
+                ret_size -= strlen(__wp) + 1;
             }
             break;
 
         /* Test for the Windows Me/98/95. */
         case VER_PLATFORM_WIN32_WINDOWS:
 
-            if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 0)
-            {
-                strncat(ret, "Microsoft Windows 95 ", ret_size -1);
-                ret_size-=strlen(ret) +1;
+            if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 0) {
+                strncat(ret, "Microsoft Windows 95 ", ret_size - 1);
+                ret_size -= strlen(ret) + 1;
             }
 
-            if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 10)
-            {
-                strncat(ret, "Microsoft Windows 98 ", ret_size -1);
-                ret_size-=strlen(ret) +1;
+            if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 10) {
+                strncat(ret, "Microsoft Windows 98 ", ret_size - 1);
+                ret_size -= strlen(ret) + 1;
             }
 
-            if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 90)
-            {
+            if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 90) {
                 strncat(ret, "Microsoft Windows Millennium Edition",
-                        ret_size -1);
+                        ret_size - 1);
 
-                ret_size-=strlen(ret) +1;
+                ret_size -= strlen(ret) + 1;
             }
             break;
 
         case VER_PLATFORM_WIN32s:
 
-            strncat(ret, "Microsoft Win32s", ret_size -1);
-            ret_size-=strlen(ret) +1;
+            strncat(ret, "Microsoft Win32s", ret_size - 1);
+            ret_size -= strlen(ret) + 1;
             break;
     }
 
 
     /* Adding ossec version */
     snprintf(os_v, 128, " - %s %s", __ossec_name, __version);
-    strncat(ret, os_v, ret_size -1);
+    strncat(ret, os_v, ret_size - 1);
 
 
     /* Returning system information */

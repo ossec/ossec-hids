@@ -26,8 +26,7 @@ void monitor_agents()
 
 
     /* No agent saved */
-    if(!mond.agents)
-    {
+    if(!mond.agents) {
         mond.agents = av_agents;
         return;
     }
@@ -36,16 +35,13 @@ void monitor_agents()
      * are disconnected.
      */
     cr_agents = mond.agents;
-    while(*cr_agents)
-    {
+    while(*cr_agents) {
         int available = 0;
         char **tmp_av;
 
         tmp_av = av_agents;
-        while(tmp_av && *tmp_av)
-        {
-            if(strcmp(*cr_agents, *tmp_av) == 0)
-            {
+        while(tmp_av && *tmp_av) {
+            if(strcmp(*cr_agents, *tmp_av) == 0) {
                 available = 1;
                 break;
             }
@@ -53,15 +49,13 @@ void monitor_agents()
         }
 
         /* Agent disconnected */
-        if(available == 0)
-        {
-            char str[OS_SIZE_1024 +1];
+        if(available == 0) {
+            char str[OS_SIZE_1024 + 1];
 
             /* Sending disconnected message */
-            snprintf(str, OS_SIZE_1024 -1, OS_AG_DISCON, *cr_agents);
+            snprintf(str, OS_SIZE_1024 - 1, OS_AG_DISCON, *cr_agents);
             if(SendMSG(mond.a_queue, str, ARGV0,
-                        LOCALFILE_MQ) < 0)
-            {
+                       LOCALFILE_MQ) < 0) {
                 merror(QUEUE_SEND, ARGV0);
             }
         }

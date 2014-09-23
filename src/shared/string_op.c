@@ -24,18 +24,18 @@ void os_trimcrlf(char *str)
 {
     size_t len;
 
-    len=strlen(str);
+    len = strlen(str);
     len--;
 
-    while (str[len]=='\n' || str[len]=='\r')
-    {
-       str[len]='\0';
-       len--;
+    while (str[len] == '\n' || str[len] == '\r') {
+        str[len] = '\0';
+        len--;
     }
 }
 
 /* Remove offending char (e.g., double quotes) from source */
-char *os_strip_char(const char *source, char remove) {
+char *os_strip_char(const char *source, char remove)
+{
     char *clean;
     const char *iterator = source;
     size_t length = 0;
@@ -56,8 +56,8 @@ char *os_strip_char(const char *source, char remove) {
     memset(clean, '\0', length + 1);
 
     // Remove the characters
-    iterator=source;
-    for( i=0; *iterator; iterator++ ) {
+    iterator = source;
+    for( i = 0; *iterator; iterator++ ) {
         if ( *iterator != remove ) {
             clean[i] = *iterator;
             i++;
@@ -68,8 +68,9 @@ char *os_strip_char(const char *source, char remove) {
 }
 
 /* Do a substring */
-int os_substr(char *dest, const char *src, size_t position, ssize_t length) {
-    dest[0]='\0';
+int os_substr(char *dest, const char *src, size_t position, ssize_t length)
+{
+    dest[0] = '\0';
 
     if( length <= 0  ) {
         // Unsupported negative length string
@@ -88,17 +89,20 @@ int os_substr(char *dest, const char *src, size_t position, ssize_t length) {
 }
 
 /* Escape a set of characters */
-char *os_shell_escape(const char *src) {
+char *os_shell_escape(const char *src)
+{
     // Maximum Length of the String is 2xthe current length
     char shell_escapes[] = { '\\', '"', '\'', ' ', '\t', ';', '`', '>', '<', '|', '#',
-                            '*', '[', ']', '{', '}', '&', '$', '!', ':', '(', ')' };
+                             '*', '[', ']', '{', '}', '&', '$', '!', ':', '(', ')'
+                           };
 
     char *escaped_string;
     size_t length = 0;
     int i = 0;
 
-    if (src == NULL)
+    if (src == NULL) {
         return NULL;
+    }
 
     // Determine how long the string will be
     const char *iterator = src;
@@ -115,8 +119,8 @@ char *os_shell_escape(const char *src) {
     }
 
     // Escape the escapable characters
-    iterator=src;
-    for( i=0; *iterator; iterator++ ) {
+    iterator = src;
+    for( i = 0; *iterator; iterator++ ) {
         if ( strchr(shell_escapes, *iterator) ) {
             escaped_string[i] = '\\';
             i++;

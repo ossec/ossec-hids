@@ -21,46 +21,39 @@
 int main(int argc, char **argv)
 {
     char *status;
-    const char *(xml_syscheck_status[])={"ossec_config","syscheck","disabled", NULL};
+    const char *(xml_syscheck_status[]) = {"ossec_config", "syscheck", "disabled", NULL};
 
-    if(argc < 3)
-    {
+    if(argc < 3) {
         printf("%s: Invalid syntax.\n", argv[0]);
         printf("Try: '%s <dir> [enable|disable]'\n\n", argv[0]);
         return(0);
     }
 
     /* Checking for directory. */
-    if(chdir(argv[1]) != 0)
-    {
+    if(chdir(argv[1]) != 0) {
         printf("%s: Invalid directory: '%s'.\n", argv[0], argv[1]);
         return(0);
     }
 
 
     /* Checking if ossec was installed already */
-    if(!fileexist(OSSECCONF))
-    {
+    if(!fileexist(OSSECCONF)) {
         printf("%s: OSSEC not installed yet. Exiting.\n", argv[0]);
         return(0);
     }
 
 
     /* Checking status. */
-    if(strcmp(argv[2], "enable") == 0)
-    {
+    if(strcmp(argv[2], "enable") == 0) {
         status = "no";
-    }
-    else
-    {
+    } else {
         status = "yes";
     }
 
 
     /* Writing to the XML. */
     if(OS_WriteXML(OSSECCONF, OSSEC_CONFIG_TMP, xml_syscheck_status,
-                   "no", status) != 0)
-    {
+                   "no", status) != 0) {
         printf("%s: Error writing to the Config file. Exiting.\n", argv[0]);
         return(0);
     }

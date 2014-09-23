@@ -18,18 +18,16 @@
 
 
 /* Structure for the report. */
-typedef struct _report_config
-{
+typedef struct _report_config {
     char *title;
     char *args;
     char *relations;
     char *type;
     char **emailto;
     report_filter r_filter;
-}report_config;
+} report_config;
 
-typedef struct _monitor_config
-{
+typedef struct _monitor_config {
     short int day_wait;
     short int compress;
     short int sign;
@@ -42,7 +40,7 @@ typedef struct _monitor_config
 
     char **agents;
     report_config **reports;
-}monitor_config;
+} monitor_config;
 
 
 

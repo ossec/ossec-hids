@@ -25,17 +25,15 @@
 #define LR_ADDRESS_MATCH_VALUE 12
 
 
-typedef struct ListNode
-{
+typedef struct ListNode {
     int loaded;
     char *cdb_filename;
     char *txt_filename;
     struct cdb cdb;
     struct ListNode *next;
-}ListNode;
+} ListNode;
 
-typedef struct ListRule
-{
+typedef struct ListRule {
     int loaded;
     int field;
     int lookup_type;
@@ -43,7 +41,7 @@ typedef struct ListRule
     char *filename;
     ListNode *db;
     struct ListRule *next;
-}ListRule;
+} ListRule;
 
 /* create the rule list */
 void OS_CreateListsList();

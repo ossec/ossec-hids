@@ -36,13 +36,11 @@ int Accumulate_Init()
 
     /* Creating store data */
     acm_store = OSHash_Create();
-    if(!acm_store)
-    {
+    if(!acm_store) {
         merror(LIST_ERROR, ARGV0);
         return(0);
     }
-    if(!OSHash_setSize(acm_store, 2048))
-    {
+    if(!OSHash_setSize(acm_store, 2048)) {
         merror(LIST_ERROR, ARGV0);
         return(0);
     }
@@ -58,7 +56,7 @@ int Accumulate_Init()
 /* Accumulate v0.1
  *   Accumulate data from events sharing the same id
  */
-Eventinfo* Accumulate(Eventinfo *lf)
+Eventinfo *Accumulate(Eventinfo *lf)
 {
     // Declare our variables
     int result;
@@ -102,10 +100,10 @@ Eventinfo* Accumulate(Eventinfo *lf)
 
     /* Accumulator Key */
     result = snprintf(_key, OS_FLSIZE, "%s %s %s",
-            lf->hostname,
-            lf->decoder_info->name,
-            lf->id
-            );
+                      lf->hostname,
+                      lf->decoder_info->name,
+                      lf->id
+                     );
     if( result < 0 || result >= sizeof(_key) ) {
         debug1("accumulator: DEBUG: error setting accumulator key, id:%s,name:%s", lf->id, lf->decoder_info->name);
         return lf;
@@ -123,74 +121,83 @@ Eventinfo* Accumulate(Eventinfo *lf)
                 // Reallocate what we need
                 stored_data = InitACMStore();
             }
-        }
-        else {
+        } else {
             // Update the event
             do_update = 1;
-            if (acm_str_replace(&lf->dstuser,stored_data->dstuser) == 0)
+            if (acm_str_replace(&lf->dstuser, stored_data->dstuser) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->dstuser to %s", _key, lf->dstuser);
+            }
 
-            if (acm_str_replace(&lf->srcuser,stored_data->srcuser) == 0)
+            if (acm_str_replace(&lf->srcuser, stored_data->srcuser) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->srcuser to %s", _key, lf->srcuser);
+            }
 
-            if (acm_str_replace(&lf->dstip,stored_data->dstip) == 0)
+            if (acm_str_replace(&lf->dstip, stored_data->dstip) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->dstip to %s", _key, lf->dstip);
+            }
 
-            if (acm_str_replace(&lf->srcip,stored_data->srcip) == 0)
+            if (acm_str_replace(&lf->srcip, stored_data->srcip) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->srcip to %s", _key, lf->srcip);
+            }
 
-            if (acm_str_replace(&lf->dstport,stored_data->dstport) == 0)
+            if (acm_str_replace(&lf->dstport, stored_data->dstport) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->dstport to %s", _key, lf->dstport);
+            }
 
-            if (acm_str_replace(&lf->srcport,stored_data->srcport) == 0)
+            if (acm_str_replace(&lf->srcport, stored_data->srcport) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->srcport to %s", _key, lf->srcport);
+            }
 
-            if (acm_str_replace(&lf->data,stored_data->data) == 0)
+            if (acm_str_replace(&lf->data, stored_data->data) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->data to %s", _key, lf->data);
+            }
         }
-    }
-    else {
+    } else {
         stored_data = InitACMStore();
     }
 
     // Store the object in the cache
     stored_data->timestamp = current_ts;
-    if (acm_str_replace(&stored_data->dstuser,lf->dstuser) == 0)
+    if (acm_str_replace(&stored_data->dstuser, lf->dstuser) == 0) {
         debug2("accumulator: DEBUG: (%s) updated stored_data->dstuser to %s", _key, stored_data->dstuser);
+    }
 
-    if (acm_str_replace(&stored_data->srcuser,lf->srcuser) == 0)
+    if (acm_str_replace(&stored_data->srcuser, lf->srcuser) == 0) {
         debug2("accumulator: DEBUG: (%s) updated stored_data->srcuser to %s", _key, stored_data->srcuser);
+    }
 
-    if (acm_str_replace(&stored_data->dstip,lf->dstip) == 0)
+    if (acm_str_replace(&stored_data->dstip, lf->dstip) == 0) {
         debug2("accumulator: DEBUG: (%s) updated stored_data->dstip to %s", _key, stored_data->dstip);
+    }
 
-    if (acm_str_replace(&stored_data->srcip,lf->srcip) == 0)
+    if (acm_str_replace(&stored_data->srcip, lf->srcip) == 0) {
         debug2("accumulator: DEBUG: (%s) updated stored_data->srcip to %s", _key, stored_data->srcip);
+    }
 
-    if (acm_str_replace(&stored_data->dstport,lf->dstport) == 0)
+    if (acm_str_replace(&stored_data->dstport, lf->dstport) == 0) {
         debug2("accumulator: DEBUG: (%s) updated stored_data->dstport to %s", _key, stored_data->dstport);
+    }
 
-    if (acm_str_replace(&stored_data->srcport,lf->srcport) == 0)
+    if (acm_str_replace(&stored_data->srcport, lf->srcport) == 0) {
         debug2("accumulator: DEBUG: (%s) updated stored_data->srcport to %s", _key, stored_data->srcport);
+    }
 
-    if (acm_str_replace(&stored_data->data,lf->data) == 0)
+    if (acm_str_replace(&stored_data->data, lf->data) == 0) {
         debug2("accumulator: DEBUG: (%s) updated stored_data->data to %s", _key, stored_data->data);
+    }
 
     // Update or Add to the hash
     if( do_update == 1 ) {
         // Update the hash entry
         if( (result = OSHash_Update(acm_store, _key, stored_data)) != 1) {
             verbose("accumulator: ERROR: Update of stored data for %s failed (%d).", _key, result);
-        }
-        else {
+        } else {
             debug1("accumulator: DEBUG: Updated stored data for %s", _key);
         }
-    }
-    else {
+    } else {
         if((result = OSHash_Add(acm_store, _key, stored_data)) != 2 ) {
             verbose("accumulator: ERROR: Addition of stored data for %s failed (%d).", _key, result);
-        }
-        else {
+        } else {
             debug1("accumulator: DEBUG: Added stored data for %s", _key);
         }
     }
@@ -198,7 +205,8 @@ Eventinfo* Accumulate(Eventinfo *lf)
     return lf;
 }
 
-void Accumulate_CleanUp() {
+void Accumulate_CleanUp()
+{
     struct timeval tp;
     int current_ts = 0;
     int expired = 0;
@@ -245,8 +253,7 @@ void Accumulate_CleanUp() {
                     if( OSHash_Delete(acm_store, key) != NULL ) {
                         FreeACMStore(stored_data);
                         expired++;
-                    }
-                    else {
+                    } else {
                         debug1("accumulator: DEBUG: CleanUp() failed to find key '%s'", key);
                     }
                 }
@@ -257,7 +264,8 @@ void Accumulate_CleanUp() {
 }
 
 /* Initialize an storage object */
-OS_ACM_Store * InitACMStore() {
+OS_ACM_Store *InitACMStore()
+{
     OS_ACM_Store *obj;
     os_calloc(1, sizeof(OS_ACM_Store), obj);
 
@@ -274,7 +282,8 @@ OS_ACM_Store * InitACMStore() {
 }
 
 /* Free an accumulation store struct */
-void FreeACMStore(OS_ACM_Store *obj) {
+void FreeACMStore(OS_ACM_Store *obj)
+{
     if( obj != NULL ) {
         debug2("accumulator: DEBUG: Freeing an accumulator struct.");
         free(obj->dstuser);
@@ -288,7 +297,8 @@ void FreeACMStore(OS_ACM_Store *obj) {
     }
 }
 
-int acm_str_replace(char **dst, const char *src) {
+int acm_str_replace(char **dst, const char *src)
+{
     int result = 0;
 
     // Don't overwrite with a null str
@@ -311,11 +321,12 @@ int acm_str_replace(char **dst, const char *src) {
     if( dst != NULL ) {
         free(*dst); // If *dst is NULL, free() does nothing
     }
-    os_malloc(slen+1, *dst);
+    os_malloc(slen + 1, *dst);
 
     result = strcpy(*dst, src) == NULL ? -1 : 0;
-    if (result < 0)
+    if (result < 0) {
         debug1("accumulator: DEBUG: error in acm_str_replace()");
+    }
     return result;
 }
 

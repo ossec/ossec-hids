@@ -155,16 +155,15 @@ int rk_sys_count;
 
 
 /* All the ports */
-char total_ports_udp[65535 +1];
-char total_ports_tcp[65535 +1];
+char total_ports_udp[65535 + 1];
+char total_ports_tcp[65535 + 1];
 
 
 /* Process struct */
-typedef struct _Proc_Info
-{
+typedef struct _Proc_Info {
     char *p_name;
     char *p_path;
-}Proc_Info;
+} Proc_Info;
 
 
 #endif

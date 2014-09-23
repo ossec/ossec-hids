@@ -20,7 +20,7 @@
 #define _ERROR_MESSAGES__H
 
 
-	/***  Error messages - English ***/
+/***  Error messages - English ***/
 
 
 /* SYSTEM ERRORS */

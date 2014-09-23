@@ -47,8 +47,7 @@ OSDecoderNode *OS_GetFirstOSDecoder(char *p_name)
 {
     /* If program name is set, we return the forpname list.
      */
-    if(p_name)
-    {
+    if(p_name) {
         return(osdecodernode_forpname);
     }
 
@@ -62,61 +61,50 @@ OSDecoderNode *_OS_AddOSDecoder(OSDecoderNode *s_node, OSDecoderInfo *pi)
     OSDecoderNode *tmp_node = s_node;
     int rm_f = 0;
 
-    if(tmp_node)
-    {
+    if(tmp_node) {
         OSDecoderNode *new_node;
 
-        new_node = (OSDecoderNode *)calloc(1,sizeof(OSDecoderNode));
-        if(new_node == NULL)
-        {
-            merror(MEM_ERROR,ARGV0);
+        new_node = (OSDecoderNode *)calloc(1, sizeof(OSDecoderNode));
+        if(new_node == NULL) {
+            merror(MEM_ERROR, ARGV0);
             return(NULL);
         }
 
         /* Going to the last node */
-        do
-        {
+        do {
             /* Checking for common names */
-            if((strcmp(tmp_node->osdecoder->name,pi->name) == 0) &&
-               (pi->parent != NULL))
-            {
+            if((strcmp(tmp_node->osdecoder->name, pi->name) == 0) &&
+                    (pi->parent != NULL)) {
                 if((tmp_node->osdecoder->prematch ||
-                    tmp_node->osdecoder->regex) && pi->regex_offset)
-                {
+                        tmp_node->osdecoder->regex) && pi->regex_offset) {
                     rm_f = 1;
                 }
 
                 /* Multi-regexes patterns cannot have prematch */
-                if(pi->prematch)
-                {
-                    merror(PDUP_INV, ARGV0,pi->name);
+                if(pi->prematch) {
+                    merror(PDUP_INV, ARGV0, pi->name);
                     return(NULL);
                 }
 
                 /* Multi-regex patterns cannot have fts set */
-                if(pi->fts)
-                {
-                    merror(PDUPFTS_INV, ARGV0,pi->name);
+                if(pi->fts) {
+                    merror(PDUPFTS_INV, ARGV0, pi->name);
                     return(NULL);
                 }
 
-                if(tmp_node->osdecoder->regex && pi->regex)
-                {
+                if(tmp_node->osdecoder->regex && pi->regex) {
                     tmp_node->osdecoder->get_next = 1;
-                }
-                else
-                {
-                    merror(DUP_INV, ARGV0,pi->name);
+                } else {
+                    merror(DUP_INV, ARGV0, pi->name);
                     return(NULL);
                 }
             }
 
-        }while(tmp_node->next && (tmp_node = tmp_node->next));
+        } while(tmp_node->next && (tmp_node = tmp_node->next));
 
 
         /* Must have a prematch set */
-        if(!rm_f && (pi->regex_offset & AFTER_PREVREGEX))
-        {
+        if(!rm_f && (pi->regex_offset & AFTER_PREVREGEX)) {
             merror(INV_OFFSET, ARGV0, pi->name);
             return(NULL);
         }
@@ -128,20 +116,17 @@ OSDecoderNode *_OS_AddOSDecoder(OSDecoderNode *s_node, OSDecoderInfo *pi)
         new_node->child = NULL;
     }
 
-    else
-    {
+    else {
         /* Must not have a previous regex set */
-        if(pi->regex_offset & AFTER_PREVREGEX)
-        {
+        if(pi->regex_offset & AFTER_PREVREGEX) {
             merror(INV_OFFSET, ARGV0, pi->name);
             return(NULL);
         }
 
         tmp_node = (OSDecoderNode *)calloc(1, sizeof(OSDecoderNode));
 
-        if(tmp_node == NULL)
-        {
-            ErrorExit(MEM_ERROR,ARGV0);
+        if(tmp_node == NULL) {
+            ErrorExit(MEM_ERROR, ARGV0);
         }
 
         tmp_node->child = NULL;
@@ -164,29 +149,22 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
     /* We can actually have two lists. One with program
      * name and the other without.
      */
-    if(pi->program_name)
-    {
+    if(pi->program_name) {
         osdecodernode = osdecodernode_forpname;
-    }
-    else
-    {
+    } else {
         osdecodernode = osdecodernode_nopname;
     }
 
 
     /* Search for parent on both lists */
-    if(pi->parent)
-    {
+    if(pi->parent) {
         OSDecoderNode *tmp_node = osdecodernode_forpname;
 
         /* List with p_name */
-        while(tmp_node)
-        {
-            if(strcmp(tmp_node->osdecoder->name, pi->parent) == 0)
-            {
+        while(tmp_node) {
+            if(strcmp(tmp_node->osdecoder->name, pi->parent) == 0) {
                 tmp_node->child = _OS_AddOSDecoder(tmp_node->child, pi);
-                if(!tmp_node->child)
-                {
+                if(!tmp_node->child) {
                     merror(DEC_PLUGIN_ERR, ARGV0);
                     return(0);
                 }
@@ -198,13 +176,10 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
 
         /* List without p name */
         tmp_node = osdecodernode_nopname;
-        while(tmp_node)
-        {
-            if(strcmp(tmp_node->osdecoder->name, pi->parent) == 0)
-            {
+        while(tmp_node) {
+            if(strcmp(tmp_node->osdecoder->name, pi->parent) == 0) {
                 tmp_node->child = _OS_AddOSDecoder(tmp_node->child, pi);
-                if(!tmp_node->child)
-                {
+                if(!tmp_node->child) {
                     merror(DEC_PLUGIN_ERR, ARGV0);
                     return(0);
                 }
@@ -215,30 +190,23 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
 
 
         /* OSDecoder was added correctly */
-        if(added == 1)
-        {
+        if(added == 1) {
             return(1);
         }
 
         merror(PPLUGIN_INV, ARGV0, pi->parent);
         return(0);
-    }
-    else
-    {
+    } else {
         osdecodernode = _OS_AddOSDecoder(osdecodernode, pi);
-        if(!osdecodernode)
-        {
+        if(!osdecodernode) {
             merror(DEC_PLUGIN_ERR, ARGV0);
             return(0);
         }
 
         /* Updating global decoders pointers */
-        if(pi->program_name)
-        {
+        if(pi->program_name) {
             osdecodernode_forpname = osdecodernode;
-        }
-        else
-        {
+        } else {
             osdecodernode_nopname = osdecodernode;
         }
     }

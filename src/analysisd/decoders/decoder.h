@@ -31,8 +31,7 @@
 
 
 /* Decoder structure */
-typedef struct
-{
+typedef struct {
     u_int8_t  get_next;
     u_int8_t  type;
     u_int8_t  use_own_name;
@@ -53,15 +52,14 @@ typedef struct
 
     void (*plugindecoder)(void *lf);
     void (**order)(void *lf, char *field);
-}OSDecoderInfo;
+} OSDecoderInfo;
 
 /* List structure */
-typedef struct _OSDecoderNode
-{
+typedef struct _OSDecoderNode {
     struct _OSDecoderNode *next;
     struct _OSDecoderNode *child;
     OSDecoderInfo *osdecoder;
-}OSDecoderNode;
+} OSDecoderNode;
 
 
 

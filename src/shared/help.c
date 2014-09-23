@@ -32,7 +32,7 @@ void print_version()
     print_out(" ");
     print_out("%s %s - %s", __ossec_name, __version, __author);
     print_out(" ");
-    print_out("%s",__license);
+    print_out("%s", __license);
     exit(1);
 }
 

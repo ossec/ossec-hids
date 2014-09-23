@@ -33,23 +33,22 @@ int os_get_streams(char *full_path)
     WIN32_STREAM_ID sid;
     void *context = NULL;
 
-    char stream_name[MAX_PATH +1];
-    char final_name[MAX_PATH +1];
+    char stream_name[MAX_PATH + 1];
+    char final_name[MAX_PATH + 1];
 
     DWORD dwRead, shs, dw1, dw2;
 
 
     /* Opening file */
     file_h = CreateFile(full_path,
-            GENERIC_READ,
-            FILE_SHARE_READ,
-            NULL,
-            OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_POSIX_SEMANTICS,
-            NULL);
+                        GENERIC_READ,
+                        FILE_SHARE_READ,
+                        NULL,
+                        OPEN_EXISTING,
+                        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_POSIX_SEMANTICS,
+                        NULL);
 
-    if (file_h == INVALID_HANDLE_VALUE)
-    {
+    if (file_h == INVALID_HANDLE_VALUE) {
         return 0;
     }
 
@@ -58,35 +57,29 @@ int os_get_streams(char *full_path)
     ZeroMemory(&sid, sizeof(WIN32_STREAM_ID));
 
     /* Getting stream header size -- should be 20 bytes */
-    shs = (LPBYTE)&sid.cStreamName - (LPBYTE)&sid+ sid.dwStreamNameSize;
+    shs = (LPBYTE)&sid.cStreamName - (LPBYTE)&sid + sid.dwStreamNameSize;
 
 
-    while(1)
-    {
+    while(1) {
         if(BackupRead(file_h, (LPBYTE) &sid, shs, &dwRead,
-                    FALSE, FALSE, &context) == 0)
-        {
+                      FALSE, FALSE, &context) == 0) {
             break;
         }
-        if(dwRead == 0)
-        {
+        if(dwRead == 0) {
             break;
         }
 
         stream_name[0] = '\0';
         stream_name[MAX_PATH] = '\0';
         if(BackupRead(file_h, (LPBYTE)stream_name,
-                    sid.dwStreamNameSize,
-                    &dwRead, FALSE, FALSE, &context))
-        {
-            if(dwRead != 0)
-            {
+                      sid.dwStreamNameSize,
+                      &dwRead, FALSE, FALSE, &context)) {
+            if(dwRead != 0) {
                 char *tmp_pt;
                 snprintf(final_name, MAX_PATH, "%s%S", full_path,
-                        (WCHAR *)stream_name);
+                         (WCHAR *)stream_name);
                 tmp_pt = strrchr(final_name, ':');
-                if(tmp_pt)
-                {
+                if(tmp_pt) {
                     *tmp_pt = '\0';
                 }
                 printf("Found NTFS ADS: '%s' \n", final_name);
@@ -94,10 +87,9 @@ int os_get_streams(char *full_path)
             }
         }
 
-        /* Getting next */			
+        /* Getting next */
         if(!BackupSeek(file_h, sid.Size.LowPart, sid.Size.HighPart,
-                    &dw1, &dw2, &context))
-        {
+                       &dw1, &dw2, &context)) {
             break;
         }
     }
@@ -116,14 +108,12 @@ int read_sys_file(char *file_name)
     os_get_streams(file_name);
 
 
-    if(stat(file_name, &statbuf) < 0)
-    {
+    if(stat(file_name, &statbuf) < 0) {
         return(0);
     }
 
     /* If directory, read the directory */
-    else if(S_ISDIR(statbuf.st_mode))
-    {
+    else if(S_ISDIR(statbuf.st_mode)) {
         return(read_sys_dir(file_name));
     }
 
@@ -138,46 +128,41 @@ int read_sys_dir(char *dir_name)
     DIR *dp;
 
     struct dirent *entry;
-    struct stat statbuf;	
+    struct stat statbuf;
 
 
     /* Getting the number of nodes. The total number on opendir
      * must be the same
      */
-    if(stat(dir_name, &statbuf) < 0)
-    {
+    if(stat(dir_name, &statbuf) < 0) {
         return(-1);
     }
 
 
     /* Must be a directory */
-    if(!S_ISDIR(statbuf.st_mode))
-    {
+    if(!S_ISDIR(statbuf.st_mode)) {
         return(-1);
     }
 
 
     /* Opening the directory given */
     dp = opendir(dir_name);
-    if(!dp)
-    {
+    if(!dp) {
         return(-1);
     }
 
     /* Reading every entry in the directory */
-    while((entry = readdir(dp)) != NULL)
-    {
-        char f_name[MAX_PATH +2];
+    while((entry = readdir(dp)) != NULL) {
+        char f_name[MAX_PATH + 2];
 
         /* Just ignore . and ..  */
-        if((strcmp(entry->d_name,".") == 0) ||
-                (strcmp(entry->d_name,"..") == 0))
-        {
+        if((strcmp(entry->d_name, ".") == 0) ||
+                (strcmp(entry->d_name, "..") == 0)) {
             continue;
         }
 
         /* Creating new file + path string */
-        snprintf(f_name, MAX_PATH +1, "%s\\%s",dir_name, entry->d_name);
+        snprintf(f_name, MAX_PATH + 1, "%s\\%s", dir_name, entry->d_name);
 
         read_sys_file(f_name);
     }
@@ -196,8 +181,7 @@ int main(int argc, char **argv)
 
 
     /* Going to print every NTFS ADS found */
-    if(argc < 2)
-    {
+    if(argc < 2) {
         printf("%s dir\n", argv[0]);
         exit(1);
     }
@@ -207,8 +191,7 @@ int main(int argc, char **argv)
     read_sys_file(argv[1]);
 
 
-    if(ads_found == 0)
-    {
+    if(ads_found == 0) {
         printf("No NTFS ADS found.\n");
     }
     return(0);

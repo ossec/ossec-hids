@@ -13,8 +13,8 @@
 
 /* SCHED_BATCH is Linux specific and is only picked up with _GNU_SOURCE */
 #ifdef __linux__
-	#define _GNU_SOURCE
-	#include <sched.h>
+#define _GNU_SOURCE
+#include <sched.h>
 #endif
 
 #include "shared.h"
@@ -35,12 +35,10 @@ int c_read_file(char *file_name, char *oldsum, char *newsum);
  */
 int send_syscheck_msg(char *msg)
 {
-    if(SendMSG(syscheck.queue, msg, SYSCHECK, SYSCHECK_MQ) < 0)
-    {
+    if(SendMSG(syscheck.queue, msg, SYSCHECK, SYSCHECK_MQ) < 0) {
         merror(QUEUE_SEND, ARGV0);
 
-        if((syscheck.queue = StartMQ(DEFAULTQPATH,WRITE)) < 0)
-        {
+        if((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
             ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
         }
 
@@ -58,12 +56,10 @@ int send_syscheck_msg(char *msg)
  */
 int send_rootcheck_msg(char *msg)
 {
-    if(SendMSG(syscheck.queue, msg, ROOTCHECK, ROOTCHECK_MQ) < 0)
-    {
+    if(SendMSG(syscheck.queue, msg, ROOTCHECK, ROOTCHECK_MQ) < 0) {
         merror(QUEUE_SEND, ARGV0);
 
-        if((syscheck.queue = StartMQ(DEFAULTQPATH,WRITE)) < 0)
-        {
+        if((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
             ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
         }
 
@@ -80,14 +76,11 @@ int send_rootcheck_msg(char *msg)
 void send_sk_db()
 {
     /* Sending scan start message */
-    if(syscheck.dir[0])
-    {
+    if(syscheck.dir[0]) {
         merror("%s: INFO: Starting syscheck scan (forwarding database).", ARGV0);
         send_rootcheck_msg("Starting syscheck scan.");
-    }
-    else
-    {
-        sleep(syscheck.tsleep +10);
+    } else {
+        sleep(syscheck.tsleep + 10);
         return;
     }
 
@@ -95,10 +88,9 @@ void send_sk_db()
 
 
     /* Sending scan ending message */
-    sleep(syscheck.tsleep +10);
+    sleep(syscheck.tsleep + 10);
 
-    if(syscheck.dir[0])
-    {
+    if(syscheck.dir[0]) {
         merror("%s: INFO: Ending syscheck scan (forwarding database).", ARGV0);
         send_rootcheck_msg("Ending syscheck scan.");
     }
@@ -125,10 +117,10 @@ void start_daemon()
 
 
     /* To be used by select. */
-    #ifdef USEINOTIFY
+#ifdef USEINOTIFY
     struct timeval selecttime;
     fd_set rfds;
-    #endif
+#endif
 
 
     /*
@@ -139,7 +131,7 @@ void start_daemon()
      * the interactity of an ssh session when checksumming large files.
      * This is available in kernel flavors >= 2.6.16
      */
-    #ifdef SCHED_BATCH
+#ifdef SCHED_BATCH
     struct sched_param pri;
     int status;
 
@@ -147,12 +139,12 @@ void start_daemon()
     status = sched_setscheduler(0, SCHED_BATCH, &pri);
 
     debug1("%s: Setting SCHED_BATCH returned: %d", ARGV0, status);
-    #endif
+#endif
 
 
-    #ifdef DEBUG
-    verbose("%s: Starting daemon ..",ARGV0);
-    #endif
+#ifdef DEBUG
+    verbose("%s: Starting daemon ..", ARGV0);
+#endif
 
 
 
@@ -165,8 +157,7 @@ void start_daemon()
     /* If the scan time/day is set, reset the
      * syscheck.time/rootcheck.time
      */
-    if(syscheck.scan_time || syscheck.scan_day)
-    {
+    if(syscheck.scan_time || syscheck.scan_day) {
         /* At least once a week. */
         syscheck.time = 604800;
         rootcheck.time = 604800;
@@ -174,13 +165,10 @@ void start_daemon()
 
 
     /* Will create the db to store syscheck data */
-    if(syscheck.scan_on_start)
-    {
+    if(syscheck.scan_on_start) {
         sleep(syscheck.tsleep * 15);
         send_sk_db();
-    }
-    else
-    {
+    } else {
         prev_time_rk = time(0);
     }
 
@@ -194,43 +182,35 @@ void start_daemon()
     /* If the scan_time or scan_day is set, we need to handle the
      * current day/time on the loop.
      */
-    if(syscheck.scan_time || syscheck.scan_day)
-    {
+    if(syscheck.scan_time || syscheck.scan_day) {
         curr_time = time(0);
         p = localtime(&curr_time);
 
 
         /* Assign hour/min/sec values */
         snprintf(curr_hour, 9, "%02d:%02d:%02d",
-                p->tm_hour,
-                p->tm_min,
-                p->tm_sec);
+                 p->tm_hour,
+                 p->tm_min,
+                 p->tm_sec);
 
 
         curr_day = p->tm_mday;
 
 
 
-        if(syscheck.scan_time && syscheck.scan_day)
-        {
+        if(syscheck.scan_time && syscheck.scan_day) {
             if((OS_IsAfterTime(curr_hour, syscheck.scan_time)) &&
-               (OS_IsonDay(p->tm_wday, syscheck.scan_day)))
-            {
+                    (OS_IsonDay(p->tm_wday, syscheck.scan_day))) {
                 day_scanned = 1;
             }
         }
 
-        else if(syscheck.scan_time)
-        {
-            if(OS_IsAfterTime(curr_hour, syscheck.scan_time))
-            {
+        else if(syscheck.scan_time) {
+            if(OS_IsAfterTime(curr_hour, syscheck.scan_time)) {
                 day_scanned = 1;
             }
-        }
-        else if(syscheck.scan_day)
-        {
-            if(OS_IsonDay(p->tm_wday, syscheck.scan_day))
-            {
+        } else if(syscheck.scan_day) {
+            if(OS_IsonDay(p->tm_wday, syscheck.scan_day)) {
                 day_scanned = 1;
             }
         }
@@ -238,8 +218,7 @@ void start_daemon()
 
 
     /* Checking every SYSCHECK_WAIT */
-    while(1)
-    {
+    while(1) {
         int run_now = 0;
         curr_time = time(0);
 
@@ -249,52 +228,44 @@ void start_daemon()
 
 
         /* Checking if a day_time or scan_time is set. */
-        if(syscheck.scan_time || syscheck.scan_day)
-        {
+        if(syscheck.scan_time || syscheck.scan_day) {
             p = localtime(&curr_time);
 
 
             /* Day changed. */
-            if(curr_day != p->tm_mday)
-            {
+            if(curr_day != p->tm_mday) {
                 day_scanned = 0;
                 curr_day = p->tm_mday;
             }
 
 
             /* Checking for the time of the scan. */
-            if(!day_scanned && syscheck.scan_time && syscheck.scan_day)
-            {
+            if(!day_scanned && syscheck.scan_time && syscheck.scan_day) {
                 /* Assign hour/min/sec values */
                 snprintf(curr_hour, 9, "%02d:%02d:%02d",
-                                    p->tm_hour, p->tm_min, p->tm_sec);
+                         p->tm_hour, p->tm_min, p->tm_sec);
 
                 if((OS_IsAfterTime(curr_hour, syscheck.scan_time)) &&
-                   (OS_IsonDay(p->tm_wday, syscheck.scan_day)))
-                {
+                        (OS_IsonDay(p->tm_wday, syscheck.scan_day))) {
                     day_scanned = 1;
                     run_now = 1;
                 }
             }
 
-            else if(!day_scanned && syscheck.scan_time)
-            {
+            else if(!day_scanned && syscheck.scan_time) {
                 /* Assign hour/min/sec values */
                 snprintf(curr_hour, 9, "%02d:%02d:%02d",
-                                    p->tm_hour, p->tm_min, p->tm_sec);
+                         p->tm_hour, p->tm_min, p->tm_sec);
 
-                if(OS_IsAfterTime(curr_hour, syscheck.scan_time))
-                {
+                if(OS_IsAfterTime(curr_hour, syscheck.scan_time)) {
                     run_now = 1;
                     day_scanned = 1;
                 }
             }
 
             /* Checking for the day of the scan. */
-            else if(!day_scanned && syscheck.scan_day)
-            {
-                if(OS_IsonDay(p->tm_wday, syscheck.scan_day))
-                {
+            else if(!day_scanned && syscheck.scan_day) {
+                if(OS_IsonDay(p->tm_wday, syscheck.scan_day)) {
                     run_now = 1;
                     day_scanned = 1;
                 }
@@ -306,10 +277,8 @@ void start_daemon()
         /* If time elapsed is higher than the rootcheck_time,
          * run it.
          */
-        if(syscheck.rootcheck)
-        {
-            if(((curr_time - prev_time_rk) > rootcheck.time) || run_now)
-            {
+        if(syscheck.rootcheck) {
+            if(((curr_time - prev_time_rk) > rootcheck.time) || run_now) {
                 run_rk_check();
                 prev_time_rk = time(0);
             }
@@ -319,11 +288,9 @@ void start_daemon()
         /* If time elapsed is higher than the syscheck time,
          * run syscheck time.
          */
-        if(((curr_time - prev_time_sk) > syscheck.time) || run_now)
-        {
+        if(((curr_time - prev_time_sk) > syscheck.time) || run_now) {
             /* We need to create the db, if scan on start is not set. */
-            if(syscheck.scan_on_start == 0)
-            {
+            if(syscheck.scan_on_start == 0) {
                 sleep(syscheck.tsleep * 10);
                 send_sk_db();
                 sleep(syscheck.tsleep * 10);
@@ -332,20 +299,18 @@ void start_daemon()
             }
 
 
-            else
-            {
+            else {
                 /* Sending scan start message */
-                if(syscheck.dir[0])
-                {
+                if(syscheck.dir[0]) {
                     merror("%s: INFO: Starting syscheck scan.", ARGV0);
                     send_rootcheck_msg("Starting syscheck scan.");
                 }
 
 
-                #ifdef WIN32
+#ifdef WIN32
                 /* Checking for registry changes on Windows */
                 os_winreg_check();
-                #endif
+#endif
 
 
                 /* Checking for changes */
@@ -355,8 +320,7 @@ void start_daemon()
 
             /* Sending scan ending message */
             sleep(syscheck.tsleep + 20);
-            if(syscheck.dir[0])
-            {
+            if(syscheck.dir[0]) {
                 merror("%s: INFO: Ending syscheck scan.", ARGV0);
                 send_rootcheck_msg("Ending syscheck scan.");
             }
@@ -372,9 +336,8 @@ void start_daemon()
         }
 
 
-        #ifdef USEINOTIFY
-        if(syscheck.realtime && (syscheck.realtime->fd >= 0))
-        {
+#ifdef USEINOTIFY
+        if(syscheck.realtime && (syscheck.realtime->fd >= 0)) {
             selecttime.tv_sec = SYSCHECK_WAIT;
             selecttime.tv_usec = 0;
 
@@ -385,48 +348,35 @@ void start_daemon()
 
             run_now = select(syscheck.realtime->fd + 1, &rfds,
                              NULL, NULL, &selecttime);
-            if(run_now < 0)
-            {
+            if(run_now < 0) {
                 merror("%s: ERROR: Select failed (for realtime fim).", ARGV0);
                 sleep(SYSCHECK_WAIT);
-            }
-            else if(run_now == 0)
-            {
+            } else if(run_now == 0) {
                 /* Timeout. */
-            }
-            else if (FD_ISSET (syscheck.realtime->fd, &rfds))
-            {
+            } else if (FD_ISSET (syscheck.realtime->fd, &rfds)) {
                 realtime_process();
             }
-        }
-        else
-        {
+        } else {
             sleep(SYSCHECK_WAIT);
         }
 
-        #elif WIN32
-        if(syscheck.realtime && (syscheck.realtime->fd >= 0))
-        {
+#elif WIN32
+        if(syscheck.realtime && (syscheck.realtime->fd >= 0)) {
             run_now = WaitForSingleObjectEx(syscheck.realtime->evt, SYSCHECK_WAIT * 1000, TRUE);
-            if(run_now == WAIT_FAILED)
-            {
+            if(run_now == WAIT_FAILED) {
                 merror("%s: ERROR: WaitForSingleObjectEx failed (for realtime fim).", ARGV0);
                 sleep(SYSCHECK_WAIT);
-            }
-            else
-            {
+            } else {
                 sleep(1);
             }
-        }
-        else
-        {
+        } else {
             sleep(SYSCHECK_WAIT);
         }
 
 
-        #else
+#else
         sleep(SYSCHECK_WAIT);
-        #endif
+#endif
     }
 }
 
@@ -454,16 +404,16 @@ int c_read_file(char *file_name, char *oldsum, char *newsum)
 
 
     /* Stating the file */
-    #ifdef WIN32
+#ifdef WIN32
     if(stat(file_name, &statbuf) < 0)
-    #else
+#else
     if(lstat(file_name, &statbuf) < 0)
-    #endif
+#endif
     {
-        char alert_msg[912 +2];
+        char alert_msg[912 + 2];
 
-        alert_msg[912 +1] = '\0';
-        snprintf(alert_msg, 912,"-1 %s", file_name);
+        alert_msg[912 + 1] = '\0';
+        snprintf(alert_msg, 912, "-1 %s", file_name);
         send_syscheck_msg(alert_msg);
 
         return(-1);
@@ -472,70 +422,66 @@ int c_read_file(char *file_name, char *oldsum, char *newsum)
     /* Getting the old sum values */
 
     /* size */
-    if(oldsum[0] == '+')
+    if(oldsum[0] == '+') {
         size = 1;
+    }
 
     /* perm */
-    if(oldsum[1] == '+')
+    if(oldsum[1] == '+') {
         perm = 1;
+    }
 
     /* owner */
-    if(oldsum[2] == '+')
+    if(oldsum[2] == '+') {
         owner = 1;
+    }
 
     /* group */
-    if(oldsum[3] == '+')
+    if(oldsum[3] == '+') {
         group = 1;
+    }
 
     /* md5 sum */
-    if(oldsum[4] == '+')
+    if(oldsum[4] == '+') {
         md5sum = 1;
+    }
 
     /* sha1 sum */
-    if(oldsum[5] == '+')
-        sha1sum = 1;
-
-    else if(oldsum[5] == 's')
-    {
+    if(oldsum[5] == '+') {
         sha1sum = 1;
     }
-    else if(oldsum[5] == 'n')
-    {
+
+    else if(oldsum[5] == 's') {
+        sha1sum = 1;
+    } else if(oldsum[5] == 'n') {
         sha1sum = 0;
     }
 
 
     /* Generating new checksum */
-    #ifdef WIN32
+#ifdef WIN32
     if(S_ISREG(statbuf.st_mode))
-    #else
+#else
     if(S_ISREG(statbuf.st_mode))
-    #endif
+#endif
     {
-        if(sha1sum || md5sum)
-        {
+        if(sha1sum || md5sum) {
             /* Generating checksums of the file. */
-            if(OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0)
-            {
+            if(OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0) {
                 strncpy(sf_sum, "xxx", 4);
                 strncpy(mf_sum, "xxx", 4);
             }
         }
     }
-    #ifndef WIN32
+#ifndef WIN32
     /* If it is a link, we need to check if the actual file is valid. */
-    else if(S_ISLNK(statbuf.st_mode))
-    {
+    else if(S_ISLNK(statbuf.st_mode)) {
         struct stat statbuf_lnk;
-        if(stat(file_name, &statbuf_lnk) == 0)
-        {
-            if(S_ISREG(statbuf_lnk.st_mode))
-            {
-                if(sha1sum || md5sum)
-                {
+        if(stat(file_name, &statbuf_lnk) == 0) {
+            if(S_ISREG(statbuf_lnk.st_mode)) {
+                if(sha1sum || md5sum) {
                     /* Generating checksums of the file. */
-                    if(OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0)
-                    {
+                    if(OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0) {
                         strncpy(sf_sum, "xxx", 4);
                         strncpy(mf_sum, "xxx", 4);
                     }
@@ -543,18 +489,18 @@ int c_read_file(char *file_name, char *oldsum, char *newsum)
             }
         }
     }
-    #endif
+#endif
 
     newsum[0] = '\0';
     newsum[255] = '\0';
     /* chris: changed st_size int to long */
-    snprintf(newsum,255,"%ld:%d:%d:%d:%s:%s",
-            size == 0?0:(long)statbuf.st_size,
-            perm == 0?0:(int)statbuf.st_mode,
-            owner== 0?0:(int)statbuf.st_uid,
-            group== 0?0:(int)statbuf.st_gid,
-            md5sum   == 0?"xxx":mf_sum,
-            sha1sum  == 0?"xxx":sf_sum);
+    snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s",
+             size == 0 ? 0 : (long)statbuf.st_size,
+             perm == 0 ? 0 : (int)statbuf.st_mode,
+             owner == 0 ? 0 : (int)statbuf.st_uid,
+             group == 0 ? 0 : (int)statbuf.st_gid,
+             md5sum   == 0 ? "xxx" : mf_sum,
+             sha1sum  == 0 ? "xxx" : sf_sum);
 
     return(0);
 }

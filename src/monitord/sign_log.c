@@ -24,15 +24,15 @@ void OS_SignLog(char *logfile, char *logfile_old, int log_missing)
     os_sha1 sf_sum;
     os_sha1 sf_sum_old;
 
-    char logfilesum[OS_FLSIZE +1];
-    char logfilesum_old[OS_FLSIZE +1];
+    char logfilesum[OS_FLSIZE + 1];
+    char logfilesum_old[OS_FLSIZE + 1];
 
     FILE *fp;
 
 
     /* Clearing the memory */
-    memset(logfilesum, '\0', OS_FLSIZE +1);
-    memset(logfilesum_old, '\0', OS_FLSIZE +1);
+    memset(logfilesum, '\0', OS_FLSIZE + 1);
+    memset(logfilesum_old, '\0', OS_FLSIZE + 1);
 
 
     /* Setting the umask */
@@ -45,16 +45,14 @@ void OS_SignLog(char *logfile, char *logfile_old, int log_missing)
 
 
     /* generating md5 of the old file */
-    if(OS_MD5_File(logfilesum_old, mf_sum_old) < 0)
-    {
+    if(OS_MD5_File(logfilesum_old, mf_sum_old) < 0) {
         merror("%s: No previous md5 checksum found: '%s'. "
                "Starting over.", ARGV0, logfilesum_old);
         strncpy(mf_sum_old, "none", 6);
     }
 
     /* generating sha1 of the old file.  */
-    if(OS_SHA1_File(logfilesum_old, sf_sum_old) < 0)
-    {
+    if(OS_SHA1_File(logfilesum_old, sf_sum_old) < 0) {
         merror("%s: No previous sha1 checksum found: '%s'. "
                "Starting over.", ARGV0, logfilesum_old);
         strncpy(sf_sum_old, "none", 6);
@@ -62,27 +60,24 @@ void OS_SignLog(char *logfile, char *logfile_old, int log_missing)
 
 
     /* Generating md5 of the current file */
-    if(OS_MD5_File(logfile, mf_sum) < 0)
-    {
+    if(OS_MD5_File(logfile, mf_sum) < 0) {
         if(log_missing)
             merror("%s: File '%s' not found. MD5 checksum skipped.",
-                                         ARGV0, logfile);
+                   ARGV0, logfile);
         strncpy(mf_sum, "none", 6);
     }
 
     /* Generating sha1 of the current file */
-    if(OS_SHA1_File(logfile, sf_sum) < 0)
-    {
+    if(OS_SHA1_File(logfile, sf_sum) < 0) {
         if(log_missing)
             merror("%s: File '%s' not found. SHA1 checksum skipped.",
-                                        ARGV0, logfile);
+                   ARGV0, logfile);
         strncpy(sf_sum, "none", 6);
     }
 
 
     fp = fopen(logfilesum, "w");
-    if(!fp)
-    {
+    if(!fp) {
         merror(FOPEN_ERROR, ARGV0, logfilesum);
         return;
     }
@@ -99,6 +94,6 @@ void OS_SignLog(char *logfile, char *logfile_old, int log_missing)
 
     return;
 }
-	
+
 
 /* EOF */

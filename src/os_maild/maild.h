@@ -25,7 +25,7 @@
 #define DEFAULT_TIMEOUT     18   /* socket read timeout - 18 (*5)*/
 #define SUBJECT_SIZE        128  /* Maximum subject size */
 
- /* Maximum body size */
+/* Maximum body size */
 #define BODY_SIZE           OS_MAXSTR + OS_SIZE_1024
 
 #define SMS_SUBJECT         "OSSEC %d - %d - %s"
@@ -56,11 +56,10 @@
 #endif
 
 /* Mail msg structure */
-typedef struct _MailMsg
-{
-	char *subject;
-	char *body;
-}MailMsg;
+typedef struct _MailMsg {
+    char *subject;
+    char *body;
+} MailMsg;
 
 #include "shared.h"
 #include "config/mail-config.h"
@@ -86,7 +85,7 @@ int mail_timeout;
 
 /* Global var for highest level on mail subjects */
 int   _g_subject_level;
-char _g_subject[SUBJECT_SIZE +2];
+char _g_subject[SUBJECT_SIZE + 2];
 
 
 #endif

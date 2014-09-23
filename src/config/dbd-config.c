@@ -36,68 +36,43 @@ int Read_DB(XML_NODE node, __attribute__((unused)) void *config1, void *config2)
 
 
     db_config = (DBConfig *)config2;
-    if(!db_config)
-    {
+    if(!db_config) {
         return(0);
     }
 
 
     /* Reading the xml */
-    while(node[i])
-    {
-        if(!node[i]->element)
-        {
+    while(node[i]) {
+        if(!node[i]->element) {
             merror(XML_ELEMNULL, ARGV0);
             return(OS_INVALID);
-        }
-        else if(!node[i]->content)
-        {
+        } else if(!node[i]->content) {
             merror(XML_VALUENULL, ARGV0, node[i]->element);
             return(OS_INVALID);
         }
         /* Mail notification */
-        else if(strcmp(node[i]->element, xml_dbhost) == 0)
-        {
+        else if(strcmp(node[i]->element, xml_dbhost) == 0) {
             os_strdup(node[i]->content, db_config->host);
-        }
-        else if(strcmp(node[i]->element, xml_dbuser) == 0)
-        {
+        } else if(strcmp(node[i]->element, xml_dbuser) == 0) {
             os_strdup(node[i]->content, db_config->user);
-        }
-        else if(strcmp(node[i]->element, xml_dbpass) == 0)
-        {
+        } else if(strcmp(node[i]->element, xml_dbpass) == 0) {
             os_strdup(node[i]->content, db_config->pass);
-        }
-        else if(strcmp(node[i]->element, xml_dbdb) == 0)
-        {
+        } else if(strcmp(node[i]->element, xml_dbdb) == 0) {
             os_strdup(node[i]->content, db_config->db);
-        }
-        else if(strcmp(node[i]->element, xml_dbport) == 0)
-        {
+        } else if(strcmp(node[i]->element, xml_dbport) == 0) {
             db_config->port = (unsigned int) atoi(node[i]->content);
-        }
-        else if(strcmp(node[i]->element, xml_dbsock) == 0)
-        {
+        } else if(strcmp(node[i]->element, xml_dbsock) == 0) {
             os_strdup(node[i]->content, db_config->sock);
-        }
-        else if(strcmp(node[i]->element, xml_dbtype) == 0)
-        {
-            if(strcmp(node[i]->content, "mysql") == 0)
-            {
+        } else if(strcmp(node[i]->element, xml_dbtype) == 0) {
+            if(strcmp(node[i]->content, "mysql") == 0) {
                 db_config->db_type = MYSQLDB;
-            }
-            else if(strcmp(node[i]->content, "postgresql") == 0)
-            {
+            } else if(strcmp(node[i]->content, "postgresql") == 0) {
                 db_config->db_type = POSTGDB;
-            }
-            else
-            {
-                merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
+            } else {
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
-        }
-        else
-        {
+        } else {
             merror(XML_INVELEM, ARGV0, node[i]->element);
             return(OS_INVALID);
         }

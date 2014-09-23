@@ -38,7 +38,7 @@ void *SymantecWS_Decoder_Init()
 void *SymantecWS_Decoder_Exec(Eventinfo *lf)
 {
     int count = 0;
-    char buf_str[OS_SIZE_1024 +1];
+    char buf_str[OS_SIZE_1024 + 1];
     char *tmp_str = NULL;
 
     /* Initializing buffer */
@@ -47,99 +47,87 @@ void *SymantecWS_Decoder_Exec(Eventinfo *lf)
 
 
     /* Removing date and time */
-    if(!(tmp_str = strchr(lf->log, ',')))
-    {
+    if(!(tmp_str = strchr(lf->log, ','))) {
         return(NULL);
     }
-    if(!(tmp_str = strchr(tmp_str, ',')))
-    {
+    if(!(tmp_str = strchr(tmp_str, ','))) {
         return(NULL);
     }
     tmp_str++;
 
 
     /* Getting all the values */
-    while(tmp_str != NULL)
-    {
+    while(tmp_str != NULL) {
         /* Checking if we have the username */
-        if(strncmp(tmp_str, "10=", 3) == 0)
-        {
+        if(strncmp(tmp_str, "10=", 3) == 0) {
             count = 0;
-            tmp_str+=3;
-            while(*tmp_str != '\0' && count < 128 && *tmp_str != ',')
-            {
+            tmp_str += 3;
+            while(*tmp_str != '\0' && count < 128 && *tmp_str != ',') {
                 buf_str[count] = *tmp_str;
-                count++; tmp_str++;
+                count++;
+                tmp_str++;
             }
             buf_str[count] = '\0';
 
-            if(!lf->dstuser)
-            {
+            if(!lf->dstuser) {
                 os_strdup(buf_str, lf->dstuser);
             }
         }
 
         /* Checking the ip address */
-        else if(strncmp(tmp_str, "11=", 3) == 0)
-        {
+        else if(strncmp(tmp_str, "11=", 3) == 0) {
             count = 0;
-            tmp_str+=3;
-            while(*tmp_str != '\0' && count < 128 && *tmp_str != ',')
-            {
+            tmp_str += 3;
+            while(*tmp_str != '\0' && count < 128 && *tmp_str != ',') {
                 buf_str[count] = *tmp_str;
-                count++; tmp_str++;
+                count++;
+                tmp_str++;
             }
             buf_str[count] = '\0';
 
             /* Avoiding memory leaks -- only adding the first one */
-            if(!lf->srcip)
-            {
+            if(!lf->srcip) {
                 os_strdup(buf_str, lf->srcip);
             }
         }
 
         /* Getting the URL */
-        else if(strncmp(tmp_str, "60=", 3) == 0)
-        {
+        else if(strncmp(tmp_str, "60=", 3) == 0) {
             count = 0;
-            tmp_str+=3;
-            while(*tmp_str != '\0' && count < OS_SIZE_1024 && *tmp_str != ',')
-            {
+            tmp_str += 3;
+            while(*tmp_str != '\0' && count < OS_SIZE_1024 && *tmp_str != ',') {
                 buf_str[count] = *tmp_str;
-                count++; tmp_str++;
+                count++;
+                tmp_str++;
             }
             buf_str[count] = '\0';
 
             /* Avoiding memory leaks -- only adding the first one */
-            if(!lf->url)
-            {
+            if(!lf->url) {
                 os_strdup(buf_str, lf->url);
             }
         }
 
         /* Getting ID */
         else if((strncmp(tmp_str, "3=", 2) == 0) ||
-                (strncmp(tmp_str, "2=", 2) == 0))
-        {
+                (strncmp(tmp_str, "2=", 2) == 0)) {
             count = 0;
-            while(*tmp_str != '\0' && count < 9)
-            {
+            while(*tmp_str != '\0' && count < 9) {
                 buf_str[count] = *tmp_str;
-                count++; tmp_str++;
+                count++;
+                tmp_str++;
             }
             buf_str[count] = '\0';
 
             /* Avoiding memory leaks -- only adding the first one */
-            if(!lf->id)
-            {
+            if(!lf->id) {
                 os_strdup(buf_str, lf->id);
             }
         }
 
         /* Getting next entry */
         tmp_str = strchr(tmp_str, ',');
-        if(tmp_str)
-        {
+        if(tmp_str) {
             tmp_str++;
         }
     }

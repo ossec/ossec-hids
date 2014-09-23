@@ -20,32 +20,26 @@
 /* StartMQ v0.2, 2004/07/30
  * Start the Message Queue. type: WRITE||READ
  */
-int StartMQ(const char * path, short int type)
+int StartMQ(const char *path, short int type)
 {
 
-    if(type == READ)
-    {
+    if(type == READ) {
         return(OS_BindUnixDomain(path, 0660, OS_MAXSTR + 512));
     }
 
     /* We give up to 21 seconds for the other end to
      * start
      */
-    else
-    {
+    else {
         int rc = 0;
-        if(File_DateofChange(path) < 0)
-        {
+        if(File_DateofChange(path) < 0) {
             sleep(1);
-            if(File_DateofChange(path) < 0)
-            {
+            if(File_DateofChange(path) < 0) {
                 sleep(5);
-                if(File_DateofChange(path) < 0)
-                {
+                if(File_DateofChange(path) < 0) {
                     merror(QUEUE_ERROR, __local_name, path, "Queue not found");
                     sleep(15);
-                    if(File_DateofChange(path) < 0)
-                    {
+                    if(File_DateofChange(path) < 0) {
                         return(-1);
                     }
                 }
@@ -55,14 +49,11 @@ int StartMQ(const char * path, short int type)
         /* Wait up to 3 seconds to connect to the unix domain.
          * After three errors, exit.
          */
-        if((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0)
-        {
+        if((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
             sleep(1);
-            if((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0)
-            {
+            if((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
                 sleep(2);
-                if((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0)
-                {
+                if((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
                     merror(QUEUE_ERROR, __local_name, path,
                            strerror(errno));
                     return(-1);
@@ -82,7 +73,7 @@ int StartMQ(const char * path, short int type)
 int SendMSG(int queue, const char *message, const char *locmsg, char loc)
 {
     int __mq_rcode;
-    char tmpstr[OS_MAXSTR+1];
+    char tmpstr[OS_MAXSTR + 1];
 
     tmpstr[OS_MAXSTR] = '\0';
 
@@ -91,33 +82,31 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
     os_wait();
 
 
-    if(loc == SECURE_MQ)
-    {
+    if(loc == SECURE_MQ) {
         loc = message[0];
         message++;
 
-        if(message[0] != ':')
-        {
+        if(message[0] != ':') {
             merror(FORMAT_ERROR, __local_name);
             return(0);
         }
 
         message++; /* Pointing now to the location */
 
-        if(strncmp(message, "keepalive",9) == 0)
-        {
+        if(strncmp(message, "keepalive", 9) == 0) {
             return(0);
         }
 
-        snprintf(tmpstr,OS_MAXSTR,"%c:%s->%s",loc, locmsg, message);
+        snprintf(tmpstr, OS_MAXSTR, "%c:%s->%s", loc, locmsg, message);
+    } else {
+        snprintf(tmpstr, OS_MAXSTR, "%c:%s:%s", loc, locmsg, message);
     }
-    else
-        snprintf(tmpstr,OS_MAXSTR,"%c:%s:%s",loc,locmsg,message);
 
 
     /* queue not available */
-    if(queue < 0)
+    if(queue < 0) {
         return(-1);
+    }
 
 
     /* We attempt 5 times to send the message if
@@ -129,11 +118,9 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
      * If we failed again, the message is not going
      * to be delivered and an error is sent back.
      */
-    if((__mq_rcode = OS_SendUnix(queue, tmpstr,0)) < 0)
-    {
+    if((__mq_rcode = OS_SendUnix(queue, tmpstr, 0)) < 0) {
         /* Error on the socket */
-        if(__mq_rcode == OS_SOCKTERR)
-        {
+        if(__mq_rcode == OS_SOCKTERR) {
             merror("%s: socketerr (not available).", __local_name);
             close(queue);
             return(-1);
@@ -142,24 +129,20 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
 
         /* Unable to send. Socket busy */
         sleep(1);
-        if(OS_SendUnix(queue, tmpstr, 0) < 0)
-        {
+        if(OS_SendUnix(queue, tmpstr, 0) < 0) {
             /* When the socket is to busy, we may get some
              * error here. Just sleep 2 second and try
              * again.
              */
             sleep(3);
             /* merror("%s: socket busy", __local_name); */
-            if(OS_SendUnix(queue, tmpstr,0) < 0)
-            {
+            if(OS_SendUnix(queue, tmpstr, 0) < 0) {
                 sleep(5);
                 merror("%s: socket busy ..", __local_name);
-                if(OS_SendUnix(queue, tmpstr,0) < 0)
-                {
+                if(OS_SendUnix(queue, tmpstr, 0) < 0) {
                     sleep(10);
                     merror("%s: socket busy ..", __local_name);
-                    if(OS_SendUnix(queue, tmpstr,0) < 0)
-                    {
+                    if(OS_SendUnix(queue, tmpstr, 0) < 0) {
                         /* Message is going to be lost
                          * if the application does not care
                          * about checking the error

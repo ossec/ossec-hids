@@ -17,8 +17,7 @@
 
 
 /* Mail config structure */
-typedef struct _MailConfig
-{
+typedef struct _MailConfig {
     int mn;
     int maxperhour;
     int strict_checking;
@@ -44,7 +43,7 @@ typedef struct _MailConfig
 
     OSMatch **gran_location;
     OSMatch **gran_group;
-}MailConfig;
+} MailConfig;
 
 
 /** Email message formats **/

@@ -31,13 +31,12 @@ void *OS_ReadSyslogConf(int test_config, char *cfgfile,
 
 
     /* Modules for the configuration */
-    modules|= CSYSLOGD;
+    modules |= CSYSLOGD;
     gen_config.data = syslog_config;
 
 
     /* Reading configuration */
-    if(ReadConfig(modules, cfgfile, &gen_config, NULL) < 0)
-    {
+    if(ReadConfig(modules, cfgfile, &gen_config, NULL) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfgfile);
         return(NULL);
     }

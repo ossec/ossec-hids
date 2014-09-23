@@ -56,8 +56,7 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
 
     /* Checking the alert level. */
     if(strncmp("Alert Level: ", lf->log, 12) != 0 &&
-       strncmp("ossec: Alert Level:", lf->log, 18) != 0)
-    {
+            strncmp("ossec: Alert Level:", lf->log, 18) != 0) {
         return(NULL);
     }
 
@@ -70,8 +69,7 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
     /* Getting rule id. */
     oa_strchr(tmp_str, ':', tmp_str);
     tmp_str++;
-    if(*tmp_str != ' ')
-    {
+    if(*tmp_str != ' ') {
         return(NULL);
     }
     tmp_str++;
@@ -85,8 +83,7 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
 
     /* Getting rule structure. */
     rule_pointer = OSHash_Get(Config.g_rules_hash, oa_id);
-    if(!rule_pointer)
-    {
+    if(!rule_pointer) {
         merror("%s: WARN: Rule id '%s' not found internally.", ARGV0, oa_id);
         *tmp_str = ' ';
         return(NULL);
@@ -97,11 +94,10 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
 
 
     /* Checking location. */
-    if(strncmp(" Location: ", tmp_str, 11) != 0)
-    {
+    if(strncmp(" Location: ", tmp_str, 11) != 0) {
         return(NULL);
     }
-    tmp_str+=11;
+    tmp_str += 11;
 
 
     /* Setting location; */
@@ -115,15 +111,12 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
     /* Setting new location. */
     oa_newlocation[255] = '\0';
 
-    if(lf->hostname == lf->location)
-    {
+    if(lf->hostname == lf->location) {
         snprintf(oa_newlocation, 255, "%s|%s", lf->location, oa_location);
         free(lf->location);
         os_strdup(oa_newlocation, lf->location);
         lf->hostname = lf->location;
-    }
-    else
-    {
+    } else {
         snprintf(oa_newlocation, 255, "%s->%s|%s", lf->hostname,
                  lf->location, oa_location);
         free(lf->location);
@@ -136,24 +129,20 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
 
 
     /* Getting additional fields. */
-    while((*tmp_str == ' ') && (tmp_str[1] != ' '))
-    {
+    while((*tmp_str == ' ') && (tmp_str[1] != ' ')) {
         tmp_str++;
         oa_val = tmp_str;
 
         tmp_str = strchr(tmp_str, ';');
-        if(!tmp_str)
-        {
+        if(!tmp_str) {
             return(NULL);
         }
         *tmp_str = '\0';
 
-        if(strncmp(oa_val, "srcip: ", 7) == 0)
-        {
+        if(strncmp(oa_val, "srcip: ", 7) == 0) {
             os_strdup(oa_val + 7, lf->srcip);
         }
-        if(strncmp(oa_val, "user: ", 6) == 0)
-        {
+        if(strncmp(oa_val, "user: ", 6) == 0) {
             os_strdup(oa_val + 6, lf->dstuser);
         }
 
@@ -163,8 +152,9 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
 
 
     /* Removing space. */
-    while(*tmp_str == ' ')
+    while(*tmp_str == ' ') {
         tmp_str++;
+    }
 
 
     /* Creating new full log. */

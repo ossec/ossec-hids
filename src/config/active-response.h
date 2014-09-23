@@ -16,19 +16,17 @@
 
 
 /** Active response commands **/
-typedef struct _ar_command
-{
+typedef struct _ar_command {
     int expect;
     int timeout_allowed;
 
     char *name;
     char *executable;
-}ar_command;
+} ar_command;
 
 
 /** Active response data **/
-typedef struct _ar
-{
+typedef struct _ar {
     int timeout;
     int location;
     int level;
@@ -39,7 +37,7 @@ typedef struct _ar
     char *rules_group;
 
     ar_command *ar_cmd;
-}active_response;
+} active_response;
 
 
 /* Active response flag */

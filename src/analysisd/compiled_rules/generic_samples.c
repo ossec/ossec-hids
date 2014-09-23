@@ -33,13 +33,11 @@
  */
 void *comp_srcuser_dstuser(Eventinfo *lf)
 {
-    if(!lf->srcuser || !lf->dstuser)
-    {
+    if(!lf->srcuser || !lf->dstuser) {
         return(lf);
     }
 
-    if(strcmp(lf->srcuser, lf->dstuser) == 0)
-    {
+    if(strcmp(lf->srcuser, lf->dstuser) == 0) {
         return(lf);
     }
 
@@ -55,13 +53,11 @@ void *comp_srcuser_dstuser(Eventinfo *lf)
  */
 void *check_id_size(Eventinfo *lf)
 {
-    if(!lf->id)
-    {
+    if(!lf->id) {
         return(NULL);
     }
 
-    if(strlen(lf->id) >= 10)
-    {
+    if(strlen(lf->id) >= 10) {
         return(lf);
     }
 
@@ -86,8 +82,7 @@ void *comp_mswin_targetuser_calleruser_diff(Eventinfo *lf)
     target_user = strstr(lf->log, "Target Account Name");
     caller_user = strstr(lf->log, "Caller User Name");
 
-    if(!target_user || !caller_user)
-    {
+    if(!target_user || !caller_user) {
         return(NULL);
     }
 
@@ -100,8 +95,7 @@ void *comp_mswin_targetuser_calleruser_diff(Eventinfo *lf)
     target_user = strchr(target_user, ':');
     caller_user = strchr(caller_user, ':');
 
-    if(!target_user || !caller_user)
-    {
+    if(!target_user || !caller_user) {
         return(NULL);
     }
 
@@ -110,16 +104,18 @@ void *comp_mswin_targetuser_calleruser_diff(Eventinfo *lf)
     caller_user++;
 
 
-    while(*target_user != '\0')
-    {
-        if(*target_user != *caller_user)
+    while(*target_user != '\0') {
+        if(*target_user != *caller_user) {
             return(lf);
+        }
 
         if(*target_user == '\t' ||
-           (*target_user == ' '  && target_user[1] == ' '))
+                (*target_user == ' '  && target_user[1] == ' ')) {
             break;
+        }
 
-        target_user++;caller_user++;
+        target_user++;
+        caller_user++;
     }
 
 
@@ -137,22 +133,19 @@ void *comp_mswin_targetuser_calleruser_diff(Eventinfo *lf)
 void *is_simple_http_request(Eventinfo *lf)
 {
 
-    if(!lf->url)
-    {
+    if(!lf->url) {
         return(NULL);
     }
 
 
     /* Simple GET / request. */
-    if(strcmp(lf->url,"/") == 0)
-    {
+    if(strcmp(lf->url, "/") == 0) {
         return(lf);
     }
 
 
     /* Simple request, no query. */
-    if(!strchr(lf->url,'?'))
-    {
+    if(!strchr(lf->url, '?')) {
         return(lf);
     }
 
@@ -167,16 +160,15 @@ void *is_simple_http_request(Eventinfo *lf)
  */
 void *is_valid_crawler(Eventinfo *lf)
 {
-    if((strncmp(lf->log, "66.249.",7) == 0)|| /* Google bot */
-       (strncmp(lf->log, "72.14.",6) == 0)||  /* Feedfetcher-Google */
-       (strncmp(lf->log, "209.85.",7) == 0)||  /* Feedfetcher-Google */
-       (strncmp(lf->log, "65.55.",6) == 0)||  /* MSN/Bing */
-       (strncmp(lf->log, "207.46.",7) == 0)||  /* MSN/Bing */
-       (strncmp(lf->log, "74.6.",5) == 0)||  /* Yahoo */
-       (strncmp(lf->log, "72.30.",6) == 0)||  /* Yahoo */
-       (strncmp(lf->log, "67.195.",7) == 0)  /* Yahoo */
-      )
-    {
+    if((strncmp(lf->log, "66.249.", 7) == 0) || /* Google bot */
+            (strncmp(lf->log, "72.14.", 6) == 0) || /* Feedfetcher-Google */
+            (strncmp(lf->log, "209.85.", 7) == 0) || /* Feedfetcher-Google */
+            (strncmp(lf->log, "65.55.", 6) == 0) || /* MSN/Bing */
+            (strncmp(lf->log, "207.46.", 7) == 0) || /* MSN/Bing */
+            (strncmp(lf->log, "74.6.", 5) == 0) || /* Yahoo */
+            (strncmp(lf->log, "72.30.", 6) == 0) || /* Yahoo */
+            (strncmp(lf->log, "67.195.", 7) == 0) /* Yahoo */
+      ) {
         return(lf);
     }
 

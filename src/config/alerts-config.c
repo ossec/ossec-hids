@@ -36,57 +36,50 @@ int Read_Alerts(XML_NODE node, void *configp, __attribute__((unused)) void *mail
     Config = (_Config *)configp;
 
 
-    while(node[i])
-    {
-        if(!node[i]->element)
-        {
+    while(node[i]) {
+        if(!node[i]->element) {
             merror(XML_ELEMNULL, ARGV0);
             return(OS_INVALID);
-        }
-        else if(!node[i]->content)
-        {
+        } else if(!node[i]->content) {
             merror(XML_VALUENULL, ARGV0, node[i]->element);
             return(OS_INVALID);
         }
         /* Mail notification */
-        else if(strcmp(node[i]->element, xml_email_level) == 0)
-        {
-            if(!OS_StrIsNum(node[i]->content))
-            {
-                merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
+        else if(strcmp(node[i]->element, xml_email_level) == 0) {
+            if(!OS_StrIsNum(node[i]->content)) {
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
 
             Config->mailbylevel = (u_int8_t) atoi(node[i]->content);
         }
         /* Log alerts */
-        else if(strcmp(node[i]->element, xml_log_level) == 0)
-        {
-            if(!OS_StrIsNum(node[i]->content))
-            {
-                merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
+        else if(strcmp(node[i]->element, xml_log_level) == 0) {
+            if(!OS_StrIsNum(node[i]->content)) {
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
             Config->logbylevel  = (u_int8_t) atoi(node[i]->content);
         }
 #ifdef GEOIP
-	/* Enable GeoIP */
-	else if(strcmp(node[i]->element, xml_log_geoip) == 0)
-	{
-            if(strcmp(node[i]->content, "yes") == 0)
-                { if(Config) Config->loggeoip = 1;}
-            else if(strcmp(node[i]->content, "no") == 0)
-                {if(Config) Config->loggeoip = 0;}
-            else
-            {
-                merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
+        /* Enable GeoIP */
+        else if(strcmp(node[i]->element, xml_log_geoip) == 0) {
+            if(strcmp(node[i]->content, "yes") == 0) {
+                if(Config) {
+                    Config->loggeoip = 1;
+                }
+            } else if(strcmp(node[i]->content, "no") == 0) {
+                if(Config) {
+                    Config->loggeoip = 0;
+                }
+            } else {
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
 
-	}
+        }
 #endif
-        else
-        {
+        else {
             merror(XML_INVELEM, ARGV0, node[i]->element);
             return(OS_INVALID);
         }
