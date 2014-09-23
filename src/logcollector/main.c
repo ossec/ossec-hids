@@ -56,29 +56,27 @@ int main(int argc, char **argv)
 {
     int c;
     int debug_level = 0;
-    int test_config = 0,run_foreground = 0;
+    int test_config = 0, run_foreground = 0;
     int accept_manager_commands = 0;
     char *cfg = DEFAULTCPATH;
 
     /* Setuping up random */
-    #ifndef WIN32
-        #ifdef __OpenBSD__
-        srandomdev();
-        #else
-        srandom(time(0));
-        #endif
-    #else
+#ifndef WIN32
+#ifdef __OpenBSD__
+    srandomdev();
+#else
+    srandom(time(0));
+#endif
+#else
     srandom(time(0))
-    #endif
+#endif
 
     /* Setting the name */
     OS_SetName(ARGV0);
 
 
-    while((c = getopt(argc, argv, "Vtdhfc:")) != -1)
-    {
-        switch(c)
-        {
+    while((c = getopt(argc, argv, "Vtdhfc:")) != -1) {
+        switch(c) {
             case 'V':
                 print_version();
                 break;
@@ -93,8 +91,9 @@ int main(int argc, char **argv)
                 run_foreground = 1;
                 break;
             case 'c':
-                if(!optarg)
-                    ErrorExit("%s: -c needs an argument",ARGV0);
+                if(!optarg) {
+                    ErrorExit("%s: -c needs an argument", ARGV0);
+                }
                 cfg = optarg;
                 break;
             case 't':
@@ -110,28 +109,27 @@ int main(int argc, char **argv)
     /* Check current debug_level
      * Command line setting takes precedence
      */
-    if (debug_level == 0)
-    {
+    if (debug_level == 0) {
         /* Getting debug level */
         debug_level = getDefine_Int("logcollector", "debug", 0, 2);
-        while(debug_level != 0)
-        {
+        while(debug_level != 0) {
             nowDebug();
             debug_level--;
         }
     }
 
 
-    debug1(STARTED_MSG,ARGV0);
+    debug1(STARTED_MSG, ARGV0);
 
 
     accept_manager_commands = getDefine_Int("logcollector", "remote_commands",
-                                       0, 1);
+                                            0, 1);
 
 
     /* Reading config file */
-    if(LogCollectorConfig(cfg, accept_manager_commands) < 0)
+    if(LogCollectorConfig(cfg, accept_manager_commands) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
+    }
 
 
     /* Getting loop timeout */
@@ -143,17 +141,17 @@ int main(int argc, char **argv)
                                        2, 998);
 
     accept_manager_commands = getDefine_Int("logcollector", "remote_commands",
-                                       0, 1);
+                                            0, 1);
 
 
     /* Exit if test config */
-    if(test_config)
+    if(test_config) {
         exit(0);
+    }
 
 
     /* No file available to monitor -- continue */
-    if(logff == NULL)
-    {
+    if(logff == NULL) {
         os_calloc(2, sizeof(logreader), logff);
         logff[0].file = NULL;
         logff[0].ffile = NULL;
@@ -170,8 +168,7 @@ int main(int argc, char **argv)
     StartSIG(ARGV0);
 
 
-    if (!run_foreground)
-    {
+    if (!run_foreground) {
         /* Going on daemon mode */
         nowDaemon();
         goDaemon();
@@ -179,8 +176,9 @@ int main(int argc, char **argv)
 
 
     /* Creating PID file */
-    if(CreatePID(ARGV0, getpid()) < 0)
+    if(CreatePID(ARGV0, getpid()) < 0) {
         merror(PID_ERROR, ARGV0);
+    }
 
 
 
@@ -190,8 +188,9 @@ int main(int argc, char **argv)
 
 
     /* Starting the queue. */
-    if((logr_queue = StartMQ(DEFAULTQPATH,WRITE)) < 0)
+    if((logr_queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
+    }
 
 
     /* Main loop */

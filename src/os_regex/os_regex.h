@@ -40,25 +40,23 @@
 
 
 /* OSRegex structure */
-typedef struct _OSRegex
-{
+typedef struct _OSRegex {
     int error;
     int *flags;
     char **patterns;
     char **sub_strings;
-    const char ***prts_closure;
-    const char ***prts_str;
-}OSRegex;
+    const char ** *prts_closure;
+    const char ** *prts_str;
+} OSRegex;
 
 
 /* OSmatch structure */
-typedef struct _OSMatch
-{
+typedef struct _OSMatch {
     int error;
     size_t *size;
     char **patterns;
     int (**match_fp)(const char *str, const char *str2, size_t str_len, size_t size);
-}OSMatch;
+} OSMatch;
 
 
 /*** Prototypes ***/

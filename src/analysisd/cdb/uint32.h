@@ -5,7 +5,7 @@
 
 typedef unsigned int uint32;
 
-extern void uint32_pack(char *out,uint32 in);
-extern void uint32_unpack(const char *in,uint32 *out);
+extern void uint32_pack(char *out, uint32 in);
+extern void uint32_unpack(const char *in, uint32 *out);
 
 #endif

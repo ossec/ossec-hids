@@ -16,12 +16,11 @@
 
 
 /* Events List structure */
-typedef struct _MailNode
-{
+typedef struct _MailNode {
     MailMsg *mail;
     struct _MailNode *next;
     struct _MailNode *prev;
-}MailNode;
+} MailNode;
 
 
 /* Add an email to the list  */

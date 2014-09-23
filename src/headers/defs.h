@@ -64,15 +64,15 @@ http://www.ossec.net/main/license/\n"
 
 /* Maximum allowed PID */
 #ifdef SOLARIS
-    #define MAX_PID 29999
+#define MAX_PID 29999
 #else
-    #define MAX_PID 32768
+#define MAX_PID 32768
 #endif
 
 
 /* Max limit of 256 agents */
 #ifndef MAX_AGENTS
-    #define MAX_AGENTS  256
+#define MAX_AGENTS  256
 #endif
 
 
@@ -82,23 +82,23 @@ http://www.ossec.net/main/license/\n"
 
 /* User Configuration */
 #ifndef MAILUSER
-    #define MAILUSER        "ossecm"
+#define MAILUSER        "ossecm"
 #endif
 
 #ifndef USER
-    #define USER            "ossec"
+#define USER            "ossec"
 #endif
 
 #ifndef REMUSER
-    #define REMUSER         "ossecr"
+#define REMUSER         "ossecr"
 #endif
 
 #ifndef GROUPGLOBAL
-    #define GROUPGLOBAL     "ossec"
+#define GROUPGLOBAL     "ossec"
 #endif
 
-#ifndef DEFAULTDIR		
-	#define DEFAULTDIR	"/var/ossec"
+#ifndef DEFAULTDIR
+#define DEFAULTDIR	"/var/ossec"
 #endif
 
 
@@ -108,15 +108,15 @@ http://www.ossec.net/main/license/\n"
 
 /* Active response files */
 #ifndef WIN32
-    #define DEFAULTAR       "/etc/shared/ar.conf"
-    #define AR_BINDIR       "/active-response/bin"
-    #define AGENTCONFIGINT  "/etc/shared/agent.conf"
-    #define AGENTCONFIG     DEFAULTDIR "/etc/shared/agent.conf"
+#define DEFAULTAR       "/etc/shared/ar.conf"
+#define AR_BINDIR       "/active-response/bin"
+#define AGENTCONFIGINT  "/etc/shared/agent.conf"
+#define AGENTCONFIG     DEFAULTDIR "/etc/shared/agent.conf"
 #else
-    #define DEFAULTAR           "shared/ar.conf"
-    #define AR_BINDIR           "active-response/bin"
-    #define AGENTCONFIG         "shared/agent.conf"
-    #define AGENTCONFIGINT      "shared/agent.conf"
+#define DEFAULTAR           "shared/ar.conf"
+#define AR_BINDIR           "active-response/bin"
+#define AGENTCONFIG         "shared/agent.conf"
+#define AGENTCONFIGINT      "shared/agent.conf"
 #endif
 
 
@@ -161,29 +161,29 @@ http://www.ossec.net/main/license/\n"
 
 /* Wait file */
 #ifndef WIN32
-    #define WAIT_FILE       "/queue/ossec/.wait"
+#define WAIT_FILE       "/queue/ossec/.wait"
 #else
-    #define WAIT_FILE       ".wait"
+#define WAIT_FILE       ".wait"
 #endif
 
 
 /* Agent information file */
 #ifndef WIN32
-    #define AGENT_INFO_FILE "/queue/ossec/.agent_info"
-    #define AGENT_INFO_FILEP DEFAULTDIR AGENT_INFO_FILE
+#define AGENT_INFO_FILE "/queue/ossec/.agent_info"
+#define AGENT_INFO_FILEP DEFAULTDIR AGENT_INFO_FILE
 #else
-    #define AGENT_INFO_FILE ".agent_info"
-    #define AGENT_INFO_FILEP AGENT_INFO_FILE
+#define AGENT_INFO_FILE ".agent_info"
+#define AGENT_INFO_FILEP AGENT_INFO_FILE
 #endif
 
 
 /* Syscheck restart */
 #ifndef WIN32
-    #define SYSCHECK_RESTART        "/var/run/.syscheck_run"
-    #define SYSCHECK_RESTART_PATH   DEFAULTDIR SYSCHECK_RESTART
+#define SYSCHECK_RESTART        "/var/run/.syscheck_run"
+#define SYSCHECK_RESTART_PATH   DEFAULTDIR SYSCHECK_RESTART
 #else
-    #define SYSCHECK_RESTART        "syscheck/.syscheck_run"
-    #define SYSCHECK_RESTART_PATH   "syscheck/.syscheck_run"
+#define SYSCHECK_RESTART        "syscheck/.syscheck_run"
+#define SYSCHECK_RESTART_PATH   "syscheck/.syscheck_run"
 #endif
 
 
@@ -195,11 +195,11 @@ http://www.ossec.net/main/license/\n"
 
 /* Internal definitions files */
 #ifndef WIN32
-    #define OSSEC_DEFINES   "/etc/internal_options.conf"
-    #define OSSEC_LDEFINES   "/etc/local_internal_options.conf"
+#define OSSEC_DEFINES   "/etc/internal_options.conf"
+#define OSSEC_LDEFINES   "/etc/local_internal_options.conf"
 #else
-    #define OSSEC_DEFINES   "internal_options.conf"
-    #define OSSEC_LDEFINES   "local_internal_options.conf"
+#define OSSEC_DEFINES   "internal_options.conf"
+#define OSSEC_LDEFINES   "local_internal_options.conf"
 #endif
 
 
@@ -234,9 +234,9 @@ http://www.ossec.net/main/license/\n"
 
 /* Shared config directory */
 #ifndef WIN32
-    #define SHAREDCFG_DIR   "/etc/shared"
+#define SHAREDCFG_DIR   "/etc/shared"
 #else
-    #define SHAREDCFG_DIR   "shared"
+#define SHAREDCFG_DIR   "shared"
 #endif
 
 /* Built in defines */
@@ -251,24 +251,24 @@ http://www.ossec.net/main/license/\n"
 #endif
 
 #ifndef WIN32
-    #define DEFAULTARPATH   DEFAULTDIR DEFAULTAR
-    #define AR_BINDIRPATH   DEFAULTDIR AR_BINDIR
-    #define AGENTLESSDIRPATH    DEFAULTDIR AGENTLESSDIR
-    #define AGENTLESSPASSPATH   DEFAULTDIR AGENTLESSPASS
-    #define AGENTLESS_ENTRYDIRPATH  DEFAULTDIR AGENTLESS_ENTRYDIR
+#define DEFAULTARPATH   DEFAULTDIR DEFAULTAR
+#define AR_BINDIRPATH   DEFAULTDIR AR_BINDIR
+#define AGENTLESSDIRPATH    DEFAULTDIR AGENTLESSDIR
+#define AGENTLESSPASSPATH   DEFAULTDIR AGENTLESSPASS
+#define AGENTLESS_ENTRYDIRPATH  DEFAULTDIR AGENTLESS_ENTRYDIR
 #else
-    #define DEFAULTARPATH   "shared/ar.conf"
-    #define AR_BINDIRPATH   "active-response/bin"
-    #define AGENTLESSDIRPATH    AGENTLESSDIR
-    #define AGENTLESSPASSPATH   AGENTLESSPASS
-    #define AGENTLESS_ENTRYDIRPATH  AGENTLESS_ENTRYDIR
+#define DEFAULTARPATH   "shared/ar.conf"
+#define AR_BINDIRPATH   "active-response/bin"
+#define AGENTLESSDIRPATH    AGENTLESSDIR
+#define AGENTLESSPASSPATH   AGENTLESSPASS
+#define AGENTLESS_ENTRYDIRPATH  AGENTLESS_ENTRYDIR
 #endif
 #define EXECQUEUEPATH   DEFAULTDIR EXECQUEUE
 
 #ifdef WIN32
-    #define SHAREDCFG_DIRPATH   SHAREDCFG_DIR
+#define SHAREDCFG_DIRPATH   SHAREDCFG_DIR
 #else
-    #define SHAREDCFG_DIRPATH   DEFAULTDIR SHAREDCFG_DIR
+#define SHAREDCFG_DIRPATH   DEFAULTDIR SHAREDCFG_DIR
 #endif
 
 #define SHAREDCFG_FILE      SHAREDCFG_DIR "/merged.mg"
@@ -281,11 +281,11 @@ http://www.ossec.net/main/license/\n"
 
 /* Default ports */
 #ifndef DEFAULT_SECURE
-	#define DEFAULT_SECURE 1514 /* Default encrypted */
+#define DEFAULT_SECURE 1514 /* Default encrypted */
 #endif
 
 #ifndef DEFAULT_SYSLOG
-	#define DEFAULT_SYSLOG 514 /* Default syslog port - udp */
+#define DEFAULT_SYSLOG 514 /* Default syslog port - udp */
 #endif
 
 

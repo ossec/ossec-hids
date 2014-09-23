@@ -22,20 +22,19 @@
 #include "shared.h"
 
 /* socklen_t header */
-typedef struct _remoted
-{
+typedef struct _remoted {
     int *proto;
     int *port;
     int *conn;
     int *ipv6;
 
     char **lip;
-	os_ip **allowips;
-	os_ip **denyips;
+    os_ip **allowips;
+    os_ip **denyips;
 
     int m_queue;
     int sock;
     socklen_t peer_size;
-}remoted;
+} remoted;
 
 #endif

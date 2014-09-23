@@ -37,10 +37,9 @@ int ClientConf(char *cfgfile)
     agt->execdq = 0;
     agt->profile = NULL;   /*cmoraes*/
 
-    modules|= CCLIENT;
+    modules |= CCLIENT;
 
-    if(ReadConfig(modules, cfgfile, agt, NULL) < 0)
-    {
+    if(ReadConfig(modules, cfgfile, agt, NULL) < 0) {
         return(OS_INVALID);
     }
 

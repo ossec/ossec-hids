@@ -15,11 +15,11 @@
 
 
 #ifndef DBD
-   #define DBD
+#define DBD
 #endif
 
 #ifndef ARGV0
-   #define ARGV0 "ossec-dbd"
+#define ARGV0 "ossec-dbd"
 #endif
 
 #include "shared.h"
@@ -41,7 +41,7 @@ void OS_DBD(DBConfig *db_config)
 
     /* Getting currently time before starting */
     tm = time(NULL);
-    p = localtime(&tm);	
+    p = localtime(&tm);
 
 
     /* Initating file queue - to read the alerts */
@@ -51,8 +51,7 @@ void OS_DBD(DBConfig *db_config)
 
     /* Creating location hash */
     db_config->location_hash = OSHash_Create();
-    if(!db_config->location_hash)
-    {
+    if(!db_config->location_hash) {
         ErrorExit(MEM_ERROR, ARGV0);
     }
 
@@ -63,16 +62,14 @@ void OS_DBD(DBConfig *db_config)
 
 
     /* Infinite loop reading the alerts and inserting them. */
-    while(1)
-    {
+    while(1) {
         tm = time(NULL);
         p = localtime(&tm);
 
 
         /* Get message if available (timeout of 5 seconds) */
         al_data = Read_FileMon(fileq, p, 5);
-        if(!al_data)
-        {
+        if(!al_data) {
             continue;
         }
 

@@ -23,36 +23,33 @@
 #include <string.h>
 #include "md5.h"
 
-int OS_MD5_File(const char * fname, os_md5 output)
+int OS_MD5_File(const char *fname, os_md5 output)
 {
     FILE *fp;
     MD5_CTX ctx;
-    unsigned char buf[1024 +1];
+    unsigned char buf[1024 + 1];
     unsigned char digest[16];
     size_t n;
 
-    memset(output,0, 33);
+    memset(output, 0, 33);
     buf[1024] = '\0';
 
-    fp = fopen(fname,"r");
-    if(!fp)
-    {
+    fp = fopen(fname, "r");
+    if(!fp) {
         return(-1);
     }
 
     MD5Init(&ctx);
-    while((n = fread(buf, 1, sizeof(buf) -1, fp)) > 0)
-    {
+    while((n = fread(buf, 1, sizeof(buf) - 1, fp)) > 0) {
         buf[n] = '\0';
-        MD5Update(&ctx,buf,(unsigned)n);
+        MD5Update(&ctx, buf, (unsigned)n);
     }
 
     MD5Final(digest, &ctx);
 
-    for(n = 0;n < 16; n++)
-    {
+    for(n = 0; n < 16; n++) {
         snprintf(output, 3, "%02x", digest[n]);
-        output+=2;
+        output += 2;
     }
 
     /* Closing it */
@@ -61,7 +58,7 @@ int OS_MD5_File(const char * fname, os_md5 output)
     return(0);
 }
 
-int OS_MD5_Str(const char * str, os_md5 output)
+int OS_MD5_Str(const char *str, os_md5 output)
 {
     unsigned char digest[16];
 
@@ -71,15 +68,14 @@ int OS_MD5_Str(const char * str, os_md5 output)
 
     MD5Init(&ctx);
 
-    MD5Update(&ctx,(const unsigned char *)str,(unsigned)strlen(str));
+    MD5Update(&ctx, (const unsigned char *)str, (unsigned)strlen(str));
 
     MD5Final(digest, &ctx);
 
     output[32] = '\0';
-    for(n = 0;n < 16;n++)
-    {
+    for(n = 0; n < 16; n++) {
         snprintf(output, 3, "%02x", digest[n]);
-        output+=2;
+        output += 2;
     }
 
     return(0);

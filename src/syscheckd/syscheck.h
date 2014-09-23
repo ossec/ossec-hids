@@ -40,7 +40,7 @@ void start_daemon();
 
 
 /* Read the XML config */
-int Read_Syscheck_Config(char * cfgfile);
+int Read_Syscheck_Config(char *cfgfile);
 
 
 /* create the database */

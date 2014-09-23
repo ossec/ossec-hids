@@ -20,7 +20,7 @@
 
 /** Internal prototypes **/
 static const char *_OS_Regex(const char *pattern, const char *str, const char **prts_closure,
-        const char **prts_str, int flags) __attribute__((nonnull(1,2)));
+                             const char **prts_str, int flags) __attribute__((nonnull(1, 2)));
 
 
 
@@ -36,41 +36,34 @@ const char *OSRegex_Execute(const char *str, OSRegex *reg)
     int i = 0;
 
     /* The string can't be NULL */
-    if(str == NULL)
-    {
+    if(str == NULL) {
         reg->error = OS_REGEX_STR_NULL;
         return(0);
     }
 
 
     /* If we need the sub strings */
-    if(reg->prts_closure)
-    {
+    if(reg->prts_closure) {
         int k = 0;
 
         /* Looping on all sub patterns */
-        while(reg->patterns[i])
-        {
+        while(reg->patterns[i]) {
             /* Cleaning the prts_str */
             int j = 0;
-            while(reg->prts_closure[i][j])
-            {
+            while(reg->prts_closure[i][j]) {
                 reg->prts_str[i][j] = NULL;
                 j++;
             }
 
             if((ret = _OS_Regex(reg->patterns[i], str, reg->prts_closure[i],
-                        reg->prts_str[i], reg->flags[i])))
-            {
+                                reg->prts_str[i], reg->flags[i]))) {
                 j = 0;
 
                 /* We must always have the open and the close */
-                while(reg->prts_str[i][j] && reg->prts_str[i][j+1])
-                {
-                    size_t length = (size_t) (reg->prts_str[i][j+1] - reg->prts_str[i][j]);
+                while(reg->prts_str[i][j] && reg->prts_str[i][j + 1]) {
+                    size_t length = (size_t) (reg->prts_str[i][j + 1] - reg->prts_str[i][j]);
                     reg->sub_strings[k] = (char *) malloc((length + 1) * sizeof(char));
-                    if(!reg->sub_strings[k])
-                    {
+                    if(!reg->sub_strings[k]) {
                         OSRegex_FreeSubStrings(reg);
                         return(NULL);
                     }
@@ -82,7 +75,7 @@ const char *OSRegex_Execute(const char *str, OSRegex *reg)
                     reg->sub_strings[k] = NULL;
 
                     /* Go two by two */
-                    j+=2;
+                    j += 2;
                 }
 
                 return(ret);
@@ -97,10 +90,8 @@ const char *OSRegex_Execute(const char *str, OSRegex *reg)
     /* If we don't need the sub strings */
 
     /* Looping on all sub patterns */
-    while(reg->patterns[i])
-    {
-        if((ret = _OS_Regex(reg->patterns[i], str, NULL, NULL, reg->flags[i])))
-        {
+    while(reg->patterns[i]) {
+        if((ret = _OS_Regex(reg->patterns[i], str, NULL, NULL, reg->flags[i]))) {
             return(ret);
         }
         i++;
@@ -120,7 +111,7 @@ const char *OSRegex_Execute(const char *str, OSRegex *reg)
  * written on prts_str (which must not be NULL)
  */
 static const char *_OS_Regex(const char *pattern, const char *str, const char **prts_closure,
-        const char **prts_str, int flags)
+                             const char **prts_str, int flags)
 {
     const char *r_code = NULL;
 
@@ -140,25 +131,21 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
 
 
     /* Will loop the whole string, trying to find a match */
-    do
-    {
-        switch(*pt)
-        {
+    do {
+        switch(*pt) {
             case '\0':
-                if(!(flags & END_SET) || ((flags & END_SET) && (*st == '\0')))
+                if(!(flags & END_SET) || ((flags & END_SET) && (*st == '\0'))) {
                     return(r_code);
+                }
                 break;
 
-                /* If it is a parenthesis do not match against the character */
+            /* If it is a parenthesis do not match against the character */
             case '(':
                 /* Find the closure for the parenthesis */
-                if(prts_closure)
-                {
+                if(prts_closure) {
                     prts_int = 0;
-                    while(prts_closure[prts_int])
-                    {
-                        if(prts_closure[prts_int] == pt)
-                        {
+                    while(prts_closure[prts_int]) {
+                        if(prts_closure[prts_int] == pt) {
                             prts_str[prts_int] = st;
                             break;
                         }
@@ -167,10 +154,10 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
                 }
 
                 pt++;
-                if(*pt == '\0')
-                {
-                    if(!(flags & END_SET) || ((flags & END_SET) && (*st == '\0')))
+                if(*pt == '\0') {
+                    if(!(flags & END_SET) || ((flags & END_SET) && (*st == '\0'))) {
                         return(r_code);
+                    }
                 }
                 break;
             default:
@@ -178,20 +165,16 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
         }
 
         /* If it starts on Backslash (future regex) */
-        if(*pt == BACKSLASH)
-        {
-            if(Regex((uchar)*(pt+1), (uchar)*st))
-            {
-                next_pt = pt+2;
+        if(*pt == BACKSLASH) {
+            if(Regex((uchar) * (pt + 1), (uchar)*st)) {
+                next_pt = pt + 2;
 
                 /* If we don't have a '+' or '*', we should skip
                  * searching using this pattern.
                  */
-                if(!isPlus(*next_pt))
-                {
+                if(!isPlus(*next_pt)) {
                     pt = next_pt;
-                    if(!st_error)
-                    {
+                    if(!st_error) {
                         /* If st_error is not set, we need to set it here.
                          * In case of error in the matching later, we need
                          * to continue from here (it will be incremented in
@@ -206,8 +189,7 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
                 /* If it is a '*', we need to set the _regex_matched
                  * for the first pattern even.
                  */
-                if(*next_pt == '*')
-                {
+                if(*next_pt == '*') {
                     _regex_matched = 1;
                 }
 
@@ -219,61 +201,47 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
                  * _regex_matched will set set to true after the first
                  * round of matches
                  */
-                if(_regex_matched)
-                {
+                if(_regex_matched) {
                     next_pt++;
                     ok_here = -1;
 
                     /* If it is a parenthesis, jump to the next and write
                      * the location down if 'ok_here >= 0'
                      */
-                    if(prts(*next_pt))
-                    {
+                    if(prts(*next_pt)) {
                         next_pt++;
                     }
 
-                    if(*next_pt == '\0')
-                    {
+                    if(*next_pt == '\0') {
                         ok_here = 1;
-                    }
-                    else if(*next_pt == BACKSLASH)
-                    {
-                        if(Regex((uchar)*(next_pt+1), (uchar)*st))
-                        {
+                    } else if(*next_pt == BACKSLASH) {
+                        if(Regex((uchar) * (next_pt + 1), (uchar)*st)) {
                             /* If the next one does not have
                              * a '+' or '*', we can set it as
                              * being read and continue.
                              */
-                            if(!isPlus(*(next_pt+2)))
-                            {
+                            if(!isPlus(*(next_pt + 2))) {
                                 ok_here = 2;
-                            }
-                            else
-                            {
+                            } else {
                                 ok_here = 0;
                             }
                         }
-                    }
-                    else if(*next_pt == charmap[(uchar)*st])
-                    {
+                    } else if(*next_pt == charmap[(uchar)*st]) {
                         _regex_matched = 0;
                         ok_here = 1;
                     }
 
                     /* If the next character matches in here */
-                    if(ok_here >= 0)
-                    {
-                        if(prts_closure && prts(*(next_pt - 1)))
-                        {
+                    if(ok_here >= 0) {
+                        if(prts_closure && prts(*(next_pt - 1))) {
                             prts_int = 0;
-                            while(prts_closure[prts_int])
-                            {
-                                if(prts_closure[prts_int] == (next_pt -1))
-                                {
-                                    if(*(st+1) == '\0')
-                                        prts_str[prts_int] = st+1;
-                                    else
+                            while(prts_closure[prts_int]) {
+                                if(prts_closure[prts_int] == (next_pt - 1)) {
+                                    if(*(st + 1) == '\0') {
+                                        prts_str[prts_int] = st + 1;
+                                    } else {
                                         prts_str[prts_int] = st;
+                                    }
                                     break;
                                 }
                                 prts_int++;
@@ -282,8 +250,7 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
 
 
                         /* If next_pt == \0, return the r_code */
-                        if(*next_pt == '\0')
-                        {
+                        if(*next_pt == '\0') {
                             continue;
                         }
 
@@ -291,51 +258,41 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
                         /* Each "if" will increment the amount
                          * necessary for the next pattern in ok_here
                          */
-                        if(ok_here)
-                            next_pt+=ok_here;
+                        if(ok_here) {
+                            next_pt += ok_here;
+                        }
 
 
-                        if(!pt_error[0])
-                        {
+                        if(!pt_error[0]) {
                             pt_error[0] = pt;
                             pt_error_str[0] = st;
-                        }
-                        else if(!pt_error[1])
-                        {
+                        } else if(!pt_error[1]) {
                             pt_error[1] = pt;
                             pt_error_str[1] = st;
-                        }
-                        else if(!pt_error[2])
-                        {
+                        } else if(!pt_error[2]) {
                             pt_error[2] = pt;
                             pt_error_str[2] = st;
 
-                        }
-                        else if(!pt_error[3])
-                        {
+                        } else if(!pt_error[3]) {
                             pt_error[3] = pt;
                             pt_error_str[3] = st;
                         }
 
                         pt = next_pt;
                     }
-                }
-                else
-                {
+                } else {
                     next_pt++;
 
                     /* If it is a parenthesis, mark the location */
-                    if(prts_closure && prts(*next_pt))
-                    {
+                    if(prts_closure && prts(*next_pt)) {
                         prts_int = 0;
-                        while(prts_closure[prts_int])
-                        {
-                            if(prts_closure[prts_int] == next_pt)
-                            {
-                                if(*(st+1) == '\0')
-                                    prts_str[prts_int] = st +1;
-                                else
+                        while(prts_closure[prts_int]) {
+                            if(prts_closure[prts_int] == next_pt) {
+                                if(*(st + 1) == '\0') {
+                                    prts_str[prts_int] = st + 1;
+                                } else {
                                     prts_str[prts_int] = st;
+                                }
                                 break;
                             }
                             prts_int++;
@@ -350,27 +307,25 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
                 continue;
             }
 
-            else if((*(pt+3) == '\0') && (_regex_matched == 1)&&(r_code))
-            {
+            else if((*(pt + 3) == '\0') && (_regex_matched == 1) && (r_code)) {
                 r_code = st;
-                if(!(flags & END_SET) || ((flags & END_SET) && (*st == '\0')))
+                if(!(flags & END_SET) || ((flags & END_SET) && (*st == '\0'))) {
                     return(r_code);
+                }
             }
 
             /* If we didn't match regex, but _regex_matched == 1, jump
              * to the next available pattern
              */
-            else if((*(pt+2) == '+') && (_regex_matched == 1))
-            {
-                pt+=3;
+            else if((*(pt + 2) == '+') && (_regex_matched == 1)) {
+                pt += 3;
                 st--;
                 _regex_matched = 0;
                 continue;
             }
             /* We may not match with '*' */
-            else if(*(pt+2) == '*')
-            {
-                pt+=3;
+            else if(*(pt + 2) == '*') {
+                pt += 3;
                 st--;
                 r_code = st;
                 _regex_matched = 0;
@@ -378,12 +333,9 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
             }
 
             _regex_matched = 0;
-        }
-        else if(*pt == charmap[(uchar)*st])
-        {
+        } else if(*pt == charmap[(uchar)*st]) {
             pt++;
-            if(!st_error)
-            {
+            if(!st_error) {
                 /* If st_error is not set, we need to set it here.
                  * In case of error in the matching later, we need
                  * to continue from here (it will be incremented in
@@ -396,70 +348,55 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
         }
 
         /* Error Handling */
-            if(pt_error[3])
-            {
-                pt = pt_error[3];
-                st = pt_error_str[3];
-                pt_error[3] = NULL;
-                continue;
-            }
-            else if(pt_error[2])
-            {
-                pt = pt_error[2];
-                st = pt_error_str[2];
-                pt_error[2] = NULL;
-                continue;
-            }
-            else if(pt_error[1])
-            {
-                pt = pt_error[1];
-                st = pt_error_str[1];
-                pt_error[1] = NULL;
-                continue;
-            }
-            else if(pt_error[0])
-            {
-                pt = pt_error[0];
-                st = pt_error_str[0];
-                pt_error[0] = NULL;
-                continue;
-            }
-            else if(flags & BEGIN_SET)
-            {
-                /* If we get an error and the "^" option is
-                 * set, we can return "not matched" in here.
-                 */
-                return(NULL);
-            }
-            else if(st_error)
-            {
-                st = st_error;
-                st_error = NULL;
-            }
-            pt = pattern;
-            r_code = NULL;
+        if(pt_error[3]) {
+            pt = pt_error[3];
+            st = pt_error_str[3];
+            pt_error[3] = NULL;
+            continue;
+        } else if(pt_error[2]) {
+            pt = pt_error[2];
+            st = pt_error_str[2];
+            pt_error[2] = NULL;
+            continue;
+        } else if(pt_error[1]) {
+            pt = pt_error[1];
+            st = pt_error_str[1];
+            pt_error[1] = NULL;
+            continue;
+        } else if(pt_error[0]) {
+            pt = pt_error[0];
+            st = pt_error_str[0];
+            pt_error[0] = NULL;
+            continue;
+        } else if(flags & BEGIN_SET) {
+            /* If we get an error and the "^" option is
+             * set, we can return "not matched" in here.
+             */
+            return(NULL);
+        } else if(st_error) {
+            st = st_error;
+            st_error = NULL;
+        }
+        pt = pattern;
+        r_code = NULL;
 
-    }while(*(++st) != '\0');
+    } while(*(++st) != '\0');
 
 
     /* Matching for a possible last parenthesis */
-    if(prts_closure)
-    {
-        while(!prts(*pt) && *pt != '\0')
-        {
-            if(*pt == BACKSLASH && *(pt+2) == '*')
-                pt+=3;
-            else
+    if(prts_closure) {
+        while(!prts(*pt) && *pt != '\0') {
+            if(*pt == BACKSLASH && *(pt + 2) == '*') {
+                pt += 3;
+            } else {
                 break;
+            }
         }
 
-        if(prts(*pt))
-        {
+        if(prts(*pt)) {
             prts_int = 0;
-            while(prts_closure[prts_int])
-            {
-                if(prts_closure[prts_int] == pt)
-                {
+            while(prts_closure[prts_int]) {
+                if(prts_closure[prts_int] == pt) {
                     prts_str[prts_int] = st;
                     break;
                 }
@@ -470,24 +407,23 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
 
     /* Cleaning up */
     if(ENDOFFILE(pt) ||
-        (*pt == BACKSLASH &&
-        _regex_matched &&
-        (pt+=2) &&
-        isPlus(*pt) &&
-        (pt++) &&
-        ((ENDOFFILE(pt)) ||
-        ((*pt == BACKSLASH) &&
-        (pt+=2) &&
-        (*pt == '*') &&
-        (pt++) &&
-        (ENDOFFILE(pt)) ))) ||
-        (*pt == BACKSLASH &&
-        (pt+=2) &&
-        (*pt == '*') &&
-        (pt++) &&
-        ENDOFFILE(pt))
-        )
-    {
+            (*pt == BACKSLASH &&
+             _regex_matched &&
+             (pt += 2) &&
+             isPlus(*pt) &&
+             (pt++) &&
+             ((ENDOFFILE(pt)) ||
+              ((*pt == BACKSLASH) &&
+               (pt += 2) &&
+               (*pt == '*') &&
+               (pt++) &&
+               (ENDOFFILE(pt)) ))) ||
+            (*pt == BACKSLASH &&
+             (pt += 2) &&
+             (*pt == '*') &&
+             (pt++) &&
+             ENDOFFILE(pt))
+      ) {
         return(r_code);
     }
 

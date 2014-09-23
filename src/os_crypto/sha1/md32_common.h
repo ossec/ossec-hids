@@ -194,18 +194,18 @@
 #  if defined(__POWERPC__)
 #   define ROTATE(a,n)	__rlwinm(a,n,0,31)
 #  elif defined(__MC68K__)
-    /* Motorola specific tweak. <appro@fy.chalmers.se> */
+/* Motorola specific tweak. <appro@fy.chalmers.se> */
 #   define ROTATE(a,n)	( n<24 ? __rol(a,n) : __ror(a,32-n) )
 #  else
 #   define ROTATE(a,n)	__rol(a,n)
 #  endif
 # elif defined(__GNUC__) && __GNUC__>=2 && !defined(OPENSSL_NO_ASM) && !defined(OPENSSL_NO_INLINE_ASM)
-  /*
-   * Some GNU C inline assembler templates. Note that these are
-   * rotates by *constant* number of bits! But that's exactly
-   * what we need here...
-   * 					<appro@fy.chalmers.se>
-   */
+/*
+ * Some GNU C inline assembler templates. Note that these are
+ * rotates by *constant* number of bits! But that's exactly
+ * what we need here...
+ * 					<appro@fy.chalmers.se>
+ */
 #  if defined(__i386) || defined(__i386__) || defined(__x86_64) || defined(__x86_64__)
 #   define ROTATE(a,n)	({ register unsigned int ret;	\
 				asm (			\
@@ -297,12 +297,12 @@
 # if defined(__GNUC__) && __GNUC__>=2 && !defined(OPENSSL_NO_ASM) && !defined(OPENSSL_NO_INLINE_ASM)
 #  if ((defined(__i386) || defined(__i386__)) && !defined(I386_ONLY)) || \
       (defined(__x86_64) || defined(__x86_64__))
-    /*
-     * This gives ~30-40% performance improvement in SHA-256 compiled
-     * with gcc [on P4]. Well, first macro to be frank. We can pull
-     * this trick on x86* platforms only, because these CPUs can fetch
-     * unaligned data without raising an exception.
-     */
+/*
+ * This gives ~30-40% performance improvement in SHA-256 compiled
+ * with gcc [on P4]. Well, first macro to be frank. We can pull
+ * this trick on x86* platforms only, because these CPUs can fetch
+ * unaligned data without raising an exception.
+ */
 #   define HOST_c2l(c,l)	({ unsigned int r=*((const unsigned int *)(c));	\
 				   asm ("bswapl %0":"=r"(r):"0"(r));	\
 				   (c)+=4; (l)=r;			})
@@ -355,7 +355,7 @@
 
 #if defined(__i386) || defined(__i386__) || defined(__x86_64) || defined(__x86_64__)
 # ifndef B_ENDIAN
-   /* See comment in DATA_ORDER_IS_BIG_ENDIAN section. */
+/* See comment in DATA_ORDER_IS_BIG_ENDIAN section. */
 #  define HOST_c2l(c,l)	((l)=*((const unsigned int *)(c)), (c)+=4, l)
 #  define HOST_l2c(l,c)	(*((unsigned int *)(c))=(l), (c)+=4, l)
 # endif
@@ -406,205 +406,207 @@
  */
 
 int HASH_UPDATE (HASH_CTX *c, const void *data_, size_t len)
-	{
-	const unsigned char *data=data_;
-	register HASH_LONG * p;
-	register HASH_LONG l;
-	size_t sw,sc,ew,ec;
+{
+    const unsigned char *data = data_;
+    register HASH_LONG *p;
+    register HASH_LONG l;
+    size_t sw, sc, ew, ec;
 
-	if (len==0) return 1;
+    if (len == 0) {
+        return 1;
+    }
 
-	l=(c->Nl+(((HASH_LONG)len)<<3))&0xffffffffUL;
-	/* 95-05-24 eay Fixed a bug with the overflow handling, thanks to
-	 * Wei Dai <weidai@eskimo.com> for pointing it out. */
-	if (l < c->Nl) /* overflow */
-		c->Nh++;
-	c->Nh+=(len>>29);	/* might cause compiler warning on 16-bit */
-	c->Nl=l;
+    l = (c->Nl + (((HASH_LONG)len) << 3)) & 0xffffffffUL;
+    /* 95-05-24 eay Fixed a bug with the overflow handling, thanks to
+     * Wei Dai <weidai@eskimo.com> for pointing it out. */
+    if (l < c->Nl) { /* overflow */
+        c->Nh++;
+    }
+    c->Nh += (len >> 29);	/* might cause compiler warning on 16-bit */
+    c->Nl = l;
 
-	if (c->num != 0)
-		{
-		p=c->data;
-		sw=c->num>>2;
-		sc=c->num&0x03;
+    if (c->num != 0) {
+        p = c->data;
+        sw = c->num >> 2;
+        sc = c->num & 0x03;
 
-		if ((c->num+len) >= HASH_CBLOCK)
-			{
-			l=p[sw]; HOST_p_c2l(data,l,sc); p[sw++]=l;
-			for (; sw<HASH_LBLOCK; sw++)
-				{
-				HOST_c2l(data,l); p[sw]=l;
-				}
-			HASH_BLOCK_HOST_ORDER (c,p,1);
-			len-=(HASH_CBLOCK-c->num);
-			c->num=0;
-			/* drop through and do the rest */
-			}
-		else
-			{
-			c->num+=(unsigned int)len;
-			if ((sc+len) < 4) /* ugly, add char's to a word */
-				{
-				l=p[sw]; HOST_p_c2l_p(data,l,sc,len); p[sw]=l;
-				}
-			else
-				{
-				ew=(c->num>>2);
-				ec=(c->num&0x03);
-				if (sc)
-					l=p[sw];
-				HOST_p_c2l(data,l,sc);
-				p[sw++]=l;
-				for (; sw < ew; sw++)
-					{
-					HOST_c2l(data,l); p[sw]=l;
-					}
-				if (ec)
-					{
-					HOST_c2l_p(data,l,ec); p[sw]=l;
-					}
-				}
-			return 1;
-			}
-		}
+        if ((c->num + len) >= HASH_CBLOCK) {
+            l = p[sw];
+            HOST_p_c2l(data, l, sc);
+            p[sw++] = l;
+            for (; sw < HASH_LBLOCK; sw++) {
+                HOST_c2l(data, l);
+                p[sw] = l;
+            }
+            HASH_BLOCK_HOST_ORDER (c, p, 1);
+            len -= (HASH_CBLOCK - c->num);
+            c->num = 0;
+            /* drop through and do the rest */
+        } else {
+            c->num += (unsigned int)len;
+            if ((sc + len) < 4) { /* ugly, add char's to a word */
+                l = p[sw];
+                HOST_p_c2l_p(data, l, sc, len);
+                p[sw] = l;
+            } else {
+                ew = (c->num >> 2);
+                ec = (c->num & 0x03);
+                if (sc) {
+                    l = p[sw];
+                }
+                HOST_p_c2l(data, l, sc);
+                p[sw++] = l;
+                for (; sw < ew; sw++) {
+                    HOST_c2l(data, l);
+                    p[sw] = l;
+                }
+                if (ec) {
+                    HOST_c2l_p(data, l, ec);
+                    p[sw] = l;
+                }
+            }
+            return 1;
+        }
+    }
 
-	sw=len/HASH_CBLOCK;
-	if (sw > 0)
-		{
+    sw = len / HASH_CBLOCK;
+    if (sw > 0) {
 #if defined(HASH_BLOCK_DATA_ORDER_ALIGNED)
-		/*
-		 * Note that HASH_BLOCK_DATA_ORDER_ALIGNED gets defined
-		 * only if sizeof(HASH_LONG)==4.
-		 */
-		if ((((size_t)data)%4) == 0)
-			{
-			/* data is properly aligned so that we can cast it: */
-			HASH_BLOCK_DATA_ORDER_ALIGNED (c,(const HASH_LONG *)data,sw);
-			sw*=HASH_CBLOCK;
-			data+=sw;
-			len-=sw;
-			}
-		else
+        /*
+         * Note that HASH_BLOCK_DATA_ORDER_ALIGNED gets defined
+         * only if sizeof(HASH_LONG)==4.
+         */
+        if ((((size_t)data) % 4) == 0) {
+            /* data is properly aligned so that we can cast it: */
+            HASH_BLOCK_DATA_ORDER_ALIGNED (c, (const HASH_LONG *)data, sw);
+            sw *= HASH_CBLOCK;
+            data += sw;
+            len -= sw;
+        } else
 #if !defined(HASH_BLOCK_DATA_ORDER)
-			while (sw--)
-				{
-				memcpy (p=c->data,data,HASH_CBLOCK);
-				HASH_BLOCK_DATA_ORDER_ALIGNED(c,p,1);
-				data+=HASH_CBLOCK;
-				len-=HASH_CBLOCK;
-				}
+            while (sw--) {
+                memcpy (p = c->data, data, HASH_CBLOCK);
+                HASH_BLOCK_DATA_ORDER_ALIGNED(c, p, 1);
+                data += HASH_CBLOCK;
+                len -= HASH_CBLOCK;
+            }
 #endif
 #endif
 #if defined(HASH_BLOCK_DATA_ORDER)
-			{
-			HASH_BLOCK_DATA_ORDER(c,data,sw);
-			sw*=HASH_CBLOCK;
-			data+=sw;
-			len-=sw;
-			}
+        {
+            HASH_BLOCK_DATA_ORDER(c, data, sw);
+            sw *= HASH_CBLOCK;
+            data += sw;
+            len -= sw;
+        }
 #endif
-		}
+    }
 
-	if (len!=0)
-		{
-		p = c->data;
-		c->num = len;
-		ew=len>>2;	/* words to copy */
-		ec=len&0x03;
-		for (; ew; ew--,p++)
-			{
-			HOST_c2l(data,l); *p=l;
-			}
-		HOST_c2l_p(data,l,ec);
-		*p=l;
-		}
-	return 1;
-	}
+    if (len != 0) {
+        p = c->data;
+        c->num = len;
+        ew = len >> 2;	/* words to copy */
+        ec = len & 0x03;
+        for (; ew; ew--, p++) {
+            HOST_c2l(data, l);
+            *p = l;
+        }
+        HOST_c2l_p(data, l, ec);
+        *p = l;
+    }
+    return 1;
+}
 
 
 void HASH_TRANSFORM (HASH_CTX *c, const unsigned char *data)
-	{
+{
 #if defined(HASH_BLOCK_DATA_ORDER_ALIGNED)
-	if ((((size_t)data)%4) == 0)
-		/* data is properly aligned so that we can cast it: */
-		HASH_BLOCK_DATA_ORDER_ALIGNED (c,(const HASH_LONG *)data,1);
-	else
+    if ((((size_t)data) % 4) == 0)
+        /* data is properly aligned so that we can cast it: */
+    {
+        HASH_BLOCK_DATA_ORDER_ALIGNED (c, (const HASH_LONG *)data, 1);
+    } else
 #if !defined(HASH_BLOCK_DATA_ORDER)
-		{
-		memcpy (c->data,data,HASH_CBLOCK);
-		HASH_BLOCK_DATA_ORDER_ALIGNED (c,c->data,1);
-		}
+    {
+        memcpy (c->data, data, HASH_CBLOCK);
+        HASH_BLOCK_DATA_ORDER_ALIGNED (c, c->data, 1);
+    }
 #endif
 #endif
 #if defined(HASH_BLOCK_DATA_ORDER)
-	HASH_BLOCK_DATA_ORDER (c,data,1);
+    HASH_BLOCK_DATA_ORDER (c, data, 1);
 #endif
-	}
+}
 
 
 int HASH_FINAL (unsigned char *md, HASH_CTX *c)
-	{
-	register HASH_LONG *p;
-	register unsigned long l;
-	register int i,j;
-	static const unsigned char end[4]={0x80,0x00,0x00,0x00};
-	const unsigned char *cp=end;
+{
+    register HASH_LONG *p;
+    register unsigned long l;
+    register int i, j;
+    static const unsigned char end[4] = {0x80, 0x00, 0x00, 0x00};
+    const unsigned char *cp = end;
 
-	/* c->num should definitly have room for at least one more byte. */
-	p=c->data;
-	i=c->num>>2;
-	j=c->num&0x03;
+    /* c->num should definitly have room for at least one more byte. */
+    p = c->data;
+    i = c->num >> 2;
+    j = c->num & 0x03;
 
 #if 0
-	/* purify often complains about the following line as an
-	 * Uninitialized Memory Read.  While this can be true, the
-	 * following p_c2l macro will reset l when that case is true.
-	 * This is because j&0x03 contains the number of 'valid' bytes
-	 * already in p[i].  If and only if j&0x03 == 0, the UMR will
-	 * occur but this is also the only time p_c2l will do
-	 * l= *(cp++) instead of l|= *(cp++)
-	 * Many thanks to Alex Tang <altitude@cic.net> for pickup this
-	 * 'potential bug' */
+    /* purify often complains about the following line as an
+     * Uninitialized Memory Read.  While this can be true, the
+     * following p_c2l macro will reset l when that case is true.
+     * This is because j&0x03 contains the number of 'valid' bytes
+     * already in p[i].  If and only if j&0x03 == 0, the UMR will
+     * occur but this is also the only time p_c2l will do
+     * l= *(cp++) instead of l|= *(cp++)
+     * Many thanks to Alex Tang <altitude@cic.net> for pickup this
+     * 'potential bug' */
 #ifdef PURIFY
-	if (j==0) p[i]=0; /* Yeah, but that's not the way to fix it:-) */
+    if (j == 0) {
+        p[i] = 0;    /* Yeah, but that's not the way to fix it:-) */
+    }
 #endif
-	l=p[i];
+    l = p[i];
 #else
-	l = (j==0) ? 0 : p[i];
+    l = (j == 0) ? 0 : p[i];
 #endif
-	HOST_p_c2l(cp,l,j); p[i++]=l; /* i is the next 'undefined word' */
+    HOST_p_c2l(cp, l, j);
+    p[i++] = l; /* i is the next 'undefined word' */
 
-	if (i>(HASH_LBLOCK-2)) /* save room for Nl and Nh */
-		{
-		if (i<HASH_LBLOCK) p[i]=0;
-		HASH_BLOCK_HOST_ORDER (c,p,1);
-		i=0;
-		}
-	for (; i<(HASH_LBLOCK-2); i++)
-		p[i]=0;
+    if (i > (HASH_LBLOCK - 2)) { /* save room for Nl and Nh */
+        if (i < HASH_LBLOCK) {
+            p[i] = 0;
+        }
+        HASH_BLOCK_HOST_ORDER (c, p, 1);
+        i = 0;
+    }
+    for (; i < (HASH_LBLOCK - 2); i++) {
+        p[i] = 0;
+    }
 
 #if   defined(DATA_ORDER_IS_BIG_ENDIAN)
-	p[HASH_LBLOCK-2]=c->Nh;
-	p[HASH_LBLOCK-1]=c->Nl;
+    p[HASH_LBLOCK - 2] = c->Nh;
+    p[HASH_LBLOCK - 1] = c->Nl;
 #elif defined(DATA_ORDER_IS_LITTLE_ENDIAN)
-	p[HASH_LBLOCK-2]=c->Nl;
-	p[HASH_LBLOCK-1]=c->Nh;
+    p[HASH_LBLOCK - 2] = c->Nl;
+    p[HASH_LBLOCK - 1] = c->Nh;
 #endif
-	HASH_BLOCK_HOST_ORDER (c,p,1);
+    HASH_BLOCK_HOST_ORDER (c, p, 1);
 
 #ifndef HASH_MAKE_STRING
 #error "HASH_MAKE_STRING must be defined!"
 #else
-	HASH_MAKE_STRING(c,md);
+    HASH_MAKE_STRING(c, md);
 #endif
 
-	c->num=0;
-	/* clear stuff, HASH_BLOCK may be leaving some stuff on the stack
-	 * but I'm not worried :-)
-	OPENSSL_cleanse((void *)c,sizeof(HASH_CTX));
-	 */
-	return 1;
-	}
+    c->num = 0;
+    /* clear stuff, HASH_BLOCK may be leaving some stuff on the stack
+     * but I'm not worried :-)
+    OPENSSL_cleanse((void *)c,sizeof(HASH_CTX));
+     */
+    return 1;
+}
 
 #ifndef MD32_REG_T
 #define MD32_REG_T int

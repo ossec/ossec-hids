@@ -29,7 +29,7 @@
 #define _AUTHD_H
 
 #ifndef ARGV0
-   #define ARGV0 "ossec-authd"
+#define ARGV0 "ossec-authd"
 #endif
 
 #include <unistd.h>

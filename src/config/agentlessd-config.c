@@ -38,10 +38,10 @@ int Read_CAgentless(XML_NODE node, void *config, __attribute__((unused)) void *c
 
 
     /* Getting any configured entry. */
-    if(lessd_config->entries)
-    {
-        while(lessd_config->entries[s])
+    if(lessd_config->entries) {
+        while(lessd_config->entries[s]) {
             s++;
+        }
     }
 
 
@@ -65,119 +65,84 @@ int Read_CAgentless(XML_NODE node, void *config, __attribute__((unused)) void *c
 
 
     /* Reading the XML. */
-    while(node[i])
-    {
-        if(!node[i]->element)
-        {
+    while(node[i]) {
+        if(!node[i]->element) {
             merror(XML_ELEMNULL, ARGV0);
             return(OS_INVALID);
-        }
-        else if(!node[i]->content)
-        {
+        } else if(!node[i]->content) {
             merror(XML_VALUENULL, ARGV0, node[i]->element);
             return(OS_INVALID);
-        }
-        else if(strcmp(node[i]->element, xml_lessd_frequency) == 0)
-        {
-            if(!OS_StrIsNum(node[i]->content))
-            {
-                merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
+        } else if(strcmp(node[i]->element, xml_lessd_frequency) == 0) {
+            if(!OS_StrIsNum(node[i]->content)) {
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
 
             lessd_config->entries[s]->frequency = atoi(node[i]->content);
-        }
-        else if(strcmp(node[i]->element, xml_lessd_port) == 0)
-        {
-            if(!OS_StrIsNum(node[i]->content))
-            {
-                merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
+        } else if(strcmp(node[i]->element, xml_lessd_port) == 0) {
+            if(!OS_StrIsNum(node[i]->content)) {
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
 
             lessd_config->entries[s]->port = atoi(node[i]->content);
-        }
-        else if(strcmp(node[i]->element, xml_lessd_server) == 0)
-        {
-            char s_content[1024 +1];
+        } else if(strcmp(node[i]->element, xml_lessd_server) == 0) {
+            char s_content[1024 + 1];
             s_content[1024] = '\0';
 
             /* Getting any configured entry. */
             j = 0;
-            if(lessd_config->entries[s]->server)
-            {
-                while(lessd_config->entries[s]->server[j])
+            if(lessd_config->entries[s]->server) {
+                while(lessd_config->entries[s]->server[j]) {
                     j++;
+                }
             }
 
             os_realloc(lessd_config->entries[s]->server, (j + 2) *
                        sizeof(char *),
                        lessd_config->entries[s]->server);
-            if(strncmp(node[i]->content, "use_su ", 7) == 0)
-            {
-                snprintf(s_content, 1024, "s%s", node[i]->content +7);
-            }
-            else if(strncmp(node[i]->content, "use_sudo ", 9) == 0)
-            {
-                snprintf(s_content, 1024, "o%s", node[i]->content +9);
-            }
-            else
-            {
+            if(strncmp(node[i]->content, "use_su ", 7) == 0) {
+                snprintf(s_content, 1024, "s%s", node[i]->content + 7);
+            } else if(strncmp(node[i]->content, "use_sudo ", 9) == 0) {
+                snprintf(s_content, 1024, "o%s", node[i]->content + 9);
+            } else {
                 snprintf(s_content, 1024, " %s", node[i]->content);
             }
 
             os_strdup(s_content,
                       lessd_config->entries[s]->server[j]);
             lessd_config->entries[s]->server[j + 1] = NULL;
-        }
-        else if(strcmp(node[i]->element, xml_lessd_type) == 0)
-        {
-            char script_path[1024 +1];
+        } else if(strcmp(node[i]->element, xml_lessd_type) == 0) {
+            char script_path[1024 + 1];
 
             script_path[1024] = '\0';
             snprintf(script_path, 1024, "%s/%s", AGENTLESSDIRPATH,
-                                         node[i]->content);
+                     node[i]->content);
 
-            if(File_DateofChange(script_path) <= 0)
-            {
+            if(File_DateofChange(script_path) <= 0) {
                 merror("%s: ERROR: Unable to find '%s' at '%s'.",
                        ARGV0, node[i]->content, AGENTLESSDIRPATH);
-                merror(XML_VALUEERR,ARGV0, node[i]->element, node[i]->content);
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
             os_strdup(node[i]->content, lessd_config->entries[s]->type);
-        }
-        else if(strcmp(node[i]->element, xml_lessd_command) == 0)
-        {
+        } else if(strcmp(node[i]->element, xml_lessd_command) == 0) {
             os_strdup(node[i]->content, lessd_config->entries[s]->command);
-        }
-        else if(strcmp(node[i]->element, xml_lessd_options) == 0)
-        {
+        } else if(strcmp(node[i]->element, xml_lessd_options) == 0) {
             os_strdup(node[i]->content, lessd_config->entries[s]->options);
-        }
-        else if(strcmp(node[i]->element, xml_lessd_state) == 0)
-        {
-            if(strcmp(node[i]->content, "periodic") == 0)
-            {
+        } else if(strcmp(node[i]->element, xml_lessd_state) == 0) {
+            if(strcmp(node[i]->content, "periodic") == 0) {
                 lessd_config->entries[s]->state |= LESSD_STATE_PERIODIC;
-            }
-            else if(strcmp(node[i]->content, "stay_connected") == 0)
-            {
+            } else if(strcmp(node[i]->content, "stay_connected") == 0) {
                 lessd_config->entries[s]->state |= LESSD_STATE_CONNECTED;
-            }
-            else if(strcmp(node[i]->content, "periodic_diff") == 0)
-            {
+            } else if(strcmp(node[i]->content, "periodic_diff") == 0) {
                 lessd_config->entries[s]->state |= LESSD_STATE_PERIODIC;
                 lessd_config->entries[s]->state |= LESSD_STATE_DIFF;
-            }
-            else
-            {
-                merror(XML_VALUEERR,ARGV0,node[i]->element,node[i]->content);
+            } else {
+                merror(XML_VALUEERR, ARGV0, node[i]->element, node[i]->content);
                 return(OS_INVALID);
             }
-        }
-        else
-        {
+        } else {
             merror(XML_INVELEM, ARGV0, node[i]->element);
             return(OS_INVALID);
         }
@@ -187,17 +152,15 @@ int Read_CAgentless(XML_NODE node, void *config, __attribute__((unused)) void *c
 
     /* We must have at least one entry set */
     if(!lessd_config->entries[s]->server ||
-       !lessd_config->entries[s]->state ||
-       !lessd_config->entries[s]->type)
-    {
+            !lessd_config->entries[s]->state ||
+            !lessd_config->entries[s]->type) {
         merror(XML_INV_MISSOPTS, ARGV0);
         return(OS_INVALID);
     }
 
 
     if((lessd_config->entries[s]->state == LESSD_STATE_PERIODIC) &&
-       !lessd_config->entries[s]->frequency)
-    {
+            !lessd_config->entries[s]->frequency) {
         merror(XML_INV_MISSFREQ, ARGV0);
         return(OS_INVALID);
     }

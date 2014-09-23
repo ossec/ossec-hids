@@ -88,13 +88,12 @@
 #define SHA_LAST_BLOCK  (SHA_CBLOCK-8)
 #define SHA_DIGEST_LENGTH 20
 
-typedef struct SHAstate_st
-	{
-	SHA_LONG h0,h1,h2,h3,h4;
-	SHA_LONG Nl,Nh;
-	SHA_LONG data[SHA_LBLOCK];
-	unsigned int num;
-	} SHA_CTX;
+typedef struct SHAstate_st {
+    SHA_LONG h0, h1, h2, h3, h4;
+    SHA_LONG Nl, Nh;
+    SHA_LONG data[SHA_LBLOCK];
+    unsigned int num;
+} SHA_CTX;
 
 int SHA1_Init(SHA_CTX *c);
 int SHA1_Update(SHA_CTX *c, const void *data, size_t len);

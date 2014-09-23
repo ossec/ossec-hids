@@ -21,25 +21,23 @@
 
 typedef struct _OSDirTree OSDirTree;
 
-typedef struct _OSTreeNode
-{
+typedef struct _OSTreeNode {
     struct _OSTreeNode *next;
     OSDirTree *child;
 
     char *value;
     void *data;
-}OSTreeNode;
+} OSTreeNode;
 
 
-struct _OSDirTree
-{
+struct _OSDirTree {
     OSTreeNode *first_node;
     OSTreeNode *last_node;
 };
 
 
 OSDirTree *OSDirTree_Create(void);
-void OSDirTree_AddToTree(OSDirTree *tree, const char *str, void *data, char sep) __attribute__((nonnull(1,2)));
+void OSDirTree_AddToTree(OSDirTree *tree, const char *str, void *data, char sep) __attribute__((nonnull(1, 2)));
 void *OSDirTree_SearchTree(const OSDirTree *tree, const char *str, char sep) __attribute__((nonnull));
 
 OSTreeNode *OSDirTree_GetFirstNode(OSDirTree *tree) __attribute__((nonnull));

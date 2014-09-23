@@ -16,8 +16,7 @@
 
 #include <stdio.h>
 
-typedef struct _rkconfig
-{
+typedef struct _rkconfig {
     char *workdir;
     char *basedir;
     char *rootkit_files;
@@ -38,9 +37,8 @@ typedef struct _rkconfig
 
     int time;
     int queue;
-	
-	struct _checks
-	{
+
+    struct _checks {
         short rc_dev;
         short rc_files;
         short rc_if;
@@ -49,22 +47,22 @@ typedef struct _rkconfig
         short rc_sys;
         short rc_trojans;
 
-        #ifdef WIN32
+#ifdef WIN32
 
         short rc_winaudit;
         short rc_winmalware;
         short rc_winapps;
 
-        #else
+#else
 
         short rc_unixaudit;
 
-        #endif
+#endif
 
 
     } checks;
 
-}rkconfig;
+} rkconfig;
 
 #endif
 

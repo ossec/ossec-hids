@@ -29,8 +29,7 @@ int os_win32_setdebugpriv(HANDLE h, int en)
     LUID luid;
     DWORD cbPrevious = sizeof(TOKEN_PRIVILEGES);
 
-    if(!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &luid))
-    {
+    if(!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &luid)) {
         return(0);
     }
 
@@ -39,10 +38,9 @@ int os_win32_setdebugpriv(HANDLE h, int en)
     tp.Privileges[0].Attributes = 0;
 
     AdjustTokenPrivileges(h, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                          &tpPrevious,&cbPrevious);
+                          &tpPrevious, &cbPrevious);
 
-    if(GetLastError() != ERROR_SUCCESS)
-    {
+    if(GetLastError() != ERROR_SUCCESS) {
         return(0);
     }
 
@@ -51,19 +49,15 @@ int os_win32_setdebugpriv(HANDLE h, int en)
 
 
     /* If en is set to true, we enable the privilege */
-    if(en)
-    {
+    if(en) {
         tpPrevious.Privileges[0].Attributes |= (SE_PRIVILEGE_ENABLED);
-    }
-    else
-    {
+    } else {
         tpPrevious.Privileges[0].Attributes ^= (SE_PRIVILEGE_ENABLED &
-                tpPrevious.Privileges[0].Attributes);
+                                                tpPrevious.Privileges[0].Attributes);
     }
 
     AdjustTokenPrivileges(h, FALSE, &tpPrevious, cbPrevious, NULL, NULL);
-    if(GetLastError() != ERROR_SUCCESS)
-    {
+    if(GetLastError() != ERROR_SUCCESS) {
         return(0);
     }
 
@@ -85,38 +79,31 @@ void *os_get_process_list()
 
     /* Getting token for enable debug priv */
     if(!OpenThreadToken(GetCurrentThread(),
-                        TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY, FALSE, &hpriv))
-    {
-        if(GetLastError() == ERROR_NO_TOKEN)
-        {
-            if(!ImpersonateSelf(SecurityImpersonation))
-            {
+                        TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, FALSE, &hpriv)) {
+        if(GetLastError() == ERROR_NO_TOKEN) {
+            if(!ImpersonateSelf(SecurityImpersonation)) {
                 merror("%s: ERROR: os_get_win32_process_list -> "
-                       "ImpersonateSelf",ARGV0);
+                       "ImpersonateSelf", ARGV0);
                 return(NULL);
             }
 
             if(!OpenThreadToken(GetCurrentThread(),
-                                TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY,
-                                FALSE, &hpriv))
-            {
+                                TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+                                FALSE, &hpriv)) {
                 merror("%s: ERROR: os_get_win32_process_list -> "
-                       "OpenThread",ARGV0);
+                       "OpenThread", ARGV0);
                 return(NULL) ;
             }
-        }
-        else
-        {
-            merror("%s: ERROR: os_get_win32_process_list -> OpenThread",ARGV0);
+        } else {
+            merror("%s: ERROR: os_get_win32_process_list -> OpenThread", ARGV0);
             return(NULL);
         }
     }
 
 
     /* Enabling debug privilege */
-    if(!os_win32_setdebugpriv(hpriv, 1))
-    {
-        merror("%s: ERROR: os_win32_setdebugpriv",ARGV0);
+    if(!os_win32_setdebugpriv(hpriv, 1)) {
+        merror("%s: ERROR: os_win32_setdebugpriv", ARGV0);
         CloseHandle(hpriv);
 
         return(NULL);
@@ -125,16 +112,14 @@ void *os_get_process_list()
 
     /* Snapshot of every process */
     hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if(hsnap == INVALID_HANDLE_VALUE)
-    {
-        merror("%s: ERROR: CreateToolhelp32Snapshot",ARGV0);
+    if(hsnap == INVALID_HANDLE_VALUE) {
+        merror("%s: ERROR: CreateToolhelp32Snapshot", ARGV0);
         return(NULL);
     }
 
 
     /* Getting first and second processes -- system entries */
-    if(!Process32First(hsnap, &p_entry) && !Process32Next(hsnap, &p_entry ))
-    {
+    if(!Process32First(hsnap, &p_entry) && !Process32Next(hsnap, &p_entry )) {
         merror("%s: ERROR: Process32First", ARGV0);
         CloseHandle(hsnap);
         return(NULL);
@@ -143,8 +128,7 @@ void *os_get_process_list()
 
     /* Creating process list */
     p_list = OSList_Create();
-    if(!p_list)
-    {
+    if(!p_list) {
         CloseHandle(hsnap);
         merror(LIST_ERROR, ARGV0);
         return(0);
@@ -152,8 +136,7 @@ void *os_get_process_list()
 
 
     /* Getting each process name and path */
-    while(Process32Next( hsnap, &p_entry))
-    {
+    while(Process32Next( hsnap, &p_entry)) {
         char *p_name;
         char *p_path;
         Proc_Info *p_info;
@@ -170,20 +153,17 @@ void *os_get_process_list()
         /* Snapshot of the process */
         hmod = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE,
                                         p_entry.th32ProcessID);
-        if(hmod == INVALID_HANDLE_VALUE)
-        {
+        if(hmod == INVALID_HANDLE_VALUE) {
             os_strdup(p_name, p_path);
         }
 
         /* Getting executable path (first entry in the module list */
-        else if(!Module32First(hmod, &m_entry))
-        {
+        else if(!Module32First(hmod, &m_entry)) {
             CloseHandle(hmod);
             os_strdup(p_name, p_path);
         }
 
-        else
-        {
+        else {
             os_strdup(m_entry.szExePath, p_path);
             CloseHandle(hmod);
         }

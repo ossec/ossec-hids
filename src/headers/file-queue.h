@@ -19,19 +19,18 @@
 #define FQ_TIMEOUT  5
 
 /* File queue */
-typedef struct _file_queue
-{
+typedef struct _file_queue {
     time_t last_change;
     int year;
     int day;
     int flags;
 
     char mon[4];
-    char file_name[MAX_FQUEUE +1];
+    char file_name[MAX_FQUEUE + 1];
 
     FILE *fp;
     struct stat f_status;
-}file_queue;
+} file_queue;
 
 
 /*** Prototypes */

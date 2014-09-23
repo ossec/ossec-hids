@@ -18,8 +18,7 @@
 
 
 /* Configuration structure */
-typedef struct __Config
-{
+typedef struct __Config {
     u_int8_t logall;
     u_int8_t stats;
     u_int8_t integrity;
@@ -54,7 +53,7 @@ typedef struct __Config
 
     /* Custom Alert output*/
     short int custom_alert_output;
-    char * custom_alert_output_format;
+    char *custom_alert_output_format;
 
     /* For the active response */
     int ar;
@@ -90,7 +89,7 @@ typedef struct __Config
     char *geoip6_db_path;
 #endif
 
-}_Config;
+} _Config;
 
 
 #endif

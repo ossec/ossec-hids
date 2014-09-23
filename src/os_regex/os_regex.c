@@ -30,10 +30,8 @@ int OS_Regex(const char *pattern, const char *str)
     OSRegex reg;
 
     /* If the compilation failed, we don't need to free anything */
-    if(OSRegex_Compile(pattern, &reg, 0))
-    {
-        if(OSRegex_Execute(str, &reg))
-        {
+    if(OSRegex_Compile(pattern, &reg, 0)) {
+        if(OSRegex_Execute(str, &reg)) {
             r_code = 1;
         }
 

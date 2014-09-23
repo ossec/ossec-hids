@@ -159,7 +159,7 @@ typedef unsigned char u_int8_t;
 #define MSG_DONTWAIT    0
 
 #ifndef PROCESSOR_ARCHITECTURE_AMD64
- #define PROCESSOR_ARCHITECTURE_AMD64 9
+#define PROCESSOR_ARCHITECTURE_AMD64 9
 #endif
 #endif
 
@@ -191,9 +191,9 @@ extern const char *__local_name;
 #define os_clearnl(x,p) if((p = strrchr(x, '\n')))*p = '\0';
 
 #ifdef CLIENT
-    #define isAgent 1
+#define isAgent 1
 #else
-    #define isAgent 0
+#define isAgent 0
 #endif
 
 

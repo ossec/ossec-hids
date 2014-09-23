@@ -60,10 +60,9 @@ int Read_CReports(XML_NODE node, void *config1, void *config2);
 
 
 /* General config, for passing blobs of data. */
-typedef struct _GeneralConfig
-{
+typedef struct _GeneralConfig {
     void *data;
-}GeneralConfig;
+} GeneralConfig;
 
 
 #endif

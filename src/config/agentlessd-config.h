@@ -24,8 +24,7 @@
 
 
 /* Structure for each entry. */
-typedef struct _agentlessd_entries
-{
+typedef struct _agentlessd_entries {
     short int state;
 
     int frequency;
@@ -38,16 +37,15 @@ typedef struct _agentlessd_entries
     const char *options;
     char *command;
 
-}agentlessd_entries;
+} agentlessd_entries;
 
 
 /* Configuration structure. */
-typedef struct _agentlessd_config
-{
+typedef struct _agentlessd_config {
     int queue;
     agentlessd_entries **entries;
 
-}agentlessd_config;
+} agentlessd_config;
 
 
 #endif

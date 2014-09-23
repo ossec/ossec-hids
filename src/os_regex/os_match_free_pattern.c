@@ -26,13 +26,12 @@
 void OSMatch_FreePattern(OSMatch *reg)
 {
     /* Freeing the patterns */
-    if(reg->patterns)
-    {
+    if(reg->patterns) {
         char **pattern = reg->patterns;
-        while(*pattern)
-        {
-            if(*pattern)
+        while(*pattern) {
+            if(*pattern) {
                 free(*pattern);
+            }
             pattern++;
         }
 

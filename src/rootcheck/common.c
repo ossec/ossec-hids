@@ -24,10 +24,8 @@
  */
 int _is_str_in_array(char **ar, char *str)
 {
-    while(*ar)
-    {
-        if(strcmp(*ar, str) == 0)
-        {
+    while(*ar) {
+        if(strcmp(*ar, str) == 0) {
             return(1);
         }
         ar++;
@@ -42,53 +40,46 @@ int _is_str_in_array(char **ar, char *str)
 int rk_check_dir(char *dir, char *file, char *pattern)
 {
     int ret_code = 0;
-    char f_name[PATH_MAX +2];
+    char f_name[PATH_MAX + 2];
     struct dirent *entry;
     struct stat statbuf_local;
     DIR *dp = NULL;
 
 
-    f_name[PATH_MAX +1] = '\0';
+    f_name[PATH_MAX + 1] = '\0';
 
 
     dp = opendir(dir);
-    if(!dp)
+    if(!dp) {
         return(0);
+    }
 
 
-    while((entry = readdir(dp)) != NULL)
-    {
+    while((entry = readdir(dp)) != NULL) {
         /* Just ignore . and ..  */
-        if((strcmp(entry->d_name,".") == 0) ||
-           (strcmp(entry->d_name,"..") == 0))
-        {
+        if((strcmp(entry->d_name, ".") == 0) ||
+                (strcmp(entry->d_name, "..") == 0)) {
             continue;
         }
 
 
         /* Creating new file + path string */
-        snprintf(f_name, PATH_MAX +1, "%s/%s",dir, entry->d_name);
+        snprintf(f_name, PATH_MAX + 1, "%s/%s", dir, entry->d_name);
 
 
         /* Checking if the read entry, matches the provided file name. */
-        if(strncasecmp(file, "r:", 2) == 0)
-        {
-            if(OS_Regex(file +2, entry->d_name))
-            {
-                if(rk_check_file(f_name, pattern))
-                {
+        if(strncasecmp(file, "r:", 2) == 0) {
+            if(OS_Regex(file + 2, entry->d_name)) {
+                if(rk_check_file(f_name, pattern)) {
                     ret_code = 1;
                 }
             }
         }
 
         /* Trying without regex. */
-        else
-        {
-            if(OS_Match2(file, entry->d_name))
-            {
-                if(rk_check_file(f_name, pattern))
-                {
+        else {
+            if(OS_Match2(file, entry->d_name)) {
+                if(rk_check_file(f_name, pattern)) {
                     ret_code = 1;
                 }
             }
@@ -96,12 +87,9 @@ int rk_check_dir(char *dir, char *file, char *pattern)
 
 
         /* Checking if file is a directory */
-        if(lstat(f_name, &statbuf_local) == 0)
-        {
-            if(S_ISDIR(statbuf_local.st_mode))
-            {
-                if(rk_check_dir(f_name, file, pattern))
-                {
+        if(lstat(f_name, &statbuf_local) == 0) {
+            if(S_ISDIR(statbuf_local.st_mode)) {
+                if(rk_check_dir(f_name, file, pattern)) {
                     ret_code = 1;
                 }
             }
@@ -124,89 +112,80 @@ int rk_check_file(char *file, char *pattern)
     int pt_result = 0;
 
     FILE *fp;
-    char buf[OS_SIZE_2048 +1];
+    char buf[OS_SIZE_2048 + 1];
 
 
     /* If string is null, we don't match */
-    if(file == NULL)
-    {
+    if(file == NULL) {
         return(0);
     }
 
 
     /* Checking if the file is divided */
     split_file = strchr(file, ',');
-    if(split_file)
-    {
+    if(split_file) {
         *split_file = '\0';
         split_file++;
     }
 
 
     /* Getting each file */
-    do
-    {
+    do {
 
 
         /* If we don't have a pattern, just check if the file/dir is there */
-        if(pattern == NULL)
-        {
-            if(is_file(file))
-            {
+        if(pattern == NULL) {
+            if(is_file(file)) {
                 int i = 0;
-                char _b_msg[OS_SIZE_1024 +1];
+                char _b_msg[OS_SIZE_1024 + 1];
 
                 _b_msg[OS_SIZE_1024] = '\0';
                 snprintf(_b_msg, OS_SIZE_1024, " File: %s.",
                          file);
 
                 /* Already present. */
-                if(_is_str_in_array(rootcheck.alert_msg, _b_msg))
-                {
+                if(_is_str_in_array(rootcheck.alert_msg, _b_msg)) {
                     return(1);
                 }
 
-                while(rootcheck.alert_msg[i] && (i < 255))
+                while(rootcheck.alert_msg[i] && (i < 255)) {
                     i++;
+                }
 
-                if(!rootcheck.alert_msg[i])
+                if(!rootcheck.alert_msg[i]) {
                     os_strdup(_b_msg, rootcheck.alert_msg[i]);
+                }
 
                 return(1);
             }
         }
 
-        else
-        {
+        else {
             full_negate = pt_check_negate(pattern);
             /* Checking for a content in the file */
             debug1("checking file: %s", file);
             fp = fopen(file, "r");
-            if(fp)
-            {
+            if(fp) {
 
                 debug1(" starting new file: %s", file);
                 buf[OS_SIZE_2048] = '\0';
-                while(fgets(buf, OS_SIZE_2048, fp) != NULL)
-                {
+                while(fgets(buf, OS_SIZE_2048, fp) != NULL) {
                     char *nbuf;
 
                     /* Removing end of line */
                     nbuf = strchr(buf, '\n');
-                    if(nbuf)
-                    {
+                    if(nbuf) {
                         *nbuf = '\0';
                     }
 
 
-                    #ifdef WIN32
+#ifdef WIN32
                     /* Removing end of line */
                     nbuf = strchr(buf, '\r');
-                    if(nbuf)
-                    {
+                    if(nbuf) {
                         *nbuf = '\0';
                     }
-                    #endif
+#endif
 
 
                     /* Matched */
@@ -214,11 +193,10 @@ int rk_check_file(char *file, char *pattern)
                     debug1("Buf == \"%s\"", buf);
                     debug1("Pattern == \"%s\"", pattern);
                     debug1("pt_result == %d and full_negate == %d", pt_result, full_negate);
-                    if((pt_result == 1 && full_negate == 0) )
-                    {
+                    if((pt_result == 1 && full_negate == 0) ) {
                         debug1("alerting file %s on line %s", file, buf);
                         int i = 0;
-                        char _b_msg[OS_SIZE_1024 +1];
+                        char _b_msg[OS_SIZE_1024 + 1];
 
 
                         /* Closing the file before dealing with the alert. */
@@ -230,21 +208,20 @@ int rk_check_file(char *file, char *pattern)
                                  file);
 
                         /* Already present. */
-                        if(_is_str_in_array(rootcheck.alert_msg, _b_msg))
-                        {
+                        if(_is_str_in_array(rootcheck.alert_msg, _b_msg)) {
                             return(1);
                         }
 
-                        while(rootcheck.alert_msg[i] && (i < 255))
+                        while(rootcheck.alert_msg[i] && (i < 255)) {
                             i++;
+                        }
 
-                        if(!rootcheck.alert_msg[i])
-                        os_strdup(_b_msg, rootcheck.alert_msg[i]);
+                        if(!rootcheck.alert_msg[i]) {
+                            os_strdup(_b_msg, rootcheck.alert_msg[i]);
+                        }
 
                         return(1);
-                    }
-                    else if((pt_result == 0 && full_negate == 1) )
-                    {
+                    } else if((pt_result == 0 && full_negate == 1) ) {
                         /* found a full+negate match so no longer need to search
                          * break out of loop and amke sure the full negate does
                          * not alertin
@@ -257,11 +234,10 @@ int rk_check_file(char *file, char *pattern)
 
                 fclose(fp);
 
-                if(full_negate == 1)
-                {
-                    debug1("full_negate alerting - file %s",file);
+                if(full_negate == 1) {
+                    debug1("full_negate alerting - file %s", file);
                     int i = 0;
-                    char _b_msg[OS_SIZE_1024 +1];
+                    char _b_msg[OS_SIZE_1024 + 1];
 
                     /* Generating the alert itself. */
                     _b_msg[OS_SIZE_1024] = '\0';
@@ -269,34 +245,33 @@ int rk_check_file(char *file, char *pattern)
                              file);
 
                     /* Already present. */
-                    if(_is_str_in_array(rootcheck.alert_msg, _b_msg))
-                    {
+                    if(_is_str_in_array(rootcheck.alert_msg, _b_msg)) {
                         return(1);
                     }
 
-                    while(rootcheck.alert_msg[i] && (i < 255))
+                    while(rootcheck.alert_msg[i] && (i < 255)) {
                         i++;
+                    }
 
-                    if(!rootcheck.alert_msg[i])
-                    os_strdup(_b_msg, rootcheck.alert_msg[i]);
+                    if(!rootcheck.alert_msg[i]) {
+                        os_strdup(_b_msg, rootcheck.alert_msg[i]);
+                    }
 
                     return(1);
                 }
             }
         }
 
-        if(split_file)
-        {
+        if(split_file) {
             file = split_file;
             split_file = strchr(split_file, ',');
-            if(split_file)
-            {
+            if(split_file) {
                 split_file++;
             }
         }
 
 
-    }while(split_file);
+    } while(split_file);
 
 
     return(0);
@@ -315,22 +290,17 @@ int pt_check_negate(char *pattern)
     char *tmp_pattern = mypattern;
 
 
-    while(tmp_pt != NULL)
-    {
+    while(tmp_pt != NULL) {
         /* We first look for " && " */
         tmp_pt = strchr(tmp_pattern, ' ');
-        if(tmp_pt && tmp_pt[1] == '&' && tmp_pt[2] == '&' && tmp_pt[3] == ' ')
-        {
+        if(tmp_pt && tmp_pt[1] == '&' && tmp_pt[2] == '&' && tmp_pt[3] == ' ') {
             *tmp_pt = '\0';
             tmp_pt += 4;
-        }
-        else
-        {
+        } else {
             tmp_pt = NULL;
         }
 
-        if(*tmp_pattern != '!')
-        {
+        if(*tmp_pattern != '!') {
             free(mypattern);
             return 0;
         }
@@ -338,7 +308,7 @@ int pt_check_negate(char *pattern)
         tmp_pattern = tmp_pt;
     }
 
-    debug1("pattern: %s is fill_negate",pattern);
+    debug1("pattern: %s is fill_negate", pattern);
     free(mypattern);
     return(1);
 }
@@ -363,25 +333,20 @@ int pt_matches(char *str, char *pattern)
 
 
     /* If string we null, we don't match */
-    if(str == NULL)
-    {
+    if(str == NULL) {
         return(0);
     }
 
-    while(tmp_pt != NULL)
-    {
+    while(tmp_pt != NULL) {
         /* We first look for " && " */
         tmp_pt = strchr(pattern, ' ');
-        if(tmp_pt && tmp_pt[1] == '&' && tmp_pt[2] == '&' && tmp_pt[3] == ' ')
-        {
+        if(tmp_pt && tmp_pt[1] == '&' && tmp_pt[2] == '&' && tmp_pt[3] == ' ') {
             /* Marking pointer to clean it up */
             tmp_ret = tmp_pt;
 
             *tmp_pt = '\0';
             tmp_pt += 4;
-        }
-        else
-        {
+        } else {
             tmp_pt = NULL;
         }
 
@@ -389,101 +354,76 @@ int pt_matches(char *str, char *pattern)
         /* Checking for negate values */
         neg = 0;
         ret_code = 0;
-        if(*pattern == '!')
-        {
+        if(*pattern == '!') {
             pattern++;
             neg = 1;
         }
 
 
         /* Doing strcasecmp */
-        if(strncasecmp(pattern, "=:", 2) == 0)
-        {
+        if(strncasecmp(pattern, "=:", 2) == 0) {
             pattern += 2;
-            if(strcasecmp(pattern, str) == 0)
-            {
+            if(strcasecmp(pattern, str) == 0) {
                 ret_code = 1;
             }
-        }
-        else if(strncasecmp(pattern, "r:", 2) == 0)
-        {
+        } else if(strncasecmp(pattern, "r:", 2) == 0) {
             pattern += 2;
-            if(OS_Regex(pattern, str))
-            {
-                debug1("pattern: %s matches %s.",pattern, str);
+            if(OS_Regex(pattern, str)) {
+                debug1("pattern: %s matches %s.", pattern, str);
                 ret_code = 1;
             }
-        }
-        else if(strncasecmp(pattern, "<:", 2) == 0)
-        {
+        } else if(strncasecmp(pattern, "<:", 2) == 0) {
             pattern += 2;
-            if(strcmp(pattern, str) < 0)
-            {
+            if(strcmp(pattern, str) < 0) {
                 ret_code = 1;
             }
-        }
-        else if(strncasecmp(pattern, ">:", 2) == 0)
-        {
+        } else if(strncasecmp(pattern, ">:", 2) == 0) {
             pattern += 2;
-            if(strcmp(pattern, str) > 0)
-            {
+            if(strcmp(pattern, str) > 0) {
                 ret_code = 1;
             }
-        }
-        else
-        {
-            #ifdef WIN32
-            char final_file[2048 +1];
+        } else {
+#ifdef WIN32
+            char final_file[2048 + 1];
 
             /* Try to get Windows variable */
-            if(*pattern == '%')
-            {
+            if(*pattern == '%') {
                 final_file[0] = '\0';
                 final_file[2048] = '\0';
 
                 ExpandEnvironmentStrings(pattern, final_file, 2047);
-            }
-            else
-            {
+            } else {
                 strncpy(final_file, pattern, 2047);
             }
 
             /* Comparing against the expanded variable */
-            if(strcasecmp(final_file, str) == 0)
-            {
+            if(strcasecmp(final_file, str) == 0) {
                 ret_code = 1;
             }
 
-            #else
-            if(strcasecmp(pattern, str) == 0)
-            {
+#else
+            if(strcasecmp(pattern, str) == 0) {
                 ret_code = 1;
             }
 
-            #endif
+#endif
         }
 
         /* Fixing tmp_ret entry */
-        if(tmp_ret != NULL)
-        {
+        if(tmp_ret != NULL) {
             *tmp_ret = ' ';
             tmp_ret = NULL;
         }
 
 
         /* If we have "!", return true if we don't match */
-        if(neg == 1)
-        {
-            if(ret_code)
-            {
+        if(neg == 1) {
+            if(ret_code) {
                 ret_code = 0;
                 break;
             }
-        }
-        else
-        {
-            if(!ret_code)
-            {
+        } else {
+            if(!ret_code) {
                 ret_code = 0;
                 break;
             }
@@ -507,27 +447,23 @@ char *normalize_string(char *str)
     unsigned int str_sz = strlen(str);
     // return zero-length str as is
     if (str_sz == 0) {
-       return str;
+        return str;
     } else {
         str_sz--;
     }
     // remove trailing spaces
-    while(str[str_sz] == ' ' || str[str_sz] == '\t')
-    {
-        if(str_sz == 0)
+    while(str[str_sz] == ' ' || str[str_sz] == '\t') {
+        if(str_sz == 0) {
             break;
+        }
 
         str[str_sz--] = '\0';
     }
     // ignore leading spaces
-    while(*str != '\0')
-    {
-        if(*str == ' ' || *str == '\t')
-        {
+    while(*str != '\0') {
+        if(*str == ' ' || *str == '\t') {
             str++;
-        }
-        else
-        {
+        } else {
             break;
         }
     }
@@ -548,13 +484,12 @@ int isfile_ondir(char *file, char *dir)
     struct dirent *entry;
     dp = opendir(dir);
 
-    if(!dp)
+    if(!dp) {
         return(0);
+    }
 
-    while((entry = readdir(dp)) != NULL)
-    {
-        if(strcmp(entry->d_name, file) == 0)
-        {
+    while((entry = readdir(dp)) != NULL) {
+        if(strcmp(entry->d_name, file) == 0) {
             closedir(dp);
             return(1);
         }
@@ -578,7 +513,7 @@ int is_file(char *file_name)
     DIR *dp = NULL;
 
 
-    #ifndef WIN32
+#ifndef WIN32
 
     char curr_dir[1024];
 
@@ -588,15 +523,13 @@ int is_file(char *file_name)
 
     curr_dir[1023] = '\0';
 
-    if(!getcwd(curr_dir, 1022))
-    {
+    if(!getcwd(curr_dir, 1022)) {
         return(0);
     }
 
     /* Getting dir name */
     file_basename = strrchr(file_name, '/');
-    if(!file_basename)
-    {
+    if(!file_basename) {
         merror("%s: RK: Invalid file name: %s!", ARGV0, file_name);
         return(0);
     }
@@ -605,37 +538,30 @@ int is_file(char *file_name)
     /* If file_basename == file_name, then the file
      * only has one slash at the beginning.
      */
-    if(file_basename != file_name)
-    {
+    if(file_basename != file_name) {
         /* Dir name and base name are now set */
         *file_basename = '\0';
         file_basename++;
         file_dirname = file_name;
 
         /** chdir test **/
-        if(chdir(file_dirname) == 0)
-        {
-            if(chdir(file_basename) == 0)
-            {
+        if(chdir(file_dirname) == 0) {
+            if(chdir(file_basename) == 0) {
                 ret = 1;
             }
             /* Checking errno (if file exists, but it is not
              * a directory.
              */
-            else if(errno == ENOTDIR)
-            {
+            else if(errno == ENOTDIR) {
                 ret = 1;
             }
 
             /** Trying open dir **/
             dp = opendir(file_basename);
-            if(dp)
-            {
+            if(dp) {
                 closedir(dp);
                 ret = 1;
-            }
-            else if(errno == ENOTDIR)
-            {
+            } else if(errno == ENOTDIR) {
                 ret = 1;
             }
 
@@ -647,46 +573,40 @@ int is_file(char *file_name)
         file_basename--;
         *file_basename = '/';
 
-    }
-    else
-    {
-        if(chdir(file_name) == 0)
-        {
+    } else {
+        if(chdir(file_name) == 0) {
             ret = 1;
 
             /* Returning to the previous directory */
             chdir(curr_dir);
-        }
-        else if(errno == ENOTDIR)
-        {
+        } else if(errno == ENOTDIR) {
             ret = 1;
         }
     }
 
-    #else
+#else
     dp = opendir(file_name);
-    if(dp)
-    {
+    if(dp) {
         closedir(dp);
         ret = 1;
     }
 
-    #endif /* WIN32 */
+#endif /* WIN32 */
 
 
     /* Trying other calls */
     if( (stat(file_name, &statbuf) < 0) &&
-        #ifndef WIN32
-        (access(file_name, F_OK) < 0) &&
-        #endif
-        ((fp = fopen(file_name, "r")) == NULL))
-    {
+#ifndef WIN32
+            (access(file_name, F_OK) < 0) &&
+#endif
+            ((fp = fopen(file_name, "r")) == NULL)) {
         return(ret);
     }
 
     /* must close it over here */
-    if(fp)
+    if(fp) {
         fclose(fp);
+    }
 
     return(1);
 }
@@ -701,32 +621,27 @@ int del_plist(void *p_list_p)
     OSListNode *l_node;
     OSListNode *p_node = NULL;
 
-    if(p_list == NULL)
-    {
+    if(p_list == NULL) {
         return(0);
     }
 
     l_node = OSList_GetFirstNode(p_list);
-    while(l_node)
-    {
+    while(l_node) {
         Proc_Info *pinfo;
 
         pinfo = (Proc_Info *)l_node->data;
 
-        if(pinfo->p_name)
-        {
+        if(pinfo->p_name) {
             free(pinfo->p_name);
         }
 
-        if(pinfo->p_path)
-        {
+        if(pinfo->p_path) {
             free(pinfo->p_path);
         }
 
         free(l_node->data);
 
-        if(p_node)
-        {
+        if(p_node) {
             free(p_node);
             p_node = NULL;
         }
@@ -735,8 +650,7 @@ int del_plist(void *p_list_p)
         l_node = OSList_GetNextNode(p_list);
     }
 
-    if(p_node)
-    {
+    if(p_node) {
         free(p_node);
         p_node = NULL;
     }
@@ -754,28 +668,24 @@ int is_process(char *value, void *p_list_p)
 {
     OSList *p_list = (OSList *)p_list_p;
     OSListNode *l_node;
-    if(p_list == NULL)
-    {
+    if(p_list == NULL) {
         return(0);
     }
-    if(!value)
-    {
+    if(!value) {
         return(0);
     }
 
 
     l_node = OSList_GetFirstNode(p_list);
-    while(l_node)
-    {
+    while(l_node) {
         Proc_Info *pinfo;
 
         pinfo = (Proc_Info *)l_node->data;
 
         /* Checking if value matches */
-        if(pt_matches(pinfo->p_path, value))
-        {
+        if(pt_matches(pinfo->p_path, value)) {
             int i = 0;
-            char _b_msg[OS_SIZE_1024 +1];
+            char _b_msg[OS_SIZE_1024 + 1];
 
             _b_msg[OS_SIZE_1024] = '\0';
 
@@ -783,16 +693,17 @@ int is_process(char *value, void *p_list_p)
                      pinfo->p_path);
 
             /* Already present. */
-            if(_is_str_in_array(rootcheck.alert_msg, _b_msg))
-            {
+            if(_is_str_in_array(rootcheck.alert_msg, _b_msg)) {
                 return(1);
             }
 
-            while(rootcheck.alert_msg[i] && (i< 255))
+            while(rootcheck.alert_msg[i] && (i < 255)) {
                 i++;
+            }
 
-            if(!rootcheck.alert_msg[i])
+            if(!rootcheck.alert_msg[i]) {
                 os_strdup(_b_msg, rootcheck.alert_msg[i]);
+            }
 
             return(1);
         }

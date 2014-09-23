@@ -28,12 +28,13 @@ void OS_CompressLog(char *logfile)
 
 
     /* Do not compress */
-    if(mond.compress == 0)
+    if(mond.compress == 0) {
         return;
+    }
 
 
     /* Clearing the memory */
-    memset(logfileGZ,'\0',OS_FLSIZE +1);
+    memset(logfileGZ, '\0', OS_FLSIZE + 1);
     memset(buf, '\0', OS_MAXSTR + 1);
 
 
@@ -47,28 +48,27 @@ void OS_CompressLog(char *logfile)
 
     /* Reading log file */
     log = fopen(logfile, "r");
-    if(!log)
-    {
+    if(!log) {
         /* Do not warn in here, since the alert file may not exist. */
         return;
     }
 
     /* Opening compressed file */
     zlog = gzopen(logfileGZ, "w");
-    if(!zlog)
-    {
+    if(!zlog) {
         fclose(log);
         merror(FOPEN_ERROR, ARGV0, logfileGZ);
         return;
     }
 
-    for(;;)
-    {
+    for(;;) {
         len = fread(buf, 1, OS_MAXSTR, log);
-        if(len <= 0)
+        if(len <= 0) {
             break;
-        if(gzwrite(zlog, buf, (unsigned)len) != len)
+        }
+        if(gzwrite(zlog, buf, (unsigned)len) != len) {
             merror("%s: Compression error: %s", ARGV0, gzerror(zlog, &err));
+        }
     }
 
     /* Closing */

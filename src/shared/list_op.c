@@ -24,8 +24,9 @@ OSList *OSList_Create()
     OSList *my_list;
 
     my_list = (OSList *) calloc(1, sizeof(OSList));
-    if(!my_list)
+    if(!my_list) {
         return(NULL);
+    }
 
     my_list->first_node = NULL;
     my_list->last_node = NULL;
@@ -44,14 +45,12 @@ OSList *OSList_Create()
  */
 int OSList_SetMaxSize(OSList *list, int max_size)
 {
-    if(!list)
-    {
+    if(!list) {
         return(0);
     }
 
     /* Minimum size is 1 */
-    if(max_size <= 1)
-    {
+    if(max_size <= 1) {
         return(0);
     }
 
@@ -66,8 +65,7 @@ int OSList_SetMaxSize(OSList *list, int max_size)
  */
 int OSList_SetFreeDataPointer(OSList *list, void (free_data_function)(void *))
 {
-    if(!list)
-    {
+    if(!list) {
         return(0);
     }
 
@@ -102,8 +100,9 @@ OSListNode *OSList_GetLastNode(OSList *list)
  */
 OSListNode *OSList_GetNextNode(OSList *list)
 {
-    if(list->cur_node == NULL)
+    if(list->cur_node == NULL) {
         return(NULL);
+    }
 
     list->cur_node = list->cur_node->next;
 
@@ -116,8 +115,9 @@ OSListNode *OSList_GetNextNode(OSList *list)
  */
 OSListNode *OSList_GetPrevNode(OSList *list)
 {
-    if(list->cur_node == NULL)
+    if(list->cur_node == NULL) {
         return(NULL);
+    }
 
     list->cur_node = list->cur_node->prev;
 
@@ -139,19 +139,17 @@ void OSList_DeleteOldestNode(OSList *list)
 {
     OSListNode *next;
 
-    if(list->first_node)
-    {
+    if(list->first_node) {
         next = list->first_node->next;
-        if(next)
+        if(next) {
             next->prev = NULL;
-        else
+        } else {
             list->last_node = next;
+        }
 
         free(list->first_node);
         list->first_node = next;
-    }
-    else
-    {
+    } else {
         merror("%s: No Oldest node to delete", __local_name);
     }
 
@@ -167,8 +165,9 @@ void OSList_DeleteThisNode(OSList *list, OSListNode *thisnode)
     OSListNode *prev;
     OSListNode *next;
 
-    if(thisnode == NULL)
+    if(thisnode == NULL) {
         return;
+    }
 
     prev = thisnode->prev;
     next = thisnode->next;
@@ -176,23 +175,16 @@ void OSList_DeleteThisNode(OSList *list, OSListNode *thisnode)
     /* Setting the previous node of the next one
      * and the next node of the previous one.. :)
      */
-    if(prev && next)
-    {
+    if(prev && next) {
         prev->next = next;
         next->prev = prev;
-    }
-    else if(prev)
-    {
+    } else if(prev) {
         prev->next = NULL;
         list->last_node = prev;
-    }
-    else if(next)
-    {
+    } else if(next) {
         next->prev = NULL;
         list->first_node = next;
-    }
-    else
-    {
+    } else {
         list->last_node = NULL;
         list->first_node = NULL;
     }
@@ -217,8 +209,9 @@ void OSList_DeleteCurrentlyNode(OSList *list)
     OSListNode *prev;
     OSListNode *next;
 
-    if(list->cur_node == NULL)
+    if(list->cur_node == NULL) {
         return;
+    }
 
     prev = list->cur_node->prev;
     next = list->cur_node->next;
@@ -227,23 +220,16 @@ void OSList_DeleteCurrentlyNode(OSList *list)
     /* Setting the previous node of the next one
      * and the next node of the previous one.. :)
      */
-    if(prev && next)
-    {
+    if(prev && next) {
         prev->next = next;
         next->prev = prev;
-    }
-    else if(prev)
-    {
+    } else if(prev) {
         prev->next = NULL;
         list->last_node = prev;
-    }
-    else if(next)
-    {
+    } else if(next) {
         next->prev = NULL;
         list->first_node = next;
-    }
-    else
-    {
+    } else {
         list->last_node = NULL;
         list->first_node = NULL;
     }
@@ -268,8 +254,7 @@ int OSList_AddData(OSList *list, void *data)
 
     /* Allocating memory for new node */
     newnode = (OSListNode *) calloc(1, sizeof(OSListNode));
-    if(!newnode)
-    {
+    if(!newnode) {
         merror(MEM_ERROR, __local_name);
         return(0);
     }
@@ -280,14 +265,12 @@ int OSList_AddData(OSList *list, void *data)
 
 
     /* If we don't havea first node, assign it */
-    if(!list->first_node)
-    {
+    if(!list->first_node) {
         list->first_node = newnode;
     }
 
     /* If we have a last node, set the next to new node */
-    if(list->last_node)
-    {
+    if(list->last_node) {
         list->last_node->next = newnode;
     }
 
@@ -301,18 +284,15 @@ int OSList_AddData(OSList *list, void *data)
     /* if currently_size higher than the maximum size, remove the
      * oldest node (first one)
      */
-    if(list->max_size)
-    {
-        if(list->currently_size > list->max_size && list->first_node->next)
-        {
+    if(list->max_size) {
+        if(list->currently_size > list->max_size && list->first_node->next) {
             /* Remove first node */
             newnode = list->first_node->next;
 
             newnode->prev = NULL;
 
             /* Clearing any internal memory using the pointer */
-            if(list->free_data_function)
-            {
+            if(list->free_data_function) {
                 list->free_data_function(list->first_node->data);
             }
 

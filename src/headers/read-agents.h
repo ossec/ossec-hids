@@ -17,8 +17,7 @@
 
 
 /* Unique key for each agent. */
-typedef struct _agent_info
-{
+typedef struct _agent_info {
     char *last_keepalive;
     char *syscheck_time;
     char *syscheck_endtime;
@@ -26,7 +25,7 @@ typedef struct _agent_info
     char *rootcheck_endtime;
     char *os;
     char *version;
-}agent_info;
+} agent_info;
 
 
 /* Print syscheck db (of modified files). */

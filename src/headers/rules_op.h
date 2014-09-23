@@ -75,8 +75,7 @@
 
 
 
-typedef struct _RuleInfo
-{
+typedef struct _RuleInfo {
     int sigid;  /* id attribute -- required*/
     int level;  /* level attribute --required */
     int maxsize;
@@ -163,13 +162,13 @@ typedef struct _RuleInfo
 
     void **ar;
 
-}RuleInfo;
+} RuleInfo;
 
 
 /** Prototypes **/
 int OS_ReadXMLRules(const char *rulefile,
                     void *(*ruleact_function)(RuleInfo *rule_1, void *data_1),
-                    void *data) __attribute__((nonnull(1,2)));
+                    void *data) __attribute__((nonnull(1, 2)));
 
 
 #endif

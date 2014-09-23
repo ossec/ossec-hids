@@ -47,7 +47,7 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
         if( tries > OS_CSYSLOGD_MAX_TRIES ) {
             merror("%s: ERROR: Could not open queue after %d tries, exiting!",
                    ARGV0, tries
-            );
+                  );
             exit(1);
         }
         sleep(1);
@@ -57,16 +57,12 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 
     /* Connecting to syslog. */
     s = 0;
-    while(syslog_config[s])
-    {
+    while(syslog_config[s]) {
         syslog_config[s]->socket = OS_ConnectUDP(syslog_config[s]->port,
-                                                 syslog_config[s]->server, 0);
-        if(syslog_config[s]->socket < 0)
-        {
+                                   syslog_config[s]->server, 0);
+        if(syslog_config[s]->socket < 0) {
             merror(CONNS_ERROR, ARGV0, syslog_config[s]->server);
-        }
-        else
-        {
+        } else {
             merror("%s: INFO: Forwarding alerts via syslog to: '%s:%d'.",
                    ARGV0, syslog_config[s]->server, syslog_config[s]->port);
         }
@@ -77,16 +73,14 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 
 
     /* Infinite loop reading the alerts and inserting them. */
-    while(1)
-    {
+    while(1) {
         tm = time(NULL);
         p = localtime(&tm);
 
 
         /* Get message if available (timeout of 5 seconds) */
         al_data = Read_FileMon(fileq, p, 5);
-        if(!al_data)
-        {
+        if(!al_data) {
             continue;
         }
 
@@ -94,8 +88,7 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 
         /* Sending via syslog */
         s = 0;
-        while(syslog_config[s])
-        {
+        while(syslog_config[s]) {
             OS_Alert_SendSyslog(al_data, syslog_config[s]);
             s++;
         }
@@ -107,7 +100,8 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 }
 
 /* Format Field for output */
-int field_add_string(char *dest, int size, const char *format, const char *value ) {
+int field_add_string(char *dest, int size, const char *format, const char *value )
+{
     char buffer[OS_SIZE_2048];
     int len = 0;
     int dest_sz = size - strlen(dest);
@@ -123,7 +117,7 @@ int field_add_string(char *dest, int size, const char *format, const char *value
                 ((value[0] != '(') && (value[1] != 'u') && (value[2] != 'n')) ||
                 ((value[0] != 'u') && (value[1] != 'n') && (value[4] != 'k'))
             )
-    ) {
+      ) {
         len = snprintf(buffer, sizeof(buffer) - dest_sz - 1, format, value);
         strncat(dest, buffer, dest_sz);
     }
@@ -132,7 +126,8 @@ int field_add_string(char *dest, int size, const char *format, const char *value
 }
 
 /* Add a field, but truncate if too long */
-int field_add_truncated(char *dest, int size, const char *format, const char *value, int fmt_size ) {
+int field_add_truncated(char *dest, int size, const char *format, const char *value, int fmt_size )
+{
     char buffer[OS_SIZE_2048];
 
     int available_sz = size - strlen(dest);
@@ -154,22 +149,20 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
                 ((value[0] != '(') && (value[1] != 'u') && (value[2] != 'n')) ||
                 ((value[0] != 'u') && (value[1] != 'n') && (value[4] != 'k'))
             )
-    ) {
+      ) {
 
-        if( (truncated=malloc(field_sz + 1)) != NULL ) {
+        if( (truncated = malloc(field_sz + 1)) != NULL ) {
             if( total_sz > available_sz ) {
                 // Truncate and add a trailer
                 os_substr(truncated, value, 0, field_sz - strlen(trailer));
                 strcat(truncated, trailer);
-            }
-            else {
-                strncpy(truncated,value,field_sz);
+            } else {
+                strncpy(truncated, value, field_sz);
             }
 
             len = snprintf(buffer, available_sz, format, truncated);
             strncat(dest, buffer, available_sz);
-        }
-        else {
+        } else {
             // Memory Error
             len = -3;
         }
@@ -181,7 +174,8 @@ int field_add_truncated(char *dest, int size, const char *format, const char *va
 }
 
 /* Handle integers in the second position */
-int field_add_int(char *dest, int size, const char *format, const int value ) {
+int field_add_int(char *dest, int size, const char *format, const int value )
+{
     char buffer[255];
     int len = 0;
     int dest_sz = size - strlen(dest);

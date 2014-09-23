@@ -25,18 +25,17 @@ int OS_PRegex(const char *str, const char *regex)
 {
     regex_t preg;
 
-    if(!str || !regex)
+    if(!str || !regex) {
         return(0);
+    }
 
 
-    if(regcomp(&preg, regex, REG_EXTENDED|REG_NOSUB) != 0)
-    {
+    if(regcomp(&preg, regex, REG_EXTENDED | REG_NOSUB) != 0) {
         merror("%s: Posix Regex compile error (%s).", __local_name, regex);
         return(0);
     }
 
-    if(regexec(&preg, str, strlen(str), NULL, 0) != 0)
-    {
+    if(regexec(&preg, str, strlen(str), NULL, 0) != 0) {
         /* Didn't match */
         regfree(&preg);
         return(0);

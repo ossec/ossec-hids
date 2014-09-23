@@ -24,22 +24,27 @@ char *encode_base64(int size, char *src);
 
 char *trimwhitespace(char *str)
 {
-  char *end;
+    char *end;
 
-  // Trim leading space
-  while(isspace(*str)) str++;
+    // Trim leading space
+    while(isspace(*str)) {
+        str++;
+    }
 
-  if(*str == 0)  // All spaces?
+    if(*str == 0) { // All spaces?
+        return str;
+    }
+
+    // Trim trailing space
+    end = str + strlen(str) - 1;
+    while(end > str && isspace(*end)) {
+        end--;
+    }
+
+    // Write new null terminator
+    *(end + 1) = 0;
+
     return str;
-
-  // Trim trailing space
-  end = str + strlen(str) - 1;
-  while(end > str && isspace(*end)) end--;
-
-  // Write new null terminator
-  *(end+1) = 0;
-
-  return str;
 }
 
 /* Import a key */
@@ -49,11 +54,13 @@ int k_import(char *cmdimport)
     char *user_input;
     char *b64_dec;
 
-    char *name; char *ip; char *tmp_key;
+    char *name;
+    char *ip;
+    char *tmp_key;
 
-    char line_read[FILE_SIZE +1];
+    char line_read[FILE_SIZE + 1];
 
-    #ifdef WIN32
+#ifdef WIN32
     int result;
     int cmdlen;
     int caclslen;
@@ -62,32 +69,29 @@ int k_import(char *cmdimport)
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     DWORD exit_code;
-    #endif
+#endif
 
 
     /* Parsing user argument. */
-    if(cmdimport)
-    {
+    if(cmdimport) {
         user_input = cmdimport;
-    }
-    else
-    {
+    } else {
         printf(IMPORT_KEY);
 
         user_input = getenv("OSSEC_AGENT_KEY");
         if (user_input == NULL) {
-          user_input = read_from_user();
+            user_input = read_from_user();
         }
     }
 
 
     /* quit */
-    if(strcmp(user_input, QUIT) == 0)
+    if(strcmp(user_input, QUIT) == 0) {
         return(0);
+    }
 
     b64_dec = decode_base64(user_input);
-    if(b64_dec == NULL)
-    {
+    if(b64_dec == NULL) {
         printf(NO_KEY);
         printf(PRESS_ENTER);
         read_from_user();
@@ -95,24 +99,21 @@ int k_import(char *cmdimport)
     }
 
 
-    memset(line_read, '\0', FILE_SIZE +1);
+    memset(line_read, '\0', FILE_SIZE + 1);
     strncpy(line_read, b64_dec, FILE_SIZE);
 
 
     name = strchr(b64_dec, ' ');
-    if(name && strlen(line_read) < FILE_SIZE)
-    {
+    if(name && strlen(line_read) < FILE_SIZE) {
         *name = '\0';
         name++;
         ip = strchr(name, ' ');
-        if(ip)
-        {
+        if(ip) {
             *ip = '\0';
             ip++;
 
             tmp_key = strchr(ip, ' ');
-            if(!tmp_key)
-            {
+            if(!tmp_key) {
                 printf(NO_KEY);
                 return(0);
             }
@@ -121,35 +122,30 @@ int k_import(char *cmdimport)
             printf("\n");
             printf(AGENT_INFO, b64_dec, name, ip);
 
-            while(1)
-            {
+            while(1) {
                 printf(ADD_CONFIRM);
                 fflush(stdout);
 
                 user_input = getenv("OSSEC_ACTION_CONFIRMED");
                 if (user_input == NULL) {
-                  user_input = read_from_user();
+                    user_input = read_from_user();
                 }
 
-                if(user_input[0] == 'y' || user_input[0] == 'Y')
-                {
-                    fp = fopen(KEYS_FILE,"w");
-                    if(!fp)
-                    {
+                if(user_input[0] == 'y' || user_input[0] == 'Y') {
+                    fp = fopen(KEYS_FILE, "w");
+                    if(!fp) {
                         ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE);
                     }
-                    fprintf(fp,"%s\n",line_read);
+                    fprintf(fp, "%s\n", line_read);
                     fclose(fp);
 
-                    #ifndef WIN32
+#ifndef WIN32
                     chmod(KEYS_FILE, 0440);
-                    #else
+#else
                     /* Get cmd location from environment */
                     comspec = getenv("COMSPEC");
-                    if (comspec == NULL || strncmp(comspec, "", strlen(comspec) == 0))
-                    {
-                        if(unlink(KEYS_FILE))
-                        {
+                    if (comspec == NULL || strncmp(comspec, "", strlen(comspec) == 0)) {
+                        if(unlink(KEYS_FILE)) {
                             verbose(DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(COMPSEC_ERROR);
@@ -165,19 +161,17 @@ int k_import(char *cmdimport)
                     cmdlen = strlen(comspec) + 5 + caclslen;
                     char cmd[cmdlen];
                     snprintf(cmd, cmdlen, "%s /c %s", comspec, caclscmd);
-                    
-                     /* Log command being run */
-                     log2file("%s: INFO: Running the following command (%s)", ARGV0, cmd);
+
+                    /* Log command being run */
+                    log2file("%s: INFO: Running the following command (%s)", ARGV0, cmd);
 
                     ZeroMemory(&si, sizeof(si));
                     si.cb = sizeof(si);
                     ZeroMemory(&pi, sizeof(pi));
 
                     if(!CreateProcess(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL,
-                                      &si, &pi))
-                    {
-                        if(unlink(KEYS_FILE))
-                        {
+                                      &si, &pi)) {
+                        if(unlink(KEYS_FILE)) {
                             verbose(DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(PROC_ERROR, cmd);
@@ -193,24 +187,20 @@ int k_import(char *cmdimport)
                     CloseHandle(pi.hProcess);
                     CloseHandle(pi.hThread);
 
-                    if (!result)
-                    {
-                        if(unlink(KEYS_FILE))
-                        {
+                    if (!result) {
+                        if(unlink(KEYS_FILE)) {
                             verbose(DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(RESULT_ERROR, cmd, GetLastError());
                     }
 
-                    if (exit_code)
-                    {
-                        if(unlink(KEYS_FILE))
-                        {
+                    if (exit_code) {
+                        if(unlink(KEYS_FILE)) {
                             verbose(DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(CACLS_ERROR, cmd, exit_code);
                     }
-                    #endif
+#endif
 
                     /* Removing sender counter. */
                     OS_RemoveCounter("sender");
@@ -220,9 +210,7 @@ int k_import(char *cmdimport)
                     read_from_user();
                     restart_necessary = 1;
                     return(1);
-                }
-                else /* if(user_input[0] == 'n' || user_input[0] == 'N') */
-                {
+                } else { /* if(user_input[0] == 'n' || user_input[0] == 'N') */
                     printf("%s", ADD_NOT);
                     return(0);
                 }
@@ -244,43 +232,40 @@ int k_extract(char *cmdextract)
     FILE *fp;
     char *user_input;
     char *b64_enc;
-    char line_read[FILE_SIZE +1];
-    char n_id[USER_SIZE +1];
+    char line_read[FILE_SIZE + 1];
+    char n_id[USER_SIZE + 1];
 
 
-    if(cmdextract)
-    {
+    if(cmdextract) {
         user_input = cmdextract;
 
-        if(!IDExist(user_input))
-        {
+        if(!IDExist(user_input)) {
             printf(NO_ID, user_input);
             exit(1);
         }
     }
 
-    else
-    {
-        if(!print_agents(0, 0, 0))
-        {
+    else {
+        if(!print_agents(0, 0, 0)) {
             printf(NO_AGENT);
             printf(PRESS_ENTER);
             read_from_user();
             return(0);
         }
 
-        do
-        {
+        do {
             printf(EXTRACT_KEY);
             fflush(stdout);
             user_input = read_from_user();
 
             /* quit */
-            if(strcmp(user_input, QUIT) == 0)
+            if(strcmp(user_input, QUIT) == 0) {
                 return(0);
+            }
 
-            if(!IDExist(user_input))
+            if(!IDExist(user_input)) {
                 printf(NO_ID, user_input);
+            }
 
         } while(!IDExist(user_input));
     }
@@ -288,19 +273,17 @@ int k_extract(char *cmdextract)
 
     /* Trying to open the auth file */
     fp = fopen(AUTH_FILE, "r");
-    if(!fp)
-    {
+    if(!fp) {
         ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE);
     }
 
     fsetpos(fp, &fp_pos);
 
-    memset(n_id, '\0', USER_SIZE +1);
-    strncpy(n_id, user_input, USER_SIZE -1);
+    memset(n_id, '\0', USER_SIZE + 1);
+    strncpy(n_id, user_input, USER_SIZE - 1);
 
 
-    if(fgets(line_read, FILE_SIZE, fp) == NULL)
-    {
+    if(fgets(line_read, FILE_SIZE, fp) == NULL) {
         printf(ERROR_KEYS);
         fclose(fp);
         exit(1);
@@ -308,17 +291,15 @@ int k_extract(char *cmdextract)
     chomp(line_read);
 
 
-    b64_enc = encode_base64(strlen(line_read),line_read);
-    if(b64_enc == NULL)
-    {
+    b64_enc = encode_base64(strlen(line_read), line_read);
+    if(b64_enc == NULL) {
         printf(EXTRACT_ERROR);
         fclose(fp);
         exit(1);
     }
 
     printf(EXTRACT_MSG, n_id, b64_enc);
-    if(!cmdextract)
-    {
+    if(!cmdextract) {
         printf("\n" PRESS_ENTER);
         read_from_user();
     }
@@ -334,33 +315,31 @@ int k_bulkload(char *cmdbulk)
 {
     int i = 1;
     FILE *fp, *infp;
-    char str1[STR_SIZE +1];
-    char str2[STR_SIZE +1];
+    char str1[STR_SIZE + 1];
+    char str2[STR_SIZE + 1];
 
     os_md5 md1;
     os_md5 md2;
-    char line[FILE_SIZE+1];
-    char name[FILE_SIZE +1];
-    char id[FILE_SIZE +1];
-    char ip[FILE_SIZE+1];
+    char line[FILE_SIZE + 1];
+    char name[FILE_SIZE + 1];
+    char id[FILE_SIZE + 1];
+    char ip[FILE_SIZE + 1];
     os_ip *c_ip;
     char delims[] = ",";
-    char * token = NULL;
+    char *token = NULL;
 
     /* Checking if we can open the input file */
     printf("Opening: [%s]\n", cmdbulk);
-    infp = fopen(cmdbulk,"r");
-    if(!infp)
-    {
-	perror("Failed.");
+    infp = fopen(cmdbulk, "r");
+    if(!infp) {
+        perror("Failed.");
         ErrorExit(FOPEN_ERROR, ARGV0, cmdbulk);
     }
 
 
     /* Checking if we can open the auth_file */
-    fp = fopen(AUTH_FILE,"a");
-    if(!fp)
-    {
+    fp = fopen(AUTH_FILE, "a");
+    if(!fp) {
         ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE);
     }
     fclose(fp);
@@ -368,142 +347,134 @@ int k_bulkload(char *cmdbulk)
     /* Allocating for c_ip */
     os_calloc(1, sizeof(os_ip), c_ip);
 
-	while(fgets(line, FILE_SIZE - 1, infp) != NULL)
-	{
-		if (1 >= strlen(trimwhitespace(line)))
-			continue;
+    while(fgets(line, FILE_SIZE - 1, infp) != NULL) {
+        if (1 >= strlen(trimwhitespace(line))) {
+            continue;
+        }
 
-		memset(ip, '\0', FILE_SIZE +1);
-		token = strtok(line, delims);
-		strncpy(ip, trimwhitespace(token),FILE_SIZE -1);
+        memset(ip, '\0', FILE_SIZE + 1);
+        token = strtok(line, delims);
+        strncpy(ip, trimwhitespace(token), FILE_SIZE - 1);
 
-		memset(name, '\0', FILE_SIZE +1);
-		token = strtok(NULL, delims);
-		strncpy(name, trimwhitespace(token),FILE_SIZE -1);
-			
-    		#ifndef WIN32
-    		chmod(AUTH_FILE, 0440);
-    		#endif
+        memset(name, '\0', FILE_SIZE + 1);
+        token = strtok(NULL, delims);
+        strncpy(name, trimwhitespace(token), FILE_SIZE - 1);
 
-    		/* Setting time 2 */
-    		time2 = time(0);
+#ifndef WIN32
+        chmod(AUTH_FILE, 0440);
+#endif
 
-
-    		/* Source is time1+ time2 +pid + ppid */
-    		#ifndef WIN32
-        		#ifdef __OpenBSD__
-        		srandomdev();
-        		#else
-        		srandom(time2 + time1 + getpid() + getppid());
-        		#endif
-    		#else
-    		srandom(time2 + time1 + getpid());
-    		#endif
-
-    		rand1 = random();
+        /* Setting time 2 */
+        time2 = time(0);
 
 
-    		/* Zeroing strings */
-    		memset(str1,'\0', STR_SIZE +1);
-    		memset(str2,'\0', STR_SIZE +1);
+        /* Source is time1+ time2 +pid + ppid */
+#ifndef WIN32
+#ifdef __OpenBSD__
+        srandomdev();
+#else
+        srandom(time2 + time1 + getpid() + getppid());
+#endif
+#else
+        srandom(time2 + time1 + getpid());
+#endif
+
+        rand1 = random();
 
 
-        	/* check the name */
-        	if(!OS_IsValidName(name))
-        	{
-            	printf(INVALID_NAME,name);
-            	continue;
-        	}
-
-        	/* Search for name  -- no duplicates */
-        	if(NameExist(name))
-        	{
-            	printf(ADD_ERROR_NAME, name);
-            	continue;
-        	}
+        /* Zeroing strings */
+        memset(str1, '\0', STR_SIZE + 1);
+        memset(str2, '\0', STR_SIZE + 1);
 
 
-      		if(!OS_IsValidIP(ip, c_ip))
-      		{
-          		printf(IP_ERROR, ip);
-          		continue;
-      		}
+        /* check the name */
+        if(!OS_IsValidName(name)) {
+            printf(INVALID_NAME, name);
+            continue;
+        }
 
-		/* Default ID */
-		i = MAX_AGENTS + 32512;
-		snprintf(id, 8, "%03d", i);
-		while(!IDExist(id))
-		{
-		i--;
-		snprintf(id, 8, "%03d", i);
-
-		/* No key present, use id 0 */
-		if(i <= 0)
-		{
-			i = 0;
-			break;
-		}
-		}
-		snprintf(id, 8, "%03d", i+1);
-
-		if(!OS_IsValidID(id)) 
-		{
-		printf(INVALID_ID, id);
-		continue;
-		}
-
-		/* Search for ID KEY  -- no duplicates */
-		if(IDExist(id))
-		{
-		printf(NO_DEFAULT, i+1);
-		continue;
-		}
-
-    		printf(AGENT_INFO, id, name, ip);
-    		fflush(stdout);
+        /* Search for name  -- no duplicates */
+        if(NameExist(name)) {
+            printf(ADD_ERROR_NAME, name);
+            continue;
+        }
 
 
-        	time3 = time(0);
-        	rand2 = random();
+        if(!OS_IsValidIP(ip, c_ip)) {
+            printf(IP_ERROR, ip);
+            continue;
+        }
 
-        	fp = fopen(AUTH_FILE,"a");
-        	if(!fp)
-        	{
-            	ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE);
-        	}
-        	#ifndef WIN32
-        	chmod(AUTH_FILE, 0440);
-        	#endif
+        /* Default ID */
+        i = MAX_AGENTS + 32512;
+        snprintf(id, 8, "%03d", i);
+        while(!IDExist(id)) {
+            i--;
+            snprintf(id, 8, "%03d", i);
+
+            /* No key present, use id 0 */
+            if(i <= 0) {
+                i = 0;
+                break;
+            }
+        }
+        snprintf(id, 8, "%03d", i + 1);
+
+        if(!OS_IsValidID(id)) {
+            printf(INVALID_ID, id);
+            continue;
+        }
+
+        /* Search for ID KEY  -- no duplicates */
+        if(IDExist(id)) {
+            printf(NO_DEFAULT, i + 1);
+            continue;
+        }
+
+        printf(AGENT_INFO, id, name, ip);
+        fflush(stdout);
 
 
-        	/* Random 1: Time took to write the agent information.
-         	* Random 2: Time took to choose the action.
-         	* Random 3: All of this + time + pid
-         	* Random 4: Md5 all of this + the name, key and ip
-         	* Random 5: Final key
-         	*/
+        time3 = time(0);
+        rand2 = random();
 
-        	snprintf(str1, STR_SIZE, "%d%s%d",time3-time2, name, rand1);
-        	snprintf(str2, STR_SIZE, "%d%s%s%d", time2-time1, ip, id, rand2);
+        fp = fopen(AUTH_FILE, "a");
+        if(!fp) {
+            ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE);
+        }
+#ifndef WIN32
+        chmod(AUTH_FILE, 0440);
+#endif
 
-        	OS_MD5_Str(str1, md1);
-        	OS_MD5_Str(str2, md2);
 
-        	snprintf(str1, STR_SIZE, "%s%d%d%d",md1,(int)getpid(), (int)random(),
-                                            time3);
-        	OS_MD5_Str(str1, md1);
+        /* Random 1: Time took to write the agent information.
+        * Random 2: Time took to choose the action.
+        * Random 3: All of this + time + pid
+        * Random 4: Md5 all of this + the name, key and ip
+        * Random 5: Final key
+        */
 
-        	//fprintf(fp,"%s %s %s %s%s\n",id, name, ip, md1,md2);
-        	fprintf(fp,"%s %s %s %s%s\n",id, name, c_ip->ip, md1,md2);
+        snprintf(str1, STR_SIZE, "%d%s%d", time3 - time2, name, rand1);
+        snprintf(str2, STR_SIZE, "%d%s%s%d", time2 - time1, ip, id, rand2);
 
-        	fclose(fp);
+        OS_MD5_Str(str1, md1);
+        OS_MD5_Str(str2, md2);
 
-        	printf(AGENT_ADD);
-        	restart_necessary = 1;
-	};
+        snprintf(str1, STR_SIZE, "%s%d%d%d", md1, (int)getpid(), (int)random(),
+                 time3);
+        OS_MD5_Str(str1, md1);
 
-	fclose(infp);
-	return(0);
+        //fprintf(fp,"%s %s %s %s%s\n",id, name, ip, md1,md2);
+        fprintf(fp, "%s %s %s %s%s\n", id, name, c_ip->ip, md1, md2);
+
+        fclose(fp);
+
+        printf(AGENT_ADD);
+        restart_necessary = 1;
+    };
+
+    fclose(infp);
+    return(0);
 }
 
 

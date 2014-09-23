@@ -30,10 +30,8 @@ int OS_Match2(const char *pattern, const char *str)
     OSMatch reg;
 
     /* If the compilation failed, we don't need to free anything */
-    if(OSMatch_Compile(pattern, &reg, 0))
-    {
-        if(OSMatch_Execute(str,strlen(str), &reg))
-        {
+    if(OSMatch_Compile(pattern, &reg, 0)) {
+        if(OSMatch_Execute(str, strlen(str), &reg)) {
             r_code = 1;
         }
 

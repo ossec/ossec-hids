@@ -20,12 +20,11 @@
 #define __VALIDATE_H
 
 /* IP structure */
-typedef struct _os_ip
-{
+typedef struct _os_ip {
     char *ip;
     unsigned int ip_address;
     unsigned int netmask;
-}os_ip;
+} os_ip;
 
 
 /* Getting the netmask based on the integer value. */

@@ -65,8 +65,7 @@ char *encode_base64(int size, char *src);
 
 
 /* Global ossec config structure */
-typedef struct _ossec_config
-{
+typedef struct _ossec_config {
     unsigned short int server_type;
     unsigned short int admin_access;
     unsigned long int msg_sent;
@@ -82,13 +81,13 @@ typedef struct _ossec_config
     char *version;
     char *install_date;
     char *status;
-}ossec_config;
+} ossec_config;
 
 
 /** Global variables **/
 
 /* Agent status */
-char ui_server_info[2048 +1];
+char ui_server_info[2048 + 1];
 
 /* Configuration */
 ossec_config config_inst;

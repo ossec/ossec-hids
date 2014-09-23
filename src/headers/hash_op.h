@@ -21,23 +21,21 @@
 
 
 /* Node structure */
-typedef struct _OSHashNode
-{
+typedef struct _OSHashNode {
     struct _OSHashNode *next;
 
     char *key;
     void *data;
-}OSHashNode;
+} OSHashNode;
 
 
-typedef struct _OSHash
-{
+typedef struct _OSHash {
     unsigned int rows;
     unsigned int initial_seed;
     unsigned int constant;
 
     OSHashNode **table;
-}OSHash;
+} OSHash;
 
 
 
@@ -64,9 +62,9 @@ void *OSHash_Free(OSHash *self) __attribute__((nonnull));
  * Returns 2 on success
  * Key must not be NULL.
  */
-int OSHash_Add(OSHash *hash, const char *key, void *data) __attribute__((nonnull(1,2)));
-int OSHash_Update(OSHash *hash, const char *key, void *data) __attribute__((nonnull(1,2)));
-void* OSHash_Delete(OSHash *self, const char *key) __attribute__((nonnull));
+int OSHash_Add(OSHash *hash, const char *key, void *data) __attribute__((nonnull(1, 2)));
+int OSHash_Update(OSHash *hash, const char *key, void *data) __attribute__((nonnull(1, 2)));
+void *OSHash_Delete(OSHash *self, const char *key) __attribute__((nonnull));
 
 
 /** void *OSHash_Get(OSHash *self, char *key)

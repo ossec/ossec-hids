@@ -28,7 +28,7 @@
 
 
 /** Prototypes **/
-static int _InternalMatch(const char *pattern, const char *str,size_t count) __attribute__((nonnull));
+static int _InternalMatch(const char *pattern, const char *str, size_t count) __attribute__((nonnull));
 
 
 /* OS_WordMatch v0.3:
@@ -38,23 +38,19 @@ int OS_WordMatch(const char *pattern, const char *str)
 {
     size_t count = 0;
 
-    if(*pattern == '\0')
+    if(*pattern == '\0') {
         return(FALSE);
+    }
 
-    do
-    {
-        if(pattern[count] == '|')
-        {
+    do {
+        if(pattern[count] == '|') {
             /* If we match '|' , search with
              * we have so far.
              */
-            if(_InternalMatch(pattern, str, count))
-            {
+            if(_InternalMatch(pattern, str, count)) {
                 return(TRUE);
-            }
-            else
-            {
-                pattern += count+1;
+            } else {
+                pattern += count + 1;
                 count = 0;
                 continue;
             }
@@ -62,10 +58,10 @@ int OS_WordMatch(const char *pattern, const char *str)
 
         count++;
 
-    }while(pattern[count] != '\0');
+    } while(pattern[count] != '\0');
 
     /* Last check until end of string */
-    return(_InternalMatch(pattern, str,count));
+    return(_InternalMatch(pattern, str, count));
 }
 
 /* Internal match function */
@@ -78,59 +74,61 @@ static int _InternalMatch(const char *pattern, const char *str, size_t pattern_s
 
 
     /* Return true for some odd expressions */
-    if(*pattern == '\0')
+    if(*pattern == '\0') {
         return(TRUE);
+    }
 
 
     /* If '^' specified, just do a strncasecmp */
-    else if(*pattern == '^')
-    {
+    else if(*pattern == '^') {
         pattern++;
         pattern_size --;
 
         /* Compare two string */
-        if(strncasecmp(pattern,str,pattern_size) == 0)
+        if(strncasecmp(pattern, str, pattern_size) == 0) {
             return(TRUE);
+        }
         return(FALSE);
     }
 
 
     /* Null line */
-    else if(*st == '\0')
+    else if(*st == '\0') {
         return(FALSE);
+    }
 
 
     /* Look to match the first pattern */
-    do
-    {
+    do {
         /* Match */
-        if(charmap[*st] == charmap[*pt])
-        {
+        if(charmap[*st] == charmap[*pt]) {
             str = (const char *)st++;
             pt++;
 
-            while(*pt != last_char)
-            {
-                if(*st == '\0')
+            while(*pt != last_char) {
+                if(*st == '\0') {
                     return(FALSE);
+                }
 
-                else if(charmap[*pt] != charmap[*st])
+                else if(charmap[*pt] != charmap[*st]) {
                     goto error;
+                }
 
-                st++;pt++;
+                st++;
+                pt++;
             }
 
             /* Return here if pt == last_char */
             return(TRUE);
 
-            error:
-                st = (const uchar *)str;
-                pt = (const uchar *)pattern;
+error:
+            st = (const uchar *)str;
+            pt = (const uchar *)pattern;
 
         }
 
         st++;
-    }while(*st != '\0');
+    } while(*st != '\0');
 
     return(FALSE);
 }

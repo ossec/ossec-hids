@@ -26,15 +26,13 @@ int CreateThread(void *function_pointer(void *data), void *data)
     pthread_t lthread;
     int ret = 0;
 
-    ret = pthread_create(&lthread, NULL, function_pointer, (void*)data);
-    if(ret != 0)
-    {
+    ret = pthread_create(&lthread, NULL, function_pointer, (void *)data);
+    if(ret != 0) {
         merror(THREAD_ERROR, __local_name);
         return (-1);
     }
 
-    if(pthread_detach(lthread) != 0)
-    {
+    if(pthread_detach(lthread) != 0) {
         merror(THREAD_ERROR, __local_name);
         return(-1);
     }

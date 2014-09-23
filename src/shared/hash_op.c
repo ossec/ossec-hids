@@ -32,33 +32,29 @@ OSHash *OSHash_Create()
 
     /* Allocating memory for the hash */
     self = (OSHash *) calloc(1, sizeof(OSHash));
-    if(!self)
-    {
+    if(!self) {
         return(NULL);
     }
 
 
     /* Setting default row size */
     self->rows = os_getprime(1024);
-    if(self->rows == 0)
-    {
+    if(self->rows == 0) {
         free(self);
         return(NULL);
     }
 
 
     /* Creating hashing table */
-    self->table = (OSHashNode **)calloc(self->rows +1, sizeof(OSHashNode *));
-    if(!self->table)
-    {
+    self->table = (OSHashNode **)calloc(self->rows + 1, sizeof(OSHashNode *));
+    if(!self->table) {
         free(self);
         return(NULL);
     }
 
 
     /* Zeroing our tables */
-    for(i = 0; i <= self->rows; i++)
-    {
+    for(i = 0; i <= self->rows; i++) {
         self->table[i] = NULL;
     }
 
@@ -85,12 +81,10 @@ void *OSHash_Free(OSHash *self)
 
 
     /* Freeing each entry */
-    while(i <= self->rows)
-    {
+    while(i <= self->rows) {
         curr_node = self->table[i];
         next_node = curr_node;
-        while(next_node)
-        {
+        while(next_node) {
             next_node = next_node->next;
             free(curr_node->key);
             free(curr_node);
@@ -119,10 +113,9 @@ static unsigned int _os_genhash(const OSHash *self, const char *key)
     /* What we have here is a simple polynomial hash.
      * x0 * a^k-1 .. xk * a^k-k +1
      */
-    while(*key)
-    {
+    while(*key) {
         hash_key *= self->constant;
-        hash_key += (unsigned int) *key;
+        hash_key += (unsigned int) * key;
         key++;
     }
 
@@ -140,31 +133,27 @@ int OSHash_setSize(OSHash *self, unsigned int new_size)
     unsigned int i = 0;
 
     /* We can't decrease the size */
-    if(new_size <= self->rows)
-    {
+    if(new_size <= self->rows) {
         return(1);
     }
 
 
     /* Getting next prime */
     self->rows = os_getprime(new_size);
-    if(self->rows == 0)
-    {
+    if(self->rows == 0) {
         return(0);
     }
 
 
     /* If we fail, the hash should not be used anymore */
-    self->table = (OSHashNode **) realloc(self->table, (self->rows +1) * sizeof(OSHashNode *));
-    if(!self->table)
-    {
+    self->table = (OSHashNode **) realloc(self->table, (self->rows + 1) * sizeof(OSHashNode *));
+    if(!self->table) {
         return(0);
     }
 
 
     /* Zeroing our tables */
-    for(i = 0; i <= self->rows; i++)
-    {
+    for(i = 0; i <= self->rows; i++) {
         self->table[i] = NULL;
     }
 
@@ -200,11 +189,9 @@ int OSHash_Update(OSHash *self, const char *key, void *data)
 
     /* Checking for duplicated entries in the index */
     curr_node = self->table[index];
-    while(curr_node)
-    {
+    while(curr_node) {
         /* Checking for duplicated key -- not adding */
-        if(strcmp(curr_node->key, key) == 0)
-        {
+        if(strcmp(curr_node->key, key) == 0) {
             curr_node->data = data;
             return(1);
         }
@@ -240,11 +227,9 @@ int OSHash_Add(OSHash *self, const char *key, void *data)
 
     /* Checking for duplicated entries in the index */
     curr_node = self->table[index];
-    while(curr_node)
-    {
+    while(curr_node) {
         /* Checking for duplicated key -- not adding */
-        if(strcmp(curr_node->key, key) == 0)
-        {
+        if(strcmp(curr_node->key, key) == 0) {
             /* Not adding */
             return(1);
         }
@@ -254,8 +239,7 @@ int OSHash_Add(OSHash *self, const char *key, void *data)
 
     /* Creating new node */
     new_node = (OSHashNode *) calloc(1, sizeof(OSHashNode));
-    if(!new_node)
-    {
+    if(!new_node) {
         return(0);
     }
     new_node->next = NULL;
@@ -269,13 +253,11 @@ int OSHash_Add(OSHash *self, const char *key, void *data)
 
 
     /* Adding to table */
-    if(!self->table[index])
-    {
+    if(!self->table[index]) {
         self->table[index] = new_node;
     }
     /* If there is duplicated, add to the beginning */
-    else
-    {
+    else {
         new_node->next = self->table[index];
         self->table[index] = new_node;
     }
@@ -308,15 +290,14 @@ void *OSHash_Get(const OSHash *self, const char *key)
 
     /* Getting entry */
     curr_node = self->table[index];
-    while(curr_node != NULL)
-    {
+    while(curr_node != NULL) {
         /* Skip null pointers */
-        if( curr_node->key == NULL )
+        if( curr_node->key == NULL ) {
             continue;
+        }
 
         /* We may have colisions, so double check with strcmp */
-        if(strcmp(curr_node->key, key) == 0)
-        {
+        if(strcmp(curr_node->key, key) == 0) {
             return(curr_node->data);
         }
 
@@ -327,7 +308,7 @@ void *OSHash_Get(const OSHash *self, const char *key)
 }
 
 /* Returns a pointer to a hash node if found, that hash node is removed from the table */
-void* OSHash_Delete(OSHash *self, const char *key)
+void *OSHash_Delete(OSHash *self, const char *key)
 {
     OSHashNode *curr_node;
     OSHashNode *prev_node = 0;
@@ -346,8 +327,7 @@ void* OSHash_Delete(OSHash *self, const char *key)
         if(strcmp(curr_node->key, key) == 0) {
             if( prev_node == NULL ) {
                 self->table[index] = curr_node->next;
-            }
-            else {
+            } else {
                 prev_node->next = curr_node->next;
             }
             free(curr_node->key);

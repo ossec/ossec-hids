@@ -50,8 +50,8 @@ int main(int argc, char **argv)
     int gid = 0;
     int uid = 0;
     int c = 0, info_agent = 0, update_rootcheck = 0,
-               list_agents = 0, show_last = 0,
-               resolved_only = 0;
+        list_agents = 0, show_last = 0,
+        resolved_only = 0;
     int active_only = 0, csv_output = 0;
 
     char shost[512];
@@ -63,15 +63,13 @@ int main(int argc, char **argv)
 
 
     /* user arguments */
-    if(argc < 2)
-    {
+    if(argc < 2) {
         helpmsg();
     }
 
 
-    while((c = getopt(argc, argv, "VhqrDdLlcsu:i:")) != -1)
-    {
-        switch(c){
+    while((c = getopt(argc, argv, "VhqrDdLlcsu:i:")) != -1) {
+        switch(c) {
             case 'V':
                 print_version();
                 break;
@@ -101,17 +99,15 @@ int main(int argc, char **argv)
                 break;
             case 'i':
                 info_agent++;
-                if(!optarg)
-                {
-                    merror("%s: -u needs an argument",ARGV0);
+                if(!optarg) {
+                    merror("%s: -u needs an argument", ARGV0);
                     helpmsg();
                 }
                 agent_id = optarg;
                 break;
             case 'u':
-                if(!optarg)
-                {
-                    merror("%s: -u needs an argument",ARGV0);
+                if(!optarg) {
+                    merror("%s: -u needs an argument", ARGV0);
                     helpmsg();
                 }
                 agent_id = optarg;
@@ -128,22 +124,19 @@ int main(int argc, char **argv)
     /* Getting the group name */
     gid = Privsep_GetGroup(group);
     uid = Privsep_GetUser(user);
-    if(gid < 0)
-    {
-	    ErrorExit(USER_ERROR, ARGV0, user, group);
+    if(gid < 0) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
     }
-	
+
 
     /* Setting the group */
-    if(Privsep_SetGroup(gid) < 0)
-    {
-	    ErrorExit(SETGID_ERROR,ARGV0, group);
+    if(Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group);
     }
 
 
     /* Chrooting to the default directory */
-    if(Privsep_Chroot(dir) < 0)
-    {
+    if(Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir);
     }
 
@@ -153,8 +146,7 @@ int main(int argc, char **argv)
 
 
     /* Setting the user */
-    if(Privsep_SetUser(uid) < 0)
-    {
+    if(Privsep_SetUser(uid) < 0) {
         ErrorExit(SETUID_ERROR, ARGV0, user);
     }
 
@@ -162,8 +154,7 @@ int main(int argc, char **argv)
 
     /* Getting servers hostname */
     memset(shost, '\0', 512);
-    if(gethostname(shost, 512 -1) != 0)
-    {
+    if(gethostname(shost, 512 - 1) != 0) {
         strncpy(shost, "localhost", 32);
         return(0);
     }
@@ -171,17 +162,13 @@ int main(int argc, char **argv)
 
 
     /* Listing available agents. */
-    if(list_agents)
-    {
-        if(!csv_output)
-        {
+    if(list_agents) {
+        if(!csv_output) {
             printf("\nOSSEC HIDS %s. List of available agents:",
-                    ARGV0);
+                   ARGV0);
             printf("\n   ID: 000, Name: %s (server), IP: 127.0.0.1, "
                    "Active/Local\n", shost);
-        }
-        else
-        {
+        } else {
             printf("000,%s (server),127.0.0.1,Active/Local,\n", shost);
         }
         print_agents(1, active_only, csv_output);
@@ -192,42 +179,35 @@ int main(int argc, char **argv)
 
 
     /* Update rootcheck database. */
-    if(update_rootcheck)
-    {
+    if(update_rootcheck) {
         /* Cleaning all agents (and server) db. */
-        if(strcmp(agent_id, "all") == 0)
-        {
+        if(strcmp(agent_id, "all") == 0) {
             DIR *sys_dir;
             struct dirent *entry;
 
             sys_dir = opendir(ROOTCHECK_DIR);
-            if(!sys_dir)
-            {
+            if(!sys_dir) {
                 ErrorExit("%s: Unable to open: '%s'", ARGV0, ROOTCHECK_DIR);
             }
 
-            while((entry = readdir(sys_dir)) != NULL)
-            {
+            while((entry = readdir(sys_dir)) != NULL) {
                 FILE *fp;
-                char full_path[OS_MAXSTR +1];
+                char full_path[OS_MAXSTR + 1];
 
                 /* Do not even attempt to delete . and .. :) */
-                if((strcmp(entry->d_name,".") == 0)||
-                   (strcmp(entry->d_name,"..") == 0))
-                {
+                if((strcmp(entry->d_name, ".") == 0) ||
+                        (strcmp(entry->d_name, "..") == 0)) {
                     continue;
                 }
 
-                snprintf(full_path, OS_MAXSTR,"%s/%s", ROOTCHECK_DIR,
+                snprintf(full_path, OS_MAXSTR, "%s/%s", ROOTCHECK_DIR,
                          entry->d_name);
 
                 fp = fopen(full_path, "w");
-                if(fp)
-                {
+                if(fp) {
                     fclose(fp);
                 }
-                if(entry->d_name[0] == '.')
-                {
+                if(entry->d_name[0] == '.') {
                     unlink(full_path);
                 }
             }
@@ -238,15 +218,13 @@ int main(int argc, char **argv)
         }
 
         else if((strcmp(agent_id, "000") == 0) ||
-                (strcmp(agent_id, "local") == 0))
-        {
+                (strcmp(agent_id, "local") == 0)) {
             char final_dir[1024];
             FILE *fp;
             snprintf(final_dir, 1020, "/%s/rootcheck", ROOTCHECK_DIR);
 
             fp = fopen(final_dir, "w");
-            if(fp)
-            {
+            if(fp) {
                 fclose(fp);
             }
             unlink(final_dir);
@@ -255,16 +233,14 @@ int main(int argc, char **argv)
         }
 
         /* Database from remote agents. */
-        else
-        {
+        else {
             int i;
             keystore keys;
 
             OS_ReadKeys(&keys);
 
             i = OS_IsAllowedID(&keys, agent_id);
-            if(i < 0)
-            {
+            if(i < 0) {
                 printf("\n** Invalid agent id '%s'.\n", agent_id);
                 helpmsg();
             }
@@ -280,32 +256,27 @@ int main(int argc, char **argv)
 
 
     /* Printing information from an agent. */
-    if(info_agent)
-    {
+    if(info_agent) {
         int i;
-        char final_ip[128 +1];
-        char final_mask[128 +1];
+        char final_ip[128 + 1];
+        char final_mask[128 + 1];
         keystore keys;
 
 
         if((strcmp(agent_id, "000") == 0) ||
-           (strcmp(agent_id, "local") == 0))
-        {
+                (strcmp(agent_id, "local") == 0)) {
             if(!csv_output)
-            printf("\nPolicy and auditing events for local system '%s - %s':\n",
-                    shost, "127.0.0.1");
+                printf("\nPolicy and auditing events for local system '%s - %s':\n",
+                       shost, "127.0.0.1");
 
             print_rootcheck(NULL,
                             NULL, NULL, resolved_only, csv_output, show_last);
-        }
-        else
-        {
+        } else {
 
             OS_ReadKeys(&keys);
 
             i = OS_IsAllowedID(&keys, agent_id);
-            if(i < 0)
-            {
+            if(i < 0) {
                 printf("\n** Invalid agent id '%s'.\n", agent_id);
                 helpmsg();
             }
@@ -315,11 +286,11 @@ int main(int argc, char **argv)
             final_mask[128] = '\0';
             getNetmask(keys.keyentries[i]->ip->netmask,
                        final_mask, 128);
-            snprintf(final_ip, 128, "%s%s",keys.keyentries[i]->ip->ip,
+            snprintf(final_ip, 128, "%s%s", keys.keyentries[i]->ip->ip,
                      final_mask);
 
             if(!csv_output)
-            printf("\nPolicy and auditing events for agent "
+                printf("\nPolicy and auditing events for agent "
                        "'%s (%s) - %s':\n",
                        keys.keyentries[i]->name, keys.keyentries[i]->id,
                        final_ip);

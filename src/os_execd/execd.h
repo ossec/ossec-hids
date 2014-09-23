@@ -54,7 +54,7 @@ void ExecCmd(char **cmd);
 
 void ExecCmd_Win32(char *cmd);
 
-int ExecdConfig(char * cfgfile);
+int ExecdConfig(char *cfgfile);
 
 int WinExecd_Start();
 

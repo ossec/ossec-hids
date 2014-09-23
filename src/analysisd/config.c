@@ -30,7 +30,7 @@
 /* GlobalConf vv0.2: 2005/03/03
  * v0.2: Changing to support the new OS_XML
  */
-int GlobalConf(char * cfgfile)
+int GlobalConf(char *cfgfile)
 {
     int modules = 0;
 
@@ -44,7 +44,7 @@ int GlobalConf(char * cfgfile)
     Config.picviz = 0;
     Config.prelude = 0;
     Config.zeromq_output = 0;
-    Config.zeromq_output_uri = NULL; 
+    Config.zeromq_output_uri = NULL;
     Config.memorysize = 1024;
     Config.mailnotify = -1;
     Config.keeplogdate = 0;
@@ -60,27 +60,27 @@ int GlobalConf(char * cfgfile)
     Config.mailbylevel = 7;
     Config.logbylevel  = 1;
 
-    Config.custom_alert_output =0;
+    Config.custom_alert_output = 0;
     Config.custom_alert_output_format = NULL;
 
     Config.includes = NULL;
     Config.lists = NULL;
     Config.decoders = NULL;
 
-    modules|= CGLOBAL;
-    modules|= CRULES;
-    modules|= CALERTS;
+    modules |= CGLOBAL;
+    modules |= CRULES;
+    modules |= CALERTS;
 
 
     /* Reading config */
-    if(ReadConfig(modules, cfgfile, &Config, NULL)< 0)
-    {
+    if(ReadConfig(modules, cfgfile, &Config, NULL) < 0) {
         return(OS_INVALID);
     }
 
     /* Minimum memory size */
-    if(Config.memorysize < 64)
+    if(Config.memorysize < 64) {
         Config.memorysize = 64;
+    }
 
 
     return(0);

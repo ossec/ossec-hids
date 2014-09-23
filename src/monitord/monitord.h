@@ -15,7 +15,7 @@
 #define _MONITORD_H
 
 #ifndef ARGV0
-   #define ARGV0 "ossec-monitord"
+#define ARGV0 "ossec-monitord"
 #endif
 
 #include "config/reports-config.h"

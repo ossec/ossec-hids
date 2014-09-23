@@ -25,7 +25,7 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 {
     size_t n;
     FILE *fp;
-    unsigned char buf[2048 +2];
+    unsigned char buf[2048 + 2];
     unsigned char sha1_digest[SHA_DIGEST_LENGTH];
     unsigned char md5_digest[16];
 
@@ -36,26 +36,23 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
     /* Clearing the memory. */
     md5output[0] = '\0';
     sha1output[0] = '\0';
-    buf[2048 +1] = '\0';
+    buf[2048 + 1] = '\0';
 
     /* Use prefilter_cmd if set */
     if (prefilter_cmd == NULL) {
-        fp = fopen(fname,"r");
-        if(!fp)
-        {
+        fp = fopen(fname, "r");
+        if(!fp) {
             return(-1);
         }
     } else {
         char cmd[OS_MAXSTR];
         size_t target_length = strlen(prefilter_cmd) + 1 + strlen(fname);
         int res = snprintf(cmd, sizeof(cmd), "%s %s", prefilter_cmd, fname);
-        if(res < 0 || (unsigned int)res != target_length)
-        {
+        if(res < 0 || (unsigned int)res != target_length) {
             return (-1);
         }
         fp = popen(cmd, "r");
-        if(!fp)
-        {
+        if(!fp) {
             return(-1);
         }
     }
@@ -66,8 +63,7 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 
 
     /* Updating for each one. */
-    while((n = fread(buf, 1, 2048, fp)) > 0)
-    {
+    while((n = fread(buf, 1, 2048, fp)) > 0) {
         buf[n] = '\0';
         SHA1_Update(&sha1_ctx, buf, n);
         MD5Update(&md5_ctx, buf, (unsigned)n);
@@ -78,17 +74,15 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 
 
     /* Setting output for md5. */
-    for(n = 0;n < 16; n++)
-    {
+    for(n = 0; n < 16; n++) {
         snprintf(md5output, 3, "%02x", md5_digest[n]);
-        md5output+=2;
+        md5output += 2;
     }
 
     /* Setting output for sha1. */
-    for (n = 0; n<SHA_DIGEST_LENGTH; n++)
-    {
+    for (n = 0; n < SHA_DIGEST_LENGTH; n++) {
         snprintf(sha1output, 3, "%02x", sha1_digest[n]);
-        sha1output+=2;
+        sha1output += 2;
     }
 
 

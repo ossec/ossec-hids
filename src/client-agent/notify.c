@@ -27,8 +27,7 @@ char *rand_keepalive_str2(char *dst, int size)
                                "0123456789"
                                "!@#$%^&*()_+-=;'[],./?";
     int i, len = rand() % (size - 1);
-    for ( i = 0; i < len; ++i )
-    {
+    for ( i = 0; i < len; ++i ) {
         dst[i] = text[rand() % (sizeof text - 1)];
     }
     dst[i] = '\0';
@@ -46,8 +45,7 @@ char *getsharedfiles()
     os_md5 md5sum;
 
 
-    if(OS_MD5_File(SHAREDCFG_FILE, md5sum) != 0)
-    {
+    if(OS_MD5_File(SHAREDCFG_FILE, md5sum) != 0) {
         md5sum[0] = 'x';
         md5sum[1] = 'x';
         md5sum[1] = '\0';
@@ -55,9 +53,8 @@ char *getsharedfiles()
 
 
     /* we control these files, max size is m_size */
-    ret = (char *)calloc(m_size +1, sizeof(char));
-    if(!ret)
-    {
+    ret = (char *)calloc(m_size + 1, sizeof(char));
+    if(!ret) {
         merror(MEM_ERROR, ARGV0);
         return(NULL);
     }
@@ -75,7 +72,7 @@ char *getsharedfiles()
 void run_notify()
 {
     char keep_alive_random[1024];
-    char tmp_msg[OS_SIZE_1024 +1];
+    char tmp_msg[OS_SIZE_1024 + 1];
     char *uname;
     char *shared_files;
     os_md5 md5sum;
@@ -88,10 +85,9 @@ void run_notify()
     curr_time = time(0);
 
 
-    #ifndef ONEWAY
+#ifndef ONEWAY
     /* Check if the server has responded */
-    if((curr_time - available_server) > agt->max_time_reconnect_try)
-    {
+    if((curr_time - available_server) > agt->max_time_reconnect_try) {
         /* If response is not available, set lock and
          * wait for it.
          */
@@ -104,12 +100,11 @@ void run_notify()
         verbose(SERVER_UP, ARGV0);
         os_delwait();
     }
-    #endif
+#endif
 
 
     /* Check if time has elapsed */
-    if((curr_time - g_saved_time) < agt->notify_time)
-    {
+    if((curr_time - g_saved_time) < agt->notify_time) {
         return;
     }
     g_saved_time = curr_time;
@@ -124,22 +119,19 @@ void run_notify()
 
     /* Getting uname */
     uname = getuname();
-    if(!uname)
-    {
-        merror(MEM_ERROR,ARGV0);
+    if(!uname) {
+        merror(MEM_ERROR, ARGV0);
         return;
     }
 
 
     /* get shared files */
     shared_files = getsharedfiles();
-    if(!shared_files)
-    {
+    if(!shared_files) {
         shared_files = strdup("\0");
-        if(!shared_files)
-        {
+        if(!shared_files) {
             free(uname);
-            merror(MEM_ERROR,ARGV0);
+            merror(MEM_ERROR, ARGV0);
             return;
         }
     }
@@ -149,13 +141,10 @@ void run_notify()
 
     /* creating message */
     if((File_DateofChange(AGENTCONFIGINT) > 0 ) &&
-       (OS_MD5_File(AGENTCONFIGINT, md5sum) == 0))
-    {
+            (OS_MD5_File(AGENTCONFIGINT, md5sum) == 0)) {
         snprintf(tmp_msg, OS_SIZE_1024, "#!-%s / %s\n%s\n%s",
                  uname, md5sum, shared_files, keep_alive_random);
-    }
-    else
-    {
+    } else {
         snprintf(tmp_msg, OS_SIZE_1024, "#!-%s\n%s\n%s",
                  uname, shared_files, keep_alive_random);
     }

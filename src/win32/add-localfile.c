@@ -29,8 +29,9 @@ int fileexist(char *file)
 
     /* Opening file */
     fp = fopen(file, "r");
-    if(!fp)
+    if(!fp) {
         return(0);
+    }
 
     fclose(fp);
     return(1);
@@ -38,22 +39,21 @@ int fileexist(char *file)
 
 int dogrep(char *file, char *str)
 {
-    char line[OS_MAXSTR +1];
+    char line[OS_MAXSTR + 1];
     FILE *fp;
 
     /* Opening file */
     fp = fopen(file, "r");
-    if(!fp)
+    if(!fp) {
         return(0);
+    }
 
     /* Clearing memory */
-    memset(line, '\0', OS_MAXSTR +1);
+    memset(line, '\0', OS_MAXSTR + 1);
 
     /* Reading file and looking for str */
-    while(fgets(line, OS_MAXSTR, fp) != NULL)
-    {
-        if(OS_Match(str, line))
-        {
+    while(fgets(line, OS_MAXSTR, fp) != NULL) {
+        if(OS_Match(str, line)) {
             fclose(fp);
             return(1);
         }
@@ -75,61 +75,53 @@ int config_file(char *name, char *file, int quiet)
 
 
     /* Checking if the file has a variable format */
-    if(strchr(file, '%') != NULL)
-    {
+    if(strchr(file, '%') != NULL) {
         time_t tm;
         struct tm *p;
 
         tm = time(NULL);
         p = localtime(&tm);
 
-        if(strftime(ffile, 255, file, p) == 0)
-        {
+        if(strftime(ffile, 255, file, p) == 0) {
             return(-1);
         }
-    }
-    else
-    {
+    } else {
         strncpy(ffile, file, 255);
     }
 
 
     /* Looking for ffile */
-    if(!fileexist(ffile))
-    {
-        if(quiet == 0)
-        {
+    if(!fileexist(ffile)) {
+        if(quiet == 0) {
             printf("%s: Log file not existent: '%s'.\n", name, file);
         }
         return(-1);
     }
 
-    if(dogrep(OSSECCONF, file))
-    {
+    if(dogrep(OSSECCONF, file)) {
         printf("%s: Log file already configured: '%s'.\n",
-                    name, file);
+               name, file);
         return(0);
     }
 
 
     /* Add iis config config */
     fp = fopen(OSSECCONF, "a");
-    if(!fp)
-    {
+    if(!fp) {
         printf("%s: Unable to edit configuration file.\n", name);
         return(0);
     }
 
-    printf("%s: Adding log file to be monitored: '%s'.\n", name,file);
+    printf("%s: Adding log file to be monitored: '%s'.\n", name, file);
     fprintf(fp, "\r\n"
-    "\r\n"
-    "<!-- Extra log file -->\r\n"
-    "<ossec_config>\r\n"
-    "  <localfile>\r\n"
-    "    <location>%s</location>\r\n"
-    "    <log_format>syslog</log_format>\r\n"
-    "  </localfile>\r\n"
-    "</ossec_config>\r\n\r\n", file);
+            "\r\n"
+            "<!-- Extra log file -->\r\n"
+            "<ossec_config>\r\n"
+            "  <localfile>\r\n"
+            "    <location>%s</location>\r\n"
+            "    <log_format>syslog</log_format>\r\n"
+            "  </localfile>\r\n"
+            "</ossec_config>\r\n\r\n", file);
 
 
     printf("%s: Action completed.\n", name);
@@ -144,27 +136,23 @@ int main(int argc, char **argv)
 {
     int quiet = 0;
 
-    if(argc < 2)
-    {
+    if(argc < 2) {
         printf("%s: Invalid syntax.\n", argv[0]);
         printf("Try: '%s <file_name>'\n\n", argv[0]);
     }
 
     /* Looking for the quiet option */
-    if((argc == 3) && (strcmp(argv[2],"--quiet") == 0))
-    {
+    if((argc == 3) && (strcmp(argv[2], "--quiet") == 0)) {
         quiet = 1;
     }
 
 
     /* Checking if ossec was installed already */
-    if(!fileexist(OSSECCONF))
-    {
+    if(!fileexist(OSSECCONF)) {
         printf("%s: Unable to find ossec config: '%s'.\n", argv[0], OSSECCONF);
     }
 
-    else
-    {
+    else {
         config_file(argv[0], argv[1], quiet);
     }
 

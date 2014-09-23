@@ -30,9 +30,9 @@ void *AR_Forward(void *arg)
     int agent_id = 0;
     int ar_location = 0;
 
-    char msg_to_send[OS_SIZE_1024 +1];
+    char msg_to_send[OS_SIZE_1024 + 1];
 
-    char msg[OS_SIZE_1024 +1];
+    char msg[OS_SIZE_1024 + 1];
     char *location = NULL;
     char *ar_location_str = NULL;
     char *ar_agent_id = NULL;
@@ -40,18 +40,15 @@ void *AR_Forward(void *arg)
 
 
     /* Creating the unix queue */
-    if((arq = StartMQ(ARQUEUE, READ)) < 0)
-    {
+    if((arq = StartMQ(ARQUEUE, READ)) < 0) {
         ErrorExit(QUEUE_ERROR, ARGV0, ARQUEUE, strerror(errno));
     }
 
-    memset(msg, '\0', OS_SIZE_1024 +1);
+    memset(msg, '\0', OS_SIZE_1024 + 1);
 
     /* Daemon loop */
-    while(1)
-    {
-        if(OS_RecvUnix(arq, OS_SIZE_1024, msg))
-        {
+    while(1) {
+        if(OS_RecvUnix(arq, OS_SIZE_1024, msg)) {
             /* Always zeroing the location */
             ar_location = 0;
 
@@ -62,8 +59,7 @@ void *AR_Forward(void *arg)
 
             /* Location is going to be the agent name */
             tmp_str = strchr(msg, ')');
-            if(!tmp_str)
-            {
+            if(!tmp_str) {
                 merror(EXECD_INV_MSG, ARGV0, msg);
                 continue;
             }
@@ -76,8 +72,7 @@ void *AR_Forward(void *arg)
 
             /* Extracting the source ip */
             tmp_str = strchr(tmp_str, ' ');
-            if(!tmp_str)
-            {
+            if(!tmp_str) {
                 merror(EXECD_INV_MSG, ARGV0, msg);
                 continue;
             }
@@ -87,30 +82,24 @@ void *AR_Forward(void *arg)
 
             /* Setting ar_location */
             ar_location_str = tmp_str;
-            if(*tmp_str == ALL_AGENTS_C)
-            {
-                ar_location|=ALL_AGENTS;
+            if(*tmp_str == ALL_AGENTS_C) {
+                ar_location |= ALL_AGENTS;
             }
             tmp_str++;
-            if(*tmp_str == REMOTE_AGENT_C)
-            {
-                ar_location|=REMOTE_AGENT;
-            }
-            else if(*tmp_str == NO_AR_C)
-            {
-                ar_location|=NO_AR_MSG;
+            if(*tmp_str == REMOTE_AGENT_C) {
+                ar_location |= REMOTE_AGENT;
+            } else if(*tmp_str == NO_AR_C) {
+                ar_location |= NO_AR_MSG;
             }
             tmp_str++;
-            if(*tmp_str == SPECIFIC_AGENT_C)
-            {
-                ar_location|=SPECIFIC_AGENT;
+            if(*tmp_str == SPECIFIC_AGENT_C) {
+                ar_location |= SPECIFIC_AGENT;
             }
 
 
             /*** Extracting the active response location ***/
             tmp_str = strchr(ar_location_str, ' ');
-            if(!tmp_str)
-            {
+            if(!tmp_str) {
                 merror(EXECD_INV_MSG, ARGV0, msg);
                 continue;
             }
@@ -121,8 +110,7 @@ void *AR_Forward(void *arg)
             /*** Extracting the agent id */
             ar_agent_id = tmp_str;
             tmp_str = strchr(tmp_str, ' ');
-            if(!tmp_str)
-            {
+            if(!tmp_str) {
                 merror(EXECD_INV_MSG, ARGV0, msg);
                 continue;
             }
@@ -131,18 +119,15 @@ void *AR_Forward(void *arg)
 
 
             /*** Creating the new message ***/
-            if(ar_location & NO_AR_MSG)
-            {
+            if(ar_location & NO_AR_MSG) {
                 snprintf(msg_to_send, OS_SIZE_1024, "%s%s",
-                                      CONTROL_HEADER,
-                                      tmp_str);
-            }
-            else
-            {
+                         CONTROL_HEADER,
+                         tmp_str);
+            } else {
                 snprintf(msg_to_send, OS_SIZE_1024, "%s%s%s",
-                                      CONTROL_HEADER,
-                                      EXECD_HEADER,
-                                      tmp_str);
+                         CONTROL_HEADER,
+                         EXECD_HEADER,
+                         tmp_str);
             }
 
 
@@ -151,20 +136,16 @@ void *AR_Forward(void *arg)
 
 
             /* Sending to ALL agents */
-            if(ar_location & ALL_AGENTS)
-            {
-                for(i = 0;i< keys.keysize; i++)
-                {
+            if(ar_location & ALL_AGENTS) {
+                for(i = 0; i < keys.keysize; i++) {
                     send_msg(i, msg_to_send);
                 }
             }
 
             /* Send to the remote agent that generated the event */
-            else if((ar_location & REMOTE_AGENT) && (location != NULL))
-            {
+            else if((ar_location & REMOTE_AGENT) && (location != NULL)) {
                 agent_id = OS_IsAllowedName(&keys, location);
-                if(agent_id < 0)
-                {
+                if(agent_id < 0) {
                     key_unlock();
                     merror(AR_NOAGENT_ERROR, ARGV0, location);
                     continue;
@@ -174,14 +155,12 @@ void *AR_Forward(void *arg)
             }
 
             /* Send to a pre-defined agent */
-            else if(ar_location & SPECIFIC_AGENT)
-            {
+            else if(ar_location & SPECIFIC_AGENT) {
                 ar_location++;
 
                 agent_id = OS_IsAllowedID(&keys, ar_agent_id);
 
-                if(agent_id < 0)
-                {
+                if(agent_id < 0) {
                     key_unlock();
                     merror(AR_NOAGENT_ERROR, ARGV0, ar_agent_id);
                     continue;

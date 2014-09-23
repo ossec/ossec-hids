@@ -25,17 +25,13 @@ void os_setwait()
     __wait_lock = 1;
 
 
-    if(isChroot())
-    {
+    if(isChroot()) {
         fp = fopen(WAIT_FILE, "w");
-    }
-    else
-    {
+    } else {
         fp = fopen(WAIT_FILE_PATH, "w");
     }
 
-    if(fp)
-    {
+    if(fp) {
         fprintf(fp, "l");
         fclose(fp);
     }
@@ -49,12 +45,9 @@ void os_delwait()
 {
     __wait_lock = 0;
 
-    if(isChroot())
-    {
+    if(isChroot()) {
         unlink(WAIT_FILE);
-    }
-    else
-    {
+    } else {
         unlink(WAIT_FILE_PATH);
     }
     return;
@@ -69,16 +62,17 @@ void os_delwait()
 #ifdef WIN32
 void os_wait()
 {
-    if(!__wait_lock)
+    if(!__wait_lock) {
         return;
+    }
 
 
     /* Wait until the lock is gone. */
     verbose(WAITING_MSG, __local_name);
-    while(1)
-    {
-        if(!__wait_lock)
+    while(1) {
+        if(!__wait_lock) {
             break;
+        }
 
         /* Sleep LOCK_LOOP seconds and check it lock is gone. */
         sleep(LOCK_LOOP);
@@ -99,31 +93,28 @@ void os_wait()
 
     /* If the wait file is not present, keep going.
      */
-    if(isChroot())
-    {
-        if(stat(WAIT_FILE, &file_status) == -1)
+    if(isChroot()) {
+        if(stat(WAIT_FILE, &file_status) == -1) {
             return;
-    }
-    else
-    {
-        if(stat(WAIT_FILE_PATH, &file_status) == -1)
+        }
+    } else {
+        if(stat(WAIT_FILE_PATH, &file_status) == -1) {
             return;
+        }
     }
 
 
     /* Wait until the lock is gone. */
     verbose(WAITING_MSG, __local_name);
-    while(1)
-    {
-        if(isChroot())
-        {
-            if(stat(WAIT_FILE, &file_status) == -1)
+    while(1) {
+        if(isChroot()) {
+            if(stat(WAIT_FILE, &file_status) == -1) {
                 break;
-        }
-        else
-        {
-            if(stat(WAIT_FILE_PATH, &file_status) == -1)
+            }
+        } else {
+            if(stat(WAIT_FILE_PATH, &file_status) == -1) {
                 break;
+            }
         }
 
         /* Sleep LOCK_LOOP seconds and check it lock is gone. */

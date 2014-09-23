@@ -16,16 +16,14 @@
 #ifndef _OS_LIST
 #define _OS_LIST
 
-typedef struct _OSListNode
-{
+typedef struct _OSListNode {
     struct _OSListNode *next;
     struct _OSListNode *prev;
     void *data;
-}OSListNode;
+} OSListNode;
 
 
-typedef struct _OSList
-{
+typedef struct _OSList {
     OSListNode *first_node;
     OSListNode *last_node;
     OSListNode *cur_node;
@@ -34,7 +32,7 @@ typedef struct _OSList
     int max_size;
 
     void (*free_data_function)(void *data);
-}OSList;
+} OSList;
 
 
 OSList *OSList_Create(void);

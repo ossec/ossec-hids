@@ -38,7 +38,7 @@ void help_agentlessd()
 int main(int argc, char **argv)
 {
     int c, test_config = 0, run_foreground = 0;
-    int uid=0,gid=0;
+    int uid = 0, gid = 0;
     char *dir  = DEFAULTDIR;
     char *user = USER;
     char *group = GROUPGLOBAL;
@@ -49,8 +49,8 @@ int main(int argc, char **argv)
     OS_SetName(ARGV0);
 
 
-    while((c = getopt(argc, argv, "Vdhtfu:g:D:c:")) != -1){
-        switch(c){
+    while((c = getopt(argc, argv, "Vdhtfu:g:D:c:")) != -1) {
+        switch(c) {
             case 'V':
                 print_version();
                 break;
@@ -62,25 +62,29 @@ int main(int argc, char **argv)
                 break;
             case 'f':
                 run_foreground = 1;
-            break;
+                break;
             case 'u':
-                if(!optarg)
-                    ErrorExit("%s: -u needs an argument",ARGV0);
-                user=optarg;
+                if(!optarg) {
+                    ErrorExit("%s: -u needs an argument", ARGV0);
+                }
+                user = optarg;
                 break;
             case 'g':
-                if(!optarg)
-                    ErrorExit("%s: -g needs an argument",ARGV0);
-                group=optarg;
+                if(!optarg) {
+                    ErrorExit("%s: -g needs an argument", ARGV0);
+                }
+                group = optarg;
                 break;
             case 'D':
-                if(!optarg)
-                    ErrorExit("%s: -D needs an argument",ARGV0);
-                dir=optarg;
+                if(!optarg) {
+                    ErrorExit("%s: -D needs an argument", ARGV0);
+                }
+                dir = optarg;
                 break;
             case 'c':
-                if(!optarg)
-                    ErrorExit("%s: -c needs an argument",ARGV0);
+                if(!optarg) {
+                    ErrorExit("%s: -c needs an argument", ARGV0);
+                }
                 cfg = optarg;
                 break;
             case 't':
@@ -95,36 +99,36 @@ int main(int argc, char **argv)
 
 
     /* Starting daemon */
-    debug1(STARTED_MSG,ARGV0);
+    debug1(STARTED_MSG, ARGV0);
 
 
     /* Check if the user/group given are valid */
     uid = Privsep_GetUser(user);
     gid = Privsep_GetGroup(group);
-    if((uid < 0)||(gid < 0))
-        ErrorExit(USER_ERROR,ARGV0,user,group);
+    if((uid < 0) || (gid < 0)) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
+    }
 
 
     /* Reading config. */
     c = 0;
-    c|= CAGENTLESS;
+    c |= CAGENTLESS;
     lessdc.entries = NULL;
     lessdc.queue = 0;
 
-    if(ReadConfig(c, cfg, &lessdc, NULL) < 0)
-    {
+    if(ReadConfig(c, cfg, &lessdc, NULL) < 0) {
         ErrorExit(XML_INV_AGENTLESS, ARGV0);
     }
 
 
     /* Exit here if test config is set */
-    if(test_config)
+    if(test_config) {
         exit(0);
+    }
 
 
     /* Going on daemon mode */
-    if(!run_foreground)
-    {
+    if(!run_foreground) {
         nowDaemon();
         goDaemonLight();
     }
@@ -132,24 +136,25 @@ int main(int argc, char **argv)
 
 
     /* Exiting if not configured. */
-    if(!lessdc.entries)
-    {
+    if(!lessdc.entries) {
         verbose("%s: INFO: Not configured. Exiting.", ARGV0);
         exit(0);
     }
 
 
     /* Privilege separation */
-    if(Privsep_SetGroup(gid) < 0)
-        ErrorExit(SETGID_ERROR,ARGV0,group);
+    if(Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group);
+    }
 
 
     /* Changing user */
-    if(Privsep_SetUser(uid) < 0)
-        ErrorExit(SETUID_ERROR,ARGV0,user);
+    if(Privsep_SetUser(uid) < 0) {
+        ErrorExit(SETUID_ERROR, ARGV0, user);
+    }
 
 
-    debug1(PRIVSEP_MSG,ARGV0,dir,user);
+    debug1(PRIVSEP_MSG, ARGV0, dir, user);
 
 
 
@@ -159,15 +164,16 @@ int main(int argc, char **argv)
 
 
     /* Creating PID files */
-    if(CreatePID(ARGV0, getpid()) < 0)
-        ErrorExit(PID_ERROR,ARGV0);
+    if(CreatePID(ARGV0, getpid()) < 0) {
+        ErrorExit(PID_ERROR, ARGV0);
+    }
 
 
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
 
-    /* the real daemon now */	
+    /* the real daemon now */
     Agentlessd();
     exit(0);
 }

@@ -80,16 +80,14 @@ int main(int argc, char **argv)
     struct sockaddr_in addr;
 
 
-    while((c = getopt(argc, argv, "h:p:")) != -1)
-    {
-        switch(c){
+    while((c = getopt(argc, argv, "h:p:")) != -1) {
+        switch(c) {
             case 'h':
                 host = optarg;
                 break;
             case 'p':
                 port = atoi(optarg);
-                if(port <= 0 || port >= 65536)
-                {
+                if(port <= 0 || port >= 65536) {
                     exit(1);
                 }
                 break;
@@ -99,42 +97,37 @@ int main(int argc, char **argv)
         }
     }
 
-    if(!bio_err)
-    {
+    if(!bio_err) {
         SSL_library_init();
         SSL_load_error_strings();
         OpenSSL_add_all_algorithms();
-        bio_err = BIO_new_fp(stderr,BIO_NOCLOSE);
+        bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
     }
 
     sslmeth = SSLv23_method();
     ctx = SSL_CTX_new(sslmeth);
-    if(!ctx)
-    {
+    if(!ctx) {
         printf("CTX ERROR\n");
         exit(1);
     }
 
-    if(!host)
-    {
+    if(!host) {
         printf("ERROR - host not set.\n");
         exit(1);
     }
 
     /* Connecting via TCP */
-    sock = socket(AF_INET,SOCK_STREAM, IPPROTO_TCP);
-    if(sock < 0)
-    {
+    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if(sock < 0) {
         printf("sock error\n");
         exit(1);
     }
 
-    memset(&addr,0,sizeof(addr));
+    memset(&addr, 0, sizeof(addr));
     addr.sin_addr.s_addr = inet_addr(host);
-    addr.sin_family=AF_INET;
-    addr.sin_port=htons(port);
-    if(connect(sock,(struct sockaddr *)&addr, sizeof(addr)) < 0)
-    {
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    if(connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         printf("connect error\n");
         exit(1);
     }
@@ -146,8 +139,7 @@ int main(int argc, char **argv)
     sbio = BIO_new_socket(sock, BIO_NOCLOSE);
     SSL_set_bio(ssl, sbio, sbio);
     ret = SSL_connect(ssl);
-    if(ret <= 0)
-    {
+    if(ret <= 0) {
         printf("SSL connect error\n");
         ERR_print_errors_fp(stderr);
         exit(1);
@@ -156,39 +148,36 @@ int main(int argc, char **argv)
     printf("Connected!\n");
 
 
-    ret=SSL_write(ssl,TEST, sizeof(TEST));
-    if(ret < 0)
-    {
+    ret = SSL_write(ssl, TEST, sizeof(TEST));
+    if(ret < 0) {
         printf("SSL write error\n");
         ERR_print_errors_fp(stderr);
         exit(1);
     }
 
-    while(1)
-    {
+    while(1) {
         char buf[2048];
-        ret = SSL_read(ssl,buf,sizeof(buf) -1);
+        ret = SSL_read(ssl, buf, sizeof(buf) - 1);
         printf("ret: %d\n", ret);
-        switch(SSL_get_error(ssl,ret))
-        {
-        case SSL_ERROR_NONE:
-          buf[ret] = '\0';
-          printf("no error: %s\n", buf);
-          break;
-        case SSL_ERROR_ZERO_RETURN:
-          printf("no returen\n");
-           exit(1);
-          break;
-        case SSL_ERROR_SYSCALL:
-          fprintf(stderr,
-            "SSL Error: Premature close\n");
-           exit(1);
-           break;
-        default:
-          printf("default error\n");
-           exit(1);
-          break;
-      }
+        switch(SSL_get_error(ssl, ret)) {
+            case SSL_ERROR_NONE:
+                buf[ret] = '\0';
+                printf("no error: %s\n", buf);
+                break;
+            case SSL_ERROR_ZERO_RETURN:
+                printf("no returen\n");
+                exit(1);
+                break;
+            case SSL_ERROR_SYSCALL:
+                fprintf(stderr,
+                        "SSL Error: Premature close\n");
+                exit(1);
+                break;
+            default:
+                printf("default error\n");
+                exit(1);
+                break;
+        }
 
     }
 
