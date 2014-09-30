@@ -48,13 +48,13 @@ int k_import(char *cmdimport)
     FILE *fp;
     char *user_input;
     char *b64_dec;
+    int result;
 
     char *name; char *ip; char *tmp_key;
 
     char line_read[FILE_SIZE +1];
 
     #ifdef WIN32
-    int result;
     int cmdlen;
     int caclslen;
     char *comspec;
@@ -133,25 +133,27 @@ int k_import(char *cmdimport)
 
                 if(user_input[0] == 'y' || user_input[0] == 'Y')
                 {
+                    /* create empty file or truncate file if it exists */
                     fp = fopen(KEYS_FILE,"w");
                     if(!fp)
                     {
                         ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE);
                     }
-                    fprintf(fp,"%s\n",line_read);
                     fclose(fp);
 
+                    /* set permissions on keys file */
                     #ifndef WIN32
-                    chmod(KEYS_FILE, 0440);
+                    result = chmod(KEYS_FILE, 0440);
+
+                    if (result != 0)
+                    {
+                        ErrorExit(CHMOD_ERROR, KEYS_FILE, result, strerror(result));
+                    }
                     #else
                     /* Get cmd location from environment */
                     comspec = getenv("COMSPEC");
                     if (comspec == NULL || strncmp(comspec, "", strlen(comspec) == 0))
                     {
-                        if(unlink(KEYS_FILE))
-                        {
-                            verbose(DELETE_ERROR, KEYS_FILE);
-                        }
                         ErrorExit(COMPSEC_ERROR);
                     }
 
@@ -165,9 +167,9 @@ int k_import(char *cmdimport)
                     cmdlen = strlen(comspec) + 5 + caclslen;
                     char cmd[cmdlen];
                     snprintf(cmd, cmdlen, "%s /c %s", comspec, caclscmd);
-                    
-                     /* Log command being run */
-                     log2file("%s: INFO: Running the following command (%s)", ARGV0, cmd);
+
+                    /* Log command being run */
+                    log2file("%s: INFO: Running the following command (%s)", ARGV0, cmd);
 
                     ZeroMemory(&si, sizeof(si));
                     si.cb = sizeof(si);
@@ -176,10 +178,6 @@ int k_import(char *cmdimport)
                     if(!CreateProcess(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL,
                                       &si, &pi))
                     {
-                        if(unlink(KEYS_FILE))
-                        {
-                            verbose(DELETE_ERROR, KEYS_FILE);
-                        }
                         ErrorExit(PROC_ERROR, cmd);
                     }
 
@@ -195,22 +193,23 @@ int k_import(char *cmdimport)
 
                     if (!result)
                     {
-                        if(unlink(KEYS_FILE))
-                        {
-                            verbose(DELETE_ERROR, KEYS_FILE);
-                        }
                         ErrorExit(RESULT_ERROR, cmd, GetLastError());
                     }
 
                     if (exit_code)
                     {
-                        if(unlink(KEYS_FILE))
-                        {
-                            verbose(DELETE_ERROR, KEYS_FILE);
-                        }
                         ErrorExit(CACLS_ERROR, cmd, exit_code);
                     }
                     #endif
+
+                    /* write key to keys file */
+                    fp = fopen(KEYS_FILE,"w");
+                    if(!fp)
+                    {
+                        ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE);
+                    }
+                    fprintf(fp,"%s\n",line_read);
+                    fclose(fp);
 
                     /* Removing sender counter. */
                     OS_RemoveCounter("sender");
