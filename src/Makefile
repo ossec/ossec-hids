@@ -102,7 +102,7 @@ endif
 
 CFLAGS+=${DEFINES}
 CFLAGS+=-Wall -Wextra -O2
-CFLAGS+=-I./ -I./headers/
+CFLAGS+=-I./ -I./headers/ -I./external/lua/src 
 
 
 BUILDLIB=ar -crus
@@ -529,7 +529,7 @@ winagent:
 ####################
 
 .PHONY: external lua
-external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a ${EXTERNAL_LUA}src/liblua.a 
 
 lua:
 	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
@@ -537,6 +537,8 @@ lua:
 ${EXTERNAL_ZLIB}libz.a:
 	cd ${EXTERNAL_ZLIB} && ./configure && ${MAKE} libz.a
 
+${EXTERNAL_LUA}src/liblua.a: $(wildcard ${EXTERNAL_LUA}src/*.c) 
+	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
 
 #### zlib ##########
 
@@ -576,8 +578,11 @@ libcJSON.a: ${cjson_o}
 #### OSSEC Libs ####
 ####################
 
-ossec_libs = os_crypto.a config.a shared.a os_net.a os_regex.a os_xml.a
+ossec_libs = ${EXTERNAL_LUA}src/liblua.a os_crypto.a config.a shared.a os_net.a os_regex.a os_xml.a 
 
+
+lua.a: deps 
+	cp 
 #### os_xml ########
 
 os_xml_c := $(wildcard os_xml/*.c)
