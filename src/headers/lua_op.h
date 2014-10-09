@@ -8,6 +8,7 @@
 
 #define LUA_HANDLER_REG_NAME "__lua_handler"
 #define LUA_HANDLE_DEFAULT_FAILURE_MAX 5
+#define LUA_STATE_DEFAULT "default"
 
 typedef struct _lua_handler_t {
     lua_State *L;
@@ -19,7 +20,7 @@ typedef struct _lua_handler_t {
 
 
 lua_handler_t *lua_states_get(const char *name);
-int lua_state_add(lua_handler_t *handler);
+int lua_states_add(lua_handler_t *handler);
 lua_handler_t *lua_states_del(const char *name);
 
 lua_handler_t *lua_handler_new(const char *name);
@@ -27,6 +28,7 @@ int lua_handler_lib_add(lua_handler_t *self, const char *lib_name, const luaL_Re
 int lua_handler_load(lua_handler_t *self, const char *fname);
 void lua_handler_destroy(lua_handler_t **self_p);
 int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresults, int errfunc);
+int lua_handler_load_function(lua_handler_t *self, const char *s);
 
 #endif 
 

@@ -229,6 +229,11 @@
 #define INV_OFFSET      "%s(2120): ERROR: Invalid offset value: '%s'"
 #define INV_ATTR        "%s(2121): ERROR: Invalid decoder attribute: '%s'"
 
+#define ERR_LUA_LOAD_CONFIG   "%s(2150): ERROR: Error in loading lua details above"
+#define ERR_LUA_NOOTHER       "%s(2151): ERROR: Lua defined without regex/program_name/match/parent in decoder: %s"
+
+
+
 
 /* os_zlib */
 #define COMPRESS_ERR    "%s(2201): ERROR: Error compressing string: '%s'."
@@ -287,6 +292,9 @@
 #define DB_CLOSING      "%s(5209): INFO: Closing connection to database."
 #define DB_ATTEMPT      "%s(5210): INFO: Attempting to reconnect to database."
 
+/* lua errors */
+
+#define ERR_LUA_STATE_NOT_DEFINED "%s(5300): ERROR: Lua state %s is referenced but not defined"
 
 
 /* Verbose messages */

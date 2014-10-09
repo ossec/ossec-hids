@@ -38,6 +38,7 @@ ifeq (${uname_S},Linux)
 		DEFINES+=-DUSEINOTIFY
 #		DEFINES+=-DUSE_MAGIC
 		LDFLAGS+=-lpthread
+		LDFLAGS+=-lm
 #		LDFLAGS+=-lmagic
 else
 ifeq (${uname_S},AIX)
@@ -49,6 +50,7 @@ ifeq (${uname_S},SunOS)
 		DEFINES+=-DSOLARIS
 		DEFINES+=-DHIGHFIRST
 		LDFLAGS+=-lsocket -lnsl -lresolv
+		LDFLAGS+=-lm
 		LUA_PLAT=solaris
 		PATH=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
 
@@ -57,16 +59,17 @@ ifeq (${uname_S},Darwin)
 		DEFINES+=-DDarwin
 		DEFINES+=-DHIGHFIRST
 		LUA_PLAT=macosx
-
 else
 ifeq (${uname_S},FreeBSD)
 		DEFINES+=-DFreeBSD
 		LDFLAGS+=-pthread
+		LDFLAGS+=-lm
 		LUA_PLAT=freebsd
 else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
 		DEFINES+=-pthread
+		LDFLAGS+=-lm
 		LUA_PLAT=posix
 else
 ifeq (${uname_S},HP-UX)
@@ -578,7 +581,7 @@ libcJSON.a: ${cjson_o}
 #### OSSEC Libs ####
 ####################
 
-ossec_libs = ${EXTERNAL_LUA}src/liblua.a os_crypto.a config.a shared.a os_net.a os_regex.a os_xml.a 
+ossec_libs = os_crypto.a config.a shared.a os_net.a os_regex.a os_xml.a ${EXTERNAL_LUA}src/liblua.a 
 
 
 lua.a: deps 

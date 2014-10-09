@@ -7,7 +7,9 @@
 #include <lualib.h>
 
 #include "hash_op.h"
+#include "debug_op.h"
 #include "lua_op.h"
+
 
 
 /* Global Lists of States */ 
@@ -199,6 +201,26 @@ int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresu
     }
 }
 
+int lua_handler_load_function(lua_handler_t *self, const char *s)
+{
+    int result; 
+    luaL_loadstring(self->L, s);
+    if(lua_pcall(self->L, 0, 1, 0) != 0) {
+        debug2("Error in Lua: \n %s\n", s); 
+        debug2("Error: %s\n", lua_tostring(self->L, -1));
+        lua_pop(self->L, 1);
+        goto error; 
+    } else if (lua_isfunction(self->L, -1)) {
+        result = luaL_ref(self->L, LUA_REGISTRYINDEX);
+        if (result == LUA_REFNIL) {
+            debug2("Error could not luaL_reg function: %s\n", s );
+            goto error; 
+        }
+        return(result); /* return int that will allow ref to function in future */
+    }
+error: 
+    return(0);
+}
 /*
 int lua_handler_tick(lua_handler_t *self) 
 {

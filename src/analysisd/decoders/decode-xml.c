@@ -191,6 +191,16 @@ int ReadDecodeAttrs(char **names, char **values)
     return(AFTER_ERROR);
 }
 
+int decoder_verify_lua(OSDecoderInfo *self) {
+    /* LUA must be gated with other attributes */
+    if(self->lua) {
+        if(pi->regex == NULL && pi->parent == NULL && pi->program_name == NULL && pi->prematch == NULL) {
+            merror("");
+            return(1); 
+        }
+    }
+    return(0); 
+}
 
 /* ReaddecodeXML */
 int ReadDecodeXML(char *file)
@@ -201,20 +211,23 @@ int ReadDecodeXML(char *file)
     /* XML variables */
     /* These are the available options for the rule configuration */
 
-    char *xml_plugindecoder = "plugin_decoder";
-    char *xml_decoder = "decoder";
-    char *xml_decoder_name = "name";
-    char *xml_decoder_status = "status";
-    char *xml_usename = "use_own_name";
-    char *xml_parent = "parent";
-    char *xml_program_name = "program_name";
-    char *xml_prematch = "prematch";
-    char *xml_regex = "regex";
-    char *xml_order = "order";
-    char *xml_type = "type";
-    char *xml_fts = "fts";
-    char *xml_ftscomment = "ftscomment";
-    char *xml_accumulate = "accumulate";
+    const char *xml_plugindecoder = "plugin_decoder";
+    const char *xml_decoder = "decoder";
+    const char *xml_decoder_name = "name";
+    const char *xml_decoder_status = "status";
+    const char *xml_usename = "use_own_name";
+    const char *xml_parent = "parent";
+    const char *xml_program_name = "program_name";
+    const char *xml_prematch = "prematch";
+    const char *xml_regex = "regex";
+    const char *xml_order = "order";
+    const char *xml_type = "type";
+    const char *xml_fts = "fts";
+    const char *xml_ftscomment = "ftscomment";
+    const char *xml_accumulate = "accumulate";
+
+    const char *xml_lua = "lua"; 
+    const char *xml_lua_attr_state = "state"; 
 
     int i = 0;
     OSDecoderInfo *NULL_Decoder_tmp = NULL;
@@ -336,6 +349,7 @@ int ReadDecodeXML(char *file)
         pi->order = NULL;
         pi->plugindecoder = NULL;
         pi->fts = 0;
+        pi->lua = NULL; 
         pi->accumulate = 0;
         pi->type = SYSLOG;
         pi->prematch = NULL;
@@ -345,6 +359,7 @@ int ReadDecodeXML(char *file)
         pi->get_next = 0;
         pi->regex_offset = 0;
         pi->prematch_offset = 0;
+
 
         regex = NULL;
         prematch = NULL;
@@ -465,6 +480,38 @@ int ReadDecodeXML(char *file)
             {
                 if(strcmp(elements[j]->content,"true") == 0)
                     pi->use_own_name = 1;
+            }
+
+            else if(strcasecmp(elements[j]->element, xml_lua)==0)
+            {
+                lua_handler_t *lua = NULL; 
+                int list_att_num = 0;
+
+                if(!elements[j]->attributes || !elements[j]->values) {
+                    pi->lua = lua_states_get(LUA_STATE_DEFAULT);
+                    debug2("Lua State %s used into decoder %s", LUA_STATE_DEFAULT, pi->name);
+                    if(pi->lua == NULL) {
+                        pi->lua = lua_handler_new(LUA_STATE_DEFAULT);
+                        lua_states_add(pi->lua);
+                    }
+                } else {
+                    list_att_num = 0;
+                    while(elements[j]->attributes[list_att_num]) {
+                        if(strcasecmp(elements[j]->attributes[list_att_num],xml_lua_attr_state)==0) {
+                            pi->lua = lua_states_get(elements[j]->attributes[list_att_num]);
+                            if(pi->lua==NULL) {
+                                merror(ERR_LUA_STATE_NOT_DEFINED, ARGV0, elements[j]->attributes[list_att_num]);
+                                return(0); 
+                            }
+                            pi->lua_function = lua_handler_load_function(pi->lua, elements[j]->content); 
+                            if (pi->lua_function == 0) {
+                                merror(ERR_LUA_LOAD_CONFIG, ARGV0);
+                                return(0); 
+                            }
+                            debug2("Lua State %s in decoder %s", elements[j]->attributes[list_att_num],  pi->name);
+                        }
+                    }
+                }
             }
 
             else if(strcasecmp(elements[j]->element, xml_plugindecoder) == 0)
@@ -713,6 +760,8 @@ int ReadDecodeXML(char *file)
                 return(0);
             }
 
+            /* Verify State of Decoder */
+
             /* NEXT */
             j++;
 
@@ -720,6 +769,10 @@ int ReadDecodeXML(char *file)
 
         OS_ClearNode(elements);
 
+        if(decoder_verify_lua(pi)) {
+            merror(ERR_LUA_NOOTHER, ARGV0, pi->name); 
+            return(0);
+        }
 
         /* Prematch must be set */
         if(!prematch && !pi->parent && !p_name)
