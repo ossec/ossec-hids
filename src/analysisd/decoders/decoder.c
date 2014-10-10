@@ -23,14 +23,85 @@
 #include "eventinfo.h"
 #include "decoder.h"
 
+void decoder_destroy(OSDecoderInfo **self_p) 
+{
+    if (*self_p) {
+        OSDecoderInfo *self = *self_p; 
+        if(self->parent) { free(self->parent); }
+        if(self->name) { free(self->name);  }
+        if(self->ftscomment) { free(self->ftscomment); }
+        if(self->lua) { self->lua = NULL; }
+        if(self->regex) { free(self->regex); }
+        if(self->prematch) { free(self->prematch); }
+        if(self->program_name) { free(self->program_name); }
+        /* 
+         * XXX Free self->order 
+         *
+         */
+        self_p = NULL; 
+    }
+}
+OSDecoderInfo *decoder_new(char *name)
+{
+    OSDecoderInfo *pi = (OSDecoderInfo *)calloc(1,sizeof(OSDecoderInfo));
+    check_mem(pi);
+    pi->parent = NULL;
+    pi->id = 0;
+    pi->name = strdup(name);
+    pi->order = NULL;
+    pi->plugindecoder = NULL;
+    pi->fts = 0;
+    pi->lua = NULL; 
+    pi->accumulate = 0;
+    pi->type = SYSLOG;
+    pi->prematch = NULL;
+    pi->program_name = NULL;
+    pi->regex = NULL;
+    pi->use_own_name = 0;
+    pi->get_next = 0;
+    pi->regex_offset = 0;
+    pi->prematch_offset = 0;
+    return pi; 
 
-/* 
- *
- * 
- *
- */
-int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
+error: 
+    decoder_destroy(&pi);
+    return NULL;
+}
 
+int decoder_set_parent(OSDecoderInfo *self, const char *parent) {
+    self->parent = strdup(parent);
+    check_mem(self->parent); 
+    return 0;
+error:
+    return 1;
+}
+
+int decoder_set_name(OSDecoderInfo *self, const char *name) 
+{
+    if (self->name) {
+        return 2;
+    }
+    self->name = strdup(name);
+    check_mem(self->name); 
+    return 0;
+error:
+    return 1;
+}
+
+int decoder_set_ftscomment(OSDecoderInfo *self, const char *ftscomment) 
+{
+    if(self->ftscomment) {
+        return 2;
+    }
+    self->ftscomment = strdup(ftscomment);
+    check_mem(self->ftscomment); 
+    return 0;
+error:
+    return 1;
+}
+
+int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) 
+{
     d("starting run_lua");
     int t; 
     const char *key; 

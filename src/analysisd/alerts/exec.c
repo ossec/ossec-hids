@@ -56,6 +56,7 @@ void OS_Exec(int *execq, int *arq, Eventinfo *lf, active_response *ar)
             if(OS_IPFoundList(ip, Config.white_list))
             {
                 return;
+
             }
         }
 

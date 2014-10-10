@@ -202,6 +202,8 @@ int decoder_verify_lua(OSDecoderInfo *self) {
     return(0); 
 }
 
+
+
 /* ReaddecodeXML */
 int ReadDecodeXML(char *file)
 {
@@ -334,31 +336,12 @@ int ReadDecodeXML(char *file)
         }
 
         /* Creating the OSDecoderInfo */
-        pi = (OSDecoderInfo *)calloc(1,sizeof(OSDecoderInfo));
+        pi = decoder_new(node[i]->values[0]);
         if(pi == NULL)
         {
             merror(MEM_ERROR,ARGV0);
             return(0);
         }
-
-
-        /* Default values to the list */
-        pi->parent = NULL;
-        pi->id = 0;
-        pi->name = strdup(node[i]->values[0]);
-        pi->order = NULL;
-        pi->plugindecoder = NULL;
-        pi->fts = 0;
-        pi->lua = NULL; 
-        pi->accumulate = 0;
-        pi->type = SYSLOG;
-        pi->prematch = NULL;
-        pi->program_name = NULL;
-        pi->regex = NULL;
-        pi->use_own_name = 0;
-        pi->get_next = 0;
-        pi->regex_offset = 0;
-        pi->prematch_offset = 0;
 
 
         regex = NULL;

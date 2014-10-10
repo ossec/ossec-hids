@@ -66,6 +66,17 @@ typedef struct _OSDecoderNode
 }OSDecoderNode;
 
 
+/*
+ * decoder obj functions 
+ */
+
+OSDecoderInfo *decoder_new(char *name);
+void decoder_destroy(OSDecoderInfo **self_p);
+/*
+int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf);
+int decoder_set(OSDecoderInfo *self, const char *key, void *value);
+*/
+
 
 /* Functions to Create the list, Add a osdecoder to the
  * list and to get the first osdecoder.
