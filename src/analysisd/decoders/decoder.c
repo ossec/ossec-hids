@@ -14,7 +14,7 @@
  */
 
 
-#define d(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define d(M, ...) //fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
 #include "shared.h"
 #include "os_regex/os_regex.h"
@@ -104,8 +104,29 @@ int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
                           #endif
                       } else if (strcasecmp(key,"dstuser")==0) {
                           lf->dstuser = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstuser: '%s'", lf->dstuser);
+                          #endif
                       } else if (strcasecmp(key,"dstport")==0) {
                           lf->dstport = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstport: '%s'", lf->dstport);
+                          #endif
+                      } else if (strcasecmp(key,"srcip")==0) {
+                          lf->srcip = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcip: '%s'", lf->srcip);
+                          #endif
+                      } else if (strcasecmp(key,"srcuser")==0) {
+                          lf->srcuser = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcuser: '%s'", lf->srcuser);
+                          #endif
+                      } else if (strcasecmp(key,"srcport")==0) {
+                          lf->srcport = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcport: '%s'", lf->srcport);
+                          #endif
                       }
                       d("%s => %s\n", key, value);
                       // pop value + copy of key, leaving original key
@@ -114,7 +135,6 @@ int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
 
             }
             lua_pop(self->lua->L,1); 
-            lua_handler_stack_dump(self->lua->L);
             return 0; 
         case LUA_TNIL: /* dont do anything */ 
             lua_pop(self->lua->L,1);

@@ -198,10 +198,8 @@ int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresu
                 lua_tostring(self->L, -1));
         //pcall failed exit error
         lua_pop(self->L, 1);
-        lua_handler_stack_dump(self->L);
         return 0;
     } else {
-        lua_handler_stack_dump(self->L);
         return 1;
     }
 }
