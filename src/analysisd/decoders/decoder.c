@@ -99,6 +99,9 @@ int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
                       value = lua_tostring(self->lua->L, -2);
                       if(strcasecmp(key,"dstip")==0) {
                           lf->dstip = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstip: '%s'", lf->dstip);
+                          #endif
                       } else if (strcasecmp(key,"dstuser")==0) {
                           lf->dstuser = strdup(value); 
                       } else if (strcasecmp(key,"dstport")==0) {
