@@ -484,12 +484,11 @@ int ReadDecodeXML(char *file)
 
             else if(strcasecmp(elements[j]->element, xml_lua)==0)
             {
-                lua_handler_t *lua = NULL; 
                 int list_att_num = 0;
 
                 if(!elements[j]->attributes || !elements[j]->values) {
                     pi->lua = lua_states_get(LUA_STATE_DEFAULT);
-                    printf("Lua State %s used into decoder %s\n", LUA_STATE_DEFAULT, pi->name);
+                    debug2("Lua State %s used into decoder %s\n", LUA_STATE_DEFAULT, pi->name);
                     if(pi->lua == NULL) {
                         pi->lua = lua_handler_new(LUA_STATE_DEFAULT);
                         lua_states_add(pi->lua);
@@ -508,7 +507,7 @@ int ReadDecodeXML(char *file)
                     }
                 }
                 if(pi->lua) {
-                    printf("Adding lua function\n");
+                    debug2("Adding lua function\n");
                     pi->lua_function = lua_handler_load_function(pi->lua, elements[j]->content); 
                     printf("%d\n",pi->lua_function); 
                     if (pi->lua_function == 0) {

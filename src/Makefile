@@ -103,6 +103,11 @@ ifdef ONEWAY
 	DEFINES+=-DONEWAY
 endif
 
+ifdef DEV_DEBUG 
+	DEFINES+=-DDEBUGAD
+	DEFINES+=-DDEV_DEBUG
+endif
+
 CFLAGS+=${DEFINES}
 CFLAGS+=-Wall -Wextra -O2
 CFLAGS+=-I./ -I./headers/ -I./external/lua/src 

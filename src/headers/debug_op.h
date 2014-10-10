@@ -45,6 +45,11 @@ void log2file(const char * msg,... ) __attribute__((format(printf, 1, 2))) __att
 
 void ErrorExit(const char *msg,...) __attribute__((format(printf, 1, 2))) __attribute__((nonnull)) __attribute__ ((noreturn));
 
+#ifdef DEV_DEBUG 
+#define d(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+#define d(M, ...) // fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#endif
 
 /* Use these three functions to set when you
  * enter in debug, chroot or daemon mode

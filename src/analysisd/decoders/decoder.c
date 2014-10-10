@@ -14,7 +14,6 @@
  */
 
 
-#define d(M, ...) //fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
 #include "shared.h"
 #include "os_regex/os_regex.h"
@@ -24,20 +23,18 @@
 #include "eventinfo.h"
 #include "decoder.h"
 
-/*
-    char *log;
-    char *full_log;
-    char *location;
-    char *hostname;
-    char *program_name;
- */
 
+/* 
+ *
+ * 
+ *
+ */
 int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
 
     d("starting run_lua");
     int t; 
-    char *key; 
-    char *value; 
+    const char *key; 
+    const char *value; 
 
     if(self->lua == NULL) {
         d("no lua");
@@ -127,7 +124,38 @@ int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
                           #ifdef TESTRULE
                           if(!alert_only)print_out("       srcport: '%s'", lf->srcport);
                           #endif
+                      } else if (strcasecmp(key,"protocol")==0) {
+                          lf->protocol = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       protocol: '%s'", lf->protocol);
+                          #endif
+                      } else if (strcasecmp(key,"action")==0) {
+                          lf->action = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       action: '%s'", lf->action);
+                          #endif
+                      } else if (strcasecmp(key,"status")==0) {
+                          lf->status = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       status: '%s'", lf->status);
+                          #endif
+                      } else if (strcasecmp(key,"url")==0) {
+                          lf->url = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       url: '%s'", lf->url);
+                          #endif
+                      } else if (strcasecmp(key,"data")==0) {
+                          lf->data = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       data: '%s'", lf->data);
+                          #endif
+                      } else if (strcasecmp(key,"data")==0) {
+                          lf->data = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       data: '%s'", lf->data);
+                          #endif
                       }
+
                       d("%s => %s\n", key, value);
                       // pop value + copy of key, leaving original key
                       lua_pop(self->lua->L, 2);
@@ -396,18 +424,21 @@ void DecodeEvent(Eventinfo *lf)
                     i++;
                 }
 
+
+                if(nnode->lua) {
+                    if(decoder_run_lua(nnode, lf) && nnode->get_next) {
+                        child_node = child_node->next;
+                        nnode = child_node->osdecoder;
+                        continue;
+                    } 
+                }
+
                 /* If we have a next regex, try getting it */
                 if(nnode->get_next)
                 {
-                    d("get_next");
                     child_node = child_node->next;
                     nnode = child_node->osdecoder;
                     continue;
-                }
-
-                if(nnode->lua) {
-                    d("starting lua");
-                    decoder_run_lua(nnode, lf); 
                 }
 
                 d("Breaking out of regex");
