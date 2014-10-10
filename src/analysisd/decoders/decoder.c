@@ -156,7 +156,7 @@ int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
                           #endif
                       }
 
-                      d("%s => %s\n", key, value);
+                      d(" - %s => %s", key, value);
                       // pop value + copy of key, leaving original key
                       lua_pop(self->lua->L, 2);
                       // stack now contains: -1 => key; -2 => table
