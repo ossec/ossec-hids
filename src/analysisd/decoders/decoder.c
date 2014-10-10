@@ -14,6 +14,8 @@
  */
 
 
+#define d(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
 #include "shared.h"
 #include "os_regex/os_regex.h"
 #include "os_xml/os_xml.h"
@@ -22,6 +24,108 @@
 #include "eventinfo.h"
 #include "decoder.h"
 
+/*
+    char *log;
+    char *full_log;
+    char *location;
+    char *hostname;
+    char *program_name;
+ */
+
+int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) {
+
+    d("starting run_lua");
+    int t; 
+    char *key; 
+    char *value; 
+
+    if(self->lua == NULL) {
+        d("no lua");
+        return 0; 
+    }
+
+    if (self->lua_function == 0) {
+        d("no function"); 
+        return 0; 
+    }
+    lua_newtable(self->lua->L); 
+
+    if(lf->log) {
+        lua_pushstring(self->lua->L, "log");
+        lua_pushstring(self->lua->L, lf->log); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->full_log) {
+        lua_pushstring(self->lua->L, "full_log");
+        lua_pushstring(self->lua->L, lf->full_log); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->location) {
+        lua_pushstring(self->lua->L, "location");
+        lua_pushstring(self->lua->L, lf->location); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->hostname) {
+        lua_pushstring(self->lua->L, "hostname");
+        lua_pushstring(self->lua->L, lf->hostname); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->program_name) {
+        lua_pushstring(self->lua->L, "program_name");
+        lua_pushstring(self->lua->L, lf->program_name); 
+        lua_settable(self->lua->L, -3);
+    }
+
+
+    /* Run lua code */
+    d("pcall");
+    if(!(lua_handler_pcall(self->lua, self->lua_function, 1, 1, 0))) {
+        d("pcall done");
+        goto error; 
+    }
+
+    /* output of lua code */ 
+    t =  lua_type(self->lua->L, -1);
+    switch(t) {
+        case LUA_TTABLE: /* set values based on output Table */ 
+            d("in table");
+            lua_pushnil(self->lua->L); 
+            while (lua_next(self->lua->L, -2)) {
+                      // stack now contains: -1 => value; -2 => key; -3 => table
+                      // copy the key so that lua_tostring does not modify the original
+                      lua_pushvalue(self->lua->L, -2);
+                      // stack now contains: -1 => key; -2 => value; -3 => key; -4 => table
+                      key = lua_tostring(self->lua->L, -1);
+                      value = lua_tostring(self->lua->L, -2);
+                      if(strcasecmp(key,"dstip")==0) {
+                          lf->dstip = strdup(value); 
+                      } else if (strcasecmp(key,"dstuser")==0) {
+                          lf->dstuser = strdup(value); 
+                      } else if (strcasecmp(key,"dstport")==0) {
+                          lf->dstport = strdup(value); 
+                      }
+                      d("%s => %s\n", key, value);
+                      // pop value + copy of key, leaving original key
+                      lua_pop(self->lua->L, 2);
+                      // stack now contains: -1 => key; -2 => table
+
+            }
+            lua_pop(self->lua->L,1); 
+            lua_handler_stack_dump(self->lua->L);
+            return 0; 
+        case LUA_TNIL: /* dont do anything */ 
+            lua_pop(self->lua->L,1);
+            return 0;
+            break;
+        default:
+            lua_pop(self->lua->L,1); 
+            goto error; 
+    }
+
+error: 
+    d("error");
+    return 1; 
+}
 
 
 /* DecodeEvent.
@@ -59,6 +163,7 @@ void DecodeEvent(Eventinfo *lf)
     do
     {
         nnode = node->osdecoder;
+        d("start do: nnode-name: %s", nnode->name);
 
 
         /* First checking program name */
@@ -112,6 +217,7 @@ void DecodeEvent(Eventinfo *lf)
             while(child_node)
             {
                 nnode = child_node->osdecoder;
+                d("prematch: %s", nnode->name);
 
 
                 /* If we have a pre match and it matches, keep
@@ -192,6 +298,7 @@ void DecodeEvent(Eventinfo *lf)
         {
             if(nnode->regex)
             {
+                d("regex: %s", nnode->name);
                 int i = 0;
 
                 /* With regex we have multiple options
@@ -203,16 +310,20 @@ void DecodeEvent(Eventinfo *lf)
                  */
                 if(nnode->regex_offset)
                 {
+                    d("Regex offset");
                     if(nnode->regex_offset & AFTER_PARENT)
                     {
+                        d("after_parent");
                         llog = pmatch;
                     }
                     else if(nnode->regex_offset & AFTER_PREMATCH)
                     {
+                        d("AFTER_PREMATCH");
                         llog = cmatch;
                     }
                     else if(nnode->regex_offset & AFTER_PREVREGEX)
                     {
+                        d("AFTER_PREVREGEX");
                         if(!regex_prev)
                             llog = cmatch;
                         else
@@ -221,20 +332,24 @@ void DecodeEvent(Eventinfo *lf)
                 }
                 else
                 {
+                    d("No Regex offset");
                     llog = lf->log;
                 }
 
                 /* If Regex does not match, return */
                 if(!(regex_prev = OSRegex_Execute(llog, nnode->regex)))
                 {
+                    d("Regex does not match");
                     if(nnode->get_next)
                     {
                         child_node = child_node->next;
                         nnode = child_node->osdecoder;
                         continue;
                     }
+                    d("return");
                     return;
                 }
+                d("it matched: %s",llog);
 
 
                 /* Fixing next pointer */
@@ -243,6 +358,7 @@ void DecodeEvent(Eventinfo *lf)
 
                 while(nnode->regex->sub_strings[i])
                 {
+                    d(" order sub");
                     if(nnode->order[i])
                     {
                         nnode->order[i](lf, nnode->regex->sub_strings[i]);
@@ -260,19 +376,30 @@ void DecodeEvent(Eventinfo *lf)
                 /* If we have a next regex, try getting it */
                 if(nnode->get_next)
                 {
+                    d("get_next");
                     child_node = child_node->next;
                     nnode = child_node->osdecoder;
                     continue;
                 }
 
+                if(nnode->lua) {
+                    d("starting lua");
+                    decoder_run_lua(nnode, lf); 
+                }
+
+                d("Breaking out of regex");
                 break;
             }
 
+
             /* If we don't have a regex, we may leave now */
+            d("No regex return");
             return;
         }
 
+        d("nnode->name: %s", nnode->name); 
         /* ok to return  */
+        d("ok to return "); 
         return;
     }while((node=node->next) != NULL);
 

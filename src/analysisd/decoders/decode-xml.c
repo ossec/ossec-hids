@@ -194,8 +194,8 @@ int ReadDecodeAttrs(char **names, char **values)
 int decoder_verify_lua(OSDecoderInfo *self) {
     /* LUA must be gated with other attributes */
     if(self->lua) {
-        if(pi->regex == NULL && pi->parent == NULL && pi->program_name == NULL && pi->prematch == NULL) {
-            merror("");
+        if(self->regex == NULL && self->parent == NULL && self->program_name == NULL && self->prematch == NULL) {
+            merror("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
             return(1); 
         }
     }
@@ -489,7 +489,7 @@ int ReadDecodeXML(char *file)
 
                 if(!elements[j]->attributes || !elements[j]->values) {
                     pi->lua = lua_states_get(LUA_STATE_DEFAULT);
-                    debug2("Lua State %s used into decoder %s", LUA_STATE_DEFAULT, pi->name);
+                    printf("Lua State %s used into decoder %s\n", LUA_STATE_DEFAULT, pi->name);
                     if(pi->lua == NULL) {
                         pi->lua = lua_handler_new(LUA_STATE_DEFAULT);
                         lua_states_add(pi->lua);
@@ -503,13 +503,17 @@ int ReadDecodeXML(char *file)
                                 merror(ERR_LUA_STATE_NOT_DEFINED, ARGV0, elements[j]->attributes[list_att_num]);
                                 return(0); 
                             }
-                            pi->lua_function = lua_handler_load_function(pi->lua, elements[j]->content); 
-                            if (pi->lua_function == 0) {
-                                merror(ERR_LUA_LOAD_CONFIG, ARGV0);
-                                return(0); 
-                            }
-                            debug2("Lua State %s in decoder %s", elements[j]->attributes[list_att_num],  pi->name);
+                            printf("Lua State %s in decoder %s\n", elements[j]->attributes[list_att_num],  pi->name);
                         }
+                    }
+                }
+                if(pi->lua) {
+                    printf("Adding lua function\n");
+                    pi->lua_function = lua_handler_load_function(pi->lua, elements[j]->content); 
+                    printf("%d\n",pi->lua_function); 
+                    if (pi->lua_function == 0) {
+                        merror(ERR_LUA_LOAD_CONFIG, ARGV0);
+                        return(0); 
                     }
                 }
             }
@@ -782,10 +786,12 @@ int ReadDecodeXML(char *file)
             return(0);
         }
 
-        /* If pi->regex is not set, fts must not be set too */
-        if((!regex && (pi->fts || pi->order)) || (regex && !pi->order))
-        {
-            merror(DEC_REGEX_ERROR, ARGV0, pi->name);
+        if(!regex && pi->fts) {
+            merror("%s(2107) ERROR: fts requires regex decoder %s\n", ARGV0, pi->name); 
+            return(0);
+        }
+        if(!regex && pi->order) {
+            merror("%s(2107) ERROR: order requires regex decoder %s\n", ARGV0, pi->name); 
             return(0);
         }
 
@@ -794,6 +800,7 @@ int ReadDecodeXML(char *file)
         if((pi->regex_offset & AFTER_PARENT) && !pi->parent)
         {
             merror(INV_OFFSET, ARGV0, "after_parent");
+                    printf("803\n");
             merror(DEC_REGEX_ERROR, ARGV0, pi->name);
             return(0);
         }

@@ -15,8 +15,7 @@
 /* Global Lists of States */ 
 OSHash *lua_states_g = NULL; 
 
-/*
-static void stack_dump(lua_State *L)
+void lua_handler_stack_dump(lua_State *L)
 {
     int i;
     int top = lua_gettop(L);
@@ -36,7 +35,6 @@ static void stack_dump(lua_State *L)
         }
     }
 }
- */
 
 
 lua_handler_t *lua_states_get(const char *name)
@@ -186,18 +184,25 @@ void lua_handler_destroy(lua_handler_t **self_p)
 
 
 int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresults, int errfunc) {
-    //stack_dump(self->L);
-    //lua_rawgeti(self->L, LUA_REGISTRYINDEX, action_func);
-    //stack_dump(self->L);
+
+    /* push function stack: 1: table 2: function */
+    lua_rawgeti(self->L, LUA_REGISTRYINDEX, action_func);
+    /* push table from 1 to stack: 1: table 2: function 3: table */
+    lua_pushvalue(self->L, nargs);
+    /* remove 1st table from stack: 1: function 2: table */
+    lua_remove(self->L, 1);
+
     if(lua_pcall(self->L, nargs, nresults, errfunc ) != 0 ) {
         printf("lau_handler_pcall error for %s in pcall: %s\n", 
                 self->name, 
                 lua_tostring(self->L, -1));
         //pcall failed exit error
         lua_pop(self->L, 1);
-        return 1;
-    } else {
+        lua_handler_stack_dump(self->L);
         return 0;
+    } else {
+        lua_handler_stack_dump(self->L);
+        return 1;
     }
 }
 

@@ -24,6 +24,7 @@ int lua_states_add(lua_handler_t *handler);
 lua_handler_t *lua_states_del(const char *name);
 
 lua_handler_t *lua_handler_new(const char *name);
+void lua_handler_stack_dump(lua_State *L);
 int lua_handler_lib_add(lua_handler_t *self, const char *lib_name, const luaL_Reg *lib_functs);
 int lua_handler_load(lua_handler_t *self, const char *fname);
 void lua_handler_destroy(lua_handler_t **self_p);
