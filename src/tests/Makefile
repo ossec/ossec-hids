@@ -29,6 +29,7 @@ run_tests: build_tests
 	./test_os_crypto
 	./test_os_net
 	./test_shared
+	./test_shared_hash
 
 
 run_valgrind: build_tests
@@ -47,7 +48,8 @@ generate_coverage: build_tests
 	genhtml --branch-coverage --output-directory coverage-report/ --title "ossec test coverage" --show-details --legend --num-spaces 4 --quiet ossec.test
 
 
-build_tests: test_os_zlib test_os_xml test_os_regex test_os_crypto test_os_net test_shared
+
+build_tests: test_os_zlib test_os_xml test_os_regex test_os_crypto test_os_net test_shared test_shared_hash
 
 test_os_zlib: test_os_zlib.c ../os_zlib/os_zlib.c ../external/zlib-1.2.8/libz.a
 	${CC} ${CFLAGS_TEST} $+ ${CHECK_LINK} -o $@
@@ -71,5 +73,14 @@ SHARED_SRCS = ../shared/custom_output_search_replace.c ../shared/debug_op.c ../s
 test_shared: test_shared.c ${SHARED_SRCS} ../headers/*.h
 	${CC} ${CFLAGS_TEST} test_shared.c ${SHARED_SRCS} ${CHECK_LINK} -o $@
 
+HASH_SRC = ../shared/hash_op.c ../shared/debug_op.c ../shared/math_op.c
+test_shared_hash: test_shared_hash.c  ${hash_op.c} ../headers/*.h 
+	${CC} ${CFLAGS_TEST} test_shared_hash.c ${HASH_SRC} ${CHECK_LINK} -o $@
+
+
+
+
 clean:
-	rm -f test_os_zlib test_os_xml test_os_regex test_os_crypto test_os_net test_shared coverage-report/ ossec.test
+	rm -f test_os_zlib test_os_xml test_os_regex test_os_crypto test_os_net test_shared test_shared_hash coverage-report/ ossec.test 
+	rm -f *.gcda *.gcno 
+	rm -rf *.dSYM
