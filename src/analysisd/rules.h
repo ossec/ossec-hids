@@ -133,6 +133,9 @@ typedef struct _RuleInfo
     OSMatch *match;
     OSRegex *regex;
 
+    lua_handler_t *lua; 
+    int lua_function; 
+
     /* Policy-based rules */
     char *day_time;
     char *week_day;

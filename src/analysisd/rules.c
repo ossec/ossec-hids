@@ -15,6 +15,7 @@
 
 
 
+#include "shared.h"
 #include "rules.h"
 #include "config.h"
 #include "eventinfo.h"
@@ -46,7 +47,6 @@ int getDecoderfromlist(char *name);
 extern int _max_freq;
 
 
-
 /* Rules_OP_ReadRules, v0.1, 2005/07/04
  * Will initialize the rules list
  */
@@ -71,71 +71,75 @@ int Rules_OP_ReadRules(char * rulefile)
     /* XML variables */
     /* These are the available options for the rule configuration */
 
-    char *xml_group = "group";
-    char *xml_rule = "rule";
+    const char *xml_group = "group";
+    const char *xml_rule = "rule";
 
-    char *xml_regex = "regex";
-    char *xml_match = "match";
-    char *xml_decoded = "decoded_as";
-    char *xml_category = "category";
-    char *xml_cve = "cve";
-    char *xml_info = "info";
-    char *xml_day_time = "time";
-    char *xml_week_day = "weekday";
-    char *xml_comment = "description";
-    char *xml_ignore = "ignore";
-    char *xml_check_if_ignored = "check_if_ignored";
+    const char *xml_regex = "regex";
+    const char *xml_match = "match";
+    const char *xml_decoded = "decoded_as";
+    const char *xml_category = "category";
+    const char *xml_cve = "cve";
+    const char *xml_info = "info";
+    const char *xml_day_time = "time";
+    const char *xml_week_day = "weekday";
+    const char *xml_comment = "description";
+    const char *xml_ignore = "ignore";
+    const char *xml_check_if_ignored = "check_if_ignored";
 
-    char *xml_srcip = "srcip";
-    char *xml_srcport = "srcport";
-    char *xml_dstip = "dstip";
-    char *xml_dstport = "dstport";
-    char *xml_user = "user";
-    char *xml_url = "url";
-    char *xml_id = "id";
-    char *xml_data = "extra_data";
-    char *xml_hostname = "hostname";
-    char *xml_program_name = "program_name";
-    char *xml_status = "status";
-    char *xml_action = "action";
-    char *xml_compiled = "compiled_rule";
+    const char *xml_srcip = "srcip";
+    const char *xml_srcport = "srcport";
+    const char *xml_dstip = "dstip";
+    const char *xml_dstport = "dstport";
+    const char *xml_user = "user";
+    const char *xml_url = "url";
+    const char *xml_id = "id";
+    const char *xml_data = "extra_data";
+    const char *xml_hostname = "hostname";
+    const char *xml_program_name = "program_name";
+    const char *xml_status = "status";
+    const char *xml_action = "action";
+    const char *xml_compiled = "compiled_rule";
 
-    char *xml_list = "list";
-    char *xml_list_lookup = "lookup";
-    char *xml_list_field = "field";
-    char *xml_list_cvalue = "check_value";
-    char *xml_match_key = "match_key";
-    char *xml_not_match_key = "not_match_key";
-    char *xml_match_key_value = "match_key_value";
-    char *xml_address_key = "address_match_key";
-    char *xml_not_address_key = "not_address_match_key";
-    char *xml_address_key_value = "address_match_key_value";
+    const char *xml_lua = "lua"; 
+    const char *xml_lua_attr_state = "state"; 
 
-    char *xml_if_sid = "if_sid";
-    char *xml_if_group = "if_group";
-    char *xml_if_level = "if_level";
-    char *xml_fts = "if_fts";
 
-    char *xml_if_matched_regex = "if_matched_regex";
-    char *xml_if_matched_group = "if_matched_group";
-    char *xml_if_matched_sid = "if_matched_sid";
+    const char *xml_list = "list";
+    const char *xml_list_lookup = "lookup";
+    const char *xml_list_field = "field";
+    const char *xml_list_cvalue = "check_value";
+    const char *xml_match_key = "match_key";
+    const char *xml_not_match_key = "not_match_key";
+    const char *xml_match_key_value = "match_key_value";
+    const char *xml_address_key = "address_match_key";
+    const char *xml_not_address_key = "not_address_match_key";
+    const char *xml_address_key_value = "address_match_key_value";
 
-    char *xml_same_source_ip = "same_source_ip";
-    char *xml_same_src_port = "same_src_port";
-    char *xml_same_dst_port = "same_dst_port";
-    char *xml_same_user = "same_user";
-    char *xml_same_location = "same_location";
-    char *xml_same_id = "same_id";
-    char *xml_dodiff = "check_diff";
+    const char *xml_if_sid = "if_sid";
+    const char *xml_if_group = "if_group";
+    const char *xml_if_level = "if_level";
+    const char *xml_fts = "if_fts";
 
-    char *xml_different_url = "different_url";
+    const char *xml_if_matched_regex = "if_matched_regex";
+    const char *xml_if_matched_group = "if_matched_group";
+    const char *xml_if_matched_sid = "if_matched_sid";
 
-    char *xml_notsame_source_ip = "not_same_source_ip";
-    char *xml_notsame_user = "not_same_user";
-    char *xml_notsame_agent = "not_same_agent";
-    char *xml_notsame_id = "not_same_id";
+    const char *xml_same_source_ip = "same_source_ip";
+    const char *xml_same_src_port = "same_src_port";
+    const char *xml_same_dst_port = "same_dst_port";
+    const char *xml_same_user = "same_user";
+    const char *xml_same_location = "same_location";
+    const char *xml_same_id = "same_id";
+    const char *xml_dodiff = "check_diff";
 
-    char *xml_options = "options";
+    const char *xml_different_url = "different_url";
+
+    const char *xml_notsame_source_ip = "not_same_source_ip";
+    const char *xml_notsame_user = "not_same_user";
+    const char *xml_notsame_agent = "not_same_agent";
+    const char *xml_notsame_id = "not_same_id";
+
+    const char *xml_options = "options";
 
     char *rulepath;
 
@@ -400,6 +404,39 @@ int Rules_OP_ReadRules(char * rulefile)
                 {
                     if((!rule_opt[k]->element)||(!rule_opt[k]->content))
                         break;
+
+                    else if(strcasecmp(rule_opt[k]->element, xml_lua)==0)
+                    {
+                        int list_att_num = 0;
+
+                        if(!rule_opt[k]->attributes || !rule_opt[k]->values) {
+                            config_ruleinfo->lua = lua_states_get(LUA_STATE_DEFAULT);
+                            if(config_ruleinfo->lua == NULL) {
+                                config_ruleinfo->lua = lua_handler_new(LUA_STATE_DEFAULT);
+                                lua_states_add(config_ruleinfo->lua);
+                            }
+                        } else {
+                            list_att_num = 0;
+                            while(rule_opt[k]->attributes[list_att_num]) {
+                                if(strcasecmp(rule_opt[k]->attributes[list_att_num],xml_lua_attr_state)==0) {
+                                    config_ruleinfo->lua = lua_states_get(rule_opt[k]->attributes[list_att_num]);
+                                    if(config_ruleinfo->lua==NULL) {
+                                        merror(ERR_LUA_STATE_NOT_DEFINED, ARGV0, rule_opt[k]->attributes[list_att_num]);
+                                        return(0); 
+                                    }
+                                }
+                            }
+                        }
+                        if(config_ruleinfo->lua) {
+                            debug2("Adding lua function\n");
+                            config_ruleinfo->lua_function = lua_handler_load_function(config_ruleinfo->lua, rule_opt[k]->content); 
+                            printf("%d\n",config_ruleinfo->lua_function); 
+                            if (config_ruleinfo->lua_function == 0) {
+                                merror(ERR_LUA_LOAD_CONFIG, ARGV0);
+                                return(0); 
+                            }
+                        }
+                    }
                     else if(strcasecmp(rule_opt[k]->element,xml_regex)==0)
                     {
                         regex =
@@ -1650,6 +1687,8 @@ RuleInfo *zerorulemember(int id, int level,
     ruleinfo_pt->regex = NULL;
     ruleinfo_pt->match = NULL;
     ruleinfo_pt->decoded_as = 0;
+    ruleinfo_pt->lua = NULL; 
+    ruleinfo_pt->lua_function = 0; 
 
     ruleinfo_pt->comment = NULL;
     ruleinfo_pt->info = NULL;

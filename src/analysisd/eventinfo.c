@@ -581,6 +581,7 @@ void Free_Eventinfo(Eventinfo *lf)
     if(lf->systemname)
         free(lf->systemname);
 
+
     if(lf->filename)
         free(lf->filename);
     if (lf->md5_before)
