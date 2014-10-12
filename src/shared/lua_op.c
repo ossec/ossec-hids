@@ -24,13 +24,13 @@ void lua_handler_stack_dump(lua_State *L)
         int t = lua_type(L, i);
         switch(t) {
         case LUA_TSTRING:
-            printf(" %d: %s\n", i, lua_tostring(L, i));
+            debug1(" %d: %s\n", i, lua_tostring(L, i));
             break;
         case LUA_TNUMBER:
-            printf(" %d: %g\n", i,  lua_tonumber(L, i));
+            debug1(" %d: %g\n", i,  lua_tonumber(L, i));
             break;
         default:
-            printf(" %d: %s\n", i, lua_typename(L, t));
+            debug1(" %d: %s\n", i, lua_typename(L, t));
             break;
         }
     }
@@ -89,6 +89,7 @@ lua_handler_t *lua_handler_getself(lua_State *L)
 static int ossec_log_debug(lua_State, *L)
 {
     
+
 }
 
 static int ossec_log_info(lua_State, *L)
@@ -124,7 +125,6 @@ lua_handler_t *lua_handler_new(const char *name)
     return self;
 
 error:
-    //printf("goto: error in new\n");
     if (self) {
         lua_handler_destroy(&self);
     }
@@ -141,15 +141,13 @@ int lua_handler_lib_add(lua_handler_t *self, const char *lib_name, const luaL_Re
 int lua_handler_load(lua_handler_t *self, const char *fname) 
 {
     // Loadfile **********************************************
-    //
-    //printf("\n\n");
     if(luaL_loadfile(self->L, fname)) {
-        printf("Could not load the file: %s\n", lua_tostring(self->L, -1));
+        debug2("Could not load the file: %s\n", lua_tostring(self->L, -1));
         goto error;
     } 
 
     if(lua_pcall(self->L, 0, 0, 0) != 0) {
-        printf("lua_handler_new error for %s in loadfile pcall: %s\n", fname, lua_tostring(self->L, -1));
+        debug2("lua_handler_new error for %s in loadfile pcall: %s\n", fname, lua_tostring(self->L, -1));
         goto error;
     }
     return 0;
@@ -193,7 +191,7 @@ int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresu
     lua_remove(self->L, 1);
 
     if(lua_pcall(self->L, nargs, nresults, errfunc ) != 0 ) {
-        printf("lau_handler_pcall error for %s in pcall: %s\n", 
+        debug1("lau_handler_pcall error for %s in pcall: %s\n", 
                 self->name, 
                 lua_tostring(self->L, -1));
         //pcall failed exit error
