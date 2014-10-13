@@ -59,6 +59,184 @@ void Rules_OP_CreateRules()
     return;
 }
 
+int rules_info_run_lua(RuleInfo *self, Eventinfo *lf)
+{
+    if(self->lua == NULL) {
+        d("No lua rule");
+        return (0); 
+    }
+    lua_newtable(self->lua->L); 
+
+    if(lf->log) {
+        lua_pushstring(self->lua->L, "log");
+        lua_pushstring(self->lua->L, lf->log); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->full_log) {
+        lua_pushstring(self->lua->L, "full_log");
+        lua_pushstring(self->lua->L, lf->full_log); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->location) {
+        lua_pushstring(self->lua->L, "location");
+        lua_pushstring(self->lua->L, lf->location); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->hostname) {
+        lua_pushstring(self->lua->L, "hostname");
+        lua_pushstring(self->lua->L, lf->hostname); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->program_name) {
+        lua_pushstring(self->lua->L, "program_name");
+        lua_pushstring(self->lua->L, lf->program_name); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->id) {
+        lua_pushstring(self->lua->L, "id");
+        lua_pushstring(self->lua->L, lf->id); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->dstip) {
+        lua_pushstring(self->lua->L, "dstip");
+        lua_pushstring(self->lua->L, lf->dstip); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->dstuser) {
+        lua_pushstring(self->lua->L, "dstuser");
+        lua_pushstring(self->lua->L, lf->dstuser); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->dstport) {
+        lua_pushstring(self->lua->L, "dstport");
+        lua_pushstring(self->lua->L, lf->dstport); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->srcip) {
+        lua_pushstring(self->lua->L, "srcip");
+        lua_pushstring(self->lua->L, lf->srcip); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->srcuser) {
+        lua_pushstring(self->lua->L, "srcuser");
+        lua_pushstring(self->lua->L, lf->srcuser); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->srcport) {
+        lua_pushstring(self->lua->L, "srcport");
+        lua_pushstring(self->lua->L, lf->srcport); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->action) {
+        lua_pushstring(self->lua->L, "action");
+        lua_pushstring(self->lua->L, lf->action); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->url) {
+        lua_pushstring(self->lua->L, "url");
+        lua_pushstring(self->lua->L, lf->url); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->protocol) {
+        lua_pushstring(self->lua->L, "protocol");
+        lua_pushstring(self->lua->L, lf->protocol); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->data) {
+        lua_pushstring(self->lua->L, "data");
+        lua_pushstring(self->lua->L, lf->data); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->command) {
+        lua_pushstring(self->lua->L, "command");
+        lua_pushstring(self->lua->L, lf->command); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->systemname) {
+        lua_pushstring(self->lua->L, "systemname");
+        lua_pushstring(self->lua->L, lf->systemname); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->filename) {
+        lua_pushstring(self->lua->L, "filename");
+        lua_pushstring(self->lua->L, lf->filename); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->md5_before) {
+        lua_pushstring(self->lua->L, "md5_before");
+        lua_pushstring(self->lua->L, lf->md5_before); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->md5_after) {
+        lua_pushstring(self->lua->L, "md5_after");
+        lua_pushstring(self->lua->L, lf->md5_after); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->sha1_before) {
+        lua_pushstring(self->lua->L, "sha1_before");
+        lua_pushstring(self->lua->L, lf->sha1_before); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->sha1_after) {
+        lua_pushstring(self->lua->L, "sha1_after");
+        lua_pushstring(self->lua->L, lf->sha1_after); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->size_before) {
+        lua_pushstring(self->lua->L, "size_before");
+        lua_pushstring(self->lua->L, lf->size_before); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->size_after) {
+        lua_pushstring(self->lua->L, "size_after");
+        lua_pushstring(self->lua->L, lf->size_after); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->owner_before) {
+        lua_pushstring(self->lua->L, "owner_before");
+        lua_pushstring(self->lua->L, lf->owner_before); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->owner_after) {
+        lua_pushstring(self->lua->L, "owner_after");
+        lua_pushstring(self->lua->L, lf->owner_after); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->gowner_before) {
+        lua_pushstring(self->lua->L, "gowner_before");
+        lua_pushstring(self->lua->L, lf->gowner_before); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->gowner_after) {
+        lua_pushstring(self->lua->L, "gowner_after");
+        lua_pushstring(self->lua->L, lf->gowner_after); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->perm_before) {
+        lua_pushstring(self->lua->L, "perm_before");
+        lua_pushinteger(self->lua->L, lf->perm_before); 
+        lua_settable(self->lua->L, -3);
+    }
+    if(lf->perm_after) {
+        lua_pushstring(self->lua->L, "perm_after");
+        lua_pushinteger(self->lua->L, lf->perm_after); 
+        lua_settable(self->lua->L, -3);
+    }
+
+    /* Run lua code */
+    d("pcall");
+    if(!(lua_handler_pcall(self->lua, self->lua_function, 1, 1, 0))) {
+        d("pcall done");
+        /* XXX Need to grab the lua error */
+        goto error; 
+    }
+    /* XXX Need to deal without correct */
+
+error:
+    d("lua rule error");
+    return 1; 
+}
+
 /* Rules_OP_ReadRules, v0.3, 2005/03/21
  * Read the log rules.
  * v0.3: Fixed many memory problems.

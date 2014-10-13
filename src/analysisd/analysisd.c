@@ -1659,6 +1659,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
     if(currently_rule->lua && currently_rule->lua_function) {
         /*do stuff here */
         d("running a lua rule");
+        rules_info_run_lua(currently_rule, lf);
     }
 
 
