@@ -225,7 +225,7 @@ int rules_info_run_lua(RuleInfo *self, Eventinfo *lf)
 
     /* Run lua code */
     d("pcall");
-    if(!(lua_handler_pcall(self->lua, self->lua_function, 1, 1, 0))) {
+    if(!(os_lua_pcall(self->lua, self->lua_function, 1, 1, 0))) {
         d("pcall done");
         /* XXX Need to grab the lua error */
         goto error; 
@@ -590,8 +590,10 @@ int Rules_OP_ReadRules(char * rulefile)
                         if(!rule_opt[k]->attributes || !rule_opt[k]->values) {
                             config_ruleinfo->lua = lua_states_get(LUA_STATE_DEFAULT);
                             if(config_ruleinfo->lua == NULL) {
-                                config_ruleinfo->lua = lua_handler_new(LUA_STATE_DEFAULT);
+                                config_ruleinfo->lua = os_lua_new(LUA_STATE_DEFAULT);
                                 lua_states_add(config_ruleinfo->lua);
+                                os_lua_load_core(config_ruleinfo->lua); 
+                                os_lua_load_lib(config_ruleinfo->lua, "log", luaopen_log);
                             }
                         } else {
                             list_att_num = 0;
@@ -607,7 +609,7 @@ int Rules_OP_ReadRules(char * rulefile)
                         }
                         if(config_ruleinfo->lua) {
                             debug2("Adding lua function\n");
-                            config_ruleinfo->lua_function = lua_handler_load_function(config_ruleinfo->lua, rule_opt[k]->content); 
+                            config_ruleinfo->lua_function = os_lua_load_function(config_ruleinfo->lua, rule_opt[k]->content); 
                             printf("%d\n",config_ruleinfo->lua_function); 
                             if (config_ruleinfo->lua_function == 0) {
                                 merror(ERR_LUA_LOAD_CONFIG, ARGV0);

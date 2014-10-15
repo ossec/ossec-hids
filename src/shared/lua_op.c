@@ -15,7 +15,7 @@
 /* Global Lists of States */ 
 OSHash *lua_states_g = NULL; 
 
-void lua_handler_stack_dump(lua_State *L)
+void os_lua_stack_dump(lua_State *L)
 {
     int i;
     int top = lua_gettop(L);
@@ -37,10 +37,10 @@ void lua_handler_stack_dump(lua_State *L)
 }
 
 
-lua_handler_t *lua_states_get(const char *name)
+os_lua_t *lua_states_get(const char *name)
 {
     if(lua_states_g) {
-        return (lua_handler_t *)OSHash_Get(lua_states_g, name); 
+        return (os_lua_t *)OSHash_Get(lua_states_g, name); 
     } else {
         return NULL; 
     }
@@ -52,7 +52,7 @@ lua_handler_t *lua_states_get(const char *name)
  * Returns 2 on success
  * Key must not be NULL.
  */
-int lua_states_add(lua_handler_t *handler) 
+int lua_states_add(os_lua_t *handler) 
 {
     if (lua_states_g == NULL) { 
         lua_states_g = OSHash_Create();
@@ -63,11 +63,11 @@ int lua_states_add(lua_handler_t *handler)
     return OSHash_Add(lua_states_g, handler->name, handler);
 }
 
-lua_handler_t *lua_states_del(const char *name) {
+os_lua_t *lua_states_del(const char *name) {
     if(lua_states_g == NULL) {
         return NULL; 
     }
-    return (lua_handler_t *)OSHash_Delete(lua_states_g, name); 
+    return (os_lua_t *)OSHash_Delete(lua_states_g, name); 
 }
 
 
@@ -77,10 +77,10 @@ lua_handler_t *lua_states_del(const char *name) {
 
 
 
-lua_handler_t *lua_handler_getself(lua_State *L)
+os_lua_t *os_lua_getself(lua_State *L)
 {
-    lua_getfield(L, LUA_REGISTRYINDEX, LUA_HANDLER_REG_NAME);
-    lua_handler_t *self = lua_touserdata(L, -1);
+    lua_getfield(L, LUA_REGISTRYINDEX, OS_LUA_REG_NAME);
+    os_lua_t *self = lua_touserdata(L, -1);
     return self;
 }
 
@@ -106,10 +106,10 @@ static const struct luaL_Reg ossec_log_functs[] = {
 */
 
 
-lua_handler_t *lua_handler_new(const char *name)
+os_lua_t *os_lua_new(const char *name)
 {
 
-    lua_handler_t *self = (lua_handler_t *)malloc(sizeof(lua_handler_t));
+    os_lua_t *self = (os_lua_t *)malloc(sizeof(os_lua_t));
     if (self == NULL) {
         goto error;
     }
@@ -117,28 +117,28 @@ lua_handler_t *lua_handler_new(const char *name)
     self->L = luaL_newstate();
     self->name = strdup(name);
 
-    luaL_openlibs(self->L);
+    //luaL_openlibs(self->L);
     lua_pushlightuserdata(self->L, self);
-    lua_setfield(self->L, LUA_REGISTRYINDEX, LUA_HANDLER_REG_NAME);
-    //lua_handler_lib_add(self, "ar", ar_functs);
+    lua_setfield(self->L, LUA_REGISTRYINDEX, OS_LUA_REG_NAME);
+    //os_lua_lib_add(self, "ar", ar_functs);
 
     return self;
 
 error:
     if (self) {
-        lua_handler_destroy(&self);
+        os_lua_destroy(&self);
     }
     return NULL;
 }
 
-int lua_handler_lib_add(lua_handler_t *self, const char *lib_name, const luaL_Reg *lib_functs)
+int os_lua_lib_add(os_lua_t *self, const char *lib_name, const luaL_Reg *lib_functs)
 {
     luaL_newlib(self->L, lib_functs);
     lua_setglobal(self->L, lib_name);
     return 0; 
 }
 
-int lua_handler_load(lua_handler_t *self, const char *fname) 
+int os_lua_load(os_lua_t *self, const char *fname) 
 {
     // Loadfile **********************************************
     if(luaL_loadfile(self->L, fname)) {
@@ -147,7 +147,7 @@ int lua_handler_load(lua_handler_t *self, const char *fname)
     } 
 
     if(lua_pcall(self->L, 0, 0, 0) != 0) {
-        debug2("lua_handler_new error for %s in loadfile pcall: %s\n", fname, lua_tostring(self->L, -1));
+        debug2("os_lua_new error for %s in loadfile pcall: %s\n", fname, lua_tostring(self->L, -1));
         goto error;
     }
     return 0;
@@ -157,7 +157,7 @@ error:
 }
 
 /*
-int lua_handler_limit_count(lua_handler_t *self, lua_Debug *ar, int count) 
+int os_lua_limit_count(os_lua_t *self, lua_Debug *ar, int count) 
 {
     self->ar = ar; 
     self->limit_count = count; 
@@ -166,11 +166,11 @@ int lua_handler_limit_count(lua_handler_t *self, lua_Debug *ar, int count)
 */
 
 
-void lua_handler_destroy(lua_handler_t **self_p)
+void os_lua_destroy(os_lua_t **self_p)
 {
     assert (self_p);
     if (*self_p) {
-        lua_handler_t *self = *self_p;
+        os_lua_t *self = *self_p;
         lua_close(self->L);
         free(self->name);
         free (self);
@@ -181,7 +181,7 @@ void lua_handler_destroy(lua_handler_t **self_p)
 
 
 
-int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresults, int errfunc) {
+int os_lua_pcall(os_lua_t *self, int action_func, int nargs, int nresults, int errfunc) {
 
     /* push function stack: 1: table 2: function */
     lua_rawgeti(self->L, LUA_REGISTRYINDEX, action_func);
@@ -194,7 +194,6 @@ int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresu
         debug1("lau_handler_pcall error for %s in pcall: %s\n", 
                 self->name, 
                 lua_tostring(self->L, -1));
-        //pcall failed exit error
         lua_pop(self->L, 1);
         return 0;
     } else {
@@ -202,7 +201,23 @@ int lua_handler_pcall(lua_handler_t *self, int action_func, int nargs, int nresu
     }
 }
 
-int lua_handler_load_function(lua_handler_t *self, const char *s)
+void os_lua_load_lib(os_lua_t *self, const char *libname, lua_CFunction luafunc) 
+{
+    lua_pushcfunction(self->L, luafunc);
+    lua_pushstring(self->L, libname);
+    lua_call(self->L, 1, 0);
+}
+
+void os_lua_load_core(os_lua_t *self) 
+{
+    os_lua_load_lib(self,  "", luaopen_base);
+    os_lua_load_lib(self, LUA_TABLIBNAME, luaopen_table);
+    os_lua_load_lib(self, LUA_STRLIBNAME, luaopen_string);
+    os_lua_load_lib(self, LUA_DBLIBNAME, luaopen_debug);
+
+}
+
+int os_lua_load_function(os_lua_t *self, const char *s)
 {
     int result; 
     luaL_loadstring(self->L, s);
@@ -223,41 +238,41 @@ error:
     return(0);
 }
 /*
-int lua_handler_tick(lua_handler_t *self) 
+int os_lua_tick(os_lua_t *self) 
 {
 
     if (self->timer) {
         lua_rawgeti(self->L, LUA_REGISTRYINDEX, self->timer);
-        return lua_handler_pcall(self, self->timer, 0, 0, 0);
+        return os_lua_pcall(self, self->timer, 0, 0, 0);
     }
     return 0;
 }
 
-int lua_handler_init(lua_handler_t *self)
+int os_lua_init(os_lua_t *self)
 {
     if (self->init) {
         lua_rawgeti(self->L, LUA_REGISTRYINDEX, self->init);
-        return lua_handler_pcall(self, self->startup, 0, 0, 0);
+        return os_lua_pcall(self, self->startup, 0, 0, 0);
     } 
     return 0;
 }
 
-int lua_handler_startup(lua_handler_t *self)
+int os_lua_startup(os_lua_t *self)
 {
     if (self->startup) {
         lua_rawgeti(self->L, LUA_REGISTRYINDEX, self->startup);
-        return lua_handler_pcall(self, self->startup, 0, 0, 0);
+        return os_lua_pcall(self, self->startup, 0, 0, 0);
     } 
     return 0;
 }
 
 
 
-int lua_handler_shutdown(lua_handler_t *self)
+int os_lua_shutdown(os_lua_t *self)
 {
     if (self->shutdown) {
         lua_rawgeti(self->L, LUA_REGISTRYINDEX, self->shutdown);
-        return lua_handler_pcall(self, self->shutdown, 0, 0, 0);
+        return os_lua_pcall(self, self->shutdown, 0, 0, 0);
     } 
     return 0;
 }

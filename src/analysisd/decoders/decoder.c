@@ -147,7 +147,7 @@ int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf)
 
     /* Run lua code */
     d("pcall");
-    if(!(lua_handler_pcall(self->lua, self->lua_function, 1, 1, 0))) {
+    if(!(os_lua_pcall(self->lua, self->lua_function, 1, 1, 0))) {
         d("pcall done");
         goto error; 
     }

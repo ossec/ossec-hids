@@ -133,7 +133,7 @@ typedef struct _RuleInfo
     OSMatch *match;
     OSRegex *regex;
 
-    lua_handler_t *lua; 
+    os_lua_t *lua; 
     int lua_function; 
 
     /* Policy-based rules */
@@ -246,5 +246,6 @@ RuleNode *OS_GetFirstRule();
 #define SYSCHECK_NEW    "syscheck_new_entry"
 #define SYSCHECK_DEL    "syscheck_deleted"
 
+int luaopen_log(lua_State * L);
 
 #endif /* _OS_RULES */

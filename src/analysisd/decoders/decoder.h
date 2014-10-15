@@ -46,7 +46,7 @@ typedef struct
     char *parent;
     char *name;
     char *ftscomment;
-    lua_handler_t *lua; 
+    os_lua_t *lua; 
     int lua_function; 
 
     OSRegex *regex;

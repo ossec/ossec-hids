@@ -20,6 +20,7 @@
 
 
 #include "analysisd.h"
+#include "rules.h"
 #include "eventinfo.h"
 #include "decoder.h"
 #include "plugin_decoders.h"
@@ -473,8 +474,10 @@ int ReadDecodeXML(char *file)
                     pi->lua = lua_states_get(LUA_STATE_DEFAULT);
                     debug2("Lua State %s used into decoder %s\n", LUA_STATE_DEFAULT, pi->name);
                     if(pi->lua == NULL) {
-                        pi->lua = lua_handler_new(LUA_STATE_DEFAULT);
+                        pi->lua = os_lua_new(LUA_STATE_DEFAULT);
                         lua_states_add(pi->lua);
+                        os_lua_load_core(pi->lua); 
+                        os_lua_load_lib(pi->lua, "log", luaopen_log);
                     }
                 } else {
                     list_att_num = 0;
@@ -491,7 +494,7 @@ int ReadDecodeXML(char *file)
                 }
                 if(pi->lua) {
                     debug2("Adding lua function\n");
-                    pi->lua_function = lua_handler_load_function(pi->lua, elements[j]->content); 
+                    pi->lua_function = os_lua_load_function(pi->lua, elements[j]->content); 
                     printf("%d\n",pi->lua_function); 
                     if (pi->lua_function == 0) {
                         merror(ERR_LUA_LOAD_CONFIG, ARGV0);
