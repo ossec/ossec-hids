@@ -27,8 +27,8 @@ static const struct luaL_Reg ossec_log_functs[] = {
 int luaopen_log(lua_State * L)
 {
     luaL_newlib(L, ossec_log_functs);
-    printf("setting log\n\n\n\n");
-    return 0; 
+    printf("\n\n\n\n\n====================================================\n\n\n");
+    return 1; 
 }
 
 

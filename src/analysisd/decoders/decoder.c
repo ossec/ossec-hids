@@ -43,28 +43,28 @@ void decoder_destroy(OSDecoderInfo **self_p)
 }
 OSDecoderInfo *decoder_new(char *name)
 {
-    OSDecoderInfo *pi = (OSDecoderInfo *)calloc(1,sizeof(OSDecoderInfo));
-    check_mem(pi);
-    pi->parent = NULL;
-    pi->id = 0;
-    pi->name = strdup(name);
-    pi->order = NULL;
-    pi->plugindecoder = NULL;
-    pi->fts = 0;
-    pi->lua = NULL; 
-    pi->accumulate = 0;
-    pi->type = SYSLOG;
-    pi->prematch = NULL;
-    pi->program_name = NULL;
-    pi->regex = NULL;
-    pi->use_own_name = 0;
-    pi->get_next = 0;
-    pi->regex_offset = 0;
-    pi->prematch_offset = 0;
-    return pi; 
+    OSDecoderInfo *self = (OSDecoderInfo *)calloc(1,sizeof(OSDecoderInfo));
+    check_mem(self);
+    self->parent = NULL;
+    self->id = 0;
+    self->name = strdup(name);
+    self->order = NULL;
+    self->plugindecoder = NULL;
+    self->fts = 0;
+    self->lua = NULL; 
+    self->accumulate = 0;
+    self->type = SYSLOG;
+    self->prematch = NULL;
+    self->program_name = NULL;
+    self->regex = NULL;
+    self->use_own_name = 0;
+    self->get_next = 0;
+    self->regex_offset = 0;
+    self->prematch_offset = 0;
+    return self; 
 
 error: 
-    decoder_destroy(&pi);
+    decoder_destroy(&self);
     return NULL;
 }
 
@@ -99,6 +99,50 @@ int decoder_set_ftscomment(OSDecoderInfo *self, const char *ftscomment)
 error:
     return 1;
 }
+
+int decoder_set_lua(OSDecoderInfo *self, os_lua_t *lua)
+{
+    if(self->lua) {
+        return 2; 
+    }
+    self->lua = lua; 
+    return 0; 
+}
+
+int decoder_set_lua_function(OSDecoderInfo *self, int f)
+{
+    if(self->lua_function) {
+        return 2; 
+    }
+    self->lua_function = f; 
+    return 0;
+}
+
+int decoder_set_regex(OSDecoderInfo *self, OSRegex *r )
+{
+    if(self->regex) {
+        return 2; 
+    }
+    self->regex = r; 
+    return 0; 
+}
+
+int decoder_set_regex_text(OSDecoderInfo *self, const char *pattern, int flags) 
+{
+    if(self->regex) {
+        return 2; 
+    }
+    os_calloc(1, sizeof(OSRegex), self->regex);
+    check_mem(self->regex); 
+    if(!OSRegex_Compile(pattern, self->regex, flags))
+    {
+        merror(REGEX_COMPILE, ARGV0, pattern, self->regex->error);
+        return(1);
+    }
+error:
+    return 1; 
+}
+
 
 int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf) 
 {

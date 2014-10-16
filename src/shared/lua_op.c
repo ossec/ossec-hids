@@ -116,6 +116,7 @@ os_lua_t *os_lua_new(const char *name)
 
     self->L = luaL_newstate();
     self->name = strdup(name);
+    self->sandboxed = 0; 
 
     //luaL_openlibs(self->L);
     lua_pushlightuserdata(self->L, self);
@@ -133,6 +134,11 @@ error:
 
 int os_lua_lib_add(os_lua_t *self, const char *lib_name, const luaL_Reg *lib_functs)
 {
+    /*
+    if(lib_functs != luaopen_base && lib_functs != luaopen_table && lib_functs != luaopen_string && lib_functs != luaopen_debug) {
+        self->sandboxed = 1; 
+    }
+     */
     luaL_newlib(self->L, lib_functs);
     lua_setglobal(self->L, lib_name);
     return 0; 

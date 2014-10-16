@@ -14,7 +14,7 @@ typedef struct _os_lua_t {
     lua_State *L;
     char *name;
     lua_Debug *ar;
-    double timer_freq;
+    int sandboxed; 
 } os_lua_t;
 
 

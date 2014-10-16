@@ -48,6 +48,7 @@ typedef struct
     char *ftscomment;
     os_lua_t *lua; 
     int lua_function; 
+    char *lua_function_text; 
 
     OSRegex *regex;
     OSRegex *prematch;
