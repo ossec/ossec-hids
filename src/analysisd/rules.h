@@ -200,7 +200,9 @@ RuleInfo *zerorulemember(int id,
 /* another hack we need to fix with our header fules */
 typedef struct _Eventinfo Eventinfo; 
 
-int rules_info_run_lua(RuleInfo *self, Eventinfo *lf);
+/*
+ */
+int ruleinfo_run_lua(RuleInfo *self, Eventinfo *lf);
 
 /** Rule_list Functions **/
 

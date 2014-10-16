@@ -59,8 +59,10 @@ void Rules_OP_CreateRules()
     return;
 }
 
-int rules_info_run_lua(RuleInfo *self, Eventinfo *lf)
+int ruleinfo_run_lua(RuleInfo *self, Eventinfo *lf)
 {
+    int rc;
+    int t;
     if(self->lua == NULL) {
         d("No lua rule");
         return (0); 
@@ -225,12 +227,46 @@ int rules_info_run_lua(RuleInfo *self, Eventinfo *lf)
 
     /* Run lua code */
     d("pcall");
-    if(!(os_lua_pcall(self->lua, self->lua_function, 1, 1, 0))) {
-        d("pcall done");
-        /* XXX Need to grab the lua error */
+    if(!(os_lua_pcall(self->lua, self->lua_function, 1, 2, 0))) {
+        d("error in pcall rules");
         goto error; 
     }
-    /* XXX Need to deal without correct */
+
+
+
+    if(lua_type(self->lua->L, -1) == LUA_TTABLE) {
+        lua_pushstring(self->lua->L, "dstuser");
+        lua_gettable(self->lua->L, -2); 
+        if(lua_type(self->lua->L, -1) == LUA_TSTRING) {
+            if(lf->dstuser) {
+                free(lf->dstuser); 
+            }
+            lf->dstuser = strdup(lua_tostring(self->lua->L, -1));
+            d("new value: %s", lf->dstuser); 
+
+        }
+        lua_pop(self->lua->L, 1);
+        d("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+    } 
+
+    /* LUA based test for true. Only nil and false will return 0 */
+    switch(lua_type(self->lua->L, -2)) {
+        case LUA_TNIL:
+            rc = 0; 
+            break; 
+        case LUA_TBOOLEAN:
+            rc = lua_toboolean(self->lua->L, -2);
+            break; 
+        default: 
+            rc = 0;
+    }
+
+    d("lua says: %d",rc );
+
+    lua_pop(self->lua->L, 2);
+    return rc;
+
 
 error:
     d("lua rule error");

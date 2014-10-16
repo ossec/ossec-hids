@@ -15,22 +15,22 @@
 /* Global Lists of States */ 
 OSHash *lua_states_g = NULL; 
 
-void os_lua_stack_dump(lua_State *L)
+void os_lua_stack_dump(os_lua_t *self)
 {
     int i;
-    int top = lua_gettop(L);
+    int top = lua_gettop(self->L);
 
     for (i = 1; i <= top; i++) {
-        int t = lua_type(L, i);
+        int t = lua_type(self->L, i);
         switch(t) {
         case LUA_TSTRING:
-            debug1(" %d: %s\n", i, lua_tostring(L, i));
+            debug1(" %d: %s\n", i, lua_tostring(self->L, i));
             break;
         case LUA_TNUMBER:
-            debug1(" %d: %g\n", i,  lua_tonumber(L, i));
+            debug1(" %d: %g\n", i,  lua_tonumber(self->L, i));
             break;
         default:
-            debug1(" %d: %s\n", i, lua_typename(L, t));
+            debug1(" %d: %s\n", i, lua_typename(self->L, t));
             break;
         }
     }
@@ -197,7 +197,7 @@ int os_lua_pcall(os_lua_t *self, int action_func, int nargs, int nresults, int e
     lua_remove(self->L, 1);
 
     if(lua_pcall(self->L, nargs, nresults, errfunc ) != 0 ) {
-        debug1("lau_handler_pcall error for %s in pcall: %s\n", 
+        debug1("os_lua_pcall error for %s in pcall: %s\n", 
                 self->name, 
                 lua_tostring(self->L, -1));
         lua_pop(self->L, 1);
