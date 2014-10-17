@@ -121,7 +121,20 @@ os_lua_t *os_lua_new(const char *name)
     //luaL_openlibs(self->L);
     lua_pushlightuserdata(self->L, self);
     lua_setfield(self->L, LUA_REGISTRYINDEX, OS_LUA_REG_NAME);
+    /*
+    os_lua_load_text(self, 
+        "ossec = {}"
+        "ossec.version = {}"
+        "ossec.version.text = \"%s\""
+        "ossec.version.major = %d"
+        "ossec.version.minor = %d"
+        "ossec.version.patch = %d"
+        "ossec.app = {}"
+        "ossec.app.name = \"%s\""
+    );
+    */
     //os_lua_lib_add(self, "ar", ar_functs);
+    os_lua_load_ossec(self);
 
     return self;
 
@@ -144,6 +157,65 @@ int os_lua_lib_add(os_lua_t *self, const char *lib_name, const luaL_Reg *lib_fun
     return 0; 
 }
 
+int os_lua_load_text(os_lua_t *self, const char *script)
+{
+    if(luaL_loadstring(self->L, script)) {
+        debug2("Error loading script"); 
+        goto error; 
+    }
+
+    if(lua_pcall(self->L, 0, 0, 0) != 0) {
+        debug2("os_lua_load_text error in pcall: %s\n", lua_tostring(self->L, -1));
+        goto error;
+    }
+    return 0;
+error:
+    return 1;
+}
+
+
+static int ossec_log_debug(lua_State *L)
+{
+    const char *msg = luaL_checkstring(L, 1);
+    printf("-> new debug\n");
+    debug1("%s\n",msg);
+    return(0);
+}
+
+static int ossec_log_info(lua_State *L)
+{
+    const char *msg = luaL_checkstring(L, 1);
+    verbose("%s\n", msg);
+    return(0);
+}
+
+int os_lua_load_ossec(os_lua_t *self)
+{
+    /* Start ossec table */
+    lua_newtable(self->L);
+
+    /* ossec.log() */
+    lua_pushstring(self->L, "log");
+    lua_pushcfunction(self->L, ossec_log_info);
+    lua_settable(self->L, -3);
+
+    /* ossec.debug() */
+    lua_pushstring(self->L, "debug");
+    lua_pushcfunction(self->L, ossec_log_debug);
+    lua_settable(self->L, -3);
+
+    /* Finally set table to name ossec */
+    lua_setglobal(self->L, "ossec");
+
+
+    /* Start user table */
+    lua_newtable(self->L); 
+
+    /* Finally set table to name user */
+    lua_setglobal(self->L, "user");
+}
+
+
 int os_lua_load(os_lua_t *self, const char *fname) 
 {
     // Loadfile **********************************************
@@ -153,7 +225,7 @@ int os_lua_load(os_lua_t *self, const char *fname)
     } 
 
     if(lua_pcall(self->L, 0, 0, 0) != 0) {
-        debug2("os_lua_new error for %s in loadfile pcall: %s\n", fname, lua_tostring(self->L, -1));
+        debug2("os_lua_load error for %s in loadfile pcall: %s\n", fname, lua_tostring(self->L, -1));
         goto error;
     }
     return 0;
