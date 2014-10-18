@@ -2,6 +2,7 @@ os_net os_net
 os_regex os_regex
 os_xml os_xml
 os_crypto os_crypto
+os_auth os_auth
 headers headers
 shared shared
 error_messages error_messages
@@ -49,6 +50,7 @@ external/zlib-1.2.8/zconf.h.in zconf.h
 external/lua-5.2.3/src lua
 os_zlib/os_zlib.c os_zlib.c
 os_zlib/os_zlib.h os_zlib.h
+win32/agent_auth.c os_auth/agent_auth.c
 win32/os_win.h os_win.h
 win32/win_agent.c win_agent.c
 win32/win_service.c win_service.c

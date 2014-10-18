@@ -151,6 +151,7 @@ Section "OSSEC Agent (required)" MainSec
     File ossec-agent-eventchannel.exe
     File default-ossec.conf
     File manage_agents.exe
+    File agent-auth.exe
     File /oname=win32ui.exe os_win32ui.exe
     File ossec-rootcheck.exe
     File internal_options.conf
@@ -409,6 +410,7 @@ Section "Uninstall"
     Delete "$INSTDIR\ossec-lua.exe"
     Delete "$INSTDIR\ossec-luac.exe"
     Delete "$INSTDIR\manage_agents.exe"
+    Delete "$INSTDIR\agent-auth.exe"
     Delete "$INSTDIR\ossec.conf"
     Delete "$INSTDIR\uninstall.exe"
     Delete "$INSTDIR\*"
