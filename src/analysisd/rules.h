@@ -60,7 +60,6 @@
 #define RULE_STATUS     1024
 #define RULE_ACTION     2048
 
-
 #define RULEINFODETAIL_TEXT     0
 #define RULEINFODETAIL_LINK     1
 #define RULEINFODETAIL_CVE      2

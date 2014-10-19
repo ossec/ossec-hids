@@ -565,13 +565,13 @@ int ReadDecodeXML(char *file)
                 int order_int = 0;
 
                 /* Maximum number is 8 for the order */
-                norder = OS_StrBreak(',',elements[j]->content, 8);
+                norder = OS_StrBreak(',',elements[j]->content, DECODER_MAX_ORDER);
                 s_norder = norder;
-                os_calloc(8, sizeof(void *), pi->order);
+                os_calloc(DECODER_MAX_ORDER, sizeof(void *), pi->order);
 
 
                 /* Initializing the function pointers */
-                while(order_int < 8)
+                while(order_int < DECODER_MAX_ORDER)
                 {
                     pi->order[order_int] = NULL;
                     order_int++;
@@ -670,8 +670,8 @@ int ReadDecodeXML(char *file)
                 char **norder;
                 char **s_norder;
 
-                /* Maximum number is 8 for the fts */
-                norder = OS_StrBreak(',',elements[j]->content, 8);
+                /* Maximum number is DECODER_MAX_ORDER for the fts */
+                norder = OS_StrBreak(',',elements[j]->content, DECODER_MAX_ORDER);
                 if(norder == NULL)
                     ErrorExit(MEM_ERROR,ARGV0);
 

@@ -25,6 +25,7 @@
 
 void decoder_destroy(OSDecoderInfo **self_p) 
 {
+    int i;
     if (*self_p) {
         OSDecoderInfo *self = *self_p; 
         if(self->parent) { free(self->parent); }
@@ -34,6 +35,11 @@ void decoder_destroy(OSDecoderInfo **self_p)
         if(self->regex) { free(self->regex); }
         if(self->prematch) { free(self->prematch); }
         if(self->program_name) { free(self->program_name); }
+        if(self->order) {
+            for (i=0,self->order[i] != NULL, i++ ) {
+                free(self->order[i]);
+            }
+        }
         /* 
          * XXX Free self->order 
          *
