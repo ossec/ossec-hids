@@ -196,7 +196,8 @@ int decoder_verify_lua(OSDecoderInfo *self) {
     /* LUA must be gated with other attributes */
     if(self->lua) {
         if(self->regex == NULL && self->parent == NULL && self->program_name == NULL && self->prematch == NULL) {
-            merror("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+          debug("%s: %s has lua enabled, but no regex/parent/program_name/prematch j"
+                "are configured and one is required", ARGV0, self->name);
             return(1); 
         }
     }
@@ -488,14 +489,14 @@ int ReadDecodeXML(char *file)
                                 merror(ERR_LUA_STATE_NOT_DEFINED, ARGV0, elements[j]->attributes[list_att_num]);
                                 return(0); 
                             }
-                            printf("Lua State %s in decoder %s\n", elements[j]->attributes[list_att_num],  pi->name);
+                            d("Lua State %s in decoder %s\n", elements[j]->attributes[list_att_num],  pi->name);
                         }
                     }
                 }
                 if(pi->lua) {
                     debug2("Adding lua function\n");
                     pi->lua_function = os_lua_load_function(pi->lua, elements[j]->content); 
-                    printf("%d\n",pi->lua_function); 
+                    d("%d\n",pi->lua_function); 
                     if (pi->lua_function == 0) {
                         merror(ERR_LUA_LOAD_CONFIG, ARGV0);
                         return(0); 
@@ -785,7 +786,6 @@ int ReadDecodeXML(char *file)
         if((pi->regex_offset & AFTER_PARENT) && !pi->parent)
         {
             merror(INV_OFFSET, ARGV0, "after_parent");
-                    printf("803\n");
             merror(DEC_REGEX_ERROR, ARGV0, pi->name);
             return(0);
         }
