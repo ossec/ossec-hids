@@ -36,14 +36,10 @@ void decoder_destroy(OSDecoderInfo **self_p)
         if(self->prematch) { free(self->prematch); }
         if(self->program_name) { free(self->program_name); }
         if(self->order) {
-            for (i=0,self->order[i] != NULL, i++ ) {
+            for (i=0;self->order[i] != NULL; i++ ) {
                 free(self->order[i]);
             }
         }
-        /* 
-         * XXX Free self->order 
-         *
-         */
         self_p = NULL; 
     }
 }

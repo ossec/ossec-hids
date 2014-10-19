@@ -29,7 +29,7 @@
 #define AFTER_ERROR     0x010
 
 
-#define RULE_MAX_ORDER 8
+#define DECODER_MAX_ORDER 8
 
 /* Decoder structure */
 typedef struct

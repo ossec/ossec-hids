@@ -177,7 +177,6 @@ error:
 static int ossec_log_debug(lua_State *L)
 {
     const char *msg = luaL_checkstring(L, 1);
-    printf("-> new debug\n");
     debug1("%s\n",msg);
     return(0);
 }

@@ -196,8 +196,8 @@ int decoder_verify_lua(OSDecoderInfo *self) {
     /* LUA must be gated with other attributes */
     if(self->lua) {
         if(self->regex == NULL && self->parent == NULL && self->program_name == NULL && self->prematch == NULL) {
-          debug("%s: %s has lua enabled, but no regex/parent/program_name/prematch j"
-                "are configured and one is required", ARGV0, self->name);
+          debug1("%s: %s has lua enabled, but no regex/parent/program_name/prematch j"
+                 "are configured and one is required", ARGV0, self->name);
             return(1); 
         }
     }
