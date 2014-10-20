@@ -381,10 +381,11 @@ void WINAPI OssecServiceStart (DWORD argc, LPTSTR *argv)
     }
 
 
-    #ifdef OSSECHIDS
     /* Starting process */
+    /*
+     * This was hidden in ifdef OSSECHIDS but never enabled. 
     local_start();
-    #endif
+     */
 }
 
 

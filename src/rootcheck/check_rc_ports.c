@@ -140,9 +140,7 @@ static void test_ports(int proto, int *_errors, int *_total)
             }
 
             /* If we are being run by the ossec hids, sleep here (no rush) */
-            #ifdef OSSECHIDS
             sleep(2);
-            #endif
 
             if(!run_netstat(proto, i) && conn_port(proto, i))
             {
