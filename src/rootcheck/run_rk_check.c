@@ -42,7 +42,6 @@ int notify_rk(int rk_type, const char *msg)
     if(rk_type <= ALERT_SYSTEM_ERR)
         return(0);
 
-    #ifdef OSSECHIDS
     if(SendMSG(rootcheck.queue, msg, ROOTCHECK, ROOTCHECK_MQ) < 0)
     {
         merror(QUEUE_SEND, ARGV0);
@@ -57,7 +56,6 @@ int notify_rk(int rk_type, const char *msg)
             ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
         }
     }
-    #endif
 
     return(0);
 }

@@ -17,7 +17,6 @@
 
 #include "rootcheck.h"
 
-#ifndef OSSECHIDS
 
 static int _ports_open;
 static int open_ports_size;
@@ -114,7 +113,6 @@ static void try_to_access_ports()
     }
 
 }
-#endif
 
 
 /*  check_open_ports: v0.1
@@ -122,7 +120,6 @@ static void try_to_access_ports()
  */
 void check_open_ports()
 {
-    #ifndef OSSECHIDS
     memset(open_ports_str, '\0', OS_SIZE_1024 +1);
     open_ports_size = OS_SIZE_1024 - 1;
     _ports_open = 0;
@@ -137,7 +134,6 @@ void check_open_ports()
 
     notify_rk(ALERT_OK, open_ports_str);
 
-    #endif
     return;
 }
 

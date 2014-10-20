@@ -139,16 +139,9 @@ static int read_sys_file(const char *file_name, int do_read)
         if(statbuf.st_uid == 0)
         {
             char op_msg[OS_SIZE_1024 +1];
-            #ifdef OSSECHIDS
             snprintf(op_msg, OS_SIZE_1024, "File '%s' is owned by root "
                              "and has written permissions to anyone.",
                              file_name);
-            #else
-            snprintf(op_msg, OS_SIZE_1024, "File '%s' is: \n"
-                             "          - owned by root,\n"
-                             "          - has written permissions to anyone.",
-                             file_name);
-            #endif
             notify_rk(ALERT_SYSTEM_CRIT, op_msg);
 
         }
