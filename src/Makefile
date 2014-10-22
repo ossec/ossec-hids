@@ -115,9 +115,6 @@ CFLAGS+=-Wall -Wextra
 CFLAGS+=-I./ -I./headers/ -I./external/lua/src 
 
 
-BUILDLIB=ar -crus
-
-
 CCCOLOR="\033[34m"
 LINKCOLOR="\033[34;1m"
 SRCCOLOR="\033[33m"
@@ -137,7 +134,7 @@ endif
 
 OSSEC_CC     =${QUIET_CC}${CC}
 OSSEC_CCBIN  =${QUIET_CCBIN}${CC}
-OSSEC_LINK   =${QUIET_LINK}${BUILDLIB}
+OSSEC_LINK   =${QUIET_LINK}ar -rc
 OSSEC_RANLIB =${QUIET_RANLIB}ranlib
 
 
