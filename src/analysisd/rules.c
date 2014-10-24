@@ -369,7 +369,7 @@ int Rules_OP_ReadRules(char * rulefile)
         rulepath = (char *)calloc(i,sizeof(char));
         if(!rulepath)
         {
-            ErrorExit(MEM_ERROR,ARGV0);
+            ErrorExit(MEM_ERROR,ARGV0, errno, strerror(errno));
         }
         snprintf(rulepath,i,"%s/%s",RULEPATH,rulefile);
     }
@@ -388,7 +388,7 @@ int Rules_OP_ReadRules(char * rulefile)
     {
         merror(XML_ERROR, ARGV0, rulepath, xml.err, xml.err_line);
         free(rulepath);
-        return(-1);	
+        return(-1);
     }
 
 
@@ -1699,7 +1699,7 @@ int Rules_OP_ReadRules(char * rulefile)
                 config_ruleinfo->group_search = OSList_Create();
                 if(!config_ruleinfo->group_search)
                 {
-                    ErrorExit(MEM_ERROR, ARGV0);
+                    ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
                 }
 
                 /* Marking rules that match this group */
@@ -1774,7 +1774,7 @@ char *loadmemory(char *at, char *str)
             at = calloc(strsize+1,sizeof(char));
             if(at == NULL)
             {
-                merror(MEM_ERROR,ARGV0);
+                merror(MEM_ERROR,ARGV0, errno, strerror(errno));
                 return(NULL);
             }
             strncpy(at,str,strsize);
@@ -1802,7 +1802,7 @@ char *loadmemory(char *at, char *str)
 
         if(at == NULL)
         {
-            merror(MEM_ERROR,ARGV0);
+            merror(MEM_ERROR,ARGV0, errno, strerror(errno));
             return(NULL);
         }
 
@@ -1824,7 +1824,7 @@ RuleInfoDetail *zeroinfodetails(int type, char *data)
 
     if (info_details_pt == NULL)
     {
-        ErrorExit(MEM_ERROR,ARGV0);
+        ErrorExit(MEM_ERROR,ARGV0, errno, strerror(errno));
     }
     /* type */
     info_details_pt->type = type;
@@ -1851,7 +1851,7 @@ RuleInfo *zerorulemember(int id, int level,
 
     if(ruleinfo_pt == NULL)
     {
-        ErrorExit(MEM_ERROR,ARGV0);
+        ErrorExit(MEM_ERROR,ARGV0, errno, strerror(errno));
     }
 
     /* Default values */
