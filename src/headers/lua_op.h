@@ -25,7 +25,7 @@ os_lua_t *lua_states_del(const char *name);
 
 os_lua_t *os_lua_new(const char *name);
 void os_lua_stack_dump(os_lua_t *self);
-int os_lua_lib_add(os_lua_t *self, const char *lib_name, const luaL_Reg *lib_functs);
+/*int os_lua_lib_add(os_lua_t *self, const char *lib_name, const luaL_Reg *lib_functs);*/
 int os_lua_load(os_lua_t *self, const char *fname);
 int os_lua_load_ossec(os_lua_t *self);
 void os_lua_destroy(os_lua_t **self_p);

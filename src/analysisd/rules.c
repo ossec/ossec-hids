@@ -62,7 +62,6 @@ void Rules_OP_CreateRules()
 int ruleinfo_run_lua(RuleInfo *self, Eventinfo *lf)
 {
     int rc;
-    int t;
     if(self->lua == NULL) {
         d("No lua rule");
         return (0); 

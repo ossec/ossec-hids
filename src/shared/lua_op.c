@@ -145,17 +145,16 @@ error:
     return NULL;
 }
 
+/*
 int os_lua_lib_add(os_lua_t *self, const char *lib_name, const luaL_Reg *lib_functs)
 {
-    /*
-    if(lib_functs != luaopen_base && lib_functs != luaopen_table && lib_functs != luaopen_string && lib_functs != luaopen_debug) {
-        self->sandboxed = 1; 
-    }
-     */
-    luaL_newlib(self->L, lib_functs);
+    //luaL_newlib(self->L, lib_functs);
+    luaL_newlibtable(self->L,lib_functs);
+    luaL_setfuncs(self->L,lib_functs,0);
     lua_setglobal(self->L, lib_name);
     return 0; 
 }
+*/
 
 int os_lua_load_text(os_lua_t *self, const char *script)
 {
@@ -212,6 +211,7 @@ int os_lua_load_ossec(os_lua_t *self)
 
     /* Finally set table to name user */
     lua_setglobal(self->L, "user");
+    return (0); 
 }
 
 
