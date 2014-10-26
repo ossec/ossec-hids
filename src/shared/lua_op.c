@@ -24,13 +24,13 @@ void os_lua_stack_dump(os_lua_t *self)
         int t = lua_type(self->L, i);
         switch(t) {
         case LUA_TSTRING:
-            debug1(" %d: %s\n", i, lua_tostring(self->L, i));
+            d(" %d: %s\n", i, lua_tostring(self->L, i));
             break;
         case LUA_TNUMBER:
-            debug1(" %d: %g\n", i,  lua_tonumber(self->L, i));
+            d(" %d: %g\n", i,  lua_tonumber(self->L, i));
             break;
         default:
-            debug1(" %d: %s\n", i, lua_typename(self->L, t));
+            d(" %d: %s\n", i, lua_typename(self->L, t));
             break;
         }
     }
@@ -260,12 +260,16 @@ void os_lua_destroy(os_lua_t **self_p)
 
 int os_lua_pcall(os_lua_t *self, int action_func, int nargs, int nresults, int errfunc) {
 
+    
+    d(" - os_lua_pcall stack @ start ");
     /* push function stack: 1: table 2: function */
     lua_rawgeti(self->L, LUA_REGISTRYINDEX, action_func);
     /* push table from 1 to stack: 1: table 2: function 3: table */
     lua_pushvalue(self->L, nargs);
     /* remove 1st table from stack: 1: function 2: table */
     lua_remove(self->L, 1);
+    d(" ---- os_lua_pcall stack before pcal ");
+    os_lua_stack_dump(self);
 
     if(lua_pcall(self->L, nargs, nresults, errfunc ) != 0 ) {
         debug1("os_lua_pcall error for %s in pcall: %s\n", 

@@ -61,171 +61,226 @@ void Rules_OP_CreateRules()
 
 int ruleinfo_run_lua(RuleInfo *self, Eventinfo *lf)
 {
+    d("-----------rules stakc at start");
+    d("           --------------> sid: %d", self->sigid);
+    os_lua_stack_dump(self->lua);
+    const char *key;
+    const char *value;
     int rc;
+    int table_set = 0; 
+
     if(self->lua == NULL) {
         d("No lua rule");
         return (0); 
     }
+
     lua_newtable(self->lua->L); 
 
+        os_lua_stack_dump(self->lua); 
+        d("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ TABLE?");
+
     if(lf->log) {
+        d("### LOG");
         lua_pushstring(self->lua->L, "log");
         lua_pushstring(self->lua->L, lf->log); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->full_log) {
+
+        d("### FULL_LOG");
         lua_pushstring(self->lua->L, "full_log");
         lua_pushstring(self->lua->L, lf->full_log); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->location) {
         lua_pushstring(self->lua->L, "location");
         lua_pushstring(self->lua->L, lf->location); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->hostname) {
         lua_pushstring(self->lua->L, "hostname");
         lua_pushstring(self->lua->L, lf->hostname); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->program_name) {
         lua_pushstring(self->lua->L, "program_name");
         lua_pushstring(self->lua->L, lf->program_name); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->id) {
         lua_pushstring(self->lua->L, "id");
         lua_pushstring(self->lua->L, lf->id); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->dstip) {
         lua_pushstring(self->lua->L, "dstip");
         lua_pushstring(self->lua->L, lf->dstip); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->dstuser) {
         lua_pushstring(self->lua->L, "dstuser");
         lua_pushstring(self->lua->L, lf->dstuser); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->dstport) {
         lua_pushstring(self->lua->L, "dstport");
         lua_pushstring(self->lua->L, lf->dstport); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->srcip) {
         lua_pushstring(self->lua->L, "srcip");
         lua_pushstring(self->lua->L, lf->srcip); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->srcuser) {
         lua_pushstring(self->lua->L, "srcuser");
         lua_pushstring(self->lua->L, lf->srcuser); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->srcport) {
         lua_pushstring(self->lua->L, "srcport");
         lua_pushstring(self->lua->L, lf->srcport); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->action) {
         lua_pushstring(self->lua->L, "action");
         lua_pushstring(self->lua->L, lf->action); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->url) {
         lua_pushstring(self->lua->L, "url");
         lua_pushstring(self->lua->L, lf->url); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->protocol) {
         lua_pushstring(self->lua->L, "protocol");
         lua_pushstring(self->lua->L, lf->protocol); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->data) {
         lua_pushstring(self->lua->L, "data");
         lua_pushstring(self->lua->L, lf->data); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->command) {
         lua_pushstring(self->lua->L, "command");
         lua_pushstring(self->lua->L, lf->command); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->systemname) {
         lua_pushstring(self->lua->L, "systemname");
         lua_pushstring(self->lua->L, lf->systemname); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->filename) {
         lua_pushstring(self->lua->L, "filename");
         lua_pushstring(self->lua->L, lf->filename); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->md5_before) {
         lua_pushstring(self->lua->L, "md5_before");
         lua_pushstring(self->lua->L, lf->md5_before); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->md5_after) {
         lua_pushstring(self->lua->L, "md5_after");
         lua_pushstring(self->lua->L, lf->md5_after); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->sha1_before) {
         lua_pushstring(self->lua->L, "sha1_before");
         lua_pushstring(self->lua->L, lf->sha1_before); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->sha1_after) {
         lua_pushstring(self->lua->L, "sha1_after");
         lua_pushstring(self->lua->L, lf->sha1_after); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->size_before) {
         lua_pushstring(self->lua->L, "size_before");
         lua_pushstring(self->lua->L, lf->size_before); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->size_after) {
         lua_pushstring(self->lua->L, "size_after");
         lua_pushstring(self->lua->L, lf->size_after); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->owner_before) {
         lua_pushstring(self->lua->L, "owner_before");
         lua_pushstring(self->lua->L, lf->owner_before); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->owner_after) {
         lua_pushstring(self->lua->L, "owner_after");
         lua_pushstring(self->lua->L, lf->owner_after); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->gowner_before) {
         lua_pushstring(self->lua->L, "gowner_before");
         lua_pushstring(self->lua->L, lf->gowner_before); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->gowner_after) {
         lua_pushstring(self->lua->L, "gowner_after");
         lua_pushstring(self->lua->L, lf->gowner_after); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->perm_before) {
         lua_pushstring(self->lua->L, "perm_before");
         lua_pushinteger(self->lua->L, lf->perm_before); 
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
     if(lf->perm_after) {
         lua_pushstring(self->lua->L, "perm_after");
         lua_pushinteger(self->lua->L, lf->perm_after); 
+
         lua_settable(self->lua->L, -3);
+        table_set += 1;
     }
+    if(table_set == 0) {
+        d("############# Force set log");
+        lua_settable(self->lua->L, -1);
+    }
+    d("################# ");
+    os_lua_stack_dump(self->lua); 
+    d("################# ");
+
+
+
 
     /* Run lua code */
-    d("pcall");
     if(!(os_lua_pcall(self->lua, self->lua_function, 1, 2, 0))) {
         d("error in pcall rules");
         goto error; 
@@ -234,41 +289,110 @@ int ruleinfo_run_lua(RuleInfo *self, Eventinfo *lf)
 
 
     if(lua_type(self->lua->L, -1) == LUA_TTABLE) {
-        lua_pushstring(self->lua->L, "dstuser");
-        lua_gettable(self->lua->L, -2); 
-        if(lua_type(self->lua->L, -1) == LUA_TSTRING) {
-            if(lf->dstuser) {
-                free(lf->dstuser); 
+            lua_pushnil(self->lua->L); 
+            while (lua_next(self->lua->L, -2)) {
+                      // stack now contains: -1 => value; -2 => key; -3 => table
+                      // copy the key so that lua_tostring does not modify the original
+                      lua_pushvalue(self->lua->L, -2);
+                      // stack now contains: -1 => key; -2 => value; -3 => key; -4 => table
+                      key = lua_tostring(self->lua->L, -1);
+                      value = lua_tostring(self->lua->L, -2);
+                      if(strcasecmp(key,"dstip")==0) {
+                          lf->dstip = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstip changed to: '%s'", lf->dstip);
+                          #endif
+                      } else if (strcasecmp(key,"dstuser")==0) {
+                          lf->dstuser = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstuser changed to: '%s'", lf->dstuser);
+                          #endif
+                      } else if (strcasecmp(key,"dstport")==0) {
+                          lf->dstport = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstport changed to: '%s'", lf->dstport);
+                          #endif
+                      } else if (strcasecmp(key,"srcip")==0) {
+                          lf->srcip = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcip changed to: '%s'", lf->srcip);
+                          #endif
+                      } else if (strcasecmp(key,"srcuser")==0) {
+                          lf->srcuser = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcuser changed to: '%s'", lf->srcuser);
+                          #endif
+                      } else if (strcasecmp(key,"srcport")==0) {
+                          lf->srcport = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcport changed to: '%s'", lf->srcport);
+                          #endif
+                      } else if (strcasecmp(key,"protocol")==0) {
+                          lf->protocol = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       protocol changed to: '%s'", lf->protocol);
+                          #endif
+                      } else if (strcasecmp(key,"action")==0) {
+                          lf->action = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       action changed to: '%s'", lf->action);
+                          #endif
+                      } else if (strcasecmp(key,"status")==0) {
+                          lf->status = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       status changed to: '%s'", lf->status);
+                          #endif
+                      } else if (strcasecmp(key,"url")==0) {
+                          lf->url = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       url changed to: '%s'", lf->url);
+                          #endif
+                      } else if (strcasecmp(key,"data")==0) {
+                          lf->data = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       data changed to: '%s'", lf->data);
+                          #endif
+                      } else if (strcasecmp(key,"data")==0) {
+                          lf->data = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       data changed to: '%s'", lf->data);
+                          #endif
+                      }
+
+                      d(" - %s => %s", key, value);
+                      // pop value + copy of key, leaving original key
+                      lua_pop(self->lua->L, 2);
+                      // stack now contains: -1 => key; -2 => table
+
             }
-            lf->dstuser = strdup(lua_tostring(self->lua->L, -1));
-            d("new value: %s", lf->dstuser); 
-
-        }
-        lua_pop(self->lua->L, 1);
-        d("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-
+            lua_pop(self->lua->L,1); 
     } 
 
     /* LUA based test for true. Only nil and false will return 0 */
-    switch(lua_type(self->lua->L, -2)) {
+    os_lua_stack_dump(self->lua);
+    switch(lua_type(self->lua->L, -1)) {
         case LUA_TNIL:
             rc = 0; 
             break; 
         case LUA_TBOOLEAN:
-            rc = lua_toboolean(self->lua->L, -2);
+            rc = lua_toboolean(self->lua->L, -1);
             break; 
         default: 
             rc = 0;
+            break;
     }
 
-    d("lua says: %d",rc );
 
     lua_pop(self->lua->L, 2);
+    d("-----------rules stakc at return");
+    os_lua_stack_dump(self->lua);
     return rc;
 
 
 error:
     d("lua rule error");
+    d("-----------rules stakc at return");
+    os_lua_stack_dump(self->lua);
     return 1; 
 }
 

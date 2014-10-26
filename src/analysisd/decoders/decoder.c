@@ -162,6 +162,7 @@ int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf)
         d("no function"); 
         return 0; 
     }
+    d("lua_function: %d", self->lua_function);
     lua_newtable(self->lua->L); 
 
     if(lf->log) {
