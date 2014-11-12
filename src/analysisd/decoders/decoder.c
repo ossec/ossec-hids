@@ -234,6 +234,9 @@ void DecodeEvent(Eventinfo *lf)
                         continue;
                     }
                     return;
+                } else {
+                    //child decoder matches, set this has the matched decoder
+                    lf->decoder_info = nnode;
                 }
 
 
