@@ -41,10 +41,12 @@
 #include "syscheck.h"
 #include "error_messages/error_messages.h"
 
-static int realtime_checksumfile(const char *file_name) __attribute__((nonnull));
+//static int realtime_checksumfile(const char *file_name) __attribute__((nonnull));
+int realtime_checksumfile(const char *file_name) __attribute__((nonnull));
 
 /* Checking sum of the realtime file being monitored. */
-static int realtime_checksumfile(const char *file_name)
+//static int realtime_checksumfile(const char *file_name)
+int realtime_checksumfile(const char *file_name)
 {
     char *buf;
 
@@ -462,12 +464,8 @@ int realtime_start()
     return(0);
 }
 
-
-int realtime_adddir(const char *dir)
+int realtime_adddir(__attribute__((unused)) const char *dir)
 {
-    if(!dir) {
-        return(0);
-    }
     return(0);
 }
 
