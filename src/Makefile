@@ -13,7 +13,7 @@ EXTERNAL_LUA=external/lua/
 EXTERNAL_ZLIB=external/zlib-1.2.8/
 LUA_PLAT=posix
 MAXAGENTS?=2048
-# XXX Becareful NO EXTRA Spaces here
+# XXX Be careful NO EXTRA Spaces here
 PREFIX?=/var/ossec
 PG_CONFIG?=pg_config
 MY_CONFIG?=mysql_config
@@ -36,9 +36,7 @@ DEFINES+=-DMAILUSER=\"${OSSEC_USER_MAIL}\"
 
 ifeq (${uname_S},Linux)
 		DEFINES+=-DUSEINOTIFY
-#		DEFINES+=-DUSE_MAGIC
 		LDFLAGS+=-lpthread
-#		LDFLAGS+=-lmagic
 else
 ifeq (${uname_S},AIX)
 		DEFINES+=-DAIX
@@ -150,6 +148,10 @@ ifeq (${USE_GEOIP},1)
 	LDFLAGS+=-lGeoIP
 endif # USE_GEOIP
 
+ifneq (,$(filter ${USE_MAGIC},auto yes y Y 1))
+	DEFINES+=-DLIBMAGIC_ENABLED
+	LDFLAGS+=-lmagic
+endif # USE_GEOIP
 
 MI :=
 PI :=
