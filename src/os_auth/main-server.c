@@ -24,6 +24,13 @@
  *
  */
 
+
+#include <sys/wait.h>
+
+#include "shared.h"
+#include "auth.h"
+
+
 #ifndef USE_OPENSSL
 int main()
 {
@@ -32,10 +39,6 @@ int main()
 }
 #else
 
-#include <sys/wait.h>
-
-#include "shared.h"
-#include "auth.h"
 
 /* TODO: Pulled this value out of the sky, may or may not be sane */
 #define POOL_SIZE 512
