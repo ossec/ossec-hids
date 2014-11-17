@@ -26,6 +26,7 @@ OSSEC_USER_REM?=ossecr
 USE_PRELUDE?=0
 USE_ZEROMQ?=0
 USE_GEOIP?=0
+USE_MAGIC?=auto
 
 DEFINES=-DMAX_AGENTS=${MAXAGENTS} -DOSSECHIDS
 DEFINES+=-DDEFAULTDIR=\"${PREFIX}\"
@@ -149,8 +150,16 @@ ifeq (${USE_GEOIP},1)
 endif # USE_GEOIP
 
 ifneq (,$(filter ${USE_MAGIC},auto yes y Y 1))
-	DEFINES+=-DLIBMAGIC_ENABLED
-	LDFLAGS+=-lmagic
+	ifeq (${USE_MAGIC},auto)
+		ifneq (,$(wildcard /usr/include/linux/magic.h))
+			DEFINES+=-DLIBMAGIC_ENABLED
+			LDFLAGS+=-lmagic
+			CFLAGS+=-I/usr/include/linux
+		endif 
+	else
+		DEFINES+=-DLIBMAGIC_ENABLED
+		LDFLAGS+=-lmagic
+	endif 
 endif # USE_GEOIP
 
 MI :=
@@ -471,6 +480,7 @@ settings:
 	@echo "    USE_ZEROMQ:     ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:      ${USE_GEOIP}"
 	@echo "    USE_PRELUDE:    ${USE_PRELUDE}"
+	@echo "    USE_MAGIC       ${USE_MAGIC}"
 	@echo "Mysql settings:"
 	@echo "    includes:       ${MI}"
 	@echo "    libs:           ${ML}"
