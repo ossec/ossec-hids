@@ -151,10 +151,9 @@ endif # USE_GEOIP
 
 ifneq (,$(filter ${USE_MAGIC},auto yes y Y 1))
 	ifeq (${USE_MAGIC},auto)
-		ifneq (,$(wildcard /usr/include/linux/magic.h))
+		ifneq (,$(wildcard /usr/include/magic.h))
 			DEFINES+=-DLIBMAGIC_ENABLED
 			LDFLAGS+=-lmagic
-			CFLAGS+=-I/usr/include/linux
 		endif 
 	else
 		DEFINES+=-DLIBMAGIC_ENABLED
@@ -874,8 +873,8 @@ syscheck_o := $(syscheck_c:.c=.o)
 syscheckd/%.o: syscheckd/%.c
 	${OSSEC_CC} ${CFLAGS} -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
 
-ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${CFLAGS} ${ZLIB_INCLUDE} $^ ${LDFLAGS} -o $@
+ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB} ${LM}
+	${OSSEC_CCBIN} ${CFLAGS} ${ZLIB_INCLUDE} $^ ${LDFLAGS}  -o $@
 
 #### Monitor #######
 
