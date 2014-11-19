@@ -1068,13 +1068,13 @@ test_os_xml: tests/test_os_xml.o ${os_xml_o}
 test_os_regex: tests/test_os_regex.c ${os_regex_o}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
-test_os_crypto: tests/test_os_crypto.c ${crypto_o} ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o} ${ZLIB_LIB}
+test_os_crypto: tests/test_os_crypto.c ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
-test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
+test_os_net: tests/test_os_net.c ${os_net_o} ${ossec_libs}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
-test_shared: tests/test_shared.c ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o}
+test_shared: tests/test_shared.c ${ossec_libs}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
 test_valgrind: build_tests
