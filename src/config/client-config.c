@@ -19,7 +19,7 @@
 
 int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 {
-    int i = 0;
+    int i = 0, portnum;
 
     /* XML definitions */
     const char *xml_client_ip = "server-ip";
@@ -135,11 +135,12 @@ int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                 merror(XML_VALUEERR,__local_name,node[i]->element,node[i]->content);
                 return(OS_INVALID);
             }
-            logr->port = atoi(node[i]->content);
+            os_strdup(node[i]->content, logr->port);
+            portnum = atoi(node[i]->content);
 
-            if(logr->port <= 0 || logr->port > 65535)
+            if(portnum <= 0 || portnum > 65535)
             {
-                merror(PORT_ERROR, __local_name, logr->port);
+                merror(PORT_ERROR, __local_name, portnum);
                 return(OS_INVALID);
             }
         }

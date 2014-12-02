@@ -58,7 +58,7 @@ static void help_agent_auth()
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out("    -m <addr>   Manager IP address");
-    print_out("    -p <port>   Manager port (default: %d)", DEFAULT_PORT);
+    print_out("    -p <port>   Manager port (default: %s)", DEFAULT_PORT);
     print_out("    -A <name>   Agent name (default: hostname)");
     print_out("    -v <path>   Full path to CA certificate used to verify the server");
     print_out("    -x <path>   Full path to agent certificate");
@@ -77,11 +77,11 @@ int main(int argc, char **argv)
     gid_t gid = 0;
 #endif
 
-    int sock = 0, port = DEFAULT_PORT, ret = 0;
+    int sock = 0, portnum, ret = 0;
+    char *port = DEFAULT_PORT;
     const char *dir = DEFAULTDIR;
     const char *group = GROUPGLOBAL;
     const char *manager = NULL;
-    const char *ipaddress = NULL;
     const char *agentname = NULL;
     const char *agent_cert = NULL;
     const char *agent_key = NULL;
@@ -140,11 +140,12 @@ int main(int argc, char **argv)
             case 'p':
                if(!optarg)
                     ErrorExit("%s: -%c needs an argument",ARGV0, c);
-                port = atoi(optarg);
-                if(port <= 0 || port >= 65536)
+                portnum = atoi(optarg);
+                if(portnum <= 0 || portnum >= 65536)
                 {
                     ErrorExit("%s: Invalid port: %s", ARGV0, optarg);
                 }
+                port = optarg;
                 break;
             case 'v':
                 if (!optarg)
@@ -235,24 +236,13 @@ int main(int argc, char **argv)
     }
 
 
-    /* Check to see if the manager to connect to was specified as an IP address
-     * or hostname on the command line. If it was given as a hostname then ensure
-     * the hostname is preserved so that certificate verification can be done.
-     */
-    if(!(ipaddress = OS_GetHost(manager, 3)))
-    {
-        merror("%s: Could not resolve hostname: %s\n", ARGV0, manager);
-        exit(1);
-    }
-
     /* Connecting via TCP */
-    sock = OS_ConnectTCP(port, ipaddress, 0);
+    sock = OS_ConnectTCP(port, manager);
     if(sock <= 0)
     {
-        merror("%s: Unable to connect to %s:%d", ARGV0, ipaddress, port);
+        merror("%s: Unable to connect to %s:%s", ARGV0, manager, port);
         exit(1);
     }
-
 
     /* Connecting the SSL socket */
     ssl = SSL_new(ctx);
@@ -269,7 +259,7 @@ int main(int argc, char **argv)
     }
 
 
-    printf("INFO: Connected to %s:%d\n", ipaddress, port);
+    printf("INFO: Connected to %s:%s\n", manager, port);
 
     /* Additional verification of the manager's certificate if a hostname
      * rather than an IP address is given on the command line. Could change
@@ -277,7 +267,7 @@ int main(int argc, char **argv)
      */
     if(ca_cert)
     {
-        printf("INFO: Verifing manager's certificate\n");
+        printf("INFO: Verifying manager's certificate\n");
         if(check_x509_cert(ssl, manager) != VERIFY_TRUE) {
             debug1("%s: DEBUG: Unable to verify server certificate.", ARGV0);
             exit(1);

@@ -58,7 +58,7 @@ static void help_authd()
     print_out("    -i          Use client's source IP address");
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
-    print_out("    -p <port>   Manager port (default: %d)", DEFAULT_PORT);
+    print_out("    -p <port>   Manager port (default: %s)", DEFAULT_PORT);
     print_out("    -v <path>   Full path to CA certificate used to verify clients");
     print_out("    -x <path>   Full path to server certificate");
     print_out("    -k <path>   Full path to server key");
@@ -105,7 +105,8 @@ int main(int argc, char **argv)
     // Count of pids we are wait()ing on.
     int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
     gid_t gid;
-    int client_sock = 0, sock = 0, port = DEFAULT_PORT, ret = 0;
+    int client_sock = 0, sock = 0, portnum, ret = 0;
+    char *port = DEFAULT_PORT;
     const char *dir  = DEFAULTDIR;
     const char *group = GROUPGLOBAL;
     const char *server_cert = NULL;
@@ -115,7 +116,7 @@ int main(int argc, char **argv)
     SSL_CTX *ctx;
     SSL *ssl;
     char srcip[IPSIZE +1];
-    struct sockaddr_in _nc;
+    struct sockaddr_storage _nc;
     socklen_t _ncl;
 
 
@@ -161,11 +162,12 @@ int main(int argc, char **argv)
             case 'p':
                if(!optarg)
                     ErrorExit("%s: -%c needs an argument",ARGV0, c);
-                port = atoi(optarg);
-                if(port <= 0 || port >= 65536)
+                portnum = atoi(optarg);
+                if(portnum <= 0 || portnum >= 65536)
                 {
                     ErrorExit("%s: Invalid port: %s", ARGV0, optarg);
                 }
+                port = optarg;
                 break;
             case 'v':
                 if (!optarg)
@@ -248,10 +250,10 @@ int main(int argc, char **argv)
 
 
     /* Connecting via TCP */
-    sock = OS_Bindporttcp(port, NULL, 0);
+    sock = OS_Bindporttcp(port, NULL);
     if(sock <= 0)
     {
-        merror("%s: Unable to bind to port %d", ARGV0, port);
+        merror("%s: Unable to bind to port %s", ARGV0, port);
         exit(1);
     }
     fcntl(sock, F_SETFL, O_NONBLOCK);
@@ -305,7 +307,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                strncpy(srcip, inet_ntoa(_nc.sin_addr),IPSIZE -1);
+                satop((struct sockaddr *) &_nc, srcip, IPSIZE);
                 char *agentname = NULL;
                 ssl = SSL_new(ctx);
                 SSL_set_fd(ssl, client_sock);

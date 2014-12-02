@@ -88,8 +88,8 @@ if [ "x${IP}" = "x" ]; then
 fi
 
 
-# Checking for invalid entries (lacking ".", etc)
-echo "${IP}" | grep "\." > /dev/null 2>&1
+# Checking for invalid entries (lacking "." or ":", etc)
+echo "${IP}" | egrep "\.|\:" > /dev/null 2>&1
 if [ ! $? = 0 ]; then
     echo "`date` Invalid ip/hostname entry: ${IP}" >> ${PWD}/../logs/active-responses.log
     exit 1;
@@ -99,6 +99,10 @@ fi
 # Adding the ip to hosts.deny
 if [ "x${ACTION}" = "xadd" ]; then
    lock;     
+   echo "${IP}" | grep "\:" > /dev/null 2>&1
+   if [ $? = 0 ]; then
+    IP="[${IP}]"
+   fi
    if [ "X$UNAME" = "XFreeBSD" ]; then
     echo "ALL : ${IP} : deny" >> /etc/hosts.allow
    else    
@@ -111,10 +115,14 @@ if [ "x${ACTION}" = "xadd" ]; then
 # Deleting from hosts.deny   
 elif [ "x${ACTION}" = "xdelete" ]; then   
    lock;
-   TMP_FILE=`mktemp /var/ossec/ossec-hosts.XXXXXXXXXX` 
+   TMP_FILE = `mktemp /var/ossec/ossec-hosts.XXXXXXXXXX` 
    if [ "X${TMP_FILE}" = "X" ]; then 
      # Cheap fake tmpfile, but should be harder then no random data 
-     TMP_FILE="/var/ossec/ossec-hosts.`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -1 `"
+     TMP_FILE = "/var/ossec/ossec-hosts.`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -1 `"
+   fi
+   echo "${IP}" | grep "\:" > /dev/null 2>&1
+   if [ $? = 0 ]; then
+    IP="\[${IP}\]"
    fi
    if [ "X$UNAME" = "XFreeBSD" ]; then
     cat /etc/hosts.allow | grep -v "ALL : ${IP} : deny$"> ${TMP_FILE}
