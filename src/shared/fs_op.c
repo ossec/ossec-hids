@@ -16,7 +16,7 @@
 
 short IsNFS(const char *dir_name)
 {
-#ifdef _CAN_CHECK_FS_TYPE
+#if defned(Linux)
     struct statfs stfs;
 
     /* ignore NFS (0x6969) or CIFS (0xFF534D42) mounts */

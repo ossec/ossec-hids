@@ -20,7 +20,6 @@
 #define _OS_FS
 
 #ifdef Linux
-#define _CAN_CHECK_FS_TYPE
 #include <sys/vfs.h>
 #endif
 
