@@ -20,7 +20,7 @@ static char *gen_diff_alert(const char *filename, time_t alert_diff_time) __attr
 static int seechanges_dupfile(const char *old, const char *new) __attribute__((nonnull));
 static int seechanges_createpath(const char *filename) __attribute__((nonnull));
 
-#ifdef USE_MAGIC
+#ifdef LIBMAGIC_ENABLED
 #include <magic.h>
 extern magic_t magic_cookie;
 
@@ -147,7 +147,7 @@ static int seechanges_dupfile(const char *old, const char *new)
     }
 
     n = fread(buf, 1, 2048, fpr);
-    #ifdef USE_MAGIC
+    #ifdef LIBMAGIC_ENABLED
     if(is_text(magic_cookie, buf, n) == 0)
     {
         goto cleanup;
@@ -161,7 +161,7 @@ static int seechanges_dupfile(const char *old, const char *new)
     }
     while((n = fread(buf, 1, 2048, fpr)) > 0);
 
-#ifdef USE_MAGIC
+#ifdef LIBMAGIC_ENABLED
 cleanup:
 #endif
     fclose(fpr);

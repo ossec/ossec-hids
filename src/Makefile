@@ -13,7 +13,7 @@ EXTERNAL_LUA=external/lua/
 EXTERNAL_ZLIB=external/zlib-1.2.8/
 LUA_PLAT=posix
 MAXAGENTS?=2048
-# XXX Becareful NO EXTRA Spaces here
+# XXX Be careful NO EXTRA Spaces here
 PREFIX?=/var/ossec
 PG_CONFIG?=pg_config
 MY_CONFIG?=mysql_config
@@ -26,6 +26,7 @@ OSSEC_USER_REM?=ossecr
 USE_PRELUDE?=0
 USE_ZEROMQ?=0
 USE_GEOIP?=0
+USE_MAGIC?=auto
 
 DEFINES=-DMAX_AGENTS=${MAXAGENTS} -DOSSECHIDS
 DEFINES+=-DDEFAULTDIR=\"${PREFIX}\"
@@ -39,9 +40,7 @@ LDFLAGS+=-lm
 
 ifeq (${uname_S},Linux)
 		DEFINES+=-DUSEINOTIFY
-#		DEFINES+=-DUSE_MAGIC
 		LDFLAGS+=-lpthread
-#		LDFLAGS+=-lmagic
 else
 ifeq (${uname_S},AIX)
 		DEFINES+=-DAIX
@@ -153,6 +152,17 @@ ifeq (${USE_GEOIP},1)
 	LDFLAGS+=-lGeoIP
 endif # USE_GEOIP
 
+ifneq (,$(filter ${USE_MAGIC},auto yes y Y 1))
+	ifeq (${USE_MAGIC},auto)
+		ifneq (,$(wildcard /usr/include/magic.h))
+			DEFINES+=-DLIBMAGIC_ENABLED
+			LDFLAGS+=-lmagic
+		endif 
+	else
+		DEFINES+=-DLIBMAGIC_ENABLED
+		LDFLAGS+=-lmagic
+	endif 
+endif # USE_GEOIP
 
 MI :=
 PI :=
@@ -472,6 +482,7 @@ settings:
 	@echo "    USE_ZEROMQ:     ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:      ${USE_GEOIP}"
 	@echo "    USE_PRELUDE:    ${USE_PRELUDE}"
+	@echo "    USE_MAGIC       ${USE_MAGIC}"
 	@echo "Mysql settings:"
 	@echo "    includes:       ${MI}"
 	@echo "    libs:           ${ML}"
@@ -865,8 +876,8 @@ syscheck_o := $(syscheck_c:.c=.o)
 syscheckd/%.o: syscheckd/%.c
 	${OSSEC_CC} ${CFLAGS} -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
 
-ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${CFLAGS} ${ZLIB_INCLUDE} $^ ${LDFLAGS} -o $@
+ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB} ${LM}
+	${OSSEC_CCBIN} ${CFLAGS} ${ZLIB_INCLUDE} $^ ${LDFLAGS}  -o $@
 
 #### Monitor #######
 
