@@ -32,9 +32,6 @@ char *os_strip_char(const char *source, char remove) __attribute__((nonnull));
 /* Escape a list of characters with a backslash */
 char *os_shell_escape(const char *src);
 
-/* Escape a list of characters with a backslash */
-char *os_shell_escape(const char *src);
-
 #endif
 
 /* EOF */
