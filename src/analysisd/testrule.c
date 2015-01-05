@@ -89,6 +89,8 @@ void DecodeEvent(Eventinfo *lf);
 int ReadDecodeXML(char *file);
 int SetDecodeXML();
 
+int file = 0;
+FILE *logfile;
 
 /* print help statement */
 void help_logtest()
@@ -120,6 +122,7 @@ int main(int argc, char **argv)
 
     char *dir = DEFAULTDIR;
     char *cfg = DEFAULTCPATH;
+    char *lfile = '\0';
 
     /* Setting the name */
     OS_SetName(ARGV0);
@@ -133,7 +136,7 @@ int main(int argc, char **argv)
     active_responses = NULL;
     memset(prev_month, '\0', 4);
 
-    while((c = getopt(argc, argv, "VatvdhU:D:c:")) != -1){
+    while((c = getopt(argc, argv, "VatvdhU:D:F:c:")) != -1){
         switch(c){
 	    case 'V':
 		print_version();
@@ -157,6 +160,13 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -D needs an argument",ARGV0);
                 dir = optarg;
                 break;
+	    case 'F':
+		if(!optarg) {
+			ErrorExit("%s: -F needs an argument", ARGV0);
+		}
+		lfile = optarg;
+	 	file = 1;
+		break;
             case 'c':
                 if(!optarg)
                     ErrorExit("%s: -c needs an argument",ARGV0);
@@ -342,6 +352,14 @@ int main(int argc, char **argv)
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, getpid());
 
+    if(file) {
+	logfile = fopen(lfile, "r");
+	if(!logfile) {
+		ErrorExit("Cannot open %s (%d): %s", lfile, errno, strerror(errno));
+	}
+
+    }
+
 
     /* Going to main loop */
     OS_ReadMSG(ut_str);
@@ -451,7 +469,15 @@ void OS_ReadMSG(char *ut_str)
 
 
         /* Receive message from queue */
-        if(fgets(msg +8, OS_MAXSTR -8, stdin))
+        //if(fgets(msg +8, OS_MAXSTR -8, stdin))
+        char *fret;
+        if(file) {
+		fret = fgets(msg + 8, OS_MAXSTR - 8, logfile);
+	} else {
+		fret = fgets(msg + 8, OS_MAXSTR - 8, stdin);
+	}
+
+        if(fret)
         {
             RuleNode *rulenode_pt;
 
