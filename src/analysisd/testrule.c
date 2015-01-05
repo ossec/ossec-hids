@@ -107,6 +107,7 @@ void help_logtest()
     print_out("    -v          Verbose (full) output/rule debugging");
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
+    print_out("    -F <FILE>   File to read log messages from.");
     print_out("    -U <rule:alert:decoder>  Unit test. Refer to contrib/ossec-testing/runtests.py");
     print_out(" ");
     exit(1);
