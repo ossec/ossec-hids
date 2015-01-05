@@ -56,7 +56,7 @@
   <rule id="31504" level="6">
     <if_sid>31100</if_sid>
     <url>login.php</url>
-    <regex>/admin/\w+.php/login.php</regex>
+    <regex>/admin/\S+.php/login.php</regex>
     <description>osCommerce file manager login.php bypass attempt.</description>
    </rule>
 
