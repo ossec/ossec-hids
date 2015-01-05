@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 
 def xmlfile():
-    """generates expressions from rules file"""
+    """rule generator from xml file"""
     tree = ET.parse(XMLFILE)
     for rule in tree.getiterator("rule"):
         yield rule
