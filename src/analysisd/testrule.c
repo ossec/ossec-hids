@@ -89,6 +89,8 @@ void DecodeEvent(Eventinfo *lf);
 int ReadDecodeXML(char *file);
 int SetDecodeXML();
 
+int file = 0;
+FILE *logfile;
 
 /* print help statement */
 void help_logtest()
@@ -105,6 +107,7 @@ void help_logtest()
     print_out("    -v          Verbose (full) output/rule debugging");
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
+    print_out("    -F <FILE>   File to read log messages from.");
     print_out("    -U <rule:alert:decoder>  Unit test. Refer to contrib/ossec-testing/runtests.py");
     print_out(" ");
     exit(1);
@@ -120,6 +123,8 @@ int main(int argc, char **argv)
 
     char *dir = DEFAULTDIR;
     char *cfg = DEFAULTCPATH;
+    char *lfile;
+    lfile = NULL;
 
     /* Setting the name */
     OS_SetName(ARGV0);
@@ -133,7 +138,7 @@ int main(int argc, char **argv)
     active_responses = NULL;
     memset(prev_month, '\0', 4);
 
-    while((c = getopt(argc, argv, "VatvdhU:D:c:")) != -1){
+    while((c = getopt(argc, argv, "VatvdhU:D:F:c:")) != -1){
         switch(c){
 	    case 'V':
 		print_version();
@@ -157,6 +162,13 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -D needs an argument",ARGV0);
                 dir = optarg;
                 break;
+	    case 'F':
+		if(!optarg) {
+			ErrorExit("%s: -F needs an argument", ARGV0);
+		}
+		lfile = optarg;
+	 	file = 1;
+		break;
             case 'c':
                 if(!optarg)
                     ErrorExit("%s: -c needs an argument",ARGV0);
@@ -342,6 +354,14 @@ int main(int argc, char **argv)
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, getpid());
 
+    if(file) {
+	logfile = fopen(lfile, "r");
+	if(!logfile) {
+		ErrorExit("Cannot open %s (%d): %s", lfile, errno, strerror(errno));
+	}
+
+    }
+
 
     /* Going to main loop */
     OS_ReadMSG(ut_str);
@@ -451,7 +471,15 @@ void OS_ReadMSG(char *ut_str)
 
 
         /* Receive message from queue */
-        if(fgets(msg +8, OS_MAXSTR -8, stdin))
+        //if(fgets(msg +8, OS_MAXSTR -8, stdin))
+        char *fret;
+        if(file) {
+		fret = fgets(msg + 8, OS_MAXSTR - 8, logfile);
+	} else {
+		fret = fgets(msg + 8, OS_MAXSTR - 8, stdin);
+	}
+
+        if(fret)
         {
             RuleNode *rulenode_pt;
 
