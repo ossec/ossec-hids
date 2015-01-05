@@ -123,7 +123,8 @@ int main(int argc, char **argv)
 
     char *dir = DEFAULTDIR;
     char *cfg = DEFAULTCPATH;
-    char *lfile = '\0';
+    char *lfile;
+    lfile = NULL;
 
     /* Setting the name */
     OS_SetName(ARGV0);
