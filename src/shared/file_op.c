@@ -954,7 +954,7 @@ int mkstemp_ex(char *tmp_path)
 {
     DWORD dwResult;
     int result;
-    int error = -1;
+    int status = -1;
 
     HANDLE h;
     PACL pACL;
@@ -1013,7 +1013,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     /* create SID for the SYSTEM group */
@@ -1033,7 +1033,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     /* initialize an EXPLICIT_ACCESS structure for an ACE */
@@ -1066,7 +1066,7 @@ int mkstemp_ex(char *tmp_path)
             dwResult
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     /* initialize security descriptor */
@@ -1083,7 +1083,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION))
@@ -1094,7 +1094,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     /* set owner */
@@ -1106,7 +1106,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     /* set group owner */
@@ -1118,7 +1118,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     /* add ACL to security descriptor */
@@ -1130,7 +1130,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     /* initialize security attributes structure */
@@ -1157,7 +1157,7 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
     if (!CloseHandle(h))
@@ -1169,13 +1169,13 @@ int mkstemp_ex(char *tmp_path)
             GetLastError()
         );
 
-        goto Cleanup;
+        goto cleanup;
     }
 
-    /* everything was successful */
-    error = 0;
+    /* success */
+    status = 0;
 
-    Cleanup:
+    cleanup:
         if (pAdminGroupSID)
             FreeSid(pAdminGroupSID);
         if (pSystemGroupSID)
@@ -1185,7 +1185,7 @@ int mkstemp_ex(char *tmp_path)
         if (pSD)
             LocalFree(pSD);
 
-    return(error);
+    return(status);
 }
 
 
