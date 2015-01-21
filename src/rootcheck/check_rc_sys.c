@@ -175,8 +175,9 @@ static int read_sys_dir(const char *dir_name, int do_read)
     int did_changed = 0;
     DIR *dp;
 
-	struct dirent *entry;
+    struct dirent *entry;
     struct stat statbuf;
+    short is_nfs;
 
     #ifndef WIN32
     const char *(dirs_to_doread[]) = { "/bin", "/sbin", "/usr/bin",
@@ -205,7 +206,16 @@ static int read_sys_dir(const char *dir_name, int do_read)
         i = 0;
     }
 
-
+    /* Should we check for NFS? */
+    if(rootcheck.skip_nfs)
+    {
+        is_nfs = IsNFS(dir_name);
+        if(is_nfs != 0)
+        {
+            // Error will be -1, and 1 means skipped
+            return(is_nfs);
+        }
+    }
 
     /* Getting the number of nodes. The total number on opendir
      * must be the same

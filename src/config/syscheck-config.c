@@ -570,6 +570,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     const char *xml_disabled = "disabled";
     const char *xml_scan_on_start = "scan_on_start";
     const char *xml_prefilter_cmd = "prefilter_cmd";
+    const char *xml_skip_nfs = "skip_nfs";
 
     /* Configuration example
     <directories check_all="yes">/etc,/usr/bin</directories>
@@ -678,6 +679,20 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                 syscheck->disabled = 1;
             else if(strcmp(node[i]->content, "no") == 0)
                 syscheck->disabled = 0;
+            else
+            {
+                merror(XML_VALUEERR,__local_name,node[i]->element,node[i]->content);
+                return(OS_INVALID);
+            }
+        }
+
+        /* Getting if skip_nfs. */
+        else if(strcmp(node[i]->element,xml_skip_nfs) == 0)
+        {
+            if(strcmp(node[i]->content, "yes") == 0)
+                syscheck->skip_nfs = 1;
+            else if(strcmp(node[i]->content, "no") == 0)
+                syscheck->skip_nfs = 0;
             else
             {
                 merror(XML_VALUEERR,__local_name,node[i]->element,node[i]->content);
