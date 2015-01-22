@@ -29,6 +29,7 @@
 #define AFTER_ERROR     0x010
 
 
+#define DECODER_MAX_ORDER 8
 
 /* Decoder structure */
 typedef struct
@@ -46,6 +47,9 @@ typedef struct
     char *parent;
     char *name;
     char *ftscomment;
+    os_lua_t *lua; 
+    int lua_function; 
+    char *lua_function_text; 
 
     OSRegex *regex;
     OSRegex *prematch;
@@ -63,6 +67,17 @@ typedef struct _OSDecoderNode
     OSDecoderInfo *osdecoder;
 }OSDecoderNode;
 
+
+/*
+ * decoder obj functions 
+ */
+
+OSDecoderInfo *decoder_new(char *name);
+void decoder_destroy(OSDecoderInfo **self_p);
+/*
+int decoder_run_lua(OSDecoderInfo *self, Eventinfo *lf);
+int decoder_set(OSDecoderInfo *self, const char *key, void *value);
+*/
 
 
 /* Functions to Create the list, Add a osdecoder to the

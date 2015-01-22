@@ -46,6 +46,7 @@ ifeq (${uname_S},Linux)
 		DEFINES+=-DINOTIFY_ENABLED
 #		DEFINES+=-DUSE_MAGIC
 		LDFLAGS+=-lpthread
+		LDFLAGS+=-lm
 #		LDFLAGS+=-lmagic
 else
 ifeq (${uname_S},AIX)
@@ -57,6 +58,7 @@ ifeq (${uname_S},SunOS)
 		DEFINES+=-DSOLARIS
 		DEFINES+=-DHIGHFIRST
 		LDFLAGS+=-lsocket -lnsl -lresolv
+		LDFLAGS+=-lm
 		LUA_PLAT=solaris
 		PATH=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
 
@@ -65,16 +67,17 @@ ifeq (${uname_S},Darwin)
 		DEFINES+=-DDarwin
 		DEFINES+=-DHIGHFIRST
 		LUA_PLAT=macosx
-
 else
 ifeq (${uname_S},FreeBSD)
 		DEFINES+=-DFreeBSD
 		LDFLAGS+=-pthread
+		LDFLAGS+=-lm
 		LUA_PLAT=freebsd
 else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
 		DEFINES+=-pthread
+		LDFLAGS+=-lm
 		LUA_PLAT=posix
 		CFLAGS+=-I/usr/local/include
 		LDFLAGS+=-L/usr/local/lib
@@ -112,9 +115,14 @@ ifneq (,$(filter ${ONEWAY},yes y Y 1))
 	DEFINES+=-DONEWAY_ENABLED
 endif
 
+ifdef DEV_DEBUG 
+	DEFINES+=-DDEBUGAD
+	DEFINES+=-DDEV_DEBUG
+endif
+
 CFLAGS+=${DEFINES}
 CFLAGS+=-Wall -Wextra -Werror
-CFLAGS+=-I./ -I./headers/
+CFLAGS+=-I./ -I./headers/ -I./external/lua/src 
 
 
 CCCOLOR="\033[34m"
@@ -571,7 +579,7 @@ winagent:
 ####################
 
 .PHONY: external lua
-external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a ${EXTERNAL_LUA}src/liblua.a 
 
 lua:
 	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
@@ -579,6 +587,8 @@ lua:
 ${EXTERNAL_ZLIB}libz.a:
 	cd ${EXTERNAL_ZLIB} && ./configure && ${MAKE} libz.a
 
+${EXTERNAL_LUA}src/liblua.a: $(wildcard ${EXTERNAL_LUA}src/*.c) 
+	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
 
 #### zlib ##########
 
@@ -618,8 +628,11 @@ libcJSON.a: ${cjson_o}
 #### OSSEC Libs ####
 ####################
 
-ossec_libs = os_crypto.a config.a shared.a os_net.a os_regex.a os_xml.a
+ossec_libs = os_crypto.a config.a shared.a os_net.a os_regex.a os_xml.a ${EXTERNAL_LUA}src/liblua.a 
 
+
+lua.a: deps 
+	cp 
 #### os_xml ########
 
 os_xml_c := $(wildcard os_xml/*.c)
@@ -1089,13 +1102,13 @@ test_os_xml: tests/test_os_xml.o ${os_xml_o}
 test_os_regex: tests/test_os_regex.c ${os_regex_o}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
-test_os_crypto: tests/test_os_crypto.c ${crypto_o} ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o} ${ZLIB_LIB}
+test_os_crypto: tests/test_os_crypto.c ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
-test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
+test_os_net: tests/test_os_net.c ${os_net_o} ${ossec_libs}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
-test_shared: tests/test_shared.c ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o}
+test_shared: tests/test_shared.c ${ossec_libs}
 	${OSSEC_CCBIN} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
 test_valgrind: build_tests

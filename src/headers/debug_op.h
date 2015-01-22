@@ -31,6 +31,36 @@
 #define __attribute__(x)
 #endif
 
+#include <errno.h> 
+
+#ifdef DEV_DEBUG 
+#define d(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+#define d(M, ...) // fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#endif
+
+#define RED    "\e[31m"
+#define GREEN  "\e[32m"
+#define YELLOW "\e[33m"
+#define WHITE  "\e[1m"
+#define COLOR_X "\e[m"
+
+#define clean_errno() (errno == 0 ? "None" : strerror(errno))
+ 
+#define log_err(M, ...) fprintf(stderr, RED "[ERROR]" COLOR_X " (%s:%d:%s: errno: %s) " M "\n", __FILE__, __LINE__, __func__, clean_errno(), ##__VA_ARGS__) 
+ 
+#define log_warn(M, ...) fprintf(stderr, YELLOW "[WARN]" COLOR_X " (%s:%d:%s: errno: %s) " M "\n", __FILE__, __LINE__, __func__, clean_errno(), ##__VA_ARGS__) 
+ 
+#define log_info(M, ...) fprintf(stderr, WHITE "[INFO]" COLOR_X " (%s:%d:%s) " M "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__) 
+ 
+#define check(A, M, ...) if(!(A)) { log_err(M, ##__VA_ARGS__); errno=0; goto error; } 
+ 
+#define sentinel(M, ...)  { log_err(M, ##__VA_ARGS__); errno=0; goto error; } 
+ 
+#define check_mem(A) check((A), "Out of memory.")
+ 
+#define check_debug(A, M, ...) if(!(A)) { d(M, ##__VA_ARGS__); errno=0; goto error; } 
+
 void debug1(const char *msg,...) __attribute__((format(printf, 1, 2))) __attribute__((nonnull));
 
 void debug2(const char *msg,...) __attribute__((format(printf, 1, 2))) __attribute__((nonnull));

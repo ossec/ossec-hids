@@ -1665,6 +1665,12 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
         }
     }
 
+    if(currently_rule->lua && currently_rule->lua_function) {
+        if(!ruleinfo_run_lua(currently_rule, lf)) {
+            return(NULL);
+        }
+    }
+
 
     /* If it is a context rule, search for it */
     if(currently_rule->context == 1)

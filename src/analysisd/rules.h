@@ -60,7 +60,6 @@
 #define RULE_STATUS     1024
 #define RULE_ACTION     2048
 
-
 #define RULEINFODETAIL_TEXT     0
 #define RULEINFODETAIL_LINK     1
 #define RULEINFODETAIL_CVE      2
@@ -133,6 +132,9 @@ typedef struct _RuleInfo
     OSMatch *match;
     OSRegex *regex;
 
+    os_lua_t *lua; 
+    int lua_function; 
+
     /* Policy-based rules */
     char *day_time;
     char *week_day;
@@ -194,6 +196,13 @@ RuleInfo *zerorulemember(int id,
                          int overwrite);
 
 
+/* another hack we need to fix with our header fules */
+typedef struct _Eventinfo Eventinfo; 
+
+/*
+ */
+int ruleinfo_run_lua(RuleInfo *self, Eventinfo *lf);
+
 /** Rule_list Functions **/
 
 /* create the rule list */
@@ -238,5 +247,6 @@ RuleNode *OS_GetFirstRule();
 #define SYSCHECK_NEW    "syscheck_new_entry"
 #define SYSCHECK_DEL    "syscheck_deleted"
 
+int luaopen_log(lua_State * L);
 
 #endif /* _OS_RULES */

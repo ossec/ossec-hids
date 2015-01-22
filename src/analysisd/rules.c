@@ -15,6 +15,7 @@
 
 
 
+#include "shared.h"
 #include "rules.h"
 #include "config.h"
 #include "eventinfo.h"
@@ -46,7 +47,6 @@ int getDecoderfromlist(char *name);
 extern int _max_freq;
 
 
-
 /* Rules_OP_ReadRules, v0.1, 2005/07/04
  * Will initialize the rules list
  */
@@ -57,6 +57,343 @@ void Rules_OP_CreateRules()
     OS_CreateRuleList();
 
     return;
+}
+
+int ruleinfo_run_lua(RuleInfo *self, Eventinfo *lf)
+{
+    d("-----------rules stakc at start");
+    d("           --------------> sid: %d", self->sigid);
+    os_lua_stack_dump(self->lua);
+    const char *key;
+    const char *value;
+    int rc;
+    int table_set = 0; 
+
+    if(self->lua == NULL) {
+        d("No lua rule");
+        return (0); 
+    }
+
+    lua_newtable(self->lua->L); 
+
+        os_lua_stack_dump(self->lua); 
+        d("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ TABLE?");
+
+    if(lf->log) {
+        d("### LOG");
+        lua_pushstring(self->lua->L, "log");
+        lua_pushstring(self->lua->L, lf->log); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->full_log) {
+
+        d("### FULL_LOG");
+        lua_pushstring(self->lua->L, "full_log");
+        lua_pushstring(self->lua->L, lf->full_log); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->location) {
+        lua_pushstring(self->lua->L, "location");
+        lua_pushstring(self->lua->L, lf->location); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->hostname) {
+        lua_pushstring(self->lua->L, "hostname");
+        lua_pushstring(self->lua->L, lf->hostname); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->program_name) {
+        lua_pushstring(self->lua->L, "program_name");
+        lua_pushstring(self->lua->L, lf->program_name); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->id) {
+        lua_pushstring(self->lua->L, "id");
+        lua_pushstring(self->lua->L, lf->id); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->dstip) {
+        lua_pushstring(self->lua->L, "dstip");
+        lua_pushstring(self->lua->L, lf->dstip); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->dstuser) {
+        lua_pushstring(self->lua->L, "dstuser");
+        lua_pushstring(self->lua->L, lf->dstuser); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->dstport) {
+        lua_pushstring(self->lua->L, "dstport");
+        lua_pushstring(self->lua->L, lf->dstport); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->srcip) {
+        lua_pushstring(self->lua->L, "srcip");
+        lua_pushstring(self->lua->L, lf->srcip); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->srcuser) {
+        lua_pushstring(self->lua->L, "srcuser");
+        lua_pushstring(self->lua->L, lf->srcuser); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->srcport) {
+        lua_pushstring(self->lua->L, "srcport");
+        lua_pushstring(self->lua->L, lf->srcport); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->action) {
+        lua_pushstring(self->lua->L, "action");
+        lua_pushstring(self->lua->L, lf->action); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->url) {
+        lua_pushstring(self->lua->L, "url");
+        lua_pushstring(self->lua->L, lf->url); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->protocol) {
+        lua_pushstring(self->lua->L, "protocol");
+        lua_pushstring(self->lua->L, lf->protocol); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->data) {
+        lua_pushstring(self->lua->L, "data");
+        lua_pushstring(self->lua->L, lf->data); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->command) {
+        lua_pushstring(self->lua->L, "command");
+        lua_pushstring(self->lua->L, lf->command); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->systemname) {
+        lua_pushstring(self->lua->L, "systemname");
+        lua_pushstring(self->lua->L, lf->systemname); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->filename) {
+        lua_pushstring(self->lua->L, "filename");
+        lua_pushstring(self->lua->L, lf->filename); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->md5_before) {
+        lua_pushstring(self->lua->L, "md5_before");
+        lua_pushstring(self->lua->L, lf->md5_before); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->md5_after) {
+        lua_pushstring(self->lua->L, "md5_after");
+        lua_pushstring(self->lua->L, lf->md5_after); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->sha1_before) {
+        lua_pushstring(self->lua->L, "sha1_before");
+        lua_pushstring(self->lua->L, lf->sha1_before); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->sha1_after) {
+        lua_pushstring(self->lua->L, "sha1_after");
+        lua_pushstring(self->lua->L, lf->sha1_after); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->size_before) {
+        lua_pushstring(self->lua->L, "size_before");
+        lua_pushstring(self->lua->L, lf->size_before); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->size_after) {
+        lua_pushstring(self->lua->L, "size_after");
+        lua_pushstring(self->lua->L, lf->size_after); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->owner_before) {
+        lua_pushstring(self->lua->L, "owner_before");
+        lua_pushstring(self->lua->L, lf->owner_before); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->owner_after) {
+        lua_pushstring(self->lua->L, "owner_after");
+        lua_pushstring(self->lua->L, lf->owner_after); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->gowner_before) {
+        lua_pushstring(self->lua->L, "gowner_before");
+        lua_pushstring(self->lua->L, lf->gowner_before); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->gowner_after) {
+        lua_pushstring(self->lua->L, "gowner_after");
+        lua_pushstring(self->lua->L, lf->gowner_after); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->perm_before) {
+        lua_pushstring(self->lua->L, "perm_before");
+        lua_pushinteger(self->lua->L, lf->perm_before); 
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(lf->perm_after) {
+        lua_pushstring(self->lua->L, "perm_after");
+        lua_pushinteger(self->lua->L, lf->perm_after); 
+
+        lua_settable(self->lua->L, -3);
+        table_set += 1;
+    }
+    if(table_set == 0) {
+        d("############# Force set log");
+        lua_settable(self->lua->L, -1);
+    }
+    d("################# ");
+    os_lua_stack_dump(self->lua); 
+    d("################# ");
+
+
+
+
+    /* Run lua code */
+    if(!(os_lua_pcall(self->lua, self->lua_function, 1, 2, 0))) {
+        d("error in pcall rules");
+        goto error; 
+    }
+
+
+
+    if(lua_type(self->lua->L, -1) == LUA_TTABLE) {
+            lua_pushnil(self->lua->L); 
+            while (lua_next(self->lua->L, -2)) {
+                      // stack now contains: -1 => value; -2 => key; -3 => table
+                      // copy the key so that lua_tostring does not modify the original
+                      lua_pushvalue(self->lua->L, -2);
+                      // stack now contains: -1 => key; -2 => value; -3 => key; -4 => table
+                      key = lua_tostring(self->lua->L, -1);
+                      value = lua_tostring(self->lua->L, -2);
+                      if(strcasecmp(key,"dstip")==0) {
+                          lf->dstip = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstip changed to: '%s'", lf->dstip);
+                          #endif
+                      } else if (strcasecmp(key,"dstuser")==0) {
+                          lf->dstuser = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstuser changed to: '%s'", lf->dstuser);
+                          #endif
+                      } else if (strcasecmp(key,"dstport")==0) {
+                          lf->dstport = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       dstport changed to: '%s'", lf->dstport);
+                          #endif
+                      } else if (strcasecmp(key,"srcip")==0) {
+                          lf->srcip = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcip changed to: '%s'", lf->srcip);
+                          #endif
+                      } else if (strcasecmp(key,"srcuser")==0) {
+                          lf->srcuser = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcuser changed to: '%s'", lf->srcuser);
+                          #endif
+                      } else if (strcasecmp(key,"srcport")==0) {
+                          lf->srcport = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       srcport changed to: '%s'", lf->srcport);
+                          #endif
+                      } else if (strcasecmp(key,"protocol")==0) {
+                          lf->protocol = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       protocol changed to: '%s'", lf->protocol);
+                          #endif
+                      } else if (strcasecmp(key,"action")==0) {
+                          lf->action = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       action changed to: '%s'", lf->action);
+                          #endif
+                      } else if (strcasecmp(key,"status")==0) {
+                          lf->status = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       status changed to: '%s'", lf->status);
+                          #endif
+                      } else if (strcasecmp(key,"url")==0) {
+                          lf->url = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       url changed to: '%s'", lf->url);
+                          #endif
+                      } else if (strcasecmp(key,"data")==0) {
+                          lf->data = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       data changed to: '%s'", lf->data);
+                          #endif
+                      } else if (strcasecmp(key,"data")==0) {
+                          lf->data = strdup(value); 
+                          #ifdef TESTRULE
+                          if(!alert_only)print_out("       data changed to: '%s'", lf->data);
+                          #endif
+                      }
+
+                      d(" - %s => %s", key, value);
+                      // pop value + copy of key, leaving original key
+                      lua_pop(self->lua->L, 2);
+                      // stack now contains: -1 => key; -2 => table
+
+            }
+            lua_pop(self->lua->L,1); 
+    } 
+
+    /* LUA based test for true. Only nil and false will return 0 */
+    os_lua_stack_dump(self->lua);
+    switch(lua_type(self->lua->L, -1)) {
+        case LUA_TNIL:
+            rc = 0; 
+            break; 
+        case LUA_TBOOLEAN:
+            rc = lua_toboolean(self->lua->L, -1);
+            break; 
+        default: 
+            rc = 0;
+            break;
+    }
+
+
+    lua_pop(self->lua->L, 2);
+    d("-----------rules stakc at return");
+    os_lua_stack_dump(self->lua);
+    return rc;
+
+
+error:
+    d("lua rule error");
+    d("-----------rules stakc at return");
+    os_lua_stack_dump(self->lua);
+    return 1; 
 }
 
 /* Rules_OP_ReadRules, v0.3, 2005/03/21
@@ -71,71 +408,75 @@ int Rules_OP_ReadRules(char * rulefile)
     /* XML variables */
     /* These are the available options for the rule configuration */
 
-    char *xml_group = "group";
-    char *xml_rule = "rule";
+    const char *xml_group = "group";
+    const char *xml_rule = "rule";
 
-    char *xml_regex = "regex";
-    char *xml_match = "match";
-    char *xml_decoded = "decoded_as";
-    char *xml_category = "category";
-    char *xml_cve = "cve";
-    char *xml_info = "info";
-    char *xml_day_time = "time";
-    char *xml_week_day = "weekday";
-    char *xml_comment = "description";
-    char *xml_ignore = "ignore";
-    char *xml_check_if_ignored = "check_if_ignored";
+    const char *xml_regex = "regex";
+    const char *xml_match = "match";
+    const char *xml_decoded = "decoded_as";
+    const char *xml_category = "category";
+    const char *xml_cve = "cve";
+    const char *xml_info = "info";
+    const char *xml_day_time = "time";
+    const char *xml_week_day = "weekday";
+    const char *xml_comment = "description";
+    const char *xml_ignore = "ignore";
+    const char *xml_check_if_ignored = "check_if_ignored";
 
-    char *xml_srcip = "srcip";
-    char *xml_srcport = "srcport";
-    char *xml_dstip = "dstip";
-    char *xml_dstport = "dstport";
-    char *xml_user = "user";
-    char *xml_url = "url";
-    char *xml_id = "id";
-    char *xml_data = "extra_data";
-    char *xml_hostname = "hostname";
-    char *xml_program_name = "program_name";
-    char *xml_status = "status";
-    char *xml_action = "action";
-    char *xml_compiled = "compiled_rule";
+    const char *xml_srcip = "srcip";
+    const char *xml_srcport = "srcport";
+    const char *xml_dstip = "dstip";
+    const char *xml_dstport = "dstport";
+    const char *xml_user = "user";
+    const char *xml_url = "url";
+    const char *xml_id = "id";
+    const char *xml_data = "extra_data";
+    const char *xml_hostname = "hostname";
+    const char *xml_program_name = "program_name";
+    const char *xml_status = "status";
+    const char *xml_action = "action";
+    const char *xml_compiled = "compiled_rule";
 
-    char *xml_list = "list";
-    char *xml_list_lookup = "lookup";
-    char *xml_list_field = "field";
-    char *xml_list_cvalue = "check_value";
-    char *xml_match_key = "match_key";
-    char *xml_not_match_key = "not_match_key";
-    char *xml_match_key_value = "match_key_value";
-    char *xml_address_key = "address_match_key";
-    char *xml_not_address_key = "not_address_match_key";
-    char *xml_address_key_value = "address_match_key_value";
+    const char *xml_lua = "lua"; 
+    const char *xml_lua_attr_state = "state"; 
 
-    char *xml_if_sid = "if_sid";
-    char *xml_if_group = "if_group";
-    char *xml_if_level = "if_level";
-    char *xml_fts = "if_fts";
 
-    char *xml_if_matched_regex = "if_matched_regex";
-    char *xml_if_matched_group = "if_matched_group";
-    char *xml_if_matched_sid = "if_matched_sid";
+    const char *xml_list = "list";
+    const char *xml_list_lookup = "lookup";
+    const char *xml_list_field = "field";
+    const char *xml_list_cvalue = "check_value";
+    const char *xml_match_key = "match_key";
+    const char *xml_not_match_key = "not_match_key";
+    const char *xml_match_key_value = "match_key_value";
+    const char *xml_address_key = "address_match_key";
+    const char *xml_not_address_key = "not_address_match_key";
+    const char *xml_address_key_value = "address_match_key_value";
 
-    char *xml_same_source_ip = "same_source_ip";
-    char *xml_same_src_port = "same_src_port";
-    char *xml_same_dst_port = "same_dst_port";
-    char *xml_same_user = "same_user";
-    char *xml_same_location = "same_location";
-    char *xml_same_id = "same_id";
-    char *xml_dodiff = "check_diff";
+    const char *xml_if_sid = "if_sid";
+    const char *xml_if_group = "if_group";
+    const char *xml_if_level = "if_level";
+    const char *xml_fts = "if_fts";
 
-    char *xml_different_url = "different_url";
+    const char *xml_if_matched_regex = "if_matched_regex";
+    const char *xml_if_matched_group = "if_matched_group";
+    const char *xml_if_matched_sid = "if_matched_sid";
 
-    char *xml_notsame_source_ip = "not_same_source_ip";
-    char *xml_notsame_user = "not_same_user";
-    char *xml_notsame_agent = "not_same_agent";
-    char *xml_notsame_id = "not_same_id";
+    const char *xml_same_source_ip = "same_source_ip";
+    const char *xml_same_src_port = "same_src_port";
+    const char *xml_same_dst_port = "same_dst_port";
+    const char *xml_same_user = "same_user";
+    const char *xml_same_location = "same_location";
+    const char *xml_same_id = "same_id";
+    const char *xml_dodiff = "check_diff";
 
-    char *xml_options = "options";
+    const char *xml_different_url = "different_url";
+
+    const char *xml_notsame_source_ip = "not_same_source_ip";
+    const char *xml_notsame_user = "not_same_user";
+    const char *xml_notsame_agent = "not_same_agent";
+    const char *xml_notsame_id = "not_same_id";
+
+    const char *xml_options = "options";
 
     char *rulepath;
 
@@ -400,6 +741,41 @@ int Rules_OP_ReadRules(char * rulefile)
                 {
                     if((!rule_opt[k]->element)||(!rule_opt[k]->content))
                         break;
+
+                    else if(strcasecmp(rule_opt[k]->element, xml_lua)==0)
+                    {
+                        int list_att_num = 0;
+
+                        if(!rule_opt[k]->attributes || !rule_opt[k]->values) {
+                            config_ruleinfo->lua = lua_states_get(LUA_STATE_DEFAULT);
+                            if(config_ruleinfo->lua == NULL) {
+                                config_ruleinfo->lua = os_lua_new(LUA_STATE_DEFAULT);
+                                lua_states_add(config_ruleinfo->lua);
+                                os_lua_load_core(config_ruleinfo->lua); 
+                                os_lua_load_lib(config_ruleinfo->lua, "log", luaopen_log);
+                            }
+                        } else {
+                            list_att_num = 0;
+                            while(rule_opt[k]->attributes[list_att_num]) {
+                                if(strcasecmp(rule_opt[k]->attributes[list_att_num],xml_lua_attr_state)==0) {
+                                    config_ruleinfo->lua = lua_states_get(rule_opt[k]->attributes[list_att_num]);
+                                    if(config_ruleinfo->lua==NULL) {
+                                        merror(ERR_LUA_STATE_NOT_DEFINED, ARGV0, rule_opt[k]->attributes[list_att_num]);
+                                        return(0); 
+                                    }
+                                }
+                            }
+                        }
+                        if(config_ruleinfo->lua) {
+                            debug2("Adding lua function\n");
+                            config_ruleinfo->lua_function = os_lua_load_function(config_ruleinfo->lua, rule_opt[k]->content); 
+                            printf("%d\n",config_ruleinfo->lua_function); 
+                            if (config_ruleinfo->lua_function == 0) {
+                                merror(ERR_LUA_LOAD_CONFIG, ARGV0);
+                                return(0); 
+                            }
+                        }
+                    }
                     else if(strcasecmp(rule_opt[k]->element,xml_regex)==0)
                     {
                         regex =
@@ -1650,6 +2026,8 @@ RuleInfo *zerorulemember(int id, int level,
     ruleinfo_pt->regex = NULL;
     ruleinfo_pt->match = NULL;
     ruleinfo_pt->decoded_as = 0;
+    ruleinfo_pt->lua = NULL; 
+    ruleinfo_pt->lua_function = 0; 
 
     ruleinfo_pt->comment = NULL;
     ruleinfo_pt->info = NULL;

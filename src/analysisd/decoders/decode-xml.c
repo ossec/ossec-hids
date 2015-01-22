@@ -20,6 +20,7 @@
 
 
 #include "analysisd.h"
+#include "rules.h"
 #include "eventinfo.h"
 #include "decoder.h"
 #include "plugin_decoders.h"
@@ -191,6 +192,19 @@ int ReadDecodeAttrs(char **names, char **values)
     return(AFTER_ERROR);
 }
 
+int decoder_verify_lua(OSDecoderInfo *self) {
+    /* LUA must be gated with other attributes */
+    if(self->lua) {
+        if(self->regex == NULL && self->parent == NULL && self->program_name == NULL && self->prematch == NULL) {
+          debug1("%s: %s has lua enabled, but no regex/parent/program_name/prematch j"
+                 "are configured and one is required", ARGV0, self->name);
+            return(1); 
+        }
+    }
+    return(0); 
+}
+
+
 
 /* ReaddecodeXML */
 int ReadDecodeXML(char *file)
@@ -201,20 +215,23 @@ int ReadDecodeXML(char *file)
     /* XML variables */
     /* These are the available options for the rule configuration */
 
-    char *xml_plugindecoder = "plugin_decoder";
-    char *xml_decoder = "decoder";
-    char *xml_decoder_name = "name";
-    char *xml_decoder_status = "status";
-    char *xml_usename = "use_own_name";
-    char *xml_parent = "parent";
-    char *xml_program_name = "program_name";
-    char *xml_prematch = "prematch";
-    char *xml_regex = "regex";
-    char *xml_order = "order";
-    char *xml_type = "type";
-    char *xml_fts = "fts";
-    char *xml_ftscomment = "ftscomment";
-    char *xml_accumulate = "accumulate";
+    const char *xml_plugindecoder = "plugin_decoder";
+    const char *xml_decoder = "decoder";
+    const char *xml_decoder_name = "name";
+    const char *xml_decoder_status = "status";
+    const char *xml_usename = "use_own_name";
+    const char *xml_parent = "parent";
+    const char *xml_program_name = "program_name";
+    const char *xml_prematch = "prematch";
+    const char *xml_regex = "regex";
+    const char *xml_order = "order";
+    const char *xml_type = "type";
+    const char *xml_fts = "fts";
+    const char *xml_ftscomment = "ftscomment";
+    const char *xml_accumulate = "accumulate";
+
+    const char *xml_lua = "lua"; 
+    const char *xml_lua_attr_state = "state"; 
 
     int i = 0;
     OSDecoderInfo *NULL_Decoder_tmp = NULL;
@@ -321,30 +338,13 @@ int ReadDecodeXML(char *file)
         }
 
         /* Creating the OSDecoderInfo */
-        pi = (OSDecoderInfo *)calloc(1,sizeof(OSDecoderInfo));
+        pi = decoder_new(node[i]->values[0]);
         if(pi == NULL)
         {
             merror(MEM_ERROR,ARGV0, errno, strerror(errno));
             return(0);
         }
 
-
-        /* Default values to the list */
-        pi->parent = NULL;
-        pi->id = 0;
-        pi->name = strdup(node[i]->values[0]);
-        pi->order = NULL;
-        pi->plugindecoder = NULL;
-        pi->fts = 0;
-        pi->accumulate = 0;
-        pi->type = SYSLOG;
-        pi->prematch = NULL;
-        pi->program_name = NULL;
-        pi->regex = NULL;
-        pi->use_own_name = 0;
-        pi->get_next = 0;
-        pi->regex_offset = 0;
-        pi->prematch_offset = 0;
 
         regex = NULL;
         prematch = NULL;
@@ -467,6 +467,43 @@ int ReadDecodeXML(char *file)
                     pi->use_own_name = 1;
             }
 
+            else if(strcasecmp(elements[j]->element, xml_lua)==0)
+            {
+                int list_att_num = 0;
+
+                if(!elements[j]->attributes || !elements[j]->values) {
+                    pi->lua = lua_states_get(LUA_STATE_DEFAULT);
+                    debug2("Lua State %s used into decoder %s\n", LUA_STATE_DEFAULT, pi->name);
+                    if(pi->lua == NULL) {
+                        pi->lua = os_lua_new(LUA_STATE_DEFAULT);
+                        lua_states_add(pi->lua);
+                        os_lua_load_core(pi->lua); 
+                        os_lua_load_lib(pi->lua, "log", luaopen_log);
+                    }
+                } else {
+                    list_att_num = 0;
+                    while(elements[j]->attributes[list_att_num]) {
+                        if(strcasecmp(elements[j]->attributes[list_att_num],xml_lua_attr_state)==0) {
+                            pi->lua = lua_states_get(elements[j]->attributes[list_att_num]);
+                            if(pi->lua==NULL) {
+                                merror(ERR_LUA_STATE_NOT_DEFINED, ARGV0, elements[j]->attributes[list_att_num]);
+                                return(0); 
+                            }
+                            d("Lua State %s in decoder %s\n", elements[j]->attributes[list_att_num],  pi->name);
+                        }
+                    }
+                }
+                if(pi->lua) {
+                    debug2("Adding lua function\n");
+                    pi->lua_function = os_lua_load_function(pi->lua, elements[j]->content); 
+                    d("%d\n",pi->lua_function); 
+                    if (pi->lua_function == 0) {
+                        merror(ERR_LUA_LOAD_CONFIG, ARGV0);
+                        return(0); 
+                    }
+                }
+            }
+
             else if(strcasecmp(elements[j]->element, xml_plugindecoder) == 0)
             {
                 int ed_c = 0;
@@ -528,13 +565,13 @@ int ReadDecodeXML(char *file)
                 int order_int = 0;
 
                 /* Maximum number is 8 for the order */
-                norder = OS_StrBreak(',',elements[j]->content, 8);
+                norder = OS_StrBreak(',',elements[j]->content, DECODER_MAX_ORDER);
                 s_norder = norder;
-                os_calloc(8, sizeof(void *), pi->order);
+                os_calloc(DECODER_MAX_ORDER, sizeof(void *), pi->order);
 
 
                 /* Initializing the function pointers */
-                while(order_int < 8)
+                while(order_int < DECODER_MAX_ORDER)
                 {
                     pi->order[order_int] = NULL;
                     order_int++;
@@ -633,8 +670,8 @@ int ReadDecodeXML(char *file)
                 char **norder;
                 char **s_norder;
 
-                /* Maximum number is 8 for the fts */
-                norder = OS_StrBreak(',',elements[j]->content, 8);
+                /* Maximum number is DECODER_MAX_ORDER for the fts */
+                norder = OS_StrBreak(',',elements[j]->content, DECODER_MAX_ORDER);
                 if(norder == NULL)
                     ErrorExit(MEM_ERROR,ARGV0, errno, strerror(errno));
 
@@ -713,6 +750,8 @@ int ReadDecodeXML(char *file)
                 return(0);
             }
 
+            /* Verify State of Decoder */
+
             /* NEXT */
             j++;
 
@@ -720,6 +759,10 @@ int ReadDecodeXML(char *file)
 
         OS_ClearNode(elements);
 
+        if(decoder_verify_lua(pi)) {
+            merror(ERR_LUA_NOOTHER, ARGV0, pi->name); 
+            return(0);
+        }
 
         /* Prematch must be set */
         if(!prematch && !pi->parent && !p_name)
@@ -729,10 +772,12 @@ int ReadDecodeXML(char *file)
             return(0);
         }
 
-        /* If pi->regex is not set, fts must not be set too */
-        if((!regex && (pi->fts || pi->order)) || (regex && !pi->order))
-        {
-            merror(DEC_REGEX_ERROR, ARGV0, pi->name);
+        if(!regex && pi->fts) {
+            merror("%s(2107) ERROR: fts requires regex decoder %s\n", ARGV0, pi->name); 
+            return(0);
+        }
+        if(!regex && pi->order) {
+            merror("%s(2107) ERROR: order requires regex decoder %s\n", ARGV0, pi->name); 
             return(0);
         }
 
