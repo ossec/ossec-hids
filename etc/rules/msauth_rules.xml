@@ -876,7 +876,13 @@
     <description>User Logoff Exchange.</description>
   </rule>
   
-  
+    <rule id="18262" level="3">
+    <if_sid>18107</if_sid>
+    <id>^4624$</id>
+    <match>Logon Type:   2</match>
+    <description>Local Logon Success.</description>
+  </rule> 
+
   <!-- Composite rules -->
   <rule id="18151" level="10" frequency="$MS_FREQ" timeframe="240">
     <if_matched_sid>18108</if_matched_sid>
