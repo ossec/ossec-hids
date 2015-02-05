@@ -120,7 +120,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     while (1) {
         /* Monitor all available sockets from here */
         FD_ZERO(&fdset);
-        FD_SET(agt->sock, &fdset);
+        FD_SET((u_int) agt->sock, &fdset);
         FD_SET(agt->m_queue, &fdset);
 
         fdtimeout.tv_sec = 1;
