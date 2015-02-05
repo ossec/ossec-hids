@@ -50,7 +50,7 @@ void *receiver_thread(__attribute__((unused)) void *none)
         }
 
         FD_ZERO(&fdset);
-        FD_SET(agt->sock, &fdset);
+        FD_SET((u_int) agt->sock, &fdset);
 
         /* Wait for 30 seconds */
         selecttime.tv_sec = 30;
