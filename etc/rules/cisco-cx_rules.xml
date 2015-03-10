@@ -1,0 +1,18 @@
+<!--
+  - Contributed by Brent Morris
+  -->
+
+<group name="syslog,cisco-cx,">
+  <rule id="14300" level="0">
+  <decoded_as>cisco-cx</decoded_as>
+  <description>Cisco CX Flows.</description>
+  </rule>
+
+<rule id="14301" level="10">
+  <if_sid>14300</if_sid>
+  <match>Deny</match>
+  <description>Cisco CX - Flow Denied</description>
+  </rule>
+
+</group>
+
