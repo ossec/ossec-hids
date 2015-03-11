@@ -2621,11 +2621,11 @@ Author and (c): Michael Starks, 2014 -->
 
 <!-- cisco-cx - Cisco ASA CX module syslog decode submitted by Brent Morris - decodes will extract important bits based on flow intrusion events.  syslog messages are truncated by Cisco ASA CX when URLs are exceeedingly long.
 
-<!-- cisco-cx Normal Flow example -->
+     cisco-cx Normal Flow example    
 
 -  1 2015-01-28T22:26:34.371Z 1.1.1.23 CiscoNGFW 2827 5 [ngfwEvent@9 Http_Response_Status="200" Flow_Dst_Service="tcp/80" Flow_Bytes_Sent="519" Flow_Bytes_Received="352" Event_Type="0" Count="1" Flow_DstIp="54.241.20.38" Flow_SrcIp="1.2.3.32" Url_Category_Name="Business and Industry" Flow_Bytes="871" Web_Reputation_Threat_Type="" Avc_Tag_Name="" Ev_SrcLabel="CX-CX" Response_Magic_Type="image/gif" Event_Type_Name="HTTP Complete" User_Realm="1.2.3.32" Policy_Name="Implicit Allow" Flow_Transaction_Id="4" Url="http://nexus.ensighten.com/error/e.gif?msg=Unable%20to%20get%20property%20'onmousedown'%20of%20undefined%20or%20null%20reference&lnn=-1&fn=&cid=1017&client=MSFTsupport&publishPath=prod&rid=602489&did=255875&errorName=TypeError" Identity_Source_Name="None" Auth_Policy_Name="Default" Flow_SrcIfc="inside" Flow_ConnId="28362166" Flow_DstHostName="nexus.ensighten.com" Flow_Transaction_Count="1" Ev_Id="1276022" Web_Reputation_Score="0.5" Event_Type_Action="Info" Ev_GenTime="1422484014848" Flow_DstPort=
 
-<!-- cisco-cx Normal Flow Denied -->
+     cisco-cx Normal Flow Denied    
 
 -  1 2015-02-02T23:09:03.733Z 1.1.1.23 CiscoNGFW 2827 6 [ngfwEvent@9 Flow_Dst_Service="tcp/80" Flow_Bytes_Sent="396" Event_Type="0" Flow_DstIp="162.255.119.254" Flow_SrcIp="1.2.3.32" Count="1" Url_Category_Name="Uncategorized" Flow_Bytes="396" Web_Reputation_Threat_Type="Related to Phishing" Avc_Tag_Name="" Ev_SrcLabel="CX-CX" Event_Type_Name="HTTP Deny" User_Realm="1.2.3.32" Policy_Name="Implicit Allow" Flow_Transaction_Id="0" Url="http://image2.seethenewscan-updates.us/" Identity_Source_Name="None" Auth_Policy_Name="Default" Flow_SrcIfc="inside" Flow_ConnId="29106287" Flow_DstHostName="image2.seethenewscan-updates.us" Flow_Transaction_Count="1" Ev_Id="2281992" Web_Reputation_Score="-8.4" Event_Type_Action="Deny" Ev_GenTime="1422918630588" Flow_DstPort="80" Policy_Deny_Reason_Name="Web Reputation" Flow_DstIfc="outside" Ev_SrcId="2147484710" Avc_App_Name="HyperText Transfer Protocol" Ev_SrcHwType="ASA-CX" Flow_SrcPort="2260" Smx_Config_Version="56" Flow_Requests_Denied="1" Avc_App_Type="Infrastruct
 
