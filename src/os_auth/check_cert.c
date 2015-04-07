@@ -50,6 +50,7 @@ int check_x509_cert(const SSL *ssl, const char *manager)
     /* Check for a matching subject alt name entry in the extensions first and
      * if no match is found there then check the subject CN.
      */
+    debug1("%s: DEBUG: Manager hostname: %s", ARGV0, manager)
     debug1("%s: DEBUG: Checking certificate's subject alternative names.", ARGV0);
     if ((verified = check_subject_alt_names(cert, manager)) == VERIFY_ERROR) {
         goto CERT_CHECK_ERROR;
