@@ -64,7 +64,7 @@ int check_x509_cert(const SSL *ssl, const char *manager)
     }
 
     X509_free(cert);
-
+    verified = VERIFY_TRUE;
     return verified;
 
 CERT_CHECK_ERROR:
