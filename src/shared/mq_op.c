@@ -16,12 +16,13 @@
 /* Start the Message Queue. type: WRITE||READ */
 int StartMQ(const char *path, short int type)
 {
+    int rc = 0;
+
     if (type == READ) {
         return (OS_BindUnixDomain(path, 0660, OS_MAXSTR + 512));
     }
 
     /* We give up to 21 seconds for the other end to start */
-    int rc = 0;
     if (File_DateofChange(path) < 0) {
         sleep(1);
         if (File_DateofChange(path) < 0) {
