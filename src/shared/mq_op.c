@@ -21,40 +21,37 @@ int StartMQ(const char *path, short int type)
     }
 
     /* We give up to 21 seconds for the other end to start */
-    else {
-        int rc = 0;
+    int rc = 0;
+    if (File_DateofChange(path) < 0) {
+        sleep(1);
         if (File_DateofChange(path) < 0) {
-            sleep(1);
+            sleep(5);
             if (File_DateofChange(path) < 0) {
-                sleep(5);
+                merror(QUEUE_ERROR, __local_name, path, "Queue not found");
+                sleep(15);
                 if (File_DateofChange(path) < 0) {
-                    merror(QUEUE_ERROR, __local_name, path, "Queue not found");
-                    sleep(15);
-                    if (File_DateofChange(path) < 0) {
-                        return (-1);
-                    }
-                }
-            }
-        }
-
-        /* Wait up to 3 seconds to connect to the unix domain.
-         * After three errors, exit.
-         */
-        if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
-            sleep(1);
-            if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
-                sleep(2);
-                if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
-                    merror(QUEUE_ERROR, __local_name, path,
-                           strerror(errno));
                     return (-1);
                 }
             }
         }
-
-        debug1(MSG_SOCKET_SIZE, __local_name, OS_getsocketsize(rc));
-        return (rc);
     }
+
+    /* Wait up to 3 seconds to connect to the unix domain.
+     * After three errors, exit.
+     */
+    if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
+        sleep(1);
+        if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
+            sleep(2);
+            if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
+                merror(QUEUE_ERROR, __local_name, path, strerror(errno));
+                return (-1);
+            }
+        }
+    }
+
+    debug1(MSG_SOCKET_SIZE, __local_name, OS_getsocketsize(rc));
+    return (rc);
 }
 
 /* Send a message to the queue */
