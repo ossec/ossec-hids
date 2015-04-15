@@ -40,7 +40,6 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         cJSON_AddStringToObject(rule, "info", lf->generated_rule->info);
     }
 
-
     if (lf->action) {
         cJSON_AddStringToObject(root, "action", lf->action);
     }
