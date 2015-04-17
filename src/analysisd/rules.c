@@ -95,6 +95,7 @@ int Rules_OP_ReadRules(const char *rulefile)
     const char *xml_if_group = "if_group";
     const char *xml_if_level = "if_level";
     const char *xml_fts = "if_fts";
+    const char *xml_if_not_sid = "if_not_sid";
 
     const char *xml_if_matched_regex = "if_matched_regex";
     const char *xml_if_matched_group = "if_matched_group";
@@ -722,7 +723,14 @@ int Rules_OP_ReadRules(const char *rulefile)
                         config_ruleinfo->if_sid =
                             loadmemory(config_ruleinfo->if_sid,
                                        rule_opt[k]->content);
-                    } else if (strcasecmp(rule_opt[k]->element, xml_if_level) == 0) {
+                    }
+                    else if(strcasecmp(rule_opt[k]->element,xml_if_not_sid)==0)
+                    {
+                        config_ruleinfo->if_not_sid=
+                            loadmemory(config_ruleinfo->if_not_sid,
+                                    rule_opt[k]->content);
+                    }
+		     else if (strcasecmp(rule_opt[k]->element, xml_if_level) == 0) {
                         if (!OS_StrIsNum(rule_opt[k]->content)) {
                             merror(INVALID_CONFIG, ARGV0,
                                    "if_level",
@@ -1359,6 +1367,8 @@ RuleInfo *zerorulemember(int id, int level,
     ruleinfo_pt->if_sid = NULL;
     ruleinfo_pt->if_group = NULL;
     ruleinfo_pt->if_level = NULL;
+
+    ruleinfo_pt->if_not_sid = NULL;
 
     ruleinfo_pt->if_matched_regex = NULL;
     ruleinfo_pt->if_matched_group = NULL;

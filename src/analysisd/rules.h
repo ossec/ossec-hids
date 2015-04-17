@@ -148,6 +148,7 @@ typedef struct _RuleInfo {
     char *if_sid;
     char *if_level;
     char *if_group;
+    char *if_not_sid;
 
     OSRegex *if_matched_regex;
     OSMatch *if_matched_group;

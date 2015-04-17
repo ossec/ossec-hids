@@ -10,6 +10,7 @@
 /* ossec-analysisd
  * Responsible for correlation and log decoding
  */
+#define MATCHED_SID_ARRAY_SIZE 200000
 
 #ifndef ARGV0
 #define ARGV0 "ossec-analysisd"
@@ -527,6 +528,9 @@ void OS_ReadMSG_analysisd(int m_queue)
     char msg[OS_MAXSTR + 1];
     Eventinfo *lf;
 
+    int matched_sids[MATCHED_SID_ARRAY_SIZE];
+    int matched_sids_index=0;
+ 
     RuleInfo *stats_rule = NULL;
 
     /* Null to global currently pointers */
@@ -866,6 +870,28 @@ void OS_ReadMSG_analysisd(int m_queue)
                          == NULL) {
                     continue;
                 }
+
+               /* if any of the rules has a if_not_sid that match a previous matched rules will be ignored  */
+               if (matched_sids_index < MATCHED_SID_ARRAY_SIZE)
+               {
+               matched_sids[matched_sids_index] = currently_rule->sigid;
+               matched_sids_index++;
+               int break_loop = 0; //false
+               if (currently_rule->if_not_sid)
+               {
+                 int i;
+                 for (i=0; i++; i<matched_sids_index)
+                       { int not_sid = strtol(currently_rule->if_not_sid, NULL,10);
+                          if (not_sid == matched_sids[i]);
+                               {
+                                       break_loop = 1; //true
+                                       break;
+                               }
+                       }
+               if (break_loop == 1)
+                       break;
+               }
+               }
 
                 /* Ignore level 0 */
                 if (currently_rule->level == 0) {
