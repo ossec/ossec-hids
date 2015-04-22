@@ -41,7 +41,9 @@ short IsNFS(const char *dir_name)
     else
     {
         /* Throw an error and retreat! */
-        merror("ERROR: statfs('%s') produced error: %s", dir_name, strerror(errno));
+	if(errno != ENOENT) {
+        	merror("ERROR: statfs('%s') produced error: %s", dir_name, strerror(errno));
+	}
         return(-1);
     }
 #else
