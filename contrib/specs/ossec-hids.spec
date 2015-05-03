@@ -1,80 +1,22 @@
-## TODO
-## generate ssl cert for authd:
-## openssl genrsa -out /var/ossec/etc/sslmanager.key 2048
-## openssl req -new -x509 -key /var/ossec/etc/sslmanager.key -out /var/ossec/etc/sslmanager.cert -days 365
-
-
-
-##%define asl 1
-##%define _default_patch_fuzz 2
-##%define gitver beta03
-
-
-%define githubtag 2.9.0-beta03
-%define max_agents 1000
-
-#0 - disable or 1 - enable
-%define use_geoip 0
-
-%define  debug_package %{nil}
-
 Summary:     An Open Source Host-based Intrusion Detection System
 Name:        ossec-hids
 Version:     2.9.0b3
-
-
-##Release:     0.3
-
-
 Release:     1
 License:     GPL
 Group:       Applications/System
-
-
-##Source0:     http://www.ossec.net/files/%{name}-%{version}.tar.gz
-##Source0:     http://www.ossec.net/files/%{version}-%{gitver}.tar.gz
-
-
-Source0:    https://github.com/ossec/ossec-hids/archive/%{githubtag}.zip
-
-
-##Source1:     CHANGELOG
-##Source2:     %{name}.init
-##Source5:     asl-shun.pl
-##Source6:     ossec-hids.logrotate
-##Source7:     zabbix-alert.sh
-##Source8:     ossec-configure
-##Source9:     ossec-hids-agent.conf
-##Source10:    ar-tracking.sh
-##Source1000:	exclusion_rules.xml
-##Patch1: syscheck-increase-sleep.patch
-##Patch2: deprecate-decoder.patch
-##Patch4: ossec-client-conf.patch
-##Patch6: disable-psql.patch
-##Patch20: ossec-hids-mysql-schema-fix1.patch
-##Patch21: ossec-hids-server-init.patch
-##Patch22: ossec-hids-2.9-duplicate-suppression-revert.patch
-##Patch23: ossec-2.8.0-fortify.patch
-##Patch25: ossec-hids-2.9-execd-sqlite.patch
-##Patch28: OSSEC-authd-rh-init.patch
-##Patch37: smtp-port.patch
-## WIP & R&D
-##Patch38: ossec-hids-2.8-execd-maxfork.patch
-##Patch40: hardlink-test.patch
-
 URL:         http://www.ossec.net/
 
+%define githubtag 2.9.0-beta03
+%define max_agents 1000
+%define use_geoip 0
+%define debug_package %{nil}
 
-##BuildRoot:   %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Source0:    https://github.com/ossec/ossec-hids/archive/%{githubtag}.zip
 
 BuildRoot:   %{_tmppath}/%{name}-%{version}-%{release}
 Vendor:      http://www.ossec.net
 Packager:    Daniil Svetlov <daniil@svetlov.pro>
 Requires(pre):    /usr/sbin/groupadd /usr/sbin/useradd
-
-
-##if %{undefined suse_version}
-
 
 %if "%{_vendor}" == "suse"
 BuildRequires: apache2-devel
@@ -108,8 +50,6 @@ Solaris and Windows.
 
 This package contains common files required for all packages.
 
-
-
 %package client
 Summary:     The OSSEC HIDS Client
 Group:       System Environment/Daemons
@@ -119,11 +59,6 @@ Requires(post):   /sbin/chkconfig
 Requires(preun):  /sbin/chkconfig /sbin/service
 Requires(postun): /sbin/service 
 Conflicts:   %{name}-server
-
-
-##%if %{asl}
-##Requires:    perl-DBD-SQLite
-##%endif
 
 %description client
 The %{name}-client package contains the client part of the
@@ -136,10 +71,6 @@ Group:       System Environment/Daemons
 Provides:    ossec-server-%{version}-%{release}
 Requires:    %{name} = %{version}-%{release}
 
-
-##Requires:	ossec-rules
-
-
 Conflicts:   %{name}-client
 Requires(pre):    /usr/sbin/groupadd /usr/sbin/useradd
 Requires(post):   /sbin/chkconfig 
@@ -150,7 +81,6 @@ Requires(postun): /sbin/service
 The %{name}-server package contains the server part of the
 OSSEC HIDS. Install this package on a central machine for
 log collection and alerting.
-
 
 %package mysql
 Summary:     The OSSEC HIDS Server
@@ -170,31 +100,9 @@ Mysql connector for OSSEC
 %prep
 %setup -q  -n %{name}-%{githubtag}
 
-##%if %{asl}
-##%patch1 -p1
-##%patch4 -p0
-
-## Are you ok for
-##%patch21 -p1
-
-## rejected
-##%patch22 -p1 -b .duplicate-suppression-rever
-## Circle back on this
-##%patch23 -p1 -b .fortify
-##%patch25 -p1 -b .execd.sqlite
-
-##%patch28 -p1
-
-## tmp disable
-##%patch37 -p1
-##%patch38 -p1
-##%patch40 -p1
-##%endif
-
 # Prepare for docs
 rm -rf contrib/specs
 chmod -x contrib/*
-
 
 %build
 
@@ -227,16 +135,10 @@ make DATABASE=mysql MAXAGENTS=%{max_agents} USE_GEOIP=%{use_geoip} TARGET=server
 
 popd
 
-## Bugfix, Cleanup for agentd
-##mv src/clients/* bin/
-
-
 # Generate the ossec-init.conf template
 echo "DIRECTORY=\"%{_localstatedir}/ossec\"" >  ossec-init.conf
 echo "VERSION=\"%{version}\""                 >> ossec-init.conf
 echo "DATE=\"`date`\""                        >> ossec-init.conf
-
-
 
 %install
 [ -n "${RPM_BUILD_ROOT}" -a "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -257,50 +159,26 @@ mkdir -p ${RPM_BUILD_ROOT}%{_initrddir}
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/var/run
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/mysql
-
-
-##%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/templates
-##%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/decoders.d
-##%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/rules.d
-##%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/stats
-
-
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/tmp
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/var/run
 
-
-##%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/.ssh
-
-
-## Copy changelog
-##cp %{SOURCE1} CHANGELOG
-
-##%{__install} -m 0755 %{SOURCE2} ${RPM_BUILD_ROOT}%{_initrddir}/%{name}
-
-
 %{__install} -m 0755 src/init/ossec-hids-rh.init ${RPM_BUILD_ROOT}%{_initrddir}/ossec-hids
-
 install -m 0600 ossec-init.conf ${RPM_BUILD_ROOT}%{_sysconfdir}
-
 install -m 0644 etc/ossec.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec.conf.sample
 install -m 0644 etc/ossec-{agent,server}.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc
 install -m 0644 etc/*.xml ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc
 install -m 0644 etc/internal_options* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc
 install -m 0644 etc/rules/*xml ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/rules
 install -m 0644 etc/rules/translated/pure_ftpd/* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/rules/translated/pure_ftpd
-##install -m 0644 etc/templates/config/* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/templates/
-##install -m 0750 bin/* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 
 pushd src
+
 # Client
 install -m 0550 clients/agent-auth ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 clients/client-logcollector ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 clients/client-syscheckd ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 clients/manage_client ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 clients/ossec-agentd ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/
-# Test this
-#install -m 0550 clients/ossec-execd ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/client-execd
-# Server components
 install -m 0550 ossec-logcollector ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 ossec-syscheckd ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 ossec-execd ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
@@ -327,11 +205,7 @@ install -m 0550 agent_control ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/
 install -m 0550 syscheck_control ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/
 install -m 0550 rootcheck_control ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/
 
-
 popd
-
-
-
 
 install -m 0755 active-response/*.sh ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/active-response/bin
 install -m 0644 src/rootcheck/db/*.txt ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared
@@ -339,32 +213,18 @@ install -m 0644 src/os_dbd/mysql.schema ${RPM_BUILD_ROOT}%{_localstatedir}/ossec
 install -m 0550 src/init/ossec-{client,server}.sh ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 src/agentlessd/scripts/* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/agentless
 
-## Legacy file
-##install -m 0644 %{SOURCE1000} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/rules/exclusion_rules.xml
-
-
 # Install contrib files
 pushd contrib
 %{__install} -m 0750 {config2xml,*.pl,*.sh}   ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 %{__install} -m 0640 *.{conf,pm,sql,txt}      ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
-popd
 
+popd
 
 # create the faux ossec.conf, %ghost'ed files must exist in the buildroot
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec.conf
 
 #Create fake changelog file
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec.conf
-
-##%if %{asl}
-##mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
-##install -m 0755 %{SOURCE5} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/active-response/bin/asl-shun.pl
-##install -m 0644 %{SOURCE6} ${RPM_BUILD_ROOT}/etc/logrotate.d/%{name}
-##install -m 0755 %{SOURCE7} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/active-response/bin/zabbix-alert.sh
-##install -m 0755 %{SOURCE10} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/active-response/bin/ar-tracking.sh
-##install -m 0755 %{SOURCE8} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/ossec-configure
-##install -m 0644 %{SOURCE9} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared/agent.conf
-##%endif
 
 %pre
 if ! id -g ossec > /dev/null 2>&1; then
@@ -488,8 +348,6 @@ fi
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/bin
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/etc
 %attr(770,ossec,ossec) %dir %{_localstatedir}/ossec/etc/shared
-##%attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/etc/templates
-##%attr(640,ossec,ossec) %{_localstatedir}/ossec/etc/templates/*
 %attr(770,ossec,ossec) %dir %{_localstatedir}/ossec/logs
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/queue
 %attr(770,ossec,ossec) %dir %{_localstatedir}/ossec/queue/ossec
@@ -497,12 +355,6 @@ fi
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/var
 %attr(770,root,ossec) %dir %{_localstatedir}/ossec/var/run
 %attr(550,root,root) %{_localstatedir}/ossec/bin/ossec-lua*
-
-
-##%if %{asl}
-##%config(noreplace) /etc/logrotate.d/%{name}
-##%{_localstatedir}/ossec/bin/ossec-configure
-##%endif
 
 
 %files client
@@ -532,21 +384,10 @@ fi
 %ghost %config(missingok,noreplace) %{_localstatedir}/ossec/etc/ossec.conf
 %config(noreplace) %{_localstatedir}/ossec/etc/ossec-server.conf
 %config(noreplace) %{_localstatedir}/ossec/etc/internal_options*
-
-
-##%attr(640,ossec,ossec) %{_localstatedir}/ossec/etc/shared/agent.conf
-
-
 %config %{_localstatedir}/ossec/etc/*.xml
 %config(noreplace) %{_localstatedir}/ossec/etc/shared/*
 %dir %{_datadir}/ossec/contrib
 %{_datadir}/ossec/*
-
-
-##%{_localstatedir}/ossec/etc/rules.d/
-##%{_localstatedir}/ossec/etc/decoders.d/
-
-
 %{_localstatedir}/ossec/etc/*.sample
 %{_localstatedir}/ossec/bin/ossec-authd
 %{_localstatedir}/ossec/bin/agent_control
@@ -584,7 +425,6 @@ fi
 %attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/queue/rootcheck
 %attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/queue/syscheck
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/rules
-##%config(noreplace) %{_localstatedir}/ossec/rules/*
 %config %{_localstatedir}/ossec/rules/*
 %attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/stats
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/tmp
