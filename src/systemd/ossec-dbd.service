@@ -3,6 +3,7 @@ Description=The OSSEC DBD
 PartOf=ossec-server.target
 
 [Service]
+EnvironmentFile=/etc/ossec-init.conf
 Environment=DIRECTORY=/var/ossec
 
 ExecStartPre=/usr/bin/env ${DIRECTORY}/bin/ossec-dbd -t

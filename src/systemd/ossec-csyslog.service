@@ -3,6 +3,7 @@ Description=OSSEC Syslog client
 PartOf=ossec-server.target
 
 [Service]
+EnvironmentFile=/etc/ossec-init.conf
 Environment=DIRECTORY=/var/ossec
 
 ExecStartPre=/usr/bin/env ${DIRECTORY}/bin/ossec-csyslogd -t
