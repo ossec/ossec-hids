@@ -1,0 +1,8 @@
+[Unit]
+Description=The OSSEC DBD
+
+[Service]
+Environment=DIRECTORY=/var/ossec
+
+ExecStartPre=/usr/bin/env ${DIRECTORY}/bin/ossec-dbd -t
+ExecStart=/usr/bin/env ${DIRECTORY}/bin/ossec-dbd -f

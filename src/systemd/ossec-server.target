@@ -1,0 +1,6 @@
+[Unit]
+Description=The OSSEC HIDS server
+After=network.target 
+
+[Install]
+Wanted=ossec-dbd.service
