@@ -1,5 +1,6 @@
 [Unit]
 Description=The OSSEC DBD
+PartOf=ossec-server.target
 
 [Service]
 Environment=DIRECTORY=/var/ossec

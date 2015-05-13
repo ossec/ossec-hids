@@ -1,6 +1,8 @@
 [Unit]
-Description=The OSSEC HIDS server
+Description=OSSEC HIDS server
 After=network.target 
+Wants=ossec-dbd.service
+Wants=ossec-csyslog.service
 
 [Install]
-Wanted=ossec-dbd.service
+WantedBy=multi-user.target
