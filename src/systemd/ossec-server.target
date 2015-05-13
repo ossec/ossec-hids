@@ -1,8 +1,9 @@
 [Unit]
 Description=OSSEC HIDS server
-After=network.target 
+After=network.target
 Wants=ossec-dbd.service
 Wants=ossec-csyslog.service
+Wants=ossec-agentless.service
 
 [Install]
 WantedBy=multi-user.target
