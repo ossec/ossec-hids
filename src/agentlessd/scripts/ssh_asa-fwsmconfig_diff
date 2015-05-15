@@ -77,7 +77,7 @@ if {[string compare $pass "x"] == 0} {
 
 # SSH to the box and pass the directories to check
 if [catch {
-    spawn ssh -c des $hostname
+    spawn ssh -q -c des $hostname
 } loc_error] {
     send_user "ERROR: Opening connection: $loc_error.\n"
     exit 1;
@@ -183,10 +183,15 @@ send_user "\nSTORE: now\n"
 
 send "term pager 0\r"
 
-# Exclude uptime from the output
-send "show version | grep -v Configuration last| up\r"
-send "show running-config\r"
+# Exclude written by name and current date/time from the running-config output.
+send "more system:running-config | grep -v Written\r"
+# Sleep 1.1 seconds to prevent inconsistent number of line feeds near eof.
+sleep 1.1
+# Exclude uptime and botnet traffic filter expiration days from the output.
+send "show version | grep -v Configuration last| up|Botnet\r"
 send "$commands\r"
+# Sleep .3 seconds to prevent inconsistent number of line feeds near eof.
+sleep .3
 send "exit\r"
 
 expect {
