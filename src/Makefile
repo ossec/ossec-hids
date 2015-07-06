@@ -101,6 +101,13 @@ ifdef DEBUGAD
 	DEFINES+=+DDEBUGAD
 endif
 
+# Flags for hardening the build
+CFLAGS+=-fPIC -fpie
+CFLAGS+=-Wformat-security
+CFLAGS+=-fstack-protector-all -Wstack-protector --param ssp-buffer-size=4
+CFLAGS+=-D_FORTIFY_SOURCE=2
+CFLAGS+=-Wl,-z,relro,-z,now
+
 OSSEC_CFLAGS=${CFLAGS}
 
 ifdef DEBUG
