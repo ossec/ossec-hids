@@ -101,8 +101,13 @@ ifdef DEBUGAD
 	DEFINES+=+DDEBUGAD
 endif
 
+
 # Flags for hardening the build
+ifeq (${TARGET},test)
+CFLAGS_HARDENING=-fPIC
+else
 CFLAGS_HARDENING=-fPIC -pie
+endif
 CFLAGS_HARDENING+=-Wformat -Wformat-security
 CFLAGS_HARDENING+=-fstack-protector-all -Wstack-protector --param ssp-buffer-size=4
 CFLAGS_HARDENING+=-D_FORTIFY_SOURCE=2
@@ -110,6 +115,7 @@ CFLAGS_HARDENING+=-D_FORTIFY_SOURCE=2
 ifneq (${TARGET},winagent)
 CFLAGS_HARDENING+=-Wl,-z,relro,-z,now
 endif
+
 
 OSSEC_CFLAGS=${CFLAGS} ${CFLAGS_HARDENING}
 
