@@ -107,7 +107,7 @@ CFLAGS_HARDENING+=-Wformat -Wformat-security
 CFLAGS_HARDENING+=-fstack-protector-all -Wstack-protector --param ssp-buffer-size=4
 CFLAGS_HARDENING+=-D_FORTIFY_SOURCE=2
 
-ifneq (${uname_S},winagent)
+ifneq (${TARGET},winagent)
 CFLAGS_HARDENING+=-Wl,-z,relro,-z,now
 endif
 
