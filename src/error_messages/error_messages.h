@@ -122,6 +122,7 @@
 #define SK_DUP          "%s(1756): ERROR: Duplicated directory given: '%s'."
 #define SK_INV_REG      "%s(1757): ERROR: Invalid syscheck registry entry: '%s'."
 #define SK_REG_OPEN     "%s(1758): ERROR: Unable to open registry key: '%s'."
+#define SK_REG_OPEN64   "%s(1759): ERROR: Unable to open registry key using 64 bit registry: '%s'."
 
 
 /* Analysisd */
