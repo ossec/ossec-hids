@@ -265,29 +265,26 @@ int NameExist(const char *u_name)
     fgetpos(fp, &fp_pos);
 
     while (fgets(line_read, FILE_SIZE - 1, fp) != NULL) {
-        char *name;
 
         if (line_read[0] == '#') {
             continue;
         }
 
-        name = strchr(line_read, ' ');
-        if (name) {
-            char *ip;
-            name++;
+        /* tokenizing a line(record) */
+        strtok(line_read, " "); // ID field
+        char *name = strtok(NULL, " ");
 
-            if (*name == '#') {
+        if (name) {
+
+        	if (*name == '#') {
                 continue;
             }
 
-            ip = strchr(name, ' ');
-            if (ip) {
-                *ip = '\0';
-                if (strcmp(u_name, name) == 0) {
-                    fclose(fp);
-                    return (1);
-                }
-            }
+        	if (strcmp(u_name, name) == 0) {
+						fclose(fp);
+						return (1);
+					}
+
         }
         fgetpos(fp, &fp_pos);
     }
@@ -304,7 +301,12 @@ int print_agents(int print_status, int active_only, int csv_output)
     char line_read[FILE_SIZE + 1];
     line_read[FILE_SIZE] = '\0';
 
-    fp = fopen(AUTH_FILE, "r");
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "r");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "r");
+    }
+
     if (!fp) {
         return (0);
     }
