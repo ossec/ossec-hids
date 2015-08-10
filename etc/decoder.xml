@@ -2665,4 +2665,21 @@ Author and (c): Michael Starks, 2014 -->
 </decoder>
 
 
+<!-- OpenBSD dhcpd
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPREQUEST for 192.168.17.154 from b4:b5:2f:15:4c:ec via sk0
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPACK on 192.168.17.154 to b4:b5:2f:15:4c:ec via sk0
+-->
+
+<decoder name="dhcpd">
+  <program_name>^dhcpd$</program_name>
+</decoder>
+
+<decoder name="dhcpd-data">
+  <parent>dhcpd</parent>
+  <regex offset="after_parent">^(\S+) \S+ (\S+) \S+ (\S+) via (\S+)$</regex> 
+  <order>action, srcip, extra_data, extra_data</order>
+</decoder>
+
+
+
 <!-- EOF -->
