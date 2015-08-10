@@ -80,6 +80,10 @@
 40900 - 40999 Firewalld
 
 51500 - 51999 OpenBSD rules.
-52000 - XXXXX Apparmor rules.
+52000 - 52499 Apparmor rules.
+
+52500 - 52999 ClamAV
+53000 - XXXXX OpenBSD DHCPd
+
 
 100000 - 109999 User defined rules
