@@ -25,7 +25,7 @@
 ; general
 !define MUI_ICON favicon.ico
 !define MUI_UNICON ossec-uninstall.ico
-!define VERSION "2.8"
+!define VERSION "2.8.2"
 !define NAME "OSSEC HIDS"
 !define SERVICE "OssecSvc"
 

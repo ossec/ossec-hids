@@ -1,4 +1,4 @@
-OSSEC v2.8 Copyright (C) 2014 Trend Micro Inc.
+OSSEC v2.8.2 Copyright (C) 2014 Trend Micro Inc.
 
 # Information about OSSEC 
 
