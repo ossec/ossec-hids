@@ -2665,4 +2665,33 @@ Author and (c): Michael Starks, 2014 -->
 </decoder>
 
 
+<!-- OpenBSD dhcpd
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPREQUEST for 192.168.17.154 from b4:b5:2f:15:4c:ec via sk0
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPACK on 192.168.17.154 to b4:b5:2f:15:4c:ec via sk0
+-->
+
+<decoder name="dhcpd">
+  <program_name>^dhcpd$</program_name>
+</decoder>
+
+<decoder name="dhcpd-data">
+  <parent>dhcpd</parent>
+  <regex offset="after_parent">^(\S+) \S+ (\S+) \S+ (\S+) via (\S+)$</regex> 
+  <order>action, srcip, extra_data, extra_data</order>
+</decoder>
+
+<!-- NSD
+Aug 11 13:21:46 ix nsd[16565]: server initialization failed, nsd could not be started
+Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: syntax error
+Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: unrecognized RR type 'name:'
+Aug 12 09:01:00 junction.example.com nsd[7405]: NSTATS 1439384460 1439314258 A=1 AAAA=1
+Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=0 RNXD=0 RFwdR=0 RDupR=0 RFail=0 RFErr=0 RErr=0 RAXFR=0 RLame=0 ROpts=0 SSysQ=0 SAns=2 S
+FwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 SNaAns=0 SNXD=0 RUQ=0 RURQ=0 RUXFR=0 RUUpd=0
+-->
+
+<decoder name="nsd">
+  <program_name>^nsd</program_name>
+</decoder>
+
+
 <!-- EOF -->
