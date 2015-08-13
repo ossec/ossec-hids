@@ -236,7 +236,28 @@
     <description>dhclient: device not configured.</description>
   </rule>
 
+  <rule id="51537" level="1">
+    <decoded_as>doas</decoded_as>
+  </rule>
 
+  <rule id="51538" level="5">
+    <decoded_as>doas</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>^failed password for </match>
+    <description>doas authentication failure.</description>
+  </rule>
+
+  <rule id="51539" level="1">
+    <if_sid>51537</if_sid>
+    <match>ran command as </match>
+    <description>does command was used.</description>
+  </rule>
+
+  <rule id="51540" level="2">
+    <if_sid>51539</if_sid>
+    <match> ran command as root</match>
+    <description>does command was used to run a command as root.</description>
+  </rule>
 
 </group> <!-- SYSLOG,LOCAL -->
 

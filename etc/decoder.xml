@@ -2665,4 +2665,59 @@ Author and (c): Michael Starks, 2014 -->
 </decoder>
 
 
+<!-- OpenBSD dhcpd
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPREQUEST for 192.168.17.154 from b4:b5:2f:15:4c:ec via sk0
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPACK on 192.168.17.154 to b4:b5:2f:15:4c:ec via sk0
+-->
+
+<decoder name="dhcpd">
+  <program_name>^dhcpd$</program_name>
+</decoder>
+
+<decoder name="dhcpd-data">
+  <parent>dhcpd</parent>
+  <regex offset="after_parent">^(\S+) \S+ (\S+) \S+ (\S+) via (\S+)$</regex> 
+  <order>action, srcip, extra_data, extra_data</order>
+</decoder>
+
+
+<!-- NSD
+   - Aug 11 13:21:46 ix nsd[16565]: server initialization failed, nsd could not be started
+   - Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: syntax error
+   - Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: unrecognized RR type 'name:'
+   - Aug 12 09:01:00 junction.example.com nsd[7405]: NSTATS 1439384460 1439314258 A=1 AAAA=1
+   - Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=0 RNXD=0 RFwdR=0 RDupR=0 RFail=0 RFErr=0 RErr=0 RAXFR=0 RLame=0 ROpts=0 SSysQ=0 SAns=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 SNaAns=0 SNXD=0 RUQ=0 RURQ=0 RUXFR=0 RUUpd=0
+-->
+
+<decoder name="nsd">
+  <program_name>^nsd</program_name>
+</decoder>
+
+
+<!-- doas
+   - Aug 13 15:14:24 ix doas: ddp ran command as root: /bin/ksh
+   - Aug 13 15:15:17 ix doas: failed password for ddp
+   - Aug 13 15:16:40 ix doas: ddp ran command as ddpnfs: ls
+-->
+
+<decoder name="doas">
+  <program_name>doas</program_name>
+</decoder>
+
+<decoder name="doas-fail">
+  <parent>doas</parent>
+  <prematch offset="after_parent">^failed </prematch>
+  <regex offset="after_parent">^failed password for (\S+)$</regex>
+  <order>user</order>
+</decoder>
+
+<decoder name="doas-users">
+  <parent>doas</parent>
+  <prematch offset="after_parent">ran command as</prematch>
+  <regex offset="after_parent">^(\S+) ran command as (\S+): (\.+)$</regex>
+  <order>srcuser, dstuser, extra_data</order>
+</decoder>
+
+
+
 <!-- EOF -->
