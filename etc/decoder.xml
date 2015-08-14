@@ -2701,6 +2701,7 @@ Author and (c): Michael Starks, 2014 -->
   <order>action, srcip, extra_data, extra_data</order>
 </decoder>
 
+<<<<<<< HEAD
 <!-- NSD
 Aug 11 13:21:46 ix nsd[16565]: server initialization failed, nsd could not be started
 Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: syntax error
@@ -2713,6 +2714,8 @@ FwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 
 <decoder name="nsd">
   <program_name>^nsd</program_name>
 </decoder>
+=======
+>>>>>>> 9470de87ae6d8e7c1148c7650dc0881bb5b0da23
 
 
 <!-- EOF -->
