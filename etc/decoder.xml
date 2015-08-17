@@ -981,7 +981,12 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 </decoder>
 
 
-<!-- OpenBSD smtpd decoders -->
+<!-- OpenBSD smtpd decoders
+   - Aug 14 10:15:25 junction.example.com smtpd[28882]: smtp-in: Failed command on session 1f55bdcdf16e28a3: "MAIL FROM:<root@junction.example.com>  " => 421 4.3.0: Temporary Error
+   - Aug 17 01:26:02 ix smtpd[22704]: smtp-in: New session 08d856b172f69c5c from host ix.example.com [local]
+   - Aug 17 01:26:02 ix smtpd[22704]: smtp-in: Accepted message 4296f490 on session 08d856b172f69c5c: from=<root@ix.example.com>, to=<ddp@ix.example.com>, size=1746, ndest=1, proto=ESMTP
+   - Aug 17 01:26:02 ix smtpd[22704]: smtp-in: Closing session 08d856b172f69c5c
+-->
 
 <decoder name="smtpd">
   <program_name>smtpd</program_name>
@@ -1001,6 +1006,18 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <prematch offset="after_parent">^smtp-in: </prematch>
+  <regex offset="after_prematch">^(\S+) </regex>
+  <order>status</order>
+</decoder>
+
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <regex> => (\d+) </regex>
+  <order>action</order>
+</decoder>
 
 
 <!-- Iptables decoder.
