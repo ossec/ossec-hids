@@ -44,6 +44,13 @@ Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=
     <description>nsd is already running.</description>
   </rule>
 
+  <rule id="53206" level="1">
+    <decoded_as>nsd</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>received notify response error NOT IMPL</match>
+    <description>Notify is not implemented.</description>
+  </rule>
+
 </group>
 
 
