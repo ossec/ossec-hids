@@ -110,6 +110,16 @@
     <group>authentication_failure</group>
   </rule>
 
+<!--
+Aug 18 09:15:34 beaglebone sudo: pam_unix(sudo:auth): conversation failed
+-->
+  <rule id="5558" level="1">
+    <decoded_as>pam</decoded_as>
+    <if_sid>1002</if_sid>
+    <match> conversation failed</match>
+    <description>PAM failed to authenticate user.</description>
+  </rule>
+
 
 </group> <!-- SYSLOG,pam -->
 
