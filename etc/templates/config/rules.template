@@ -64,5 +64,6 @@
     <include>nsd_rules.xml</include>
     <include>dhcpd_rules.xml</include>
     <include>opensmtpd_rules.xml</include>
+    <include>appleairport_rules.xml</include>
     <include>local_rules.xml</include>
   </rules>  
