@@ -2731,4 +2731,24 @@ Author and (c): Michael Starks, 2014 -->
 </decoder>
 
 
+<!-- Apple Airport -->
+
+<decoder name="airport">
+  <program_name>80211</program_name>
+</decoder>
+
+<decoder name="airport-station">
+  <parent>airport</parent>
+  <prematch offset="after_parent"> station </prematch>
+  <regex offset="after_parent">^(\S+) \.* station (\S+)</regex>
+  <order>action, extra_data</order>
+</decoder>
+
+<decoder name="airport-supplicant">
+  <parent>airport</parent>
+  <prematch offset="after_parent"> supplicant </prematch>
+  <regex offset="after_parent">^(\S+) \.* supplicant (\S+)</regex>
+  <order>action, extra_data</order>
+</decoder>
+
 <!-- EOF -->
