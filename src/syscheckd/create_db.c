@@ -28,6 +28,22 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
     char sha1s = '+';
     struct stat statbuf;
 
+    /* skip any subdir that is defined as a top level starting directory,
+     * so we only scan it once, and with the right options for that dir.
+     * for example: 
+     * <directories check_all="yes">/etc</directories>
+     * <directories check_all="yes" report_changes="yes">/etc/sysconfig</directories>
+     */
+    int i = 0;
+    while(syscheck.dir[i] != NULL) {
+	if(strcmp(syscheck.dir[i], file_name ) == 0) {
+	    debug2("%s: read_file ignoring as subdir %s", 
+		ARGV0, file_name );
+	    return(0);
+	}
+	i++;
+    }
+
     /* Check if the file should be ignored */
     if (syscheck.ignore) {
         int i = 0;
