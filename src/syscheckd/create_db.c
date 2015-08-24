@@ -14,15 +14,18 @@
 #include "os_crypto/md5_sha1/md5_sha1_op.h"
 
 /* Prototypes */
-static int read_file(const char *dir_name, int opts, OSMatch *restriction)  __attribute__((nonnull(1)));
-static int read_dir(const char *dir_name, int opts, OSMatch *restriction) __attribute__((nonnull(1)));
+static int read_file(const char *dir_name, int opts, OSMatch *restriction,
+    dev_t topdev)  __attribute__((nonnull(1)));
+static int read_dir(const char *dir_name, int opts, OSMatch *restriction,
+    dev_t topdev) __attribute__((nonnull(1)));
 
 /* Global variables */
 static int __counter = 0;
 
 
 /* Read and generate the integrity data of a file */
-static int read_file(const char *file_name, int opts, OSMatch *restriction)
+static int read_file(const char *file_name, int opts, OSMatch *restriction,
+    dev_t topdev)
 {
     char *buf;
     char sha1s = '+';
@@ -72,6 +75,14 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 	}
     }
 
+    // same filesystem?
+    if ((opts & CHECK_SAME_DEV) && statbuf.st_dev != topdev) {
+       debug2("%s: read_file ignoring cross-device '%s'", 
+           ARGV0, file_name);
+       return(0);
+    }
+
+
     if (S_ISDIR(statbuf.st_mode)) {
 #ifdef DEBUG
         verbose("%s: Reading dir: %s\n", ARGV0, file_name);
@@ -84,7 +95,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             return (-1);
         }
 #endif
-        return (read_dir(file_name, opts, restriction));
+        return (read_dir(file_name, opts, restriction, topdev));
     }
 
     /* Restrict file types */
@@ -249,7 +260,8 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
     return (0);
 }
 
-static int read_dir(const char *dir_name, int opts, OSMatch *restriction)
+static int read_dir(const char *dir_name, int opts, OSMatch *restriction,
+    dev_t topdev)
 {
     size_t dir_size;
     char f_name[PATH_MAX + 2];
@@ -282,7 +294,7 @@ static int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     dp = opendir(dir_name);
     if (!dp) {
         if (errno == ENOTDIR) {
-            if (read_file(dir_name, opts, restriction) == 0) {
+            if (read_file(dir_name, opts, restriction, topdev) == 0) {
                 return (0);
             }
         }
@@ -347,7 +359,7 @@ static int read_dir(const char *dir_name, int opts, OSMatch *restriction)
         strncpy(s_name, entry->d_name, PATH_MAX - dir_size - 2);
 
         /* Check integrity of the file */
-        read_file(f_name, opts, restriction);
+        read_file(f_name, opts, restriction, topdev);
     }
 
     closedir(dp);
@@ -357,10 +369,24 @@ static int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 int run_dbcheck()
 {
     int i = 0;
+    struct stat statbuf;
 
     __counter = 0;
     while (syscheck.dir[i] != NULL) {
-        read_dir(syscheck.dir[i], syscheck.opts[i], syscheck.filerestrict[i]);
+	debug2( "%s: read starting dir: '%s'", ARGV0, syscheck.dir[i]);
+
+	/* Win32 does not have lstat */
+	#ifdef WIN32
+	if(stat(syscheck.dir[i], &statbuf) < 0)
+	#else
+	if(lstat(syscheck.dir[i], &statbuf) < 0) 
+	#endif
+	{
+	    merror("%s: Error accessing '%s'.",ARGV0, syscheck.dir[i]);
+	} else {
+	    read_dir(syscheck.dir[i], syscheck.opts[i], syscheck.filerestrict[i], 
+		statbuf.st_dev);
+	}
         i++;
     }
 
@@ -393,11 +419,24 @@ int create_db()
     /* Read all available directories */
     __counter = 0;
     do {
-        if (read_dir(syscheck.dir[i], syscheck.opts[i], syscheck.filerestrict[i]) == 0) {
+	struct stat statbuf;
+
+	debug2( "%s: read starting dir: '%s'", ARGV0, syscheck.dir[i] );
+
+	/* Win32 does not have lstat */
+	#ifdef WIN32
+	if(stat(syscheck.dir[i], &statbuf) < 0)
+	#else
+	if(lstat(syscheck.dir[i], &statbuf) < 0)
+	#endif
+	{
+	    merror("%s: Error accessing '%s'.",ARGV0, syscheck.dir[i]);
+	} else if(read_dir(syscheck.dir[i], syscheck.opts[i], 
+		syscheck.filerestrict[i], statbuf.st_dev) == 0) { 
 #ifdef WIN32
-            if (syscheck.opts[i] & CHECK_REALTIME) {
-                realtime_adddir(syscheck.dir[i]);
-            }
+	    if (syscheck.opts[i] & CHECK_REALTIME) {
+		realtime_adddir(syscheck.dir[i]);
+	    }
 #endif
         }
         i++;
