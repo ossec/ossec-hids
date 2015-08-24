@@ -61,9 +61,7 @@
 #include <ctype.h>
 #include <signal.h>
 
-/* The mingw32 builder used by travis.ci can't find glob.h 
- * Yet glob must work on actual win32.  
- */
+/* the mingw32 builder used by travis.ci can't find glob.h */
 #ifndef __MINGW32__ 
 #include <glob.h>
 #endif
