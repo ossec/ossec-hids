@@ -167,6 +167,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_real_time = "realtime";
     const char *xml_report_changes = "report_changes";
     const char *xml_restrict = "restrict";
+    const char *xml_skip_subdir = "skip_subdir";
 
     char *restrictfile = NULL;
     char **dir;
@@ -337,6 +338,16 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                     restrictfile = NULL;
                 }
                 os_strdup(*values, restrictfile);
+            } else if (strcmp(*attrs, xml_skip_subdir) == 0) {
+                if (strcmp(*values, "yes") == 0) {
+                    opts |= CHECK_SKIP_SUBDIR;
+                } else if (strcmp(*values, "no") == 0) {
+                    opts &= ~ CHECK_SKIP_SUBDIR;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
             } else {
                 merror(SK_INV_ATTR, __local_name, *attrs);
                 ret = 0;

@@ -34,14 +34,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
      * <directories check_all="yes">/etc</directories>
      * <directories check_all="yes" report_changes="yes">/etc/sysconfig</directories>
      */
-    int i = 0;
-    while(syscheck.dir[i] != NULL) {
-	if(strcmp(syscheck.dir[i], file_name ) == 0) {
-	    debug2("%s: read_file ignoring as subdir %s", 
-		ARGV0, file_name );
-	    return(0);
+    if (opts & CHECK_SKIP_SUBDIR) {
+	int i = 0;
+	while(syscheck.dir[i] != NULL) {
+	    if(strcmp(syscheck.dir[i], file_name ) == 0) {
+		debug2("%s: read_file ignoring as subdir %s", 
+		    ARGV0, file_name );
+		return(0);
+	    }
+	    i++;
 	}
-	i++;
     }
 
     /* Check if the file should be ignored */
