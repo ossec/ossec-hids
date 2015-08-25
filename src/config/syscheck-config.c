@@ -567,37 +567,79 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             free(node[i]->content);
             node[i]->content = new_ig;
 #endif
-            /* Add if regex */
+            /* Add if regex or glob*/
             if (node[i]->attributes && node[i]->values) {
                 if (node[i]->attributes[0] && node[i]->values[0] &&
-                        (strcmp(node[i]->attributes[0], "type") == 0) &&
-                        (strcmp(node[i]->values[0], "sregex") == 0)) {
-                    OSMatch *mt_pt;
+                        (strcmp(node[i]->attributes[0], "type") == 0)) { 
 
-                    if (!syscheck->ignore_regex) {
-                        os_calloc(2, sizeof(OSMatch *), syscheck->ignore_regex);
-                        syscheck->ignore_regex[0] = NULL;
-                        syscheck->ignore_regex[1] = NULL;
-                    } else {
-                        while (syscheck->ignore_regex[ign_size] != NULL) {
-                            ign_size++;
-                        }
+		    if (strcmp(node[i]->values[0], "sregex") == 0) {
+			// check for dups
+			if(!os_IsStrOnArray(node[i]->content, 
+				syscheck->ignore_regex_str)) {
+			    OSMatch *mt_pt;
 
-                        os_realloc(syscheck->ignore_regex,
-                                   sizeof(OSMatch *) * (ign_size + 2),
-                                   syscheck->ignore_regex);
-                        syscheck->ignore_regex[ign_size + 1] = NULL;
-                    }
-                    os_calloc(1, sizeof(OSMatch),
-                              syscheck->ignore_regex[ign_size]);
+			    if (!syscheck->ignore_regex) {
+				os_calloc(2, sizeof(OSMatch *), 
+				    syscheck->ignore_regex);
+				syscheck->ignore_regex[0] = NULL;
+				syscheck->ignore_regex[1] = NULL;
 
-                    if (!OSMatch_Compile(node[i]->content,
-                                         syscheck->ignore_regex[ign_size], 0)) {
-                        mt_pt = (OSMatch *)syscheck->ignore_regex[ign_size];
-                        merror(REGEX_COMPILE, __local_name, node[i]->content,
-                               mt_pt->error);
-                        return (0);
-                    }
+				os_calloc(2, sizeof(char *), 
+				    syscheck->ignore_regex_str);
+				syscheck->ignore_regex_str[0] = NULL;
+				syscheck->ignore_regex_str[1] = NULL;
+			    } else {
+				while (syscheck->ignore_regex[ign_size] != NULL) {
+				    ign_size++;
+				}
+
+				os_realloc(syscheck->ignore_regex,
+					   sizeof(OSMatch *) * (ign_size + 2),
+					   syscheck->ignore_regex);
+				syscheck->ignore_regex[ign_size + 1] = NULL;
+
+				os_realloc(syscheck->ignore_regex_str,
+					   sizeof(char *) * (ign_size + 2),
+					   syscheck->ignore_regex_str);
+				syscheck->ignore_regex_str[ign_size + 1] = NULL;
+			    }
+			    os_calloc(1, sizeof(OSMatch),
+				      syscheck->ignore_regex[ign_size]);
+
+			    if (!OSMatch_Compile(node[i]->content,
+						 syscheck->ignore_regex[ign_size], 0)) {
+				mt_pt = (OSMatch *)syscheck->ignore_regex[ign_size];
+				merror(REGEX_COMPILE, __local_name, node[i]->content,
+				       mt_pt->error);
+				return (0);
+			    }
+
+			    // cache a printable copy of the pattern
+			    // for de-dup and printing
+			    os_strdup( node[i]->content, 
+				syscheck->ignore_regex_str[ign_size] );
+			}
+                    } else if (strcmp(node[i]->values[0], "glob") == 0) {
+			// check for dups
+			if(!os_IsStrOnArray(node[i]->content, syscheck->ignore_glob)) {
+			    if(!syscheck->ignore_glob) {
+				os_calloc(2, sizeof(char *), syscheck->ignore_glob);
+				syscheck->ignore_glob[0] = NULL;
+				syscheck->ignore_glob[1] = NULL;
+			    } else {
+				while(syscheck->ignore_glob[ign_size] != NULL)
+				    ign_size++;
+				os_realloc(syscheck->ignore_glob,
+					sizeof(char *)*(ign_size +2),
+					syscheck->ignore_glob);
+				syscheck->ignore_glob[ign_size +1] = NULL;
+			    }
+			    os_strdup( node[i]->content, syscheck->ignore_glob[ign_size] );
+			}
+		    } else { 
+			merror(SK_INV_ATTR, __local_name, node[i]->attributes[0]);
+			return (OS_INVALID);
+		    }
                 } else {
                     merror(SK_INV_ATTR, __local_name, node[i]->attributes[0]);
                     return (OS_INVALID);
@@ -726,5 +768,59 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     }
 
     return (0);
+}
+
+
+char *syscheck_opts2str(char *buf, int buflen, int opts) { 
+    int left = buflen;
+    int i;
+    int check_bits[] = { 
+        CHECK_PERM,
+        CHECK_SIZE,
+        CHECK_OWNER,
+        CHECK_GROUP,
+	CHECK_MD5SUM,
+        CHECK_SHA1SUM,
+        CHECK_REALTIME,
+        CHECK_SEECHANGES,
+#ifdef CHECK_SAME_DEV
+        CHECK_SAME_DEV,
+#endif
+#ifdef CHECK_SKIP_SUBDIR
+        CHECK_SKIP_SUBDIR,
+#endif
+	0
+    };
+    char *check_strings[] = { 
+        "perm",
+        "size",
+        "owner",
+        "group",
+	"md5sum",
+        "sha1sum",
+        "realtime",
+        "report_changes",
+#ifdef CHECK_SAME_DEV
+        "same_dev",
+#endif
+#ifdef CHECK_SKIP_SUBDIR
+        "skip_subdir",
+#endif
+	NULL
+    };
+
+    buf[0] = '\0';
+    for ( i = 0; check_bits[ i ]; i++ ) { 
+	if ( opts & check_bits[ i ] ) { 
+	    if ( left < buflen )  { 
+		strncat( buf, " | ", left );
+		left -= 3;
+	    }
+	    strncat( buf, check_strings[ i ], left ); 
+	    left = buflen - strlen( buf );
+	}
+    }
+
+    return buf;
 }
 

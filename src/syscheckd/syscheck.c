@@ -121,12 +121,34 @@ int Start_win32_Syscheck()
         r++;
     }
 
+    /* Print directories to be monitored */
     r = 0;
+#define optstrlen 128
     while (syscheck.dir[r] != NULL) {
-        verbose("%s: INFO: Monitoring directory: '%s'.",
-                ARGV0, syscheck.dir[r]);
+	char optstr[ optstrlen ];
+        verbose("%s: INFO: Monitoring directory: '%s', with options %s.",
+                ARGV0, syscheck.dir[r],
+		syscheck_opts2str(optstr, optstrlen, syscheck.opts[r]));
         r++;
     }
+
+    /* Print ignores. */
+    if(syscheck.ignore) 
+	for (r = 0; syscheck.ignore[r] != NULL; r++)
+	    verbose("%s: INFO: ignoring: '%s'",
+		ARGV0, syscheck.ignore[r]);
+
+    /* Print sregex ignores. */
+    if(syscheck.ignore_regex) 
+	for (r = 0; syscheck.ignore_regex[r] != NULL; r++) 
+	    verbose("%s: INFO: ignoring sregex: '%s'",
+		ARGV0, syscheck.ignore_regex_str[r]);
+
+    /* Print glob ignores. */
+    if(syscheck.ignore_glob) 
+	for (r = 0; syscheck.ignore_glob[r] != NULL; r++)
+	    verbose("%s: INFO: ignoring glob: '%s'",
+		ARGV0, syscheck.ignore_glob[r]);
 
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, getpid());
@@ -288,13 +310,35 @@ int main(int argc, char **argv)
         verbose(STARTUP_MSG, "ossec-rootcheck", (int)getpid());
     }
 
+
     /* Print directories to be monitored */
+#define optstrlen 128
     r = 0;
     while (syscheck.dir[r] != NULL) {
-        verbose("%s: INFO: Monitoring directory: '%s'.",
-                ARGV0, syscheck.dir[r]);
+	char optstr[ optstrlen ];
+        verbose("%s: INFO: Monitoring directory: '%s', with options %s.",
+                ARGV0, syscheck.dir[r],
+		syscheck_opts2str(optstr, optstrlen, syscheck.opts[r]));
         r++;
     }
+
+    /* Print ignores. */
+    if(syscheck.ignore) 
+	for (r = 0; syscheck.ignore[r] != NULL; r++)
+	    verbose("%s: INFO: ignoring: '%s'",
+		ARGV0, syscheck.ignore[r]);
+
+    /* Print sregex ignores. */
+    if(syscheck.ignore_regex) 
+	for (r = 0; syscheck.ignore_regex[r] != NULL; r++) 
+	    verbose("%s: INFO: ignoring sregex: '%s'",
+		ARGV0, syscheck.ignore_regex_str[r]);
+
+    /* Print glob ignores. */
+    if(syscheck.ignore_glob) 
+	for (r = 0; syscheck.ignore_glob[r] != NULL; r++)
+	    verbose("%s: INFO: ignoring glob: '%s'",
+		ARGV0, syscheck.ignore_glob[r]);
 
     /* Check directories set for real time */
     r = 0;
