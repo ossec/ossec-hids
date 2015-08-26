@@ -13,48 +13,57 @@
 
 #ifndef WIN32
 
+void exponential_backoff(int *current, int maxwait) {
+    sleep(*current);
+
+    *current *= 2;
+    if (*current >= maxwait) {
+        *current = maxwait;
+    }
+}
+
 /* Start the Message Queue. type: WRITE||READ */
 int StartMQ(const char *path, short int type)
 {
+    int rc = 0;
+    int maxwait = 9;
+    int current = 1;
+    int last = FALSE;
+
     if (type == READ) {
         return (OS_BindUnixDomain(path, 0660, OS_MAXSTR + 512));
     }
 
-    /* We give up to 21 seconds for the other end to start */
-    else {
-        int rc = 0;
-        if (File_DateofChange(path) < 0) {
-            sleep(1);
-            if (File_DateofChange(path) < 0) {
-                sleep(5);
-                if (File_DateofChange(path) < 0) {
-                    merror(QUEUE_ERROR, __local_name, path, "Queue not found");
-                    sleep(15);
-                    if (File_DateofChange(path) < 0) {
-                        return (-1);
-                    }
-                }
-            }
+    /* Continuously wait for socket to become available */
+    while (File_DateofChange(path) < 0) {
+        if (last == TRUE) {
+            merror(QUEUE_ERROR, __local_name, path, "Queue not found");
+            return (-1);
         }
 
-        /* Wait up to 3 seconds to connect to the unix domain.
-         * After three errors, exit.
-         */
-        if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
-            sleep(1);
-            if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
-                sleep(2);
-                if ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
-                    merror(QUEUE_ERROR, __local_name, path,
-                           strerror(errno));
-                    return (-1);
-                }
-            }
+        if (current >= maxwait) {
+            last = TRUE;
         }
 
-        debug1(MSG_SOCKET_SIZE, __local_name, OS_getsocketsize(rc));
-        return (rc);
+        exponential_backoff(&current, maxwait);
     }
+
+    /* reset waits */
+    maxwait = 3;
+    current = 1;
+
+    /* Continuously connect to UNIX domain */
+    while ((rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256)) < 0) {
+        if (current >= maxwait) {
+            merror(QUEUE_ERROR, __local_name, path, strerror(errno));
+            return (-1);
+        }
+
+        exponential_backoff(&current, maxwait);
+    }
+
+    debug1(MSG_SOCKET_SIZE, __local_name, OS_getsocketsize(rc));
+    return (rc);
 }
 
 /* Send a message to the queue */
@@ -62,6 +71,9 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
 {
     int __mq_rcode;
     char tmpstr[OS_MAXSTR + 1];
+    int maxwait = 9;
+    int current = 1;
+    int last = FALSE;
 
     tmpstr[OS_MAXSTR] = '\0';
 
@@ -92,16 +104,8 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
         return (-1);
     }
 
-    /* We attempt 5 times to send the message if
-     * the receiver socket is busy.
-     * After the first error, we wait 1 second.
-     * After the second error, we wait more 3 seconds.
-     * After the third error, we wait 5 seconds.
-     * After the fourth error, we wait 10 seconds.
-     * If we failed again, the message is not going
-     * to be delivered and an error is sent back.
-     */
-    if ((__mq_rcode = OS_SendUnix(queue, tmpstr, 0)) < 0) {
+    /* Continuously attempt to send message */
+    while ((__mq_rcode = OS_SendUnix(queue, tmpstr, 0)) < 0) {
         /* Error on the socket */
         if (__mq_rcode == OS_SOCKTERR) {
             merror("%s: socketerr (not available).", __local_name);
@@ -109,32 +113,21 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
             return (-1);
         }
 
-        /* Unable to send. Socket busy */
-        sleep(1);
-        if (OS_SendUnix(queue, tmpstr, 0) < 0) {
-            /* When the socket is to busy, we may get some
-             * error here. Just sleep 2 second and try
-             * again.
-             */
-            sleep(3);
-            /* merror("%s: socket busy", __local_name); */
-            if (OS_SendUnix(queue, tmpstr, 0) < 0) {
-                sleep(5);
-                merror("%s: socket busy ..", __local_name);
-                if (OS_SendUnix(queue, tmpstr, 0) < 0) {
-                    sleep(10);
-                    merror("%s: socket busy ..", __local_name);
-                    if (OS_SendUnix(queue, tmpstr, 0) < 0) {
-                        /* Message is going to be lost
-                         * if the application does not care
-                         * about checking the error
-                         */
-                        close(queue);
-                        return (-1);
-                    }
-                }
-            }
+        if (last == TRUE) {
+            merror("%s: socket busy giving up after waiting (%d) seconds", __local_name, current);
+            close(queue);
+            return (-1);
         }
+
+        if (current >= maxwait) {
+            last = TRUE;
+        }
+
+        if (current >= 5) {
+            merror("%s: socket busy...", __local_name);
+        }
+
+        exponential_backoff(&current, maxwait);
     }
 
     return (0);
