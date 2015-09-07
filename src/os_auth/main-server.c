@@ -306,8 +306,7 @@ int main(int argc, char **argv)
 
     fp = fopen(KEYSFILE_PATH, "a");
     if (!fp) {
-        merror("%s: ERROR: Unable to open %s (key file)", ARGV0, KEYSFILE_PATH);
-        exit(1);
+        ErrorExit(FOPEN_ERROR, ARGV0, KEYSFILE_PATH, errno, strerror(errno));
     }
     fclose(fp);
 
