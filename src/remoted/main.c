@@ -36,6 +36,7 @@ static void help_remoted()
 
 int main(int argc, char **argv)
 {
+    FILE *fp;
     int i = 0, c = 0;
     uid_t uid;
     gid_t gid;
@@ -126,6 +127,13 @@ int main(int argc, char **argv)
         /* Not configured */
         exit(0);
     }
+
+    /* Touch client.keys */
+    fp = fopen(KEYSFILE_PATH, "a");
+    if (!fp) {
+        ErrorExit(FOPEN_ERROR, ARGV0, KEYSFILE_PATH, errno, strerror(errno));
+    }
+    fclose(fp);
 
     /* Check if the user and group given are valid */
     uid = Privsep_GetUser(user);

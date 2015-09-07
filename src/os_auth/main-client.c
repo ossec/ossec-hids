@@ -307,8 +307,7 @@ int main(int argc, char **argv)
                         FILE *fp;
                         fp = fopen(KEYSFILE_PATH, "w");
                         if (!fp) {
-                            printf("ERROR: Unable to open key file: %s", KEYSFILE_PATH);
-                            exit(1);
+                            ErrorExit(FOPEN_ERROR, ARGV0, KEYSFILE_PATH, errno, strerror(errno));
                         }
                         fprintf(fp, "%s\n", key);
                         fclose(fp);
