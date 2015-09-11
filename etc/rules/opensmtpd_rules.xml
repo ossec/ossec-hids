@@ -35,4 +35,10 @@ y Error
     <description>Message accepted.</description>
   </rule>
 
+  <rule id="53505" level="0">
+    <decoded_as>smtpd</decoded_as>
+    <match>delivery: Ok</match>
+    <description>Email delivered.</description>
+  </rule>
+
 </group>

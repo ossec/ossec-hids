@@ -1060,6 +1060,15 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>action</order>
 </decoder>
 
+<!--
+<decoder name="smtpd-delivery">
+  <parent>smtpd</parent>
+  <prematch offset="after_parent">^delivery: </prematch>
+  <regex offset="after_prematch">^(\S+) \.from=\p(\S+@\S+)\p, to=\.+, user=(\S+) </regex>
+  <order>status, extra_data, user</order>
+</decoder>
+-->
+
 
 <!-- Iptables decoder.
   - Will extract the srcip, dstip, srcport, dstport, protocol
