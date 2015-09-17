@@ -342,6 +342,12 @@
     <description>ssh bad packet length</description>
   </rule>
 
+  <rule id="5750" level="2">
+    <if_sid>5700</if_sid>
+    <match>no matching key exchange method found.</match>
+    <description>Client did not offer an acceptable key exchange method.</description>
+  </rule>
+
 </group> <!-- SYSLOG, SSHD -->
 
 <!-- EOF -->
