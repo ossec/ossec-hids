@@ -797,4 +797,37 @@ int handle_file(int i, int do_fseek, int do_log)
 }
 
 
+#ifdef WIN32
+
+/* Remove newlines and replace tabs in the argument fields with spaces */
+void win_format_event_string(char *string)
+{
+    if (string == NULL) {
+        return;
+    }
+
+    while (*string != '\0') {
+        if (*string == '\n' || *string == '\r' || *string == ':') {
+            if (*string == '\n' || *string == '\r') {
+                *string = ' ';
+            }
+
+            string++;
+
+            while (*string == '\t') {
+                *string = ' ';
+                string++;
+            }
+
+            continue;
+        }
+
+        string++;
+    }
+}
+
+#endif /* WIN32 */
+
+
+
 /* EOF */
