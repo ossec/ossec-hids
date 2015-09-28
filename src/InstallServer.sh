@@ -164,6 +164,9 @@ chown -R ${USER}:${GROUP} ${DIR}/queue/agentless
 chmod -R 750 ${DIR}/queue/agentless
 chmod 740 ${DIR}/queue/agentless/* > /dev/null 2>&1
 
+chown -R root:${GROUP} ${DIR}/tmp
+chmod 1550 ${DIR}/tmp
+
 
 # For the stats directory
 chown -R ${USER}:${GROUP} ${DIR}/stats
