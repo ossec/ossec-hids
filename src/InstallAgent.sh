@@ -125,6 +125,8 @@ chown -R ${USER}:${GROUP} ${DIR}/queue/diff
 chmod -R 750 ${DIR}/queue/diff
 chmod 740 ${DIR}/queue/diff/* > /dev/null 2>&1
 
+chown -R root:${GROUP} ${DIR}/tmp
+chmod 1550 ${DIR}/tmp
 
 
 
