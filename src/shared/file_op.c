@@ -910,6 +910,73 @@ int checkVista()
     return(isVista);
 }
 
+/* Get basename of path */
+char *basename_ex(char *path)
+{
+    return (PathFindFileNameA(path));
+}
+
+/* Rename file or directory */
+int rename_ex(const char *source, const char *destination)
+{
+    if (!MoveFileEx(source, destination, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+        log2file(
+            "%s: ERROR: Could not move (%s) to (%s) which returned (%lu)",
+            __local_name,
+            source,
+            destination,
+            GetLastError()
+        );
+
+        return (-1);
+    }
+
+    return (0);
+}
+
+/* Create a temporary file */
+int mkstemp_ex(char *tmp_path)
+{
+    DWORD dwResult;
+    int result;
+    int status = -1;
+
+    HANDLE h = NULL;
+    PACL pACL = NULL;
+    PSECURITY_DESCRIPTOR pSD = NULL;
+    EXPLICIT_ACCESS ea[2];
+    SECURITY_ATTRIBUTES sa;
+
+    PSID pAdminGroupSID = NULL;
+    PSID pSystemGroupSID = NULL;
+    SID_IDENTIFIER_AUTHORITY SIDAuthNT = {SECURITY_NT_AUTHORITY};
+
+#if defined(_MSC_VER) && _MSC_VER >= 1500
+    result = _mktemp_s(tmp_path, strlen(tmp_path) + 1);
+
+    if (result != 0) {
+        log2file(
+            "%s: ERROR: Could not create temporary file (%s) which returned (%d)",
+            __local_name,
+            tmp_path,
+            result
+        );
+
+        return (-1);
+    }
+#else
+    if (_mktemp(tmp_path) == NULL) {
+        log2file(
+            "%s: ERROR: Could not create temporary file (%s) which returned [(%d)-(%s)]",
+            __local_name,
+            tmp_path,
+            errno,
+            strerror(errno)
+        );
+
+        return (-1);
+    }
+#endif
 
 
 /** get uname for windows **/
