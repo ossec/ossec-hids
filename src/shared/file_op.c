@@ -632,6 +632,81 @@ int MergeFiles(char *finalpath, char **files)
 
 
 #ifndef WIN32
+/* Get basename of path */
+char *basename_ex(char *path)
+{
+    return (basename(path));
+}
+
+/* Rename file or directory */
+int rename_ex(const char *source, const char *destination)
+{
+    if (rename(source, destination)) {
+        log2file(
+            RENAME_ERROR,
+            __local_name,
+            source,
+            destination,
+            errno,
+            strerror(errno)
+        );
+
+        return (-1);
+    }
+
+    return (0);
+}
+
+/* Create a temporary file */
+int mkstemp_ex(char *tmp_path)
+{
+    int fd;
+
+    fd = mkstemp(tmp_path);
+
+    if (fd == -1) {
+        log2file(
+            MKSTEMP_ERROR,
+            __local_name,
+            tmp_path,
+            errno,
+            strerror(errno)
+        );
+
+        return (-1);
+    }
+
+    /* mkstemp() only implicitly does this in POSIX 2008 */
+    if (fchmod(fd, 0600) == -1) {
+        close(fd);
+
+        log2file(
+            CHMOD_ERROR,
+            __local_name,
+            tmp_path,
+            errno,
+            strerror(errno)
+        );
+
+        if (unlink(tmp_path)) {
+            log2file(
+                DELETE_ERROR,
+                __local_name,
+                tmp_path,
+                errno,
+                strerror(errno)
+            );
+        }
+
+        return (-1);
+    }
+
+    close(fd);
+    return (0);
+}
+
+
+
 /* getuname; Get uname and returns a string with it.
  * Memory must be freed after use
  */

@@ -37,6 +37,7 @@
 
 #include "shared.h"
 #include "logcollector.h"
+#include "file_op.h"
 
 #include <stdint.h>
 #include <winevt.h>

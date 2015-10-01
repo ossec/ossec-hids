@@ -48,6 +48,15 @@ void goDaemonLight();
 
 /* not really a file operation, but returns the uname */
 char *getuname();
+/* Return basename of path */
+char *basename_ex(char *path) __attribute__((nonnull));
+
+/* Rename file or directory */
+int rename_ex(const char *source, const char *destination) __attribute__((nonnull));
+
+/* Create temporary file */
+int mkstemp_ex(char *tmp_path) __attribute__((nonnull));
+
 
 /* Checks for vista. */
 #ifdef WIN32
