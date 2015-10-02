@@ -152,6 +152,6 @@ fpos_t fp_pos;
 #define GMF_ERROR       ARGV0 ": Could not run GetModuleFileName.\n"
 #define GMF_BUFF_ERROR  ARGV0 ": Could not get path because it is too long and was shrunk by (%d) characters with a max of (%d).\n"
 #define GMF_UNKN_ERROR  ARGV0 ": Could not run GetModuleFileName with returned (%ld).\n"
-#define DELETE_ERROR    ARGV0 ": Could not unlink file (%s).\n"
+#define AGENT_DELETE_ERROR    ARGV0 ": Could not unlink file (%s).\n"
 
 /* EOF */

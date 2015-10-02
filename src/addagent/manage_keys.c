@@ -150,7 +150,7 @@ int k_import(char *cmdimport)
                     {
                         if(unlink(KEYS_FILE))
                         {
-                            verbose(DELETE_ERROR, KEYS_FILE);
+                            verbose(AGENT_DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(COMPSEC_ERROR);
                     }
@@ -178,7 +178,7 @@ int k_import(char *cmdimport)
                     {
                         if(unlink(KEYS_FILE))
                         {
-                            verbose(DELETE_ERROR, KEYS_FILE);
+                            verbose(AGENT_DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(PROC_ERROR, cmd);
                     }
@@ -197,7 +197,7 @@ int k_import(char *cmdimport)
                     {
                         if(unlink(KEYS_FILE))
                         {
-                            verbose(DELETE_ERROR, KEYS_FILE);
+                            verbose(AGENT_DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(RESULT_ERROR, cmd, GetLastError());
                     }
@@ -206,7 +206,7 @@ int k_import(char *cmdimport)
                     {
                         if(unlink(KEYS_FILE))
                         {
-                            verbose(DELETE_ERROR, KEYS_FILE);
+                            verbose(AGENT_DELETE_ERROR, KEYS_FILE);
                         }
                         ErrorExit(CACLS_ERROR, cmd, exit_code);
                     }
