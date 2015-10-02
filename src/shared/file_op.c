@@ -17,6 +17,9 @@
 
 #include "shared.h"
 
+#ifndef WIN32
+#include <libgen.h>
+#endif
 
 /* Vista product information. */
 #ifdef WIN32
