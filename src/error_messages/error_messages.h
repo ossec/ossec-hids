@@ -51,6 +51,7 @@
 #define INT_ERROR     "%s(1125): ERROR: Internal error (undefined)."
 #define OPEN_ERROR    "%s(1126): ERROR: Unable to open file '%s' reason '%s'"
 #define LINK_ERROR    "%s(1134): ERROR: Unable to link from '%s' to '%s' due to [(%d)-(%s)]."
+#define CHMOD_ERROR   "%s(1127): ERROR: Could not chmod object '%s' due to [(%d)-(%s)]."
 #define DELETE_ERROR  "%s(1129): ERROR: Could not unlink file '%s' due to [(%d)-(%s)]."
 
 
@@ -317,6 +318,7 @@
 #define OS_AG_STARTED   "ossec: Agent started: '%s->%s'."
 #define OS_AG_DISCON    "ossec: Agent disconnected: '%s'."
 
+#define MKSTEMP_ERROR "%s(1128): ERROR: Could not create temporary file '%s' due to [(%d)-(%s)]."
 
 #endif /* _ERROR_MESSAGES__H */
 
