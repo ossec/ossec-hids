@@ -16,19 +16,19 @@
 
 <group name="apache,">
   <rule id="31401" level="0">
-    <if_sid>31301, 30101</if_sid>
+    <if_sid>31301, 30101, 30301</if_sid>
     <match>PHP Warning: </match>
     <description>PHP Warning message.</description>
   </rule>    
 
   <rule id="31402" level="0">
-    <if_sid>31301, 30101</if_sid>
+    <if_sid>31301, 30101, 30301</if_sid>
     <match>PHP Fatal error: </match>
     <description>PHP Fatal error.</description>
   </rule>    
 
   <rule id="31403" level="0">
-    <if_sid>31301, 30101</if_sid>
+    <if_sid>31301, 30101, 30301</if_sid>
     <match>PHP Parse error:</match>
     <description>PHP Parse error.</description>
   </rule>    
