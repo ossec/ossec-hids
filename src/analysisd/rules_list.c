@@ -58,7 +58,7 @@ static int _AddtoRule(int sid, int level, int none, const char *group,
                 /* If no context for rule, check if the parent has context
                  * and use that
                  */
-                if (!read_rule->last_events && r_node->ruleinfo->last_events) {
+		if((!read_rule->last_events && read_rule->context) && r_node->ruleinfo->last_events) {
                     read_rule->last_events = r_node->ruleinfo->last_events;
                 }
 
@@ -75,7 +75,7 @@ static int _AddtoRule(int sid, int level, int none, const char *group,
                 /* If no context for rule, check if the parent has context
                  * and use that
                  */
-                if (!read_rule->last_events && r_node->ruleinfo->last_events) {
+		if((!read_rule->last_events && read_rule->context) && r_node->ruleinfo->last_events) {
                     read_rule->last_events = r_node->ruleinfo->last_events;
                 }
 
