@@ -26,6 +26,8 @@ void *read_ossecalert(int pos, int *rc, int drop_it)
     char user_msg[256];
     char srcip_msg[256];
 
+    *rc = 0;
+
     char syslog_msg[OS_SIZE_2048 +1];
 
     al_data = GetAlertData(0, logff[pos].fp);
