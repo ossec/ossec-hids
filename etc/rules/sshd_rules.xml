@@ -348,6 +348,13 @@
     <description>Client did not offer an acceptable key exchange method.</description>
   </rule>
 
+  <rule id="5751" level="1">
+    <decoded_as>sshd</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>no hostkey alg [preauth]</match>
+    <description>No hostkey alg.</description>
+  </rule>
+
 </group> <!-- SYSLOG, SSHD -->
 
 <!-- EOF -->

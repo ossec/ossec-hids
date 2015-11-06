@@ -51,6 +51,13 @@ Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=
     <description>Notify is not implemented.</description>
   </rule>
 
+  <rule id="53207" level="1">
+    <decoded_as>nsd</decoded_as>
+    <if_sid>1002</if_sid>
+    <regex>read with \d+ errors$</regex>
+    <description>Zone file read with errors.</description>
+  </rule>
+
 </group>
 
 
