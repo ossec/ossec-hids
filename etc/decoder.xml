@@ -2808,4 +2808,27 @@ Author and (c): Michael Starks, 2014 -->
   <order>action, extra_data</order>
 </decoder>
 
+<!--
+<decoder name="splunkd-web">
+  <prematch>^\d\d-\d\d-\d\d\d\d \d\d:\d\d:\d\d.\d\d\d \.\d\d\d\d </prematch>
+  <regex offset="after_prematch">^(\S+)  (\S+) - \.* from (\S+) </regex>
+  <order>status, extra_data, srcip</order>
+</decoder>
+
+<decoder name="splunkd-auditlogger">
+  <prematch>^\d\d-\d\d-\d\d\d\d \d\d:\d\d:\d\d.\d\d\d \.\d\d\d\d </prematch>
+  <regex offset="after_prematch">^(\S+) (\S+) - Audit:\.+, user=(\S+), action=(\.+), info=(\S+) </regex>
+  <order>status, extra_data, user, action, extra_data</order>
+</decoder>
+-->
+
+<decoder name="openbsd-ftp-proxy">
+  <program_name>^ftp-proxy</program_name>
+</decoder>
+
+<decoder name="doas">
+  <program_name>^doas</program_name>
+</decoder>
+
+
 <!-- EOF -->
