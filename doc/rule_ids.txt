@@ -86,7 +86,8 @@
 53000 - 53199 OpenBSD DHCPd
 53200 - 53499 NSD
 53500 - 53699 OpenSMTPd
-53700 - XXXXX Apple Airport
+53700 - 53799 Apple Airport
+53800 - XXXXX splunkd
 
 
 
