@@ -13,6 +13,17 @@
 #include "os_crypto/sha1/sha1_op.h"
 #include "os_crypto/md5_sha1/md5_sha1_op.h"
 
+/* Windows doesn't have fnmatch(), have to use PathMatchSpec() instead. 
+ * The MSDOS wildcards aren't as powerful as Unix glob ones.  For example,
+ * they don't have [...] character classes.  However, they're better than
+ * nothing.
+ */
+#ifdef __WIN32__
+#include <shlwapi.h>
+#else
+#include <fnmatch.h>
+#endif
+
 /* Prototypes */
 static int read_file(const char *dir_name, int opts, OSMatch *restriction)  __attribute__((nonnull(1)));
 static int read_dir(const char *dir_name, int opts, OSMatch *restriction) __attribute__((nonnull(1)));
@@ -34,6 +45,8 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         while (syscheck.ignore[i] != NULL) {
             if (strncasecmp(syscheck.ignore[i], file_name,
                             strlen(syscheck.ignore[i])) == 0) {
+		debug2("%s: read_file ignoring '%s'",
+		    ARGV0, file_name);
                 return (0);
             }
             i++;
@@ -46,7 +59,30 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         while (syscheck.ignore_regex[i] != NULL) {
             if (OSMatch_Execute(file_name, strlen(file_name),
                                 syscheck.ignore_regex[i])) {
+		debug2("%s: read_file ignoring '%s' for regex '%s'",
+		    ARGV0, file_name, syscheck.ignore_regex_str[i]);
                 return (0);
+            }
+            i++;
+        }
+    }
+
+    /* Check in the ignore_glob entries */
+    if (syscheck.ignore_glob) {
+        int i = 0;
+        while (syscheck.ignore_glob[i] != NULL) {
+	    /* Windows doesn't have fnmatch(), have to use PathMatchSpec()
+	     * instead.
+	     */
+#ifdef __WIN32__
+            if (PathMatchSpec(file_name, syscheck.ignore_glob[i]))
+#else
+            if (!fnmatch(syscheck.ignore_glob[i], file_name, 0 ))
+#endif
+	    { /* uncuddled for vi % */
+		debug2("%s: read_file ignoring '%s' for glob '%s'",
+		    ARGV0, file_name, syscheck.ignore_glob[i]);
+                return(0);
             }
             i++;
         }
