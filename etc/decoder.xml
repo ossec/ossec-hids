@@ -272,6 +272,12 @@
   <order>srcip</order>
 </decoder>
 
+<decoder name="sshd-pam-host-user">
+  <parent>sshd</parent>
+  <prematch>rhost=\S+\s+user=\S+</prematch>
+  <regex>rhost=(\S+)\s+user=(\S+)</regex>
+  <order>srcip, user</order>
+</decoder>
 
 <!-- Dropbear rules -->
 <decoder name="dropbear">
