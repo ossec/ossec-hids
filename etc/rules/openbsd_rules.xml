@@ -160,9 +160,9 @@
   </rule>
 
   <rule id="51525" level="0">
-    <program_name>^ftp-proxy</program_name>
+    <program_name>^openbsd-ftp-proxy</program_name>
     <match>proxy cannot connect to server</match>
-    <description>ftp-proxy cannot connect to a server.</description>
+    <description>openbsd-ftp-proxy cannot connect to a server.</description>
   </rule>
 
   <rule id="51526" level="0">
@@ -237,7 +237,7 @@
   </rule>
 
   <rule id="51537" level="0">
-    <program_name>ftp-proxy</program_name>
+    <decoded_as>openbsd-ftp-proxy</decoded_as>
     <if_sid>1002</if_sid>
     <match>server refused connection</match>
     <description>Server refused connection.</description>
@@ -260,6 +260,20 @@
     <program_name>doas</program_name>
     <match>path not secure$</match>
     <description>A critical path for doas does not have secure permissions.</description>
+  </rule>
+
+  <rule id="51541" level="0">
+    <decoded_as>ntpd</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>bad peer </match>
+    <description>ntpd bad peer.</description>
+  </rule>
+
+  <rule id="51542" level="1">
+    <decoded_as>openbsd-ftp-proxy</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>getsockname failed: Connection refused</match>
+    <description>DNS lookup failed for openbsd-ftp-proxy.</description>
   </rule>
 
 </group> <!-- SYSLOG,LOCAL -->
