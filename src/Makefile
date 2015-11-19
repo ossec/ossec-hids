@@ -74,6 +74,11 @@ ifeq (${uname_S},FreeBSD)
 		OSSEC_LDFLAGS+=-pthread
 		LUA_PLAT=freebsd
 else
+ifeq (${uname_S},NetBSD)
+		DEFINES+=-DNetBSD
+		OSSEC_LDFLAGS+=-pthread
+		LUA_PLAT=posix
+else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
 		DEFINES+=-pthread
@@ -90,6 +95,7 @@ else
 	    # Unknow platform
 endif # HPUX
 endif # OpenBSD
+endif # NetBSD
 endif # FreeBSD
 endif # Darwin
 endif # SunOS
@@ -1109,9 +1115,8 @@ ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-te
 ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
-
+ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@ 
 
 
 ####################
