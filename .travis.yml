@@ -17,7 +17,7 @@ env:
 - DB=none OSSEC_TYPE=local GEOIP=no ZEROMQ=yes
 - DB=none OSSEC_TYPE=hybrid GEOIP=no ZEROMQ=yes
 - DB=none OSSEC_TYPE=agent GEOIP=no ZEROMQ=yes
-- DB=none OSSEC_TYPE=winagent GEOIP=no
+- DB=none OSSEC_TYPE=winagent GEOIP=no ZEROMQ=no
 - OSSEC_TYPE=test ZEROMQ=yes
 - OSSEC_TYPE=server RULES=test
 
