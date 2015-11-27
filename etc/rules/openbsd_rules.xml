@@ -297,6 +297,12 @@
     <description>ftp-proxy connection refused.</description>
   </rule>
 
+  <rule id="51546" level="5">
+    <decoded_as>doas</decoded_as>
+    <match>^failed password for </match>
+    <description>Failed attempt to run doas.</description>
+  </rule>
+
 
 </group> <!-- SYSLOG,LOCAL -->
 
