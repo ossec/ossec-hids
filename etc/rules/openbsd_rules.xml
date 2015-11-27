@@ -276,6 +276,15 @@
     <description>DNS lookup failed for openbsd-ftp-proxy.</description>
   </rule>
 
+  <rule id="51543" level="0">
+    <decoded_as>bsd_kernel</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>fatal firmware error$|^firmware error log|</match>
+    <match>error type = "SYSASSERT"</match>
+    <description>Firmware error.</description>
+  </rule>
+
+
 </group> <!-- SYSLOG,LOCAL -->
 
 
