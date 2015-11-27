@@ -284,6 +284,19 @@
     <description>Firmware error.</description>
   </rule>
 
+  <rule id="51544" level="0">
+    <decoded_as>openbsd-ftp-proxy</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>proxy cannot connect to server</match>
+    <description>ftp-proxy cannot connect to a server</description>
+  </rule>
+
+  <rule id="51545" level="1">
+    <if_sid>51544</if_sid>
+    <match>Connection refused$</match>
+    <description>ftp-proxy connection refused.</description>
+  </rule>
+
 
 </group> <!-- SYSLOG,LOCAL -->
 
