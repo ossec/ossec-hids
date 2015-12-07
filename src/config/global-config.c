@@ -364,7 +364,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                     white_size++;
                     Config->white_list = realloc(Config->white_list, sizeof(os_ip *)*white_size);
                     if(!Config->white_list) {
-                        merror(MEM_ERROR, "progname");
+                        merror(MEM_ERROR, __local_name, errno, strerror(errno));
                         return(OS_INVALID);
                     }
 
