@@ -12,7 +12,7 @@
 #include "global-config.h"
 #include "mail-config.h"
 #include "config.h"
-
+#include "headers/shared.h"
 
 int Read_GlobalSK(XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
 {
@@ -91,6 +91,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     unsigned int white_size = 1;
     unsigned int hostname_white_size = 1;
     unsigned int mailto_size = 1;
+    os_ip *tmp_ip;
 
     /* XML definitions */
     const char *xml_mailnotify = "email_notification";
@@ -354,23 +355,23 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 "([0-9]{0,2}|[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})$";
 
             if (Config && OS_PRegex(node[i]->content, ip_address_regex)) {
-                white_size++;
-                Config->white_list = (os_ip **)
-                                     realloc(Config->white_list, sizeof(os_ip *)*white_size);
-                if (!Config->white_list) {
-                    merror(MEM_ERROR, __local_name, errno, strerror(errno));
-                    return (OS_INVALID);
+                os_calloc(1, sizeof(os_ip), tmp_ip);
+                if(!OS_IsValidIP(node[i]->content, tmp_ip)) {
+                    os_free(tmp_ip);
+                    merror(INVALID_IP, "progname", node[i]->content);
+                }
+                else {
+                    white_size++;
+                    Config->white_list = realloc(Config->white_list, sizeof(os_ip *)*white_size);
+                    if(!Config->white_list) {
+                        merror(MEM_ERROR, "progname");
+                        return(OS_INVALID);
+                    }
+
+                    Config->white_list[white_size -1] = NULL;
+                    Config->white_list[white_size -2] = tmp_ip;
                 }
 
-                os_calloc(1, sizeof(os_ip), Config->white_list[white_size - 2]);
-                Config->white_list[white_size - 1] = NULL;
-
-                if (!OS_IsValidIP(node[i]->content,
-                                  Config->white_list[white_size - 2])) {
-                    merror(INVALID_IP, __local_name,
-                           node[i]->content);
-                    return (OS_INVALID);
-                }
             }
             /* Add hostname */
             else if (Config) {
