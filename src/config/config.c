@@ -12,6 +12,7 @@
 #include "shared.h"
 #include "os_xml/os_xml.h"
 #include "config.h"
+#include <libgen.h>
 
 /* Prototypes */
 static int read_main_elements(const OS_XML *xml, int modules,
@@ -153,8 +154,16 @@ int ReadConfig(int modules, const char *cfgfile, void *d1, void *d2)
     const char *xml_agent_profile = "profile";
 
     if (OS_ReadXML(cfgfile, &xml) < 0) {
-	merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
-        return (OS_INVALID);
+	char *cfilename, *tmpcfg;
+	tmpcfg = cfgfile;
+	cfilename = basename(tmpcfg);
+	if(strncmp(cfilename, "agent.conf", 10) != 0) {
+	    merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
+            return (OS_INVALID);
+        }
+	else {
+	    merror("%s WARN: Could not open agent.conf.", __local_name);
+	}
     }
 
     node = OS_GetElementsbyNode(&xml, NULL);
