@@ -9,6 +9,12 @@
 
 #include "shared.h"
 
+#ifdef WIN32
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
 static char *_read_file(const char *high_name, const char *low_name, const char *defines_file) __attribute__((nonnull(3)));
 static const char *__gethour(const char *str, char *ossec_hour) __attribute__((nonnull));
 
