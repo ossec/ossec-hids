@@ -607,7 +607,7 @@ endif
 agent: ${BUILD_AGENT}
 
 
-WINDOWS_BINS:=win32/ossec-agent.exe win32/ossec-agent-eventchannel.exe win32/ossec-rootcheck.exe win32/manage_agents.exe win32/setup-windows.exe win32/setup-syscheck.exe win32/setup-iis.exe win32/add-localfile.exe win32/os_win32ui.exe win32/agent_auth.exe
+WINDOWS_BINS:=win32/ossec-agent.exe win32/ossec-agent-eventchannel.exe win32/ossec-rootcheck.exe win32/manage_agents.exe win32/setup-windows.exe win32/setup-syscheck.exe win32/setup-iis.exe win32/add-localfile.exe win32/os_win32ui.exe
 
 ifeq (${MAKECMDGOALS},winagent)
 $(error Do not use 'winagent' directly, use 'TARGET=winagent')
@@ -1246,9 +1246,6 @@ win32/resource.o: win32/ui/win32ui.rc
 win32/os_win32ui.exe: win32/resource.o win32/win_service_rk.o ${win32_ui_o} addagent/b64.o ${ossec_libs}
 	${OSSEC_CCBIN} -DARGV0=\"ossec-win32ui\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-#win32/agent_auth.exe: win32/agent_auth.c shared/*.c os_regex/*.c os_net/*.c os_crypto/md5/*.c win32/win_service.c addagent/validate.c
-win32/agent_auth.exe: win32/agent_auth.c ${ossec_libs}
-	${OSSEC_CCBIN} -DARGV0=\"agent-auth\" -DCLIENT -DWIN32 -I./external/zlib-1.2.8/ -O2 -DMAX_AGENTS=2048 -DOSSECHIDS -DDEFAULTDIR=\"/var/ossec\" -DUSER=\"ossec\" -DREMUSER=\"ossecr\" -DGROUPGLOBAL=\"ossec\" -DMAILUSER=\"ossecm\" -DLinux -Wall -Wextra -I./ -I./headers/ -lws2_32 -lshlwapi -lwevtapi -lcomctl32 -lws2_32 -mwindows -lm -lsecur32 shared/*.c os_regex/*.c os_net/*.c os_crypto/md5/*.c win32/win_service.c addagent/validate.c os_xml.a  win32/agent_auth.c -o $@
 
 ####################
 #### Clean #########
