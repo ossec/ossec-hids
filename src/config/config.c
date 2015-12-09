@@ -162,7 +162,7 @@ int ReadConfig(int modules, const char *cfgfile, void *d1, void *d2)
             return (OS_INVALID);
         }
 	else {
-	    merror("%s WARN: Could not open agent.conf.", __local_name);
+	    merror("%s INFO: Could not open agent.conf.", __local_name);
 	}
     }
 
