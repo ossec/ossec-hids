@@ -2906,5 +2906,11 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <program_name>^doas</program_name>
 </decoder>
 
+<decoder name="doas-user">
+  <parent>doas</parent>
+  <prematch offset="after_parent">auth for </prematch>
+  <regex offset="after_prematch">^(\S+)</regex>
+  <order>user</order>
+</decoder>
 
 <!-- EOF -->
