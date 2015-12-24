@@ -36,7 +36,7 @@ before_script:
   ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
 - if [[ "${OSSEC_TYPE}" == "test" ]]; then ( sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ vivid main " && sudo apt-get update && sudo apt-get install check valgrind ); fi
-- (echo 'XXX'; ls -l /run/resolv.conf)
+- (echo 'XXX'; ls -l /run/resolvconf/resolv.conf)
 
 script:
 - COMMAND="V=1 TARGET=${OSSEC_TYPE}"
