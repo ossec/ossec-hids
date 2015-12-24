@@ -67,10 +67,9 @@ int OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
         return(OS_INVALID);
     }
 
-    printf("_ip: %s || _port: %s\n", _ip, _port);
     s = getaddrinfo(_ip, _port, &hints, &result);
     if (s != 0) {
-        verbose("getaddrinfo: %s", gai_strerror(s));
+        verbose("(OS_Bindport) getaddrinfo: %s", gai_strerror(s));
         return(OS_INVALID);
     }
 
@@ -253,7 +252,7 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
             hints.ai_flags = AI_NUMERICHOST;
             s = getaddrinfo(agt->lip, NULL, &hints, &result);
             if (s != 0) {
-                verbose("getaddrinfo: %s", gai_strerror(s));
+                verbose("(OS_Connect) getaddrinfo: %s", gai_strerror(s));
             }
             else {
                 memcpy(&local_ai, result, sizeof(struct addrinfo));
@@ -276,7 +275,7 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
 
     s = getaddrinfo(_ip, _port, &hints, &result);
     if (s != 0) {
-        verbose("getaddrinfo: %s", gai_strerror(s));
+        verbose("(OS_Connect 2) getaddrinfo: %s", gai_strerror(s));
         return(OS_INVALID);
     }
 
