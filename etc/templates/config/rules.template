@@ -32,6 +32,7 @@
     <include>ids_rules.xml</include>
     <include>squid_rules.xml</include>
     <include>firewall_rules.xml</include>
+    <include>apparmor_rules.xml</include>
     <include>cisco-ios_rules.xml</include>
     <include>netscreenfw_rules.xml</include>
     <include>sonicwall_rules.xml</include>
@@ -59,5 +60,6 @@
     <include>openbsd_rules.xml</include>
     <include>clam_av_rules.xml</include>
     <include>dropbear_rules.xml</include>
+    <include>sysmon_rules.xml</include>
     <include>local_rules.xml</include>
   </rules>  

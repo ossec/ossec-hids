@@ -127,7 +127,8 @@
     <match>Authentication failed for|invalid password for|</match>
     <match>LOGIN FAILURE|auth failure: |authentication error|</match>
     <match>authinternal failed|Failed to authorize|</match>
-    <match>Wrong password given for|login failed|Auth: Login incorrect</match>
+    <match>Wrong password given for|login failed|Auth: Login incorrect|</match>
+    <match>Failed to authenticate user</match>
     <group>authentication_failed,</group>
     <description>User authentication failure.</description>
   </rule>
@@ -396,7 +397,7 @@
   
   <rule id="5301" level="5">
    <if_sid>5300</if_sid>
-   <match>authentication failure; |failed|BAD su|^-| - </match>
+   <match>authentication failure; |failed|BAD su|^-</match>
    <description>User missed the password to change UID (user id).</description> 
    <group>authentication_failed,</group>
   </rule>
@@ -484,15 +485,15 @@
     <description>Initial group for sudo messages</description>
   </rule>
   
-  <rule id="5401" level="10">
+  <rule id="5401" level="5">
     <if_sid>5400</if_sid>
-    <match>3 incorrect password attempts</match>
-    <description>Three failed attempts to run sudo</description>
+    <match>incorrect password attempt</match>
+    <description>Failed attempt to run sudo</description>
   </rule>
 
   <rule id="5402" level="3">
     <if_sid>5400</if_sid>
-    <match> ; USER=root ; COMMAND=</match>
+    <regex> ; USER=root ; COMMAND=| ; USER=root ; TSID=\S+ ; COMMAND=</regex>
     <description>Successful sudo to ROOT executed</description>
   </rule>
 
@@ -501,7 +502,13 @@
     <options>alert_by_email</options>
     <if_fts></if_fts>
     <description>First time user executed sudo.</description>
-  </rule>                  
+  </rule>
+
+  <rule id="5404" level="10">
+    <if_sid>5401</if_sid>
+    <match>3 incorrect password attempts</match>
+    <description>Three failed attempts to run sudo</description>
+  </rule>
 </group> <!-- SYSLOG, SUDO -->
 
 
@@ -634,7 +641,7 @@
   <rule id="2937" level="12">
     <if_sid>2935</if_sid>
     <status>FAILED</status>
-    <description>Posible Disk failure. SCSI controller error.</description>
+    <description>Possible Disk failure. SCSI controller error.</description>
   </rule>
 
   <rule id="2938" level="12">
@@ -677,6 +684,12 @@
     <description>Uninteresting nouveau error.</description>
   </rule>
 
+  <rule id="2945" level="4">
+    <program_name>^rsyslogd</program_name>
+    <match>^imuxsock begins to drop messages </match>
+    <info>https://isc.sans.edu/diary/Are+you+losing+system+logging+information+%28and+don%27t+know+it%29%3F/15106</info>
+    <description>rsyslog may be dropping messages due to rate-limiting.</description>
+  </rule>
 
 </group>
 
