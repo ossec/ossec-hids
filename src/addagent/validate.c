@@ -59,7 +59,7 @@ char *OS_AddNewAgent(char *name, char *ip, char *id, char *key)
         {
             i++;
             snprintf(nid, 6, "%d", i);
-            if(i >= 4000)
+            if (i >= (MAX_AGENTS + 1024)){
             {
                 return(NULL);
             }
