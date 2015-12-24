@@ -67,6 +67,7 @@ int OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
         return(OS_INVALID);
     }
 
+    printf("_ip: %s || _port: %s\n", _ip, _port);
     s = getaddrinfo(_ip, _port, &hints, &result);
     if (s != 0) {
         verbose("getaddrinfo: %s", gai_strerror(s));
