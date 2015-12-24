@@ -27,6 +27,7 @@ matrix:
 
 before_script:
 - sudo apt-get update -qq
+- (echo 'XXX'; cat /etc/hosts /etc/resolv.conf /etc/nsswitch.conf; sudo echo '127.0.0.1 localhost.localdomain localhost' | sudo tee -a /etc/hosts ; sudo apt-get -y install dnsutils && nslookup localhost)
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev
@@ -36,7 +37,6 @@ before_script:
   ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
 - if [[ "${OSSEC_TYPE}" == "test" ]]; then ( sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ vivid main " && sudo apt-get update && sudo apt-get install check valgrind ); fi
-- (echo 'XXX'; cat /etc/hosts /etc/resolv.conf /etc/nsswitch.conf; sudo echo '127.0.0.1 localhost.localdomain localhost' >> /etc/hosts ; sudo apt-get -y install dnsutils && nslookup localhost)
 
 script:
 - COMMAND="V=1 TARGET=${OSSEC_TYPE}"
