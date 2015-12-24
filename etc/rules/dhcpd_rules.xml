@@ -61,6 +61,17 @@ Aug 10 09:45:28 junction dhcpd[2042]: DHCPACK on 192.168.17.154 to b4:b5:2f:15:4
     <description>dhcpd has been started.</description>
   </rule>
 
+  <rule id="53009" level="0">
+    <if_sid>53000</if_sid>
+    <match>^Address range </match>
+    <description>Message with address range.</description>
+  </rule>
+
+  <rule id="53010" level="2">
+    <if_sid>53009</if_sid>
+    <match> not on net </match>
+    <description>Defined address range is not on the configured network.</description>
+  </rule>
 
 </group>
 
