@@ -14,7 +14,7 @@
 #include "../os_net/os_net.h"
 #include "../headers/os_err.h"
 
-#define LOCALHOST4 "127.0.0.1"
+#define LOCALHOST4 "127.0.1.1"
 #define LOCALHOST6 "::1"
 #define PORT "4321"
 #define SENDSTRING "Hello World!\n"
