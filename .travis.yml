@@ -27,7 +27,7 @@ matrix:
 
 before_script:
 - sudo apt-get update -qq
-- (echo 'XXX'; hostname)
+- (echo 'XXX'; host 127.0.0.1)
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev
