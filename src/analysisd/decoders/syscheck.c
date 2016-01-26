@@ -430,10 +430,10 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                 }
             }
 
-            /* Get integer values */
+            /* Get octal values */
             if (c_newperm && c_oldperm) {
-                newperm = atoi(c_newperm);
-                oldperm = atoi(c_oldperm);
+                newperm = strtoul(c_newperm, 0, 8);
+                oldperm = strtoul(c_oldperm, 0, 8);
             }
 
             /* Generate size message */
