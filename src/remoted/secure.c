@@ -113,11 +113,11 @@ void HandleSecure()
                 if (check_keyupdate()) {
                     agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
                     if (agentid == -1) {
-                        merror(ENC_IP_ERROR, ARGV0, srcip);
+                        merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
                         continue;
                     }
                 } else {
-                    merror(ENC_IP_ERROR, ARGV0, srcip);
+                    merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
                     continue;
                 }
             }
@@ -174,4 +174,3 @@ void HandleSecure()
         }
     }
 }
-
