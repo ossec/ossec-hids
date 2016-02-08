@@ -23,5 +23,12 @@
     <description>Service has entered a failed state, and likely has not started.</description>
   </rule>
 
+  <rule id="40704" level="6">
+    <program_name>systemd</program_name>
+    <if_sid>1002</if_sid>
+    <match>entered failed state.</match>
+    <description>systemd detected a failing service.</description>
+  </rule>
+
 </group>
 

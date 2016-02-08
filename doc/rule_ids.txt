@@ -80,6 +80,16 @@
 40900 - 40999 Firewalld
 
 51500 - 51999 OpenBSD rules.
-52000 - XXXXX Apparmor rules.
+52000 - 52499 Apparmor rules.
+
+52500 - 52999 ClamAV
+53000 - 53199 OpenBSD DHCPd
+53200 - 53499 NSD
+53500 - 53699 OpenSMTPd
+53700 - 53799 Apple Airport
+53800 - 53999 splunkd
+54000 - XXXXX Unbound
+
+
 
 100000 - 109999 User defined rules

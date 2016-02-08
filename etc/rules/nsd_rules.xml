@@ -1,0 +1,63 @@
+<!--
+Aug 11 13:21:46 ix nsd[16565]: server initialization failed, nsd could not be started
+Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: syntax error
+Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: unrecognized RR type 'name:'
+Aug 12 09:01:00 junction.example.com nsd[7405]: NSTATS 1439384460 1439314258 A=1 AAAA=1
+Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=0 RNXD=0 RFwdR=0 RDupR=0 RFail=0 RFErr=0 RErr=0 RAXFR=0 RLame=0 ROpts=0 SSysQ=0 SAns=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 SNaAns=0 SNXD=0 RUQ=0 RURQ=0 RUXFR=0 RUUpd=0
+
+-->
+
+<group name="syslog,dns,nsd,">
+  <rule id="53200" level="1">
+    <decoded_as>nsd</decoded_as>
+    <description>NSD grouping.</description>
+  </rule>
+
+  <rule id="53201" level="1">
+    <if_sid>53200</if_sid>
+    <match>unrecognized RR type</match>
+    <description>Syntax error in nsd configuration.</description>
+  </rule>
+
+  <rule id="53202" level="1">
+    <decoded_as>nsd</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>server initialization failed|syntax error$</match>
+    <description>Syntax error in nsd configuration.</description>
+  </rule>
+
+  <rule id="53203" level="0">
+    <if_sid>53200</if_sid>
+    <match>^NSTATS|^XSTATS</match>
+    <description>nsd statistics</description>
+  </rule>
+
+  <rule id="53204" level="2">
+    <decoded_as>nsd</decoded_as>
+    <match>Can't bind </match>
+    <description>Cannot bind to a socket.</description>
+  </rule>
+
+  <rule id="53205" level="2">
+    <decoded_as>nsd</decoded_as>
+    <match>nsd is already running</match>
+    <description>nsd is already running.</description>
+  </rule>
+
+  <rule id="53206" level="1">
+    <decoded_as>nsd</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>received notify response error NOT IMPL</match>
+    <description>Notify is not implemented.</description>
+  </rule>
+
+  <rule id="53207" level="1">
+    <decoded_as>nsd</decoded_as>
+    <if_sid>1002</if_sid>
+    <regex>read with \d+ errors$</regex>
+    <description>Zone file read with errors.</description>
+  </rule>
+
+</group>
+
+

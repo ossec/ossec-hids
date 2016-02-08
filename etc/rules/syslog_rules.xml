@@ -691,6 +691,13 @@
     <description>rsyslog may be dropping messages due to rate-limiting.</description>
   </rule>
 
+  <rule id="2946" level="0">
+    <program_name>^rsyslogd</program_name>
+    <if_sid>1002</if_sid>
+    <match>set SCM_CREDENTIALS failed </match>
+    <description>System unable to set SCM_CREDENTIALS to a file.</description>
+  </rule>
+
 </group>
 
 

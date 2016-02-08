@@ -265,6 +265,19 @@
   <order>user</order>
 </decoder>
 
+<decoder name="sshd-negotiate">
+  <parent>sshd</parent>
+  <prematch offset="after_parent">fatal: Unable to negotiate with </prematch>
+  <regex offset="after_prematch">^(\S+): </regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="sshd-pam-host-user">
+  <parent>sshd</parent>
+  <prematch>rhost=\S+\s+user=\S+</prematch>
+  <regex>rhost=(\S+)\s+user=(\S+)</regex>
+  <order>srcip, user</order>
+</decoder>
 
 <!-- Dropbear rules -->
 <decoder name="dropbear">
@@ -1022,7 +1035,12 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 </decoder>
 
 
-<!-- OpenBSD smtpd decoders -->
+<!-- OpenBSD smtpd decoders
+   - Aug 14 10:15:25 junction.example.com smtpd[28882]: smtp-in: Failed command on session 1f55bdcdf16e28a3: "MAIL FROM:<root@junction.example.com>  " => 421 4.3.0: Temporary Error
+   - Aug 17 01:26:02 ix smtpd[22704]: smtp-in: New session 08d856b172f69c5c from host ix.example.com [local]
+   - Aug 17 01:26:02 ix smtpd[22704]: smtp-in: Accepted message 4296f490 on session 08d856b172f69c5c: from=<root@ix.example.com>, to=<ddp@ix.example.com>, size=1746, ndest=1, proto=ESMTP
+   - Aug 17 01:26:02 ix smtpd[22704]: smtp-in: Closing session 08d856b172f69c5c
+-->
 
 <decoder name="smtpd">
   <program_name>smtpd</program_name>
@@ -1042,6 +1060,27 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <prematch offset="after_parent">^smtp-in: </prematch>
+  <regex offset="after_prematch">^(\S+) </regex>
+  <order>status</order>
+</decoder>
+
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <regex> => (\d+) </regex>
+  <order>action</order>
+</decoder>
+
+<!--
+<decoder name="smtpd-delivery">
+  <parent>smtpd</parent>
+  <prematch offset="after_parent">^delivery: </prematch>
+  <regex offset="after_prematch">^(\S+) \.from=\p(\S+@\S+)\p, to=\.+, user=(\S+) </regex>
+  <order>status, extra_data, user</order>
+</decoder>
+-->
 
 
 <!-- Iptables decoder.
@@ -2796,5 +2835,82 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <order>srcip,url</order>
 </decoder>
 
+
+<!-- OpenBSD dhcpd
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPREQUEST for 192.168.17.154 from b4:b5:2f:15:4c:ec via sk0
+   - Aug 10 09:45:28 junction dhcpd[2042]: DHCPACK on 192.168.17.154 to b4:b5:2f:15:4c:ec via sk0
+-->
+
+<decoder name="dhcpd">
+  <program_name>^dhcpd$</program_name>
+</decoder>
+
+<decoder name="dhcpd-data">
+  <parent>dhcpd</parent>
+  <regex offset="after_parent">^(\S+) \S+ (\S+) \S+ (\S+) via (\S+)$</regex> 
+  <order>action, srcip, extra_data, extra_data</order>
+</decoder>
+
+<!-- NSD
+   - Aug 11 13:21:46 ix nsd[16565]: server initialization failed, nsd could not be started
+   - Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: syntax error
+   - Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: unrecognized RR type 'name:'
+   - Aug 12 09:01:00 junction.example.com nsd[7405]: NSTATS 1439384460 1439314258 A=1 AAAA=1
+   - Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=0 RNXD=0 RFwdR=0 RDupR=0 RFail=0 RFErr=0 RErr=0 RAXFR=0 RLame=0 ROpts=0 SSysQ=0 SAns=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 SNaAns=0 SNXD=0 RUQ=0 RURQ=0 RUXFR=0 RUUpd=0
+-->
+
+<decoder name="nsd">
+  <program_name>^nsd</program_name>
+</decoder>
+
+
+<!-- Apple Airport -->
+
+<decoder name="airport">
+  <program_name>80211</program_name>
+</decoder>
+
+<decoder name="airport-station">
+  <parent>airport</parent>
+  <prematch offset="after_parent"> station </prematch>
+  <regex offset="after_parent">^(\S+) \.* station (\S+)</regex>
+  <order>action, extra_data</order>
+</decoder>
+
+<decoder name="airport-supplicant">
+  <parent>airport</parent>
+  <prematch offset="after_parent"> supplicant </prematch>
+  <regex offset="after_parent">^(\S+) \.* supplicant (\S+)</regex>
+  <order>action, extra_data</order>
+</decoder>
+
+<!--
+<decoder name="splunkd-web">
+  <prematch>^\d\d-\d\d-\d\d\d\d \d\d:\d\d:\d\d.\d\d\d \.\d\d\d\d </prematch>
+  <regex offset="after_prematch">^(\S+)  (\S+) - \.* from (\S+) </regex>
+  <order>status, extra_data, srcip</order>
+</decoder>
+
+<decoder name="splunkd-auditlogger">
+  <prematch>^\d\d-\d\d-\d\d\d\d \d\d:\d\d:\d\d.\d\d\d \.\d\d\d\d </prematch>
+  <regex offset="after_prematch">^(\S+) (\S+) - Audit:\.+, user=(\S+), action=(\.+), info=(\S+) </regex>
+  <order>status, extra_data, user, action, extra_data</order>
+</decoder>
+-->
+
+<decoder name="openbsd-ftp-proxy">
+  <program_name>^ftp-proxy</program_name>
+</decoder>
+
+<decoder name="doas">
+  <program_name>^doas</program_name>
+</decoder>
+
+<decoder name="doas-user">
+  <parent>doas</parent>
+  <prematch offset="after_parent">auth for </prematch>
+  <regex offset="after_prematch">^(\S+)</regex>
+  <order>user</order>
+</decoder>
 
 <!-- EOF -->

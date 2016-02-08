@@ -1,0 +1,44 @@
+<!--
+Aug 14 10:15:25 junction.example.com smtpd[28882]: smtp-in: Failed command on session 1f55bdcdf16e28a3: "MAIL FROM:<root@junction.example.com>  " => 421 4.3.0: Temporar
+y Error
+-->
+
+<group name="syslog,smtpd,">
+
+  <rule id="53500" level="1">
+    <decoded_as>smtpd</decoded_as>
+    <description>OpenSMTPd grouping.</description>
+  </rule>
+
+  <rule id="53501" level="3">
+    <decoded_as>smtpd</decoded_as>
+    <if_sid>1002</if_sid>
+    <status>Failed</status>
+    <description>Message failed.</description>
+  </rule>
+
+  <rule id="53502" level="0">
+    <decoded_as>smtpd</decoded_as>
+    <match> New session</match>
+    <description>New session created.</description>
+  </rule>
+
+  <rule id="53503" level="0">
+    <decoded_as>smtpd</decoded_as>
+    <match> Closing session</match>
+    <description>Session closed.</description>
+  </rule>
+
+  <rule id="53504" level="0">
+    <decoded_as>smtpd</decoded_as>
+    <status>Accepted</status>
+    <description>Message accepted.</description>
+  </rule>
+
+  <rule id="53505" level="0">
+    <decoded_as>smtpd</decoded_as>
+    <match>delivery: Ok</match>
+    <description>Email delivered.</description>
+  </rule>
+
+</group>

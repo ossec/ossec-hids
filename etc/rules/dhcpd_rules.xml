@@ -1,0 +1,77 @@
+<!-- OpenBSD dhcpd -->
+<!--
+Aug 10 09:45:28 junction dhcpd[2042]: DHCPREQUEST for 192.168.17.154 from b4:b5:2f:15:4c:ec via sk0
+Aug 10 09:45:28 junction dhcpd[2042]: DHCPACK on 192.168.17.154 to b4:b5:2f:15:4c:ec via sk0
+-->
+
+<group name="syslog,dhcpd,">
+  <rule id="53000" level="0">
+    <decoded_as>dhcpd</decoded_as>
+    <description>dhcpd grouping.</description>
+  </rule>
+
+  <rule id="53001" level="1">
+    <if_sid>53000</if_sid>
+    <action>DHCPREQUEST</action>
+    <description>DHCP request.</description>
+  </rule>
+
+  <rule id="53002" level="1">
+    <if_sid>53000</if_sid>
+    <action>DHCPACK</action>
+    <description>DHCP Acknoledgement.</description>
+  </rule>
+
+  <rule id="53003" level="5">
+    <if_sid>53000</if_sid>
+    <match>answers a ping after sending a release|Possible release spoof</match>
+    <description>A host issued a release but is responding to pings.</description>
+  </rule>
+
+  <rule id="53004" level="1">
+    <if_sid>53000</if_sid>
+    <match>expecting left brace.$|</match>
+    <match>fixed-address parameter not allowed here.$|</match>
+    <match>parameters not allowed after first declaration.$|</match>
+    <match>Configuration file errors encountered</match>
+    <description>Configuration errors.</description>
+  </rule>
+
+  <rule id="53005" level="3">
+    <if_sid>53000</if_sid>
+    <match>exiting.$</match>
+    <description>dhcpd is exiting.</description>
+  </rule>
+
+  <rule id="53006" level="1">
+    <if_sid>53000</if_sid>
+    <match>Can't listen on </match>
+    <description>dhcpd cannot listen to an interface.</description>
+  </rule>
+
+  <rule id="53007" level="1">
+    <if_sid>53006</if_sid>
+    <match>has no subnet declaration for</match>
+    <description>dhcpd is not configured to listen to an interface.</description>
+  </rule>
+
+  <rule id="53008" level="1">
+    <if_sid>53000</if_sid>
+    <match>Listening on </match>
+    <description>dhcpd has been started.</description>
+  </rule>
+
+  <rule id="53009" level="0">
+    <if_sid>53000</if_sid>
+    <match>^Address range </match>
+    <description>Message with address range.</description>
+  </rule>
+
+  <rule id="53010" level="2">
+    <if_sid>53009</if_sid>
+    <match> not on net </match>
+    <description>Defined address range is not on the configured network.</description>
+  </rule>
+
+</group>
+

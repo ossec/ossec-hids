@@ -1,0 +1,45 @@
+<group name="syslog,airport,">
+
+  <rule id="53700" level="0">
+    <decoded_as>airport</decoded_as>
+    <description>Apple Airport grouping.</description>
+  </rule>
+
+  <rule id="53701" level="0">
+    <if_sid>53700</if_sid>
+    <match>^Rotated CCMP group key.$</match>
+    <description>CCMP group key was rotated.</description>
+  </rule>
+
+  <rule id="53702" level="1">
+    <if_sid>53700</if_sid>
+    <match>^Associated with station </match>
+    <description>A host associated with the wireless access point.</description>
+  </rule>
+
+  <rule id="53703" level="1">
+    <if_sid>53700</if_sid>
+    <match>^Disassociat</match>
+    <description>Wireless access point is disassciating with a host.</description>
+  </rule>
+
+  <rule id="53704" level="0">
+    <if_sid>53700</if_sid>
+    <match>^Installed unicast CCMP key for </match>
+    <description>Installed unicast CCMP key.</description>
+  </rule>
+
+  <rule id="53705" level="2">
+    <if_sid>53700</if_sid>
+    <match>^Deauthenticating with station</match>
+    <description>Deauthenticated a station.</description>
+  </rule>
+
+  <rule id="53706" level="0">
+    <if_sid>53700</if_sid>
+    <match>^Idle timeout</match>
+    <description>A host has idled out.</description>>
+  </rule> 
+
+
+</group>
