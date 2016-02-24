@@ -1,0 +1,8 @@
+OSSEC changelog.
+
+
+Changes at the -latest version
+   * Feature: Added hourly and daily options to the logcollecor frequency.
+   * Bug fix: Glob() implementation on logcollector.
+
+
