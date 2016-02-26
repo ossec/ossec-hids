@@ -28,7 +28,7 @@ matrix:
 before_script:
 - (echo 'XXX'; ping -c 1 localhost)
 - sudo apt-get update -qq
-- (echo 'YYY'; host 127.0.0.1)
+- (echo 'YYY'; ping -c 1 localhost)
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev
