@@ -21,6 +21,7 @@ matrix:
 
 before_script:
 - (echo 'XXX'; ping -c 1 localhost)
+- ls -l /etc/resolvconf/resolv.conf.d
 - sudo apt-get update -qq
 - (echo 'YYY'; ping -c 1 localhost)
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
