@@ -51,7 +51,11 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
         id = nid;
     }
 
-    fp = fopen(KEYSFILE_PATH, "a");
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "a");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "a");
+    }
     if (!fp) {
         return (NULL);
     }
@@ -107,7 +111,12 @@ char *getFullnameById(const char *id)
         return (NULL);
     }
 
-    fp = fopen(AUTH_FILE, "r");
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "r");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "r");
+    }
+
     if (!fp) {
         return (NULL);
     }
@@ -265,26 +274,29 @@ int NameExist(const char *u_name)
     fgetpos(fp, &fp_pos);
 
     while (fgets(line_read, FILE_SIZE - 1, fp) != NULL) {
+        char *name;
 
         if (line_read[0] == '#') {
             continue;
         }
 
-        /* tokenizing a line(record) */
-        strtok(line_read, " "); // ID field
-        char *name = strtok(NULL, " ");
-
+        name = strchr(line_read, ' ');
         if (name) {
+            char *ip;
+            name++;
 
-        	if (*name == '#') {
+            if (*name == '#') {
                 continue;
             }
 
-        	if (strcmp(u_name, name) == 0) {
-						fclose(fp);
-						return (1);
-					}
-
+            ip = strchr(name, ' ');
+            if (ip) {
+                *ip = '\0';
+                if (strcmp(u_name, name) == 0) {
+                    fclose(fp);
+                    return (1);
+                }
+            }
         }
         fgetpos(fp, &fp_pos);
     }
@@ -306,7 +318,6 @@ int print_agents(int print_status, int active_only, int csv_output)
     } else {
         fp = fopen(KEYSFILE_PATH, "r");
     }
-
     if (!fp) {
         return (0);
     }
