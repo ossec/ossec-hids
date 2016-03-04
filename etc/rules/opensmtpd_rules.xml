@@ -5,7 +5,7 @@ y Error
 
 <group name="syslog,smtpd,">
 
-  <rule id="53500" level="1">
+  <rule id="53500" level="0">
     <decoded_as>smtpd</decoded_as>
     <description>OpenSMTPd grouping.</description>
   </rule>
