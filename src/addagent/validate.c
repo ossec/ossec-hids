@@ -51,7 +51,11 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
         id = nid;
     }
 
-    fp = fopen(KEYSFILE_PATH, "a");
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "a");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "a");
+    }
     if (!fp) {
         return (NULL);
     }
@@ -107,7 +111,12 @@ char *getFullnameById(const char *id)
         return (NULL);
     }
 
-    fp = fopen(AUTH_FILE, "r");
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "r");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "r");
+    }
+
     if (!fp) {
         return (NULL);
     }
@@ -304,7 +313,11 @@ int print_agents(int print_status, int active_only, int csv_output)
     char line_read[FILE_SIZE + 1];
     line_read[FILE_SIZE] = '\0';
 
-    fp = fopen(AUTH_FILE, "r");
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "r");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "r");
+    }
     if (!fp) {
         return (0);
     }
