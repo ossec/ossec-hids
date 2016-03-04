@@ -23,8 +23,8 @@ before_script:
 - (echo 'XXX'; ping -c 1 localhost)
 - cat /etc/resolvconf/resolv.conf.d/*
 - cat /etc/resolv.conf
-- echo 'nameserver 10.240.0.1' >> /etc/resolv.conf
-- echo 'search c.eco-emissary-99515.internal google.internal' >> /etc/resolv.conf
+- sudo echo 'nameserver 10.240.0.1' > /etc/resolv.conf
+- sudo echo 'search c.eco-emissary-99515.internal google.internal' >> /etc/resolv.conf
 - sudo apt-get update -qq
 - (echo 'YYY'; ping -c 1 localhost)
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
