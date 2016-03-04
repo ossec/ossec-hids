@@ -288,9 +288,67 @@ int add_agent()
     return (0);
 }
 
-int remove_agent()
+int remove_agent_by_id(const char* id)
 {
     FILE *fp;
+    int id_exist;
+    char u_id[FILE_SIZE + 1];
+    u_id[FILE_SIZE] = '\0';
+
+    id_exist = IDExist(id);
+
+    if (!id_exist) {
+        printf(NO_ID, id);
+        return (1);
+    }
+
+    strncpy(u_id, id, FILE_SIZE);
+
+    do {
+
+        char *full_name = getFullnameById(u_id);
+
+        if (!full_name) {
+            printf(NO_ID, u_id);
+            return (1);
+        }
+
+        if (isChroot()) {
+            fp = fopen(AUTH_FILE, "r+");
+        } else {
+            fp = fopen(KEYSFILE_PATH, "r+");
+        }
+
+        if (!fp) {
+            free(full_name);
+            ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+        }
+#ifndef WIN32
+        chmod(AUTH_FILE, 0440);
+#endif
+
+        /* Remove the agent, but keep the id */
+        fsetpos(fp, &fp_pos);
+        fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+
+        fclose(fp);
+
+        /* Remove counter for ID */
+        delete_agentinfo(full_name);
+        OS_RemoveCounter(u_id);
+        free(full_name);
+        full_name = NULL;
+
+        printf(REMOVE_DONE, u_id);
+        restart_necessary = 1;
+        break;
+
+    } while (1);
+
+    return (0);
+}
+int remove_agent()
+{
     char *user_input;
     char u_id[FILE_SIZE + 1];
     int id_exist;
@@ -333,55 +391,22 @@ int remove_agent()
         }
     } while (!id_exist);
 
-    do {
-        printf(REMOVE_CONFIRM);
-        fflush(stdout);
+    printf(REMOVE_CONFIRM);
+    fflush(stdout);
 
-        user_input = getenv("OSSEC_ACTION_CONFIRMED");
-        if (user_input == NULL) {
-            user_input = read_from_user();
-        } else {
-            printf("%s\n", user_input);
-        }
+    user_input = getenv("OSSEC_ACTION_CONFIRMED");
+    if (user_input == NULL) {
+        user_input = read_from_user();
+    } else {
+        printf("%s\n", user_input);
+    }
 
-        /* If user confirms */
-        if (user_input[0] == 'y' || user_input[0] == 'Y') {
-            /* Get full agent name */
-            char *full_name = getFullnameById(u_id);
-            if (!full_name) {
-                printf(NO_ID, u_id);
-                return (1);
-            }
-
-            fp = fopen(AUTH_FILE, "r+");
-            if (!fp) {
-                free(full_name);
-                ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
-            }
-#ifndef WIN32
-            chmod(AUTH_FILE, 0440);
-#endif
-
-            /* Remove the agent, but keep the id */
-            fsetpos(fp, &fp_pos);
-            fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
-
-            fclose(fp);
-
-            /* Remove counter for ID */
-            delete_agentinfo(full_name);
-            OS_RemoveCounter(u_id);
-            free(full_name);
-            full_name = NULL;
-
-            printf(REMOVE_DONE, u_id);
-            restart_necessary = 1;
-            break;
-        } else { /* if(user_input[0] == 'n' || user_input[0] == 'N') */
-            printf(REMOVE_NOT);
-            break;
-        }
-    } while (1);
+    /* If user confirms */
+    if (user_input[0] == 'y' || user_input[0] == 'Y') {
+        remove_agent_by_id(u_id);
+    } else { /* if(user_input[0] == 'n' || user_input[0] == 'N') */
+        printf(REMOVE_NOT);
+    }
 
     return (0);
 }

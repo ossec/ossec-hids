@@ -22,6 +22,7 @@ char *read_from_user(void);
 /* Add or remove an agent */
 int add_agent(void);
 int remove_agent(void);
+int remove_agent_by_id(const char* id);
 
 /* Extract or import a key */
 int k_extract(const char *cmdextract);
