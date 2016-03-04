@@ -355,9 +355,9 @@
     <description>No hostkey alg.</description>
   </rule>
 
-  <rule id="5752" level="1">
+  <rule id="5752" level="0">
     <decoded_as>sshd</decoded_as>
-    <if_sid>1002</if_sid>
+    <if_sid>5700</if_sid>
     <match>Unable to negotiate with </match>
     <description>sshd could not negotiate with client.</description>
   </rule>
