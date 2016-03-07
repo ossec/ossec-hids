@@ -325,8 +325,6 @@ START_TEST(test_gethost_success_ipv6)
 }
 END_TEST
 
-*/
-
 START_TEST(test_gethost_fail1)
 {
     ck_assert_ptr_eq(OS_GetHost(NULL, 2), NULL);
@@ -338,7 +336,7 @@ START_TEST(test_gethost_fail2)
     ck_assert_ptr_eq(OS_GetHost("this.should.not.exist", 2), NULL);
 }
 END_TEST
-
+*/
 
 Suite *test_suite(void)
 {
