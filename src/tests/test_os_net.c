@@ -360,6 +360,7 @@ Suite *test_suite(void)
     tcase_add_test(tc_unix, test_unix);
     tcase_add_test(tc_unix, test_unixinvalidsockets);
 
+/*
     TCase *tc_gethost = tcase_create("GetHost");
     tcase_add_test(tc_gethost, test_gethost_success_ipv4);
     tcase_add_test(tc_gethost, test_gethost_success_ipv6);
@@ -371,6 +372,7 @@ Suite *test_suite(void)
     suite_add_tcase(s, tc_udp);
     suite_add_tcase(s, tc_unix);
     suite_add_tcase(s, tc_gethost);
+*/
 
     return (s);
 }
