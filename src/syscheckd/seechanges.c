@@ -43,6 +43,15 @@ int is_text(magic_t cookie, const void *buf, size_t len)
 
 /* Return 1 if the file has the ``nodiff`` option. 0 otherwise */
 int is_nodiff(const char *filename){
+    int i = 0;
+    if (syscheck.nodiff){
+        for (i = 0; syscheck.nodiff[i] != NULL; i++){
+            if (strncasecmp(syscheck.nodiff[i], filename,
+                            strlen(filename)) == 0) {
+                return 1;
+            }
+        }
+    }
     return 0;
 }
 
@@ -357,9 +366,17 @@ char *seechanges_addfile(const char *filename)
         snprintf(
             diff_cmd,
             2048,
-            "echo diff truncated > \"%s\" 2> /dev/null",
+            "printf '<Diff truncated>' > \"%s\"",
             diff_tmp
         );
+
+        if (system(diff_cmd) != 0) {
+            merror("%s: ERROR: Unable to run `%s`", ARGV0, diff_cmd);
+            goto cleanup;
+        }
+
+        /* Success */
+        status = 0;
     } else {
         /* OK, run diff */
         snprintf(
@@ -370,15 +387,15 @@ char *seechanges_addfile(const char *filename)
             old_tmp,
             diff_tmp
         );
+
+        if (system(diff_cmd) != 256) {
+            merror("%s: ERROR: Unable to run `%s`", ARGV0, diff_cmd);
+            goto cleanup;
+        }
+
+        /* Success */
+        status = 0;
     };
-
-    if (system(diff_cmd) != 256) {
-        merror("%s: ERROR: Unable to run diff for %s", ARGV0, filename);
-        goto cleanup;
-    }
-
-    /* Success */
-    status = 0;
 
 cleanup:
     unlink(old_tmp);
