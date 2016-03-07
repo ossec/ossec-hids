@@ -41,6 +41,11 @@ int is_text(magic_t cookie, const void *buf, size_t len)
 }
 #endif
 
+/* Return 1 if the file has the ``nodiff`` option. 0 otherwise */
+int is_nodiff(const char *filename){
+    return 0;
+}
+
 /* Generate diffs alerts */
 static char *gen_diff_alert(const char *filename, time_t alert_diff_time)
 {
@@ -347,15 +352,25 @@ char *seechanges_addfile(const char *filename)
         goto cleanup;
     }
 
-    /* Run diff */
-    snprintf(
-        diff_cmd,
-        2048,
-        "diff \"%s\" \"%s\" > \"%s\" 2> /dev/null",
-        new_tmp,
-        old_tmp,
-        diff_tmp
-    );
+    if (is_nodiff((filename))) {
+        /* Dont leak sensible data with a diff hanging around */
+        snprintf(
+            diff_cmd,
+            2048,
+            "echo diff truncated > \"%s\" 2> /dev/null",
+            diff_tmp
+        );
+    } else {
+        /* OK, run diff */
+        snprintf(
+            diff_cmd,
+            2048,
+            "diff \"%s\" \"%s\" > \"%s\" 2> /dev/null",
+            new_tmp,
+            old_tmp,
+            diff_tmp
+        );
+    };
 
     if (system(diff_cmd) != 256) {
         merror("%s: ERROR: Unable to run diff for %s", ARGV0, filename);
