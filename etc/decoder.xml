@@ -1057,6 +1057,18 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <prematch offset="after_parent">^smtp-in: </prematch>
+  <regex offset="after_prematch">^(\S+) </regex>
+  <order>status</order>
+</decoder>
+
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <regex> => (\d+) </regex>
+  <order>action</order>
+</decoder>
 
 
 <!-- Iptables decoder.
@@ -2817,38 +2829,5 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <regex> info: (\S+) (\S+). A IN$| info: (\S+) (\S+) AAAA IN$</regex>
   <order>srcip,url</order>
 </decoder>
-
-<!-- OpenSMTPd decoders -->
-<decoder name="smtpd">
-  <program_name>smtpd</program_name>
-</decoder>
-
-<decoder name="smtpd-client">
-  <parent>smtpd</parent>
-  <prematch offset="after_parent">^client</prematch>
-  <regex>^client (\S+) </regex>
-  <order>srcip</order>
-</decoder>
-
-<decoder name="smtpd-relay">
-  <parent>smtpd</parent>
-  <prematch>relay=</prematch>
-  <regex>relay=\S+ [(\S+)], </regex>
-  <order>srcip</order>
-</decoder>
-
-<decoder name="smtpd-in">
-  <parent>smtpd</parent>
-  <prematch offset="after_parent">^smtp-in: </prematch>
-  <regex offset="after_prematch">^(\S+) </regex>
-  <order>status</order>
-</decoder>
-
-<decoder name="smtpd-in">
-  <parent>smtpd</parent>
-  <regex> => (\d+) </regex>
-  <order>action</order>
-</decoder>
-
 
 <!-- EOF -->
