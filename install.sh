@@ -1214,6 +1214,11 @@ main()
     # Installing (calls the respective script
     # -- InstallAgent.sh or InstallServer.sh
     Install
+    ls -la GeoLiteCity.dat > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        mv GeoLiteCity.dat $INSTALLDIR/etc/
+    fi
+
 
     # User messages
     echo ""
