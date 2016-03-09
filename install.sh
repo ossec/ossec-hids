@@ -728,6 +728,35 @@ ConfigureServer()
         fi
     fi
 
+
+    # Auto setting up geoip
+    if [ "X$INSTYPE" = "Xserver" -o "X$INSTYPE" = "Xlocal" -o "X$INSTYPE" = "Xhybrid" ]; then
+        ls -la /usr/share/GeoIP/GeoLiteCity.dat >/dev/null 2>&1
+        if [ $? = 0 ]; then
+            echo "  <global>" >> $NEWCONFIG
+            echo "  <geoipdb>/usr/share/GeoIP/GeoLiteCity.dat</geoipdb>"  >> $NEWCONFIG
+            echo "  </global>" >> $NEWCONFIG
+        else
+            wget --timeout=10 -4 --quiet http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+            gunzip -fd GeoLiteCity.dat.gz >/dev/null 2>&1
+            ls GeoLiteCity.dat > /dev/null 2>&1
+            if [ $? = 0 ]; then
+                echo ""
+                echo ""
+                echo "   - Downloading GeoLiteCity database from MaxMind"
+                echo ""
+                echo ""
+                if [ $? = 0 ]; then
+                    echo "  <global>" >> $NEWCONFIG
+                    echo "  <geoipdb>$INSTALLDIR/etc/GeoLiteCity.dat</geoipdb>"  >> $NEWCONFIG
+                    echo "  </global>" >> $NEWCONFIG
+                fi
+            fi
+        fi
+    fi
+
+
+
     # Setting up the logs
     SetupLogs "3.6"
     echo "</ossec_config>" >> $NEWCONFIG
@@ -1143,6 +1172,42 @@ main()
             ConfigureServer
         else
             catError "0x4-installtype"
+        fi
+    else
+        # Auto setting up geoip
+        grep geoipdb $INSTALLDIR/etc/ossec.conf >/dev/null 2>&1
+        if [ ! $? = 0 ]; then
+            ls -la /usr/share/GeoIP/GeoLiteCity.dat >/dev/null 2>&1
+            if [ $? = 0 ]; then
+                echo "" >> $INSTALLDIR/etc/ossec.conf
+                echo "<ossec_config>" >> $INSTALLDIR/etc/ossec.conf
+                echo "  <global>" >> $INSTALLDIR/etc/ossec.conf
+                echo "  <geoipdb>/usr/share/GeoIP/GeoLiteCity.dat</geoipdb>"  >> $INSTALLDIR/etc/ossec.conf
+                echo "  </global>" >> $INSTALLDIR/etc/ossec.conf
+                echo "</ossec_config>" >> $INSTALLDIR/etc/ossec.conf
+                echo "" >> $INSTALLDIR/etc/ossec.conf
+            else
+                wget --timeout=10 -4 --quiet http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+                gunzip -fd GeoLiteCity.dat.gz >/dev/null 2>&1
+                ls GeoLiteCity.dat > /dev/null 2>&1
+                if [ $? = 0 ]; then
+                    mv GeoLiteCity.dat $INSTALLDIR/etc/
+                    echo ""
+                    echo ""
+                    echo "   - Downloading GeoLiteCity database from MaxMind"
+                    echo ""
+                    echo ""
+                    if [ $? = 0 ]; then
+                        echo "" >> $INSTALLDIR/etc/ossec.conf
+                        echo "<ossec_config>" >> $INSTALLDIR/etc/ossec.conf
+                        echo "<global>" >> $INSTALLDIR/etc/ossec.conf
+                        echo "  <geoipdb>$INSTALLDIR/etc/GeoLiteCity.dat</geoipdb>"  >> $INSTALLDIR/etc/ossec.conf
+                        echo "  </global>" >> $INSTALLDIR/etc/ossec.conf
+                        echo "</ossec_config>" >> $INSTALLDIR/etc/ossec.conf
+                        echo "" >> $INSTALLDIR/etc/ossec.conf
+                    fi
+                fi
+            fi
         fi
     fi
 
