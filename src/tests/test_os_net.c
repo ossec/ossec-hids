@@ -336,7 +336,6 @@ START_TEST(test_gethost_fail2)
 }
 END_TEST
 
-
 Suite *test_suite(void)
 {
     Suite *s = suite_create("os_net");

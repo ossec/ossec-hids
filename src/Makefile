@@ -1132,7 +1132,7 @@ ifdef TEST
 	OSSEC_LDFLAGS+=${LDFLAGS_TEST}
 endif #TEST
 
-test_programs = test_os_zlib test_os_xml test_os_regex test_os_crypto test_os_net test_shared
+test_programs = test_os_zlib test_os_xml test_os_regex test_os_crypto test_shared
 
 .PHONY: test run_tests build_tests test_valgrind test_coverage
 
@@ -1163,8 +1163,8 @@ test_os_regex: tests/test_os_regex.c ${os_regex_o}
 test_os_crypto: tests/test_os_crypto.c ${crypto_o} ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
+#test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
+#	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 test_shared: tests/test_shared.c ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
