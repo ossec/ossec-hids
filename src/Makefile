@@ -5,6 +5,7 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
 EXTERNAL_ZLIB=external/zlib-1.2.8/
+EXTERNAL_GEOIP=external/libgeoip/
 LUA_PLAT=posix
 MAXAGENTS?=2048
 # XXX Becareful NO EXTRA Spaces here
@@ -633,7 +634,7 @@ winagent:
 ####################
 
 .PHONY: external lua
-external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua libgeoip.a
 
 lua:
 	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
@@ -659,6 +660,25 @@ os_zlib/%.o: os_zlib/%.c ${EXTERNAL_ZLIB}libz.a
 os_zlib.a: ${os_zlib_o}
 	${OSSEC_LINK} $@ $^
 	${OSSEC_RANLIB} $@
+
+
+#### libgeoip ##########
+
+#libgeoip.a : ${EXTERNAL_GEOIP}GeoIP.c ${EXTERNAL_GEOIP}GeoIPCity.c ${EXTERNAL_GEOIP}regionName.c
+#	${OSSEC_CC} ${OSSEC_CFLAGS} -DPACKAGE_VERSION=\"OSSEC201601\" -DGEOIPDATADIR=\"/\"  -c $< -o $@
+GEOIP_LIB=libgeoip.a
+GEOIP_INCLUDE=-I./${EXTERNAL_GEOIP}
+
+geoip_c := ${EXTERNAL_GEOIP}GeoIP.c ${EXTERNAL_GEOIP}GeoIPCity.c ${EXTERNAL_GEOIP}regionName.c ${EXTERNAL_GEOIP}timeZone.c ${EXTERNAL_GEOIP}GeoIP_deprecated.c
+geoip_o := $(geoip_c:.c=.o)
+
+${EXTERNAL_GEOIP}%.o: ${EXTERNAL_GEOIP}%.c
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DPACKAGE_VERSION=\"OSSEC201601\" -DGEOIPDATADIR=\"/\" -c $^ -o $@
+
+libgeoip.a: ${geoip_o}
+	${OSSEC_LINK} $@ $^
+	${OSSEC_RANLIB} $@
+
 
 
 
@@ -1021,7 +1041,7 @@ all_analysisd_o += ${cdb_o}
 all_analysisd_libs += cdb.a
 
 analysisd/cdb/%.o: analysisd/cdb/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/cdb -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/cdb -c $^ -o $@
 
 cdb.a: ${cdb_o}
 	${OSSEC_LINK} $@ $^
@@ -1034,7 +1054,7 @@ all_analysisd_o += ${alerts_o}
 all_analysisd_libs += alerts.a
 
 analysisd/alerts/%.o: analysisd/alerts/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/alerts -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/alerts -c $^ -o $@
 
 alerts.a: ${alerts_o}
 	${OSSEC_LINK} $@ $^
@@ -1050,27 +1070,27 @@ all_analysisd_libs += decoders.a decoders-test.a decoders-live.a
 
 
 analysisd/decoders/%-test.o: analysisd/decoders/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 
 analysisd/decoders/%-live.o: analysisd/decoders/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 analysisd/decoders/plugins/%-test.o: analysisd/decoders/plugins/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 
 analysisd/decoders/plugins/%-live.o: analysisd/decoders/plugins/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 analysisd/compiled_rules/compiled_rules.h: analysisd/compiled_rules/.function_list analysisd/compiled_rules/register_rule.sh
 	./analysisd/compiled_rules/register_rule.sh build
 
 analysisd/compiled_rules/%-test.o: analysisd/compiled_rules/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 analysisd/compiled_rules/%-live.o: analysisd/compiled_rules/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE}  -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 decoders-live.a: ${decoders_live_o}
 	${OSSEC_LINK} $@ $^
@@ -1083,14 +1103,14 @@ format_o := ${format_c:.c=.o}
 all_analysisd_o += ${format_o}
 
 analysisd/format/%.o: analysisd/format/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} ${JSON_INCLUDE} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} ${GEOIP_INCLUDE} ${JSON_INCLUDE} ${GEOIP_LIB} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 output_c := ${wildcard analysisd/output/*c}
 output_o := ${output_c:.c=.o}
 all_analysisd_o += ${output_o}
 
 analysisd/output/%.o: analysisd/output/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 
 
@@ -1103,19 +1123,19 @@ analysisd_live_o := $(analysisd_o:.o=-live.o)
 all_analysisd_o += ${analysisd_test_o} ${analysisd_live_o} analysisd/testrule-test.o analysisd/analysisd-live.o analysisd/analysisd-test.o analysisd/makelists-live.o
 
 analysisd/%-live.o: analysisd/%.c analysisd/compiled_rules/compiled_rules.h
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -c $< -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -c $< -o $@
 
 analysisd/%-test.o: analysisd/%.c analysisd/compiled_rules/compiled_rules.h
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -c $< -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" ${GEOIP_INCLUDE} -I./analysisd -c $< -o $@
 
 
-ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-test.o analysisd/analysisd-test.o alerts.a cdb.a decoders-test.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-test.o analysisd/analysisd-test.o alerts.a cdb.a decoders-test.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB} ${GEOIP_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -DTESTRULE $^ ${OSSEC_LDFLAGS} -o $@
 
-ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB} ${GEOIP_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB} ${GEOIP_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@ 
 
 
@@ -1260,7 +1280,7 @@ clean-test:
 	find . -name "*.gcda" -exec rm {} \;
 
 clean-external:
-	rm -f ${cjson_o} libcJSON.a
+	rm -f ${cjson_o} libcJSON.a libgeoip.a external/libgeoip.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
 	cd ${EXTERNAL_LUA} && ${MAKE} clean
 

@@ -132,6 +132,8 @@ int main_analysisd(int argc, char **argv)
     hourly_syscheck = 0;
     hourly_firewall = 0;
 
+    geoipdb = NULL;
+
     while ((c = getopt(argc, argv, "Vtdhfu:g:D:c:")) != -1) {
         switch (c) {
             case 'V':
@@ -220,6 +222,17 @@ int main_analysisd(int argc, char **argv)
     }
 
     debug1(READ_CONFIG, ARGV0);
+
+
+    /* Opening GeoIP DB */
+    if(Config.geoipdb_file) {
+        geoipdb = GeoIP_open(Config.geoipdb_file, GEOIP_INDEX_CACHE);
+        if (geoipdb == NULL)
+        {
+            merror("%s: Unable to open GeoIP database from: %s (disabling GeoIP).", ARGV0, Config.geoipdb_file);
+        }
+    }
+
 
     /* Fix Config.ar */
     Config.ar = ar_flag;
@@ -1213,6 +1226,31 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 return (NULL);
             }
         }
+
+        /* Adding checks for geoip. */
+        if(currently_rule->srcgeoip) {
+            if(lf->srcgeoip) {
+                if(!OSMatch_Execute(lf->srcgeoip,
+                            strlen(lf->srcgeoip),
+                            currently_rule->srcgeoip))
+                    return(NULL);
+            } else {
+                return(NULL);
+            }
+        }
+
+
+        if(currently_rule->dstgeoip) {
+            if(lf->dstgeoip) {
+                if(!OSMatch_Execute(lf->dstgeoip,
+                            strlen(lf->dstgeoip),
+                            currently_rule->dstgeoip))
+                    return(NULL);
+            } else {
+                return(NULL);
+            }
+        }
+
 
         /* Check if any rule related to the size exist */
         if (rule->maxsize) {
