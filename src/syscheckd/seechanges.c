@@ -373,18 +373,15 @@ char *seechanges_addfile(const char *filename)
 
     if (is_nodiff((filename))) {
         /* Dont leak sensible data with a diff hanging around */
-        snprintf(
-            diff_cmd,
-            2048,
-            "printf '<Diff truncated>' > \"%s\"",
-            diff_tmp
-        );
-
-        if (system(diff_cmd) != 0) {
-            merror("%s: ERROR: Unable to run `%s`", ARGV0, diff_cmd);
+        FILE *fdiff;
+        char* nodiff_message = "<Diff truncated because nodiff option>";
+        fdiff = fopen(diff_location, "w");
+        if (!fdiff){
+            merror("%s: ERROR: Unable to open file for writing `%s`", ARGV0, diff_location);
             goto cleanup;
         }
-
+        fwrite(nodiff_message, strlen(nodiff_message) + 1, 1, fdiff);
+        fclose(fdiff);
         /* Success */
         status = 0;
     } else {
