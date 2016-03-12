@@ -41,18 +41,28 @@ int is_text(magic_t cookie, const void *buf, size_t len)
 }
 #endif
 
-/* Return 1 if the file has the ``nodiff`` option. 0 otherwise */
+/* Return TRUE if the file name match one of the ``nodiff`` entries.
+   Return FALSE otherwise */
 int is_nodiff(const char *filename){
-    int i = 0;
     if (syscheck.nodiff){
+        int i;
         for (i = 0; syscheck.nodiff[i] != NULL; i++){
             if (strncasecmp(syscheck.nodiff[i], filename,
                             strlen(filename)) == 0) {
-                return 1;
+                return (TRUE);
             }
         }
     }
-    return 0;
+    if (syscheck.nodiff_regex) {
+        int i;
+        for (i = 0; syscheck.nodiff_regex[i] != NULL; i++) {
+            if (OSMatch_Execute(filename, strlen(filename),
+                                syscheck.nodiff_regex[i])) {
+                 return (TRUE);
+            }
+        }
+    }
+    return (FALSE);
 }
 
 /* Generate diffs alerts */
