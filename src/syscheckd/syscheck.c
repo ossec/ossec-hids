@@ -138,10 +138,12 @@ int Start_win32_Syscheck()
 		ARGV0, syscheck.ignore[r]);
 
     /* Print files with no diff. */
-    if(syscheck.nodiff)
-        for (r = 0; syscheck.nodiff[r] != NULL; r++)
+    r = 0;
+    while (syscheck.nodiff[r] != NULL) {
             verbose("%s: INFO: No diff for file: '%s'",
-                ARGV0, syscheck.nodiff[r]);
+                    ARGV0, syscheck.nodiff[r]);
+            r++;
+    }
 
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, getpid());
@@ -320,10 +322,12 @@ int main(int argc, char **argv)
 		ARGV0, syscheck.ignore[r]);
 
     /* Print files with no diff. */
-    if(syscheck.nodiff)
-        for (r = 0; syscheck.nodiff[r] != NULL; r++)
+    r = 0;
+    while (syscheck.nodiff[r] != NULL) {
             verbose("%s: INFO: No diff for file: '%s'",
-                ARGV0, syscheck.nodiff[r]);
+                    ARGV0, syscheck.nodiff[r]);
+            r++;
+    }
 
     /* Check directories set for real time */
     r = 0;
