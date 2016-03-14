@@ -232,6 +232,7 @@ int _setlevels(RuleNode *node, int nnode);
 #define SYSCHECK_MOD3   "syscheck_integrity_changed_3rd"
 #define SYSCHECK_NEW    "syscheck_new_entry"
 #define SYSCHECK_DEL    "syscheck_deleted"
+#define SYSCHECK_ALLOWED "syscheck_allowed"
 
 /* Global variables */
 extern int _max_freq;

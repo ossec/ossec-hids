@@ -126,6 +126,7 @@ http://www.ossec.net/main/license/\n"
 /* Syscheck data */
 #define SYSCHECK        "syscheck"
 #define SYSCHECK_REG    "syscheck-registry"
+#define ALLOWCHANGE     "syscheck-allowchange"
 
 /* Rule path */
 #define RULEPATH        "/rules"

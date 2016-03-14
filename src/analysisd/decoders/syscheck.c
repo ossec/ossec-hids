@@ -38,6 +38,7 @@ typedef struct __sdb {
     int id3;
     int idn;
     int idd;
+    int id_allowed;
 
     /* Syscheck rule */
     OSDecoderInfo  *syscheck_dec;
@@ -87,6 +88,7 @@ void SyscheckInit()
     sdb.id3 = getDecoderfromlist(SYSCHECK_MOD3);
     sdb.idn = getDecoderfromlist(SYSCHECK_NEW);
     sdb.idd = getDecoderfromlist(SYSCHECK_DEL);
+    sdb.id_allowed = getDecoderfromlist(SYSCHECK_ALLOWED);
 
     debug1("%s: SyscheckInit completed.", ARGV0);
     return;
@@ -122,6 +124,12 @@ static int __iscompleted(const char *agent)
         return (1);
     }
     return (0);
+}
+
+
+static int consumeAllow(const char *filename){
+    verbose("is %s allowed ?\n", filename);
+    return 0;
 }
 
 /* Set the database of a specific agent as completed */
@@ -619,6 +627,7 @@ int DecodeSyscheck(Eventinfo *lf)
 {
     const char *c_sum;
     char *f_name;
+    int status;
 
     /* Every syscheck message must be in the following format:
      * checksum filename
@@ -668,6 +677,12 @@ int DecodeSyscheck(Eventinfo *lf)
     c_sum = lf->log;
 
     /* Search for file changes */
-    return (DB_Search(f_name, c_sum, lf));
+    status = DB_Search(f_name, c_sum, lf);
+
+    /* Check if the file have been allowed to change */
+    if (consumeAllow(f_name)){
+        lf->decoder_info = sdb.id_allowed;
+    }
+    return status;
 }
 
