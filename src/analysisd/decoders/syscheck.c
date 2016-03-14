@@ -14,6 +14,7 @@
 #include "config.h"
 #include "alerts/alerts.h"
 #include "decoder.h"
+#include "syscheck-allow.c" /* I don't like this either */
 
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
@@ -127,11 +128,6 @@ static int __iscompleted(const char *agent)
 }
 
 
-static int consumeAllow(const char *filename){
-    verbose("is %s allowed ?", filename);
-    return 0;
-}
-
 /* Set the database of a specific agent as completed */
 static void DB_SetCompleted(const Eventinfo *lf)
 {
@@ -184,7 +180,7 @@ static FILE *DB_File(const char *agent, int *agent_id)
 
     /* Get agent file */
     snprintf(sdb.buf, OS_FLSIZE , "%s/%s", SYSCHECK_DIR, agent);
-
+    verbose("opening %s", sdb.buf);
     /* r+ to read and write. Do not truncate */
     sdb.agent_fps[i] = fopen(sdb.buf, "r+");
     if (!sdb.agent_fps[i]) {
@@ -680,35 +676,8 @@ int DecodeSyscheck(Eventinfo *lf)
     status = DB_Search(f_name, c_sum, lf);
 
     /* Check if the file have been allowed to change */
-    if (consumeAllow(f_name)){
+    if (consumeAllowchange(f_name, lf)){
         lf->decoder_info = sdb.id_allowed;
     }
     return status;
-}
-
-/* A special decoder to read an AllowChange event */
-int DecodeAllowchange(Eventinfo *lf)
-{
-    int status;
-    int timestamp;
-    char *f_name;
-
-    verbose("incoming %s", lf->log);
-    /* Every allow change message must be in the following format:
-     * timestamp filename
-     */
-    f_name = strchr(lf->log, ' ');
-    if (f_name == NULL) {
-        merror(SK_INV_MSG, ARGV0);
-        return (0);
-    }
-
-    /* Zero to get the timestamp */
-    *f_name = '\0';
-    f_name++;
-
-    /* Get timestamp */
-    timestamp = atoi(lf->log);
-    verbose("successfully read allowchange for %s until %d from %s", f_name, timestamp, lf->hostname);
-    return timestamp;
 }

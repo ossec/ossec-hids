@@ -117,6 +117,9 @@ http://www.ossec.net/main/license/\n"
 /* Rootcheck directory */
 #define ROOTCHECK_DIR    "/queue/rootcheck"
 
+/* Allowchange directory */
+#define ALLOWCHANGE_DIR     "/queue/syscheck-allowchange"
+
 /* Diff queue */
 #define DIFF_DIR        "/queue/diff"
 #define DIFF_DIR_PATH   DEFAULTDIR DIFF_DIR
