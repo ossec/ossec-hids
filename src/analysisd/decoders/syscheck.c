@@ -128,7 +128,7 @@ static int __iscompleted(const char *agent)
 
 
 static int consumeAllow(const char *filename){
-    verbose("is %s allowed ?\n", filename);
+    verbose("is %s allowed ?", filename);
     return 0;
 }
 
@@ -686,3 +686,29 @@ int DecodeSyscheck(Eventinfo *lf)
     return status;
 }
 
+/* A special decoder to read an AllowChange event */
+int DecodeAllowchange(Eventinfo *lf)
+{
+    int status;
+    int timestamp;
+    char *f_name;
+
+    verbose("incoming %s", lf->log);
+    /* Every allow change message must be in the following format:
+     * timestamp filename
+     */
+    f_name = strchr(lf->log, ' ');
+    if (f_name == NULL) {
+        merror(SK_INV_MSG, ARGV0);
+        return (0);
+    }
+
+    /* Zero to get the timestamp */
+    *f_name = '\0';
+    f_name++;
+
+    /* Get timestamp */
+    timestamp = atoi(lf->log);
+    verbose("successfully read allowchange for %s until %d from %s", f_name, timestamp, lf->hostname);
+    return timestamp;
+}

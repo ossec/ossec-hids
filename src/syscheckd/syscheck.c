@@ -71,15 +71,16 @@ static void read_internal(int debug_level)
  */
 static int allowChange(char* filename, time_t timestamp)
 {
-
+    char msg[1024*2];
+    sprintf(msg, "%d %s", timestamp, filename);
     if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
     }
     sleep(1);
-    if (SendMSG(syscheck.queue, filename, SYSCHECK, ALLOWCHANGE_MQ) < 0) {
+    if (SendMSG(syscheck.queue, msg, ALLOWCHANGE, ALLOWCHANGE_MQ) < 0) {
         merror(QUEUE_SEND, ARGV0);
     }
-    printf("send_allowchange_msg: %s to %s\n", filename, DEFAULTQPATH);
+    printf("send_allowchange_msg: %s to %s\n", msg, DEFAULTQPATH);
     return 0;
 }
 

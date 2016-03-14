@@ -755,6 +755,15 @@ void OS_ReadMSG_analysisd(int m_queue)
                 lf->size = strlen(lf->log);
             }
 
+            /* Allowchange event decoding */
+            else if (msg[0] == ALLOWCHANGE_MQ) {
+                if (!DecodeAllowchange(lf)) {
+                    /* We don't process allowchange events further */
+                    goto CLMEM;
+                }
+                lf->size = strlen(lf->log);
+            }
+
             /* Host information special decoder */
             else if (msg[0] == HOSTINFO_MQ) {
                 if (!DecodeHostinfo(lf)) {
