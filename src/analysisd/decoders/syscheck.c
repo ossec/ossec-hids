@@ -39,7 +39,6 @@ typedef struct __sdb {
     int id3;
     int idn;
     int idd;
-    int id_allowed;
 
     /* Syscheck rule */
     OSDecoderInfo  *syscheck_dec;
@@ -89,7 +88,6 @@ void SyscheckInit()
     sdb.id3 = getDecoderfromlist(SYSCHECK_MOD3);
     sdb.idn = getDecoderfromlist(SYSCHECK_NEW);
     sdb.idd = getDecoderfromlist(SYSCHECK_DEL);
-    sdb.id_allowed = getDecoderfromlist(SYSCHECK_ALLOWED);
 
     debug1("%s: SyscheckInit completed.", ARGV0);
     return;
@@ -677,7 +675,8 @@ int DecodeSyscheck(Eventinfo *lf)
 
     /* Check if the file have been allowed to change */
     if (consumeAllowchange(f_name, lf)){
-        lf->decoder_info = sdb.id_allowed;
+        lf->decoder_info->id = getDecoderfromlist(SYSCHECK_ALLOWED);
+        lf->decoder_info->name = SYSCHECK_ALLOWED;
     }
     return status;
 }

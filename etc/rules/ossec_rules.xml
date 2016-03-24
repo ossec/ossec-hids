@@ -211,6 +211,13 @@
     <group>syscheck,agentless</group>
   </rule>
 
+  <rule id="556" level="2">
+    <category>ossec</category>
+    <decoded_as>syscheck_allowed</decoded_as>
+    <description>Integrity checksum changed (allowed).</description>
+    <group>syscheck,</group>
+  </rule>
+
   <!-- Hostinfo rules -->  
   <rule id="580" level="8">
     <category>ossec</category>

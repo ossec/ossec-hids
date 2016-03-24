@@ -691,6 +691,7 @@ int SetDecodeXML()
     addDecoder2list(SYSCHECK_MOD);
     addDecoder2list(SYSCHECK_MOD2);
     addDecoder2list(SYSCHECK_MOD3);
+    addDecoder2list(SYSCHECK_ALLOWED);
     addDecoder2list(SYSCHECK_NEW);
     addDecoder2list(SYSCHECK_DEL);
     addDecoder2list(HOSTINFO_NEW);
