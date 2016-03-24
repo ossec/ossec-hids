@@ -32,13 +32,15 @@ static int consumeAllowchange(const char *filename, Eventinfo *lf){
     time_t current;
     snprintf(db_filename, OS_FLSIZE , "%s/%s", ALLOWCHANGE_DIR, lf->hostname);
     db_file = fopen(db_filename, "r+");
-    rewind(db_file);
     if (!db_file) {
-        verbose("failed to open %s", db_filename);
-        return 0;
+        db_file = fopen(db_filename, "w+");
+        if (!db_file) {
+            verbose("failed to open %s", db_filename);
+            return 0;
+        }
     }
+    rewind(db_file);
     current = time(0);
-
 
     while (fgets(line, OS_FLSIZE*2, db_file) != NULL) {
         /* Attempt to parse the line */
