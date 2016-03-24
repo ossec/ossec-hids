@@ -72,7 +72,7 @@ static void read_internal(int debug_level)
 static int allowChange(char* filename, time_t timestamp)
 {
     char msg[1024*2];
-    sprintf(msg, "%d %s", timestamp, filename);
+    sprintf(msg, "%ld %s", timestamp, filename);
     if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
     }

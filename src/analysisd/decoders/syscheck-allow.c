@@ -24,7 +24,7 @@
 
 /* Determine if this filename have at least one allowed change, and
    consumme it */
-static int consumeAllowchange(const char *filename, Eventinfo *lf){
+int consumeAllowchange(const char *filename, Eventinfo *lf){
     FILE *db_file;
     char db_filename[OS_FLSIZE];
     char line[OS_FLSIZE*2];
@@ -68,18 +68,17 @@ static int consumeAllowchange(const char *filename, Eventinfo *lf){
 
 /* Save an Allowchange record in our "database"
 */
-static int produceAllowchange(time_t timestamp, const char *filename, Eventinfo *lf){
+int produceAllowchange(time_t timestamp, const char *filename, Eventinfo *lf){
     FILE *db_file;
     char db_filename[OS_FLSIZE];
     snprintf(db_filename, OS_FLSIZE , "%s/%s", ALLOWCHANGE_DIR, lf->hostname);
-    verbose("opening %s", db_filename);
     db_file = fopen(db_filename, "a");
     if (db_file) {
-        fprintf(db_file, "%d %d %s\n", 1, timestamp, filename);
+        fprintf(db_file, "%d %ld %s\n", 1, timestamp, filename);
         fclose(db_file);
         return timestamp;
     }
-    verbose("failed to write to %s", db_filename);
+    verbose("Failed to open %s", db_filename);
     return 0;
 }
 
@@ -88,7 +87,6 @@ static int produceAllowchange(time_t timestamp, const char *filename, Eventinfo 
 /* A special decoder to read an AllowChange event */
 int DecodeAllowchange(Eventinfo *lf)
 {
-    int status;
     time_t timestamp;
     char *f_name;
 

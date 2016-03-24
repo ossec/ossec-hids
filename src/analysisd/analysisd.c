@@ -32,6 +32,7 @@
 #include "cleanevent.h"
 #include "dodiff.h"
 #include "output/jsonout.h"
+#include "decoders/syscheck-allow.h"
 
 #ifdef PICVIZ_OUTPUT_ENABLED
 #include "output/picviz.h"

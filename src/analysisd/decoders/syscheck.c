@@ -14,7 +14,7 @@
 #include "config.h"
 #include "alerts/alerts.h"
 #include "decoder.h"
-#include "syscheck-allow.c" /* I don't like this either */
+#include "syscheck-allow.h"
 
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
@@ -178,7 +178,6 @@ static FILE *DB_File(const char *agent, int *agent_id)
 
     /* Get agent file */
     snprintf(sdb.buf, OS_FLSIZE , "%s/%s", SYSCHECK_DIR, agent);
-    verbose("opening %s", sdb.buf);
     /* r+ to read and write. Do not truncate */
     sdb.agent_fps[i] = fopen(sdb.buf, "r+");
     if (!sdb.agent_fps[i]) {
@@ -306,9 +305,8 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         }
 
         /* Check the number of changes */
-        if (!Config.syscheck_auto_ignore) {
-            sdb.syscheck_dec->id = sdb.id1;
-        } else {
+        sdb.syscheck_dec->id = sdb.id1;
+        if (Config.syscheck_auto_ignore) {
             switch (p) {
                 case 0:
                     sdb.syscheck_dec->id = sdb.id1;
