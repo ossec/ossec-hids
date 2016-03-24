@@ -47,7 +47,7 @@ static int consumeAllowchange(const char *filename, Eventinfo *lf){
         int validity;
         time_t until;
         char path[OS_FLSIZE];
-        sscanf(line, "%d %d %s", &validity, &until, path);
+        sscanf(line, "%d %ld %s", &validity, &until, path);
         if (validity) {
             if (until > current) {
                 if (strcmp(path, filename) == 0){
