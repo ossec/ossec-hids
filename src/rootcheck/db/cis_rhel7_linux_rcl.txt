@@ -239,11 +239,9 @@ f:/etc/xinetd.d/rlogin -> !r:^# && r:disable && r:no;
 f:/etc/xinetd.d/rsh -> !r:^# && r:disable && r:no;
 f:/etc/xinetd.d/shell -> !r:^# && r:disable && r:no;
 # TODO (finish this)
-/usr/lib/systemd/system/rexec@.service
-/usr/lib/systemd/system/rlogin@.service
-/usr/lib/systemd/system/rsh@.service
-# Stoped here, adding elements tothe rest
-
+f:/usr/lib/systemd/system/rexec@.service -> r:ExecStart;
+f:/usr/lib/systemd/system/rlogin@.service -> r:ExecStart;
+f:/usr/lib/systemd/system/rsh@.service -> r:ExecStart;
 
 # 2.1.4 Remove rsh (Scored)
 # TODO
@@ -251,10 +249,12 @@ f:/etc/xinetd.d/shell -> !r:^# && r:disable && r:no;
 # 2.1.5 Remove NIS Client (Scored)
 [CIS - RHEL7 - 2.1.5 - Disable standard boot services - NIS (client) Enabled {CIS: 2.1.5 RHEL7} {PCI_DSS: 2.2.3}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
 d:$rc_dirs -> ^S\d\dypbind$;
+f:/usr/lib/systemd/system/ypbind.service -> r:Exec;
 
 # 2.1.6 Remove NIS Server (Scored)
 [CIS - RHEL7 - 2.1.6 - Disable standard boot services - NIS (server) Enabled {CIS: 2.1.6 RHEL7} {PCI_DSS: 2.2.3}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
 d:$rc_dirs -> ^S\d\dypserv$;
+f:/usr/lib/systemd/system/ypserv.service -> r:Exec;
 
 # 2.1.7 Remove tftp (Scored)
 # TODO
@@ -262,6 +262,7 @@ d:$rc_dirs -> ^S\d\dypserv$;
 # 2.1.8 Remove tftp-server (Scored)
 [CIS - RHEL7 - 2.1.8 - tftpd enabled on xinetd {CIS: 2.1.8 RHEL7} {PCI_DSS: 2.2.3}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
 f:/etc/xinetd.d/tftpd -> !r:^# && r:disable && r:no;
+f:/usr/lib/systemd/system/tftp.service -> r:Exec;
 
 # 2.1.9 Remove talk (Scored)
 # TODO
@@ -269,30 +270,40 @@ f:/etc/xinetd.d/tftpd -> !r:^# && r:disable && r:no;
 # 2.1.10 Remove talk-server (Scored)
 [CIS - RHEL7 - 2.1.10 - talk enabled on xinetd {CIS: 2.1.10 RHEL7} {PCI_DSS: 2.2.3}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
 f:/etc/xinetd.d/talk -> !r:^# && r:disable && r:no;
+f:/usr/lib/systemd/system/ntalk.service -> r:Exec;
 
 # 2.1.11 Remove xinetd (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.11 -  xinetd detected {CIS: 2.1.11 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/usr/lib/systemd/system/xinetd.service -> r:Exec;
 
 # 2.1.12 Disable chargen-dgram (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.12 -  chargen-dgram enabled on xinetd {CIS: 2.1.12 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/xinetd.d/chargen-dgram -> !r:^# && r:disable && r:no;
 
 # 2.1.13 Disable chargen-stream (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.13 -  chargen-stream enabled on xinetd {CIS: 2.1.13 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/xinetd.d/chargen-stream -> !r:^# && r:disable && r:no;
 
 # 2.1.14 Disable daytime-dgram (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.14 -  daytime-dgram enabled on xinetd {CIS: 2.1.14 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/xinetd.d/daytime-dgram -> !r:^# && r:disable && r:no;
 
 # 2.1.15 Disable daytime-stream (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.15 -  daytime-stream enabled on xinetd {CIS: 2.1.15 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/xinetd.d/daytime-stream -> !r:^# && r:disable && r:no;
+
 
 # 2.1.16 Disable echo-dgram (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.16 -  echo-dgram enabled on xinetd {CIS: 2.1.16 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/xinetd.d/echo-dgram -> !r:^# && r:disable && r:no;
 
 # 2.1.17 Disable echo-stream (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.17 -  echo-stream enabled on xinetd {CIS: 2.1.17 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/xinetd.d/echo-stream -> !r:^# && r:disable && r:no;
 
 # 2.1.18 Disable tcpmux-server (Scored)
-# TODO
+[CIS - RHEL7 - 2.1.18 -  tcpmux-server enabled on xinetd {CIS: 2.1.18 RHEL7}  [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/xinetd.d/tcpmux-server -> !r:^# && r:disable && r:no;
 
 
 ###############################################
@@ -301,13 +312,12 @@ f:/etc/xinetd.d/talk -> !r:^# && r:disable && r:no;
 
 # 3.1 Set Daemon umask (Scored)
 [CIS - RHEL7 - 3.1 - Set daemon umask - Default umask is higher than 027 {CIS: 3.1 RHEL7} {PCI_DSS: 2.2.2}] [all] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
-f:/etc/init.d/functions -> !r:^# && r:^umask && <:umask 027;
-# # grep umask /etc/sysconfig/init
+f:/etc/sysconfig/init -> !r:^# && r:^umask && <:umask 027;
 
 # 3.2 Remove X Windows (Scored)
 [CIS - RHEL7 - 3.2 - X11 not disabled {CIS: 3.2 RHEL7} {PCI_DSS: 2.2.2}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
-f:/etc/inittab -> !r:^# && r:id:5;
-#ls -l /usr/lib/systemd/system/default.target | grep graphical.target
+f:/usr/lib/systemd/system/default.target -> r:Graphical;
+p:gdm-x-session;
 
 # 3.3 Disable Avahi Server (Scored)
 [CIS - RHEL7 - 3.2 - Avahi daemon not disabled {CIS: 3.3 RHEL7} {PCI_DSS: 2.2.2}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
@@ -315,12 +325,14 @@ p:avahi-daemon;
 
 # 3.4 Disable Print Server - CUPS (Not Scored)
 
-# 3.5 Remove DHCP Server (Not Scored)
-# TODO
+# 3.5 Remove DHCP Server (Scored)
+[CIS - RHEL7 - 3.5 - DHCPnot disabled {CIS: 3.5 RHEL7} [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/usr/lib/systemd/system/dhcpd.service -> r:Exec;
 
 # 3.6 Configure Network Time Protocol (NTP) (Scored)
-#[CIS - RHEL7 - 3.6 - NTPD not disabled {CIS: 1.1.1 RHEL7} {PCI_DSS: 2.2.2}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
-# TODO.
+[CIS - RHEL7 - 3.6 - NTPD not Configured {CIS: 3.6 RHEL7} {PCI_DSS: 2.2.2}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/ntp.conf -> r:restrict default kod nomodify notrap nopeer noquery && r:^server;
+f:/etc/sysconfig/ntpd -> r:OPTIONS="-u ntp:ntp -p /var/run/ntpd.pid";
 
 # 3.7 Remove LDAP (Not Scored)
 
@@ -392,9 +404,9 @@ f:/proc/sys/net/ipv4/conf/default/send_redirects -> 0;
 f:/proc/sys/net/ipv4/conf/all/accept_source_route -> 1;
 
 # 4.2.2 Disable ICMP Redirect Acceptance (Scored)
-#[CIS - RHEL7 - 4.2.2 - Network parameters - ICMP redirects accepted {CIS: 1.1.1 RHEL7} {PCI_DSS: 2.2.4}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
-#f:/proc/sys/net/ipv4/conf/all/accept_redirects -> 1;
-#f:/proc/sys/net/ipv4/conf/default/accept_redirects -> 1;
+[CIS - RHEL7 - 4.2.2 - Network parameters - ICMP redirects accepted {CIS: 1.1.1 RHEL7} {PCI_DSS: 2.2.4}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/proc/sys/net/ipv4/conf/all/accept_redirects -> 1;
+f:/proc/sys/net/ipv4/conf/default/accept_redirects -> 1;
 
 # 4.2.3 Disable Secure ICMP Redirect Acceptance (Scored)
 [CIS - RHEL7 - 4.2.3 - Network parameters - ICMP secure redirects accepted {CIS: 4.2.3 RHEL7} {PCI_DSS: 2.2.4}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
@@ -475,7 +487,8 @@ f:/proc/sys/net/ipv4/tcp_syncookies -> 0;
 # 4.6.4 Disable TIPC (Not Scored)
 
 # 4.7 Enable IPtables (Scored)
-# TODO
+#[CIS - RHEL7 - 4.7 - Uncommon Network Protocols - Firewalld not enabled {CIS: 4.7 RHEL7} [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+#f:/usr/lib/systemd/system/firewalld.service -> TODO;
 
 
 ###############################################
@@ -591,12 +604,20 @@ f:/proc/sys/net/ipv4/tcp_syncookies -> 0;
 f:/etc/ssh/sshd_config -> !r:^# && r:Protocol\.+1;
 
 # 6.2.2 Set LogLevel to INFO (Scored)
+[CIS - RHEL7 - 6.2.1 - SSH Configuration - Protocol version 1 enabled {CIS: 6.2.1 RHEL7} {PCI_DSS: 4.1}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:/etc/ssh/sshd_config -> !r:^# && !r:LogLevel\.+INFO;
 
 # 6.2.3 Set Permissions on /etc/ssh/sshd_config (Scored)
+# TODO
 
 # 6.2.4 Disable SSH X11 Forwarding (Scored)
+# TODO
 
 # 6.2.5 Set SSH MaxAuthTries to 4 or Less (Scored)
+[ CIS - RHEL7 - 6.2.5 - SSH Configuration - Set SSH MaxAuthTries to 4 or Less  {CIS - RHEL7 - 6.2.5} {PCI_DSS: 2.2.4}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
+f:$sshd_file -> !r:^# && r:MaxAuthTries && !r:3\s*$;
+f:$sshd_file -> r:^#\s*MaxAuthTries;
+f:$sshd_file -> !r:MaxAuthTries;
 
 # 6.2.6 Set SSH IgnoreRhosts to Yes (Scored)
 [CIS - RHEL7 - 6.2.6 - SSH Configuration - IgnoreRHosts disabled {CIS: 6.2.6 RHEL7} {PCI_DSS: 4.1}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
@@ -609,10 +630,12 @@ f:/etc/ssh/sshd_config -> !r:^# && r:HostbasedAuthentication\.+yes;
 # 6.2.8 Disable SSH Root Login (Scored)
 [CIS - RHEL7 - 6.2.8 - SSH Configuration - Root login allowed {CIS: 6.2.8 RHEL7} {PCI_DSS: 4.1}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
 f:/etc/ssh/sshd_config -> !r:^# && r:PermitRootLogin\.+yes;
+f:/etc/ssh/sshd_config -> r:^#\s*PermitRootLogin;
 
 # 6.2.9 Set SSH PermitEmptyPasswords to No (Scored)
 [CIS - RHEL7 - 6.2.9 - SSH Configuration - Empty passwords permitted {CIS: 6.2.9 RHEL7} {PCI_DSS: 4.1}] [any] [http://www.ossec.net/wiki/index.php/CIS_RHEL7 -]
 f:/etc/ssh/sshd_config -> !r:^# && r:^PermitEmptyPasswords\.+yes;
+f:/etc/ssh/sshd_config -> r:^#\s*PermitEmptyPasswords;
 
 # 6.2.10 Do Not Allow Users to Set Environment Options (Scored)
 
