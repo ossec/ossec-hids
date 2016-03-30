@@ -76,11 +76,10 @@ static int allowChange(char* filename, time_t timestamp)
     if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
     }
-    sleep(1);
     if (SendMSG(syscheck.queue, msg, ALLOWCHANGE, ALLOWCHANGE_MQ) < 0) {
         merror(QUEUE_SEND, ARGV0);
     }
-    printf("send_allowchange_msg: %s to %s\n", msg, DEFAULTQPATH);
+    debug1("%s: send_allowchange_msg: %s to %s\n", ARGV0, msg, DEFAULTQPATH);
     return 0;
 }
 
