@@ -71,7 +71,7 @@ static void read_internal(int debug_level)
  */
 static int allowChange(char* filename, time_t timestamp)
 {
-    char msg[1024*2];
+    char msg[OS_MAXPATH*2];
     sprintf(msg, "%ld %s", timestamp, filename);
     if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
@@ -208,11 +208,12 @@ int main(int argc, char **argv)
     int test_config = 0, run_foreground = 0;
     int allow_change = 0;
     const char *cfg = DEFAULTCPATH;
-    char *allow_filename = NULL;
+    char allow_filename[OS_MAXPATH];
     time_t allow_timestamp = 0;
 
     /* Set the name */
     OS_SetName(ARGV0);
+    *allow_filename = '\0';
 
     while ((c = getopt(argc, argv, "Vtdhfc:a:u:")) != -1) {
         switch (c) {
@@ -239,7 +240,7 @@ int main(int argc, char **argv)
                 if (!optarg) {
                     ErrorExit("%s: -a needs a filename", ARGV0);
                 }
-                allow_filename = optarg;
+                strncpy(allow_filename, optarg, OS_MAXPATH);
                 allow_change = 1;
                 break;
             case 'u':
@@ -290,12 +291,22 @@ int main(int argc, char **argv)
 
 
     if (allow_change){
-        if (allow_filename && allow_timestamp != 0) {
-        allowChange(allow_filename, allow_timestamp);
-        exit(0);
-        } else {
-            merror("%s: WARN: Missing parameter for allow change", ARGV0);
+        if (allow_timestamp == 0){
+            merror("%s: WARN: Missing timestamp for allow change", ARGV0);
             exit(1);
+        } else if (*allow_filename != '\0') {
+            allowChange(allow_filename, allow_timestamp);
+            exit(0);
+        } else {
+            debug1("%s: Reading filenames from stdin, one path per line", ARGV0);
+            while (fgets(allow_filename, OS_MAXPATH, stdin)) {
+                /* Remove the newline character */
+                if (allow_filename[strlen(allow_filename) - 1] == '\n') {
+                    allow_filename[strlen(allow_filename) - 1] = '\0';
+                }
+                allowChange(allow_filename, allow_timestamp);
+            }
+            exit(0);
         }
     }
 

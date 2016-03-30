@@ -32,6 +32,7 @@
 #define OS_FLSIZE       OS_SIZE_256     /* Maximum file size            */
 #define OS_HEADER_SIZE  OS_SIZE_128     /* Maximum header size          */
 #define OS_LOG_HEADER   OS_SIZE_256     /* Maximum log header size      */
+#define OS_MAXPATH      OS_SIZE_1024    /* Maximum filepath length      */
 #define IPSIZE          INET6_ADDRSTRLEN /* IP Address size             */
 
 /* Some global names */
