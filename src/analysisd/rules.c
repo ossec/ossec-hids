@@ -27,7 +27,7 @@ static int getattributes(char **attributes,
                   int *id, int *level,
                   int *maxsize, int *timeframe,
                   int *frequency, int *accuracy,
-                  int *noalert, int *ignore_time, int *overwrite);
+                  int *noalert, int *ignore_time, int *overwrite, int *rev);
 static int doesRuleExist(int sid, RuleNode *r_node);
 static void Rule_AddAR(RuleInfo *config_rule);
 static char *loadmemory(char *at, const char *str);
@@ -238,7 +238,7 @@ int Rules_OP_ReadRules(const char *rulefile)
             {
                 int id = -1, level = -1, maxsize = 0, timeframe = 0;
                 int frequency = 0, accuracy = 1, noalert = 0, ignore_time = 0;
-                int overwrite = 0;
+                int overwrite = 0, rev = 0;
 
                 /* Get default timeframe */
                 timeframe = default_timeframe;
@@ -246,7 +246,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                 if (getattributes(rule[j]->attributes, rule[j]->values,
                                   &id, &level, &maxsize, &timeframe,
                                   &frequency, &accuracy, &noalert,
-                                  &ignore_time, &overwrite) < 0) {
+                                  &ignore_time, &overwrite, &rev) < 0) {
                     merror("%s: Invalid attribute for rule.", ARGV0);
                     OS_ClearXML(&xml);
                     return (-1);
@@ -1428,7 +1428,7 @@ static int getattributes(char **attributes, char **values,
                   int *id, int *level,
                   int *maxsize, int *timeframe,
                   int *frequency, int *accuracy,
-                  int *noalert, int *ignore_time, int *overwrite)
+                  int *noalert, int *ignore_time, int *overwrite, int *rev)
 {
     int k = 0;
 
@@ -1441,6 +1441,7 @@ static int getattributes(char **attributes, char **values,
     const char *xml_noalert = "noalert";
     const char *xml_ignore_time = "ignore";
     const char *xml_overwrite = "overwrite";
+    const char *xml_rev = "rev";
 
     /* Get attributes */
     while (attributes[k]) {
@@ -1538,7 +1539,7 @@ static int getattributes(char **attributes, char **values,
                 merror("rules_op: Invalid overwrite: %s. "
                        "Can only by 'yes' or 'no'.", values[k]);
                 return (-1);
-            }
+            } //else if (strcasecmp(attributes[k], xml_rev) == 0) {
         } else {
             merror("rules_op: Invalid attribute \"%s\". "
                    "Only id, level, maxsize, accuracy, noalert and timeframe "

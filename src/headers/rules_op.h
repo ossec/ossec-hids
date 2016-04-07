@@ -67,6 +67,7 @@ typedef struct _RuleInfo {
     int maxsize;
     int frequency;
     int timeframe;
+    int rev;	/* Revision of a rule, probably not useful inside analysisd */
 
     u_int8_t context; /* Not a user option */
 
