@@ -1539,7 +1539,9 @@ static int getattributes(char **attributes, char **values,
                 merror("rules_op: Invalid overwrite: %s. "
                        "Can only by 'yes' or 'no'.", values[k]);
                 return (-1);
-            } //else if (strcasecmp(attributes[k], xml_rev) == 0) {
+	    }
+        } else if (strcasecmp(attributes[k], xml_rev) == 0) {
+		// XXX - This setting doesn't do much for analysisd
         } else {
             merror("rules_op: Invalid attribute \"%s\". "
                    "Only id, level, maxsize, accuracy, noalert and timeframe "
