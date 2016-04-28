@@ -2,8 +2,8 @@ language: c
 
 env:
   global:
-    - secure: "AlOrAUma2ZPYnWkm0S5VyUyTJstzhgJWMuo7of+SCbh/BkNOov99QU2E0wBuwP9VACODZcnA6NUgR76+hzLWLeldfoOL/OBD47NW7DfsZGutdl2IRukuQ1oAjA7UrLnM8ILg/MeCc7yo+UkjmYY/+Kih7610IeAuXkCrQpbuvJY="
     - DB=mysql OSSEC_TYPE=server GEOIP=yes ZEROMQ=yes
+    - secure: "Hyq0J4XSx5dm1WxYXBFcicM1EG4jYHkcyQRK/UlADPgN48kvC6s14maznlRfoqXnnbkDFsGKEj50HX2Al98m/tXME8zDJNVcxr4ZCo8FnhvsXQFHivJmM5m6fwEEH4s4sTYi1tpbd1bq7DUdmxwYuHOdRK9s8EqnhuZ8bCVz+ts="
 
 addons:
   coverity_scan:
