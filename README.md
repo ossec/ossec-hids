@@ -4,7 +4,7 @@ OSSEC v2.8 Copyright (C) 2014 Trend Micro Inc.
 
 OSSEC is a full platform to monitor and control your systems. It mixes together 
 all the aspects of HIDS (host-based intrusion detection), log monitoring and 
-SIM/SIEM together in a simple, powerful and open source solution.
+SIM/SIEM together (security information and event management) in a simple, powerful and open source solution.
 
 Visit our website for the latest information.  [ossec.github.io](http://ossec.github.io)
 
@@ -12,14 +12,14 @@ Visit our website for the latest information.  [ossec.github.io](http://ossec.gi
 
 ## Current Releases 
 
-The current stable releases are available on the ossec website. 
+The current stable releases are available on the OSSEC website. 
 
 * Releases can be downloaded from: [Downloads](http://ossec.github.io/downloads.html)
-* Release documentation is available at: [docs](http://ossec.github.io/docs/)
+* Release documentation is available at: [OSSEC’s documentation](http://ossec.github.io/docs/)
 
 ## Development ##
 
-The development version is hosted on GitHub and just a simple git clone away. 
+The development version is hosted on GitHub and just a simple *git clone* away. 
 
 [![Build Status](https://travis-ci.org/ossec/ossec-hids.png?branch=master)](https://travis-ci.org/ossec/ossec-hids)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/1847/badge.svg)](https://scan.coverity.com/projects/1847)
@@ -32,7 +32,7 @@ $ (ossec_version="2.8.2" ; ossec_checksum="a0f403270f388fbc6a0a4fd46791b1371f559
 
 ```
 
-Then follow the prompts.  You should still Read the Documentation [here](http://ossec.github.io/docs/).
+Then follow the prompts.  You should still read the documentation [here](http://ossec.github.io/docs/).
 
 ## Credits and Thanks ##
 
@@ -42,9 +42,7 @@ Then follow the prompts.  You should still Read the Documentation [here](http://
   for use in the OpenSSL Toolkit (http://www.openssl.org/).
 * This product includes cryptographic software written by Eric 
   Young (eay@cryptsoft.com)
-* This product include software developed by the zlib project 
+* This product includes software developed by the zlib project 
   (Jean-loup Gailly and Mark Adler).
-* This product include software developed by the cJSON project 
+* This product includes software developed by the cJSON project 
   (Dave Gamble)
-
-
