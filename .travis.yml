@@ -23,7 +23,7 @@ env:
 
 env:
   global:
-    - secure: "Pl2w5LU2PkeZvpKdVjSMD+33P2GZgFtye4ZUPqljuMYZzSRDfvvLpbL1BYJ0jaMnhGHFYAoovc+pDf9wZYB390ouJimHCf3KYH0WuZoDxHAV3Afm2nUV8O6YAHFQpC4fKwhlWbcBNdn7OOScJxqUucMQjAb2iZ0AQ97v7VrM5Ig="
+    - secure: "AlOrAUma2ZPYnWkm0S5VyUyTJstzhgJWMuo7of+SCbh/BkNOov99QU2E0wBuwP9VACODZcnA6NUgR76+hzLWLeldfoOL/OBD47NW7DfsZGutdl2IRukuQ1oAjA7UrLnM8ILg/MeCc7yo+UkjmYY/+Kih7610IeAuXkCrQpbuvJY="
 
 addons:
   coverity_scan:
