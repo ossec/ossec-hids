@@ -109,10 +109,13 @@ enable()
 
     if [ "X$2" = "Xdatabase" ]; then
         echo "DB_DAEMON=ossec-dbd" >> ${PLIST};
+        touch ${DIR}/etc/.dbd
     elif [ "X$2" = "Xclient-syslog" ]; then
         echo "CSYSLOG_DAEMON=ossec-csyslogd" >> ${PLIST};
+        touch ${DIR}/etc/.csyslogd
     elif [ "X$2" = "Xagentless" ]; then
         echo "AGENTLESS_DAEMON=ossec-agentlessd" >> ${PLIST};
+        touch ${DIR}/etc/.agentlessd
     elif [ "X$2" = "Xdebug" ]; then
         echo "DEBUG_CLI=\"-d\"" >> ${PLIST};
     else
