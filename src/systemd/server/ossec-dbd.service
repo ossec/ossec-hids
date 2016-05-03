@@ -2,6 +2,7 @@
 Description=The OSSEC DBD
 PartOf=ossec-server.target
 After=ossec-analysisd.service ossec-execd.service ossec-logcollector.service ossec-maild.service ossec-monitord.service ossec-remoted.service ossec-syscheckd.service
+ConditionPathExists=/var/ossec/etc/.dbd
 
 [Service]
 EnvironmentFile=/etc/ossec-init.conf
