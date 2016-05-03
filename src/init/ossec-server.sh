@@ -140,10 +140,13 @@ disable()
 
     if [ "X$2" = "Xdatabase" ]; then
         echo "DB_DAEMON=\"\"" >> ${PLIST};
+        rm /var/ossec/etc/.dbd
     elif [ "X$2" = "Xclient-syslog" ]; then
         echo "CSYSLOG_DAEMON=\"\"" >> ${PLIST};
+        rm /var/ossec/etc/.csyslogd
     elif [ "X$2" = "Xagentless" ]; then
         echo "AGENTLESS_DAEMON=\"\"" >> ${PLIST};
+        rm /var/ossec/etc/.agentlessd
     elif [ "X$2" = "Xdebug" ]; then
         echo "DEBUG_CLI=\"\"" >> ${PLIST};
     else
