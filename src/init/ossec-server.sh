@@ -184,6 +184,7 @@ testconfig()
 # Start function
 start()
 {
+
     SDAEMONS="${DB_DAEMON} ${CSYSLOG_DAEMON} ${AGENTLESS_DAEMON} ossec-maild ossec-execd ossec-analysisd ossec-logcollector ossec-remoted ossec-syscheckd ossec-monitord"
 
     echo "Starting $NAME $VERSION (by $AUTHOR)..."
@@ -192,6 +193,16 @@ start()
         echo "OSSEC analysisd: Testing rules failed. Configuration error. Exiting."
         exit 1;
     fi
+
+    ## If the system is Linux, look for systemctl. If that file exists, use it.
+    ## XXX - system paths and exact execution are probably wrong.
+    if [ X`uname` == "XLinux" ]; then
+        if [ -x /sbin/systemctl ]; then
+            /sbin/ssytemctl start ossec-server.service
+        fi
+        exit 0
+    fi
+
     lock;
     checkpid;
 
@@ -251,6 +262,14 @@ pstatus()
 stopa()
 {
     lock;
+
+    if [ X`uname` == "XLinux" ]; then
+        if [ -x /sbin/systemctl ]; then
+            /sbin/systemctl stop ossec-server.service
+        fi
+        exit 0
+    if
+
     checkpid;
     for i in ${DAEMONS}; do
         pstatus ${i};
