@@ -23,5 +23,23 @@
     <description>Service has entered a failed state, and likely has not started.</description>
   </rule>
 
+  <rule id="40704" level="0">
+    <if_sid>1002</if_sid> <!-- Not sure why 40700 doesn't work here -->
+    <match>Escape request from different namespace requires a proxy</match>
+    <descripton>No idea.</description> <!-- XXX Need to look this up -->
+  </rule>
+
+  <rule id="40705" level="0"> <!-- Not working at all? -->
+    <if_sid>1002</if_sid>
+    <match>called from different user namespace$</match>
+    <description>No idea</description> <!-- XXX Need to look this up -->
+  </rule>
+
+  <rule id="40706" level="2"> <!-- Not working at all? -->
+    <if_sid>1002</if_sid>
+    <match>Operation not permitted$</match>
+    <description>systemd operation not permitted.</description>
+  </rule>
+
 </group>
 
