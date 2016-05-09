@@ -26,7 +26,7 @@
   <rule id="40704" level="0">
     <if_sid>1002</if_sid> <!-- Not sure why 40700 doesn't work here -->
     <match>Escape request from different namespace requires a proxy</match>
-    <descripton>No idea.</description> <!-- XXX Need to look this up -->
+    <description>No idea.</description> <!-- XXX Need to look this up -->
   </rule>
 
   <rule id="40705" level="0"> <!-- Not working at all? -->
