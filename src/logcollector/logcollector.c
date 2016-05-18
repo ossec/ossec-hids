@@ -481,10 +481,6 @@ void LogCollectorStart()
                     debug1("%s: DEBUG: File size reduced. %s",
                            ARGV0, logff[i].file);
 
-
-                    /* Fix size so we don't alert more than once */
-                    logff[i].size = tmp_stat.st_size;
-
                     /* Get new file */
                     fclose(logff[i].fp);
 
@@ -544,6 +540,13 @@ void LogCollectorStart()
                     continue;
                 }
             }
+
+            /* Update file size */
+#ifdef WIN32
+            logff[i].size = lpFileInformation.nFileSizeHigh + lpFileInformation.nFileSizeLow;
+#else
+            logff[i].size = tmp_stat.st_size;
+#endif
         }
     }
 }
