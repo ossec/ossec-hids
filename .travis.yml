@@ -42,7 +42,7 @@ before_script:
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev
-  && wget http://download.zeromq.org/czmq-2.2.0.tar.gz
+  && wget https://github.com/zeromq/czmq/archive/v2.2.0.tar.gz
   && tar xfz czmq-2.2.0.tar.gz && cd czmq-2.2.0/
   && ./configure && make all -j && sudo make install
   ); fi
