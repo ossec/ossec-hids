@@ -43,7 +43,7 @@ before_script:
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev
   && wget https://github.com/zeromq/czmq/archive/v2.2.0.tar.gz
-  && tar xfz czmq-2.2.0.tar.gz && cd czmq-2.2.0/
+  && tar xfz v2.2.0.tar.gz && cd czmq-2.2.0/
   && ./configure && make all -j && sudo make install
   ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
