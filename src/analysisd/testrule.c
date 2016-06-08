@@ -64,6 +64,10 @@ int main(int argc, char **argv)
     char *ut_str = NULL;
     const char *dir = DEFAULTDIR;
     const char *cfg = DEFAULTCPATH;
+    const char *user = USER;
+    const char *group = GROUPGLOBAL;
+    uid_t uid;
+    gid_t gid;
 
     /* Set the name */
     OS_SetName(ARGV0);
@@ -142,9 +146,23 @@ int main(int argc, char **argv)
         }
     }
 
-    if (chdir(dir) != 0) {
+    /* Check if the user/group given are valid */
+    uid = Privsep_GetUser(user);
+    gid = Privsep_GetGroup(group);
+    if (uid == (uid_t) - 1 || gid == (gid_t) - 1) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
+    }
+
+    /* Set the group */
+    if (Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
+    }
+
+    /* Chroot */
+    if (Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
     }
+    nowChroot();
 
     /*
      * Anonymous Section: Load rules, decoders, and lists
@@ -267,6 +285,11 @@ int main(int argc, char **argv)
 
     if (test_config == 1) {
         exit(0);
+    }
+
+    /* Set the user */
+    if (Privsep_SetUser(uid) < 0) {
+        ErrorExit(SETUID_ERROR, ARGV0, user, errno, strerror(errno));
     }
 
     /* Start up message */
@@ -571,4 +594,3 @@ void OS_ReadMSG(char *ut_str)
     }
     exit(exit_code);
 }
-
