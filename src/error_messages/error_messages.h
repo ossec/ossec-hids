@@ -111,7 +111,8 @@
 #define SK_INV_MSG      "%s(1755): ERROR: Invalid syscheck message received."
 #define SK_DUP          "%s(1756): ERROR: Duplicated directory given: '%s'."
 #define SK_INV_REG      "%s(1757): ERROR: Invalid syscheck registry entry: '%s'."
-#define SK_REG_OPEN     "%s(1758): ERROR: Unable to open registry key: '%s'."
+#define SK_REG_OPEN     "%s(1758): ERROR: Unable to open registry key using 32 bit registry: '%s'."
+#define SK_REG_OPEN64   "%s(1759): ERROR: Unable to open registry key using 64 bit registry: '%s'."
 
 /* analysisd */
 #define FTS_LIST_ERROR   "%s(1260): ERROR: Error initiating FTS list"
