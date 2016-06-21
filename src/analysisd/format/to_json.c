@@ -17,6 +17,11 @@
 /* Convert Eventinfo to json */
 char *Eventinfo_to_jsonstr(const Eventinfo *lf)
 {
+    time_t c_time;
+    char* time_string;
+    c_time = time(NULL);
+    time_string = ctime(&c_time);
+
     cJSON *root;
     cJSON *rule;
     cJSON *file_diff;
@@ -72,6 +77,9 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     }
     if (lf->full_log) {
         cJSON_AddStringToObject(root, "full_log", lf->full_log);
+    }
+    if (lf->full_log){
+        cJSON_AddStringToObject(root, "TimeStamp", time_string);
     }
     if (lf->filename) {
         cJSON_AddItemToObject(root, "file", file_diff = cJSON_CreateObject());
