@@ -41,9 +41,9 @@ before_script:
 - sudo apt-get update -qq
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
-- if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev
-  && wget http://download.zeromq.org/czmq-2.2.0.tar.gz
-  && tar xfz czmq-2.2.0.tar.gz && cd czmq-2.2.0/
+- if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev libtool autoconf
+  && wget https://github.com/zeromq/czmq/archive/v2.2.0.tar.gz
+  && tar xzf v2.2.0.tar.gz && cd czmq-2.2.0/ && ./autogen.sh
   && ./configure && make all -j && sudo make install
   ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
