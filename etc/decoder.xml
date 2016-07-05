@@ -1889,13 +1889,24 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="windows">
   <type>windows</type>
-  <prematch>^\d\d\d\d \w\w\w \d\d \d\d:\d\d:\d\d WinEvtLog: |^WinEvtLog: </prematch>
-  <regex offset="after_prematch">^\.+: (\w+)\((\d+)\): (\.+): </regex>
+  <program_name>^WinEvtLog</program_name>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex offset="after_parent">^\.+: (\w+)\((\d+)\): (\.+): </regex>
   <regex>(\.+): \.+: (\S+): </regex>
   <order>status, id, extra_data, user, system_name</order>
   <fts>name, location, user, system_name</fts>
 </decoder>
 
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex> Source Network Address: (\S+)</regex>
+  <order>srcip</order>
+</decoder>
 
 <!-- Windows decoder -NTsyslog format
   - Will extract extra_data (as win source),action (as win category), id,
