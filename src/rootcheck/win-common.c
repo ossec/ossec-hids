@@ -308,8 +308,14 @@ int __os_winreg_open_key(char *subkey, char *full_key_name,
     int ret = 1;
     HKEY oshkey;
 
-    if (RegOpenKeyEx(rk_sub_tree, subkey, 0, KEY_READ, &oshkey) != ERROR_SUCCESS) {
-        return (0);
+    int REG64MASK = (KEY_READ | KEY_WOW64_64KEY);
+    int REG32MASK = (KEY_READ | KEY_WOW64_32KEY);
+
+    if((RegOpenKeyEx(rk_sub_tree, subkey, 0, REG64MASK, &oshkey) ||
+        (RegOpenKeyEx(rk_sub_tree, subkey, 0, REG32MASK, &oshkey))
+        ) != ERROR_SUCCESS)
+    {
+        return(0);
     }
 
     /* If option is set, return the value of query key */
