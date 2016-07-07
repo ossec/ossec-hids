@@ -58,6 +58,12 @@ agent_info *get_agent_info(const char *agent_name, const char *agent_ip) __attri
  */
 int connect_to_remoted(void);
 
+/* Return the unix permission string based on the syscheck db perm string
+ * agentless logs octal permissions, local syscheck decimal st_mode
+ * Returns a pointer to a local static array
+ */
+char *agent_file_perm(char *perm);
+
 /* Sends a message to an agent
  * Returns -1 on error
  */

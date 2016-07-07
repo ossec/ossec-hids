@@ -59,7 +59,6 @@ static int _do_print_attrs_syscheck(const char *prev_attrs, const char *attrs, _
     const char *p_size, *size;
     char *p_perm, *p_uid, *p_gid, *p_md5, *p_sha1;
     char *perm, *uid, *gid, *md5, *sha1;
-    int perm_int;
     char perm_str[36];
 
 
@@ -123,25 +122,7 @@ static int _do_print_attrs_syscheck(const char *prev_attrs, const char *attrs, _
     }
 
     perm_str[35] = '\0';
-    perm_int = atoi(perm);
-    snprintf(perm_str, 35,
-             "%c%c%c%c%c%c%c%c%c",
-             (perm_int & S_IRUSR) ? 'r' : '-',
-             (perm_int & S_IWUSR) ? 'w' : '-',
-
-             (perm_int & S_ISUID) ? 's' :
-             (perm_int & S_IXUSR) ? 'x' : '-',
-
-             (perm_int & S_IRGRP) ? 'r' : '-',
-             (perm_int & S_IWGRP) ? 'w' : '-',
-
-             (perm_int & S_ISGID) ? 's' :
-             (perm_int & S_IXGRP) ? 'x' : '-',
-
-             (perm_int & S_IROTH) ? 'r' : '-',
-             (perm_int & S_IWOTH) ? 'w' : '-',
-             (perm_int & S_ISVTX) ? 't' :
-             (perm_int & S_IXOTH) ? 'x' : '-');
+    snprintf(perm_str, 35, "%9.9s", agent_file_perm(perm));
 
     printf("Integrity checking values:\n");
     printf("   Size:%s%s\n", (strcmp(size, p_size) == 0) ? " " : " >", size);
@@ -1248,3 +1229,26 @@ char **get_agents(int flag)
     closedir(dp);
     return (f_files);
 }
+
+char *agent_file_perm(char *perm) 
+{
+	/* rwxrwxrwx0 -> 10 */
+	static char permissions[10];
+	mode_t mode = 0;
+
+	/* octal or decimal */
+	mode = (mode_t) strtoul(perm, 0, strlen(perm) == 3 ? 8 : 10);
+
+	permissions[0] = (mode & S_IRUSR) ? 'r' : '-';
+	permissions[1] = (mode & S_IWUSR) ? 'w' : '-';
+	permissions[2] = (mode & S_ISUID) ? 's' : (mode & S_IXUSR) ? 'x' : '-';
+	permissions[3] = (mode & S_IRGRP) ? 'r' : '-';
+	permissions[4] = (mode & S_IWGRP) ? 'w' : '-';
+	permissions[5] = (mode & S_ISGID) ? 's' : (mode & S_IXGRP) ? 'x' : '-';
+	permissions[6] = (mode & S_IROTH) ? 'r' : '-';
+	permissions[7] = (mode & S_IWOTH) ? 'w' : '-';
+	permissions[8] = (mode & S_ISVTX) ? 't' : (mode & S_IXOTH) ? 'x' : '-';
+
+	return &permissions[0];
+}
+
