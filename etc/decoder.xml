@@ -1272,7 +1272,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="netscreenfw-critical">
   <parent>netscreenfw</parent>
   <prematch offset="after_parent">system-critical-\.+ from |</prematch>
-  <prematch>system-alert-\.+ from </prematch>
+  <prematch>system-alert-\.+ from |</prematch>
+  <prematch>system-emergency-\.+ From </prematch>
 
   <regex offset="after_parent">system-(\w+)-(\d+): \.+ </regex>
   <regex>from\.+(\S+)</regex>
