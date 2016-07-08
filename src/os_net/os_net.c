@@ -261,7 +261,12 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
 
     memset(&hints, 0, sizeof(struct addrinfo));
     /* Allow IPv4 or IPv6 if local_ip isn't specified */
-    hints.ai_family = agt->lip ? local_ai->ai_family : AF_UNSPEC;
+    hints.ai_family = AF_UNSPEC;
+    if (agt) {
+        if (agt->lip) {
+            hints.ai_family = local_ai->ai_family;
+        }
+    }
     hints.ai_protocol = protocol;
     if (protocol == IPPROTO_TCP) {
         hints.ai_socktype = SOCK_STREAM;
