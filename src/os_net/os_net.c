@@ -237,7 +237,7 @@ int OS_getsocketsize(int ossock)
 int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
 {
     int ossock = 0, s;
-    struct addrinfo hints, *result, *rp, local_ai;
+    struct addrinfo hints, *result, *rp, *local_ai;
     char tempaddr[INET6_ADDRSTRLEN];
 
     if ((_ip == NULL)||(_ip[0] == '\0')) {
@@ -245,7 +245,6 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
         return(OS_INVALID);
     }
 
-    memset(&local_ai, 0, sizeof(struct addrinfo));
     if (agt) {
         if (agt->lip) {
             memset(&hints, 0, sizeof(struct addrinfo));
@@ -255,14 +254,19 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
                 verbose("getaddrinfo: %s", gai_strerror(s));
             }
             else {
-                memcpy(&local_ai, result, sizeof(struct addrinfo));
-                freeaddrinfo(result);
+                local_ai = result;
             }
         }
     }
 
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+    /* Allow IPv4 or IPv6 if local_ip isn't specified */
+    hints.ai_family = AF_UNSPEC;
+    if (agt) {
+        if (agt->lip) {
+            hints.ai_family = local_ai->ai_family;
+        }
+    }
     hints.ai_protocol = protocol;
     if (protocol == IPPROTO_TCP) {
         hints.ai_socktype = SOCK_STREAM;
@@ -292,7 +296,7 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
 
         if (agt) {
             if (agt->lip) {
-                if (bind(ossock, local_ai.ai_addr, local_ai.ai_addrlen)) {
+                if (bind(ossock, local_ai->ai_addr, local_ai->ai_addrlen)) {
                     verbose("Unable to bind to local address %s.  Ignoring...",
                             agt->lip);
                 }

@@ -260,7 +260,15 @@ void *SrcIP_FP(Eventinfo *lf, char *field)
 #endif
 
     lf->srcip = field;
+
+#ifdef LIBGEOIP_ENABLED
+
+    if(!lf->srcgeoip) { 
+        lf->srcgeoip = GetGeoInfobyIP(lf->srcip);
+    }
     return (NULL);
+#endif
+
 }
 
 void *DstIP_FP(Eventinfo *lf, char *field)
@@ -272,7 +280,14 @@ void *DstIP_FP(Eventinfo *lf, char *field)
 #endif
 
     lf->dstip = field;
+#ifdef LIBGEOIP_ENABLED
+
+    if(!lf->dstgeoip) { 
+        lf->dstgeoip = GetGeoInfobyIP(lf->dstip);
+    }
     return (NULL);
+#endif
+
 }
 
 void *SrcPort_FP(Eventinfo *lf, char *field)

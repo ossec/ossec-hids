@@ -160,7 +160,15 @@ void os_winreg_open_key(char *subkey)
         }
     }
 
-    if (RegOpenKeyEx(sub_tree, subkey, 0, KEY_READ, &oshkey) != ERROR_SUCCESS) {
+    if(RegOpenKeyEx(sub_tree, subkey, 0, (KEY_READ | KEY_WOW64_64KEY), &oshkey) != ERROR_SUCCESS)
+    {
+        merror(SK_REG_OPEN64, ARGV0, subkey);
+        return;
+    }
+
+    if(RegOpenKeyEx(sub_tree, subkey, 0, (KEY_READ | KEY_WOW64_32KEY), &oshkey) != ERROR_SUCCESS)
+    {
+        merror(SK_REG_OPEN, ARGV0, subkey);
         return;
     }
 

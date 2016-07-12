@@ -103,8 +103,11 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_prelude = "prelude_output";
     const char *xml_prelude_profile = "prelude_profile";
     const char *xml_prelude_log_level = "prelude_log_level";
+    const char *xml_geoipdb_file = "geoipdb";
     const char *xml_zeromq_output = "zeromq_output";
     const char *xml_zeromq_output_uri = "zeromq_uri";
+    const char *xml_zeromq_output_server_cert = "zeromq_server_cert";
+    const char *xml_zeromq_output_client_cert = "zeromq_client_cert";
     const char *xml_jsonout_output = "jsonout_output";
     const char *xml_stats = "stats";
     const char *xml_memorysize = "memory_size";
@@ -230,6 +233,12 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);
             }
+        /* GeoIP */
+        } else if(strcmp(node[i]->element, xml_geoipdb_file) == 0) {
+            if(Config)
+            {
+                Config->geoipdb_file = strdup(node[i]->content);
+            }
         } else if (strcmp(node[i]->element, xml_prelude_profile) == 0) {
             if (Config) {
                 Config->prelude_profile = strdup(node[i]->content);
@@ -261,6 +270,14 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         } else if (strcmp(node[i]->element, xml_zeromq_output_uri) == 0) {
             if (Config) {
                 Config->zeromq_output_uri = strdup(node[i]->content);
+            }
+        } else if (strcmp(node[i]->element, xml_zeromq_output_server_cert) == 0) {
+            if (Config) {
+                Config->zeromq_output_server_cert = strdup(node[i]->content);
+            }
+        } else if (strcmp(node[i]->element, xml_zeromq_output_client_cert) == 0) {
+            if (Config) {
+                Config->zeromq_output_client_cert = strdup(node[i]->content);
             }
         }
         /* jsonout output */

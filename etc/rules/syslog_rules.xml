@@ -474,6 +474,13 @@
     <match>^changed user</match>
     <description>Information from the user was changed</description>
   </rule>
+
+  <rule id="5905" level="0">
+    <program_name>useradd</program_name>
+    <match>failed adding user </match>
+    <description>useradd failed.</description>
+  </rule>
+
 </group> <!-- SYSLOG,ADDUSER -->
 
 
