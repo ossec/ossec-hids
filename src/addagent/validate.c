@@ -422,3 +422,16 @@ int print_agents(int print_status, int active_only, int csv_output)
 
     return (0);
 }
+
+void FormatID(char *id) {
+    int number;
+    char *end;
+
+    if (id && *id) {
+        number = strtol(id, &end, 10);
+
+        if (!*end) {
+            sprintf(id, "%03d", number);
+        }
+    }
+}
