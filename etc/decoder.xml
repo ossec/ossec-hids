@@ -639,7 +639,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="vsftpd_connect">
   <parent>vsftpd</parent>
   <prematch offset="after_parent">^CONNECT:</prematch>
-  <regex offset="after_parent">(CONNECT): Client "(\S+)"$</regex>
+  <regex offset="after_parent">(CONNECT): Client "(\S+\w+)"$</regex>
   <order>action,srcip</order>
 </decoder>
 
