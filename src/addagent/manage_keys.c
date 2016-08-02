@@ -183,13 +183,14 @@ int k_import(const char *cmdimport)
 int k_extract(const char *cmdextract)
 {
     FILE *fp;
-    const char *user_input;
+    char *user_input;
     char *b64_enc;
     char line_read[FILE_SIZE + 1];
     char n_id[USER_SIZE + 1];
 
     if (cmdextract) {
-        user_input = cmdextract;
+        user_input = strdup(cmdextract);
+        FormatID(user_input);
 
         if (!IDExist(user_input)) {
             printf(NO_ID, user_input);
@@ -203,7 +204,7 @@ int k_extract(const char *cmdextract)
             return (0);
         }
 
-        do {
+        while (1) {
             printf(EXTRACT_KEY);
             fflush(stdout);
             user_input = read_from_user();
@@ -213,11 +214,15 @@ int k_extract(const char *cmdextract)
                 return (0);
             }
 
-            if (!IDExist(user_input)) {
+            FormatID(user_input);
+
+            if (IDExist(user_input)) {
+                break;
+            } else {
                 printf(NO_ID, user_input);
             }
 
-        } while (!IDExist(user_input));
+        }
     }
 
     /* Try to open the auth file */
@@ -413,4 +418,3 @@ cleanup:
     fclose(infp);
     return (0);
 }
-
