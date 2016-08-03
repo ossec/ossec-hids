@@ -305,6 +305,12 @@ int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
     div_t ip_div;
     char *addr1, *addr2, modbits;
 
+    // If we have no prefixlength just return a match
+    //   * This handles the "any" case
+    if (!prefixlength) {
+        return _true;
+    }
+
     switch (sa1->sa_family)
     {
     case AF_INET:
