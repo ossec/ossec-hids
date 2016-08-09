@@ -398,6 +398,19 @@ void *SystemName_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
+void *FileName_FP(Eventinfo *lf, char *field)
+{
+#ifdef TESTRULE
+    if (!alert_only) {
+        print_out("       filename: '%s'", field);
+    }
+#endif
+
+    lf->filename = field;
+    return (NULL);
+}
+
+
 void *None_FP(__attribute__((unused)) Eventinfo *lf, char *field)
 {
     free(field);
