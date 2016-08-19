@@ -189,7 +189,7 @@
 <decoder name="ssh-failed">
   <parent>sshd</parent>
   <prematch>^Failed \S+ </prematch>
-  <regex offset="after_prematch">^for (\S+) from (\S+) port \d+ \w+$</regex>
+  <regex offset="after_prematch">^for (\S+) from (\S+) port \d+</regex>
   <order>user, srcip</order>
 </decoder>
 
