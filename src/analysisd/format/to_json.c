@@ -54,8 +54,14 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->action) {
         cJSON_AddStringToObject(root, "action", lf->action);
     }
+    if (lf->protocol) {
+        cJSON_AddStringToObject(root, "protocol", lf->protocol);
+    }
     if (lf->srcip) {
         cJSON_AddStringToObject(root, "srcip", lf->srcip);
+    }
+    if (lf->srcgeoip) {
+        cJSON_AddStringToObject(root, "srcgeoip", lf->srcgeoip);
     }
     if (lf->srcport) {
         cJSON_AddStringToObject(root, "srcport", lf->srcport);
@@ -65,6 +71,9 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     }
     if (lf->dstip) {
         cJSON_AddStringToObject(root, "dstip", lf->dstip);
+    }
+    if (lf->dstgeoip) {
+        cJSON_AddStringToObject(root, "dstip", lf->dstgeoip);
     }
     if (lf->dstport) {
         cJSON_AddStringToObject(root, "dstport", lf->dstport);
@@ -106,6 +115,24 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
             cJSON_AddNumberToObject(file_diff, "perm_before", lf->perm_before);
             cJSON_AddNumberToObject(file_diff, "perm_after", lf->perm_after);
         }
+    }
+    if ( lf->data ) {
+        cJSON_AddStringToObject(root, "data", lf->data);
+    }
+    if ( lf->action ) {
+        cJSON_AddStringToObject(root, "action", lf->action);
+    }
+    if ( lf->url ) {
+        cJSON_AddStringToObject(root, "url", lf->url);
+    }
+    if ( lf->systemname ) {
+        cJSON_AddStringToObject(root, "system_name", lf->systemname);
+    }
+    if ( lf->status ) {
+        cJSON_AddStringToObject(root, "status", lf->status);
+    }
+    if ( lf->program_name ) {
+        cJSON_AddStringToObject(root, "program_name", lf->program_name);
     }
     out = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);

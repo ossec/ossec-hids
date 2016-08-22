@@ -14,6 +14,7 @@
 use strict;
 use warnings;
 use DBI;
+use Regexp::IPv6 qw($IPv6_re);
 
 # -----------------------
 # DB access configuration
@@ -47,6 +48,8 @@ if ($ipAddr =~ m/^(\d\d?\d?)\.(\d\d?\d?)\.(\d\d?\d?)\.(\d\d?\d?)/) {
 		WriteLog("Invalid IP address: $ipAddr\n");
 		exit 1;
 	}
+}
+else if ($ipAddr =~ m/^$IPv6_re/) {
 }
 else {
 	WriteLog("Invalid IP address: $ipAddr\n");

@@ -2,6 +2,7 @@
 use Socket;
 use POSIX 'setsid';
 use strict;
+use Regexp::IPv6 qw($IPv6_re);
 # ---------------------------------------------------------------------------
 # Author: Meir Michanie (meirm@riunx.com)
 # Co-Author: J.A.Senger (jorge@br10.com.br)
@@ -101,7 +102,7 @@ $conf{resolve}=1;
 
 my($OCT) = '(?:25[012345]|2[0-4]\d|1?\d\d?)';
 
-my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT;
+my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT . '\|' . $IPv6_re;
 
 my $VERSION="0.4";
 my $sig_class_id=1;
@@ -210,8 +211,8 @@ sub taillog {
 				$dstip=$resolv{$alerthost};
 			}else{
 				if ($conf{'resolve'}){
-					$dstip=`host $alerthost 2>/dev/null | grep 'has address' `;
-					if ($dstip =~m/(\d+\.\d+\.\d+\.\d+)/ ){
+					$dstip=`host $alerthost 2>/dev/null | grep 'has address\|has IPv6 address' `;
+					if ($dstip =~m/($IP)/ ){
 						$dstip=$1;
 					}else{
 						$dstip=$srcip;
@@ -264,7 +265,7 @@ sub taillog {
                 $date=$1;
                 $alerthost=$2;
                 $datasource=$3;
-                if ($datasource=~ m/(\d+\.\d+\.\d+\.\d+)/){
+                if ($datasource=~ m/($IP)/){
                         $alerthost=$1;
                         $datasource="remoted";
                 }
@@ -285,10 +286,10 @@ sub taillog {
 		$level=$2;
 		$description= $3;
 	}elsif ( m/Src IP:/){
-		if ( m/($IP)/){
+		if ( m/Src IP: (\S+)/){
                         $srcip=$1;
                 }else{
-                        $srcip='0.0.0.0';
+                        $srcip='';
                 }
 	}elsif ( m/User: (.*)$/){
                 $user=$1;
