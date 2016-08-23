@@ -266,8 +266,8 @@ void *SrcIP_FP(Eventinfo *lf, char *field)
     if(!lf->srcgeoip) { 
         lf->srcgeoip = GetGeoInfobyIP(lf->srcip);
     }
-    return (NULL);
 #endif
+    return (NULL);
 
 }
 
@@ -285,8 +285,8 @@ void *DstIP_FP(Eventinfo *lf, char *field)
     if(!lf->dstgeoip) { 
         lf->dstgeoip = GetGeoInfobyIP(lf->dstip);
     }
-    return (NULL);
 #endif
+    return (NULL);
 
 }
 
