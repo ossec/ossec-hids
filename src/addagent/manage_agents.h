@@ -35,6 +35,7 @@ int IDExist(const char *id);
 int NameExist(const char *u_name);
 char *getFullnameById(const char *id);
 char *OS_AddNewAgent(const char *name, const char *ip, const char *id);
+void FormatID(char *id);
 
 /* Print available agents */
 int print_agents(int print_status, int active_only, int csv_output);
@@ -138,4 +139,3 @@ extern fpos_t fp_pos;
 #define GMF_ERROR       ARGV0 ": Could not run GetModuleFileName.\n"
 #define GMF_BUFF_ERROR  ARGV0 ": Could not get path because it is too long and was shrunk by (%d) characters with a max of (%d).\n"
 #define GMF_UNKN_ERROR  ARGV0 ": Could not run GetModuleFileName which returned (%ld).\n"
-

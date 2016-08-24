@@ -212,7 +212,9 @@ int add_agent()
             strncpy(id, _id, FILE_SIZE - 1);
         }
 
-        if (!OS_IsValidID(id)) {
+        if (OS_IsValidID(id)) {
+            FormatID(id);
+        } else {
             printf(INVALID_ID, id);
         }
 
@@ -317,6 +319,7 @@ int remove_agent()
             return (0);
         }
 
+        FormatID(user_input);
         strncpy(u_id, user_input, FILE_SIZE);
 
         id_exist = IDExist(user_input);
@@ -400,4 +403,3 @@ int list_agents(int cmdlist)
 
     return (0);
 }
-

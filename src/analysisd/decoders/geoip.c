@@ -53,16 +53,16 @@ char *GetGeoInfobyIP(char *ip_addr)
         return(NULL);
     }
 
-    if(geoiprecord->country_code[0] == NULL || strlen(geoiprecord->country_code) < 2)
+    if(strlen(geoiprecord->country_code) < 2)
     {
         GeoIPRecord_delete(geoiprecord);
         return(NULL);
     }
    
 
-    if(geoiprecord->region != NULL && geoiprecord->region[0] != NULL)
+    if(geoiprecord->region != NULL && geoiprecord->region[0] != '\0')
     {
-        char *regionname = NULL;
+        const char *regionname = NULL;
         regionname = GeoIP_region_name_by_code(geoiprecord->country_code, geoiprecord->region);
         if(regionname != NULL)
         {
