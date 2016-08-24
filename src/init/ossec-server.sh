@@ -204,7 +204,7 @@ start()
     ## XXX - system paths and exact execution are probably wrong.
     if [ X`uname` == "XLinux" ]; then
         if [ -x /sbin/systemctl ]; then
-            /sbin/ssytemctl start ossec-server.service
+            /sbin/systemctl start ossec-server.service
         fi
         exit 0
     fi
