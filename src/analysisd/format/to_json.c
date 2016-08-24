@@ -12,6 +12,7 @@
 #include "shared.h"
 #include "rules.h"
 #include "cJSON.h"
+#include "config.h"
 
 
 /* Convert Eventinfo to json */
