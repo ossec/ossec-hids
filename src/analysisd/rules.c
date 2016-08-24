@@ -112,7 +112,7 @@ int Rules_OP_ReadRules(const char *rulefile)
 
     const char *xml_different_url = "different_url";
     const char *xml_different_srcip = "different_srcip";
-    const char *xml_different_geoip = "different_srcgeoip";
+    const char *xml_different_srcgeoip = "different_srcgeoip";
 
     const char *xml_notsame_source_ip = "not_same_source_ip";
     const char *xml_notsame_user = "not_same_user";
