@@ -228,6 +228,8 @@ int main_analysisd(int argc, char **argv)
 
 
 #ifdef LIBGEOIP_ENABLED
+     Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
+
     /* Opening GeoIP DB */
     if(Config.geoipdb_file) {
         geoipdb = GeoIP_open(Config.geoipdb_file, GEOIP_INDEX_CACHE);
