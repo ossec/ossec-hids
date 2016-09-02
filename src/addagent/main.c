@@ -39,6 +39,7 @@ static void helpmsg()
     print_out("    -i <id>     Import authentication key (Agent only)");
     print_out("    -f <file>   Bulk generate client keys from file (Manager only)");
     print_out("                <file> contains lines in IP,NAME format");
+    print_out("                <file> should also exist within /var/ossec due to manage_agents chrooting");
     exit(1);
 }
 
