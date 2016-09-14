@@ -457,8 +457,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="sudo">
   <program_name>^sudo</program_name>
   <regex>^\s+(\S+)\s:\sTTY=\S+\s;\sPWD=(\S+)\s;\sUSER=(\S+)\s;\sCOMMAND=(\.+)$</regex>
-  <order>srcuser,url,dstuser,status</order>
-  <fts>name,srcuser,location</fts>
+  <order>dstuser,url,srcuser,status</order>
+  <fts>name,dstuser,location</fts>
   <ftscomment>First time user executed the sudo command</ftscomment>
 </decoder>
 
