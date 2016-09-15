@@ -19,7 +19,7 @@ if [ $? = 0 ]; then
 fi
 
 NAME="OSSEC HIDS"
-VERSION="v2.8"
+VERSION="v2.9.0"
 AUTHOR="Trend Micro Inc."
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf;
@@ -109,10 +109,13 @@ enable()
 
     if [ "X$2" = "Xdatabase" ]; then
         echo "DB_DAEMON=ossec-dbd" >> ${PLIST};
+        touch ${DIR}/etc/.dbd
     elif [ "X$2" = "Xclient-syslog" ]; then
         echo "CSYSLOG_DAEMON=ossec-csyslogd" >> ${PLIST};
+        touch ${DIR}/etc/.csyslogd
     elif [ "X$2" = "Xagentless" ]; then
         echo "AGENTLESS_DAEMON=ossec-agentlessd" >> ${PLIST};
+        touch ${DIR}/etc/.agentlessd
     elif [ "X$2" = "Xdebug" ]; then
         echo "DEBUG_CLI=\"-d\"" >> ${PLIST};
     else
@@ -137,10 +140,13 @@ disable()
 
     if [ "X$2" = "Xdatabase" ]; then
         echo "DB_DAEMON=\"\"" >> ${PLIST};
+        rm /var/ossec/etc/.dbd
     elif [ "X$2" = "Xclient-syslog" ]; then
         echo "CSYSLOG_DAEMON=\"\"" >> ${PLIST};
+        rm /var/ossec/etc/.csyslogd
     elif [ "X$2" = "Xagentless" ]; then
         echo "AGENTLESS_DAEMON=\"\"" >> ${PLIST};
+        rm /var/ossec/etc/.agentlessd
     elif [ "X$2" = "Xdebug" ]; then
         echo "DEBUG_CLI=\"\"" >> ${PLIST};
     else
@@ -184,6 +190,7 @@ testconfig()
 # Start function
 start()
 {
+
     SDAEMONS="${DB_DAEMON} ${CSYSLOG_DAEMON} ${AGENTLESS_DAEMON} ossec-maild ossec-execd ossec-analysisd ossec-logcollector ossec-remoted ossec-syscheckd ossec-monitord"
 
     echo "Starting $NAME $VERSION (by $AUTHOR)..."
@@ -192,6 +199,16 @@ start()
         echo "OSSEC analysisd: Testing rules failed. Configuration error. Exiting."
         exit 1;
     fi
+
+    ## If the system is Linux, look for systemctl. If that file exists, use it.
+    ## XXX - system paths and exact execution are probably wrong.
+    if [ X`uname` == "XLinux" ]; then
+        if [ -x /sbin/systemctl ]; then
+            /sbin/systemctl start ossec-server.service
+        fi
+        exit 0
+    fi
+
     lock;
     checkpid;
 
@@ -251,6 +268,14 @@ pstatus()
 stopa()
 {
     lock;
+
+    if [ X`uname` == "XLinux" ]; then
+        if [ -x /sbin/systemctl ]; then
+            /sbin/systemctl stop ossec-server.service
+        fi
+        exit 0
+    if
+
     checkpid;
     for i in ${DAEMONS}; do
         pstatus ${i};

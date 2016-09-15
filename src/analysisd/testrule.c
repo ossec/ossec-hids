@@ -68,6 +68,7 @@ int main(int argc, char **argv)
     const char *group = GROUPGLOBAL;
     uid_t uid;
     gid_t gid;
+    int quiet = 0;
 
     /* Set the name */
     OS_SetName(ARGV0);
@@ -81,7 +82,7 @@ int main(int argc, char **argv)
     active_responses = NULL;
     memset(prev_month, '\0', 4);
 
-    while ((c = getopt(argc, argv, "VatvdhU:D:c:")) != -1) {
+    while ((c = getopt(argc, argv, "VatvdhU:D:c:q")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -115,6 +116,9 @@ int main(int argc, char **argv)
                 break;
             case 'a':
                 alert_only = 1;
+                break;
+            case 'q':
+                quiet = 1;
                 break;
             case 'v':
                 full_output = 1;
@@ -199,7 +203,9 @@ int main(int argc, char **argv)
                 decodersfiles = Config.decoders;
                 while ( decodersfiles && *decodersfiles) {
 
-                    verbose("%s: INFO: Reading decoder file %s.", ARGV0, *decodersfiles);
+                    if(!quiet) {
+                        verbose("%s: INFO: Reading decoder file %s.", ARGV0, *decodersfiles);
+                    }
                     if (!ReadDecodeXML(*decodersfiles)) {
                         ErrorExit(CONFIG_ERROR, ARGV0, *decodersfiles);
                     }
