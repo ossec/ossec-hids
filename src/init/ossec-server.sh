@@ -202,9 +202,9 @@ start()
 
     ## If the system is Linux, look for systemctl. If that file exists, use it.
     ## XXX - system paths and exact execution are probably wrong.
-    if [ X`uname` == "XLinux" ]; then
+    if [ X`uname` = "XLinux" ]; then
         if [ -x /sbin/systemctl ]; then
-            /sbin/systemctl start ossec-server.service
+            /sbin/systemctl start ossec-server.target
         fi
         exit 0
     fi
@@ -269,9 +269,9 @@ stopa()
 {
     lock;
 
-    if [ X`uname` == "XLinux" ]; then
+    if [ X`uname` = "XLinux" ]; then
         if [ -x /sbin/systemctl ]; then
-            /sbin/systemctl stop ossec-server.service
+            /sbin/systemctl stop ossec-server.target
         fi
         exit 0
     if

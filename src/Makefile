@@ -350,6 +350,10 @@ install-agent: install-common
 
 	install -d -m 0750 -o ${OSSEC_USER} -g ${OSSEC_GROUP} ${PREFIX}/queue/rids
 
+ifeq (${uname_S},Linux)
+	install -m 0444 systemd/agent/ossec-agentd.service systemd/agent/ossec-agent.target systemd/agent/ossec-execd.service systemd/agent/ossec-logcollector.service systemd/agent/ossec-syscheckd.service /etc/systemd/system/
+endif
+
 install-local: install-server-generic
 
 install-hybrid: install-server-generic
@@ -476,6 +480,10 @@ endif
 	install -d -m 0750 -o ${OSSEC_USER_REM} -g ${OSSEC_GROUP} ${PREFIX}/queue/rids
 
 	install -m 0640 -o root -g ${OSSEC_GROUP} ../etc/decoder.xml ${PREFIX}/etc/
+
+ifeq (${uname_S},Linux)
+	install -m 0444 -o root -g root systemd/server/ossec-agentsless.service systemd/server/ossec-analysisd.service systemd/server/ossec-csyslog.service systemd/server/ossec-dbd.service systemd/server/ossec-execd.service systemd/server/ossec-logcollector.service systemd/server/ossec-maild.service systemd/server/ossec-monitord.service systemd/server/ossec-remoted.service systemd/server/ossec-server.target systemd/server/ossec-syscheckd.service /etc/systemd/system/
+endif
 
 	rm -f ${PREFIX}/etc/shared/merged.mg
 

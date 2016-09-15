@@ -124,6 +124,13 @@ start()
     lock;
     checkpid;
 
+    if [ X`uname` = "XLinux" ]; then
+        if [ -x /sbin/systemctl ]; then
+            /sbin/systemctl start ossec-agent.target
+        fi
+        exit 0
+    fi
+
     # We actually start them now.
     for i in ${SDAEMONS}; do
         pstatus ${i};
@@ -180,6 +187,14 @@ pstatus()
 stopa()
 {
     lock;
+
+    if [ X`uname` = "XLinux" ]; then
+        if [ -X /sbin/systemctl ]; then
+            /sbin/systemctl stop ossec-agent.target
+        fi
+        exit 0
+    fi
+
     checkpid;
     for i in ${DAEMONS}; do
         pstatus ${i};
