@@ -124,7 +124,7 @@ start()
     lock;
     checkpid;
 
-    if [ X`uname` == "XLinux" ]; then
+    if [ X`uname` = "XLinux" ]; then
         if [ -x /sbin/systemctl ]; then
             /sbin/systemctl start ossec-agent.target
         fi
@@ -188,7 +188,7 @@ stopa()
 {
     lock;
 
-    if [ X`uname` == "XLinux" ]; then
+    if [ X`uname` = "XLinux" ]; then
         if [ -X /sbin/systemctl ]; then
             /sbin/systemctl stop ossec-agent.target
         fi
