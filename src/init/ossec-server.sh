@@ -200,25 +200,25 @@ start()
 
         ## If ossec-maild is disabled, don't try to start it.
         if [ X"$i" = "Xossec-maild" ]; then
-             MRET = grep "<email_notification>no<" ${DIR}/etc/ossec.conf >/dev/null 2>&1
-             if [ $MRET = 0 ]; then
+             grep "<email_notification>no<" ${DIR}/etc/ossec.conf >/dev/null 2>&1
+             if [ $? = 0 ]; then
                  continue
              fi
         else
 
-        pstatus ${i};
-        if [ $? = 0 ]; then
-            ${DIR}/bin/${i} ${DEBUG_CLI};
-            if [ $? != 0 ]; then
-                echo "${i} did not start correctly.";
-                unlock;
-                exit 1;
-            fi
+            pstatus ${i};
+            if [ $? = 0 ]; then
+                ${DIR}/bin/${i} ${DEBUG_CLI};
+                if [ $? != 0 ]; then
+                    echo "${i} did not start correctly.";
+                    unlock;
+                    exit 1;
+                fi
 
-            echo "Started ${i}..."
-        else
-            echo "${i} already running..."
-        fi
+                echo "Started ${i}..."
+            else
+                echo "${i} already running..."
+            fi
     done
 
     # After we start we give 2 seconds for the daemons
