@@ -135,6 +135,17 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
             }
         }
 
+        /* GEOIP version of check for repetitions from same src_ip */
+        if (rule->context_opts & DIFFERENT_SRCGEOIP) {
+            if ((!lf->srcgeoip) || (!my_lf->srcgeoip)) {
+                continue;
+            }
+
+            if (strcmp(lf->srcgeoip, my_lf->srcgeoip) == 0) {
+                continue;
+            }
+        }
+
         /* Check if the number of matches worked */
         if (rule->__frequency <= 10) {
             rule->last_events[rule->__frequency]
@@ -317,7 +328,6 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
     Eventinfo *lf;
     Eventinfo *first_lf;
 
-    merror("XXXX : remove me!");
 
     /* Last events */
     eventnode_pt = OS_GetLastEvent();
@@ -402,6 +412,8 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
                 continue;
             }
         }
+
+
 
 
         /* Check if the number of matches worked */

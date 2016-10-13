@@ -189,7 +189,7 @@
 <decoder name="ssh-failed">
   <parent>sshd</parent>
   <prematch>^Failed \S+ </prematch>
-  <regex offset="after_prematch">^for (\S+) from (\S+) port \d+ \w+$</regex>
+  <regex offset="after_prematch">^for (\S+) from (\S+) port \d+</regex>
   <order>user, srcip</order>
 </decoder>
 
@@ -456,8 +456,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="sudo">
   <program_name>^sudo</program_name>
-  <regex>^\s+(\S+)\s:</regex>
-  <order>user</order>
+  <regex>^\s+(\S+)\s:\sTTY=\S+\s;\sPWD=(\S+)\s;\sUSER=(\S+)\s;\sCOMMAND=(\.+)$</regex>
+  <order>id,url,dstuser,status</order>
   <fts>name,user,location</fts>
   <ftscomment>First time user executed the sudo command</ftscomment>
 </decoder>
@@ -639,7 +639,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="vsftpd_connect">
   <parent>vsftpd</parent>
   <prematch offset="after_parent">^CONNECT:</prematch>
-  <regex offset="after_parent">(CONNECT): Client "(\S+)"$</regex>
+  <regex offset="after_parent">(CONNECT): Client "(\S+\w+)"$</regex>
   <order>action,srcip</order>
 </decoder>
 
@@ -1889,11 +1889,30 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="windows">
   <type>windows</type>
-  <prematch>^\d\d\d\d \w\w\w \d\d \d\d:\d\d:\d\d WinEvtLog: |^WinEvtLog: </prematch>
-  <regex offset="after_prematch">^\.+: (\w+)\((\d+)\): (\.+): </regex>
+  <program_name>^WinEvtLog</program_name>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex offset="after_parent">^\.+: (\w+)\(\d+\): (\.+): </regex>
   <regex>(\.+): \.+: (\S+): </regex>
   <order>status, id, extra_data, user, system_name</order>
-  <fts>name, location, user, system_name</fts>
+  <fts>name, location, system_name</fts>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex> Source Network Address: (\S+)</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex> Account Name: (\S+) Account</regex>
+  <order>user</order>
 </decoder>
 
 

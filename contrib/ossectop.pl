@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
 #use strict;
-use Socket;
-use POSIX 'setsid';
+#use Socket;
+#use POSIX 'setsid';
+use Regexp::IPv6 qw($IPv6_re);
 # ---------------------------------------------------------------------------
 # Author: Meir Michanie (meirm@riunx.com)
 # File: ossectop.pl
@@ -48,7 +49,7 @@ $conf{resolve}=1;
 
 my($OCT) = '(?:25[012345]|2[0-4]\d|1?\d\d?)';
 
-my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT;
+my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT . '\|' . $IPv6_re;
 
 my $VERSION="0.1";
 my $sig_class_id=1;
@@ -146,8 +147,8 @@ sub taillog {
 				$dstip=$resolv{$alerthost};
 			}else{
 				if ($conf{'resolve'}){
-					$dstip=`host $alerthost 2>/dev/null | grep 'has address' `;
-					if ($dstip =~m/(\d+\.\d+\.\d+\.\d+)/ ){
+					$dstip=`host $alerthost 2>/dev/null | grep 'has address\|has IPv6 address' `;
+					if ($dstip =~m/($IP)/ ){
 						$dstip=$1;
 					}else{
 						$dstip=$srcip;
@@ -198,10 +199,10 @@ sub taillog {
 		$level=$2;
 		$description= $3;
 	}elsif ( m/Src IP:/){
-		if ( m/($IP)/){
+		if ( m/Src IP: (\S+)/){
                         $srcip=$1;
                 }else{
-                        $srcip='0.0.0.0';
+                        $srcip='';
                 }
 	}elsif ( m/User: (.*)$/){
                 $user=$1;

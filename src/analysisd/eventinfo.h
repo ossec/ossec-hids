@@ -150,6 +150,7 @@ void *Url_FP(Eventinfo *lf, char *field);
 void *Data_FP(Eventinfo *lf, char *field);
 void *Status_FP(Eventinfo *lf, char *field);
 void *SystemName_FP(Eventinfo *lf, char *field);
+void *FileName_FP(Eventinfo *lf, char *field);
 void *None_FP(Eventinfo *lf, char *field);
 
 #endif /* _EVTINFO__H */

@@ -121,15 +121,15 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 struct stat statbuf_lnk;
                 if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
-                        if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0) {
+                        if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
                     }
                 }
-            } else if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0)
+            } else if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
 #else
-            if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0)
+            if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
 #endif
             {
                 strncpy(mf_sum, "xxx", 4);
@@ -320,8 +320,13 @@ static int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 
     /* Check for real time flag */
     if (opts & CHECK_REALTIME) {
-#ifdef INOTIFY_ENABLED
+#if defined(INOTIFY_ENABLED) || defined(WIN32)
         realtime_adddir(dir_name);
+#else
+        merror("%s: WARN: realtime monitoring request on unsupported system for '%s'",
+                ARGV0,
+                dir_name
+        );
 #endif
     }
 
@@ -394,11 +399,7 @@ int create_db()
     __counter = 0;
     do {
         if (read_dir(syscheck.dir[i], syscheck.opts[i], syscheck.filerestrict[i]) == 0) {
-#ifdef WIN32
-            if (syscheck.opts[i] & CHECK_REALTIME) {
-                realtime_adddir(syscheck.dir[i]);
-            }
-#endif
+            debug2("%s: Directory loaded from syscheck db: %s", ARGV0, syscheck.dir[i]);
         }
         i++;
     } while (syscheck.dir[i] != NULL);

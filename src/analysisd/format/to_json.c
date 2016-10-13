@@ -12,6 +12,7 @@
 #include "shared.h"
 #include "rules.h"
 #include "cJSON.h"
+#include "config.h"
 
 
 /* Convert Eventinfo to json */
@@ -43,6 +44,9 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->generated_rule->sigid) {
         cJSON_AddNumberToObject(rule, "sidid", lf->generated_rule->sigid);
     }
+    if (lf->generated_rule->group) {
+        cJSON_AddStringToObject(rule, "group", lf->generated_rule->group);
+    }
     if (lf->generated_rule->cve) {
         cJSON_AddStringToObject(rule, "cve", lf->generated_rule->cve);
     }
@@ -50,16 +54,29 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         cJSON_AddStringToObject(rule, "info", lf->generated_rule->info);
     }
 
+    if( lf->decoder_info->name ) {
+        cJSON_AddStringToObject(root, "decoder", lf->decoder_info->name);
+    }
+    if( lf->decoder_info->parent ) {
+        cJSON_AddStringToObject(root, "decoder_parent", lf->decoder_info->parent);
+    }
 
     if (lf->action) {
         cJSON_AddStringToObject(root, "action", lf->action);
     }
+    if (lf->protocol) {
+        cJSON_AddStringToObject(root, "protocol", lf->protocol);
+    }
     if (lf->srcip) {
         cJSON_AddStringToObject(root, "srcip", lf->srcip);
     }
-    if (lf->srcgeoip) {
+
+#ifdef LIBGEOIP_ENABLED
+    if (lf->srcgeoip && Config.geoip_jsonout) {
         cJSON_AddStringToObject(root, "srcgeoip", lf->srcgeoip);
     }
+#endif
+
     if (lf->srcport) {
         cJSON_AddStringToObject(root, "srcport", lf->srcport);
     }
@@ -69,9 +86,12 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->dstip) {
         cJSON_AddStringToObject(root, "dstip", lf->dstip);
     }
-    if (lf->dstgeoip) {
-        cJSON_AddStringToObject(root, "dstip", lf->dstgeoip);
+#ifdef LIBGEOIP_ENABLED
+    if (lf->dstgeoip && Config.geoip_jsonout) {
+        cJSON_AddStringToObject(root, "dstgeoip", lf->dstgeoip);
     }
+#endif
+
     if (lf->dstport) {
         cJSON_AddStringToObject(root, "dstport", lf->dstport);
     }
@@ -112,6 +132,24 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
             cJSON_AddNumberToObject(file_diff, "perm_before", lf->perm_before);
             cJSON_AddNumberToObject(file_diff, "perm_after", lf->perm_after);
         }
+    }
+    if ( lf->data ) {
+        cJSON_AddStringToObject(root, "data", lf->data);
+    }
+    if ( lf->url ) {
+        cJSON_AddStringToObject(root, "url", lf->url);
+    }
+    if ( lf->systemname ) {
+        cJSON_AddStringToObject(root, "system_name", lf->systemname);
+    }
+    if ( lf->status ) {
+        cJSON_AddStringToObject(root, "status", lf->status);
+    }
+    if ( lf->hostname ) {
+        cJSON_AddStringToObject(root, "hostname", lf->hostname);
+    }
+    if ( lf->program_name ) {
+        cJSON_AddStringToObject(root, "program_name", lf->program_name);
     }
     out = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
