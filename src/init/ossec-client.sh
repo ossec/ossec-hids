@@ -189,7 +189,7 @@ stopa()
     lock;
 
     if [ X`uname` = "XLinux" ]; then
-        if [ -X /sbin/systemctl ]; then
+        if [ -x /sbin/systemctl ]; then
             /sbin/systemctl stop ossec-agent.target
         fi
         exit 0
