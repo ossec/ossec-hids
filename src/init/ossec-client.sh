@@ -9,6 +9,10 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 
 
+if [ X`uname` = "XLinux" ]; then
+	SYSTEMCTL=`which systemctl`
+fi
+
 ###  Do not modify bellow here ###
 NAME="OSSEC HIDS"
 VERSION="v2.9.0"
@@ -125,8 +129,8 @@ start()
     checkpid;
 
     if [ X`uname` = "XLinux" ]; then
-        if [ -x /sbin/systemctl ]; then
-            /sbin/systemctl start ossec-agent.target
+        if [ -x ${SYSTEMCTL} ]; then
+            ${SYSTEMCTL} start ossec-agent.target
         fi
         exit 0
     fi
@@ -189,8 +193,8 @@ stopa()
     lock;
 
     if [ X`uname` = "XLinux" ]; then
-        if [ -x /sbin/systemctl ]; then
-            /sbin/systemctl stop ossec-agent.target
+        if [ -x ${SYSTEMCTL} ]; then
+            ${SYSTEMCTL} stop ossec-agent.target
         fi
         exit 0
     fi

@@ -10,6 +10,12 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 PLIST=${DIR}/bin/.process_list;
 
+
+if [ X`uname` = "XLinux" ]; then
+        SYSTEMCTL=`which systemctl`
+fi
+
+
 ###  Do not modify bellow here ###
 
 # Getting additional processes
@@ -203,8 +209,8 @@ start()
     ## If the system is Linux, look for systemctl. If that file exists, use it.
     ## XXX - system paths and exact execution are probably wrong.
     if [ X`uname` = "XLinux" ]; then
-        if [ -x /sbin/systemctl ]; then
-            /sbin/systemctl start ossec-server.target
+        if [ -x ${SYSTEMCTL} ]; then
+            ${SYSTEMCTL} start ossec-server.target
         fi
         exit 0
     fi
@@ -270,8 +276,8 @@ stopa()
     lock;
 
     if [ X`uname` = "XLinux" ]; then
-        if [ -x /sbin/systemctl ]; then
-            /sbin/systemctl stop ossec-server.target
+        if [ -x ${SYSTEMCTL} ]; then
+            ${SYSTEMCTL} stop ossec-server.target
         fi
         exit 0
     if
