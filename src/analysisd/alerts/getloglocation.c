@@ -140,6 +140,15 @@ int OS_GetLogLocation(const Eventinfo *lf)
     }
 
     if (Config.jsonout_output) {
+
+        if (_jflog) {
+            if (ftell(_jflog) == 0) {
+                unlink(__jlogfile);
+            }
+            fclose(_jflog);
+            _jflog = NULL;
+        }
+
         /* Create the json logfile name */
         snprintf(__jlogfile, OS_FLSIZE, "%s/%d/%s/ossec-%s-%02d.json",
                  ALERTS,
@@ -160,6 +169,7 @@ int OS_GetLogLocation(const Eventinfo *lf)
         if (link(__jlogfile, ALERTSJSON_DAILY) == -1) {
             ErrorExit(LINK_ERROR, ARGV0, __jlogfile, ALERTSJSON_DAILY, errno, strerror(errno));
         }
+
     }
 
     /* For the firewall events */
