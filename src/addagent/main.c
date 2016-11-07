@@ -89,6 +89,9 @@ int main(int argc, char **argv)
     int ret;
 #endif
 
+    extern int willchroot;
+    willchroot = 1;
+
     /* Set the name */
     OS_SetName(ARGV0);
 
@@ -139,6 +142,7 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -f needs an argument.", ARGV0);
                 }
                 cmdbulk = optarg;
+                willchroot = 0;
                 printf("Bulk load file: %s\n", cmdbulk);
                 break;
             case 'l':
@@ -175,7 +179,9 @@ int main(int argc, char **argv)
     }
 
     /* Inside chroot now */
-    nowChroot();
+    if(willchroot > 0) {
+        nowChroot();
+    }
 
     /* Start signal handler */
     StartSIG2(ARGV0, manage_shutdown);
