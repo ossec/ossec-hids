@@ -387,6 +387,12 @@
     <description>sshd subsystem request failed.</description>
   </rule>
 
+  <rule id="5757" level="0">
+    <decoded_as>sshd</decoded_as>
+    <match>but this does not map back to the address - POSSIBLE BREAK-IN ATTEMPT!$</match>
+    <description>Bad DNS mapping.</description>
+  </rule>
+
 
 </group> <!-- SYSLOG, SSHD -->
 
