@@ -902,7 +902,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 </decoder>
 
 <decoder name="dovecot-info">
-  <program_name>^Info$</program_name>
+  <program_name>^Info$|^Warn$</program_name>
 </decoder>
 
 <decoder name="imap-login-login">
