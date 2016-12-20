@@ -914,10 +914,9 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="dovecot-info-auth">
   <parent>dovecot-info</parent>
-  <regex offset="after_parent">auth\(\.+\): pam\((\S+),(\S+)\):</regex>
+  <regex offset="after_parent">auth\(\.+\): \S+\((\S+),(\S+)\):</regex>
   <order>user, srcip</order>
 </decoder>
-
 
 
 <!-- Named decoder.
