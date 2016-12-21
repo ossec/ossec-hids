@@ -863,7 +863,7 @@ int connect_to_remoted()
     return (arq);
 }
 
-char *agent_file_perm(char *perm) 
+const char *agent_file_perm(char *perm)
 {
 	/* rwxrwxrwx0 -> 10 */
 	static char permissions[10];
@@ -881,6 +881,7 @@ char *agent_file_perm(char *perm)
 	permissions[6] = (mode & S_IROTH) ? 'r' : '-';
 	permissions[7] = (mode & S_IWOTH) ? 'w' : '-';
 	permissions[8] = (mode & S_ISVTX) ? 't' : (mode & S_IXOTH) ? 'x' : '-';
+    permissions[9] = '\0';
 
 	return &permissions[0];
 }
@@ -1251,4 +1252,3 @@ char **get_agents(int flag)
     closedir(dp);
     return (f_files);
 }
-
