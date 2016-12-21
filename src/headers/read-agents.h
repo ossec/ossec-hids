@@ -63,7 +63,7 @@ int connect_to_remoted(void);
  * agentless logs octal permissions, local syscheck decimal st_mode
  * Returns a pointer to a local static array
  */
-char *agent_file_perm(char *perm);
+const char *agent_file_perm(char *perm);
 #endif
 
 /* Sends a message to an agent
@@ -82,4 +82,3 @@ int send_msg_to_agent(int msocket, const char *msg, const char *agt_id, const ch
 #define GA_STATUS_INV       14
 
 #endif
-
