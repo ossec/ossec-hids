@@ -204,21 +204,20 @@ start()
              if [ $? = 0 ]; then
                  continue
              fi
-        else
+        fi
 
-            pstatus ${i};
-            if [ $? = 0 ]; then
-                ${DIR}/bin/${i} ${DEBUG_CLI};
-                if [ $? != 0 ]; then
-                    echo "${i} did not start correctly.";
-                    unlock;
-                    exit 1;
-                fi
-
-                echo "Started ${i}..."
-            else
-                echo "${i} already running..."
+        pstatus ${i};
+        if [ $? = 0 ]; then
+            ${DIR}/bin/${i} ${DEBUG_CLI};
+            if [ $? != 0 ]; then
+                echo "${i} did not start correctly.";
+                unlock;
+                exit 1;
             fi
+
+            echo "Started ${i}..."
+        else
+            echo "${i} already running..."
         fi
     done
 
