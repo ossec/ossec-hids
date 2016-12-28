@@ -219,6 +219,7 @@ start()
             else
                 echo "${i} already running..."
             fi
+        fi
     done
 
     # After we start we give 2 seconds for the daemons
