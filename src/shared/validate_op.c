@@ -269,7 +269,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
      * return true if the os_ip.ip element is 'any'
      */
     if(strcmp(ip_address, "any") == 0) {
-        strcpy(ip_address, "::/0");
+        //strcpy(ip_address, "::/0");
+	os_strdup("::/0", ip_address);
     }
 
     /* Getting the cidr/netmask if available */
@@ -329,12 +330,7 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
 
     freeaddrinfo(result);
 
-    /* XXX
-     * The following free creates an error on OpenBSD with malloc options SC:
-     * ossec-remoted(55078) in free(): chunk canary corrupted 0x1bae51e6c910 0x4@0x4
-     * This causes remoted to fail, which might be a bad thing.
-     */
-    //free(ip_address);
+    free(ip_address);
     return((cidr >= 0) ? 2 : 1);
 }
 
