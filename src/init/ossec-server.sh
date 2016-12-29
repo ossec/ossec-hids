@@ -214,6 +214,11 @@ start()
                 unlock;
                 exit 1;
             fi
+
+            echo "Started ${i}..."
+        else
+            echo "${i} already running..."
+        fi
     done
 
     # After we start we give 2 seconds for the daemons
