@@ -39,6 +39,7 @@ static void helpmsg()
     print_out("    -i <id>     Import authentication key (Agent only)");
     print_out("    -f <file>   Bulk generate client keys from file (Manager only)");
     print_out("                <file> contains lines in IP,NAME format");
+    print_out("                <file> should also exist within /var/ossec due to manage_agents chrooting");
     exit(1);
 }
 
@@ -87,6 +88,9 @@ int main(int argc, char **argv)
     DWORD last_error;
     int ret;
 #endif
+
+    extern int willchroot;
+    willchroot = 1;
 
     /* Set the name */
     OS_SetName(ARGV0);
@@ -138,6 +142,7 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -f needs an argument.", ARGV0);
                 }
                 cmdbulk = optarg;
+                willchroot = 0;
                 printf("Bulk load file: %s\n", cmdbulk);
                 break;
             case 'l':
@@ -174,7 +179,9 @@ int main(int argc, char **argv)
     }
 
     /* Inside chroot now */
-    nowChroot();
+    if(willchroot > 0) {
+        nowChroot();
+    }
 
     /* Start signal handler */
     StartSIG2(ARGV0, manage_shutdown);

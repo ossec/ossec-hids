@@ -197,6 +197,15 @@ start()
 
     # We actually start them now.
     for i in ${SDAEMONS}; do
+
+        ## If ossec-maild is disabled, don't try to start it.
+        if [ X"$i" = "Xossec-maild" ]; then
+             grep "<email_notification>no<" ${DIR}/etc/ossec.conf >/dev/null 2>&1
+             if [ $? = 0 ]; then
+                 continue
+             fi
+        fi
+
         pstatus ${i};
         if [ $? = 0 ]; then
             ${DIR}/bin/${i} ${DEBUG_CLI};
