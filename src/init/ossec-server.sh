@@ -214,7 +214,6 @@ start()
                 unlock;
                 exit 1;
             fi
-	fi
     done
 
     # After we start we give 2 seconds for the daemons
