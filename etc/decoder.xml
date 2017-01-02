@@ -302,7 +302,7 @@
 </decoder>
 -->
 
-<decoder name="ssh-exceed">
+<decoder name="sshd-exceed">
   <parent>sshd</parent>
   <prematch> exceeded for </prematch>
   <regex offset="after_prematch">^(\S+) from (\S+) port (\d+) </regex>
