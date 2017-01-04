@@ -269,7 +269,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
      * return true if the os_ip.ip element is 'any'
      */
     if(strcmp(ip_address, "any") == 0) {
-        strcpy(ip_address, "::/0");
+        //strcpy(ip_address, "::/0");
+	os_strdup("::/0", ip_address);
     }
 
     /* Getting the cidr/netmask if available */
@@ -328,6 +329,7 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
     }
 
     freeaddrinfo(result);
+
     free(ip_address);
     return((cidr >= 0) ? 2 : 1);
 }
