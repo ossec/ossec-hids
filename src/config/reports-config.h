@@ -28,6 +28,7 @@ typedef struct _monitor_config {
     short int sign;
     short int monitor_agents;
     int a_queue;
+    int notify_time;
 
     char *smtpserver;
     char *emailfrom;
@@ -38,4 +39,3 @@ typedef struct _monitor_config {
 } monitor_config;
 
 #endif /* _REPORTSCONFIG_H */
-
