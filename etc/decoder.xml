@@ -610,7 +610,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - Sun Aug 16 15:48:02 2015 [pid 4832] [ftpuser] OK DELETE: Client "172.28.5.129", "/index.php"
   - Sun Aug 16 16:26:06 2015 [pid 4976] [ftpuser] OK CHMOD: Client "172.28.5.129", "/index.php 777"
   - Sun Aug 16 16:26:21 2015 [pid 4976] [ftpuser] OK RENAME: Client "172.28.5.129", "/index.php /4444index.php"
-  
+
 <decoder name="vsftpd">
   <prematch>^\w\w\w \w\w\w\s+\d+ \S+ \d+ [pid \d+] </prematch>
   <regex offset="after_prematch">Client "(\S+)"$</regex>
@@ -767,7 +767,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="imapd">
   <program_name>^imapd</program_name>
-  <regex offset="after_prematch">user=(\S+) \.+ [(\S+)]$</regex>    
+  <regex offset="after_prematch">user=(\S+) \.+ [(\S+)]$</regex>
   <order>user,srcip</order>
 </decoder>
 
@@ -875,6 +875,10 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - dovecot: Jun 23 15:04:06 Info: IMAP(username): Disconnected: Logged out bytes=59/566
   - dovecot: May 31 09:43:57 Info: pop3-login: Aborted login (1 authentication attempts): user=<username>, method=PLAIN, rip=::ffff:1.2.3.4, lip=::ffff:1.2.3.5, secured
   - Jan 30 09:37:55 hostname dovecot: pop3-login: Aborted login: user=<username>, method=PLAIN, rip=::ffff:1.2.3.4, lip=::ffff:1.2.3.5
+  - Dec 19 17:40:57 ny dovecot: pop3-login: Disconnected (auth failed, 3 attempts in 51 secs): user=<thousands>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203, session=<tlMSaQZE/JttycjJ>
+  - Dec 19 17:30:39 ny dovecot: imap-login: Disconnected: Inactivity (auth failed, 7 attempts in 176 secs): user=<32>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203,session=<7QTLPAZEXrhtycjJ>
+  - Dec 19 17:38:54 ny dovecot: pop3-login: Disconnected: Inactivity during authentication (auth failed, 13 attempts in 179 secs): user=<thousands>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203, session=<feETWgZEzJltycjJ>
+  - Dec 19 17:20:08 ny dovecot: imap-login: Aborted login (auth failed, 2 attempts in 18 secs): user=<test>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203, session=<i8uMIAZEDrdtycjJ>
 -->
 
 <decoder name="dovecot">
@@ -893,13 +897,20 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <prematch offset="after_parent">^\w\w\w\w-login: Aborted login</prematch>
   <regex offset="after_prematch">: user=\p(\S+)\p, method=\S+, rip=(\S+), lip=(\S+), (\S*)$</regex>
   <order>user, srcip, dstip, protocol</order>
-</decoder> 
+</decoder>
 
 <decoder name="dovecot-fail">
   <parent>dovecot</parent>
   <prematch offset="after_parent">^auth\(default\)|auth-worker\(default\)</prematch>
   <regex offset="after_prematch">^: \S+\((\S+),(\S+)\)</regex>
   <order>user, srcip</order>
+</decoder>
+
+<decoder name="dovecot-authfailed">
+  <parent>dovecot</parent>
+  <prematch offset="after_parent">^\w\w\w\w-login:</prematch>
+  <regex offset="after_prematch">\(auth failed, \d+ attempts in \d+ secs\): user=\p(\S+)\p, method=\w+, rip=(\d+.\d+.\d+.\d+), lip=(\d+.\d+.\d+.\d+)</regex>
+  <order>user,srcip,dstip</order>
 </decoder>
 
 <decoder name="dovecot-disconnect">
@@ -955,7 +966,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 </decoder>
 
 <decoder name="named_from">
-  <parent>named</parent>  
+  <parent>named</parent>
   <regex offset="after_parent"> from [(\S+)]</regex>
   <order>srcip</order>
 </decoder>
@@ -1433,7 +1444,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>pix</parent>
   <prematch offset="after_parent">^5-304002: </prematch>
   <regex offset="after_parent">^(\S+): Access (denied) URL (http\w*://\.+) </regex>
-  <regex>SRC (\S+) DEST (\S+) on interface</regex>  
+  <regex>SRC (\S+) DEST (\S+) on interface</regex>
   <order>id, action, url, srcip, dstip</order>
 </decoder>
 
@@ -1593,7 +1604,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>horde_imp</parent>
   <prematch offset="after_parent">^FAILED LOGIN</prematch>
   <regex offset="after_prematch">^ (\S+) to \S+ as (\S+) </regex>
-  <order>srcip, user</order> 
+  <order>srcip, user</order>
 </decoder>
 
 
@@ -1718,7 +1729,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="nginx-errorlog-ip">
   <parent>nginx-errorlog</parent>
   <prematch offset="after_parent">, client: \S+, server: \S+, request: "\S+ </prematch>
-  <regex offset="after_parent">, client: (\S+), </regex> 
+  <regex offset="after_parent">, client: (\S+), </regex>
   <order>srcip</order>
 </decoder>
 
@@ -2834,18 +2845,18 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
 </decoder>
 
 
-<!-- 
+<!--
   - Decoder for Sysmon Event ID 1: Process Created
-  - Maintained by Josh Brower, Josh@DefensiveDepth.com 
+  - Maintained by Josh Brower, Josh@DefensiveDepth.com
   -
   -  OSSEC to Sysmon Fields Mapping:
   -  user = User
   -  status = Image
   -  url = Hash
   -  extra_data = ParentImage
-  
+
   - Examples:
-  - 2014 Dec 20 14:29:48 (HME-TEST-01) 10.0.15.14->WinEvtLog 2014 Dec 20 09:29:47 WinEvtLog: Microsoft-Windows-Sysmon/Operational: INFORMATION(1): Microsoft-Windows-Sysmon: SYSTEM: NT AUTHORITY: WIN-U93G48C7BOP: Process Create:  UtcTime: 12/20/2014 2:29 PM  ProcessGuid: {00000000-87DB-5495-0000-001045F25A00}  ProcessId: 3048  Image: C:\Windows\system32\svchost.exe  CommandLine: "C:\Windows\system32\NOTEPAD.EXE" C:\Users\Administrator\Desktop\ossec.log  User: WIN-U93G48C7BOP\Administrator  LogonGuid: {00000000-84B8-5494-0000-0020CB330200}  LogonId: 0x233CB  TerminalSessionId: 1  IntegrityLevel: High  HashType: SHA1  Hash: 9FEF303BEDF8430403915951564E0D9888F6F365  ParentProcessGuid: {00000000-84B9-5494-0000-0010BE4A0200}  ParentProcessId: 848  ParentImage: C:\Windows\Explorer.EXE  ParentCommandLine: C:\Windows\Explorer.EXE 
+  - 2014 Dec 20 14:29:48 (HME-TEST-01) 10.0.15.14->WinEvtLog 2014 Dec 20 09:29:47 WinEvtLog: Microsoft-Windows-Sysmon/Operational: INFORMATION(1): Microsoft-Windows-Sysmon: SYSTEM: NT AUTHORITY: WIN-U93G48C7BOP: Process Create:  UtcTime: 12/20/2014 2:29 PM  ProcessGuid: {00000000-87DB-5495-0000-001045F25A00}  ProcessId: 3048  Image: C:\Windows\system32\svchost.exe  CommandLine: "C:\Windows\system32\NOTEPAD.EXE" C:\Users\Administrator\Desktop\ossec.log  User: WIN-U93G48C7BOP\Administrator  LogonGuid: {00000000-84B8-5494-0000-0020CB330200}  LogonId: 0x233CB  TerminalSessionId: 1  IntegrityLevel: High  HashType: SHA1  Hash: 9FEF303BEDF8430403915951564E0D9888F6F365  ParentProcessGuid: {00000000-84B9-5494-0000-0010BE4A0200}  ParentProcessId: 848  ParentImage: C:\Windows\Explorer.EXE  ParentCommandLine: C:\Windows\Explorer.EXE
 -->
 
 <decoder name="Sysmon-EventID#1">
@@ -2894,6 +2905,108 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <parent>unbound</parent>
   <regex> info: (\S+) (\S+). A IN$| info: (\S+) (\S+) AAAA IN$</regex>
   <order>srcip,url</order>
+</decoder>
+
+
+<!-- Exim
+  - Examples:
+  - 2017-01-23 03:44:14 dovecot_login authenticator failed for (hydra) [10.101.1.18]:35686: 535 Incorrect authentication data (set_id=user)
+  - 2017-01-24 05:22:29 dovecot_plain authenticator failed for (test) [::1]:39454: 535 Incorrect authentication data (set_id=test)
+  - 2017-01-24 03:09:46 SMTP connection from [10.101.1.10]:55010 (TCP/IP connection count = 1)
+  - 2017-01-24 02:53:13 SMTP connection from (hydra) [10.101.1.10]:53682 lost
+  - 2017-01-24 05:36:23 SMTP call from (000000) [::1]:39480 dropped: too many syntax or protocol errors (last command was "123")
+-->
+
+<decoder name="exim-authfailed">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">authenticator failed</prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+: \d+ Incorrect authentication data \(set_id=(\w+)\)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="exim-connect">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">^SMTP connection from </prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+ \(TCP/IP connection count</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="exim-disconnect">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">^SMTP connection from </prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+ lost</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="exim-syntax-errors">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">^SMTP call from </prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+ dropped: too many syntax or protocol errors</regex>
+  <order>srcip</order>
+</decoder>
+
+
+<!-- cPanel decoder.
+  - Examples:
+  - [2016-11-18 09:32:19 +0000] info [cpsrvd] 10.1.5.19 - admin "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password hash is missing from system (user probably does not exist)
+  - [2016-04-18 13:07:02 +0400] info [cpsrvd] 10.1.5.19 - root - SUCCESS LOGIN whostmgrd
+-->
+<decoder name="cpanel-login">
+  <prematch>^[\S+ \S+ \S+] info [cpsrvd] \S+ -</prematch>
+  <regex>info [cpsrvd] (\S+) - (\S+)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<!-- cPanel decoder.
+     Because of default postgresql decoder overwrites cpanel-login rule in case time offset with minus (-0500). This rule is necessary to cover all cases of logs
+  - Examples:
+  - [2016-11-21 04:14:58 -0500] info [cpsrvd] 10.1.5.19 - admin "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password hash is missing from system (user probably does not exist)
+  - [2017-01-25 03:16:27 -0500] info [cpsrvd] 10.1.5.19 - root "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password incorrect
+  - [2017-01-25 05:37:47 -0500] info [cpsrvd] 10.1.5.19 - root "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: root login is not permitted to cpaneld
+  - [2017-01-25 06:01:10 -0500] info [cpsrvd] 10.1.5.19 - test "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: invalid cpanel user test (loadcpdata failed)
+  - [2017-01-25 06:08:58 -0500] info [cpsrvd] 10.1.5.19 - test@domain.com "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: login attempt to whm by a non-reseller/root
+  - [2016-04-18 13:07:02 -0400] info [cpsrvd] 10.1.5.19 - root - SUCCESS LOGIN whostmgrd
+  - [2016-04-18 13:07:13 -0400] info [cpsrvd] 10.1.5.19 - root - SUCCESS LOGIN cpaneld
+  - [2016-04-18 13:07:15 -0400] info [cpsrvd] 10.1.5.19 - reseller (possessor: root) - SUCCESS LOGIN cpaneld
+  - [2016-04-18 13:08:24 -0400] info [cpsrvd] 10.1.5.19 - reseller - SUCCESS LOGIN webmaild
+  - [2016-04-18 13:08:27 -0400] info [cpsrvd] 10.1.5.19 - emailaccount@reseller.com (possessor: reseller) - SUCCESS LOGIN webmaild
+-->
+
+<decoder name="cpanel-login2">
+  <parent>postgresql_log</parent>
+  <prematch offset="after_parent">^info [cpsrvd] \S+ -</prematch>
+  <regex>info [cpsrvd] (\S+) - (\S+)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<!-- cPanel decoder.
+  - Examples:
+  10.1.5.19 - paul [11/18/2016:09:35:43 -0000] "GET" FAILED LOGIN cpdavd: Could not fetch system home directory for paul
+-->
+
+<decoder name="cpanel-access-failed">
+  <parent>web-accesslog</parent>
+  <prematch offset="after_parent">FAILED LOGIN</prematch>
+  <regex>^(\S+) \S+ (\S+)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<!-- cPanel decoder.
+  - Examples:
+  - [2017-01-25 06:15:38 -0500] info [cpsrvd] 10.1.5.19 PURGE root:Nmm4xzhSpA2Sddv3 logout
+  - [2017-01-25 06:15:38 +0000] info [cpsrvd] 10.1.5.19 PURGE root:Nmm4xzhSpA2Sddv3 logout
+-->
+<decoder name="cpanel-session">
+  <prematch>^[\S+ \S+ \S+] info [cpsrvd] \S+ PURGE</prematch>
+  <regex>info [cpsrvd] (\S+) \S+ (\w+):</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="cpanel-session2">
+  <parent>postgresql_log</parent>
+  <prematch offset="after_parent">^info [cpsrvd] \S+ PURGE</prematch>
+  <regex>info [cpsrvd] (\S+) \S+ (\w+):</regex>
+  <order>srcip,user</order>
 </decoder>
 
 <!-- EOF -->
