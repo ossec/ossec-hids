@@ -41,6 +41,9 @@ int delete_agentinfo(const char *name) __attribute__((nonnull));
 /* Get all available agents */
 char **get_agents(int flag);
 
+/* Get all available agents with specified timeout */
+char **get_agents_with_timeout(int flag, int timeout);
+
 /* Free the agent list */
 void free_agents(char **agent_list);
 
