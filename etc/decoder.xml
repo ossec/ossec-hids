@@ -2936,8 +2936,7 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
 -->
 
 <decoder name="cpanel-access-failed">
-  <parent>web-accesslog</parent>
-  <prematch offset="after_parent">FAILED LOGIN</prematch>
+  <prematch>^\S+ \S+ \S+ [\d\d/\d\d/\d\d\d\d:\d\d:\d\d:\d\d \S*\d+] "\S+" FAILED LOGIN</prematch>
   <regex>^(\S+) \S+ (\S+)</regex>
   <order>srcip,user</order>
 </decoder>
