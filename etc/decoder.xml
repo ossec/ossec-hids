@@ -909,7 +909,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="dovecot-authfailed">
   <parent>dovecot</parent>
   <prematch offset="after_parent">^\w\w\w\w-login:</prematch>
-  <regex offset="after_prematch">\(auth failed, \d+ attempts in \d+ secs\): user=\p(\S+)\p, method=\w+, rip=(\d+.\d+.\d+.\d+), lip=(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">\(auth failed, \d+ attempts in \d+ secs\): user=\p(\S+)\p, method=\w+, rip=(\S+), lip=(\S+)</regex>
   <order>user,srcip,dstip</order>
 </decoder>
 
