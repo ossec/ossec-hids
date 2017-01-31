@@ -300,6 +300,14 @@ int k_bulkload(const char *cmdbulk)
     }
 
     /* Check if we can open the auth_file */
+    char authfile[257];
+    if(willchroot > 0) {
+        snprintf(authfile, 256, "%s", AUTH_FILE);       //XXX
+    } else {
+        const char *dir = DEFAULTDIR;
+        snprintf(authfile, 256, "%s/%s", dir, AUTH_FILE);       //XXX
+    }
+
     fp = fopen(authfile, "a");
     if (!fp) {
         ErrorExit(FOPEN_ERROR, ARGV0, authfile, errno, strerror(errno));
