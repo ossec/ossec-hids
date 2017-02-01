@@ -173,13 +173,14 @@ int main(int argc, char **argv)
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
     }
 
-    /* Chroot to the default directory */
-    if (Privsep_Chroot(dir) < 0) {
-        ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
-    }
-
     /* Inside chroot now */
     if(willchroot > 0) {
+
+        /* Chroot to the default directory */
+        if (Privsep_Chroot(dir) < 0) {
+            ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
+        }
+
         nowChroot();
     }
 
