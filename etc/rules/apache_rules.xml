@@ -299,6 +299,13 @@
     <match>with code 403</match>
     <description>ModSecurity rejected a query</description>
   </rule>
+
+  <rule id="30412" level="2">
+    <if_sid>30301</if_sid>
+    <match>Permission denied: | client denied by server configuration: </match>
+    <description>Permission denied.</description>
+  </rule>
+
 </group> <!-- ERROR_LOG,APACHE -->
 
 <!-- EOF -->
