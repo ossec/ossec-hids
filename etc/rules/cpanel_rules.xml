@@ -14,7 +14,7 @@
 <!-- Two same rules but with different decoders because logs have different format -->
   <rule id="11000" level="5">
     <if_sid>2501</if_sid>
-    <decoded_as>cpanel-login</decoded_as>
+    <decoded_as>cpanel-login-failed</decoded_as>
     <regex>FAILED LOGIN</regex>
     <description>Possible attack on the cpanel services</description>
   </rule>
@@ -50,29 +50,29 @@
   </rule>
 
   <rule id="11006" level="3">
-    <decoded_as>cpanel-login</decoded_as>
-    <match>SUCCESS LOGIN</match>
+    <decoded_as>cpanel-login-success</decoded_as>
+    <match>NEW</match>
     <description>Cpanel login success</description>
   </rule>
 
   <rule id="11007" level="3">
     <if_sid>50500</if_sid>
     <decoded_as>postgresql_log</decoded_as>
-    <match>SUCCESS LOGIN</match>
+    <match>NEW</match>
     <description>Cpanel login success</description>
   </rule>
 
   <rule id="11008" level="3">
-    <decoded_as>cpanel-session</decoded_as>
-    <match>PURGE</match>
-    <description>Cpanel session purge</description>
+    <decoded_as>cpanel-session-logout</decoded_as>
+    <regex>PURGE \S+ logout</regex>
+    <description>Cpanel session logout</description>
   </rule>
 
   <rule id="11009" level="3">
     <if_sid>50500</if_sid>
     <decoded_as>postgresql_log</decoded_as>
-    <match>PURGE</match>
-    <description>Cpanel session purge</description>
+    <regex>PURGE \S+ logout</regex>
+    <description>Cpanel session logout</description>
   </rule>
 
   </group> <!-- SYSLOG -->
