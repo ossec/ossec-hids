@@ -17,7 +17,7 @@ void monitor_agents()
     char **cr_agents;
     char **av_agents;
 
-    av_agents = get_agents(GA_ACTIVE);
+    av_agents = get_agents_with_timeout(GA_ACTIVE, mond.notify_time);
 
     /* No agent saved */
     if (!mond.agents) {
@@ -60,4 +60,3 @@ void monitor_agents()
     mond.agents = av_agents;
     return;
 }
-

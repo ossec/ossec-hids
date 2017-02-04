@@ -1176,8 +1176,8 @@ int get_agent_status(const char *agent_name, const char *agent_ip)
     return (GA_STATUS_NACTIVE);
 }
 
-/* List available agents */
-char **get_agents(int flag)
+/* List available agents with specified timeout */
+char **get_agents_with_timeout(int flag, int timeout)
 {
     size_t f_size = 0;
     char **f_files = NULL;
@@ -1215,7 +1215,7 @@ char **get_agents(int flag)
                 continue;
             }
 
-            if (file_status.st_mtime > (time(0) - (3 * NOTIFY_TIME + 30))) {
+            if (file_status.st_mtime > (time(0) - (3 * timeout + 30))) {
                 status = 1;
                 if (flag == GA_NOTACTIVE) {
                     continue;
@@ -1251,4 +1251,9 @@ char **get_agents(int flag)
 
     closedir(dp);
     return (f_files);
+}
+
+/* List available agents */
+char **get_agents(int flag) {
+  return get_agents_with_timeout(flag, NOTIFY_TIME);
 }
