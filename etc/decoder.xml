@@ -1603,9 +1603,10 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - Examples:
   - WPsyslog[14382]: [127.0.0.1 na] Info: User authentication failed. User name: lala
   - WPsyslog[14382]: [127.0.0.1 na] Info: User logged in. User name: admin (admin).
+  - wpcore[14554]: [127.0.0.1 na] http://megasite.com/wordpress Info: User authentication failed. User name: qwe.
   -->
 <decoder name="wordpress">
-  <program_name>^WPsyslog</program_name>
+  <program_name>^WPsyslog|^wpcore</program_name>
   <prematch>^[</prematch>
   <regex offset="after_prematch">^(\S+) </regex>
   <order>srcip</order>
