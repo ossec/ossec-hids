@@ -282,6 +282,19 @@
     <description>File name too long.</description>
   </rule>
 
+  <rule id="30320" level="2">
+    <if_sid>30301</if_sid>
+    <match>Permission denied: | client denied by server configuration: </match>
+    <description>Permission denied.</description>
+  </rule>
+
+  <rule id="30321" level="2">
+    <if_sid>30301</if_sid>
+    <id>AH02811</id>
+    <match>script not found </match>
+    <description>A script cannot be accessed.</description>
+  </rule>
+
   <!-- Apache 2.4 ModSecurity Rules -->
   <rule id="30401" level="0">
     <if_sid>30301</if_sid>
