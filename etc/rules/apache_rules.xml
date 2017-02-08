@@ -275,6 +275,13 @@
     <description>PHP Notice in Apache log</description>
   </rule>
 
+  <rule id="30319" level="10">
+    <if_sid>30301</if_sid>
+    <id>AH00036</id>
+    <match>File name too long: </match>
+    <description>File name too long.</description>
+  </rule>
+
   <!-- Apache 2.4 ModSecurity Rules -->
   <rule id="30401" level="0">
     <if_sid>30301</if_sid>
