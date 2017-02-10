@@ -2907,7 +2907,6 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <order>srcip,url</order>
 </decoder>
 
-
 <!-- Exim
   - Examples:
   - 2017-01-23 03:44:14 dovecot_login authenticator failed for (hydra) [10.101.1.18]:35686: 535 Incorrect authentication data (set_id=user)
@@ -2943,6 +2942,83 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <prematch offset="after_parent">^SMTP call from </prematch>
   <regex offset="after_prematch">[(\S+)]:\d+ dropped: too many syntax or protocol errors</regex>
   <order>srcip</order>
+</decoder>
+
+
+<!-- cPanel decoder.
+  - Examples:
+  - [2016-11-18 09:32:19 +0000] info [cpsrvd] 46.118.10.79 - admin "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password hash is missing from system (user probably does not exist)
+-->
+<decoder name="cpanel-login-failed">
+  <prematch>^[\S+ \S+ \S+] info [cpsrvd] \.+FAILED LOGIN</prematch>
+  <regex>info [cpsrvd] (\S+) - (\S+)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<!-- cPanel decoder.
+     Because of default postgresql decoder overwrites cpanel-login-log rule in case time offset with minus (-0500). This rule is necessary to cover all cases of logs
+  - Examples:
+  - [2016-11-21 04:14:58 -0500] info [cpsrvd] 37.130.227.133 - admin "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password hash is missing from system (user probably does not exist)
+  - [2017-01-25 03:16:27 -0500] info [cpsrvd] 10.101.1.14 - root "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password incorrect
+  - [2017-01-25 05:37:47 -0500] info [cpsrvd] 172.20.93.26 - root "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: root login is not permitted to cpaneld
+  - [2017-01-25 06:01:10 -0500] info [cpsrvd] 172.20.93.26 - test "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: invalid cpanel user test (loadcpdata failed)
+  - [2017-01-25 06:08:58 -0500] info [cpsrvd] 172.20.93.26 - test@domain.com "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: login attempt to whm by a non-reseller/root
+-->
+
+<decoder name="cpanel-login-failed2">
+  <parent>postgresql_log</parent>
+  <prematch offset="after_parent">^info [cpsrvd] \.+FAILED LOGIN</prematch>
+  <regex>info [cpsrvd] (\S+) - (\S+)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<!-- cPanel decoder.
+  - Examples:
+  - 46.118.10.79 - paul [11/18/2016:09:35:43 -0000] "GET" FAILED LOGIN cpdavd: Could not fetch system home directory for paul
+-->
+
+<decoder name="cpanel-access-failed">
+  <parent>web-accesslog</parent>
+  <prematch offset="after_parent">FAILED LOGIN</prematch>
+  <regex>^(\S+) \S+ (\S+)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+
+<!-- cPanel decoder.
+  - Examples:
+  - [2017-02-03 01:21:31 +0500] info [cpsrvd] 10.101.1.18 NEW testuser:XImQi9d3anWMNSc9 address=10.101.1.18,app=cpaneld,creator=pupkin,method=handle_form_login,path=form,possessed=0
+  - [2017-02-03 01:21:31 -0500] info [cpsrvd] 10.101.1.18 NEW testuser:XImQi9d3anWMNSc9 address=10.101.1.18,app=cpaneld,creator=pupkin,method=handle_form_login,path=form,possessed=0
+-->
+<decoder name="cpanel-login-success">
+  <prematch>^[\S+ \S+ \S+] info [cpsrvd] \S+ NEW</prematch>
+  <regex>info [cpsrvd] (\S+) \S+ (\w+):</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="cpanel-login-success2">
+  <parent>postgresql_log</parent>
+  <prematch offset="after_parent">^info [cpsrvd] \S+ NEW</prematch>
+  <regex>info [cpsrvd] (\S+) \S+ (\w+):</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<!-- cPanel decoder.
+  - Examples:
+  - [2017-01-25 06:15:38 -0500] info [cpsrvd] 172.20.93.26 PURGE root:Nmm4xzhSpA2Sddv3 logout
+  - [2017-01-25 06:15:38 +0000] info [cpsrvd] 172.20.93.26 PURGE root:Nmm4xzhSpA2Sddv3 logout
+-->
+<decoder name="cpanel-session-logout">
+  <prematch>^[\S+ \S+ \S+] info [cpsrvd] \S+ PURGE \S+ logout$</prematch>
+  <regex>info [cpsrvd] (\S+) \S+ (\w+):</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="cpanel-session-logout2">
+  <parent>postgresql_log</parent>
+  <prematch offset="after_parent">^info [cpsrvd] \S+ PURGE \S+ logout$</prematch>
+  <regex>info [cpsrvd] (\S+) \S+ (\w+):</regex>
+  <order>srcip,user</order>
 </decoder>
 
 <!-- EOF -->
