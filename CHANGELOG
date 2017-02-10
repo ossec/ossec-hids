@@ -1,3 +1,9 @@
+OSSEC changelog (2.9.1) <ddpbsd@gmail.com>
+
+What's new
+    Fixed windows decoders
+
+
 OSSEC changelog (2.9.0) <scott@atomicorp.com>
 
 Release Maintainers
