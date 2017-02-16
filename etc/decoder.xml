@@ -2960,6 +2960,5 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <regex offset="after_prematch">[(\S+)]:\d+ dropped: too many syntax or protocol errors</regex>
   <order>srcip</order>
 </decoder>
->>>>>>> 50d3094f78e89158d8ca001c8a9ad01d7bf5d7d1
 
 <!-- EOF -->
