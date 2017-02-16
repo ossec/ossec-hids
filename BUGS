@@ -1,12 +1,10 @@
-OSSEC v2.8
-Copyright (C) 2014 Trend Micro Inc.
+OSSEC v2.9
+Copyright (C) 2017 Trend Micro Inc.
 
 
 ** Reporting bugs **
 
-Bugs should be sent to the OSSEC mailling list
-(ossec-list@ossec.net). Please, make sure to include
-the following information:
+Please, make sure to include the following information:
 
 -OSSEC version number.
 -Content of /etc/ossec-init.conf
@@ -16,5 +14,11 @@ the following information:
 -Any other relevant information.
 
 
+
+Github (Public Issue Reporting):
+https://github.com/ossec/ossec-hids/issues
+
+Email (Private Issue Reporting):
 If you prefer to contact us privately or if it is a security
-issue, send an e-mail to OSSEC Project ( ossec@trendmicro.com ).
+issue, send an e-mail to OSSEC Project ( ossec@ossec-hids.org ).
+

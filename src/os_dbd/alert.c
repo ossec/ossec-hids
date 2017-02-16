@@ -9,6 +9,7 @@
 
 #include "dbd.h"
 #include "config/config.h"
+#include "config/dbd-config.h"
 #include "rules_op.h"
 
 /* Prototypes */
@@ -97,7 +98,6 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     sql_query[0] = '\0';
     sql_query[OS_SIZE_8192] = '\0';
 
-
     /* Source Port */
     s_port = al_data->srcport;
 
@@ -106,7 +106,8 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
 
     /* Escape strings */
     osdb_escapestr(al_data->user);
-
+    osdb_escapestr(al_data->location);
+    
     /* We first need to insert the location */
     loc_id = (int *) OSHash_Get(db_config->location_hash, al_data->location);
 
@@ -157,17 +158,35 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     }
 
     /* Generate final SQL */
-    snprintf(sql_query, OS_SIZE_8192,
-             "INSERT INTO "
-             "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,\"user\",full_log) "
-             "VALUES ('%u', '%u','%u','%u', '%u', '%s', '%u', '%s', '%u', '%s', '%s', '%s')",
-             db_config->server_id, al_data->rule,
-             al_data->level,
-             (unsigned int)time(0), *loc_id,
-             al_data->srcip, (unsigned short)s_port,
-             al_data->dstip, (unsigned short)d_port,
-             al_data->alertid,
-             al_data->user, fulllog);
+    switch (db_config->db_type) {
+      case MYSQLDB:
+        snprintf(sql_query, OS_SIZE_8192,
+                 "INSERT INTO "
+                 "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,user,full_log,tld) "
+                 "VALUES ('%u', '%u','%u','%u', '%u', '%s', '%u', '%s', '%u', '%s', '%s', '%s','%.2s')",
+                 db_config->server_id, al_data->rule,
+                 al_data->level,
+                 (unsigned int)time(0), *loc_id,
+                 al_data->srcip, (unsigned short)s_port,
+                 al_data->dstip, (unsigned short)d_port,
+                 al_data->alertid,
+                 al_data->user, fulllog, al_data->srcgeoip);
+	break;
+
+      case POSTGDB:
+        snprintf(sql_query, OS_SIZE_8192,
+                 "INSERT INTO "
+                 "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,\"user\",full_log) "
+                 "VALUES ('%u', '%u','%u','%u', '%u', '%s', '%u', '%s', '%u', '%s', '%s', '%s')",
+                 db_config->server_id, al_data->rule,
+                 al_data->level,
+                 (unsigned int)time(0), *loc_id,
+                 al_data->srcip, (unsigned short)s_port,
+                 al_data->dstip, (unsigned short)d_port,
+                 al_data->alertid,
+                 al_data->user, fulllog);
+	break;
+    }
 
     free(fulllog);
     fulllog = NULL;

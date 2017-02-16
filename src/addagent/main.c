@@ -39,6 +39,7 @@ static void helpmsg()
     print_out("    -i <id>     Import authentication key (Agent only)");
     print_out("    -f <file>   Bulk generate client keys from file (Manager only)");
     print_out("                <file> contains lines in IP,NAME format");
+    print_out("                <file> should also exist within /var/ossec due to manage_agents chrooting");
     exit(1);
 }
 
@@ -87,6 +88,9 @@ int main(int argc, char **argv)
     DWORD last_error;
     int ret;
 #endif
+
+    extern int willchroot;
+    willchroot = 1;
 
     /* Set the name */
     OS_SetName(ARGV0);
@@ -138,6 +142,7 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -f needs an argument.", ARGV0);
                 }
                 cmdbulk = optarg;
+                willchroot = 0;
                 printf("Bulk load file: %s\n", cmdbulk);
                 break;
             case 'l':
@@ -168,13 +173,16 @@ int main(int argc, char **argv)
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
     }
 
-    /* Chroot to the default directory */
-    if (Privsep_Chroot(dir) < 0) {
-        ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
-    }
-
     /* Inside chroot now */
-    nowChroot();
+    if(willchroot > 0) {
+
+        /* Chroot to the default directory */
+        if (Privsep_Chroot(dir) < 0) {
+            ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
+        }
+
+        nowChroot();
+    }
 
     /* Start signal handler */
     StartSIG2(ARGV0, manage_shutdown);
@@ -248,14 +256,26 @@ int main(int argc, char **argv)
         switch (user_msg[0]) {
             case 'A':
             case 'a':
+#ifdef CLIENT
+                printf("\n ** Agent adding only available on a master ** \n\n");
+                break;
+#endif
                 add_agent();
                 break;
             case 'e':
             case 'E':
+#ifdef CLIENT
+                printf("\n ** Key export only available on a master ** \n\n");
+                break;
+#endif
                 k_extract(NULL);
                 break;
             case 'i':
             case 'I':
+#ifndef CLIENT
+                printf("\n ** Key import only available on an agent ** \n\n");
+                break;
+#endif
                 k_import(NULL);
                 break;
             case 'l':
@@ -264,6 +284,10 @@ int main(int argc, char **argv)
                 break;
             case 'r':
             case 'R':
+#ifdef CLIENT
+                printf("\n ** Key removal only available on a master ** \n\n");
+                break;
+#endif
                 remove_agent();
                 break;
             case 'q':
@@ -294,4 +318,3 @@ int main(int argc, char **argv)
 
     return (0);
 }
-

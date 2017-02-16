@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # OSSEC Rules list
 # Simple script to get a short brief of every rule in OSSEC rules folder
-# pedro@wazuh.com
+# Written Feb 25, 2016 and released under the GNU/GPLv2 license  ##
+# By pedro@wazuh.com @ Wazuh, Inc.
 
 import sys
 import re
