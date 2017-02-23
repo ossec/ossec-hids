@@ -63,6 +63,34 @@
     <group>authentication_failures,</group>
   </rule>
 
+  <rule id="9552" level="10" maxsize="1">
+    <if_sid>31100,31101,31108</if_sid>
+    <url>/wp-json/wp/v2/posts/</url>
+    <match>GET</match>
+    <description>Checking for Content Injection Vulnerability in WordPress (https://blog.sucuri.net/2017/02/content-injection-vulnerability-wordpress-rest-api.html).</description>
+  </rule>
+
+  <rule id="9553" level="10" maxsize="1">
+    <if_sid>31100,31101,31108</if_sid>
+    <url>/wp-json/wp/v2/posts/</url>
+    <match>POST</match>
+    <description>Checking for Content Injection Vulnerability in WordPress (https://blog.sucuri.net/2017/02/content-injection-vulnerability-wordpress-rest-api.html).</description>
+  </rule>
+
+  <rule id="9554" level="10" maxsize="1">
+    <if_sid>31100,31101,31108</if_sid>
+    <url>/wp-json/wp/v2/posts/</url>
+    <regex>/wp-json/wp/v2/posts/+\d?id=\D+</regex>
+    <description>Content Injection Attack in WordPress (https://blog.sucuri.net/2017/02/content-injection-vulnerability-wordpress-rest-api.html).</description>
+  </rule>
+
+  <rule id="9555" level="10" maxsize="1">
+    <if_sid>31100,31101,31108</if_sid>
+    <url>/wp-json/wp/v2/posts/</url>
+    <match>Python-urllib</match>
+    <description>Content Injection Attack in WordPress (https://blog.sucuri.net/2017/02/content-injection-vulnerability-wordpress-rest-api.html).</description>
+  </rule>
+
 </group>
   
 
