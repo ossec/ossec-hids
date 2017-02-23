@@ -100,9 +100,6 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_hostinfo = "host_information";
     const char *xml_picviz = "picviz_output";
     const char *xml_picviz_socket = "picviz_socket";
-    const char *xml_prelude = "prelude_output";
-    const char *xml_prelude_profile = "prelude_profile";
-    const char *xml_prelude_log_level = "prelude_log_level";
     const char *xml_geoipdb_file = "geoipdb";
     const char *xml_zeromq_output = "zeromq_output";
     const char *xml_zeromq_output_uri = "zeromq_uri";
@@ -218,39 +215,11 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
             if (Config) {
                 os_strdup(node[i]->content, Config->picviz_socket);
             }
-        }
-        /* Prelude support */
-        else if (strcmp(node[i]->element, xml_prelude) == 0) {
-            if (strcmp(node[i]->content, "yes") == 0) {
-                if (Config) {
-                    Config->prelude = 1;
-                }
-            } else if (strcmp(node[i]->content, "no") == 0) {
-                if (Config) {
-                    Config->prelude = 0;
-                }
-            } else {
-                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
-                return (OS_INVALID);
-            }
         /* GeoIP */
         } else if(strcmp(node[i]->element, xml_geoipdb_file) == 0) {
             if(Config)
             {
                 Config->geoipdb_file = strdup(node[i]->content);
-            }
-        } else if (strcmp(node[i]->element, xml_prelude_profile) == 0) {
-            if (Config) {
-                Config->prelude_profile = strdup(node[i]->content);
-            }
-        } else if (strcmp(node[i]->element, xml_prelude_log_level) == 0) {
-            if (!OS_StrIsNum(node[i]->content)) {
-                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
-                return (OS_INVALID);
-            }
-
-            if (Config) {
-                Config->prelude_log_level = (u_int8_t) atoi(node[i]->content);
             }
         }
         /* ZeroMQ output */
