@@ -1948,8 +1948,15 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="windows1">
   <type>windows</type>
   <parent>windows</parent>
-  <regex> Account Name: (\S+) Account</regex>
+  <regex> Account Name:\s+(\w+)\s+Account</regex>
   <order>user</order>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex>Account Domain:\s\s+(\w\.+)\s\s+Logon ID:</regex>
+  <order>extra_data</order>
 </decoder>
 
 
