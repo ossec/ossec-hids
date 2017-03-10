@@ -28,10 +28,23 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     cJSON *file_diff;
     char *out;
 
+    extern long int __crt_ftell;
+
     root = cJSON_CreateObject();
     cJSON_AddItemToObject(root, "rule", rule = cJSON_CreateObject());
 
     cJSON_AddNumberToObject(rule, "level", lf->generated_rule->level);
+
+    if ( lf->time ) {
+
+        char alert_id[19];
+        alert_id[18] = '\0';
+        if((snprintf(alert_id, 18, "%ld.%ld", (long int)lf->time, __crt_ftell)) < 0) {
+            merror("snprintf failed");
+        }
+
+        cJSON_AddStringToObject(root, "id", alert_id);
+    }
 
     if (lf->generated_rule->comment) {
         cJSON_AddStringToObject(rule, "comment", lf->generated_rule->comment);
@@ -146,13 +159,7 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if ( lf->program_name ) {
         cJSON_AddStringToObject(root, "program_name", lf->program_name);
     }
-    if ( lf->time ) {
-        char *alert_id;
-        if((snprintf(alert_id, 16, "%ld.%ld", (long int)lf->time, __crt_ftell)) < 0) {
-            merror("snprintf failed");
-        }
-        cJSON_AddStringToObject(root, "alert_id", alert_id);
-    }
+
     out = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
     return out;
