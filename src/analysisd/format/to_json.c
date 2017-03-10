@@ -146,6 +146,13 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if ( lf->program_name ) {
         cJSON_AddStringToObject(root, "program_name", lf->program_name);
     }
+    if ( lf->time ) {
+        char *alert_id;
+        if((snprintf(alert_id, 16, "%ld.%ld", (long int)lf->time, __crt_ftell)) < 0) {
+            merror("snprintf failed");
+        }
+        cJSON_AddStringToObject(root, "alert_id", alert_id);
+    }
     out = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
     return out;
