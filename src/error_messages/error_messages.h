@@ -122,6 +122,8 @@
 #define INVALID_CONFIG   "%s(1274): ERROR: Invalid configuration. Element '%s': %s."
 #define INVALID_HOSTNAME "%s(1275): ERROR: Invalid hostname in syslog message: '%s'."
 #define INVALID_GEOIP_DB "%s(1276): ERROR: Cannot open GeoIP database: '%s'."
+#define INVALID_IGNORE_MD5DB "%s(1277) ERROR: Cannot open MD5 database: '%s'."
+#define MD5_NOT_CHECKED	 "%s(1278) WARN: File with MD5 '%s' not processed."
 
 /* logcollector */
 #define SYSTEM_ERROR     "%s(1600): ERROR: Internal error. Exiting.."

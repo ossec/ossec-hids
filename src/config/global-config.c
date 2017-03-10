@@ -128,6 +128,9 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_geoip6_db_path = "geoip6_db_path";
 #endif
 
+    /* MD5 DB */
+    char *xml_md5db = "md5db";
+
     _Config *Config;
     MailConfig *Mail;
 
@@ -511,6 +514,13 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
             }
         }
 #endif
+        /* MD5 DB */
+        else if(strcmp(node[i]->element, xml_md5db) == 0) {
+            if(Config) {
+                os_strdup(node[i]->content, Config->md5db);
+            }
+        }
+
         else {
             merror(XML_INVELEM, __local_name, node[i]->element);
             return (OS_INVALID);
