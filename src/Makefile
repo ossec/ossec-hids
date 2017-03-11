@@ -126,7 +126,6 @@ endif
 OSSEC_CFLAGS+=${DEFINES}
 OSSEC_CFLAGS+=-Wall -Wextra
 OSSEC_CFLAGS+=-I./ -I./headers/
-OSSEC_CFLAGS+=-lsqlite3
 
 CCCOLOR="\033[34m"
 LINKCOLOR="\033[34;1m"
@@ -812,7 +811,7 @@ os_dbd/%.o: os_dbd/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} ${MI} ${PI} -DARGV0=\"ossec-dbd\" -c $^ -o $@
 
 ossec-dbd: ${os_dbd_o} ${ossec_libs}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -lsqlite3 ${MI} ${PI} ${JSON_INCLUDE} $^ -lm ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${MI} ${PI} ${JSON_INCLUDE} $^ -lm ${OSSEC_LDFLAGS} -o $@
 
 
 #### os_csyslogd #####
@@ -969,10 +968,10 @@ syscheck_c := $(wildcard syscheckd/*.c)
 syscheck_o := $(syscheck_c:.c=.o)
 
 syscheckd/%.o: syscheckd/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
 
 ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -lsqlite3 ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 #### Monitor #######
 
@@ -1049,33 +1048,33 @@ all_analysisd_libs += decoders.a decoders-test.a decoders-live.a
 
 
 analysisd/decoders/%-test.o: analysisd/decoders/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -lsqlite3 -o $@
 
 
 analysisd/decoders/%-live.o: analysisd/decoders/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -lsqlite3 -o $@
 
 analysisd/decoders/plugins/%-test.o: analysisd/decoders/plugins/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 
 analysisd/decoders/plugins/%-live.o: analysisd/decoders/plugins/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 analysisd/compiled_rules/compiled_rules.h: analysisd/compiled_rules/.function_list analysisd/compiled_rules/register_rule.sh
 	./analysisd/compiled_rules/register_rule.sh build
 
 analysisd/compiled_rules/%-test.o: analysisd/compiled_rules/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 analysisd/compiled_rules/%-live.o: analysisd/compiled_rules/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 decoders-live.a: ${decoders_live_o}
-	${OSSEC_LINK} -lsqlite3$@ $^
+	${OSSEC_LINK} $@ $^
 
 decoders-test.a: ${decoders_test_o}
-	${OSSEC_LINK} -lsqlite3 $@ $^
+	${OSSEC_LINK} $@ $^
 
 format_c := ${wildcard analysisd/format/*.c}
 format_o := ${format_c:.c=.o}
@@ -1102,20 +1101,20 @@ analysisd_live_o := $(analysisd_o:.o=-live.o)
 all_analysisd_o += ${analysisd_test_o} ${analysisd_live_o} analysisd/testrule-test.o analysisd/analysisd-live.o analysisd/analysisd-test.o analysisd/makelists-live.o
 
 analysisd/%-live.o: analysisd/%.c analysisd/compiled_rules/compiled_rules.h
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -c $< -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -c $< -lsqlite3 -o $@
 
 analysisd/%-test.o: analysisd/%.c analysisd/compiled_rules/compiled_rules.h
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -c $< -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -c $< -lsqlite3 -o $@
 
 
 ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-test.o analysisd/analysisd-test.o alerts.a cdb.a decoders-test.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -lsqlite3 -DTESTRULE $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -DTESTRULE $^ ${OSSEC_LDFLAGS} -lsqlite3 -o $@
 
 ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -lsqlite3 $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} -lsqlite3 -o $@
 
 ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -lsqlite3 $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} -o $@
 
 
 ####################
