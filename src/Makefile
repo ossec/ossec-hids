@@ -969,10 +969,10 @@ syscheck_c := $(wildcard syscheckd/*.c)
 syscheck_o := $(syscheck_c:.c=.o)
 
 syscheckd/%.o: syscheckd/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
 
 ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -lsqlite3 ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 #### Monitor #######
 
@@ -1049,11 +1049,11 @@ all_analysisd_libs += decoders.a decoders-test.a decoders-live.a
 
 
 analysisd/decoders/%-test.o: analysisd/decoders/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 
 analysisd/decoders/%-live.o: analysisd/decoders/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 analysisd/decoders/plugins/%-test.o: analysisd/decoders/plugins/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -DTESTRULE -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
