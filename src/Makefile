@@ -1072,10 +1072,10 @@ analysisd/compiled_rules/%-live.o: analysisd/compiled_rules/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -lsqlite3 -DARGV0=\"ossec-analysisd\" -I./analysisd -I./analysisd/decoders -c $^ -o $@
 
 decoders-live.a: ${decoders_live_o}
-	${OSSEC_LINK} $@ $^
+	${OSSEC_LINK} -lsqlite3$@ $^
 
 decoders-test.a: ${decoders_test_o}
-	${OSSEC_LINK} $@ $^
+	${OSSEC_LINK} -lsqlite3 $@ $^
 
 format_c := ${wildcard analysisd/format/*.c}
 format_o := ${format_c:.c=.o}
