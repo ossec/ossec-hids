@@ -1,4 +1,4 @@
-# TODO: mysql and postgresql?
+
 
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
@@ -126,7 +126,7 @@ endif
 OSSEC_CFLAGS+=${DEFINES}
 OSSEC_CFLAGS+=-Wall -Wextra
 OSSEC_CFLAGS+=-I./ -I./headers/
-
+OSSEC_CFLAGS+=-lsqlite3
 
 CCCOLOR="\033[34m"
 LINKCOLOR="\033[34;1m"
