@@ -11,13 +11,11 @@ MAXAGENTS?=2048
 PREFIX?=/var/ossec
 PG_CONFIG?=pg_config
 MY_CONFIG?=mysql_config
-PRELUDE_CONFIG?=libprelude-config
 OSSEC_GROUP?=ossec
 OSSEC_USER?=ossec
 OSSEC_USER_MAIL?=ossecm
 OSSEC_USER_REM?=ossecr
 
-USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
@@ -178,13 +176,6 @@ ifneq (,$(filter ${USE_INOTIFY},auto yes y Y 1))
 		OSSEC_CFLAGS+=-I/usr/local/include
 	endif
 endif
-
-ifneq (,$(filter ${USE_PRELUDE},auto yes y Y 1))
-	DEFINES+=-DPRELUDE_OUTPUT_ENABLED
-	OSSEC_LDFLAGS+=-lprelude
-	OSSEC_LDFLAGS+=$(shell sh -c '${PRELUDE_CONFIG} --pthread-cflags')
-	OSSEC_LDFLAGS+=$(shell sh -c '${PRELUDE_CONFIG} --libs')
-endif # USE_PRELUDE
 
 ifneq (,$(filter ${USE_ZEROMQ},auto yes y Y 1))
 	DEFINES+=-DZEROMQ_OUTPUT_ENABLED
@@ -534,7 +525,6 @@ settings:
 	@echo "USE settings:"
 	@echo "    USE_ZEROMQ:       ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
-	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_PICVIZ:       ${USE_PICVIZ}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
