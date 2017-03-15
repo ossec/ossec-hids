@@ -44,10 +44,6 @@ typedef struct __Config {
     /* JSONOUT Export */
     u_int8_t jsonout_output;
 
-    /* Picviz support */
-    u_int8_t picviz;
-    char *picviz_socket;
-
     /* Not currently used */
     u_int8_t keeplogdate;
 
