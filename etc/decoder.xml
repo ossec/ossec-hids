@@ -952,11 +952,16 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="named-query">
   <parent>named</parent>
-  <prematch>: query: </prematch>
-  <regex>client (\S+)#\d+\s*\S*: query: (\S+) IN </regex>
+  <prematch>: query </prematch>
+  <regex>client (\S+)#\d+\s*\S*: </regex>
   <order>srcip,url</order>
 </decoder>
 
+<decoder name="named-query">
+  <parent>named</parent>
+  <regex>query: (\S+) IN|query \S+ '(\S+)/</regex>
+  <order>url</order>
+</decoder>
 
 <decoder name="named_client">
   <parent>named</parent>
