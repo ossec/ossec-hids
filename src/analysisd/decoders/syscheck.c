@@ -15,7 +15,8 @@
 #include "alerts/alerts.h"
 #include "decoder.h"
 
-#include <sqlite3.h>
+//#include <sqlite3.h>
+#include "syscheck-sqlite.h"
 
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
@@ -53,7 +54,7 @@ typedef struct __sdb {
 static _sdb sdb;
 
 /* Extract a token from a string */
-char *extract_token(char *s, char *delim, int position) {
+char *extract_token(const char *s, char *delim, int position) {
     int count = 0;
     char tmp[OS_MAXSTR + 1];
     char *token;
@@ -621,7 +622,6 @@ int DecodeSyscheck(Eventinfo *lf)
 
     char *p;
     char stmt[OS_MAXSTR + 1];
-    sqlite3 *conn;
     sqlite3_stmt *res;
     int error = 0;
     int rec_count = 0;
@@ -679,31 +679,27 @@ int DecodeSyscheck(Eventinfo *lf)
      * 0:0:0:0:78f5c869675b1d09ddad870adad073f9:bd6c8d7a58b462aac86475e59af0e22954039c50
      */
     if (Config.md5db)  {
+        extern sqlite3 *conn;
         if ((p = extract_token(c_sum, ":", 4))) {
             if (!validate_md5(p)) { /* Never trust input from other origin */
                 merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
                 return(0);
             }
             debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5db);
-            if (!(error = sqlite3_open(Config.md5db, &conn))) {
-                sprintf(stmt, "select md5sum from files where md5sum = \"%s\"", p);
-                error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
-                if (error == SQLITE_OK) {
-                    while (sqlite3_step(res) == SQLITE_ROW) {
-                        rec_count++;
-                    }
-                    if (rec_count) {    
-                        sqlite3_finalize(res);
-                        sqlite3_close(conn);
-                        merror(MD5_NOT_CHECKED, ARGV0, p);
-                        return(0);
-                    }
+            sprintf(stmt, "select md5sum from files where md5sum = \"%s\"", p);
+            error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
+            if (error == SQLITE_OK) {
+                while (sqlite3_step(res) == SQLITE_ROW) {
+                    rec_count++;
                 }
-                sqlite3_finalize(res);
-                sqlite3_close(conn);
-            } else {
-                merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5db);
+                if (rec_count) {    
+                    sqlite3_finalize(res);
+                    //sqlite3_close(conn);
+                    merror(MD5_NOT_CHECKED, ARGV0, p);
+                    return(0);
+                }
             }
+            sqlite3_finalize(res);
         }
     }
  
