@@ -32,7 +32,8 @@ IP=$3
 PWD=`pwd`
 LOCK="${PWD}/fw-drop"
 LOCK_PID="${PWD}/fw-drop/pid"
-
+IPV4F="$(cat /proc/sys/net/ipv4/ip_forward)"
+IPV6F="$(cat /proc/sys/net/ipv6/conf/all/forwarding)"
 
 LOCAL=`dirname $0`;
 cd $LOCAL
@@ -175,6 +176,14 @@ if [ "X${UNAME}" = "XLinux" ]; then
    
    COUNT=0;
    while [ 1 ]; do
+        #
+        # Looking for IPV4 and IPV6 FORWARD
+        #
+        if [ "$IPV4F" == "0" ] && [ "$IPV6F" == "0" ]
+        then
+                break
+        fi
+
         ${IPTABLES} ${ARG2}
         RES=$?
         if [ $RES = 0 ]; then
