@@ -237,7 +237,7 @@ int OS_getsocketsize(int ossock)
 int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
 {
     int ossock = 0, s;
-    struct addrinfo hints, *result, *rp, *local_ai;
+    struct addrinfo hints, *result, *rp, *local_ai = NULL;
     char tempaddr[INET6_ADDRSTRLEN];
 
     if ((_ip == NULL)||(_ip[0] == '\0')) {
