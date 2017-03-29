@@ -81,6 +81,9 @@ typedef struct __Config {
     /* Global rule hash */
     OSHash *g_rules_hash;
 
+    /* Default tag for events not containing tags explicitly */
+    char *default_tag;
+
 #ifdef LIBGEOIP_ENABLED
     /* GeoIP support */
     u_int8_t loggeoip;
