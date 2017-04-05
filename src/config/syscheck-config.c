@@ -389,7 +389,10 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
         }
 
         /* Check for glob */
-#ifndef WIN32
+	/* The mingw32 builder used by travis.ci can't find glob.h 
+	 * Yet glob must work on actual win32.  
+	 */
+#ifndef __MINGW32__
         if (strchr(tmp_dir, '*') ||
                 strchr(tmp_dir, '?') ||
                 strchr(tmp_dir, '[')) {
@@ -420,7 +423,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             dump_syscheck_entry(syscheck, tmp_dir, opts, 0, restrictfile);
         }
 #else
-        dump_syscheck_entry(syscheck, tmp_dir, opts, 0, restrictfile);
+	dump_syscheck_entry(syscheck, tmp_dir, opts, 0, restrictfile);
 #endif
 
         if (restrictfile) {
