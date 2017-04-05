@@ -62,7 +62,12 @@
 #include <signal.h>
 
 #ifndef WIN32
+/* The mingw32 builder used by travis.ci can't find glob.h 
+ * Yet glob must work on actual win32.  
+ */
+#ifndef __MINGW32__ 
 #include <glob.h>
+#endif
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
