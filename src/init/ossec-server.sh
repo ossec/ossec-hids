@@ -19,8 +19,11 @@ if [ $? = 0 ]; then
 fi
 
 NAME="OSSEC HIDS"
-VERSION="v2.8"
+VERSION="v2.9.0"
 AUTHOR="Trend Micro Inc."
+
+[ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf;
+
 DAEMONS="ossec-monitord ossec-logcollector ossec-remoted ossec-syscheckd ossec-analysisd ossec-maild ossec-execd ${DB_DAEMON} ${CSYSLOG_DAEMON} ${AGENTLESS_DAEMON}"
 
 ## Locking for the start/stop
@@ -194,6 +197,15 @@ start()
 
     # We actually start them now.
     for i in ${SDAEMONS}; do
+
+        ## If ossec-maild is disabled, don't try to start it.
+        if [ X"$i" = "Xossec-maild" ]; then
+             grep "<email_notification>no<" ${DIR}/etc/ossec.conf >/dev/null 2>&1
+             if [ $? = 0 ]; then
+                 continue
+             fi
+        fi
+
         pstatus ${i};
         if [ $? = 0 ]; then
             ${DIR}/bin/${i} ${DEBUG_CLI};

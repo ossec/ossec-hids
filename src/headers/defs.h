@@ -18,6 +18,9 @@
 #define READ    1
 #define WRITE   2
 
+#define OS_BINARY   0
+#define OS_TEXT     1
+
 /* Size limit control */
 #define OS_SIZE_8192    8192
 #define OS_SIZE_6144    6144
@@ -32,11 +35,11 @@
 #define OS_FLSIZE       OS_SIZE_256     /* Maximum file size            */
 #define OS_HEADER_SIZE  OS_SIZE_128     /* Maximum header size          */
 #define OS_LOG_HEADER   OS_SIZE_256     /* Maximum log header size      */
-#define IPSIZE          16              /* IP Address size              */
+#define IPSIZE          INET6_ADDRSTRLEN /* IP Address size             */
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
-#define __version       "v2.8"
+#define __version       "v2.9.0"
 #define __author        "Trend Micro Inc."
 #define __contact       "contact@ossec.net"
 #define __site          "http://www.ossec.net"
@@ -56,6 +59,11 @@ http://www.ossec.net/main/license/\n"
 /* Limit of 256 agents */
 #ifndef MAX_AGENTS
 #define MAX_AGENTS  256
+#endif
+
+/* First ID assigned by authd */
+#ifndef AUTHD_FIRST_ID
+#define AUTHD_FIRST_ID  1024
 #endif
 
 /* Notify the manager */
@@ -173,6 +181,7 @@ http://www.ossec.net/main/license/\n"
 #define EVENTS            "/logs/archives"
 #define EVENTS_DAILY      "/logs/archives/archives.log"
 #define ALERTS            "/logs/alerts"
+#define ALERTS_PATH       DEFAULTDIR ALERTS
 #define ALERTS_DAILY      "/logs/alerts/alerts.log"
 #define ALERTSJSON_DAILY  "/logs/alerts/alerts.json"
 #define FWLOGS            "/logs/firewall"
@@ -248,11 +257,11 @@ http://www.ossec.net/main/license/\n"
 
 /* Default ports */
 #ifndef DEFAULT_SECURE
-#define DEFAULT_SECURE 1514 /* Default encrypted */
+#define DEFAULT_SECURE "1514" /* Default encrypted */
 #endif
 
 #ifndef DEFAULT_SYSLOG
-#define DEFAULT_SYSLOG 514 /* Default syslog port - udp */
+#define DEFAULT_SYSLOG "514" /* Default syslog port - udp */
 #endif
 
 /* XML global elements */

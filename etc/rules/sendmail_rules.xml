@@ -38,7 +38,7 @@
   <rule id="3104" level="6">
     <if_sid>3101</if_sid>
     <match>reject=550 5.7.1 </match>
-    <description>Attepmt to use mail server as relay </description>
+    <description>Attempt to use mail server as relay </description>
     <description>(550: Requested action not taken).</description>
     <group>spam,</group>
   </rule>

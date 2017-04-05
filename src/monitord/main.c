@@ -115,6 +115,7 @@ int main(int argc, char **argv)
     mond.compress = (short) getDefine_Int("monitord", "compress", 0, 1);
     mond.sign = (short) getDefine_Int("monitord", "sign", 0, 1);
     mond.monitor_agents = (short) getDefine_Int("monitord", "monitor_agents", 0, 1);
+    mond.notify_time = getDefine_Int("monitord", "notify_time", 60, 3600);
     mond.agents = NULL;
     mond.smtpserver = NULL;
     mond.emailfrom = NULL;
@@ -196,7 +197,8 @@ int main(int argc, char **argv)
         ErrorExit(SETUID_ERROR, ARGV0, user, errno, strerror(errno));
     }
 
-    debug1(PRIVSEP_MSG, ARGV0, dir, user);
+    debug1(CHROOT_MSG, ARGV0, dir);
+    debug1(PRIVSEP_MSG, ARGV0, user);
 
     /* Signal manipulation */
     StartSIG(ARGV0);
@@ -213,4 +215,3 @@ int main(int argc, char **argv)
     Monitord();
     exit(0);
 }
-

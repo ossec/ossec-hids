@@ -23,10 +23,8 @@ USE_GEOIP?=no
 USE_INOTIFY=no
 
 ifneq (${TARGET},winagent)
-	USE_PICVIZ?=yes
 	USE_OPENSSL?=auto
 else
-	USE_PICVIZ?=no
 	USE_OPENSSL?=no
 endif
 
@@ -74,6 +72,11 @@ ifeq (${uname_S},FreeBSD)
 		OSSEC_LDFLAGS+=-pthread
 		LUA_PLAT=freebsd
 else
+ifeq (${uname_S},NetBSD)
+		DEFINES+=-DNetBSD
+		OSSEC_LDFLAGS+=-pthread
+		LUA_PLAT=posix
+else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
 		DEFINES+=-pthread
@@ -90,6 +93,7 @@ else
 	    # Unknow platform
 endif # HPUX
 endif # OpenBSD
+endif # NetBSD
 endif # FreeBSD
 endif # Darwin
 endif # SunOS
@@ -185,10 +189,6 @@ ifneq (,$(filter ${USE_ZEROMQ},auto yes y Y 1))
 	#LDFLAGS+=-L/usr/local/lib -I/usr/local/include -lzmq -lczmq
 	OSSEC_LDFLAGS+=-lzmq -lczmq -lm
 endif # USE_ZEROMQ
-
-ifneq (,$(filter ${USE_PICVIZ},auto yes y Y 1))
-	DEFINES+=-DPICVIZ_OUTPUT_ENABLED
-endif # USE_PICVIZ
 
 ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	DEFINES+=-DLIBGEOIP_ENABLED
@@ -288,7 +288,7 @@ endif # USE_OPENSSL
 
 ifneq (,$(filter ${USE_OPENSSL},yes y Y 1))
 	DEFINES+=-DLIBOPENSSL_ENABLED
-	ifneq (${OPENSSL_LIBS},)
+	ifeq (${OPENSSL_LIBS},)
 		OSSEC_LDFLAGS+=-lssl -lcrypto
 	else
 		OSSEC_LDFLAGS+=${OPENSSL_LIBS}
@@ -344,8 +344,6 @@ install-agent: install-common
 
 	install -d -m 0750 -o ${OSSEC_USER} -g ${OSSEC_GROUP} ${PREFIX}/queue/rids
 
-	install -d -m 0770 -o ${OSSEC_USER} -g ${OSSEC_GROUP} ${PREFIX}/tmp
-
 install-local: install-server-generic
 
 install-hybrid: install-server-generic
@@ -379,6 +377,9 @@ install-common: build
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/etc
 	install -m 0440 -o root -g ${OSSEC_GROUP} /etc/localtime ${PREFIX}/etc
+
+	install -d -m 1550 -o root -g ${OSSEC_GROUP} ${PREFIX}/tmp
+
 ifneq (,$(wildcard /etc/TIMEZONE))
 	install -m 440 -o root -g ${OSSEC_GROUP} /etc/TIMEZONE ${PREFIX}/etc/
 endif
@@ -403,7 +404,7 @@ endif
 endif
 
 	install -d -m 0770 -o root -g ${OSSEC_GROUP} ${PREFIX}/etc/shared
-	install -m 0440 -o root -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
+	install -m 0640 -o root -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response/bin
@@ -468,10 +469,7 @@ endif
 
 	install -d -m 0750 -o ${OSSEC_USER_REM} -g ${OSSEC_GROUP} ${PREFIX}/queue/rids
 
-	install -d -m 0750 -o root -g ${OSSEC_GROUP} ${PREFIX}/tmp
-
 	install -m 0640 -o root -g ${OSSEC_GROUP} ../etc/decoder.xml ${PREFIX}/etc/
-	install -m 0640 -o root -g ${OSSEC_GROUP} /dev/null ${PREFIX}/etc/local_decoder.xml
 
 	rm -f ${PREFIX}/etc/shared/merged.mg
 
@@ -532,7 +530,6 @@ settings:
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
-	@echo "    USE_PICVIZ:       ${USE_PICVIZ}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
@@ -609,7 +606,7 @@ $(error Do not use 'winagent' directly, use 'TARGET=winagent')
 endif
 .PHONY: winagent
 winagent:
-	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB}" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -mwindows"
+	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB}" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
 	cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
 	cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
 	cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
@@ -1110,9 +1107,8 @@ ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-te
 ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
-
 
 
 ####################
@@ -1128,7 +1124,7 @@ ifdef TEST
 	OSSEC_LDFLAGS+=${LDFLAGS_TEST}
 endif #TEST
 
-test_programs = test_os_zlib test_os_xml test_os_regex test_os_crypto test_os_net test_shared
+test_programs = test_os_zlib test_os_xml test_os_regex test_os_crypto test_shared
 
 .PHONY: test run_tests build_tests test_valgrind test_coverage
 
@@ -1159,8 +1155,8 @@ test_os_regex: tests/test_os_regex.c ${os_regex_o}
 test_os_crypto: tests/test_os_crypto.c ${crypto_o} ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
+#test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
+#	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 test_shared: tests/test_shared.c ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
@@ -1240,7 +1236,7 @@ win32/resource.o: win32/ui/win32ui.rc
 	${OSSEC_WINDRES} -i $< -o $@
 
 win32/os_win32ui.exe: win32/resource.o win32/win_service_rk.o ${win32_ui_o} addagent/b64.o ${ossec_libs}
-	${OSSEC_CCBIN} -DARGV0=\"ossec-win32ui\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} -DARGV0=\"ossec-win32ui\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -mwindows -o $@
 
 
 ####################

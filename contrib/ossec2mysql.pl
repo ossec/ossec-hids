@@ -2,6 +2,7 @@
 use Socket;
 use POSIX 'setsid';
 use strict;
+use Regexp::IPv6 qw($IPv6_re);
 # ---------------------------------------------------------------------------
 # Author: Meir Michanie (meirm@riunx.com)
 # Co-Author: J.A.Senger (jorge@br10.com.br)
@@ -101,7 +102,7 @@ $conf{resolve}=1;
 
 my($OCT) = '(?:25[012345]|2[0-4]\d|1?\d\d?)';
 
-my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT;
+my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT . '\|' . $IPv6_re;
 
 my $VERSION="0.4";
 my $sig_class_id=1;
@@ -210,8 +211,8 @@ sub taillog {
 				$dstip=$resolv{$alerthost};
 			}else{
 				if ($conf{'resolve'}){
-					$dstip=`host $alerthost 2>/dev/null | grep 'has address' `;
-					if ($dstip =~m/(\d+\.\d+\.\d+\.\d+)/ ){
+					$dstip=`host $alerthost 2>/dev/null | grep 'has address\|has IPv6 address' `;
+					if ($dstip =~m/($IP)/ ){
 						$dstip=$1;
 					}else{
 						$dstip=$srcip;
@@ -264,7 +265,7 @@ sub taillog {
                 $date=$1;
                 $alerthost=$2;
                 $datasource=$3;
-                if ($datasource=~ m/(\d+\.\d+\.\d+\.\d+)/){
+                if ($datasource=~ m/($IP)/){
                         $alerthost=$1;
                         $datasource="remoted";
                 }
@@ -285,10 +286,10 @@ sub taillog {
 		$level=$2;
 		$description= $3;
 	}elsif ( m/Src IP:/){
-		if ( m/($IP)/){
+		if ( m/Src IP: (\S+)/){
                         $srcip=$1;
                 }else{
-                        $srcip='0.0.0.0';
+                        $srcip='';
                 }
 	}elsif ( m/User: (.*)$/){
                 $user=$1;
@@ -300,18 +301,6 @@ sub taillog {
    } # End while read line
 }
 
-
-sub ossec_aton(){
-        my ($ip)=@_;
-        if ($ip=~ m/(\d+)\.(\d+)\.(\d+)\.(\d+)/){
-                my $num= ($1 * 256 ** 3) + ($2 * 256 ** 2)+ ($3 * 256 ** 1)+ ($4);
-
-                return "$num";
-        }else{
-                return "0";
-        }
-
-}
 
 sub prepair2basedata(){
 	my (
@@ -371,8 +360,8 @@ $dbi->{sth}->finish;
 VALUES (
 ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ?, ?
 ) ";
-	$dbi->execute($query,$hids_id,$last_cid,$sig_id,$description,1,$level,&fixdate2base($date),&ossec_aton($srcip),&ossec_aton($dstip),undef,undef,undef);
-&printlog ("ACID_EVENT: ($query,$hids_id,$last_cid,$sig_id,$description,1,$level,&fixdate2base($date),&ossec_aton($srcip),&ossec_aton($dstip),undef,undef)\n");
+	$dbi->execute($query,$hids_id,$last_cid,$sig_id,$description,1,$level,&fixdate2base($date),$srcip,$dstip,undef,undef,undef);
+&printlog ("ACID_EVENT: ($query,$hids_id,$last_cid,$sig_id,$description,1,$level,&fixdate2base($date),$srcip,$dstip,undef,undef)\n");
 $dbi->{sth}->finish;
 
 #########

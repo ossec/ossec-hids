@@ -39,4 +39,13 @@
     <description>Multiple attempts of spam.</description>
     <group>multiple_spam,</group>
   </rule>
+
+  <rule id="3752" level="0">
+      <if_sid>1002</if_sid>
+      <program_name>update.bad.phishing.sites</program_name>
+      <match>^Phishing bad sites list updated</match>
+      <description>ignore</description>
+  </rule>
+
 </group> <!-- SYSLOG,MAILSCANNER -->
+

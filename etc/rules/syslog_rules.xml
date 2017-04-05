@@ -18,7 +18,7 @@
 <!-- Bad words matching. Any log containing these messages
   -  will be triggered.
   -->
-<var name="BAD_WORDS">core_dumped|failure|error|attack|bad |illegal |denied|refused|unauthorized|fatal|failed|Segmentation Fault|Corrupted</var>
+<var name="BAD_WORDS">core_dumped|failure|error|attack| bad |illegal |denied|refused|unauthorized|fatal|failed|Segmentation Fault|Corrupted</var>
 
 
 <!-- Syslog errors. -->
@@ -71,6 +71,12 @@
     <match>terminated without error|can't verify hostname: getaddrinfo|</match>
     <match>PPM exceeds tolerance</match>
     <description>Ignoring known false positives on rule 1002..</description>
+  </rule>
+
+  <rule id="1010" level="5">
+    <match>segfault at </match>
+    <description>Process segfaulted.</description>
+    <group>service_availability,</group>
   </rule>
 </group> <!-- SYSLOG,ERRORS -->
 
@@ -474,6 +480,13 @@
     <match>^changed user</match>
     <description>Information from the user was changed</description>
   </rule>
+
+  <rule id="5905" level="0">
+    <program_name>useradd</program_name>
+    <match>failed adding user </match>
+    <description>useradd failed.</description>
+  </rule>
+
 </group> <!-- SYSLOG,ADDUSER -->
 
 
@@ -485,10 +498,10 @@
     <description>Initial group for sudo messages</description>
   </rule>
   
-  <rule id="5401" level="10">
+  <rule id="5401" level="5">
     <if_sid>5400</if_sid>
-    <match>3 incorrect password attempts</match>
-    <description>Three failed attempts to run sudo</description>
+    <match>incorrect password attempt</match>
+    <description>Failed attempt to run sudo</description>
   </rule>
 
   <rule id="5402" level="3">
@@ -502,7 +515,20 @@
     <options>alert_by_email</options>
     <if_fts></if_fts>
     <description>First time user executed sudo.</description>
-  </rule>                  
+  </rule>
+
+  <rule id="5404" level="10">
+    <if_sid>5401</if_sid>
+    <match>3 incorrect password attempts</match>
+    <description>Three failed attempts to run sudo</description>
+  </rule>
+
+  <rule id="5405" level="5">
+    <if_sid>5400</if_sid>
+    <match>user NOT in sudoers</match>
+    <description>Unauthorized user attempted to use sudo.</description>
+  </rule>
+
 </group> <!-- SYSLOG, SUDO -->
 
 
@@ -635,7 +661,7 @@
   <rule id="2937" level="12">
     <if_sid>2935</if_sid>
     <status>FAILED</status>
-    <description>Posible Disk failure. SCSI controller error.</description>
+    <description>Possible Disk failure. SCSI controller error.</description>
   </rule>
 
   <rule id="2938" level="12">

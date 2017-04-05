@@ -172,6 +172,13 @@
   <fts>name, user, location</fts>
 </decoder>
 
+<decoder name="ssh-kbd">
+  <parent>sshd</parent>
+  <prematch offset="after_parent">^Postponed keyboard-interactive|^Failed keyboard-interactive</prematch>
+  <regex offset="after_prematch"> user (\S+) from (\S+) port (\d+) </regex>
+  <order>user, srcip, srcport</order>
+</decoder>
+
 <decoder name="ssh-invfailed">
   <parent>sshd</parent>
   <prematch>^Failed \S+ for invalid user|^Failed \S+ for illegal user</prematch>
@@ -182,7 +189,7 @@
 <decoder name="ssh-failed">
   <parent>sshd</parent>
   <prematch>^Failed \S+ </prematch>
-  <regex offset="after_prematch">^for (\S+) from (\S+) port \d+ \w+$</regex>
+  <regex offset="after_prematch">^for (\S+) from (\S+) port \d+</regex>
   <order>user, srcip</order>
 </decoder>
 
@@ -190,6 +197,13 @@
   <parent>sshd</parent>
   <prematch>^error: PAM: Authentication \w+ </prematch>
   <regex offset="after_prematch">^for (\S+) from (\S+)$</regex>
+  <order>user, srcip</order>
+</decoder>
+
+<decoder name="ssh-pam-error">
+  <parent>sshd</parent>
+  <prematch>^error: PAM: </prematch>
+  <regex offset="after_prematch">user (\S+) from (\S+)</regex>
   <order>user, srcip</order>
 </decoder>
 
@@ -265,6 +279,36 @@
   <order>user</order>
 </decoder>
 
+<decoder name="sshd-negotiate">
+  <parent>sshd</parent>
+  <prematch offset="after_parent">fatal: Unable to negotiate with </prematch>
+  <regex offset="after_prematch">^(\S+) port (\d+): |^(\S+): </regex>
+  <order>srcip, srcport</order>
+</decoder>
+
+<decoder name="sshd-pam-host-user">
+  <parent>sshd</parent>
+  <prematch>rhost=\S+\s+user=\S+</prematch>
+  <regex>rhost=(\S+)\s+user=(\S+)</regex>
+  <order>srcip, user</order>
+</decoder>
+
+<!--
+<decoder name="sshd-invalid">
+  <parent>sshd</parent>
+  <prematch>^input_user_auth_request: </prematch>
+  <regex offset="after_prematch"> user (\S+)</regex>
+  <order>user</order>
+</decoder>
+-->
+
+<decoder name="sshd-exceed">
+  <parent>sshd</parent>
+  <prematch> exceeded for </prematch>
+  <regex offset="after_prematch">^(\S+) from (\S+) port (\d+) </regex>
+  <order>user, srcip, srcport</order>
+</decoder>
+
 
 <!-- Dropbear rules -->
 <decoder name="dropbear">
@@ -321,7 +365,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="telnetd-ip">
   <parent>telnetd</parent>
-  <regex>from (\d+.\d+.\d+.\d+)$</regex>
+  <regex>from (\S+)$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -386,7 +430,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="smbd-ip">
   <parent>smbd</parent>
-  <regex> from \((\d+.\d+.\d+.\d+)\)</regex>
+  <regex> from \((\S+)\)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -420,12 +464,12 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="sudo">
   <program_name>^sudo</program_name>
-  <regex>^\s+(\S+)\s:</regex>
-  <order>user</order>
-  <fts>name,user,location</fts>
+  <regex>^\s*(\S+)\s:\sTTY=\S+\s;\sPWD=(\S+)\s;\sUSER=(\S+)\s;\sCOMMAND=(\.+)$|</regex>
+  <regex>^\s*(\S+)\s:\sTTY=\S+\s;\sPWD=(\S+)\s;\sUSER=(\S+)\s;\sTSID=\S+\s;\sCOMMAND=(\.+)$</regex>
+  <order>dstuser,url,srcuser,status</order>
+  <fts>name,dstuser,location</fts>
   <ftscomment>First time user executed the sudo command</ftscomment>
 </decoder>
-
 
 <!-- Su decoder.
   -  Will extract the username.
@@ -460,18 +504,19 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>user</order>
 </decoder>
 
-<decoder name="su-detail2">
-  <parent>su</parent>
-  <regex>^BAD SU (\S+) to (\S+) on|</regex>
-  <regex>^failed: \S+ changing from (\S+) to (\S+)|</regex>
-  <regex>^\S \S+ (\S+)\p(\S+)$|^(\S+) to (\S+) on </regex>
+<decoder name="su">
+  <prematch>^SU \S+ \S+ </prematch>
+  <regex offset="after_prematch">^\S \S+ (\S+)-(\S+)$</regex>
   <order>srcuser, dstuser</order>
   <fts>name, srcuser, location</fts>
 </decoder>
 
-<decoder name="su">
-  <prematch>^SU \S+ \S+ </prematch>
-  <regex offset="after_prematch">^\S \S+ (\S+)-(\S+)$</regex>
+<decoder name="su-detail2">
+  <parent>su</parent>
+  <prematch> </prematch>
+  <regex>^BAD SU (\S+) to (\S+) on|</regex>
+  <regex>^failed: \S+ changing from (\S+) to (\S+)|</regex>
+  <regex>^\S \S+ (\S+)\p(\S+)$|^(\S+) to (\S+) on </regex>
   <order>srcuser, dstuser</order>
   <fts>name, srcuser, location</fts>
 </decoder>
@@ -503,7 +548,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="proftpd-ip">
   <parent>proftpd</parent>
-  <regex>^\S+ \(\S+[(\S+)]\)|^\S+ \(\S+[::ffff:(\S+)]\)</regex>
+  <regex>^\S+ \(\S+[(\S+)]\)|^\S+ \(\S+[(\S+)]\)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -568,14 +613,14 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   
 <decoder name="vsftpd">
   <prematch>^\w\w\w \w\w\w\s+\d+ \S+ \d+ [pid \d+] </prematch>
-  <regex offset="after_prematch">Client "(\d+.\d+.\d+.\d+)"$</regex>
+  <regex offset="after_prematch">Client "(\S+)"$</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="vsftpd">
   <program_name>^vsftpd</program_name>
   <prematch>^\w\w\w \w\w\w\s+\d+ \S+ \d+ [pid \d+] </prematch>
-  <regex offset="after_prematch">Client "(\d+.\d+.\d+.\d+)"$</regex>
+  <regex offset="after_prematch">Client "(\S+)"$</regex>
   <order>srcip</order>
 </decoder>
 -->
@@ -596,26 +641,26 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="vsftpd_login">
   <parent>vsftpd</parent>
   <prematch offset="after_parent"> LOGIN:</prematch>
-  <regex offset="after_parent">[(\S+)] (\S+ LOGIN): Client "(\d+.\d+.\d+.\d+)"$</regex>
+  <regex offset="after_parent">[(\S+)] (\S+ LOGIN): Client "(\S+\w)"$</regex>
   <order>user,status,srcip</order>
 </decoder>
 
 <decoder name="vsftpd_connect">
   <parent>vsftpd</parent>
   <prematch offset="after_parent">^CONNECT:</prematch>
-  <regex offset="after_parent">(CONNECT): Client "(\d+.\d+.\d+.\d+)"$</regex>
+  <regex offset="after_parent">(CONNECT): Client "(\S+\w+)"$</regex>
   <order>action,srcip</order>
 </decoder>
 
 <decoder name="vsftpd_cmd">
   <parent>vsftpd</parent>
-  <regex offset="after_parent">[(\S+)] (OK \S+): Client "(\d+.\d+.\d+.\d+)", "(\.+)"\.*</regex>
+  <regex offset="after_parent">[(\S+)] (OK \S+): Client "(\S+)", "(\.+)"\.*</regex>
   <order>user,status,srcip,url</order>
 </decoder>
 
 <decoder name="vsftpd_default">
   <parent>vsftpd</parent>
-  <regex offset="after_parent">Client "(\d+.\d+.\d+.\d+)"$</regex>
+  <regex offset="after_parent">Client "(\S+\w)"$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -636,20 +681,20 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <prematch>^Failed authentication from: \S+ |</prematch>
   <prematch>^repeated login failures from </prematch>
   <!--<regex offset="after_prematch">(\S+)</regex>-->
-  <regex offset="after_prematch">^\S+ [(\d+.\d+.\d+.\d+)]$|^(\S+)</regex>
+  <regex offset="after_prematch">^\S+ [(\S+)]$|^(\S+)</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="ftpd-refused">
   <parent>ftpd</parent>
   <prematch>^FTP LOGIN REFUSED </prematch>
-  <regex offset="after_prematch">[(\d+.\d+.\d+.\d+)]$</regex>
+  <regex offset="after_prematch">[(\S+)]$</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="ftpd-ip">
   <parent>ftpd</parent>
-  <regex>from (\d+.\d+.\d+.\d+)$</regex>
+  <regex>from (\S+)$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -678,7 +723,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="arpwatch-new">
   <parent>arpwatch</parent>
   <prematch>^new station |^bogon </prematch>
-  <regex offset="after_prematch">^(\d+.\d+.\d+.\d+) (\S+)</regex>
+  <regex offset="after_prematch">^(\S+) (\S+)</regex>
   <order>srcip, extra_data</order>
   <fts>name, srcip, extra_data</fts>
 </decoder>
@@ -722,7 +767,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="imapd">
   <program_name>^imapd</program_name>
-  <regex offset="after_prematch">user=(\S+) \.+ [(\d+.\d+.\d+.\d+)]$</regex>
+  <regex offset="after_prematch">user=(\S+) \.+ [(\S+)]$</regex>    
   <order>user,srcip</order>
 </decoder>
 
@@ -730,10 +775,10 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <!-- Vpopmail decoder. (by Ceg Ryan <cegryan ( at ) gmail.com>)
   - Examples:
-  - vpopmail[32485]: vchkpw-pop3: password fail abc@xxx.com:x.x.x.x
-  - vpopmail[32485]: vchkpw-2110 password fail abc@xxx.com:x.x.x.x
+  - vpopmail[32485]: vchkpw-pop3: password fail abc@example.com:x.x.x.x
+  - vpopmail[32485]: vchkpw-2110 password fail abc@example.com:x.x.x.x
   -                  vchkpw-pop3: password fail (pass: 'test') user@my_domain:1.2.3.4
-  - vpopmail[2100]: vchkpw-pop3: vpopmail user not found abc@xxx.com:x.x.x.x
+  - vpopmail[2100]: vchkpw-pop3: vpopmail user not found abc@example.com:x.x.x.x
   - vpopmail[4162]: vchkpw-pop3: vpopmail user not found support@:69.3.64.3
   -->
 <decoder name="vpopmail">
@@ -743,28 +788,28 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="vpopmail-fail">
   <parent>vpopmail</parent>
   <prematch>^vchkpw-\S+: password fail</prematch>
-  <regex offset="after_prematch"> (\S+)@\S+:(\d+.\d+.\d+.\d+)$</regex>
+  <regex offset="after_prematch"> (\S+)@\S+:(\S+)$</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="vpopmail-notfound">
   <parent>vpopmail</parent>
   <prematch>^vchkpw-\S+: vpopmail user not </prematch>
-  <regex offset="after_prematch">^found (\S+):(\d+.\d+.\d+.\d+)$</regex>
+  <regex offset="after_prematch">^found (\S+):(\S+)$</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="vpopmail-empty">
   <parent>vpopmail</parent>
   <prematch>^vchkpw-\S+: null password </prematch>
-  <regex offset="after_prematch">^given (\S+):(\d+.\d+.\d+.\d+)$</regex>
+  <regex offset="after_prematch">^given (\S+):(\S+)$</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="vpopmail-success">
   <parent>vpopmail</parent>
   <prematch>^vchkpw-\S+: \(\S+\) login </prematch>
-  <regex offset="after_prematch">^success (\S+):(\d+.\d+.\d+.\d+)$</regex>
+  <regex offset="after_prematch">^success (\S+):(\S+)$</regex>
   <order>user, srcip</order>
 </decoder>
 
@@ -781,7 +826,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>vm-pop3d</parent>
   <prematch>^User '</prematch>
   <regex offset="after_prematch">^(\S+)' - \w+ auth, </regex>
-  <regex>from=(\d+.\d+.\d+.\d+)$</regex>
+  <regex>from=(\S+)$</regex>
   <order>user, srcip</order>
 </decoder>
 
@@ -802,13 +847,13 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="courier-login">
   <parent>courier</parent>
   <prematch>^LOGIN, </prematch>
-  <regex offset="after_prematch">^user=(\S+), ip=[(\S+\d)]$</regex>
+  <regex offset="after_prematch">^user=(\S+), ip=[(\S+)]$</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="courier-generic">
   <parent>courier</parent>
-  <regex>, ip=[(\S+\d)]$|, ip=[::ffff:(\S+\d)]$</regex>
+  <regex>, ip=[(\S+)]$|, ip=[(\S+)]$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -830,6 +875,10 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - dovecot: Jun 23 15:04:06 Info: IMAP(username): Disconnected: Logged out bytes=59/566
   - dovecot: May 31 09:43:57 Info: pop3-login: Aborted login (1 authentication attempts): user=<username>, method=PLAIN, rip=::ffff:1.2.3.4, lip=::ffff:1.2.3.5, secured
   - Jan 30 09:37:55 hostname dovecot: pop3-login: Aborted login: user=<username>, method=PLAIN, rip=::ffff:1.2.3.4, lip=::ffff:1.2.3.5
+  - Dec 19 17:40:57 ny dovecot: pop3-login: Disconnected (auth failed, 3 attempts in 51 secs): user=<thousands>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203, session=<tlMSaQZE/JttycjJ>
+  - Dec 19 17:30:39 ny dovecot: imap-login: Disconnected: Inactivity (auth failed, 7 attempts in 176 secs): user=<32>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203,session=<7QTLPAZEXrhtycjJ>
+  - Dec 19 17:38:54 ny dovecot: pop3-login: Disconnected: Inactivity during authentication (auth failed, 13 attempts in 179 secs): user=<thousands>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203, session=<feETWgZEzJltycjJ>
+  - Dec 19 17:20:08 ny dovecot: imap-login: Aborted login (auth failed, 2 attempts in 18 secs): user=<test>, method=PLAIN, rip=109.201.200.201, lip=67.205.141.203, session=<i8uMIAZEDrdtycjJ>
 -->
 
 <decoder name="dovecot">
@@ -839,31 +888,54 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="dovecot-success">
   <parent>dovecot</parent>
   <prematch offset="after_parent">^\w\w\w\w-login: Login: </prematch>
-  <regex offset="after_prematch">^user=\p(\S+)\p, method=\S+, rip=\S*(\d+.\d+.\d+.\d+), lip=\S*(\d+.\d+.\d+.\d+), (\S*)$</regex>
+  <regex offset="after_prematch">^user=\p(\S+)\p, method=\S+, rip=(\S+), lip=(\S+), mpid=\S+, (\S*)$</regex>
   <order>user, srcip, dstip, protocol</order>
 </decoder>
 
 <decoder name="dovecot-aborted">
   <parent>dovecot</parent>
   <prematch offset="after_parent">^\w\w\w\w-login: Aborted login</prematch>
-  <regex offset="after_prematch">: user=\p(\S+)\p, method=\S+, rip=::ffff:(\d+.\d+.\d+.\d+), lip=::ffff:(\d+.\d+.\d+.\d+)$</regex>
-  <order>user, srcip, dstip</order>
-</decoder>
+  <regex offset="after_prematch">: user=\p(\S+)\p, method=\S+, rip=(\S+), lip=(\S+), (\S*)$</regex>
+  <order>user, srcip, dstip, protocol</order>
+</decoder> 
 
 <decoder name="dovecot-fail">
   <parent>dovecot</parent>
   <prematch offset="after_parent">^auth\(default\)|auth-worker\(default\)</prematch>
-  <regex offset="after_prematch">^: \S+\((\S+),(\d+.\d+.\d+.\d+)\)</regex>
+  <regex offset="after_prematch">^: \S+\((\S+),(\S+)\)</regex>
   <order>user, srcip</order>
+</decoder>
+
+<decoder name="dovecot-authfailed">
+  <parent>dovecot</parent>
+  <prematch offset="after_parent">^\w\w\w\w-login:</prematch>
+  <regex offset="after_prematch">\(auth failed, \d+ attempts in \d+ secs\): user=\p(\S+)\p, method=\w+, rip=(\S+), lip=(\S+)</regex>
+  <order>user,srcip,dstip</order>
 </decoder>
 
 <decoder name="dovecot-disconnect">
   <parent>dovecot</parent>
   <prematch offset="after_parent">^\w\w\w\w-login: Disconnected: </prematch>
-  <regex offset="after_prematch">^rip=(\S+), lip=(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">^rip=(\S+), lip=(\S+)</regex>
   <order>srcip, dstip</order>
 </decoder>
 
+<decoder name="dovecot-info">
+  <program_name>^Info$|^Warn$</program_name>
+</decoder>
+
+<decoder name="imap-login-login">
+  <parent>dovecot-info</parent>
+  <prematch>imap-login</prematch>
+  <regex offset="after_parent">Login: user=(\S+), method=\.+, rip=(\S+), lip=(\S+) </regex>
+  <order>user, srcip, dstip</order>
+</decoder>
+
+<decoder name="dovecot-info-auth">
+  <parent>dovecot-info</parent>
+  <regex offset="after_parent">auth\(\.+\): \S+\((\S+),(\S+)\):</regex>
+  <order>user, srcip</order>
+</decoder>
 
 
 <!-- Named decoder.
@@ -889,20 +961,20 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="named_client">
   <parent>named</parent>
   <prematch>^client </prematch>
-  <regex offset="after_prematch">^(\d+.\d+.\d+.\d+)#</regex>
+  <regex offset="after_prematch">^(\S+)#</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="named_from">
-  <parent>named</parent>
-  <regex offset="after_parent"> from [(\d+.\d+.\d+.\d+)]</regex>
+  <parent>named</parent>  
+  <regex offset="after_parent"> from [(\S+)]</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="named-master">
   <parent>named</parent>
   <prematch> for master</prematch>
-  <regex>for master (\d+.\d+.\d+.\d+):(\d+) \S+ \(source (\d+.\d+.\d+.\d+)#d+\)$</regex>
+  <regex>for master (\S+):(\d+) \S+ \(source (\S+)#d+\)$</regex>
   <order>dstip,dstport,srcip</order>
 </decoder>
 
@@ -924,14 +996,14 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <use_own_name>true</use_own_name>
   <parent>postfix</parent>
   <prematch>^NOQUEUE: reject: \w\w\w\w from </prematch>
-  <regex offset="after_prematch">[(\d+.\d+.\d+.\d+)]: (\d+) </regex>
+  <regex offset="after_prematch">[(\S+)]: (\d+) |[(\S+)]:(\d+): </regex>
   <order>srcip,id</order>
 </decoder>
 
 <decoder name="postfix-sasl">
   <parent>postfix</parent>
   <prematch>^warning: \S+: SASL </prematch>
-  <regex>^warning: \S+[(\d+.\d+.\d+.\d+)]:</regex>
+  <regex>^warning: \S+[(\S+)]:</regex>
   <order>srcip</order>
 </decoder>
 
@@ -955,21 +1027,21 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="sendmail-pre-greeting">
   <parent>sendmail-reject</parent>
   <prematch>^\S+: rejecting commands from</prematch>
-  <regex offset="after_prematch">^ \S+ [(\d+.\d+.\d+.\d+)]</regex>
+  <regex offset="after_prematch">^ \S+ [(\S+)]</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="sendmail-reject-nodns">
   <parent>sendmail-reject</parent>
   <prematch>relay=[</prematch>
-  <regex offset="after_prematch">^(\d+.\d+.\d+.\d+)]</regex>
+  <regex offset="after_prematch">^(\S+)]</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="sendmail-reject-dns">
   <parent>sendmail-reject</parent>
   <prematch>relay=\S+ [</prematch>
-  <regex offset="after_prematch">^(\d+.\d+.\d+.\d+)]</regex>
+  <regex offset="after_prematch">^(\S+)]</regex>
   <order>srcip</order>
 </decoder>
 
@@ -990,8 +1062,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <program_name>^smf-sav</program_name>
   <prematch>^sender check failed|</prematch>
   <prematch>^sender check tempfailed</prematch>
-  <regex offset="after_prematch">^ \(cached\): \S+, (\d+.\d+.\d+.\d+),|</regex>
-  <regex>^: \S+, (\d+.\d+.\d+.\d+),</regex>
+  <regex offset="after_prematch">^ \(cached\): \S+, (\S+),|</regex>
+  <regex>^: \S+, (\S+),</regex>
   <order>srcip</order>
 </decoder>
 
@@ -1017,7 +1089,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="mailscanner-ip">
   <parent>mailscanner</parent>
   <prematch>^Message \S+ from </prematch>
-  <regex offset="after_prematch">^(\d+.\d+.\d+.\d+) \S+ to \S+ is (\w+)</regex>
+  <regex offset="after_prematch">^(\S+) \S+ to \S+ is (\w+)</regex>
   <order>srcip, action</order>
 </decoder>
 
@@ -1025,7 +1097,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <!-- OpenBSD smtpd decoders -->
 
 <decoder name="smtpd">
-  <program_name>smtpd</program_name>
+  <program_name>^smtpd</program_name>
 </decoder>
 
 <decoder name="smtpd-client">
@@ -1042,6 +1114,18 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <prematch offset="after_parent">^smtp-in: </prematch>
+  <regex offset="after_prematch">^(\S+) </regex>
+  <order>status</order>
+</decoder>
+
+<decoder name="smtpd-in">
+  <parent>smtpd</parent>
+  <regex> => (\d+) </regex>
+  <order>action</order>
+</decoder>
 
 
 <!-- Iptables decoder.
@@ -1137,8 +1221,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="ipfilter">
    <type>firewall</type>
    <program_name>^ipmon</program_name>
-   <regex> (\w) (\d+.\d+.\d+.\d+),(\d+) -> </regex>
-   <regex>(\d+.\d+.\d+.\d+),(\d+) PR (\w+) </regex>
+   <regex> (\w) (\S+),(\d+) -> </regex>
+   <regex>(\S+),(\d+) PR (\w+) </regex>
    <order>action,srcip,srcport,dstip,dstport,protocol</order>
 </decoder>
 
@@ -1154,8 +1238,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="aix-ipsec">
    <type>firewall</type>
    <program_name>^ipsec_logd</program_name>
-   <regex> R:(\w)  \w:\S+ S:(\d+.\d+.\d+.\d+) </regex>
-   <regex>D:(\d+.\d+.\d+.\d+) P:(\S+) SP:(\d+) DP:(\d+) </regex>
+   <regex> R:(\w)  \w:\S+ S:(\S+) </regex>
+   <regex>D:(\S+) P:(\S+) SP:(\d+) DP:(\d+) </regex>
    <order>action,srcip,dstip,protocol,srcport,dstport</order>
 </decoder>
 
@@ -1224,10 +1308,11 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="netscreenfw-critical">
   <parent>netscreenfw</parent>
   <prematch offset="after_parent">system-critical-\.+ from |</prematch>
-  <prematch>system-alert-\.+ from </prematch>
+  <prematch>system-alert-\.+ from |</prematch>
+  <prematch>system-emergency-\.+ From </prematch>
 
   <regex offset="after_parent">system-(\w+)-(\d+): \.+ </regex>
-  <regex>from\.+(\d+.\d+.\d+.\d+)</regex>
+  <regex>from\.+(\S+)</regex>
   <order>action, id, srcip</order>
 </decoder>
 
@@ -1287,7 +1372,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>pix</parent>
   <type>firewall</type>
   <prematch offset="after_parent">^3-710003|^7-710002|^7-710005</prematch>
-  <regex offset="after_parent">^(\S+): (\S+) \w+ (\w+)\.+from </regex>
+  <regex offset="after_parent">^(\S+): (\S+) \w+ (\w+) \.+from </regex>
   <regex>(\S+)/(\S+) to \w+:(\S+)/(\S+)</regex>
   <order>id, protocol, action, srcip, srcport, dstip, dstport</order>
 </decoder>
@@ -1315,7 +1400,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <type>firewall</type>
   <prematch offset="after_parent">^2-106006|^2-106007</prematch>
   <regex offset="after_parent">^(\S+): (\w+) \S+ (\w+) from </regex>
-  <regex>(\d+.\d+.\d+.\d+)/(\d+) to (\d+.\d+.\d+.\d+)/(\d+) </regex>
+  <regex>(\S+)/(\d+) to (\S+)/(\d+) </regex>
   <order>id, action, protocol, srcip, srcport, dstip, dstport</order>
 </decoder>
 
@@ -1349,9 +1434,9 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="pix-url-success">
   <parent>pix</parent>
   <prematch offset="after_parent">^5-304001: </prematch>
-  <regex offset="after_parent">^(\S+): (\d+.\d+.\d+.\d+) Accessed URL </regex>
-  <regex>(\d+.\d+.\d+.\d+):(http\w*://\.+)|</regex>
-  <regex>^(\S+): (\d+.\d+.\d+.\d+) Accessed URL (\d+.\d+.\d+.\d+):</regex>
+  <regex offset="after_parent">^(\S+): (\S+) Accessed URL </regex>
+  <regex>(\S+):(http\w*://\.+)|</regex>
+  <regex>^(\S+): (\S+) Accessed URL (\S+):</regex>
   <order>id, srcip, dstip, url</order>
 </decoder>
 
@@ -1359,7 +1444,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>pix</parent>
   <prematch offset="after_parent">^5-304002: </prematch>
   <regex offset="after_parent">^(\S+): Access (denied) URL (http\w*://\.+) </regex>
-  <regex>SRC (\d+.\d+.\d+.\d+) DEST (\d+.\d+.\d+.\d+) on interface</regex>
+  <regex>SRC (\S+) DEST (\S+) on interface</regex>  
   <order>id, action, url, srcip, dstip</order>
 </decoder>
 
@@ -1368,14 +1453,14 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <prematch offset="after_parent">^2-106012: |^2-106017: |</prematch>
   <prematch>^2-106020|^1-106021|^1-106022|</prematch>
   <prematch>^4-4000</prematch>
-  <regex offset="after_parent">^(\S+): \.+ from (\d+.\d+.\d+.\d+) </regex>
+  <regex offset="after_parent">^(\S+): \.+ from (\S+) </regex>
   <order>id, srcip</order>
 </decoder>
 
 <decoder name="pix-srcip">
   <parent>pix</parent>
   <prematch offset="after_parent">^6-605004|^6-308001|^6-605005</prematch>
-  <regex offset="after_parent">^(\S+): \.+ (\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_parent">^(\S+): \.+ (\S+)</regex>
   <order>id, srcip</order>
 </decoder>
 
@@ -1396,7 +1481,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="cisco-vpn-concentrator">
   <prematch>^\d+ \d\d/\d\d/\d\d\d\d \S+ SEV=\d </prematch>
-  <regex offset="after_prematch">^(\S+) RPT=\d+ (\d+.\d+.\d+.\d+) </regex>
+  <regex offset="after_prematch">^(\S+) RPT=\d+ (\S+) </regex>
   <order>id, srcip</order>
 </decoder>
 
@@ -1433,9 +1518,9 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
    <parent>snort</parent>
    <type>ids</type>
    <prematch>^[**] |^[\d+:\d+:\d+] </prematch>
-   <regex>^[**] [(\d+:\d+:\d+)] \.+ (\d+.\d+.\d+.\d+)\p*\d* -> </regex>
-   <regex>(\d+.\d+.\d+.\d+)|^[(\d+:\d+:\d+)] \.+ </regex>
-   <regex>(\d+.\d+.\d+.\d+)\p*\d* -> (\d+.\d+.\d+.\d+)</regex>
+   <regex>^[**] [(\d+:\d+:\d+)] \.+ (\S+)\p*\d* -> </regex>
+   <regex>(\S+)|^[(\d+:\d+:\d+)] \.+ </regex>
+   <regex>(\S+)\p*\d* -> (\S+)</regex>
    <order>id,srcip,dstip</order>
    <fts>name,id,srcip,dstip</fts>
 </decoder>
@@ -1474,7 +1559,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="suhosin">
   <program_name>^suhosin</program_name>
   <type>ids</type>
-  <regex>^ALERT - (\.+) \(attacker '(\d+.\d+.\d+.\d+)', </regex>
+  <regex>^ALERT - (\.+) \(attacker '(\S+)', </regex>
   <order>id, srcip</order>
   <fts>name, location, id</fts>
 </decoder>
@@ -1491,7 +1576,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
    <type>ids</type>
    <prematch>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\|</prematch>
    <regex offset="after_prematch">^\S+\|(\S+)\|</regex>
-   <regex>(\d+.\d+.\d+.\d+)\|(\d+.\d+.\d+.\d+)\|</regex>
+   <regex>(\S+)\|(\S+)\|</regex>
    <order>id, srcip, dstip</order>
    <fts>name, id, srcip, dstip</fts>
 </decoder>
@@ -1511,15 +1596,15 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="horde_imp_success">
   <parent>horde_imp</parent>
   <prematch offset="after_parent">^Login success </prematch>
-  <regex offset="after_prematch">^for (\S+) [(\d+.\d+.\d+.\d+)] </regex>
+  <regex offset="after_prematch">^for (\S+) [(\S+)] </regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="horde_imp_failed">
   <parent>horde_imp</parent>
   <prematch offset="after_parent">^FAILED LOGIN</prematch>
-  <regex offset="after_prematch">^ (\d+.\d+.\d+.\d+) to \S+ as (\S+) </regex>
-  <order>srcip, user</order>
+  <regex offset="after_prematch">^ (\S+) to \S+ as (\S+) </regex>
+  <order>srcip, user</order> 
 </decoder>
 
 
@@ -1533,7 +1618,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="wordpress">
   <program_name>^WPsyslog</program_name>
   <prematch>^[</prematch>
-  <regex offset="after_prematch">^(\d+.\d+.\d+.\d+) </regex>
+  <regex offset="after_prematch">^(\S+) </regex>
   <order>srcip</order>
 </decoder>
 
@@ -1556,7 +1641,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="roundcube-success">
   <parent>roundcube</parent>
   <prematch>^: Successful login for </prematch>
-  <regex offset="after_prematch">^(\S+) \(id \d+\) from (\d+.\d+.\d+.\d+)$</regex>
+  <regex offset="after_prematch">^(\S+) \(id \d+\) from (\S+)$</regex>
   <order>user, srcip</order>
 </decoder>
 
@@ -1570,56 +1655,63 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 
 <!-- Apache decoder.
+  - Updated by jesus@wazuh.com. 2016/02/17
   - Will extract the srcip
   - Examples:
-  - [error] [client 80.230.208.105] Directory index forbidden by rule: /home/
-  - [error] [client 64.94.163.159] Client sent malformed Host header
-  - [error] [client 66.31.142.16] File does not exist: /var/www/html/default.ida
-  - [notice] Apache configured
-  - httpd[18660]: [error] [client 12.34.56.78] File does not exist: /usr/local/htdocs/cache
-  - httpd[23745]: [error] [client 12.34.56.78] PHP Notice:
-  - [Tue Sep 30 11:30:13.262255 2014] [core:error] [pid 20101] [client 99.47.227.95:34567] AH00037: Symbolic link not allowed or link target not accessible: /usr/share/awstats/icon/mime/document.png
-  - [Tue Sep 30 12:11:21.258612 2014] [ssl:error] [pid 30473] AH02032: Hostname www.example.com provided via SNI and hostname ssl://www.example.com provided via HTTP are different
-  - [Tue Sep 30 12:24:22.891366 2014] [proxy:warn] [pid 2331] [client 77.127.180.111:54082] AH01136: Unescaped URL path matched ProxyPass; ignoring unsafe nocanon, referer: http://www.easylinker.co.il/he/links.aspx?user=bguyb
-  - [Tue Sep 30 14:25:44.895897 2014] [authz_core:error] [pid 31858] [client 99.47.227.95:38870] AH01630: client denied by server configuration: /var/www/example.com/docroot/
-  - [Thu Oct 23 15:17:55.926067 2014] [ssl:info] [pid 18838] [client 36.226.119.49:2359] AH02008: SSL library error 1 in handshake (server www.example.com:443)
-  - [Thu Oct 23 15:17:55.926123 2014] [ssl:info] [pid 18838] SSL Library Error: error:1407609B:SSL routines:SSL23_GET_CLIENT_HELLO:https proxy request -- speaking HTTP to HTTPS port!?
-  - [Sun Nov 23 18:49:01.713508 2014] [:error] [pid 15816] [client 141.8.147.9:51507] PHP Notice:  A non well formed numeric value encountered in /path/to/file.php on line 123
-  -->
+  - Without ID: Will extract the srcip and srcport (when it is available)
+      - [error] [client 80.230.208.105] Directory index forbidden by rule: /home/
+      - [error] [client 64.94.163.159] Client sent malformed Host header
+      - [error] [client 66.31.142.16] File does not exist: /var/www/html/default.ida
+      - [Sun Nov 23 18:49:01.713508 2014] [:error] [pid 15816] [client 141.8.147.9:51507] PHP Notice:  A non well formed numeric value encountered in /path/to/file.php on line 123
+      - Feb 17 18:00:00 myhost httpd[18660]: [error] [client 12.34.56.78] File does not exist: /usr/local/htdocs/cache
+      - Feb 17 18:00:00 myhost httpd[23745]: [error] [client 12.34.56.78] PHP Notice:
+  - With IP + ID: Will extract the srcip, id, and srcport (when it is available)
+      - [Tue Sep 30 11:30:13.262255 2014] [core:error] [pid 20101] [client 99.47.227.95:34567] AH00037: Symbolic link not allowed or link target not accessible: /usr/share/awstats/icon/mime/document.png
+      - [Tue Sep 30 12:24:22.891366 2014] [proxy:warn] [pid 2331] [client 77.127.180.111:54082] AH01136: Unescaped URL path matched ProxyPass; ignoring unsafe nocanon, referer: http://www.easylinker.co.il/he/links.aspx?user=bguyb
+      - [Tue Sep 30 14:25:44.895897 2014] [authz_core:error] [pid 31858] [client 99.47.227.95:38870] AH01630: client denied by server configuration: /var/www/example.com/docroot/
+      - [Thu Oct 23 15:17:55.926067 2014] [ssl:info] [pid 18838] [client 36.226.119.49:2359] AH02008: SSL library error 1 in handshake (server www.example.com:443)
+      - ModSecurity
+        - [Tue Feb 16 04:02:21.018764 2016] [:error] [pid 3223] [client 10.10.10.10] ModSecurity: Access denied with code 403 (phase 2). Text...
+        - [Tue Feb 16 04:02:21.018764 2016] [:error] [pid 3223] [client 10.10.10.10:5555] ModSecurity: Access denied with code 403 (phase 2). Text...
+  - Others
+      - [notice] Apache configured
+      - [Thu Oct 23 15:17:55.926123 2014] [ssl:info] [pid 18838] SSL Library Error: error:1407609B:SSL routines:SSL23_GET_CLIENT_HELLO:https proxy request -- speaking HTTP to HTTPS port!?
+      - [Tue Sep 30 12:11:21.258612 2014] [ssl:error] [pid 30473] AH02032: Hostname www.example.com provided via SNI and hostname ssl://www.example.com provided via HTTP are different
+-->
+
 <decoder name="apache-errorlog">
-  <program_name>^httpd</program_name>
+    <program_name>^httpd</program_name>
 </decoder>
 
 <decoder name="apache-errorlog">
-  <prematch>^[warn] |^[notice] |^[error] </prematch>
+    <prematch>^[warn] |^[notice] |^[error] </prematch>
 </decoder>
 
 <decoder name="apache-errorlog">
-  <prematch>^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S+:warn] |^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S+:notice] |^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S*:error] |^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S+:info] </prematch>
+    <prematch>^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S+:warn] |^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S+:notice] |^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S*:error] |^[\w+ \w+ \d+ \d+:\d+:\d+.\d+ \d+] [\S+:info] </prematch>
+</decoder>
+
+
+<decoder name="apache24-errorlog-ip-port">
+    <parent>apache-errorlog</parent>
+    <prematch offset="after_parent">[client \S+:\d+] \S+:</prematch>
+    <regex offset="after_parent">[client (\S+):(\d+)] (\S+): </regex>
+    <order>srcip,srcport,id</order>
 </decoder>
 
 <decoder name="apache24-errorlog-ip">
-  <parent>apache-errorlog</parent>
-
-  <prematch offset="after_parent">[client</prematch>
-  <regex offset="after_prematch">^ (\S+):\d+] (\S+): </regex>
-  <order>srcip,id</order>
+    <parent>apache-errorlog</parent>
+    <prematch offset="after_parent">[client \S+] \S+:</prematch>
+    <regex offset="after_parent">[client (\S+)] (\S+): </regex>
+    <order>srcip,id</order>
 </decoder>
 
-<decoder name="apache24-modsec-errorlog-ip">
-  <parent>apache-errorlog</parent>
-
-  <prematch offset="after_parent">[client</prematch>
-  <regex offset="after_prematch">^ (\S+)] ModSecurity: </regex>
-  <order>srcip</order>
-</decoder>
 
 <decoder name="apache-errorlog-ip">
-  <parent>apache-errorlog</parent>
-
-  <prematch offset="after_parent">^[client</prematch>
-  <regex offset="after_prematch">^ (\S+)] </regex>
-  <order>srcip</order>
+    <parent>apache-errorlog</parent>
+    <prematch offset="after_parent">[client</prematch>
+    <regex offset="after_prematch">^ (\S+):(\d+)] |^ (\S+)] </regex>
+    <order>srcip,srcport</order>
 </decoder>
 
 
@@ -1637,7 +1729,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="nginx-errorlog-ip">
   <parent>nginx-errorlog</parent>
   <prematch offset="after_parent">, client: \S+, server: \S+, request: "\S+ </prematch>
-  <regex offset="after_parent">, client: (\d+.\d+.\d+.\d+), </regex>
+  <regex offset="after_parent">, client: (\S+), </regex> 
   <order>srcip</order>
 </decoder>
 
@@ -1707,8 +1799,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>windows-date-format</parent>
   <type>web-log</type>
   <use_own_name>true</use_own_name>
-  <prematch offset="after_parent">^\d+.\d+.\d+.\d+ \S+ W3SVC</prematch>
-  <regex offset="after_parent">^(\d+.\d+.\d+.\d+) \S+ \S+ \S+ \S+ </regex>
+  <prematch offset="after_parent">^\S+ \S+ W3SVC</prematch>
+  <regex offset="after_parent">^(\S+) \S+ \S+ \S+ \S+ </regex>
   <regex>\d+ \S+ (\S+ \S+) (\d+) </regex>
   <order>srcip,url,id</order>
 </decoder>
@@ -1727,7 +1819,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <type>web-log</type>
   <use_own_name>true</use_own_name>
   <prematch offset="after_parent">^W3SVC\d+ \S+ \S+ \S+ </prematch>
-  <regex offset="after_prematch">^(\S+ \S+) \d+ \S+ (\d+.\d+.\d+.\d+) </regex>
+  <regex offset="after_prematch">^(\S+ \S+) \d+ \S+ (\S+) </regex>
   <regex>\S+ \S+ \S+ \S+ \S+ (\d+) </regex>
   <order>url, srcip, id</order>
 </decoder>
@@ -1748,8 +1840,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>windows-date-format</parent>
   <type>web-log</type>
   <use_own_name>true</use_own_name>
-  <prematch offset="after_parent">^\d+.\d+.\d+.\d+ GET |^\d+.\d+.\d+.\d+ POST </prematch>
-  <regex offset="after_prematch">(\S+ \S*) \.* (\d+.\d+.\d+.\d+) \S*\.* (\d\d\d) \S+ \S+ \S+</regex>
+  <prematch offset="after_parent">^\S+ GET |^\S+ POST </prematch>
+  <regex offset="after_prematch">(\S+ \S*) \.* (\S+) \S*\.* (\d\d\d) \S+ \S+ \S+</regex>
   <order>url,srcip,id</order>
 </decoder>
 
@@ -1763,8 +1855,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="msftp">
   <parent>windows-date-format</parent>
   <use_own_name>true</use_own_name>
-  <prematch offset="after_parent">^\d+.\d+.\d+.\d+ \S+ MSFTPSVC</prematch>
-  <regex offset="after_parent">^(\d+.\d+.\d+.\d+) (\S+) \S+ \S+ \S+ </regex>
+  <prematch offset="after_parent">^\S+ \S+ MSFTPSVC</prematch>
+  <regex offset="after_parent">^(\S+) (\S+) \S+ \S+ \S+ </regex>
   <regex>\d+ [\d+](\S+) \S+ \S+ (\d+) </regex>
   <order>srcip,user,action,id</order>
 </decoder>
@@ -1780,8 +1872,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="msexchange">
   <parent>windows-date-format</parent>
   <use_own_name>true</use_own_name>
-  <prematch offset="after_parent">^\d+.\d+.\d+.\d+ \S+ SMTPSVC</prematch>
-  <regex offset="after_parent">^(\d+.\d+.\d+.\d+) \S+ \S+ \S+ \S+ </regex>
+  <prematch offset="after_parent">^\S+ \S+ SMTPSVC</prematch>
+  <regex offset="after_parent">^(\S+) \S+ \S+ \S+ \S+ </regex>
   <regex>\d+ (\S+) \S+ \S+ (\d+) </regex>
   <order>srcip, action, id</order>
 </decoder>
@@ -1802,7 +1894,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <use_own_name>true</use_own_name>
 
   <prematch offset="after_parent">^ERROR: couldn't find the pskey </prematch>
-  <regex offset="after_prematch">^for (\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">^for (\S+)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -1812,23 +1904,6 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>action</order>
 </decoder>
 
-
-
-<!-- Squid access log decoder.
-  - Will extract the srcip.
-  - Author: Ahmet Ozturk
-  - Examples:
-  - 1140701044.525   1231 192.168.1.201 TCP_DENIED/400 1536
-    GET ahmet - NONE/- text/html
-  - 1140701230.827    781 192.168.1.210 TCP_DENIED/407 1785
-    GET http://www.ossec.net oahmet NONE/- text/html
-  -->
-<decoder name="squid-accesslog">
-  <type>squid</type>
-  <prematch>^\d+ \d+.\d+.\d+.\d+ </prematch>
-  <regex>^\d+ (\d+.\d+.\d+.\d+) (\w+)/(\d+) \d+ \w+ (\S+) </regex>
-  <order>srcip,action,id,url</order>
-</decoder>
 
 
 <!-- Windows decoder
@@ -1851,11 +1926,37 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -->
 <decoder name="windows">
   <type>windows</type>
-  <prematch>^\d\d\d\d \w\w\w \d\d \d\d:\d\d:\d\d WinEvtLog: |^WinEvtLog: </prematch>
-  <regex offset="after_prematch">^\.+: (\w+)\((\d+)\): (\.+): </regex>
+  <program_name>^WinEvtLog</program_name>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex offset="after_parent">^\.+: (\w+)\((\d+)\): (\.+): </regex>
   <regex>(\.+): \.+: (\S+): </regex>
   <order>status, id, extra_data, user, system_name</order>
-  <fts>name, location, user, system_name</fts>
+  <fts>name, location, system_name</fts>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex> Source Network Address: (\S+)</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex> Account Name:\s+(\w+\.+)\s+Account</regex>
+  <order>user</order>
+</decoder>
+
+<decoder name="windows1">
+  <type>windows</type>
+  <parent>windows</parent>
+  <regex>Account Domain:\s\s+(\w\.+)\s\s+Logon ID:</regex>
+  <order>extra_data</order>
 </decoder>
 
 
@@ -2039,8 +2140,8 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
 
 <decoder name="vmware-extra">
   <parent>vmware</parent>
-  <regex offset="after_regex">^: User (\w+)@(\d+.\d+.\d+.\d+)</regex>
-  <regex> logged |^: Failed login \w+ for (\w+)@(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_regex">^: User (\w+)@(\S+)</regex>
+  <regex> logged |^: Failed login \w+ for (\w+)@(\S+)</regex>
   <order>user, srcip</order>
 </decoder>
 
@@ -2113,21 +2214,21 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
 <decoder name="asterisk-denied">
   <parent>asterisk</parent>
   <prematch>^NOTICE[\d+]: \S+ in \S+: Registration from </prematch>
-  <regex offset="after_prematch">^\S+ failed for '(\d+.\d+.\d+.\d+)'</regex>
+  <regex offset="after_prematch">^\S+ failed for '(\S+)'</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="asterisk-denied2">
   <parent>asterisk</parent>
   <prematch>Registration from </prematch>
-  <regex offset="after_prematch">failed for '(\d+.\d+.\d+.\d+)'</regex>
+  <regex offset="after_prematch">failed for '(\S+)'</regex>
   <order>srcip</order>
 </decoder>
 
 <decoder name="asterisk-iax-authentication-denied">
   <parent>asterisk</parent>
   <prematch>^NOTICE[\d+]: \S+ in \S+: Host </prematch>
-  <regex offset="after_prematch">^(\d+.\d+.\d+.\d+) failed MD5 authentication for (\S+)</regex>
+  <regex offset="after_prematch">^(\S+) failed MD5 authentication for (\S+)</regex>
   <order>srcip, user</order>
 </decoder>
 
@@ -2245,7 +2346,7 @@ in HTTP request too long; attack: Malformed HTTP; src: 10.10.10.4; dst:
 10.10.10.5; proto: tcp; product: SmartDefense; service: 111; s_port: 222;
   -->
 
-<!-- \s+\S+ \d\d:\d\d:\d\d (\w+) \d+.\d+.\d+.\d+ \p\S+ rule: -->
+<!-- \s+\S+ \d\d:\d\d:\d\d (\w+) \S+ \p\S+ rule: -->
 <decoder name="checkpoint-syslog">
   <program_name>^Checkpoint</program_name>
   <prematch>^\s+\S+ \d\d:\d\d:\d\d </prematch>
@@ -2256,7 +2357,7 @@ in HTTP request too long; attack: Malformed HTTP; src: 10.10.10.4; dst:
   <type>firewall</type>
   <prematch offset="after_parent">^drop|^accept|^reject</prematch>
   <regex offset="after_parent">^(\w+)\s+\S+ \p\S+ rule:\.+</regex>
-  <regex>src: (\d+.\d+.\d+.\d+); dst: (\d+.\d+.\d+.\d+); proto: (\S+);</regex>
+  <regex>src: (\S+); dst: (\S+); proto: (\S+);</regex>
   <order>action,srcip,dstip,protocol</order>
 </decoder>
 
@@ -2272,7 +2373,7 @@ in HTTP request too long; attack: Malformed HTTP; src: 10.10.10.4; dst:
   <type>ids</type>
   <prematch offset="after_parent">^monitor|^drop</prematch>
   <regex offset="after_prematch">attack: (\.+); </regex>
-  <regex>src: (\d+.\d+.\d+.\d+); dst: (\d+.\d+.\d+.\d+); </regex>
+  <regex>src: (\S+); dst: (\S+); </regex>
   <regex>proto: (\S+);</regex>
   <order>extra_data, srcip, dstip, protocol</order>
   <fts>name, extra_data, srcip, dstip</fts>
@@ -2295,7 +2396,7 @@ in HTTP request too long; attack: Malformed HTTP; src: 10.10.10.4; dst:
 <decoder name="ms-dhcp-ipv4">
   <prematch>^\d\d,\d+/\d+/\d\d\d\d,\d+:\d+:\d+,|</prematch>
   <prematch>^\d\d,\d+/\d+/\d\d,\d+:\d+:\d+,</prematch>
-  <regex>^(\d\d),\d+/\d+/\d\d\d*,\d+:\d+:\d+,(\w+),(\d+.\d+.\d+.\d+)</regex>
+  <regex>^(\d\d),\d+/\d+/\d\d\d*,\d+:\d+:\d+,(\w+),(\S+)</regex>
   <order>id,extra_data,srcip</order>
 </decoder>
 
@@ -2681,6 +2782,76 @@ Author and (c): Michael Starks, 2014 -->
   <order>srcuser</order>
 </decoder>
 
+<!-- Barracuda S&VF Email Logs
+Examples:
+May 14 03:31:21 mx1.example.org inbound/pass1: mail-88-66.reachmail.net[216.55.88.66] 1400074281-06f4a338c037a90001-TkCAQV 1400074281 1400074283 RECV errors@mail-88-68.reachmail.net eteixeira@example.net 2 12 -
+May 15 14:09:17 mx1.example.org inbound/pass1: host.limitless-servers.com[192.208.186.41] 1400198954-06f4a338c062640001-BkZagu 1400198954 1400198958 SCAN - heartattackbreakthrough@ridchanceofhrtattk.us en@example.org - 2 74 ridchanceofhrtattk.us SZ:2557 SUBJ:THE #1 Trick to Prevent Heart-Attacks Revealed???
+May 16 10:12:29 mx1.example.org inbound/pass1: kumarafoundation.hestoe.com[208.123.118.114] 1400271149-06f4a338c07a210001-QwTJwG 1400271149 1400271151 SCAN - EzekielMack@kumarafoundation.hestoe.com ctakesue@example.org - 2 74 hestoe.com SZ:1917 SUBJ:Bad Economy, Bad Rates - Get An Auto Insurance Quotes Today
+May 13 01:20:44 mx1.example.org scan: salmon.emxp002.net[174.123.35.182] 1399980039-06f4a338c019db0001-ZAPlzU 1399980040 1399980045 SCAN - errors@mermaid.emxp002.net PTAUA@HINGYCA.ORG 1.636 0 0 - SZ:86808 SUBJ:ATTN PASILA: URGENT FUNDING AVAILABLE
+May 14 09:39:30 mx1.example.org scan: mc.eau.lormaneducation.com[64.198.99.4] 1400096370-06f4a338c040390001-vQoliC 1400096370 1400096372 SCAN - bounce-201405143661297864@mc.eau.lormaneducation.com tmoriyasu@dod.hawaii.gov 0.401 0 0 - SZ:22001 SUBJ:Contractor's Dilemma of Dealing With Bad Plans and Specs - OnDemand Webinar
+May 16 10:56:04 mx1.example.org scan: smtp133.elabs13.com[74.116.235.133] 1400273757-06f4a338c07b490001-CBNzJg 1400273757 1400273765 SCAN - newsletter@email.cnbc.com tcolwell@example.net 0.402 0 0 - SZ:26609 SUBJ:=?utf-8?Q?"Failure=20to=20Recall:=20Investigating=20GM"=20Premier?==?utf-8?Q?es=20Sunday=2010p=20ET/PT?=
+Jul 26 10:39:36 mx1.example.org outbound/smtp: 127.0.0.1 1406407176-06f4a35b4d10f2c0001-EGYtgK 0 0 SEND - 3 A90EBA1F1BA connect to dnvrco-pub-iedge-vip.email.rr.com[107.14.73.70]: server refused mail service
+Jul 26 13:38:16 mx1.example.org outbound/smtp: 127.0.0.1 1406248798-06f4a35b4de6bd0001-3QeedR 0 0 SEND - 3 68EC0A1F1A3 Name service error for name=conference.preventchildabusetexas.org type=MX: Host not found, try again
+Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2000001-PDxQZ2 0 0 SEND - 3 A194BA1F1AC connect to qw.eau.lormanwebinars.com[63.232.201.60]: Connection refused
+-->
+
+<decoder name="barracuda-svf-email">
+  <program_name>^inbound/pass|^scan|^outbound/smtp</program_name>
+</decoder>
+
+<decoder name="barracuda-svf1">
+  <parent>barracuda-svf-email</parent>
+  <prematch>^\S+[\S+]|</prematch>
+  <prematch>^\S+</prematch>
+  <regex>^\S+[(\S+)] (\d+-\w+-\w+) \d+ \d+ |</regex>
+  <regex>^(\S+) (\d+-\w+-\w+) \d+ \d+ </regex>
+  <order>srcip, id</order>
+</decoder>
+
+<!-- Info section - SCAN -->
+<decoder name="barracuda-svf1">
+  <parent>barracuda-svf-email</parent>
+  <regex offset="after_regex">(SCAN) (\S+ \S+ \S+ \S+ \d+ \d+ \.+ SUBJ:\.+)$</regex>
+  <order>action, extra_data</order>
+</decoder>
+
+<!-- Info section RECV -->
+<decoder name="barracuda-svf1">
+  <parent>barracuda-svf-email</parent>
+  <regex offset="after_regex">(RECV) (\S+ \S+ \d+ \d+ \.+)$</regex>
+  <order>action, extra_data</order>
+</decoder>
+
+<!-- Info section SEND -->
+<decoder name="barracuda-svf1">
+  <parent>barracuda-svf-email</parent>
+  <regex offset="after_regex">(SEND) (\S+ \d+ \S+ \.+)$</regex>
+  <order>action, extra_data</order>
+</decoder>
+
+<!-- Barracuda S&VF Administration-->
+
+<decoder name="barracuda-svf-admin">
+  <program_name>^web</program_name>
+</decoder>
+
+<decoder name="barracuda-svf-admin-change">
+  <parent>barracuda-svf-admin</parent>
+  <prematch>^[\S+] global[] CHANGE</prematch>
+  <regex offset="after_parent">^[(\S+)] global[] (CHANGE) (\S+ \(\S*)\)$</regex>
+  <order>srcip,action,extra_data</order>
+</decoder>
+
+<decoder name="barracuda-svf-admin-auth">
+  <parent>barracuda-svf-admin</parent>
+  <prematch>^[\S+] LOGIN|</prematch>
+  <prematch>^[\S+] FAILED_LOGIN|</prematch>
+  <prematch>^[\S+] LOGOUT</prematch>
+  <regex offset="after_parent">^[(\S+)] (\S+) \((\S+)\)\p*$</regex>
+  <order>srcip,action,user</order>
+</decoder>
+
+
 <!-- 
   - Decoder for Sysmon Event ID 1: Process Created
   - Maintained by Josh Brower, Josh@DefensiveDepth.com 
@@ -2702,7 +2873,6 @@ Author and (c): Michael Starks, 2014 -->
 <order>status,user,url,data</order>
 </decoder>
 
-
 <!-- unbound
   - 2014-05-20T09:01:07.283219-04:00 arrakis unbound: [9405:0] notice: sendto failed: Can't assign requested address
   - 2014-07-14T14:00:02.814490-04:00 arrakis unbound: [2541:0] info: 127.0.0.1 talkgadget.google.com. A IN
@@ -2716,6 +2886,24 @@ Author and (c): Michael Starks, 2014 -->
   - 2014-07-14T15:05:07.520229-04:00 arrakis unbound: [2541:0] info: 127.0.0.1 github.com. AAAA IN
 -->
 
+
+<!-- Squid access log decoder.
+  - Will extract the srcip.
+  - Author: Ahmet Ozturk
+  - Examples:
+  - 1140701044.525   1231 192.168.1.201 TCP_DENIED/400 1536
+    GET ahmet - NONE/- text/html
+  - 1140701230.827    781 192.168.1.210 TCP_DENIED/407 1785
+    GET http://www.ossec.net oahmet NONE/- text/html
+  -->
+<decoder name="squid-accesslog">
+  <type>squid</type>
+  <prematch>^\d+ \S+ </prematch>
+  <regex>^\d+ (\S+) (\w+)/(\d+) \d+ \w+ (\S+) </regex>
+  <order>srcip,action,id,url</order>
+</decoder>
+
+
 <decoder name="unbound">
   <program_name>^unbound</program_name>
 </decoder>
@@ -2726,5 +2914,58 @@ Author and (c): Michael Starks, 2014 -->
   <order>srcip,url</order>
 </decoder>
 
+<!-- OpenBSD doas -->
+<decoder name="doas">
+  <program_name>^doas</program_name>
+</decoder>
+
+<decoder name="doas-user">
+  <parent>doas</parent>
+  <regex>^(\S+) ran| for (\S+):</regex>
+  <order>srcuser</order>
+</decoder>
+
+<decoder name="doas-user">
+  <parent>doas</parent>
+  <regex offset="after_parent"> as (\S+): </regex>
+  <order>dstuser</order>
+</decoder>
+
+<!-- Exim
+  - Examples:
+  - 2017-01-23 03:44:14 dovecot_login authenticator failed for (hydra) [10.101.1.18]:35686: 535 Incorrect authentication data (set_id=user)
+  - 2017-01-24 05:22:29 dovecot_plain authenticator failed for (test) [::1]:39454: 535 Incorrect authentication data (set_id=test)
+  - 2017-01-24 03:09:46 SMTP connection from [10.101.1.10]:55010 (TCP/IP connection count = 1)
+  - 2017-01-24 02:53:13 SMTP connection from (hydra) [10.101.1.10]:53682 lost
+  - 2017-01-24 05:36:23 SMTP call from (000000) [::1]:39480 dropped: too many syntax or protocol errors (last command was "123")
+-->
+
+<decoder name="exim-authfailed">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">authenticator failed</prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+: \d+ Incorrect authentication data \(set_id=(\w+)\)</regex>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="exim-connect">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">^SMTP connection from </prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+ \(TCP/IP connection count</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="exim-disconnect">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">^SMTP connection from </prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+ lost</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="exim-syntax-errors">
+  <parent>windows-date-format</parent>
+  <prematch offset="after_parent">^SMTP call from </prematch>
+  <regex offset="after_prematch">[(\S+)]:\d+ dropped: too many syntax or protocol errors</regex>
+  <order>srcip</order>
+</decoder>
 
 <!-- EOF -->

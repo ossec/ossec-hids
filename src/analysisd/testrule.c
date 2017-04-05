@@ -64,6 +64,11 @@ int main(int argc, char **argv)
     char *ut_str = NULL;
     const char *dir = DEFAULTDIR;
     const char *cfg = DEFAULTCPATH;
+    const char *user = USER;
+    const char *group = GROUPGLOBAL;
+    uid_t uid;
+    gid_t gid;
+    int quiet = 0;
 
     /* Set the name */
     OS_SetName(ARGV0);
@@ -77,7 +82,11 @@ int main(int argc, char **argv)
     active_responses = NULL;
     memset(prev_month, '\0', 4);
 
-    while ((c = getopt(argc, argv, "VatvdhU:D:c:")) != -1) {
+#ifdef LIBGEOIP_ENABLED
+    geoipdb = NULL;
+#endif
+
+    while ((c = getopt(argc, argv, "VatvdhU:D:c:q")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -112,6 +121,9 @@ int main(int argc, char **argv)
             case 'a':
                 alert_only = 1;
                 break;
+            case 'q':
+                quiet = 1;
+                break;
             case 'v':
                 full_output = 1;
                 break;
@@ -128,6 +140,19 @@ int main(int argc, char **argv)
 
     debug1(READ_CONFIG, ARGV0);
 
+#ifdef LIBGEOIP_ENABLED
+    Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
+
+    /* Opening GeoIP DB */
+    if(Config.geoipdb_file) {
+        geoipdb = GeoIP_open(Config.geoipdb_file, GEOIP_INDEX_CACHE);
+        if (geoipdb == NULL)
+        {
+            merror("%s: Unable to open GeoIP database from: %s (disabling GeoIP).", ARGV0, Config.geoipdb_file);
+        }
+    }
+#endif
+
     /* Get server hostname */
     memset(__shost, '\0', 512);
     if (gethostname(__shost, 512 - 1) != 0) {
@@ -142,9 +167,23 @@ int main(int argc, char **argv)
         }
     }
 
-    if (chdir(dir) != 0) {
+    /* Check if the user/group given are valid */
+    uid = Privsep_GetUser(user);
+    gid = Privsep_GetGroup(group);
+    if (uid == (uid_t) - 1 || gid == (gid_t) - 1) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
+    }
+
+    /* Set the group */
+    if (Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
+    }
+
+    /* Chroot */
+    if (Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
     }
+    nowChroot();
 
     /*
      * Anonymous Section: Load rules, decoders, and lists
@@ -181,7 +220,9 @@ int main(int argc, char **argv)
                 decodersfiles = Config.decoders;
                 while ( decodersfiles && *decodersfiles) {
 
-                    verbose("%s: INFO: Reading decoder file %s.", ARGV0, *decodersfiles);
+                    if(!quiet) {
+                        verbose("%s: INFO: Reading decoder file %s.", ARGV0, *decodersfiles);
+                    }
                     if (!ReadDecodeXML(*decodersfiles)) {
                         ErrorExit(CONFIG_ERROR, ARGV0, *decodersfiles);
                     }
@@ -267,6 +308,11 @@ int main(int argc, char **argv)
 
     if (test_config == 1) {
         exit(0);
+    }
+
+    /* Set the user */
+    if (Privsep_SetUser(uid) < 0) {
+        ErrorExit(SETUID_ERROR, ARGV0, user, errno, strerror(errno));
     }
 
     /* Start up message */
@@ -571,4 +617,3 @@ void OS_ReadMSG(char *ut_str)
     }
     exit(exit_code);
 }
-

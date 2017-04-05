@@ -1,0 +1,94 @@
+OSSEC changelog (2.9.0) <scott@atomicorp.com>
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (Atomicorp, Inc.)
+
+Whats New
+    Alert Output support for JSON and ZeroMQ
+    Syscheck improvements
+    Report file deletion, even without realtime enabled
+    Report modifications made on directories
+    Corrects bug so that files created between the first and second scan are reported as new files
+    Corrects bug that made changes reverting a file to the state it was in when ossec started unreported
+    Avoids computing hashes multiple times to improve performance
+    Make the time between two syscheck wakeups configurable in internal_options
+    Add support for the “nodiff” option when using report_changes, sensitive files tagged with in ossec.conf will not have their contents included in an alert.
+    IPv6 support
+    Support to call an external mailer. This solves the problem of supporting encryption when sending mail alerts in OSSEC. The <smtp_server> field can now be prepended with “/” to designate a local binary. Example: “<smtp_server>/usr/sbin/sendmail -t</smtp_server>”.
+    Slack notification support
+
+
+
+New Rules / Decoders
+
+    PR#572: Rules/Decoders, Better Dropbear events detection
+    PR#602: Rules/Decoders, Add dropbear_rules and unbound_rules
+    PR#604: Rules/Decoders,sid 5300 incorrectly alerts on OS X
+    PR#607, Rules/Decoders, Update syslog_rules for OSX false positive
+    PR#611: Rules/Decoders, Sysmon decoder update, This should better support Windows 2003 R2.
+    PR#643, Rules/Decoders, update to IIS decoder
+    PR#654, Rules/Decoders, update to the vsftpd decoder
+    PR#668: Rules/Decoders, Fix for Cisco PIX decoder, ms-se_rules.xml, msauth_rules.xml
+    PR#721: Rules/Decoders, Update for sytemd rules to add support for new program_name, systemctl
+    PR#746: Rules/Decoders, Update to the apache decoders to handle Apache 2.4 events more gracefully
+    PR#755: Rules/Decoders, Update to ssh rules. Adds rules 5750-5753 to dedect client, protocol, and hostkey events
+    PR#762: Rules/Decoders, Update to ssh rules. Associates 5751 with 5700 instead of 1002
+    PR#763: Rules/Decoders, Add rules for OpenBSD smtpd
+    PR#774: Rules/Decoders, Add OpenBSD smtpd rules
+    PR#787: Rules/Decoders, Update to OpenBSD smtpd decoder to not conflict with postfix
+    PR#786: Rules/Decoders, SSH Rule improvements
+    PR#799: Rules/Decoders, Add rule for users not in sudoers
+    PR#803: Rules/Decoders, Add additional sshd decoders for ssh-pam & ssh invalid auth requests
+
+General
+
+    PR #2, Output, Adds ZeroMQ and Json output support
+    PR #4, Authd, Bugfix for Openssl operations on non-blocking socket
+    PR #563: IPv6 support
+    PR #599, Allow for the log format in proftpd 1.3.5+
+    PR #610: Execd, Reduce system load caused by simultaneous active response processes during ossec stop. #610
+    PR #615: Adds support for Binding src IP to ‘local_ip’ config value in agentd. In mulihomed host environment we have a big problem with binding agent to correct ip. By default agentd used ip-addr of interface, from which sented ip-packets.
+    PR #617: Agentd, Add CLIENT to DEFINES for winagent target #617 Bugfix #595
+    PR #622: Fix for CVE-2015-3222
+    PR #631, Log failure when ossec fails to remove a PID file
+    PR #652, Syscheck, add support for the “-t” flag to display XML parsing errors in agent.conf on agents
+    PR #657: Syscheck, Allows scanning of directories with , in the name. Let directory check_something=”no” options to work. This means you can do instead of listing out all the ones you want to use.
+    PR #670: Syscheck, Bugfix for report_changes
+    PR #689: Maild, add support to call an external MTA to send alert emails. The smtp_server setting can now be written as “/usr/sbin/sendmail -t”
+    PR #690: Cleanup for building on OSX
+    PR #691: adds support for syslog messages that prepend the year, ie: “2015 Nov 13 ....”
+    PR #696: Bugfix for OpenBSD sendto() sockaddr length restrictions.
+    PR #699: Encompassing only complete statements with conditional directives.
+    PR #717: Active Response, add Slack (www.slack.com) notification support
+    PR #720: Fixes for the statfs error spam
+    PR #724: Authd, bugfix for issue #642, This brings ossec-authd into parity with whatever the MAX_AGENTS is set at build time
+    PR #726: Make syslog/cef consistent with json/splunk and add classification field to alerts.
+    PR #727: Maild, Add support for “email_reply_to”. This allows configuing the Reply-To: field in email alerts sent from ossec-maild
+    PR #740: Remoted, bugfix for issue #739, Ossec will now report the agent ID of the agent that tries to conect
+    PR #744: Syscheck, Bugfix for issue #42, corrects issue on windows that would produce an incorrect hash
+    PR #749: Windows, Changed Makefile to use Windows subsystem only wth UI manager
+    PR #750: Analysisd, Fixes glob() impelemtation bug, adds Hourly/Daily options to logcollector, improved dfalts to analysisd diff alerts.
+    PR #751: Add simple python rule updater script
+    PR #754: Install.sh, Bugfix for OpenBSD adduser support
+    PR #765: Syscheck, add “nodiff” support. Sensitive data may leak through the diff attached to alerts when some file changes. This pull request add a nodiff option, which allows to explicitely set files for which we never want to output a diff.
+    PR #768: Analysisd, Bugfix for Issue #767, increase of value for stats
+    PR #770: Database support, Postgres support updates
+    PR #781: Syscheck, Bugfix for Issue #780
+    PR #788: System Audit, Add PCI DSS tags to RHEL/CentOS/Cloudlinux auditing tests
+    PR #789: Install.sh, Use ls for file existance checks, for cross platform compatibility
+    PR #791: Syscheck, add /boot to default directories. Fix for Issue #675
+    PR #797: Rootcheck, Remove legacy rootcheck options
+    PR #798: System Audit, Add RHEL/CentOS/Cloudlinux 7 CIS benchmarks
+    PR #802: Database support, Allow for longer entries in the system informtaion column
+    PR #849 Format string security fix
+    PR #864 Fix ossec-logtest to chroot when testing check_diff rules
+    PR #870 Fix installer permissions on the etc/shared directory
+    PR #878 Fix version field to correctly report "2.9.0" instead of 2.8.3
+    PR #909 Bugfix for decoders.d/rules.d logtest
+    PR #920 Bugfixes for OS_IPFound, OS_IPFoundList, OS_IsValidIP
+    PR #923 Security fix for SQLi in al_data->location
+    PR #926 Rootcheck, updates or EL7
+    PR #945 Remove debug message
+    PR #986 - Prevent manage_agents from chrooting in bulk mode
