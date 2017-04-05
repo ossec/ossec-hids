@@ -33,10 +33,6 @@
 #include "dodiff.h"
 #include "output/jsonout.h"
 
-#ifdef PICVIZ_OUTPUT_ENABLED
-#include "output/picviz.h"
-#endif
-
 #ifdef PRELUDE_OUTPUT_ENABLED
 #include "output/prelude.h"
 #endif
@@ -132,6 +128,11 @@ int main_analysisd(int argc, char **argv)
     hourly_syscheck = 0;
     hourly_firewall = 0;
 
+#ifdef LIBGEOIP_ENABLED
+    geoipdb = NULL;
+#endif
+
+
     while ((c = getopt(argc, argv, "Vtdhfu:g:D:c:")) != -1) {
         switch (c) {
             case 'V':
@@ -221,6 +222,22 @@ int main_analysisd(int argc, char **argv)
 
     debug1(READ_CONFIG, ARGV0);
 
+
+#ifdef LIBGEOIP_ENABLED
+     Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
+
+    /* Opening GeoIP DB */
+    if(Config.geoipdb_file) {
+        geoipdb = GeoIP_open(Config.geoipdb_file, GEOIP_INDEX_CACHE);
+        if (geoipdb == NULL)
+        {
+            merror("%s: ERROR: Unable to open GeoIP database from: %s (disabling GeoIP).", ARGV0, Config.geoipdb_file);
+        }
+    }
+#endif
+
+
+
     /* Fix Config.ar */
     Config.ar = ar_flag;
     if (Config.ar == -1) {
@@ -257,18 +274,11 @@ int main_analysisd(int argc, char **argv)
 #ifdef ZEROMQ_OUTPUT_ENABLED
     /* Start zeromq */
     if (Config.zeromq_output) {
+#if CZMQ_VERSION_MAJOR == 2 
         zeromq_output_start(Config.zeromq_output_uri);
-    }
+#elif CZMQ_VERSION_MAJOR >= 3
+        zeromq_output_start(Config.zeromq_output_uri, Config.zeromq_output_client_cert, Config.zeromq_output_server_cert);
 #endif
-
-#ifdef PICVIZ_OUTPUT_ENABLED
-    /* Open the Picviz socket */
-    if (Config.picviz) {
-        OS_PicvizOpen(Config.picviz_socket);
-
-        if (chown(Config.picviz_socket, uid, gid) == -1) {
-            ErrorExit(CHOWN_ERROR, ARGV0, Config.picviz_socket, errno, strerror(errno));
-        }
     }
 #endif
 
@@ -434,7 +444,8 @@ int main_analysisd(int argc, char **argv)
     }
 
     /* Verbose message */
-    debug1(PRIVSEP_MSG, ARGV0, dir, user);
+    debug1(CHROOT_MSG, ARGV0, dir);
+    debug1(PRIVSEP_MSG, ARGV0, user);
 
     /* Signal manipulation */
     StartSIG(ARGV0);
@@ -504,12 +515,6 @@ int main_analysisd(int argc, char **argv)
 
     /* Going to main loop */
     OS_ReadMSG(m_queue);
-
-#ifdef PICVIZ_OUTPUT_ENABLED
-    if (Config.picviz) {
-        OS_PicvizClose();
-    }
-#endif
 
     exit(0);
 }
@@ -936,13 +941,6 @@ void OS_ReadMSG_analysisd(int m_queue)
 #endif
 
 
-#ifdef PICVIZ_OUTPUT_ENABLED
-                /* Log to Picviz */
-                if (Config.picviz) {
-                    OS_PicvizLog(lf);
-                }
-#endif
-
                 /* Execute an active response */
                 if (currently_rule->ar) {
                     int do_ar;
@@ -1212,6 +1210,31 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 return (NULL);
             }
         }
+
+        /* Adding checks for geoip. */
+        if(rule->srcgeoip) {
+            if(lf->srcgeoip) {
+                if(!OSMatch_Execute(lf->srcgeoip,
+                            strlen(lf->srcgeoip),
+                            rule->srcgeoip))
+                    return(NULL);
+            } else {
+                return(NULL);
+            }
+        }
+
+
+        if(rule->dstgeoip) {
+            if(lf->dstgeoip) {
+                if(!OSMatch_Execute(lf->dstgeoip,
+                            strlen(lf->dstgeoip),
+                            rule->dstgeoip))
+                    return(NULL);
+            } else {
+                return(NULL);
+            }
+        }
+
 
         /* Check if any rule related to the size exist */
         if (rule->maxsize) {

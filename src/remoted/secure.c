@@ -22,7 +22,7 @@ void HandleSecure()
     char *tmp_msg;
     char srcmsg[OS_FLSIZE + 1];
     ssize_t recv_b;
-    struct sockaddr_in peer_info;
+    struct sockaddr_storage peer_info;
     socklen_t peer_size;
 
     /* Send msg init */
@@ -83,7 +83,7 @@ void HandleSecure()
         }
 
         /* Set the source IP */
-        strncpy(srcip, inet_ntoa(peer_info.sin_addr), IPSIZE);
+        satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
         srcip[IPSIZE] = '\0';
 
         /* Get a valid agent id */
@@ -113,11 +113,11 @@ void HandleSecure()
                 if (check_keyupdate()) {
                     agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
                     if (agentid == -1) {
-                        merror(ENC_IP_ERROR, ARGV0, srcip);
+                        merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
                         continue;
                     }
                 } else {
-                    merror(ENC_IP_ERROR, ARGV0, srcip);
+                    merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
                     continue;
                 }
             }
@@ -174,4 +174,3 @@ void HandleSecure()
         }
     }
 }
-

@@ -18,12 +18,13 @@
 #define VALIDDATA       "354"
 
 /* Default values used to connect */
-#define SMTP_DEFAULT_PORT   25
+#define SMTP_DEFAULT_PORT   "25"
 #define HELOMSG             "Helo notify.ossec.net\r\n"
 #define MAILFROM            "Mail From: <%s>\r\n"
 #define RCPTTO              "Rcpt To: <%s>\r\n"
 #define DATAMSG             "DATA\r\n"
 #define FROM                "From: OSSEC HIDS <%s>\r\n"
+#define REPLYTO             "Reply-To: OSSEC HIDS <%s>\r\n"
 #define TO                  "To: <%s>\r\n"
 #define CC                  "Cc: <%s>\r\n"
 #define SUBJECT             "Subject: %s\r\n"
@@ -45,95 +46,85 @@
 #define MAIL_DEBUG(x,y,z) if(MAIL_DEBUG_FLAG) merror(x,y,z)
 
 
-int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *idsname, FILE *fp, const struct tm *p)
+int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, FILE *fp, const struct tm *p)
 {
-    int socket, i = 0;
+    FILE *sendmail = NULL;
+    int socket = -1, i = 0;
     char *msg;
     char snd_msg[128];
     char buffer[2049];
 
     buffer[2048] = '\0';
 
-    /* Connect to the SMTP server */
-    socket = OS_ConnectTCP(SMTP_DEFAULT_PORT, smtpserver, 0);
-    if (socket < 0) {
-        return (socket);
-    }
-
-    /* Receive the banner */
-    msg = OS_RecvTCP(socket, OS_SIZE_1024);
-    if ((msg == NULL) || (!OS_Match(VALIDBANNER, msg))) {
-        merror(BANNER_ERROR);
-        if (msg) {
-            free(msg);
+    if (smtpserver[0] == '/') {
+        sendmail = popen(smtpserver, "w");
+        if (!sendmail) {
+            return (OS_INVALID);
         }
-        close(socket);
-        return (OS_INVALID);
-    }
-    MAIL_DEBUG("DEBUG: Received banner: '%s' %s", msg, "");
-    free(msg);
+    } else {
+        /* Connect to the SMTP server */
+        socket = OS_ConnectTCP(SMTP_DEFAULT_PORT, smtpserver);
+        if (socket < 0) {
+            return (socket);
+        }
 
-    /* Send HELO message */
-    OS_SendTCP(socket, HELOMSG);
-    msg = OS_RecvTCP(socket, OS_SIZE_1024);
-    if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
-        if (msg) {
-            /* In some cases (with virus scans in the middle)
-             * we may get two banners. Check for that in here.
-             */
-            if (OS_Match(VALIDBANNER, msg)) {
+        /* Receive the banner */
+        msg = OS_RecvTCP(socket, OS_SIZE_1024);
+        if ((msg == NULL) || (!OS_Match(VALIDBANNER, msg))) {
+            merror(BANNER_ERROR);
+            if (msg) {
                 free(msg);
+            }
+            close(socket);
+            return (OS_INVALID);
+        }
+        MAIL_DEBUG("DEBUG: Received banner: '%s' %s", msg, "");
+        free(msg);
 
-                /* Try again */
-                msg = OS_RecvTCP(socket, OS_SIZE_1024);
-                if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
-                    merror("%s:%s", HELO_ERROR, msg != NULL ? msg : "null");
-                    if (msg) {
-                        free(msg);
+        /* Send HELO message */
+        OS_SendTCP(socket, HELOMSG);
+        msg = OS_RecvTCP(socket, OS_SIZE_1024);
+        if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
+            if (msg) {
+                /* In some cases (with virus scans in the middle)
+                 * we may get two banners. Check for that in here.
+                 */
+                if (OS_Match(VALIDBANNER, msg)) {
+                    free(msg);
+
+                    /* Try again */
+                    msg = OS_RecvTCP(socket, OS_SIZE_1024);
+                    if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
+                        merror("%s:%s", HELO_ERROR, msg != NULL ? msg : "null");
+                        if (msg) {
+                            free(msg);
+                        }
+                        close(socket);
+                        return (OS_INVALID);
                     }
+                } else {
+                    merror("%s:%s", HELO_ERROR, msg);
+                    free(msg);
                     close(socket);
                     return (OS_INVALID);
                 }
             } else {
-                merror("%s:%s", HELO_ERROR, msg);
-                free(msg);
+                merror("%s:%s", HELO_ERROR, "null");
                 close(socket);
                 return (OS_INVALID);
             }
-        } else {
-            merror("%s:%s", HELO_ERROR, "null");
-            close(socket);
-            return (OS_INVALID);
         }
-    }
 
-    MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", HELOMSG, msg);
-    free(msg);
+        MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", HELOMSG, msg);
+        free(msg);
 
-    /* Build "Mail from" msg */
-    memset(snd_msg, '\0', 128);
-    snprintf(snd_msg, 127, MAILFROM, from);
-    OS_SendTCP(socket, snd_msg);
-    msg = OS_RecvTCP(socket, OS_SIZE_1024);
-    if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
-        merror(FROM_ERROR);
-        if (msg) {
-            free(msg);
-        }
-        close(socket);
-        return (OS_INVALID);
-    }
-    MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", snd_msg, msg);
-    free(msg);
-
-    /* Build "RCPT TO" msg */
-    while (to[i]) {
+        /* Build "Mail from" msg */
         memset(snd_msg, '\0', 128);
-        snprintf(snd_msg, 127, RCPTTO, to[i]);
+        snprintf(snd_msg, 127, MAILFROM, from);
         OS_SendTCP(socket, snd_msg);
         msg = OS_RecvTCP(socket, OS_SIZE_1024);
         if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
-            merror(TO_ERROR, to[i]);
+            merror(FROM_ERROR);
             if (msg) {
                 free(msg);
             }
@@ -143,31 +134,65 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", snd_msg, msg);
         free(msg);
 
-        i++;
-    }
-
-    /* Send the "DATA" msg */
-    OS_SendTCP(socket, DATAMSG);
-    msg = OS_RecvTCP(socket, OS_SIZE_1024);
-    if ((msg == NULL) || (!OS_Match(VALIDDATA, msg))) {
-        merror(DATA_ERROR);
-        if (msg) {
+        /* Build "RCPT TO" msg */
+        while (to[i]) {
+            memset(snd_msg, '\0', 128);
+            snprintf(snd_msg, 127, RCPTTO, to[i]);
+            OS_SendTCP(socket, snd_msg);
+            msg = OS_RecvTCP(socket, OS_SIZE_1024);
+            if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
+                merror(TO_ERROR, to[i]);
+                if (msg) {
+                    free(msg);
+                }
+                close(socket);
+                return (OS_INVALID);
+            }
+            MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", snd_msg, msg);
             free(msg);
+
+            i++;
         }
-        close(socket);
-        return (OS_INVALID);
+
+        /* Send the "DATA" msg */
+        OS_SendTCP(socket, DATAMSG);
+        msg = OS_RecvTCP(socket, OS_SIZE_1024);
+        if ((msg == NULL) || (!OS_Match(VALIDDATA, msg))) {
+            merror(DATA_ERROR);
+            if (msg) {
+                free(msg);
+            }
+            close(socket);
+            return (OS_INVALID);
+        }
+        MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", DATAMSG, msg);
+        free(msg);
     }
-    MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", DATAMSG, msg);
-    free(msg);
 
     /* Build "From" and "To" in the e-mail header */
     memset(snd_msg, '\0', 128);
     snprintf(snd_msg, 127, TO, to[0]);
-    OS_SendTCP(socket, snd_msg);
+
+    if (sendmail) {
+        fprintf(sendmail, "%s", snd_msg);
+    } else {
+        OS_SendTCP(socket, snd_msg);
+    }
 
     memset(snd_msg, '\0', 128);
     snprintf(snd_msg, 127, FROM, from);
-    OS_SendTCP(socket, snd_msg);
+
+    if (sendmail) {
+        fprintf(sendmail, "%s", snd_msg);
+    } else {
+        OS_SendTCP(socket, snd_msg);
+    }
+
+    if (replyto) {
+        memset(snd_msg, '\0', 128);
+        snprintf(snd_msg, 127, REPLYTO, replyto);
+        OS_SendTCP(socket, snd_msg);
+    }
 
     /* Add CCs */
     if (to[1]) {
@@ -179,7 +204,12 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
 
             memset(snd_msg, '\0', 128);
             snprintf(snd_msg, 127, TO, to[i]);
-            OS_SendTCP(socket, snd_msg);
+
+            if (sendmail) {
+                fprintf(sendmail, "%s", snd_msg);
+            } else {
+                OS_SendTCP(socket, snd_msg);
+            }
 
             i++;
         }
@@ -195,47 +225,72 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     strftime(snd_msg, 127, "Date: %a, %d %b %Y %T %z\r\n", p);
 #endif
 
-    OS_SendTCP(socket, snd_msg);
+    if (sendmail) {
+        fprintf(sendmail, "%s", snd_msg);
+    } else {
+        OS_SendTCP(socket, snd_msg);
+    }
 
     if (idsname) {
         /* Send server name header */
         memset(snd_msg, '\0', 128);
         snprintf(snd_msg, 127, XHEADER, idsname);
-        OS_SendTCP(socket, snd_msg);
+
+        if (sendmail) {
+            fprintf(sendmail, "%s", snd_msg);
+        } else {
+            OS_SendTCP(socket, snd_msg);
+        }
     }
 
     /* Send subject */
     memset(snd_msg, '\0', 128);
     snprintf(snd_msg, 127, SUBJECT, subject);
-    OS_SendTCP(socket, snd_msg);
-    OS_SendTCP(socket, ENDHEADER);
+
+    if (sendmail) {
+        fprintf(sendmail, "%s", snd_msg);
+        fprintf(sendmail, ENDHEADER);
+    } else {
+        OS_SendTCP(socket, snd_msg);
+        OS_SendTCP(socket, ENDHEADER);
+    }
 
     /* Send body */
     fseek(fp, 0, SEEK_SET);
     while (fgets(buffer, 2048, fp) != NULL) {
-        OS_SendTCP(socket, buffer);
+        if (sendmail) {
+            fprintf(sendmail, "%s", buffer);
+        } else {
+            OS_SendTCP(socket, buffer);
+        }
     }
 
-    /* Send end of data \r\n.\r\n */
-    OS_SendTCP(socket, ENDDATA);
-    msg = OS_RecvTCP(socket, OS_SIZE_1024);
+    if (sendmail) {
+        if (pclose(sendmail) == -1) {
+            merror(WAITPID_ERROR, ARGV0, errno, strerror(errno));
+        }
+    } else {
+        /* Send end of data \r\n.\r\n */
+        OS_SendTCP(socket, ENDDATA);
+        msg = OS_RecvTCP(socket, OS_SIZE_1024);
 
-    /* Check msg, since it may be null */
-    if (msg) {
-        free(msg);
-    }
+        /* Check msg, since it may be null */
+        if (msg) {
+            free(msg);
+        }
 
-    /* Quit and close socket */
-    OS_SendTCP(socket, QUITMSG);
-    msg = OS_RecvTCP(socket, OS_SIZE_1024);
+        /* Quit and close socket */
+        OS_SendTCP(socket, QUITMSG);
+        msg = OS_RecvTCP(socket, OS_SIZE_1024);
 
-    if (msg) {
-        free(msg);
+        if (msg) {
+            free(msg);
+        }
+
+        close(socket);
     }
 
     memset_secure(snd_msg, '\0', 128);
-    close(socket);
-
     return (0);
 }
 

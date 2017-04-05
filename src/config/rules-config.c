@@ -141,6 +141,8 @@ int Read_Rules(XML_NODE node, void *configp, __attribute__((unused)) void *mailp
             f_name[PATH_MAX + 1] = '\0';
             dfd = opendir(path);
 
+	    att_count = 0; // Reset this variable after it was used in decoder 
+
             if (dfd != NULL) {
                 start_point = decoders_size - 1;
                 while ((entry = readdir(dfd)) != NULL) {
@@ -174,6 +176,7 @@ int Read_Rules(XML_NODE node, void *configp, __attribute__((unused)) void *mailp
                     }
                 }
 
+                OSRegex_FreePattern(&regex);
                 closedir(dfd);
                 /* Sort just then newly added items */
                 qsort(Config->decoders + start_point , decoders_size - start_point - 1, sizeof(char *), cmpr);
@@ -242,6 +245,7 @@ int Read_Rules(XML_NODE node, void *configp, __attribute__((unused)) void *mailp
                     }
                 }
 
+                OSRegex_FreePattern(&regex);
                 closedir(dfd);
                 /* Sort just then newly added items */
                 qsort(Config->includes + start_point , rules_size - start_point - 1, sizeof(char *), cmpr);
@@ -255,4 +259,3 @@ int Read_Rules(XML_NODE node, void *configp, __attribute__((unused)) void *mailp
     }
     return (0);
 }
-

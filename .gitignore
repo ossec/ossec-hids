@@ -3,6 +3,8 @@
 *.a
 *.dSYM
 .DS_Store
+*.dll
+*.exe
 
 # Auto generated build files
 src/LOCATION
@@ -13,7 +15,8 @@ src/external/zlib-1.2.8/zlib.pc
 src/isbigendian.c
 src/analysisd/compiled_rules/compiled_rules.h
 etc/ossec.mc
-
+src/Config.OS
+src/external/zlib-1.2.8/ztest*
 
 # Compiled programs
 src/agent-auth
@@ -70,3 +73,12 @@ src/test_os_regex
 src/test_os_xml
 src/test_os_zlib
 src/test_shared
+
+# Windows-specific build output:
+src/win32/LICENSE.txt
+src/win32/default-local_internal_options.conf
+src/win32/default-ossec.conf
+src/win32/help_win.txt
+src/win32/internal_options.conf
+src/win32/restart-ossec.cmd
+src/win32/route-null.cmd

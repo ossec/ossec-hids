@@ -98,13 +98,14 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_integrity = "integrity_checking";
     const char *xml_rootcheckd = "rootkit_detection";
     const char *xml_hostinfo = "host_information";
-    const char *xml_picviz = "picviz_output";
-    const char *xml_picviz_socket = "picviz_socket";
     const char *xml_prelude = "prelude_output";
     const char *xml_prelude_profile = "prelude_profile";
     const char *xml_prelude_log_level = "prelude_log_level";
+    const char *xml_geoipdb_file = "geoipdb";
     const char *xml_zeromq_output = "zeromq_output";
     const char *xml_zeromq_output_uri = "zeromq_uri";
+    const char *xml_zeromq_output_server_cert = "zeromq_server_cert";
+    const char *xml_zeromq_output_client_cert = "zeromq_client_cert";
     const char *xml_jsonout_output = "jsonout_output";
     const char *xml_stats = "stats";
     const char *xml_memorysize = "memory_size";
@@ -114,6 +115,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 
     const char *xml_emailto = "email_to";
     const char *xml_emailfrom = "email_from";
+    const char *xml_emailreplyto = "email_reply_to";
     const char *xml_emailidsname = "email_idsname";
     const char *xml_smtpserver = "smtp_server";
     const char *xml_heloserver = "helo_server";
@@ -196,25 +198,6 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 return (OS_INVALID);
             }
         }
-        /* Picviz support */
-        else if (strcmp(node[i]->element, xml_picviz) == 0) {
-            if (strcmp(node[i]->content, "yes") == 0) {
-                if (Config) {
-                    Config->picviz = 1;
-                }
-            } else if (strcmp(node[i]->content, "no") == 0) {
-                if (Config) {
-                    Config->picviz = 0;
-                }
-            } else {
-                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
-                return (OS_INVALID);
-            }
-        } else if (strcmp(node[i]->element, xml_picviz_socket) == 0) {
-            if (Config) {
-                os_strdup(node[i]->content, Config->picviz_socket);
-            }
-        }
         /* Prelude support */
         else if (strcmp(node[i]->element, xml_prelude) == 0) {
             if (strcmp(node[i]->content, "yes") == 0) {
@@ -228,6 +211,12 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);
+            }
+        /* GeoIP */
+        } else if(strcmp(node[i]->element, xml_geoipdb_file) == 0) {
+            if(Config)
+            {
+                Config->geoipdb_file = strdup(node[i]->content);
             }
         } else if (strcmp(node[i]->element, xml_prelude_profile) == 0) {
             if (Config) {
@@ -260,6 +249,14 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         } else if (strcmp(node[i]->element, xml_zeromq_output_uri) == 0) {
             if (Config) {
                 Config->zeromq_output_uri = strdup(node[i]->content);
+            }
+        } else if (strcmp(node[i]->element, xml_zeromq_output_server_cert) == 0) {
+            if (Config) {
+                Config->zeromq_output_server_cert = strdup(node[i]->content);
+            }
+        } else if (strcmp(node[i]->element, xml_zeromq_output_client_cert) == 0) {
+            if (Config) {
+                Config->zeromq_output_client_cert = strdup(node[i]->content);
             }
         }
         /* jsonout output */
@@ -403,7 +400,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         }
 
         /* For the email now
-         * email_to, email_from, idsname, smtp_Server and maxperhour.
+         * email_to, email_from, email_replyto, idsname, smtp_Server and maxperhour.
          * We will use a separate structure for that.
          */
         else if (strcmp(node[i]->element, xml_emailto) == 0) {
@@ -431,6 +428,13 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 }
                 os_strdup(node[i]->content, Mail->from);
             }
+        } else if (strcmp(node[i]->element, xml_emailreplyto) == 0) {
+            if (Mail) {
+                if (Mail->reply_to) {
+                    free(Mail->reply_to);
+                }
+                os_strdup(node[i]->content, Mail->reply_to);
+            }
         } else if (strcmp(node[i]->element, xml_emailidsname) == 0) {
             if (Mail) {
                 if (Mail->idsname) {
@@ -441,11 +445,17 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         } else if (strcmp(node[i]->element, xml_smtpserver) == 0) {
 #ifndef WIN32
             if (Mail && (Mail->mn)) {
-                Mail->smtpserver = OS_GetHost(node[i]->content, 5);
-                if (!Mail->smtpserver) {
-                    merror(INVALID_SMTP, __local_name, node[i]->content);
-                    return (OS_INVALID);
+                if (node[i]->content[0] == '/') {
+                    os_strdup(node[i]->content, Mail->smtpserver);
+                } else {
+                    Mail->smtpserver = OS_GetHost(node[i]->content, 5);
+                    if (!Mail->smtpserver) {
+                        merror(INVALID_SMTP, __local_name, node[i]->content);
+                        return (OS_INVALID);
+                    }
                 }
+                free(Mail->smtpserver);
+                os_strdup(node[i]->content, Mail->smtpserver);
             }
 #endif
         } else if (strcmp(node[i]->element, xml_heloserver) == 0) {

@@ -3,6 +3,7 @@ use Socket;
 use POSIX 'setsid';
 use strict;
 use ossecmysql;
+use Regexp::IPv6 qw($IPv6_re);
 # ---------------------------------------------------------------------------
 # Author: Meir Michanie (meirm@riunx.com)
 # Co-Author: J.A.Senger (jorge@br10.com.br)
@@ -123,7 +124,7 @@ my $LOG='/var/ossec/logs/alerts/alerts.log';  # we need to tail this file instea
 
 my ($LOGGER)='ossec2snorby';
 my($OCT) = '(?:25[012345]|2[0-4]\d|1?\d\d?)';
-my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT;
+my($IP) = $OCT . '\.' . $OCT . '\.' . $OCT . '\.' . $OCT . '\|' . $IPv6_re;
 my $dump=0;
 my ($hids_id,$hids,$hids_interface,$last_cid)=(undef, 'localhost', 'ossec',0);
 my ($tempvar,$VERBOSE)=(0,0); 
@@ -251,7 +252,7 @@ sub taillog {
                 $dstip=$resolv{$alerthost};
             }else{
                 if ($conf{'resolve'}){
-                    if ($alerthost =~m/(\d+\.\d+\.\d+\.\d+)/ ){
+                    if ($alerthost =~m/($IP)/ ){
                         $dstip=$1;
                     }else{
                         # the "host" command doesn't work with Flatname\NetBIOS names.
@@ -342,7 +343,7 @@ sub taillog {
                 $date=$1;
                 $alerthost=$2;
                 $datasource=$3;
-                if ($datasource=~ m/(\d+\.\d+\.\d+\.\d+)/){
+                if ($datasource=~ m/($IP)/){
                         $alerthost=$1;
                         $datasource="remoted";
                 }
@@ -362,7 +363,7 @@ sub taillog {
         $osseclevel=$level;  # Keep copy of OSSEC level as it will later be converted to snort level.
         $description= $3;
     }elsif ( m/src\s?ip:/i){
-        if ( m/($IP)/){
+        if ( m/src\s?ip:\s?(\S+)/i){
             $srcip=$1;
         }else{
             $srcip='1';  # Snorby doesn't like srcip\dstip = 0\null.
@@ -386,18 +387,6 @@ sub taillog {
         $filtered=$text;
     }
    } # End of while read line
-}
-
-sub ossec_aton(){
-        my ($ip)=@_;
-        if ($ip=~ m/(\d+)\.(\d+)\.(\d+)\.(\d+)/){
-                my $num= ($1 * 256 ** 3) + ($2 * 256 ** 2)+ ($3 * 256 ** 1)+ ($4);
-
-                return "$num";
-        }else{
-                return "1";  # Snorby has a bug where it wont ouput "N\A" on the IP columns if srcip\dstip = 0\null
-        }
-
 }
 
 sub prepair2basedata(){
@@ -533,8 +522,8 @@ VALUES (
 VALUES (
 ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ?
 ) ";
-    $dbi->execute($query,$hids_id,$last_cid,&ossec_aton($srcip),&ossec_aton($dstip),4,5,0,20,0,0,0,0,0,0);
-    &printlog ("iphdr: ($query,$hids_id,$last_cid,&ossec_aton($srcip),&ossec_aton($dstip),4,5,0,undef,undef,undef,undef,undef,undef,undef)\n");
+    $dbi->execute($query,$hids_id,$last_cid,$srcip,$dstip,4,5,0,20,0,0,0,0,0,0);
+    &printlog ("iphdr: ($query,$hids_id,$last_cid,$srcip,$dstip,4,5,0,undef,undef,undef,undef,undef,undef,undef)\n");
     $dbi->{sth}->finish;
 
 #########
@@ -571,8 +560,8 @@ sub host2ip {
     # Validate if we were fed a flatnamed host or a FQDN.
     if ($host =~ m/.*\..+/){
         # FQDN
-        $CMD=`host $host 2>/dev/null | grep 'has address' `;
-        if ($CMD =~m/(\d+\.\d+\.\d+\.\d+)/ ){
+        $CMD=`host $host 2>/dev/null | grep 'has address\|has IPv6 address' `;
+        if ($CMD =~m/($IP)/ ){
             return($1);
         }else{
             return undef; # return False.
@@ -588,8 +577,8 @@ sub host2ip {
 
         # There is an extra "." after $domain, this is to ensure linux
         # does not append "localdomain" at the end of the host.
-        $CMD=`host $host.$domain. 2>/dev/null | grep 'has address' `;
-        if ($CMD =~m/(\d+\.\d+\.\d+\.\d+)/ ){
+        $CMD=`host $host.$domain. 2>/dev/null | grep 'has address\|has IPv6 address' `;
+        if ($CMD =~m/($IP)/ ){
             return($1);
         }else{
             return undef; # return False.

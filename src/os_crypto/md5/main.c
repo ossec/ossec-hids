@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(argv[1], "file") == 0) {
-        OS_MD5_File(argv[2], filesum);
+        OS_MD5_File(argv[2], filesum, OS_BINARY);
     }
 
     else if (strcmp(argv[1], "str") == 0) {
