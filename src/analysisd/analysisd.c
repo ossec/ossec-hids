@@ -659,10 +659,10 @@ void OS_ReadMSG_analysisd(int m_queue)
     /* Open the sqlite db */
     extern sqlite3 *conn;
     int s_error = 0;
-    if (Config.md5db) {
-        debug2("Opening md5db: %s", Config.md5db);
-        if((s_error = sqlite3_open(Config.md5db, &conn))) {
-            merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5db);
+    if (Config.md5_whitelist) {
+        debug2("Opening md5_whitelist: %s", Config.md5_whitelist);
+        if((s_error = sqlite3_open(Config.md5_whitelist, &conn))) {
+            merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5_whitelist);
         }
 
     }

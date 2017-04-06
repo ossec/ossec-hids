@@ -127,7 +127,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 #endif
 
     /* MD5 DB */
-    char *xml_md5db = "md5db";
+    char *xml_md5_whitelist = "md5_whitelist";
 
     _Config *Config;
     MailConfig *Mail;
@@ -494,9 +494,9 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         }
 #endif
         /* MD5 DB */
-        else if(strcmp(node[i]->element, xml_md5db) == 0) {
+        else if(strcmp(node[i]->element, xml_md5_whitelist) == 0) {
             if(Config) {
-                os_strdup(node[i]->content, Config->md5db);
+                os_strdup(node[i]->content, Config->md5_whitelist);
             }
         }
 

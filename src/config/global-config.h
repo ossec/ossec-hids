@@ -90,7 +90,7 @@ typedef struct __Config {
 #endif
 
     /* MD5 DB support */
-    char *md5db;
+    char *md5_whitelist;
 
 } _Config;
 

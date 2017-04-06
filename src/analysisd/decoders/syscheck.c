@@ -678,14 +678,14 @@ int DecodeSyscheck(Eventinfo *lf)
      * Sample message:
      * 0:0:0:0:78f5c869675b1d09ddad870adad073f9:bd6c8d7a58b462aac86475e59af0e22954039c50
      */
-    if (Config.md5db)  {
+    if (Config.md5_whitelist)  {
         extern sqlite3 *conn;
         if ((p = extract_token(c_sum, ":", 4))) {
             if (!validate_md5(p)) { /* Never trust input from other origin */
                 merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
                 return(0);
             }
-            debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5db);
+            debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_whitelist);
             sprintf(stmt, "select md5sum from files where md5sum = \"%s\"", p);
             error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
             if (error == SQLITE_OK) {
