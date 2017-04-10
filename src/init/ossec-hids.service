@@ -1,0 +1,15 @@
+[Unit]
+Description=OSSEC HIDS 
+After=network.target 
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/var/ossec/
+ExecStart=/var/ossec/bin/ossec-control start
+ExecReload=/var/ossec/bin/ossec-control reload
+ExecStop=/var/ossec/bin/ossec-control stop
+
+[Install]
+WantedBy=multi-user.target
+
