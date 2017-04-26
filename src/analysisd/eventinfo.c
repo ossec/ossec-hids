@@ -133,7 +133,29 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
                     continue;
                 }
             }
+
+            /* GEOIP version of check for repetitions from same src_ip */
+            if (rule->context_opts & DIFFERENT_SRCGEOIP) {
+                if ((!lf->srcgeoip) || (!my_lf->srcgeoip)) {
+                    continue;
+                }
+
+                if (strcmp(lf->srcgeoip, my_lf->srcgeoip) == 0) {
+                    continue;
+                }
+            }
+
+
         }
+
+        /* We avoid multiple triggers for the same rule
+         * or rules with a lower level.
+         */
+        else if (lf->matched >= rule->level) {
+            return (NULL);
+        }
+
+
 
         /* Check if the number of matches worked */
         if (rule->__frequency <= 10) {
@@ -278,7 +300,28 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
                 }
             }
 
+
+            /* Check for different from same srcgeoip */
+            if (rule->context_opts & DIFFERENT_SRCGEOIP) {
+
+                if ((!lf->srcgeoip) || (!my_lf->srcgeoip)) {
+                    continue;
+                }
+
+                if (strcmp(lf->srcgeoip, my_lf->srcgeoip) == 0) {
+                    continue;
+                }
+            }
+
+
         }
+        /* We avoid multiple triggers for the same rule
+         * or rules with a lower level.
+         */
+        else if (lf->matched >= rule->level) {
+            return (NULL);
+        }
+
 
         /* Check if the number of matches worked */
         if (rule->__frequency < rule->frequency) {
@@ -402,6 +445,27 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
             }
         }
 
+        /* Check for different from same srcgeoip */
+        if (rule->context_opts & DIFFERENT_SRCGEOIP) {
+
+            if ((!lf->srcgeoip) || (!my_lf->srcgeoip)) {
+                continue;
+            }
+
+            if (strcmp(lf->srcgeoip, my_lf->srcgeoip) == 0) {
+                continue;
+            }
+        }
+
+        /* We avoid multiple triggers for the same rule
+         * or rules with a lower level.
+         */
+        else if (lf->matched >= rule->level) {
+            return (NULL);
+        }
+
+
+
 
         /* Check if the number of matches worked */
         if (rule->__frequency < rule->frequency) {
@@ -438,7 +502,9 @@ void Zero_Eventinfo(Eventinfo *lf)
     lf->location = NULL;
 
     lf->srcip = NULL;
+    lf->srcgeoip = NULL;
     lf->dstip = NULL;
+    lf->dstgeoip = NULL;
     lf->srcport = NULL;
     lf->dstport = NULL;
     lf->protocol = NULL;
@@ -499,9 +565,21 @@ void Free_Eventinfo(Eventinfo *lf)
     if (lf->srcip) {
         free(lf->srcip);
     }
+
+    if(lf->srcgeoip) {
+        free(lf->srcgeoip);
+        lf->srcgeoip = NULL;
+    }
+
     if (lf->dstip) {
         free(lf->dstip);
     }
+
+    if(lf->dstgeoip) {
+        free(lf->dstgeoip);
+        lf->dstgeoip = NULL;
+    }
+
     if (lf->srcport) {
         free(lf->srcport);
     }
