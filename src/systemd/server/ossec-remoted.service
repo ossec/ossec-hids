@@ -5,6 +5,7 @@ After=ossec-maild.service ossec-execd.service ossec-analysisd.service ossec-logc
 Before=ossec-agentless.service ossec-csyslog.service ossec-dbd.service ossec-monitord.service ossec-syscheckd.service
 
 [Service]
+Type=forking
 EnvironmentFile=/etc/ossec-init.conf
 Environment=DIRECTORY=/var/ossec
 

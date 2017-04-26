@@ -2,7 +2,7 @@
 
 # Change these values!
 # SLACKUSER user who posts notifications
-# CHANNEL witch channel it should be posted
+# CHANNEL which channel it should be posted
 # SITE is the URL provided by the Slack's WebHook, something like:
 # https://hooks.slack.com/services/TOKEN"
 SLACKUSER=""
@@ -37,7 +37,7 @@ if [ ! $? = 0 ]; then
         exit 0;
     fi
 else
-    curl -X POST --data-urlencode "payload=${PAYLOAD}" ${SITE} 2>>${PWD}/../logs/active-responses.log
+    curl -s -X POST --data-urlencode "payload=${PAYLOAD}" ${SITE} 2>>${PWD}/../logs/active-responses.log
     exit 0;
 fi
 

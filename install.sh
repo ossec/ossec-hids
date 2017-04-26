@@ -12,6 +12,7 @@
 # New function AddTable to add support for OpenBSD pf rules in firewall-drop active response
 
 # Changelog 29 March 2012 - Adding hybrid mode (standalone + agent)
+# added fix for use of USER_AGENT_CONFIG_PROFILE in preloaded-vars
 
 
 
@@ -400,6 +401,10 @@ ConfigureClient()
         echo "    <server-ip>$IP</server-ip>" >> $NEWCONFIG
     elif [ "X${HNAME}" != "X" ]; then
         echo "    <server-hostname>$HNAME</server-hostname>" >> $NEWCONFIG
+    fi
+    if [ "$X{USER_AGENT_CONFIG_PROFILE}" != "X" ]; then      
+         PROFILE=${USER_AGENT_CONFIG_PROFILE}
+         echo "    <config-profile>$PROFILE</config-profile>" >> $NEWCONFIG
     fi
     echo "  </client>" >> $NEWCONFIG
     echo "" >> $NEWCONFIG

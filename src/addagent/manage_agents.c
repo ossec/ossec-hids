@@ -82,17 +82,27 @@ int add_agent()
     os_ip c_ip;
     c_ip.ip = NULL;
 
+    char authfile[257];
+
+    if(willchroot > 0) {
+        snprintf(authfile, 256, "%s", AUTH_FILE);	//XXX
+    } else {
+        const char *dir = DEFAULTDIR;
+        snprintf(authfile, 256, "%s/%s", dir, AUTH_FILE);	//XXX
+    }
+
+
     /* Check if we can open the auth_file */
-    fp = fopen(AUTH_FILE, "a");
+    fp = fopen(authfile, "a");
     if (!fp) {
-        ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+        ErrorExit(FOPEN_ERROR, ARGV0, authfile, errno, strerror(errno));
     }
     fclose(fp);
 
 
 #ifndef WIN32
-    if (chmod(AUTH_FILE, 0440) == -1) {
-        ErrorExit(CHMOD_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+    if (chmod(authfile, 0440) == -1) {
+        ErrorExit(CHMOD_ERROR, ARGV0, authfile, errno, strerror(errno));
     }
 #endif
 
@@ -169,10 +179,10 @@ int add_agent()
     do {
         /* Default ID */
         i = MAX_AGENTS + 32512;
-        snprintf(id, 8, "%03d", i);
+        snprintf(id, 8, "%03d", i);	//XXX
         while (!IDExist(id)) {
             i--;
-            snprintf(id, 8, "%03d", i);
+            snprintf(id, 8, "%03d", i);	//XXX
 
             /* No key present, use id 0 */
             if (i <= 0) {
@@ -246,12 +256,12 @@ int add_agent()
             time3 = time(0);
             rand2 = random();
 
-            fp = fopen(AUTH_FILE, "a");
+            fp = fopen(authfile, "a");
             if (!fp) {
                 ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE, errno, strerror(errno));
             }
 #ifndef WIN32
-            chmod(AUTH_FILE, 0440);
+            chmod(authfile, 0440);
 #endif
 
             /* Random 1: Time took to write the agent information
@@ -298,6 +308,17 @@ int remove_agent()
     int id_exist;
 
     u_id[FILE_SIZE] = '\0';
+
+    extern int willchroot;
+    char authfile[257];
+    if(willchroot > 0) {
+        snprintf(authfile, 256, "%s", AUTH_FILE);	//XXX
+    } else {
+        const char *dir = DEFAULTDIR;
+        snprintf(authfile, 256, "%s/%s", dir, AUTH_FILE);	//XXX
+    }
+        
+
 
     if (!print_agents(0, 0, 0)) {
         printf(NO_AGENT);
@@ -356,13 +377,13 @@ int remove_agent()
                 return (1);
             }
 
-            fp = fopen(AUTH_FILE, "r+");
+            fp = fopen(authfile, "r+");
             if (!fp) {
                 free(full_name);
-                ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+                ErrorExit(FOPEN_ERROR, ARGV0, authfile, errno, strerror(errno));
             }
 #ifndef WIN32
-            chmod(AUTH_FILE, 0440);
+            chmod(authfile, 0440);
 #endif
 
             /* Remove the agent, but keep the id */

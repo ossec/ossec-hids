@@ -23,10 +23,8 @@ USE_GEOIP?=no
 USE_INOTIFY=no
 
 ifneq (${TARGET},winagent)
-	USE_PICVIZ?=yes
 	USE_OPENSSL?=auto
 else
-	USE_PICVIZ?=no
 	USE_OPENSSL?=no
 endif
 
@@ -192,10 +190,6 @@ ifneq (,$(filter ${USE_ZEROMQ},auto yes y Y 1))
 	OSSEC_LDFLAGS+=-lzmq -lczmq -lm
 endif # USE_ZEROMQ
 
-ifneq (,$(filter ${USE_PICVIZ},auto yes y Y 1))
-	DEFINES+=-DPICVIZ_OUTPUT_ENABLED
-endif # USE_PICVIZ
-
 ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	DEFINES+=-DLIBGEOIP_ENABLED
 	OSSEC_LDFLAGS+=-lGeoIP
@@ -294,7 +288,7 @@ endif # USE_OPENSSL
 
 ifneq (,$(filter ${USE_OPENSSL},yes y Y 1))
 	DEFINES+=-DLIBOPENSSL_ENABLED
-	ifneq (${OPENSSL_LIBS},)
+	ifeq (${OPENSSL_LIBS},)
 		OSSEC_LDFLAGS+=-lssl -lcrypto
 	else
 		OSSEC_LDFLAGS+=${OPENSSL_LIBS}
@@ -544,7 +538,6 @@ settings:
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
-	@echo "    USE_PICVIZ:       ${USE_PICVIZ}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"

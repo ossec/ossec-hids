@@ -294,6 +294,8 @@ int ReadDecodeXML(const char *file)
         /* Add decoder */
         if (!addDecoder2list(pi->name)) {
             merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+            free(pi->name);
+            free(pi);
             return (0);
         }
 
