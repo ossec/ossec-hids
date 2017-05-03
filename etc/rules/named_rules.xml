@@ -314,4 +314,11 @@
     <description>Parsing of a configuration file has failed.</description>
   </rule>
 
+  <rule id="12187" level="10">
+    <if_sid>12100</if_sid>
+    <match> ANY TKEY </match>
+    <description>Possible BIND9 TKEY denial of service.</description>
+    <info type='cve'>2015-5477</info>  
+  </rule>
+
 </group> <!-- SYSLOG,NAMED -->
