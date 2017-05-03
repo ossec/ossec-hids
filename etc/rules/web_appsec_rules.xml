@@ -179,13 +179,5 @@
     <description>High amount of POST requests in a small period of time (likely bot).</description>
    </rule>
 
-  <!-- Anomaly rules - Used on common web attacks -->
-  <rule id="31550" level="6">
-    <if_sid>31100</if_sid>
-    <url>%00</url>
-    <regex> "GET /\S+.php?\S+%00</regex>
-    <description>Anomaly URL query (attempting to pass null termination).</description>
-   </rule>
-
 
 </group>
