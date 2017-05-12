@@ -1,6 +1,8 @@
 [Unit]
 Description=OSSEC remoted
 PartOf=ossec-server.target
+After=ossec-maild.service ossec-execd.service ossec-analysisd.service ossec-logcollector
+Before=ossec-agentless.service ossec-csyslog.service ossec-dbd.service ossec-monitord.service ossec-syscheckd.service
 
 [Service]
 Type=forking
