@@ -1457,19 +1457,26 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>id, srcip</order>
 </decoder>
 
-<decoder name="pix-srcip">
+<decoder name="pix-enable-failed">
   <parent>pix</parent>
   <prematch offset="after_parent">^6-308001</prematch>
-  <regex offset="after_parent">^(\S+): \.+ (\S+)</regex>
-  <order>id, srcip</order>
+  <regex offset="after_parent">^(\S+):</regex>
+  <order>id</order>
 </decoder>
 
-<decoder name="pix-srcip-port">
+<decoder name="pix-srcip-port-denied">
   <parent>pix</parent>
-  <prematch offset="after_parent">^6-605004|^6-605005</prematch>
+  <prematch offset="after_parent">^6-605004</prematch>
+  <regex offset="after_parent">^(\S+): Login (\S+) from (\S+)/(\d+)</regex>
+  <order>id, action, srcip, srcport</order>
+</decoder>
+
+<decoder name="pix-srcip-port-permitted">
+  <parent>pix</parent>
+  <prematch offset="after_parent">^6-605005</prematch>
   <regex offset="after_parent">^(\S+): Login (\S+) from (\S+)/(\d+) \.+user "(\w+)"</regex>
   <order>id, action, srcip, srcport, user</order>
-</decoder>
+ </decoder>
 
 <decoder name="pix-generic">
   <parent>pix</parent>
