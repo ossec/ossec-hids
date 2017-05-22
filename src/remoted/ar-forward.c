@@ -137,17 +137,37 @@ void *AR_Forward(__attribute__((unused)) void *arg)
 
             /* Send to a pre-defined agent */
             else if (ar_location & SPECIFIC_AGENT) {
+                char *org_agent_list = NULL;
+                char *agent_list = NULL;
+                char *token = NULL;
+                int  agent_id_err = 0;
+
                 ar_location++;
 
-                agent_id = OS_IsAllowedID(&keys, ar_agent_id);
-
-                if (agent_id < 0) {
+                org_agent_list = agent_list = strdup(ar_agent_id);
+                //verbose("%s: [INFO] selected agent:=%s", ARGV0, org_agent_list);
+                if (org_agent_list == NULL) {
                     key_unlock();
                     merror(AR_NOAGENT_ERROR, ARGV0, ar_agent_id);
-                    continue;
+                    continue ;
                 }
+                while ((token = strsep(&agent_list, ",")) != NULL) {
+                    if (*token!='\0') {
+                        agent_id = OS_IsAllowedID(&keys, token);
+                        //verbose("%s: [INFO] send to agent_id=%d", ARGV0, agent_id);
 
-                send_msg((unsigned)agent_id, msg_to_send);
+                        if(agent_id < 0) {
+                            //key_unlock();
+                            merror(AR_NOAGENT_ERROR, ARGV0, token);
+                            agent_id_err = -1;
+                            continue;
+                        }
+                        else {
+                            send_msg((unsigned)agent_id, msg_to_send);
+                        }
+                    }
+                }
+                free(org_agent_list);
             }
 
             /* Lock use of keys */
