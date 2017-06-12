@@ -1,6 +1,10 @@
-# rootkit_trojans.txt, (C) Daniel B. Cid
+# rootkit_trojans.txt, (C) 2017 OSSEC Project
 # Imported from the rootcheck project.
 # Some entries taken from the chkrootkit project.
+#
+# Released under the same license as OSSEC.
+# More details at the LICENSE file included with OSSEC or online
+# at: https://github.com/ossec/ossec-hids/blob/master/LICENSE
 #
 # Blank lines and lines starting with '#' are ignored.
 #
