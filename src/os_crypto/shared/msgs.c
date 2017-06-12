@@ -269,11 +269,8 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
 
         /* Check if it is a duplicated message */
         if (msg_global == keys->keyentries[id]->global) {
-            return (NULL);
-        }
-
-        /* Warn about duplicated messages */
-        merror("%s: WARN: Duplicate error:  global: %u, local: %u, "
+            /* Warn about duplicated messages */
+            merror("%s: WARN: Duplicate error:  global: %u, local: %u, "
                "saved global: %u, saved local:%u",
                __local_name,
                msg_global,
@@ -281,8 +278,9 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
                keys->keyentries[id]->global,
                keys->keyentries[id]->local);
 
-        merror(ENCTIME_ERROR, __local_name, keys->keyentries[id]->name);
-        return (NULL);
+            merror(ENCTIME_ERROR, __local_name, keys->keyentries[id]->name);
+            return (NULL);
+        }
     }
 
     /* Old format */
