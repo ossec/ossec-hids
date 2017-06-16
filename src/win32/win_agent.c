@@ -140,6 +140,8 @@ int local_start()
     }
     accept_manager_commands = getDefine_Int("logcollector",
                                             "remote_commands", 0, 1);
+    loop_timeout = getDefine_Int("logcollector",  "loop_timeout", 1, 120);
+    open_file_attempts = getDefine_Int("logcollector", "open_attempts", 2, 998);
 
     /* Configuration file not present */
     if (File_DateofChange(cfg) < 0) {

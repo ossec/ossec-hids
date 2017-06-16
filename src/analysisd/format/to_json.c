@@ -18,11 +18,8 @@
 /* Convert Eventinfo to json */
 char *Eventinfo_to_jsonstr(const Eventinfo *lf)
 {
-    time_t c_time;
     char* time_string;
-    c_time = time(NULL);
-    time_string = ctime(&c_time);
-
+ 
     cJSON *root;
     cJSON *rule;
     cJSON *file_diff;
@@ -38,12 +35,15 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if ( lf->time ) {
 
         char alert_id[19];
+        double timestamp_ms;
+        timestamp_ms = ((double)lf->time)*1000;
         alert_id[18] = '\0';
         if((snprintf(alert_id, 18, "%ld.%ld", (long int)lf->time, __crt_ftell)) < 0) {
             merror("snprintf failed");
         }
 
         cJSON_AddStringToObject(root, "id", alert_id);
+        cJSON_AddNumberToObject(root, "TimeStamp", timestamp_ms);
     }
 
     if (lf->generated_rule->comment) {
@@ -112,9 +112,7 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->full_log) {
         cJSON_AddStringToObject(root, "full_log", lf->full_log);
     }
-    if (lf->full_log){
-        cJSON_AddStringToObject(root, "TimeStamp", time_string);
-    }
+    
     if (lf->filename) {
         cJSON_AddItemToObject(root, "file", file_diff = cJSON_CreateObject());
 
@@ -124,15 +122,15 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
             cJSON_AddStringToObject(file_diff, "md5_before", lf->md5_before);
             cJSON_AddStringToObject(file_diff, "md5_after", lf->md5_after);
         }
-        if (lf->sha1_before && lf->sha1_after && !strcmp(lf->sha1_before, lf->sha1_after) != 0) {
+        if (lf->sha1_before && lf->sha1_after && (!strcmp(lf->sha1_before, lf->sha1_after)) != 0) {
             cJSON_AddStringToObject(file_diff, "sha1_before", lf->sha1_before);
             cJSON_AddStringToObject(file_diff, "sha1_after", lf->sha1_after);
         }
-        if (lf->owner_before && lf->owner_after && !strcmp(lf->owner_before, lf->owner_after) != 0) {
+        if (lf->owner_before && lf->owner_after && (!strcmp(lf->owner_before, lf->owner_after)) != 0) {
             cJSON_AddStringToObject(file_diff, "owner_before", lf->owner_before);
             cJSON_AddStringToObject(file_diff, "owner_after", lf->owner_after);
         }
-        if (lf->gowner_before && lf->gowner_after && !strcmp(lf->gowner_before, lf->gowner_after) != 0 ) {
+        if (lf->gowner_before && lf->gowner_after && (!strcmp(lf->gowner_before, lf->gowner_after)) != 0 ) {
             cJSON_AddStringToObject(file_diff, "gowner_before", lf->gowner_before);
             cJSON_AddStringToObject(file_diff, "gowner_after", lf->gowner_after);
         }
