@@ -1,15 +1,29 @@
-OSSEC changelog (2.9.1) <ddpbsd@gmail.com>
-
-What's new
-    Fixed windows decoders
-
-
-OSSEC changelog (2.9.0) <scott@atomicorp.com>
-
 Release Maintainers
 
 Dan Parriott
 Scott R. Shinn (Atomicorp, Inc.)
+
+OSSEC changelog (2.9.1) <ddpbsd@gmail.com>
+
+What's new
+    Updated rootcheck audit db's
+    Updated GeoIP support 
+
+New Rules / Decoders
+    Fixed windows decoders
+    PR #980: Update for vsftp rules / decoders
+
+General
+    PR #1108: Implement GeoIP checks in Groups and Events
+    PR #1136: Fix for mysql building
+    PR #1144: Fixes Issue #1142 for CEF support (@mkvocka)
+
+
+
+
+
+OSSEC changelog (2.9.0) <scott@atomicorp.com>
+
 
 Whats New
     Alert Output support for JSON and ZeroMQ
