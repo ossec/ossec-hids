@@ -1760,9 +1760,9 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="web-accesslog">
   <type>web-log</type>
   <prematch>^\S+ \S+ \S+ [\S+ \S\d+] "\w+ \S+ HTTP\S+" </prematch>
-  <regex>^(\S+) \S+ \S+ [\S+ \S\d+] </regex>
-  <regex>"\w+ (\S+) HTTP\S+" (\d+) </regex>
-  <order>srcip, url, id</order>
+  <regex>^(\S+) \S+ (\S+) [\S+ \S\d+] </regex>
+  <regex>"(\w+) (\S+) HTTP\S+" (\d+) </regex>
+  <order>srcip, srcuser, action, url, id</order>
 </decoder>
 
 
