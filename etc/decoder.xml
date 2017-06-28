@@ -231,7 +231,7 @@
 <decoder name="ssh-scan2">
   <parent>sshd</parent>
   <prematch>^Did not receive identification|^Bad protocol version</prematch>
-  <regex offset="after_prematch"> from (\S+)$</regex>
+  <regex offset="after_prematch"> from (\S+)</regex>
   <order>srcip</order>
 </decoder>
 
