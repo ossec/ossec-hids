@@ -7,6 +7,7 @@
  * Foundation
  */
 
+#include <time.h>
 #include "manage_agents.h"
 #include "os_crypto/md5/md5_op.h"
 
@@ -23,11 +24,9 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
     char str2[STR_SIZE + 1];
     char *muname;
     char *finals;
-
     char nid[9] = { '\0' }, nid_p[9] = { '\0' };
 
     srandom_init();
-
     muname = getuname();
 
     snprintf(str1, STR_SIZE, "%d%s%d%s", (int)time(0), name, (int)random(), muname);
@@ -66,7 +65,7 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
         id = nid;
     }
 
-    fp = fopen(KEYSFILE_PATH, "a");
+    fp = fopen(AUTH_FILE, "a");
     if (!fp) {
         return (NULL);
     }
@@ -83,6 +82,72 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
     return (finals);
 }
 
+int OS_RemoveAgent(const char *u_id) {
+    FILE *fp;
+    int id_exist;
+
+    id_exist = IDExist(u_id);
+
+    if (!id_exist)
+        return 0;
+
+    fp = fopen(AUTH_FILE, "r+");
+
+    if (!fp)
+        return 0;
+
+#ifndef WIN32
+    chmod(AUTH_FILE, 0440);
+#endif
+
+#ifdef REUSE_ID
+    long fp_seek;
+    size_t fp_read;
+    char *buffer;
+    char buf_discard[OS_BUFFER_SIZE];
+    struct stat fp_stat;
+
+    if (stat(AUTH_FILE, &fp_stat) < 0) {
+        fclose(fp);
+        return 0;
+    }
+
+    buffer = malloc(fp_stat.st_size);
+    if (!buffer) {
+        fclose(fp);
+        return 0;
+    }
+
+    fsetpos(fp, &fp_pos);
+    fp_seek = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    fp_read = fread(buffer, sizeof(char), fp_seek, fp);
+    fgets(buf_discard, OS_BUFFER_SIZE - 1, fp);
+
+    if (!feof(fp))
+        fp_read += fread(buffer + fp_read, sizeof(char), fp_stat.st_size, fp);
+
+    fclose(fp);
+    fp = fopen(AUTH_FILE, "w");
+
+    if (!fp) {
+        free(buffer);
+        return 0;
+    }
+
+    fwrite(buffer, sizeof(char), fp_read, fp);
+
+#else
+    /* Remove the agent, but keep the id */
+    fsetpos(fp, &fp_pos);
+    fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+#endif
+    fclose(fp);
+
+    /* Remove counter for ID */
+    OS_RemoveCounter(u_id);
+    return 1;
+}
 
 int OS_IsValidID(const char *id)
 {
@@ -309,6 +374,82 @@ int NameExist(const char *u_name)
 
     fclose(fp);
     return (0);
+}
+
+/* Returns the ID of an agent, or NULL if not found */
+char *IPExist(const char *u_ip)
+{
+    FILE *fp;
+    char *name, *ip, *pass;
+    char line_read[FILE_SIZE + 1];
+    line_read[FILE_SIZE] = '\0';
+
+    if (!(u_ip && strncmp(u_ip, "any", 3)))
+        return NULL;
+
+    if (isChroot())
+        fp = fopen(AUTH_FILE, "r");
+    else
+        fp = fopen(KEYSFILE_PATH, "r");
+
+    if (!fp)
+        return NULL;
+
+    fseek(fp, 0, SEEK_SET);
+    fgetpos(fp, &fp_pos);
+
+    while (fgets(line_read, FILE_SIZE - 1, fp) != NULL) {
+        if (line_read[0] == '#') {
+            continue;
+        }
+
+        name = strchr(line_read, ' ');
+        if (name) {
+            name++;
+
+            if (*name == '#') {
+                continue;
+            }
+
+            ip = strchr(name, ' ');
+            if (ip) {
+                ip++;
+
+                pass = strchr(ip, ' ');
+                if (pass) {
+                    *pass = '\0';
+                    if (strcmp(u_ip, ip) == 0) {
+                        fclose(fp);
+                        name[-1] = '\0';
+                        return strdup(line_read);
+                    }
+                }
+            }
+        }
+
+        fgetpos(fp, &fp_pos);
+    }
+
+    fclose(fp);
+    return NULL;
+}
+
+/* Returns the number of seconds since last agent connection, or -1 if error. */
+double OS_AgentAntiquity(const char *id)
+{
+    struct stat file_stat;
+    char file_name[OS_FLSIZE];
+    char *full_name = getFullnameById(id);
+
+    if (!full_name)
+        return -1;
+
+    snprintf(file_name, OS_FLSIZE - 1, "%s/%s", AGENTINFO_DIR, full_name);
+
+    if (stat(file_name, &file_stat) < 0)
+        return -1;
+
+    return difftime(time(NULL), file_stat.st_mtim.tv_sec);
 }
 
 /* Print available agents */
