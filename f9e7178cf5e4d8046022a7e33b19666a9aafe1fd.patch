@@ -1,0 +1,92 @@
+From f9e7178cf5e4d8046022a7e33b19666a9aafe1fd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?V=C3=ADctor=20Manuel=20Fern=C3=A1ndez=20Castro?=
+ <vmfdez90@gmail.com>
+Date: Wed, 17 Feb 2016 09:58:28 +0100
+Subject: [PATCH] Adding more randomness to the default authd pass
+
+---
+ src/headers/file_op.h     |  3 ++-
+ src/os_auth/main-server.c | 13 ++++++++++++-
+ src/shared/file_op.c      | 17 +++++++++++++++++
+ 3 files changed, 31 insertions(+), 2 deletions(-)
+
+diff --git a/src/headers/file_op.h b/src/headers/file_op.h
+index 26933c30..9fb9e802 100644
+--- a/src/headers/file_op.h
++++ b/src/headers/file_op.h
+@@ -25,6 +25,8 @@ int IsDir(const char *file) __attribute__((nonnull));
+ 
+ int CreatePID(const char *name, int pid) __attribute__((nonnull));
+ 
++char *GetRandomNoise();
++
+ int DeletePID(const char *name) __attribute__((nonnull));
+ 
+ int MergeFiles(const char *finalpath, char **files) __attribute__((nonnull));
+@@ -58,4 +60,3 @@ int isVista;
+ #endif
+ 
+ #endif /* __FILE_H */
+-
+diff --git a/src/os_auth/main-server.c b/src/os_auth/main-server.c
+index 56b61798..6d3f1105 100644
+--- a/src/os_auth/main-server.c
++++ b/src/os_auth/main-server.c
+@@ -75,7 +75,11 @@ char *__generatetmppass()
+ {
+     int rand1;
+     int rand2;
++    char *rand3;
++    char *rand4;
+     os_md5 md1;
++    os_md5 md3;
++    os_md5 md4;
+     char *fstring = NULL;
+     char str1[STR_SIZE +1];
+     char *muname = NULL;
+@@ -92,9 +96,16 @@ char *__generatetmppass()
+ 
+     rand1 = random();
+     rand2 = random();
++
++    rand3 = GetRandomNoise();
++    rand4 = GetRandomNoise();
++
++    OS_MD5_Str(rand3, md3);
++    OS_MD5_Str(rand4, md4);
++
+     muname = getuname();
+ 
+-    snprintf(str1, STR_SIZE, "%d%d%s%d",(int)time(0), rand1, muname, rand2);
++    snprintf(str1, STR_SIZE, "%d%d%s%d%s%s",(int)time(0), rand1, muname, rand2, md3, md4);
+     OS_MD5_Str(str1, md1);
+     fstring = strdup(md1);
+     return(fstring);
+diff --git a/src/shared/file_op.c b/src/shared/file_op.c
+index e679f331..184c2e60 100644
+--- a/src/shared/file_op.c
++++ b/src/shared/file_op.c
+@@ -356,6 +356,23 @@ int CreatePID(const char *name, int pid)
+     return (0);
+ }
+ 
++char *GetRandomNoise()
++{
++    FILE *fp;
++    char buf[2048 + 1];
++
++    /* Reading urandom */
++    fp = fopen("/dev/urandom", "r");
++    if(!fp)
++    {
++        return(NULL);
++    }
++
++    buf[2048] = '\0';
++    fread(buf, 1, 2048, fp);
++    return(strdup(buf));
++}
++
+ int DeletePID(const char *name)
+ {
+     char file[256];
