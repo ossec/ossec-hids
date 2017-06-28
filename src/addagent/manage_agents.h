@@ -33,8 +33,11 @@ int OS_IsValidName(const char *u_name);
 int OS_IsValidID(const char *id);
 int IDExist(const char *id);
 int NameExist(const char *u_name);
+char *IPExist(const char *u_name);
 char *getFullnameById(const char *id);
 char *OS_AddNewAgent(const char *name, const char *ip, const char *id);
+int  OS_RemoveAgent(const char *id);
+double OS_AgentAntiquity(const char *id);
 void FormatID(char *id);
 
 /* Print available agents */
