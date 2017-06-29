@@ -84,11 +84,12 @@ void send_msg_init()
 /* Send message to an agent
  * Returns -1 on error
  */
-int send_msg(unsigned int agentid, const char *msg)
+int send_msg(unsigned int agentid, const char *msg, int reply)
 {
     size_t msg_size, sa_size;
     char crypt_msg[OS_MAXSTR + 1];
     struct sockaddr * dest_sa;
+    int sock;
 
     /* If we don't have the agent id, ignore it */
     if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * NOTIFY_TIME))) {
@@ -101,6 +102,18 @@ int send_msg(unsigned int agentid, const char *msg)
         return (-1);
     }
 
+    if (logr.proto[logr.position] == TCP_PROTO && !reply) {
+        char *ip = inet_ntoa(keys.keyentries[agentid]->peer_info.sin_addr);
+        sock = OS_ConnectTCP(logr.port[logr.position], ip != NULL);
+
+        if (sock < 0) {
+            merror(CONNS_ERROR, ARGV0, ip);
+            return (-1);
+        }
+    } else {
+        sock = logr.sock;
+    }
+
     /* Lock before using */
     if (pthread_mutex_lock(&sendmsg_mutex) != 0) {
         merror(MUTEX_ERROR, ARGV0);
@@ -111,7 +124,7 @@ int send_msg(unsigned int agentid, const char *msg)
     dest_sa = (struct sockaddr *)&keys.keyentries[agentid]->peer_info;
     sa_size = (dest_sa->sa_family == AF_INET) ?
               sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-    if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
+    if (sendto(sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
         merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
     }
 
@@ -119,6 +132,10 @@ int send_msg(unsigned int agentid, const char *msg)
     if (pthread_mutex_unlock(&sendmsg_mutex) != 0) {
         merror(MUTEX_ERROR, ARGV0);
         return (-1);
+    }
+
+    if (logr.proto[logr.position] == TCP_PROTO && !reply) {
+        close(sock);
     }
 
     return (0);

@@ -11,18 +11,18 @@
 #include "os_net/os_net.h"
 #include "remoted.h"
 
-
 /* Handle secure connections */
-void HandleSecure()
+void HandleSecure(int protocol)
 {
     int agentid;
+    int socket_server = logr.sock;
     char buffer[OS_MAXSTR + 1];
     char cleartext_msg[OS_MAXSTR + 1];
     char srcip[IPSIZE + 1];
     char *tmp_msg;
     char srcmsg[OS_FLSIZE + 1];
     ssize_t recv_b;
-    struct sockaddr_storage peer_info;
+    struct sockaddr_in peer_info;
     socklen_t peer_size;
 
     /* Send msg init */
@@ -72,19 +72,43 @@ void HandleSecure()
     memset(srcmsg, '\0', OS_FLSIZE + 1);
     tmp_msg = NULL;
 
+    if (protocol == TCP_PROTO) {
+	logr.sock = -1;
+    }
+
+
+
+
     while (1) {
         /* Receive message  */
-        recv_b = recvfrom(logr.sock, buffer, OS_MAXSTR, 0,
-                          (struct sockaddr *)&peer_info, &peer_size);
+     	
+	if (protocol == TCP_PROTO) {
+		close(logr.sock);
+		logr.sock = OS_AcceptTCP(socket_server, srcip, IPSIZE);
+		
+		if (logr.sock < 0) {
+			ErrorExit("ERROR: %s Couldn't accept TCP connections.", ARGV0);
+		}
+
+		peer_info.sin_addr.s_addr = inet_addr(srcip);
+		
+		/* Receive message */
+		recv_b = recv(logr.sock, buffer, OS_MAXSTR, 0);
+	} else {
+		recv_b = recvfrom(logr.sock, buffer, OS_MAXSTR, 0, (struct sockaddr *)&peer_info, &peer_size);
+
+		/* Set the source IP */
+		strncpy(srcip, inet_ntoa(peer_info.sin_addr), IPSIZE);
+		srcip[IPSIZE] = '\0';
+	}
 
         /* Nothing received */
         if (recv_b <= 0) {
             continue;
         }
 
-        /* Set the source IP */
-        satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
-        srcip[IPSIZE] = '\0';
+              
+        
 
         /* Get a valid agent id */
         if (buffer[0] == '!') {

@@ -17,7 +17,7 @@ int send_msg(int agentid, const char *msg)
 {
     size_t msg_size;
     char crypt_msg[OS_MAXSTR + 1];
-
+ 
     msg_size = CreateSecMSG(&keys, msg, crypt_msg, agentid);
     if (msg_size == 0) {
         merror(SEC_ERROR, ARGV0);
@@ -25,12 +25,32 @@ int send_msg(int agentid, const char *msg)
     }
 
     /* Send msg_size of crypt_msg */
-    if (OS_SendUDPbySize(agt->sock, msg_size, crypt_msg) < 0) {
-        merror(SEND_ERROR, ARGV0, "server");
-        sleep(1);
-        return (-1);
+    if (agt->protocol == UDP_PROTO) {
+        if (OS_SendUDPbySize(agt->sock, msg_size, crypt_msg) < 0) {
+            merror(SEND_ERROR, ARGV0, "server");
+            sleep(1);
+            return (-1);
+        }
+    } else {
+        if (agt->sock_r >= 0) {
+            close(agt->sock_r);
+        }
+        
+        agt->sock_r =  OS_ConnectTCP(agt->port,  (const) (char) *strchr(agt->rip[agt->rip_id], ':') != NULL);
+
+
+        if (agt->sock_r < 0) {
+            merror(CONNS_ERROR, ARGV0, agt->rip[agt->rip_id]);
+            sleep(1);
+            return -1;
+        }
+
+        if (OS_SendTCPbySize(agt->sock_r, msg_size, crypt_msg) < 0) {
+            merror(SEND_ERROR, ARGV0, "server");
+            sleep(1);
+            return (-1);
+        }
     }
 
     return (0);
 }
-
