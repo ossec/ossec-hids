@@ -91,7 +91,7 @@ int OS_RemoveAgent(const char *u_id) {
     if (!id_exist)
         return 0;
 
-    fp = fopen(AUTH_FILE, "r+");
+    fp = fopen(isChroot() ? AUTH_FILE : KEYSFILE_PATH, "r+");
 
     if (!fp)
         return 0;
