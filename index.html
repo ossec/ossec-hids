@@ -1,0 +1,5553 @@
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+  <link rel="dns-prefetch" href="https://assets-cdn.github.com">
+  <link rel="dns-prefetch" href="https://avatars0.githubusercontent.com">
+  <link rel="dns-prefetch" href="https://avatars1.githubusercontent.com">
+  <link rel="dns-prefetch" href="https://avatars2.githubusercontent.com">
+  <link rel="dns-prefetch" href="https://avatars3.githubusercontent.com">
+  <link rel="dns-prefetch" href="https://github-cloud.s3.amazonaws.com">
+  <link rel="dns-prefetch" href="https://user-images.githubusercontent.com/">
+
+
+
+  <link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/frameworks-e04a23d39bf81b7db3c635177756ef51bc171feb440be9e174933c6eb56382da.css" media="all" rel="stylesheet" />
+  <link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/github-b9b43f5697ca643594f3a899ff0ee0b6088f2fc4164c3c54ba8d43232503c6d9.css" media="all" rel="stylesheet" />
+  
+  
+  <link crossorigin="anonymous" href="https://assets-cdn.github.com/assets/site-0985c539aa8585eaf2bfff13b4cbb98befa6556d244e6cd5cf4ce0a57700d11e.css" media="all" rel="stylesheet" />
+  
+
+  <meta name="viewport" content="width=device-width">
+  
+  <title>Merge branch &#39;stable&#39; into 2.0 · wazuh/wazuh@7e2a6a0 · GitHub</title>
+  <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="GitHub">
+  <link rel="fluid-icon" href="https://github.com/fluidicon.png" title="GitHub">
+  <meta property="fb:app_id" content="1401488693436528">
+
+    
+    <meta content="https://avatars1.githubusercontent.com/u/10536251?v=3&amp;s=200" property="og:image" /><meta content="GitHub" property="og:site_name" /><meta content="object" property="og:type" /><meta content="Merge branch &#39;stable&#39; into 2.0 · wazuh/wazuh@7e2a6a0" property="og:title" /><meta content="https://github.com/wazuh/wazuh/commit/7e2a6a0d4fdf0f62393f137a8bc9eaab94958d69" property="og:url" /><meta content="1495745071" property="og:updated_time" />
+
+  <link rel="assets" href="https://assets-cdn.github.com/">
+  
+  <meta name="pjax-timeout" content="1000">
+  
+  <meta name="request-id" content="BDF2:5199:F6189D:161642E:5956813A" data-pjax-transient>
+  
+
+  <meta name="selected-link" value="repo_commits" data-pjax-transient>
+
+  <meta name="google-site-verification" content="KT5gs8h0wvaagLKAVWq8bbeNwnZZK1r1XQysX3xurLU">
+<meta name="google-site-verification" content="ZzhVyEFwb7w3e0-uOTltm8Jsck2F5StVihD0exw2fsA">
+    <meta name="google-analytics" content="UA-3769691-2">
+
+<meta content="collector.githubapp.com" name="octolytics-host" /><meta content="github" name="octolytics-app-id" /><meta content="https://collector.githubapp.com/github-external/browser_event" name="octolytics-event-url" /><meta content="BDF2:5199:F6189D:161642E:5956813A" name="octolytics-dimension-request_id" /><meta content="iad" name="octolytics-dimension-region_edge" /><meta content="iad" name="octolytics-dimension-region_render" />
+<meta content="/&lt;user-name&gt;/&lt;repo-name&gt;/commit/show" data-pjax-transient="true" name="analytics-location" />
+
+
+
+
+  <meta class="js-ga-set" name="dimension1" content="Logged Out">
+
+
+  
+
+      <meta name="hostname" content="github.com">
+  <meta name="user-login" content="">
+
+      <meta name="expected-hostname" content="github.com">
+    <meta name="js-proxy-site-detection-payload" content="OWYwZDg2NTAwNWI3YjY1MjQ2YmMzODU4YTY4M2QzODlhNjlkMmFjYjM0NDJmODM2NjFjYWVmYjc0NWZjMDI2YXx7InJlbW90ZV9hZGRyZXNzIjoiMTczLjc5LjE2NC41IiwicmVxdWVzdF9pZCI6IkJERjI6NTE5OTpGNjE4OUQ6MTYxNjQyRTo1OTU2ODEzQSIsInRpbWVzdGFtcCI6MTQ5ODg0MTQwMywiaG9zdCI6ImdpdGh1Yi5jb20ifQ==">
+
+
+  <meta name="html-safe-nonce" content="683eacd2e4216076bc9828f147cd2033f0b3709d">
+
+  <meta http-equiv="x-pjax-version" content="98c09af5277985a51cb0cdf8624f86d6">
+  
+
+      <link data-pjax-transient="true" href="/wazuh/wazuh/commit/master.diff" rel="alternate" type="text/plain+diff" />
+  <link data-pjax-transient="true" href="/wazuh/wazuh/commit/master.patch" rel="alternate" type="text/plain+patch" />
+
+  <meta name="diff-view" content="unified" data-pjax-transient>
+  <link href="https://github.com/wazuh/wazuh/commits/master.atom" rel="alternate" title="Recent Commits to wazuh:master" type="application/atom+xml">
+
+  <meta name="description" content="wazuh - Wazuh HIDS">
+  <meta name="go-import" content="github.com/wazuh/wazuh git https://github.com/wazuh/wazuh.git">
+
+  <meta content="13752566" name="octolytics-dimension-user_id" /><meta content="wazuh" name="octolytics-dimension-user_login" /><meta content="40556106" name="octolytics-dimension-repository_id" /><meta content="wazuh/wazuh" name="octolytics-dimension-repository_nwo" /><meta content="true" name="octolytics-dimension-repository_public" /><meta content="false" name="octolytics-dimension-repository_is_fork" /><meta content="40556106" name="octolytics-dimension-repository_network_root_id" /><meta content="wazuh/wazuh" name="octolytics-dimension-repository_network_root_nwo" /><meta content="false" name="octolytics-dimension-repository_explore_github_marketplace_ci_cta_shown" />
+
+
+
+
+  <meta name="browser-stats-url" content="https://api.github.com/_private/browser/stats">
+
+  <meta name="browser-errors-url" content="https://api.github.com/_private/browser/errors">
+
+  <link rel="mask-icon" href="https://assets-cdn.github.com/pinned-octocat.svg" color="#000000">
+  <link rel="icon" type="image/x-icon" href="https://assets-cdn.github.com/favicon.ico">
+
+<meta name="theme-color" content="#1e2327">
+
+
+
+  </head>
+
+  <body class="logged-out env-production">
+    
+
+
+
+  <div class="position-relative js-header-wrapper ">
+    <a href="#start-of-content" tabindex="1" class="px-2 py-4 show-on-focus js-skip-to-content">Skip to content</a>
+    <div id="js-pjax-loader-bar" class="pjax-loader-bar"><div class="progress"></div></div>
+
+    
+    
+    
+
+
+
+          <header class="site-header js-details-container Details" role="banner">
+  <div class="site-nav-container">
+    <a class="header-logo-invertocat" href="https://github.com/" aria-label="Homepage" data-ga-click="(Logged out) Header, go to homepage, icon:logo-wordmark">
+      <svg aria-hidden="true" class="octicon octicon-mark-github" height="32" version="1.1" viewBox="0 0 16 16" width="32"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    </a>
+
+    <button class="btn-link float-right site-header-toggle js-details-target" type="button" aria-label="Toggle navigation" aria-expanded="false">
+      <svg aria-hidden="true" class="octicon octicon-three-bars" height="24" version="1.1" viewBox="0 0 12 16" width="18"><path fill-rule="evenodd" d="M11.41 9H.59C0 9 0 8.59 0 8c0-.59 0-1 .59-1H11.4c.59 0 .59.41.59 1 0 .59 0 1-.59 1h.01zm0-4H.59C0 5 0 4.59 0 4c0-.59 0-1 .59-1H11.4c.59 0 .59.41.59 1 0 .59 0 1-.59 1h.01zM.59 11H11.4c.59 0 .59.41.59 1 0 .59 0 1-.59 1H.59C0 13 0 12.59 0 12c0-.59 0-1 .59-1z"/></svg>
+    </button>
+
+    <div class="site-header-menu">
+      <nav class="site-header-nav">
+        <a href="/features" class="js-selected-navigation-item nav-item" data-ga-click="Header, click, Nav menu - item:features" data-selected-links="/features /features/code-review /features/project-management /features/integrations /features">
+          Features
+</a>        <a href="/business" class="js-selected-navigation-item nav-item" data-ga-click="Header, click, Nav menu - item:business" data-selected-links="/business /business/security /business/customers /business">
+          Business
+</a>        <a href="/explore" class="js-selected-navigation-item nav-item" data-ga-click="Header, click, Nav menu - item:explore" data-selected-links="/explore /trending /trending/developers /stars /integrations /integrations/feature/code /integrations/feature/collaborate /integrations/feature/ship showcases showcases_search showcases_landing /explore">
+          Explore
+</a>            <a href="/marketplace" class="js-selected-navigation-item nav-item" data-ga-click="Header, click, Nav menu - item:marketplace" data-selected-links=" /marketplace">
+              Marketplace
+</a>        <a href="/pricing" class="js-selected-navigation-item nav-item" data-ga-click="Header, click, Nav menu - item:pricing" data-selected-links="/pricing /pricing/developer /pricing/team /pricing/business-hosted /pricing/business-enterprise /pricing">
+          Pricing
+</a>      </nav>
+
+      <div class="site-header-actions">
+          <div class="header-search scoped-search site-scoped-search js-site-search" role="search">
+  <!-- '"` --><!-- </textarea></xmp> --></option></form><form accept-charset="UTF-8" action="/wazuh/wazuh/search" class="js-site-search-form" data-scoped-search-url="/wazuh/wazuh/search" data-unscoped-search-url="/search" method="get"><div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+    <label class="form-control header-search-wrapper js-chromeless-input-container">
+        <a href="/wazuh/wazuh/commit/master" class="header-search-scope no-underline">This repository</a>
+      <input type="text"
+        class="form-control header-search-input js-site-search-focus js-site-search-field is-clearable"
+        data-hotkey="s"
+        name="q"
+        value=""
+        placeholder="Search"
+        aria-label="Search this repository"
+        data-unscoped-placeholder="Search GitHub"
+        data-scoped-placeholder="Search"
+        autocapitalize="off">
+        <input type="hidden" class="js-site-search-type-field" name="type" >
+    </label>
+</form></div>
+
+
+          <a class="text-bold site-header-link" href="/login?return_to=%2Fwazuh%2Fwazuh%2Fcommit%2Fmaster" data-ga-click="(Logged out) Header, clicked Sign in, text:sign-in">Sign in</a>
+            <span class="text-gray">or</span>
+            <a class="text-bold site-header-link" href="/join?source=header-repo" data-ga-click="(Logged out) Header, clicked Sign up, text:sign-up">Sign up</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+  </div>
+
+  <div id="start-of-content" class="show-on-focus"></div>
+
+    <div id="js-flash-container">
+</div>
+
+
+
+  <div role="main">
+        <div itemscope itemtype="http://schema.org/SoftwareSourceCode">
+    <div id="js-repo-pjax-container" data-pjax-container>
+      
+
+
+  
+
+
+    <div class="pagehead repohead instapaper_ignore readability-menu experiment-repo-nav">
+      <div class="container repohead-details-container">
+
+        <ul class="pagehead-actions">
+  <li>
+      <a href="/login?return_to=%2Fwazuh%2Fwazuh"
+    class="btn btn-sm btn-with-count tooltipped tooltipped-n"
+    aria-label="You must be signed in to watch a repository" rel="nofollow">
+    <svg aria-hidden="true" class="octicon octicon-eye" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M8.06 2C3 2 0 8 0 8s3 6 8.06 6C13 14 16 8 16 8s-3-6-7.94-6zM8 12c-2.2 0-4-1.78-4-4 0-2.2 1.8-4 4-4 2.22 0 4 1.8 4 4 0 2.22-1.78 4-4 4zm2-4c0 1.11-.89 2-2 2-1.11 0-2-.89-2-2 0-1.11.89-2 2-2 1.11 0 2 .89 2 2z"/></svg>
+    Watch
+  </a>
+  <a class="social-count" href="/wazuh/wazuh/watchers"
+     aria-label="55 users are watching this repository">
+    55
+  </a>
+
+  </li>
+
+  <li>
+      <a href="/login?return_to=%2Fwazuh%2Fwazuh"
+    class="btn btn-sm btn-with-count tooltipped tooltipped-n"
+    aria-label="You must be signed in to star a repository" rel="nofollow">
+    <svg aria-hidden="true" class="octicon octicon-star" height="16" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74z"/></svg>
+    Star
+  </a>
+
+    <a class="social-count js-social-count" href="/wazuh/wazuh/stargazers"
+      aria-label="147 users starred this repository">
+      147
+    </a>
+
+  </li>
+
+  <li>
+      <a href="/login?return_to=%2Fwazuh%2Fwazuh"
+        class="btn btn-sm btn-with-count tooltipped tooltipped-n"
+        aria-label="You must be signed in to fork a repository" rel="nofollow">
+        <svg aria-hidden="true" class="octicon octicon-repo-forked" height="16" version="1.1" viewBox="0 0 10 16" width="10"><path fill-rule="evenodd" d="M8 1a1.993 1.993 0 0 0-1 3.72V6L5 8 3 6V4.72A1.993 1.993 0 0 0 2 1a1.993 1.993 0 0 0-1 3.72V6.5l3 3v1.78A1.993 1.993 0 0 0 5 15a1.993 1.993 0 0 0 1-3.72V9.5l3-3V4.72A1.993 1.993 0 0 0 8 1zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3 10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3-10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
+        Fork
+      </a>
+
+    <a href="/wazuh/wazuh/network" class="social-count"
+       aria-label="80 users forked this repository">
+      80
+    </a>
+  </li>
+</ul>
+
+        <h1 class="public ">
+  <svg aria-hidden="true" class="octicon octicon-repo" height="16" version="1.1" viewBox="0 0 12 16" width="12"><path fill-rule="evenodd" d="M4 9H3V8h1v1zm0-3H3v1h1V6zm0-2H3v1h1V4zm0-2H3v1h1V2zm8-1v12c0 .55-.45 1-1 1H6v2l-1.5-1.5L3 16v-2H1c-.55 0-1-.45-1-1V1c0-.55.45-1 1-1h10c.55 0 1 .45 1 1zm-1 10H1v2h2v-1h3v1h5v-2zm0-10H2v9h9V1z"/></svg>
+  <span class="author" itemprop="author"><a href="/wazuh" class="url fn" rel="author">wazuh</a></span><!--
+--><span class="path-divider">/</span><!--
+--><strong itemprop="name"><a href="/wazuh/wazuh" data-pjax="#js-repo-pjax-container">wazuh</a></strong>
+
+</h1>
+
+      </div>
+      <div class="container">
+        
+<nav class="reponav js-repo-nav js-sidenav-container-pjax"
+     itemscope
+     itemtype="http://schema.org/BreadcrumbList"
+     role="navigation"
+     data-pjax="#js-repo-pjax-container">
+
+  <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
+    <a href="/wazuh/wazuh" class="js-selected-navigation-item selected reponav-item" data-hotkey="g c" data-selected-links="repo_source repo_downloads repo_commits repo_releases repo_tags repo_branches /wazuh/wazuh" itemprop="url">
+      <svg aria-hidden="true" class="octicon octicon-code" height="16" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M9.5 3L8 4.5 11.5 8 8 11.5 9.5 13 14 8 9.5 3zm-5 0L0 8l4.5 5L6 11.5 2.5 8 6 4.5 4.5 3z"/></svg>
+      <span itemprop="name">Code</span>
+      <meta itemprop="position" content="1">
+</a>  </span>
+
+    <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
+      <a href="/wazuh/wazuh/issues" class="js-selected-navigation-item reponav-item" data-hotkey="g i" data-selected-links="repo_issues repo_labels repo_milestones /wazuh/wazuh/issues" itemprop="url">
+        <svg aria-hidden="true" class="octicon octicon-issue-opened" height="16" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"/></svg>
+        <span itemprop="name">Issues</span>
+        <span class="Counter">46</span>
+        <meta itemprop="position" content="2">
+</a>    </span>
+
+  <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
+    <a href="/wazuh/wazuh/pulls" class="js-selected-navigation-item reponav-item" data-hotkey="g p" data-selected-links="repo_pulls /wazuh/wazuh/pulls" itemprop="url">
+      <svg aria-hidden="true" class="octicon octicon-git-pull-request" height="16" version="1.1" viewBox="0 0 12 16" width="12"><path fill-rule="evenodd" d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0 0 10 15a1.993 1.993 0 0 0 1-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v6.56A1.993 1.993 0 0 0 2 15a1.993 1.993 0 0 0 1-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
+      <span itemprop="name">Pull requests</span>
+      <span class="Counter">0</span>
+      <meta itemprop="position" content="3">
+</a>  </span>
+
+    <a href="/wazuh/wazuh/projects" class="js-selected-navigation-item reponav-item" data-selected-links="repo_projects new_repo_project repo_project /wazuh/wazuh/projects">
+      <svg aria-hidden="true" class="octicon octicon-project" height="16" version="1.1" viewBox="0 0 15 16" width="15"><path fill-rule="evenodd" d="M10 12h3V2h-3v10zm-4-2h3V2H6v8zm-4 4h3V2H2v12zm-1 1h13V1H1v14zM14 0H1a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1z"/></svg>
+      Projects
+      <span class="Counter" >0</span>
+</a>
+
+
+    <div class="reponav-dropdown js-menu-container">
+      <button type="button" class="btn-link reponav-item reponav-dropdown js-menu-target " data-no-toggle aria-expanded="false" aria-haspopup="true">
+        Insights
+        <svg aria-hidden="true" class="octicon octicon-triangle-down v-align-middle text-gray" height="11" version="1.1" viewBox="0 0 12 16" width="8"><path fill-rule="evenodd" d="M0 5l6 6 6-6z"/></svg>
+      </button>
+      <div class="dropdown-menu-content js-menu-content">
+        <div class="dropdown-menu dropdown-menu-sw">
+          <a class="dropdown-item" href="/wazuh/wazuh/pulse" data-skip-pjax>
+            <svg aria-hidden="true" class="octicon octicon-pulse" height="16" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M11.5 8L8.8 5.4 6.6 8.5 5.5 1.6 2.38 8H0v2h3.6l.9-1.8.9 5.4L9 8.5l1.6 1.5H14V8z"/></svg>
+            Pulse
+          </a>
+          <a class="dropdown-item" href="/wazuh/wazuh/graphs" data-skip-pjax>
+            <svg aria-hidden="true" class="octicon octicon-graph" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M16 14v1H0V0h1v14h15zM5 13H3V8h2v5zm4 0H7V3h2v10zm4 0h-2V6h2v7z"/></svg>
+            Graphs
+          </a>
+        </div>
+      </div>
+    </div>
+</nav>
+
+      </div>
+    </div>
+
+<div class="container new-discussion-timeline experiment-repo-nav">
+  <div class="repository-content">
+
+    
+  <a href="/wazuh/wazuh/commit/7e2a6a0d4fdf0f62393f137a8bc9eaab94958d69" class="d-none js-permalink-shortcut" data-hotkey="y">Permalink</a>
+
+
+  
+
+  <div class="commit full-commit merge-commit">
+  <a href="/wazuh/wazuh/tree/7e2a6a0d4fdf0f62393f137a8bc9eaab94958d69" class="btn btn-outline float-right" title="Browse the repository at this point in the history" rel="nofollow">Browse files</a>
+
+    <p class="commit-title">
+      Merge branch 'stable' into 2.0
+    </p>
+
+
+  <div class="commit-branches">
+    
+    <svg aria-hidden="true" class="octicon octicon-git-branch" height="16" version="1.1" viewBox="0 0 10 16" width="10"><path fill-rule="evenodd" d="M10 5c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v.3c-.02.52-.23.98-.63 1.38-.4.4-.86.61-1.38.63-.83.02-1.48.16-2 .45V4.72a1.993 1.993 0 0 0-1-3.72C.88 1 0 1.89 0 3a2 2 0 0 0 1 1.72v6.56c-.59.35-1 .99-1 1.72 0 1.11.89 2 2 2 1.11 0 2-.89 2-2 0-.53-.2-1-.53-1.36.09-.06.48-.41.59-.47.25-.11.56-.17.94-.17 1.05-.05 1.95-.45 2.75-1.25S8.95 7.77 9 6.73h-.02C9.59 6.37 10 5.73 10 5zM2 1.8c.66 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2C1.35 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2zm0 12.41c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm6-8c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
+    <ul class="branches-list">
+        <li class="branch"><a href="/wazuh/wazuh">master</a></li>
+    </ul>
+    <svg aria-hidden="true" class="octicon octicon-tag" height="16" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M7.73 1.73C7.26 1.26 6.62 1 5.96 1H3.5C2.13 1 1 2.13 1 3.5v2.47c0 .66.27 1.3.73 1.77l6.06 6.06c.39.39 1.02.39 1.41 0l4.59-4.59a.996.996 0 0 0 0-1.41L7.73 1.73zM2.38 7.09c-.31-.3-.47-.7-.47-1.13V3.5c0-.88.72-1.59 1.59-1.59h2.47c.42 0 .83.16 1.13.47l6.14 6.13-4.73 4.73-6.13-6.15zM3.01 3h2v2H3V3h.01z"/></svg>
+    <ul class="branches-tag-list js-details-container">
+      <li><a href="/wazuh/wazuh/releases/tag/v2.0.1">v2.0.1</a></li>
+    </ul>
+  </div>
+
+  <div class="commit-meta clearfix">
+    <span class="float-right">
+      <span class="sha-block" data-pjax>
+        2 parents
+          
+          <a href="/wazuh/wazuh/commit/173fe49bee60ea51cb2e04a534ff18b27935a037" class="sha" data-hotkey="p">173fe49</a>
+           + 
+          <a href="/wazuh/wazuh/commit/1d4b51f9e63c4bbf9b1f8f518a721f258e8e06fa" class="sha" data-hotkey="o">1d4b51f</a>
+      </span>
+      <span class="sha-block">commit <span class="sha user-select-contain">7e2a6a0d4fdf0f62393f137a8bc9eaab94958d69</span></span>
+    </span>
+
+    <span class="commit-author-section">
+      <img alt="@vikman90" class="avatar" height="24" src="https://avatars1.githubusercontent.com/u/10536251?v=3&amp;s=48" width="24" />
+      <a href="/vikman90" class="user-mention" rel="contributor">vikman90</a>
+      
+      committed
+      <relative-time datetime="2017-05-25T20:44:31Z">May 25, 2017</relative-time>
+      
+
+    </span>
+  </div>
+</div>
+
+
+
+
+      <a name="diff-stat"></a>
+      <div id="toc" class="details-collapse table-of-contents js-details-container Details">
+  <div class="BtnGroup float-right" data-ga-load="Diff, view, Viewed Unified Diff">
+  <a class="btn btn-sm selected BtnGroup-item" href="https://github.com/wazuh/wazuh/commit/master?diff=unified">
+    Unified
+  </a>
+  <a class="btn btn-sm BtnGroup-item" href="https://github.com/wazuh/wazuh/commit/master?diff=split">
+    Split
+  </a>
+</div>
+
+
+  <div class="toc-diff-stats">
+    <svg aria-hidden="true" class="octicon octicon-diff" height="16" version="1.1" viewBox="0 0 13 16" width="13"><path fill-rule="evenodd" d="M6 7h2v1H6v2H5V8H3V7h2V5h1v2zm-3 6h5v-1H3v1zM7.5 2L11 5.5V15c0 .55-.45 1-1 1H1c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h6.5zM10 6L7 3H1v12h9V6zM8.5 0H3v1h5l4 4v8h1V4.5L8.5 0z"/></svg>
+    Showing
+    <button type="button" class="btn-link js-details-target" aria-expanded="false">
+      1 changed file
+    </button>
+    with
+    <strong>353 additions</strong>
+    and <strong>0 deletions</strong>.
+  </div>
+
+  <ol class="content collapse js-transitionable">
+    <li>
+      <span class="diffstat float-right">
+          <span class="text-green">
+            +353
+          </span>
+          <span class="text-red">
+            −0
+          </span>
+          <a href="#diff-0b7be28d3f7b1420f1813359ba7e5d74" class="tooltipped tooltipped-s" aria-label="353 lines changed">
+            <span class="block-diff-added"></span><span class="block-diff-added"></span><span class="block-diff-added"></span><span class="block-diff-added"></span><span class="block-diff-added"></span>
+          </a>
+      </span>
+      <svg aria-hidden="true" class="octicon octicon-diff-added" height="16" title="added" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M13 1H1c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V2c0-.55-.45-1-1-1zm0 13H1V2h12v12zM6 9H3V7h3V4h2v3h3v2H8v3H6V9z"/></svg>
+      <a href="#diff-0b7be28d3f7b1420f1813359ba7e5d74">etc/rules/0340-puppet_rules.xml</a>
+    </li>
+  </ol>
+</div>
+
+    <div id="files" class="diff-view ">
+
+  <div class="js-diff-progressive-container">
+    
+<a name="diff-0b7be28d3f7b1420f1813359ba7e5d74"></a>
+<div id="diff-0"
+     class="file js-file js-details-container Details
+             
+             
+             
+             
+             
+              show-inline-notes
+           ">
+  <div class="file-header" data-path="etc/rules/0340-puppet_rules.xml" data-short-path="0b7be28" data-anchor="diff-0b7be28d3f7b1420f1813359ba7e5d74">
+    <div class="file-actions">
+
+        <span class="show-file-notes pt-1">
+          <label>
+            <input type="checkbox" checked="checked" class="js-toggle-file-notes">
+            Show comments
+          </label>
+        </span>
+
+          <a href="/wazuh/wazuh/blob/7e2a6a0d4fdf0f62393f137a8bc9eaab94958d69/etc/rules/0340-puppet_rules.xml" class="btn btn-sm tooltipped tooltipped-nw" rel="nofollow" aria-label="View the whole file at version 7e2a6a0 ">View</a>
+
+
+      <button type="button" class="btn-octicon p-1 pr-2 js-details-target" aria-label="Toggle diff text" aria-expanded="true">
+        <svg aria-hidden="true" class="octicon octicon-chevron-down Details-content--shown" height="16" version="1.1" viewBox="0 0 10 16" width="10"><path fill-rule="evenodd" d="M5 11L0 6l1.5-1.5L5 8.25 8.5 4.5 10 6z"/></svg>
+        <svg aria-hidden="true" class="octicon octicon-chevron-up Details-content--hidden" height="16" version="1.1" viewBox="0 0 10 16" width="10"><path fill-rule="evenodd" d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/></svg>
+      </button>
+    </div>
+    <div class="file-info">
+        <span class="diffstat tooltipped tooltipped-e" aria-label="353 additions &amp; 0 deletions">353 <span class="block-diff-added"></span><span class="block-diff-added"></span><span class="block-diff-added"></span><span class="block-diff-added"></span><span class="block-diff-added"></span></span>
+
+      <a href="#diff-0b7be28d3f7b1420f1813359ba7e5d74" class="link-gray-dark"
+         title="etc/rules/0340-puppet_rules.xml">etc/rules/0340-puppet_rules.xml</a>
+
+      
+    </div>
+  </div>
+  <div class="js-file-content Details-content--shown">
+
+        <div class="data highlight blob-wrapper">
+          <table class="diff-table tab-size  " data-tab-size="8">
+            
+      <tr data-position="0">
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74L-1" class="blob-num blob-num-hunk non-expandable" data-line-number="..."></td>
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R0" class="blob-num blob-num-hunk non-expandable" data-line-number="..."></td>
+    <td class="blob-code blob-code-inner blob-code-hunk">@@ -0,0 +1,353 @@</td>
+  </tr>
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R1" data-line-number="1"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R2" data-line-number="2"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">  -  Puppet rules</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R3" data-line-number="3"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">  -  Created by Wazuh, Inc. &lt;support@wazuh.com&gt;.</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R4" data-line-number="4"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">  -  This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2.</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R5" data-line-number="5"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"><span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R6" data-line-number="6"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R7" data-line-number="7"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"><span class="pl-c">&lt;!--</span> ID: 80000 - 80099 <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R8" data-line-number="8"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R9" data-line-number="9"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+&lt;<span class="pl-ent">group</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>puppet,<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R10" data-line-number="10"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R11" data-line-number="11"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Note:</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R12" data-line-number="12"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        Logs with &quot;core_dumped|failure|error|attack|bad |illegal |denied|refused|unauthorized|fatal|failed|Segmentation Fault|Corrupted&quot; will match with rule 1002.</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R13" data-line-number="13"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        To use &quot;if_sid 80000 or 80001&quot; with these logs, rule 8000 and 80001 must have a level of 0 or &gt;2.</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R14" data-line-number="14"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R15" data-line-number="15"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80000<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span> <span class="pl-e">noalert</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>1<span class="pl-pds">&quot;</span></span> &gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R16" data-line-number="16"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">decoded_as</span>&gt;puppet-master&lt;/<span class="pl-ent">decoded_as</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R17" data-line-number="17"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master messages grouped.&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R18" data-line-number="18"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">group</span>&gt;master,&lt;/<span class="pl-ent">group</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R19" data-line-number="19"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R20" data-line-number="20"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R21" data-line-number="21"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80001<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span> <span class="pl-e">noalert</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>1<span class="pl-pds">&quot;</span></span> &gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R22" data-line-number="22"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">decoded_as</span>&gt;puppet-agent&lt;/<span class="pl-ent">decoded_as</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R23" data-line-number="23"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent messages grouped.&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R24" data-line-number="24"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">group</span>&gt;agent,&lt;/<span class="pl-ent">group</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R25" data-line-number="25"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R26" data-line-number="26"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R27" data-line-number="27"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span> Mater Rules <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R28" data-line-number="28"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R29" data-line-number="29"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R30" data-line-number="30"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Start</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R31" data-line-number="31"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Oct  1 10:32:26 puppet puppet-master[1055]: Starting Puppet master version 3.8.3</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R32" data-line-number="32"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R33" data-line-number="33"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80002<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R34" data-line-number="34"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R35" data-line-number="35"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Starting&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R36" data-line-number="36"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master started&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R37" data-line-number="37"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R38" data-line-number="38"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R39" data-line-number="39"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R40" data-line-number="40"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Stop</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R41" data-line-number="41"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 12:16:46 puppet puppet-master[1055]: Processing stop</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R42" data-line-number="42"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 12:17:06 puppet puppet-master[1612]: Caught TERM; storing stop</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R43" data-line-number="43"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R44" data-line-number="44"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80003<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R45" data-line-number="45"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R46" data-line-number="46"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Processing|^Caught&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R47" data-line-number="47"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">regex</span>&gt;\.+stop&lt;/<span class="pl-ent">regex</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R48" data-line-number="48"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master stopped&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R49" data-line-number="49"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R50" data-line-number="50"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R51" data-line-number="51"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R52" data-line-number="52"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Permission</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R53" data-line-number="53"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 17:56:52 puppet puppet-master[7879]: Permission denied - /etc/puppet/modules/ossec/files/ossec-agent-win32-2.8.exe</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R54" data-line-number="54"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R55" data-line-number="55"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80004<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R56" data-line-number="56"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R57" data-line-number="57"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Permission denied &lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R58" data-line-number="58"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master: Permission denied&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R59" data-line-number="59"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R60" data-line-number="60"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R61" data-line-number="61"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R62" data-line-number="62"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Cetificates</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R63" data-line-number="63"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 12:26:37 puppet puppet-master[1940]: Removing file Puppet::SSL::CertificateRequest puppet.yokatan.com at &#39;/var/lib/puppet/ssl/ca/requests/puppet.yokatan.com.pem&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R64" data-line-number="64"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:53:40 puppet puppet-master[3594]: ubuntu.localdomain has a waiting certificate request</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R65" data-line-number="65"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 12:26:35 puppet puppet-master[1940]: Signed certificate request for ca</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R66" data-line-number="66"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9126]: Using cached certificate_revocation_list for ca</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R67" data-line-number="67"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R68" data-line-number="68"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80005<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R69" data-line-number="69"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R70" data-line-number="70"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;Certificate|certificate&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R71" data-line-number="71"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master: Certificate issue&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R72" data-line-number="72"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R73" data-line-number="73"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R74" data-line-number="74"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R75" data-line-number="75"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Errors</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R76" data-line-number="76"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Run error</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R77" data-line-number="77"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:45:30 puppet puppet-master[3400]: Could not run: Address already in use - bind(2)</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R78" data-line-number="78"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R79" data-line-number="79"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Manifest Errors</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R80" data-line-number="80"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:55:46 puppet puppet-master[3594]: Could not parse for environment production: No file(s) found for import of &#39;nodes.pp&#39; at /etc/puppet/manifests/site.pp:2 on node ubuntu.localdomain</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R81" data-line-number="81"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 16:07:13 puppet puppet-master[3594]: You cannot collect exported resources without storeconfigs being set; the collection will be ignored on line 96 in file /etc/puppet/modules/ossec/manifests/server.pp</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R82" data-line-number="82"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 16:13:38 puppet puppet-master[7879]: too few arguments at /etc/puppet/modules/ossec/manifests/params.pp:71 on node windows.localdomain</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R83" data-line-number="83"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 16:16:56 puppet puppet-master[7879]: Duplicate declaration: Concat[undef] is already declared in file /etc/puppet/modules/ossec/manifests/client.pp:68; cannot redeclare at /etc/puppet/modules/ossec/manifests/client.pp:88 on node windows.localdomain</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R84" data-line-number="84"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 19:25:42 puppet puppet-master[7879]: Unrecognised escape sequence &#39;\P&#39; in file /etc/puppet/modules/ossec/manifests/params.pp at line 71</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R85" data-line-number="85"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  2 19:24:14 puppet puppet-master[1027]: Invalid parameter create_parents on File[C:/installers/ossec-agent-win32-2.8.exe] at /etc/puppet/modules/ossec/manifests/client.pp:40 on node windows.localdomain</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R86" data-line-number="86"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 16:41:38 puppet puppet-master[7879]: &quot;${env_programfiles(x86)}/ossec-agent/ossec.conf&quot; is not an absolute path. at /etc/puppet/modules/concat/manifests/init.pp:71 on node windows.localdomain</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R87" data-line-number="87"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  2 18:21:46 puppet puppet-master[1027]: &quot;&quot; is not a boolean.  It looks to be a String at /etc/puppet/modules/ossec/manifests/client.pp:12 on node windows.localdomains</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R88" data-line-number="88"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 17:56:46 puppet puppet-master[7879]: This ossec module has not been tested on your distribution at /etc/puppet/modules/ossec/manifests/common.pp:95 on node windows.localdomain</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R89" data-line-number="89"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  8 09:24:44 vpc-puppet puppet-master[1399]: Unknown function includes at /etc/puppet/manifests/nodes.pp:3 on node vpc-puppet.wazuh.com</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R90" data-line-number="90"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 16:07:13 puppet puppet-master[3594]: Puppet::Parser::AST::Resource failed with error ArgumentError: Invalid resource type apt::source at /etc/puppet/modules/ossec/manifests/common.pp:24 on node server.yokatan.com</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R91" data-line-number="91"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - *failed*</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R92" data-line-number="92"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - *has failure*</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R93" data-line-number="93"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R94" data-line-number="94"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *General Errors</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R95" data-line-number="95"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:53:39 puppet puppet-master[3594]: Could not resolve 192.168.209.171: no name for 192.168.209.171</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R96" data-line-number="96"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:56:06 puppet puppet-master[3594]: Could not find default node or by name with &#39;ubuntu.localdomain, ubuntu&#39; on node ubuntu.localdomain</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R97" data-line-number="97"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 16:07:13 puppet puppet-master[3594]: Config file /etc/puppet/hiera.yaml not found, using Hiera defaults</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R98" data-line-number="98"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 16:14:08 puppet puppet-master[3594]: Not collecting exported resources without storeconfigs</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R99" data-line-number="99"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 18:43:42 puppet puppet-master[3594]: The environment must be purely alphanumeric, not &#39;puppet-ca&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R100" data-line-number="100"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 16:48:27 puppet puppet-master[7879]: Syntax error at &#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R101" data-line-number="101"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:11:52 puppet puppet-master[8980]: Failed to submit &#39;replace facts&#39; command for agente.yokatan.com to PuppetDB at puppetdb:8081: getaddrinfo: Name or service not known</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R102" data-line-number="102"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - *failed*</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R103" data-line-number="103"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - *has failure*</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R104" data-line-number="104"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R105" data-line-number="105"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80006<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>15<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R106" data-line-number="106"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R107" data-line-number="107"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Could not run: Address already in use&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R108" data-line-number="108"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master: not run - address in use&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R109" data-line-number="109"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R110" data-line-number="110"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R111" data-line-number="111"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80007<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R112" data-line-number="112"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R113" data-line-number="113"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Could not|^You cannot|^too few arguments|^Duplicate declaration|^Unrecognised escape sequence|^Invalid parameter|is not|has not been tested|Unknown function|failed|has failure&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R114" data-line-number="114"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">regex</span>&gt;manifests&lt;/<span class="pl-ent">regex</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R115" data-line-number="115"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master: Manifest Error&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R116" data-line-number="116"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R117" data-line-number="117"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R118" data-line-number="118"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80008<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>4<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R119" data-line-number="119"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R120" data-line-number="120"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Could not|not found|^Not collecting|^The environment must be|^Syntax error|^Failed|failed|has failure&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R121" data-line-number="121"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master: Error&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R122" data-line-number="122"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R123" data-line-number="123"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R124" data-line-number="124"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R125" data-line-number="125"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R126" data-line-number="126"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Info</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R127" data-line-number="127"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 16:54:26 puppet puppet-master[7879]: Compiled catalog for windows.localdomain in environment production in 0.30 seconds</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R128" data-line-number="128"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:45:30 puppet puppet-master[3400]: Reopening log files</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R129" data-line-number="129"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R130" data-line-number="130"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Deprecated</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R131" data-line-number="131"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:45:10 puppet puppet-master[3015]: Setting templatedir is deprecated. See http://links.puppetlabs.com/env-settings-deprecations</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R132" data-line-number="132"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Sep 30 15:55:46 puppet puppet-master[3594]: The use of &#39;import&#39; is deprecated at /etc/puppet/manifests/site.pp:2. See http://links.puppetlabs.com/puppet-import-deprecation</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R133" data-line-number="133"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  1 16:56:23 puppet puppet-master[9800]: Setting modulepath is deprecated in puppet.conf. See http://links.puppetlabs.com/env-settings-deprecations</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R134" data-line-number="134"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:18:58 puppet puppet-master[1039]: Sections other than main, master, agent, user are deprecated in puppet.conf. Please use the directory environments feature to specify environments. (See http://docs.puppetlabs.com/puppet/latest/reference/environments.html)</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R135" data-line-number="135"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R136" data-line-number="136"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80009<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R137" data-line-number="137"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R138" data-line-number="138"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">program_name</span>&gt;puppet-master&lt;/<span class="pl-ent">program_name</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R139" data-line-number="139"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Compiled catalog|^Reopening log&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R140" data-line-number="140"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master: Info&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R141" data-line-number="141"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R142" data-line-number="142"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R143" data-line-number="143"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80010<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>2<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R144" data-line-number="144"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80000&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R145" data-line-number="145"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">program_name</span>&gt;puppet-master&lt;/<span class="pl-ent">program_name</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R146" data-line-number="146"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Compiled catalog|^Reopening log|is deprecated|are deprecated&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R147" data-line-number="147"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Master: Deprecated&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R148" data-line-number="148"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R149" data-line-number="149"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R150" data-line-number="150"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R151" data-line-number="151"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span> Agent Rules <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R152" data-line-number="152"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R153" data-line-number="153"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Start</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R154" data-line-number="154"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9113]: Starting Puppet client version 3.8.3</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R155" data-line-number="155"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R156" data-line-number="156"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80050<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R157" data-line-number="157"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R158" data-line-number="158"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Starting Puppet client&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R159" data-line-number="159"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent started&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R160" data-line-number="160"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R161" data-line-number="161"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R162" data-line-number="162"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R163" data-line-number="163"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Stop</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R164" data-line-number="164"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 17:43:18 puppet puppet-agent[6273]: Caught INT; storing stop</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R165" data-line-number="165"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R166" data-line-number="166"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80051<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R167" data-line-number="167"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R168" data-line-number="168"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Processing|^Caught&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R169" data-line-number="169"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">regex</span>&gt;\.+stop&lt;/<span class="pl-ent">regex</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R170" data-line-number="170"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent stopped&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R171" data-line-number="171"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R172" data-line-number="172"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R173" data-line-number="173"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R174" data-line-number="174"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Cetificates</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R175" data-line-number="175"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 17:08:18 puppet puppet-agent[4209]: Certificate Request fingerprint (SHA256): 34:F3:06:89:C2:D3:78:E0:42:99:F7:B6:39:6F:0C:C2:DB:F1:8A:1C:7E:72:B9:96:E8:A9:67:2B:93:1B:E1:A5</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R176" data-line-number="176"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9113]: Using cached certificate for ca</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R177" data-line-number="177"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 17:08:18 puppet puppet-agent[4209]: Creating a new SSL key for puppet.yokatan.com</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R178" data-line-number="178"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R179" data-line-number="179"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct 13 11:17:29 server puppet-agent[2910]: Could not request certificate: The certificate retrieved from the master does not match the agent&#39;s private key.</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R180" data-line-number="180"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R181" data-line-number="181"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80052<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>2<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R182" data-line-number="182"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R183" data-line-number="183"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Could not request certificate&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R184" data-line-number="184"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">regex</span>&gt;master does not match the agent&lt;/<span class="pl-ent">regex</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R185" data-line-number="185"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Certificate - Could not request certificate&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R186" data-line-number="186"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R187" data-line-number="187"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R188" data-line-number="188"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80053<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R189" data-line-number="189"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R190" data-line-number="190"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Certificate Request|^Using cached certificate|SSL key&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R191" data-line-number="191"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Certificate issue&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R192" data-line-number="192"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R193" data-line-number="193"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R194" data-line-number="194"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R195" data-line-number="195"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R196" data-line-number="196"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Errors</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R197" data-line-number="197"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Not file found</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R198" data-line-number="198"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:23 puppet puppet-agent[9126]: No /etc/puppet/puppetdb.conf file found; falling back to default server and port puppetdb:8081</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R199" data-line-number="199"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9113]: Puppet::Type::User::ProviderDirectoryservice: file /usr/bin/dsimport does not exist</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R200" data-line-number="200"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R201" data-line-number="201"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Missing feature</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R202" data-line-number="202"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9113]: Puppet::Type::User::ProviderLdap: feature ldap is missing</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R203" data-line-number="203"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R204" data-line-number="204"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Failed library</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R205" data-line-number="205"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:19 puppet puppet-agent[9113]: Failed to load library &#39;selinux&#39; for feature &#39;selinux&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R206" data-line-number="206"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R207" data-line-number="207"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Failed to apply catalog</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R208" data-line-number="208"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - 2014-10-04T08:02:57.1343+00:00 text puppet-agent[1966]: Failed to apply catalog: Could not find dependency File[/etc/yum.conf] for Package[puppet] at /text/text</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R209" data-line-number="209"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:48 puppet puppet-agent[7393]: Failed to apply catalog: Could not retrieve local facts: Failed to submit &#39;replace facts&#39; command for puppet.yokatan.com to PuppetDB at puppetdb:8081: getaddrinfo: Name or service not known</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R210" data-line-number="210"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R211" data-line-number="211"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Connection refused</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R212" data-line-number="212"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct 13 12:48:08 server puppet-agent[3277]: (/File[/var/lib/puppet/facts.d]) Failed to generate additional resources using &#39;eval_generate&#39;: Connection refused - connect(2)</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R213" data-line-number="213"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R214" data-line-number="214"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    *Errors</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R215" data-line-number="215"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:28 puppet puppet-agent[7393]: Unable to fetch my node definition, but the agent run will continue:</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R216" data-line-number="216"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9113]: (/User[puppet]) Provider useradd does not support features libuser; not managing attribute forcelocal</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R217" data-line-number="217"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 17:43:19 puppet puppet-agent[6273]: Not using cache on failed catalog</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R218" data-line-number="218"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:28 puppet puppet-agent[7393]: Error 400 on SERVER: Could not retrieve facts for puppet.yokatan.com: Failed to find facts from PuppetDB at puppetdb:8081: getaddrinfo: Name or service not known</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R219" data-line-number="219"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:36 puppet puppet-agent[7393]: Cached facts for puppet.yokatan.com failed: Failed to find facts from PuppetDB at puppetdb:8081: getaddrinfo: Name or service not known</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R220" data-line-number="220"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - *failed*</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R221" data-line-number="221"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - *has failure*</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R222" data-line-number="222"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R223" data-line-number="223"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R224" data-line-number="224"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80054<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>4<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R225" data-line-number="225"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R226" data-line-number="226"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">regex</span>&gt;^No \S+ file found|file \S+ does not exist&lt;/<span class="pl-ent">regex</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R227" data-line-number="227"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Error - no file found or does not exist&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R228" data-line-number="228"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R229" data-line-number="229"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R230" data-line-number="230"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80055<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>4<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R231" data-line-number="231"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R232" data-line-number="232"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">regex</span>&gt;feature \S+ is missing&lt;/<span class="pl-ent">regex</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R233" data-line-number="233"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Error - feature is missing&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R234" data-line-number="234"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R235" data-line-number="235"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R236" data-line-number="236"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80056<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R237" data-line-number="237"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R238" data-line-number="238"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Failed to load library&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R239" data-line-number="239"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Error - failed library&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R240" data-line-number="240"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R241" data-line-number="241"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R242" data-line-number="242"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80057<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R243" data-line-number="243"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R244" data-line-number="244"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Failed to apply catalog&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R245" data-line-number="245"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Error - failed to apply catalog&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R246" data-line-number="246"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R247" data-line-number="247"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R248" data-line-number="248"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80058<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>10<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R249" data-line-number="249"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R250" data-line-number="250"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;Connection refused - connect&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R251" data-line-number="251"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: connection refused&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R252" data-line-number="252"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R253" data-line-number="253"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R254" data-line-number="254"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80059<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>4<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R255" data-line-number="255"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R256" data-line-number="256"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Unable to fetch|does not support|Not using cache|Could not retrieve|Failed|failed|has failure&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R257" data-line-number="257"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Error&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R258" data-line-number="258"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R259" data-line-number="259"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R260" data-line-number="260"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R261" data-line-number="261"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    Info</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R262" data-line-number="262"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:28 puppet puppet-agent[7393]: (/File[/var/lib/puppet/lib/puppet/provider/mysql_database]/ensure) created</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R263" data-line-number="263"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:28 puppet puppet-agent[7393]: (/File[/var/lib/puppet/lib/puppet/provider/mysql_user/mysql.rb]/ensure) defined content as &#39;{md5}3af9f573524a516e2ecd6d0830a92c62&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R264" data-line-number="264"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R265" data-line-number="265"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:28 puppet puppet-agent[7393]: Retrieving pluginfacts</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R266" data-line-number="266"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - 2014-10-04T08:02:53.1234+00:00 text puppet-agent[1966]: Loading facts in /var/lib/puppet/text</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R267" data-line-number="267"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - 2014-10-04T08:02:56.1234+00:00 text puppet-agent[1966]: Caching catalog for text</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R268" data-line-number="268"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 15:49:41 puppet puppet-agent[7393]: Caching facts for puppet.yokatan.com</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R269" data-line-number="269"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:19 puppet puppet-agent[9113]: Caching environment &#39;production&#39; (ttl = 0 sec)</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R270" data-line-number="270"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:19 puppet puppet-agent[9113]: Evicting cache entry for environment &#39;production&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R271" data-line-number="271"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:19 puppet puppet-agent[9113]: Using settings: adding file resource &#39;confdir&#39;: &#39;File[/etc/puppet]{:path=&gt;&quot;/etc/puppet&quot;, :ensure=&gt;:directory, :loglevel=&gt;:debug, :links=&gt;:follow, :backup=&gt;false}&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R272" data-line-number="272"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9113]: Finishing transaction 17204180</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R273" data-line-number="273"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9126]: Starting connection for https://puppet.yokatan.com:8140</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R274" data-line-number="274"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:22 puppet puppet-agent[9126]: Caching connection for https://puppet.yokatan.com:8140</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R275" data-line-number="275"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:22 puppet puppet-agent[9126]: Using cached connection for https://puppet.yokatan.com:8140</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R276" data-line-number="276"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:30 puppet puppet-agent[9126]: Closing connection for https://puppet.yokatan.com:8140</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R277" data-line-number="277"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  8 09:22:30 vpc-puppet puppet-agent[7601]: (/File[/var/lib/puppet/state/last_run_report.yaml]/mode) mode changed &#39;0660&#39; to &#39;0640&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R278" data-line-number="278"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  8 09:48:20 vpc-puppet puppet-agent[12407]: Configuring PuppetDB terminuses with config file /etc/puppet/puppetdb.conf</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R279" data-line-number="279"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 16:13:20 puppet puppet-agent[9113]: (/File[/var/lib/puppet/state]) Autorequiring File[/var/lib/puppet]</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R280" data-line-number="280"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R281" data-line-number="281"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 17:43:35 puppet puppet-agent[6631]: Applying configuration version &#39;1444059814&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R282" data-line-number="282"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  5 17:43:35 puppet puppet-agent[6631]: Finished catalog run in 0.12 seconds</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R283" data-line-number="283"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R284" data-line-number="284"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    - Oct  8 11:51:20 vpc-puppet puppet-agent[16317]: Executing &#39;/usr/bin/apt-key add /tmp/apt_key20151008-16317-8e36sn&#39;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R285" data-line-number="285"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R286" data-line-number="286"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80070<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R287" data-line-number="287"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R288" data-line-number="288"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;created|defined&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R289" data-line-number="289"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">regex</span>&gt;\(\.+\) created|\(\.+\) defined&lt;/<span class="pl-ent">regex</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R290" data-line-number="290"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Info - create or defined content&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R291" data-line-number="291"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R292" data-line-number="292"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R293" data-line-number="293"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80071<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R294" data-line-number="294"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R295" data-line-number="295"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Retrieving|^Loading|^Caching|^Evicting|^Using settings|^Finishing transaction|^Configuring| connection for|mode changed|Autorequiring&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R296" data-line-number="296"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Info&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R297" data-line-number="297"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R298" data-line-number="298"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R299" data-line-number="299"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80072<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>2<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R300" data-line-number="300"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R301" data-line-number="301"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Applying configuration|^Finished catalog&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R302" data-line-number="302"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Info - applying configuration&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R303" data-line-number="303"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R304" data-line-number="304"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R305" data-line-number="305"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80073<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>2<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R306" data-line-number="306"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80001&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R307" data-line-number="307"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^Executing&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R308" data-line-number="308"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet Agent: Info - executing &lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R309" data-line-number="309"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R310" data-line-number="310"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R311" data-line-number="311"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R312" data-line-number="312"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R313" data-line-number="313"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span> Commands <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R314" data-line-number="314"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R315" data-line-number="315"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    <span class="pl-c"><span class="pl-c">&lt;!--</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R316" data-line-number="316"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        Last run:</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R317" data-line-number="317"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">            Check the field &quot;time:last_run&quot; in file /var/lib/puppet/state/last_run_summary.yaml</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R318" data-line-number="318"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R319" data-line-number="319"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        Setup:</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R320" data-line-number="320"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        These rules need to read a command output, so it is necessary to copy the code below to /var/ossec/etc/ossec.conf (in every agent)</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R321" data-line-number="321"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R322" data-line-number="322"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        &lt;localfile&gt;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R323" data-line-number="323"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">            &lt;log_format&gt;full_command&lt;/log_format&gt;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R324" data-line-number="324"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">            &lt;command&gt;timestamp_puppet=`cat /var/lib/puppet/state/last_run_summary.yaml | grep last_run | cut -d: -f 2 | tr -d &#39;[[:space:]]&#39;`;timestamp_current_date=$(date +&quot;%s&quot;);diff_min=$((($timestamp_current_date-$timestamp_puppet)/60));if [ &quot;$diff_min&quot; -le &quot;30&quot; ];then echo &quot;Puppet: OK. It runs in the last 30 minutes&quot;;else puppet_date=`date -d @&quot;$timestamp_puppet&quot;`;echo &quot;Puppet: KO. Last run: $puppet_date&quot;;fi&lt;/command&gt;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R325" data-line-number="325"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">            &lt;frequency&gt;2100&lt;/frequency&gt;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R326" data-line-number="326"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        &lt;/localfile&gt;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R327" data-line-number="327"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c"></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R328" data-line-number="328"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">        *Also you can copy the code to /var/ossec/etc/shared/agent.conf in OSSEC Master and configure in every agent the logcollector option to accept remote commands from the manager:</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R329" data-line-number="329"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">            /var/ossec/etc/internal_options.conf:</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R330" data-line-number="330"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">                # Logcollector - If it should accept remote commands from the manager</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R331" data-line-number="331"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">                logcollector.remote_commands=1</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R332" data-line-number="332"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">            /var/ossec/etc/shared/agent.conf:</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R333" data-line-number="333"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">                &lt;agent_config&gt; localfile_code &lt;/agent_config&gt;</span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R334" data-line-number="334"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+<span class="pl-c">    <span class="pl-c">--&gt;</span></span></span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R335" data-line-number="335"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80090<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R336" data-line-number="336"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;530&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R337" data-line-number="337"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;^ossec: output: &#39;timestamp_puppet&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R338" data-line-number="338"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Command check if puppet runs every 30 min or less&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R339" data-line-number="339"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R340" data-line-number="340"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R341" data-line-number="341"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80091<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>0<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R342" data-line-number="342"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80090&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R343" data-line-number="343"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;Puppet: OK&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R344" data-line-number="344"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet ran in the last 30 minutes&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R345" data-line-number="345"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R346" data-line-number="346"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R347" data-line-number="347"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;<span class="pl-ent">rule</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>80092<span class="pl-pds">&quot;</span></span> <span class="pl-e">level</span>=<span class="pl-s"><span class="pl-pds">&quot;</span>5<span class="pl-pds">&quot;</span></span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R348" data-line-number="348"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">if_sid</span>&gt;80090&lt;/<span class="pl-ent">if_sid</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R349" data-line-number="349"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">match</span>&gt;Puppet: KO&lt;/<span class="pl-ent">match</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R350" data-line-number="350"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+        &lt;<span class="pl-ent">description</span>&gt;Puppet did not run in the last 30 minutes&lt;/<span class="pl-ent">description</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R351" data-line-number="351"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+    &lt;/<span class="pl-ent">rule</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R352" data-line-number="352"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+</span>
+
+  </td>
+</tr>
+
+
+    <tr>
+    <td class="blob-num blob-num-addition empty-cell"></td>
+
+    <td id="diff-0b7be28d3f7b1420f1813359ba7e5d74R353" data-line-number="353"
+        class="blob-num blob-num-addition js-linkable-line-number"></td>
+
+  <td class="blob-code blob-code-addition">
+
+    <span class="blob-code-inner">+&lt;/<span class="pl-ent">group</span>&gt;</span>
+
+  </td>
+</tr>
+
+
+
+          </table>
+        </div>
+
+  </div>
+</div>
+
+  </div>
+
+</div>
+
+<button type="button" class="js-toggle-all-file-notes" data-hotkey="i" style="display:none">Toggle all file notes</button>
+
+<svg aria-hidden="true" width="340px" height="84px" viewBox="0 0 340 84" version="1.1"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  class="diff-placeholder-svg position-absolute bottom-0">
+  <defs>
+    <clippath id="diff-placeholder">
+      <rect x="0" y="0" width="67.0175439" height="11.9298746" rx="2"></rect>
+      <rect x="18.9473684" y="47.7194983" width="100.701754" height="11.9298746" rx="2"></rect>
+      <rect x="0" y="71.930126" width="37.8947368" height="11.9298746" rx="2"></rect>
+      <rect x="127.017544" y="48.0703769" width="53.3333333" height="11.9298746" rx="2"></rect>
+      <rect x="187.719298" y="48.0703769" width="72.9824561" height="11.9298746" rx="2"></rect>
+      <rect x="76.8421053" y="0" width="140.350877" height="11.9298746" rx="2"></rect>
+      <rect x="17.8947368" y="23.8597491" width="140.350877" height="11.9298746" rx="2"></rect>
+      <rect x="166.315789" y="23.8597491" width="173.684211" height="11.9298746" rx="2"></rect>
+    </clippath>
+
+    <linearGradient id="animated-diff-gradient" x1="0" x2="0" y1="0" y2="1" spreadMethod="reflect">
+      <stop offset="0" stop-color="#eee"></stop>
+      <stop offset="0.2" stop-color="#eee"></stop>
+      <stop offset="0.5" stop-color="#ddd"></stop>
+      <stop offset="0.8" stop-color="#eee"></stop>
+      <stop offset="1" stop-color="#eee"></stop>
+      <animateTransform attributeName="y1" values="0%; 100%; 0" dur="1s" repeatCount="3"></animateTransform>
+      <animateTransform attributeName="y2" values="100%; 200%; 0" dur="1s" repeatCount="3"></animateTransform>
+    </linearGradient>
+  </defs>
+</svg>
+
+
+
+  <div id="all_commit_comments" class="js-quote-selection-container ">
+
+    <div class="commit-comments-heading">
+      
+<div id="partial-visible-comments-header">
+  <span class="float-right">
+    
+  </span>
+
+  <h4 class="commit-comment-count">
+    0 comments
+    on commit <code class="commit-sha">7e2a6a0</code>
+  </h4>
+
+</div>
+
+    </div>
+
+    <div id="comments" class="comment-holder">
+      
+
+
+  <!-- Rendered timeline since 2017-05-25 13:44:31 -->
+  <div id="partial-timeline-marker"
+        class="js-timeline-marker js-socket-channel js-updatable-content"
+        data-channel="repo:40556106:commit:7e2a6a0d4fdf0f62393f137a8bc9eaab94958d69"
+        data-url="/wazuh/wazuh/commit/7e2a6a0d4fdf0f62393f137a8bc9eaab94958d69/show_partial?partial=commit%2Ftimeline_marker&amp;since=1495745071"
+        data-last-modified="Thu, 25 May 2017 20:44:31 GMT">
+
+  </div>
+
+    </div>
+
+    
+
+      Please <a href="/login?return_to=https%3A%2F%2Fgithub.com%2Fwazuh%2Fwazuh%2Fcommit%2Fmaster" rel="nofollow">sign in</a> to comment.
+
+  </div>
+
+
+  </div>
+  <div class="modal-backdrop js-touch-events"></div>
+</div>
+
+    </div>
+  </div>
+
+  </div>
+
+      
+<div class="container site-footer-container">
+  <div class="site-footer " role="contentinfo">
+    <ul class="site-footer-links float-right">
+        <li><a href="https://github.com/contact" data-ga-click="Footer, go to contact, text:contact">Contact GitHub</a></li>
+      <li><a href="https://developer.github.com" data-ga-click="Footer, go to api, text:api">API</a></li>
+      <li><a href="https://training.github.com" data-ga-click="Footer, go to training, text:training">Training</a></li>
+      <li><a href="https://shop.github.com" data-ga-click="Footer, go to shop, text:shop">Shop</a></li>
+        <li><a href="https://github.com/blog" data-ga-click="Footer, go to blog, text:blog">Blog</a></li>
+        <li><a href="https://github.com/about" data-ga-click="Footer, go to about, text:about">About</a></li>
+
+    </ul>
+
+    <a href="https://github.com" aria-label="Homepage" class="site-footer-mark" title="GitHub">
+      <svg aria-hidden="true" class="octicon octicon-mark-github" height="24" version="1.1" viewBox="0 0 16 16" width="24"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+</a>
+    <ul class="site-footer-links">
+      <li>&copy; 2017 <span title="0.21208s from github-fe143-cp1-prd.iad.github.net">GitHub</span>, Inc.</li>
+        <li><a href="https://github.com/site/terms" data-ga-click="Footer, go to terms, text:terms">Terms</a></li>
+        <li><a href="https://github.com/site/privacy" data-ga-click="Footer, go to privacy, text:privacy">Privacy</a></li>
+        <li><a href="https://github.com/security" data-ga-click="Footer, go to security, text:security">Security</a></li>
+        <li><a href="https://status.github.com/" data-ga-click="Footer, go to status, text:status">Status</a></li>
+        <li><a href="https://help.github.com" data-ga-click="Footer, go to help, text:help">Help</a></li>
+    </ul>
+  </div>
+</div>
+
+
+
+  <div id="ajax-error-message" class="ajax-error-message flash flash-error">
+    <svg aria-hidden="true" class="octicon octicon-alert" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M8.865 1.52c-.18-.31-.51-.5-.87-.5s-.69.19-.87.5L.275 13.5c-.18.31-.18.69 0 1 .19.31.52.5.87.5h13.7c.36 0 .69-.19.86-.5.17-.31.18-.69.01-1L8.865 1.52zM8.995 13h-2v-2h2v2zm0-3h-2V6h2v4z"/></svg>
+    <button type="button" class="flash-close js-flash-close js-ajax-error-dismiss" aria-label="Dismiss error">
+      <svg aria-hidden="true" class="octicon octicon-x" height="16" version="1.1" viewBox="0 0 12 16" width="12"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48z"/></svg>
+    </button>
+    You can't perform that action at this time.
+  </div>
+
+
+    <script crossorigin="anonymous" src="https://assets-cdn.github.com/assets/compat-91f98c37fc84eac24836eec2567e9912742094369a04c4eba6e3cd1fa18902d9.js"></script>
+    <script crossorigin="anonymous" src="https://assets-cdn.github.com/assets/frameworks-9cbd03ea56461e84ab8956bf7799a977d6cc8a1f984c71b5ecb2edfdba3d773f.js"></script>
+    
+    <script async="async" crossorigin="anonymous" src="https://assets-cdn.github.com/assets/github-329544b3a5787c85107e0303910bbb2f67822ceff7fc9fe9b5795a9900d01302.js"></script>
+    
+    
+    
+    
+  <div class="js-stale-session-flash stale-session-flash flash flash-warn flash-banner d-none">
+    <svg aria-hidden="true" class="octicon octicon-alert" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M8.865 1.52c-.18-.31-.51-.5-.87-.5s-.69.19-.87.5L.275 13.5c-.18.31-.18.69 0 1 .19.31.52.5.87.5h13.7c.36 0 .69-.19.86-.5.17-.31.18-.69.01-1L8.865 1.52zM8.995 13h-2v-2h2v2zm0-3h-2V6h2v4z"/></svg>
+    <span class="signed-in-tab-flash">You signed in with another tab or window. <a href="">Reload</a> to refresh your session.</span>
+    <span class="signed-out-tab-flash">You signed out in another tab or window. <a href="">Reload</a> to refresh your session.</span>
+  </div>
+  <div class="facebox" id="facebox" style="display:none;">
+  <div class="facebox-popup">
+    <div class="facebox-content" role="dialog" aria-labelledby="facebox-header" aria-describedby="facebox-description">
+    </div>
+    <button type="button" class="facebox-close js-facebox-close" aria-label="Close modal">
+      <svg aria-hidden="true" class="octicon octicon-x" height="16" version="1.1" viewBox="0 0 12 16" width="12"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48z"/></svg>
+    </button>
+  </div>
+</div>
+
+
+  </body>
+</html>
+
