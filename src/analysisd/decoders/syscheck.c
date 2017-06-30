@@ -708,3 +708,50 @@ int DecodeSyscheck(Eventinfo *lf)
     return (DB_Search(f_name, c_sum, lf));
 }
 
+/* Search the sqlite db for an entry */
+static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
+
+    /* c_sum: 2017/06/16 20:00:20 f_name: /etc/ansible/playbooks/common/broids/files/OTX-Apps-Bro-IDS/pulses/555be98eb45ff507dbe5b426.intel   c_sum: 724:33277:0:0:c88286fad6bf0db68fd8371ca2a1804b:f8e329da2ad2a50c93de2dcb8889531cdb841bfe */
+
+    char *md5sum, *sha1sum;
+
+
+    /* Grab the checksums from c_sum */
+    char **values, *hash1, *hash2, *fsize, *fperm, *fuid, *fgid;
+    char *s2;
+    s2 = strdup(c_sum);
+    printf("s2: %s\n", s2);
+
+    int count = 0;
+
+    if((fsize = strsep(&s2, ":")) == NULL) {
+            //ERROR
+    }
+
+    if((fperm = strsep(&s2, ":")) == NULL) {
+            //ERROR
+    }
+    if((fuid = strsep(&s2, ":")) == NULL) {
+            //ERROR
+    }
+    if((fgid = strsep(&s2, ":")) == NULL) {
+            //ERROR
+    }
+    if((hash1 = strsep(&s2, ":")) == NULL) {
+            //ERROR
+    }
+    if((hash2 = strsep(&s2, ":")) == NULL) {
+            //ERROR
+    }
+
+
+    char sys_search[OS_MAXSTR + 1];
+    /* hostname, file_name */
+    // XXX
+    snprintf(sys_search, "SELECT * from syscheck where hostname=\"%s\" and filename=\"%s\";", lf->hostname, f_name); 
+
+
+    return(0);
+}
+
+

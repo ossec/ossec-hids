@@ -667,6 +667,14 @@ void OS_ReadMSG_analysisd(int m_queue)
 
     }
 
+    /* Open the syscheck sqlite db */
+    extern sqlite3 *syscheck_conn;
+    int sys_error = 0;
+    debug2("Opening the syscheck db");
+    if((sys_error = sqlite3_open("/queue/syscheck/syscheck.db", &syscheck_conn))) {
+        merror("Cannot open syscheck.db");
+    }
+
     debug1("%s: DEBUG: Startup completed. Waiting for new messages..", ARGV0);
 
     if (Config.custom_alert_output) {
