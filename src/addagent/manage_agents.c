@@ -364,7 +364,9 @@ int remove_agent()
         user_input = getenv("OSSEC_ACTION_CONFIRMED");
         if (user_input == NULL) {
             user_input = read_from_user();
-        } else {
+            OS_BackupAgentInfo(id_exist);
+		
+	} else {
             printf("%s\n", user_input);
         }
 
