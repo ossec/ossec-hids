@@ -147,6 +147,7 @@ int main(int argc, char **argv)
     int process_pool[POOL_SIZE];
     /* Count of pids we are wait()ing on */
     int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
+    int m_queue = 0;
     int use_pass = 1;
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
@@ -327,6 +328,11 @@ int main(int argc, char **argv)
 
     fcntl(sock, F_SETFL, O_NONBLOCK);
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
+
+    /* Queue for sending alerts */
+    if ((m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
+        merror("%s: ERROR: Can't connect to queue.", ARGV0);
+    }
 
     while (1) {
         /* No need to completely pin the cpu, 100ms should be fast enough */

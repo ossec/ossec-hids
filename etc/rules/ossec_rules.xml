@@ -131,6 +131,13 @@
     <description>OSSEC process monitoring rules.</description>
     <group>process_monitor,</group>
   </rule>
+  
+  <rule id="520" level="3">
+    <if_sid>500</if_sid>
+    <match>Duplicated IP</match>
+    <description>Trying to add an agent with duplicated IP.</description>
+    <group>pci_dss_10.6.1,</group>
+  </rule>
 
   <rule id="531" level="7" ignore="7200">
     <if_sid>530</if_sid>
