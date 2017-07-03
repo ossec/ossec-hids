@@ -286,7 +286,9 @@ int main(int argc, char **argv)
 
             if (ret && strlen(buf) > 2) {
                 /* Remove newline */
-                buf[strlen(buf) - 1] = '\0';
+                if (buf[strlen(buf) - 1] == '\n')
+                    buf[strlen(buf) - 1] = '\0';
+
                 authpass = strdup(buf);
             }
 
@@ -442,7 +444,7 @@ int main(int argc, char **argv)
                     char *finalkey = NULL;
                     response[2048] = '\0';
                     fname[2048] = '\0';
-                    
+
                     if (!OS_IsValidName(agentname)) {
                         merror("%s: ERROR: Invalid agent name: %s from %s", ARGV0, agentname, srcip);
                         snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
@@ -470,10 +472,10 @@ int main(int argc, char **argv)
                         sleep(1);
                         exit(0);
                     }
-                    
+
                     /* Check for duplicated names */
                     strncpy(fname, agentname, 2048);
-                    
+
                     while (NameExist(fname)) {
                         snprintf(fname, 2048, "%s%d", agentname, acount);
                         acount++;
@@ -487,7 +489,7 @@ int main(int argc, char **argv)
                             exit(0);
                         }
                     }
-                    
+
                     agentname = fname;
 
                     snprintf(response, 2048, "OSSEC K:'%s'\n\n", finalkey);
