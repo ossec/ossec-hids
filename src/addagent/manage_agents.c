@@ -67,6 +67,8 @@ int add_agent()
     FILE *fp;
     char str1[STR_SIZE + 1];
     char str2[STR_SIZE + 1];
+    char agentinfo_path[OS_FLSIZE];
+    char timestamp[40];
 
     os_md5 md1;
     os_md5 md2;
@@ -302,7 +304,7 @@ int add_agent()
 
 int remove_agent()
 {
-    FILE *fp;
+    FILE *fp;	
     char *user_input;
     char u_id[FILE_SIZE + 1];
     int id_exist;
