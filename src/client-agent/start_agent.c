@@ -46,16 +46,12 @@ int connect_server(int initial_id)
                 agt->rip[rc],
                 agt->port);
 	if (agt->protocol == UDP_PROTO) {
-		const char *tmp_str = strchr(tmp_str, ':');
-		if (tmp_str != NULL) {
-			agt->sock = OS_ConnectUDP(agt->port, tmp_str);
-		}
+		agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
+		
 		agt->sock_r = agt->sock;
 	} else {
-		const char *tmp_str = strchr(tmp_str, ':');
-		if (tmp_str != NULL){
-			agt->sock = OS_ConnectTCP(agt->port, tmp_str);
-		}
+		agt->sock = OS_ConnectTCP(agt->port, agt->rip[rc]);
+		
 	}
 
         agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
