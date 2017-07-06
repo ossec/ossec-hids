@@ -61,16 +61,24 @@ void CreateSecureConnection(char *manager, int port, int *socket, CtxtHandle *co
     PCHAR buffer = NULL;
 
     // Get manager IP address
+    
     manager = OS_GetHost(manager, 3);
     if (manager == NULL)
         ErrorExit("%s: Could not resolve manager's hostname", ARGV0);
 
+
+
     // Connect via TCP
+    
     *socket = OS_ConnectTCP(port, manager);
+    
     if (socket == 0)
         ErrorExit("%s: Unable to connect to %s:%d", ARGV0, manager, port);
+	
+
 
     // Setting authentication credentials
+    
     ZeroMemory(&auth_cred, sizeof (auth_cred));
     auth_cred.dwVersion = SCHANNEL_CRED_VERSION;
     auth_cred.dwSessionLifespan = 60000;
@@ -80,9 +88,10 @@ void CreateSecureConnection(char *manager, int port, int *socket, CtxtHandle *co
     if (status != SEC_E_OK)
         ErrorExit("%s: Could not acquire credentials (AcquireCredentialsHandle failed with error code 0x%lX", ARGV0, status);
 
+
     //
     // Initialize security context
-    //
+    
     OutBuffers[0].pvBuffer   = NULL;
     OutBuffers[0].BufferType = SECBUFFER_TOKEN;
     OutBuffers[0].cbBuffer   = 0;
@@ -351,7 +360,7 @@ int main(int argc, char **argv)
 {
     int error = 0;
     int socket = 0;
-    int port = 1515;
+    char *port = "1515";
     char c = 0;
     char *manager = NULL;
     char *agentname = NULL;
@@ -437,11 +446,12 @@ int main(int argc, char **argv)
     }
     if (!authpass) {
         printf("WARN: No authentication password provided. Insecure mode started.\n");
+
     }
 
     // Connect to socket and init security context
     CreateSecureConnection(manager, port, &socket, &context, &cred);
-
+    
     printf("INFO: Using agent name as: %s\n", agentname);
 
     // Send request
