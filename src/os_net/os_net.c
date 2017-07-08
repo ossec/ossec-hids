@@ -331,13 +331,13 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
 
 
 /* Open a TCP socket */
-int OS_ConnectTCP(char *_port, const char *_ip)
+int OS_ConnectTCP(const char *_port, const char *_ip)
 {
     return (OS_Connect(_port, IPPROTO_TCP, _ip));
 }
 
 /* Open a UDP socket */
-int OS_ConnectUDP(char *_port, const char *_ip)
+int OS_ConnectUDP(const char *_port, const char *_ip)
 {
     return (OS_Connect(_port, IPPROTO_UDP, _ip));
 }

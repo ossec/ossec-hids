@@ -37,7 +37,6 @@ int connect_server(int initial_id)
                     agt->rip[rc],
                     agt->port);
         }
-
     }
 
     while (agt->rip[rc]) {
@@ -46,6 +45,14 @@ int connect_server(int initial_id)
         verbose("%s: INFO: Trying to connect to server %s, port %s.", ARGV0,
                 agt->rip[rc],
                 agt->port);
+	if (agt->protocol == UDP_PROTO) {
+		agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
+		
+		agt->sock_r = agt->sock;
+	} else {
+		agt->sock = OS_ConnectTCP(agt->port, agt->rip[rc]);
+		
+	}
 
         agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
 
@@ -79,6 +86,20 @@ int connect_server(int initial_id)
 #endif
 
             agt->rip_id = rc;
+
+            if (agt->protocol == TCP_PROTO) {
+                close(agt->sock);
+                if(!agt->lip || strchr(agt->lip, ':') != NULL){
+			agt->sock = OS_Bindporttcp(agt->port, agt->lip);
+		}
+                if (agt->sock < 0) {
+                    merror(CONNS_ERROR, ARGV0, agt->lip);
+                    return 0;
+                }
+
+                listen(agt->sock, BACKLOG);
+            }
+
             return (1);
         }
     }
@@ -114,7 +135,7 @@ void start_agent(int is_startup)
         attempts = 0;
 
         /* Read until our reply comes back */
-        while (((recv_b = recv(agt->sock, buffer, OS_MAXSTR,
+        while (((recv_b = recv(agt->sock_r, buffer, OS_MAXSTR,
                                MSG_DONTWAIT)) >= 0) || (attempts <= 5)) {
             if (recv_b <= 0) {
                 /* Sleep five seconds before trying to get the reply from
@@ -188,4 +209,3 @@ void start_agent(int is_startup)
 
     return;
 }
-
