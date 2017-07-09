@@ -112,6 +112,9 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->full_log) {
         cJSON_AddStringToObject(root, "full_log", lf->full_log);
     }
+    if (lf->generated_rule->last_events[1]) {
+        cJSON_AddStringToObject(root, "previous_output", lf->generated_rule->last_events[1]);
+    }
     
     if (lf->filename) {
         cJSON_AddItemToObject(root, "file", file_diff = cJSON_CreateObject());
