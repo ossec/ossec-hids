@@ -498,7 +498,10 @@ int main(int argc, char **argv)
                                 double antiquity = OS_AgentAntiquity(id_exist);
                                 if (antiquity >= force_antiquity || antiquity < 0) {
                                     /* TODO: Backup info-agent, syscheck and rootcheck */
-                                    OS_RemoveAgent(id_exist);
+                                    	
+					verbose("INFO: Duplicated IP '%s' (%s). Saving backup.", srcip, id_exist);
+					
+					OS_RemoveAgent(id_exist);
                                 } else {
                                     /* TODO: Send alert */
                                     merror("%s: ERROR: Duplicated IP %s (another active)", ARGV0, srcip);
