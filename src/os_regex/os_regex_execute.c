@@ -117,8 +117,8 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
     const char *pt = pattern;
     const char *next_pt;
 
-    char **pt_error = NULL;
-    char **pt_error_str = NULL;
+    const char **pt_error = NULL;
+    const char **pt_error_str = NULL;
     unsigned int pt_size = 0;
 
     /* Will loop the whole string, trying to find a match */
