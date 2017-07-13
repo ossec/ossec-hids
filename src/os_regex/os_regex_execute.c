@@ -419,10 +419,28 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
     r_code = NULL;
     cleanpt:
         if(pt_error){
+            pt_size = 0;
+            do{
+                if(pt_error[pt_size]){
+                    os_free(pt_error[pt_size]);
+                    pt_error[pt_size] = NULL;
+                }else{
+                    break;
+                }
+            }while(pt_size++);
             os_free(pt_error);
             pt_error = NULL;
         }
         if(pt_error_str){
+            pt_size = 0;
+            do{
+                if(pt_error_str[pt_size]){
+                    os_free(pt_error_str[pt_size]);
+                    pt_error_str[pt_size] = NULL;
+                }else{
+                    break;
+                }
+            }while(pt_size++);
             os_free(pt_error_str);
             pt_error_str = NULL;
         }
