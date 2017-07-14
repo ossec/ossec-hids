@@ -4,7 +4,7 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
-EXTERNAL_ZLIB=external/zlib-1.2.8/
+EXTERNAL_ZLIB=external/zlib-1.2.11/
 LUA_PLAT=posix
 MAXAGENTS?=2048
 REUSE_ID?=no
