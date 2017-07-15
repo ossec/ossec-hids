@@ -153,7 +153,11 @@ int ReadConfig(int modules, const char *cfgfile, void *d1, void *d2)
     const char *xml_agent_profile = "profile";
 
     if (OS_ReadXML(cfgfile, &xml) < 0) {
-	merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
+	if((strncmp(basename(cfgfile), "agent.conf", 10)) == 0) {
+		debug2("WARN: Cannot open %s: %s", cfgfile, xml.err);
+	} else {
+		merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
+	}
         return (OS_INVALID);
     }
 
