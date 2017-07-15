@@ -152,12 +152,14 @@ int ReadConfig(int modules, const char *cfgfile, void *d1, void *d2)
     const char *xml_agent_overwrite = "overwrite";
     const char *xml_agent_profile = "profile";
 
-    if (OS_ReadXML(cfgfile, &xml) < 0) {
-	if((strncmp(basename(cfgfile), "agent.conf", 10)) == 0) {
-		debug2("WARN: Cannot open %s: %s", cfgfile, xml.err);
-	} else {
-		merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
-	}
+    int xml_ret = OS_ReadXML(cfgfile, &xml);
+    if (xml_ret < 0) {
+        const char *cfg_base = basename(cfgfile);
+	    if((strncmp(cfg_base, "agent.conf", 10)) == 0 && xml_ret == -2) {
+		    debug2("WARN: Cannot open %s: %s", cfgfile, xml.err);
+	    } else {
+		    merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
+	    }
         return (OS_INVALID);
     }
 

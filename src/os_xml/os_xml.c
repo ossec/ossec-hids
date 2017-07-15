@@ -89,7 +89,7 @@ void OS_ClearXML(OS_XML *_lxml)
     memset(_lxml->err, '\0', XML_ERR_LENGTH);
 }
 
-/* Read na XML file and generate the necessary structs */
+/* Read an XML file and generate the necessary structs */
 int OS_ReadXML(const char *file, OS_XML *_lxml)
 {
     int r;
