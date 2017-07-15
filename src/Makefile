@@ -45,6 +45,9 @@ ifneq (,$(filter ${REUSE_ID},yes y Y 1))
 endif
 
 OSSEC_LDFLAGS=${LDFLAGS} -lm
+ifeq (${TARGET},test)
+	OSSEC_LDFLAGS+= -lsubunit
+endif
 
 ifneq (${TARGET},winagent)
 ifeq (${uname_S},Linux)
