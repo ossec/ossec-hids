@@ -9,6 +9,8 @@
 
 /* Syscheck decoder */
 
+#include <unistd.h>
+
 #include "eventinfo.h"
 #include "os_regex/os_regex.h"
 #include "config.h"
@@ -709,12 +711,14 @@ int DecodeSyscheck(Eventinfo *lf)
 }
 
 /* Search the sqlite db for an entry */
+static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf);
 static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
     /* c_sum: 2017/06/16 20:00:20 f_name: /etc/ansible/playbooks/common/broids/files/OTX-Apps-Bro-IDS/pulses/555be98eb45ff507dbe5b426.intel   c_sum: 724:33277:0:0:c88286fad6bf0db68fd8371ca2a1804b:f8e329da2ad2a50c93de2dcb8889531cdb841bfe */
 
     char *md5sum, *sha1sum;
-
+    int cfsize = 0, cfperm = 0, cfuid = 0, cfgid = 0, chash1 = 0, chash2 = 0;
+    int changed = 0, times_count = 0;
 
     /* Grab the checksums from c_sum */
     char **values, *hash1, *hash2, *fsize, *fperm, *fuid, *fgid;
@@ -748,7 +752,88 @@ static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
     char sys_search[OS_MAXSTR + 1];
     /* hostname, file_name */
     // XXX
-    snprintf(sys_search, "SELECT * from syscheck where hostname=\"%s\" and filename=\"%s\";", lf->hostname, f_name); 
+    snprintf(sys_search, 2048, "SELECT * from syscheck where hostname=\"%s\" and filename=\"%s\";", lf->hostname, f_name); 
+
+    extern sqlite3 *syscheck_conn;
+    int sys_error = 0;
+    const char *sys_tail;
+    sqlite3_stmt *sys_res;
+    sys_error = sqlite3_prepare_v2(syscheck_conn, sys_search, 1000, &sys_res, &sys_tail);
+    if(sys_error == SQLITE_OK) {
+os_step:
+        sys_error = sqlite3_step(sys_res);
+        if(sys_error == SQLITE_ROW) {
+            // Check the values
+            if((strncmp(fsize, sqlite3_column_text(sys_res, 1), 32))
+                    != 0) { 
+                cfsize++;
+                changed++;
+            }
+            if((strncmp(fperm, sqlite3_column_text(sys_res, 2), 5))
+                    != 0) { 
+                cfperm++;
+                changed++;
+            }
+            if((strncmp(fuid, sqlite3_column_text(sys_res, 3), 5))
+                    != 0) { 
+                cfuid++;
+                changed++;
+            }
+            if((strncmp(fgid, sqlite3_column_text(sys_res, 4), 5))
+                   != 0) { 
+                cfgid++;
+                changed++;
+            }
+            if((strncmp(hash1, sqlite3_column_text(sys_res, 8), HASH1_LEN))
+                    != 0) { 
+                chash1++;
+                changed++;
+            }
+            if((strncmp(hash2, sqlite3_column_text(sys_res, 9), HASH2_LEN))
+                    != 0) { 
+                chash2++;
+                changed++;
+            }
+            // Go ahead and grab the count while we're here
+            times_count = sqlite3_column_int(sys_res, 0);
+        } else if(sys_error == SQLITE_BUSY) {
+            sleep(1);
+            goto os_step;
+        } else if(SQLITE_DONE) {
+add_entry:
+            // No results - add the entry to the database
+            sqlite3_stmt *sys_add;
+            int add_res = 0;
+            char sys_add_entry[OS_MAXSTR + 1];
+            snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");", times_count, fsize, fperm, fuid, fgid, hash1, hash2);
+            add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
+            if(add_res == SQLITE_OK) {
+                return(0);
+            } else if(add_res == SQLITE_BUSY) {
+                // Try to re-do
+                sleep(1);
+                goto add_entry;
+            }
+        }
+
+    } else {
+        // FAIL
+    }
+
+    // If nothing changed, return.
+    if(changed == 0) {
+        return(0);
+    }
+
+    // Something changed.
+    /* Check how many times something has changed, if auto ignore isn't set */
+    if(!Config.syscheck_auto_ignore) {
+        //times_count should be the number of changes to the file
+        if(times_count > 2) {
+            return(0);
+        }
+    }
+
 
 
     return(0);
