@@ -151,7 +151,7 @@ void *receiver_thread(__attribute__((unused)) void *none)
                              SHAREDCFG_DIR,
                              tmp_msg);
 
-                    fp = fopen(file, "w");
+                    fp = fopen(file, "wb");
                     if (!fp) {
                         merror(FOPEN_ERROR, ARGV0, file, errno, strerror(errno));
                     }
