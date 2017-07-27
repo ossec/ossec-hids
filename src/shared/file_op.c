@@ -10,6 +10,9 @@
 /* Functions to handle operation with files
  */
 
+#include <errno.h>
+#include <string.h>
+
 #include "shared.h"
 
 #ifndef WIN32
@@ -455,8 +458,8 @@ int UnmergeFiles(const char *finalpath, const char *optdir)
         fp = fopen(final_name, "w");
         if (!fp) {
             ret = 0;
-            merror("%s: ERROR: Unable to unmerge file '%s'.",
-                   __local_name, final_name);
+            merror("%s: ERROR: Unable to unmerge file '%s': %s",
+                   __local_name, final_name, strerror(errno));
         }
 
         if (files_size < sizeof(buf) - 1) {
