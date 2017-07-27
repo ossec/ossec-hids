@@ -204,6 +204,10 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
         logr->proto[pl] = IPPROTO_UDP;
     }
 
+    /* Secure connections only run on UDP */
+    if ((logr->conn[pl] == SECURE_CONN) && (logr->proto[pl] == IPPROTO_TCP)) {
+        logr->proto[pl] = IPPROTO_UDP;
+    }
 
     return (0);
 }
