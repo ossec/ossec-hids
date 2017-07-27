@@ -344,10 +344,12 @@ int main(int argc, char **argv)
     srandom_init();
 
     /* Chroot */
+/*
     if (Privsep_Chroot(dir) < 0)
         ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
 
     nowChroot();
+*/
 
     while (1) {
         /* No need to completely pin the cpu, 100ms should be fast enough */
