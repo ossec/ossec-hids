@@ -258,7 +258,7 @@ int main(int argc, char **argv)
             fgets(buf, 4095, fp);
 
             if (strlen(buf) > 2) {
-                authpass = buf;
+                authpass = strndup(buf, 32); // XXX check return?
             }
 
             fclose(fp);
@@ -304,6 +304,7 @@ int main(int argc, char **argv)
 
     printf("INFO: Using agent name as: %s\n", agentname);
 
+    memset(buf, 0, sizeof(buf));
     if (authpass) {
         snprintf(buf, 2048, "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
     }
