@@ -311,8 +311,9 @@ int main(int argc, char **argv)
             authpass = __generatetmppass();
             verbose("Accepting connections. Random password chosen for agent authentication: %s", authpass);
         }
-    } else
+    } else {
         verbose("Accepting connections. No password required (not recommended)");
+    }
 
     /* Getting SSL cert. */
 
