@@ -252,7 +252,7 @@ int main(int argc, char **argv)
         }
     }
     if (!authpass) {
-        printf("WARN: No authentication password provided.\n");
+        printf("WARN: No authentication password provided. Insecure mode started.\n");
     }
 
     /* Connect via TCP */
