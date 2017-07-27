@@ -22,6 +22,8 @@
  *
  */
 
+#include <errno.h>
+#include <string.h>
 #include "shared.h"
 #include "check_cert.h"
 
@@ -165,10 +167,11 @@ int main(int argc, char **argv)
                 agent_key = optarg;
                 break;
             case 'P':
-            if (!optarg)
-                ErrorExit("%s: -%c needs an argument", ARGV0, c);
-
-            authpass = optarg;
+                if (!optarg) {
+                    ErrorExit("%s: -%c needs an argument", ARGV0, c);
+                }
+                authpass = optarg;
+                break;
             default:
                 help_agent_auth();
                 break;
@@ -233,10 +236,19 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+
+    if(authpass == NULL) {
+        authpass = AUTHDPASS_PATH;
+    }
+
     /* Checking if there is a custom password file */
-    if (authpass == NULL) {
+    if (authpass != NULL) {
         FILE *fp;
-        fp = fopen(AUTHDPASS_PATH, "r");
+        fp = fopen(authpass, "r");
+        if(!fp) {
+            fprintf(stderr, "Cannot open %s: %s\n", authpass, strerror(errno));
+            exit(1);
+        }
         buf[0] = '\0';
 
         if (fp) {
