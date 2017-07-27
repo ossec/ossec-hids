@@ -71,6 +71,7 @@ int main(int argc, char **argv)
     int key_added = 0;
     int c;
     int test_config = 0;
+    int authenticate = 0;
 #ifndef WIN32
     gid_t gid = 0;
 #endif
@@ -171,6 +172,7 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -%c needs an argument", ARGV0, c);
                 }
                 authpass = optarg;
+                authenticate++;
                 break;
             default:
                 help_agent_auth();
@@ -242,7 +244,7 @@ int main(int argc, char **argv)
     }
 
     /* Checking if there is a custom password file */
-    if (authpass != NULL) {
+    if (authpass != NULL && authenticate > 0) {
         FILE *fp;
         fp = fopen(authpass, "r");
         if(!fp) {
