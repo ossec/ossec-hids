@@ -38,9 +38,6 @@ int main()
 #include "auth.h"
 #include "os_crypto/md5/md5_op.h"
 
-/* TODO: Pulled this value out of the sky, may or may not be sane */
-#define POOL_SIZE 512
-
 /* Prototypes */
 static void help_authd(void) __attribute((noreturn));
 static int ssl_error(const SSL *ssl, int ret);
@@ -51,7 +48,7 @@ static void clean_exit(SSL_CTX *ctx, int sock) __attribute__((noreturn));
 static void help_authd()
 {
     print_header();
-    print_out("  %s: -[Vhdti] [-g group] [-D dir] [-p port] [-v path] [-x path] [-k path]", ARGV0);
+    print_out("  %s: -[Vhdti] [-f sec] [-g group] [-D dir] [-p port] [-v path] [-x path] [-k path]", ARGV0);
     print_out("    -V          Version and license message");
     print_out("    -h          This help message");
     print_out("    -d          Execute in debug mode. This parameter");
@@ -59,13 +56,14 @@ static void help_authd()
     print_out("                to increase the debug level.");
     print_out("    -t          Test configuration");
     print_out("    -i          Use client's source IP address");
+    print_out("    -f <sec>    Remove old agents with same IP if disconnected since <sec> seconds");
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out("    -p <port>   Manager port (default: %s)", DEFAULT_PORT);
     print_out("    -n          Disable shared password authentication (not recommended).\n");
     print_out("    -v <path>   Full path to CA certificate used to verify clients");
-    print_out("    -x <path>   Full path to server certificate");
-    print_out("    -k <path>   Full path to server key");
+    print_out("    -x <path>   Full path to server certificate (default: %s%s)", DEFAULTDIR, CERTFILE);
+    print_out("    -k <path>   Full path to server key (default: %s%s)", DEFAULTDIR, KEYFILE);
     print_out(" ");
     exit(1);
 }
@@ -148,6 +146,8 @@ int main(int argc, char **argv)
     /* Count of pids we are wait()ing on */
     int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
     int use_pass = 1;
+    int force_antiquity = -1;
+    char *id_exist;
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
     char *port = DEFAULT_PORT;
@@ -171,7 +171,9 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:v:x:k:n")) != -1) {
+    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:v:x:k:nf:")) != -1) {
+        char *end;
+
         switch (c) {
             case 'V':
                 print_version();
@@ -230,6 +232,16 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -%c needs an argument", ARGV0, c);
                 }
                 server_key = optarg;
+                break;
+            case 'f':
+                if (!optarg)
+                    ErrorExit("%s: -%c needs an argument", ARGV0, c);
+
+                force_antiquity = strtol(optarg, &end, 10);
+
+                if (optarg == end || force_antiquity < 0)
+                    ErrorExit("%s: Invalid number for -f", ARGV0);
+
                 break;
             default:
                 help_authd();
@@ -300,7 +312,7 @@ int main(int argc, char **argv)
             verbose("Accepting connections. Random password chosen for agent authentication: %s", authpass);
         }
     } else
-        verbose("Accepting insecure connections. No password required (not recommended)");
+        verbose("Accepting connections. No password required (not recommended)");
 
     /* Getting SSL cert. */
 
@@ -327,6 +339,15 @@ int main(int argc, char **argv)
 
     fcntl(sock, F_SETFL, O_NONBLOCK);
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
+
+    /* Setup random */
+    srandom_init();
+
+    /* Chroot */
+    if (Privsep_Chroot(dir) < 0)
+        ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
+
+    nowChroot();
 
     while (1) {
         /* No need to completely pin the cpu, 100ms should be fast enough */
@@ -451,7 +472,7 @@ int main(int argc, char **argv)
                         exit(0);
                     }
 
-                    /* Check for duplicate names */
+                    /* Check for duplicated names */
                     strncpy(fname, agentname, 2048);
                     while (NameExist(fname)) {
                         snprintf(fname, 2048, "%s%d", agentname, acount);
@@ -468,12 +489,50 @@ int main(int argc, char **argv)
                     }
                     agentname = fname;
 
+                    /* Check for duplicated IP */
+
+                    if (use_ip_address) {
+                        id_exist = IPExist(srcip);
+                        if (id_exist) {
+                            if (force_antiquity >= 0) {
+                                double antiquity = OS_AgentAntiquity(id_exist);
+                                if (antiquity >= force_antiquity || antiquity < 0) {
+                                    /* TODO: Backup info-agent, syscheck and rootcheck */
+                                    OS_RemoveAgent(id_exist);
+                                } else {
+                                    /* TODO: Send alert */
+                                    merror("%s: ERROR: Duplicated IP %s (another active)", ARGV0, srcip);
+                                    snprintf(response, 2048, "ERROR: Duplicated IP: %s\n\n", srcip);
+                                    SSL_write(ssl, response, strlen(response));
+                                    snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+                                    SSL_write(ssl, response, strlen(response));
+                                    sleep(1);
+                                    exit(0);
+                                }
+
+                            } else {
+                                merror("%s: ERROR: Duplicated IP %s", ARGV0, srcip);
+                                snprintf(response, 2048, "ERROR: Duplicated IP: %s\n\n", srcip);
+                                SSL_write(ssl, response, strlen(response));
+                                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+                                SSL_write(ssl, response, strlen(response));
+                                sleep(1);
+                                exit(0);
+                            }
+                        }
+                    }
+
                     /* Add the new agent */
                     if (use_ip_address) {
-                        finalkey = OS_AddNewAgent(agentname, srcip, NULL);
-                    } else {
+#ifdef REUSE_ID
+                        if (id_exist)
+                            finalkey = OS_AddNewAgent(agentname, srcip, id_exist);
+                        else
+#endif
+                            finalkey = OS_AddNewAgent(agentname, srcip, NULL);
+                    } else
                         finalkey = OS_AddNewAgent(agentname, NULL, NULL);
-                    }
+
                     if (!finalkey) {
                         merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
                         snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
