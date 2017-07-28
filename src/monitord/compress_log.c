@@ -9,7 +9,7 @@
 
 #include "shared.h"
 #include "monitord.h"
-#include "../external/zlib-1.2.8/zlib.h"
+#include "../external/zlib-1.2.11/zlib.h"
 
 
 /* gzip a log file */
