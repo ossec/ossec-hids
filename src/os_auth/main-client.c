@@ -61,7 +61,7 @@ static void help_agent_auth()
     print_out("    -v <path>   Full path to CA certificate used to verify the server");
     print_out("    -x <path>   Full path to agent certificate");
     print_out("    -k <path>   Full path to agent key");
-    print_out("    -P <path>   Authorization password");
+    print_out("    -P <path>   Authorization password file [default: /var/ossec/etc/authd.pass");
     print_out(" ");
     exit(1);
 }
