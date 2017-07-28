@@ -258,11 +258,15 @@ int main(int argc, char **argv)
             fgets(buf, 4095, fp);
 
             if (strlen(buf) > 2) {
-                authpass = strndup(buf, 32); // XXX check return?
+                authpass = strndup(buf, 32);
+                if(!authpass) {
+                    fprintf(stderr, "Could not set the authpass: %s", strerror(errno));
+                    exit(1);
+                }
             }
 
             fclose(fp);
-            printf("INFO: Using password specified on file: %s\n", AUTHDPASS_PATH);
+            printf("INFO: Using specified password.\n");
         }
     }
     if (!authpass) {
