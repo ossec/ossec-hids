@@ -722,6 +722,7 @@ static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
     /* Grab the checksums from c_sum */
     char **values, *hash1, *hash2, *fsize, *fperm, *fuid, *fgid;
+    char *dbhash1, *dbhash2, *dbfsize, *dbfperm, *dbfuid, *dbfgid;
     char *s2;
     s2 = strdup(c_sum);
     printf("s2: %s\n", s2);
@@ -729,22 +730,28 @@ static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
     int count = 0;
 
     if((fsize = strsep(&s2, ":")) == NULL) {
+        merror("Cannot get the file size.");
             //ERROR
     }
 
     if((fperm = strsep(&s2, ":")) == NULL) {
+        merror("Cannot get the file permissions.");
             //ERROR
     }
     if((fuid = strsep(&s2, ":")) == NULL) {
+        merror("Cannot get the file uid.");
             //ERROR
     }
     if((fgid = strsep(&s2, ":")) == NULL) {
+        merror("Cannot get the file gid.");
             //ERROR
     }
     if((hash1 = strsep(&s2, ":")) == NULL) {
+        merror("Cannot get the file hash1.");
             //ERROR
     }
     if((hash2 = strsep(&s2, ":")) == NULL) {
+        merror("Cannot get the file hash2.");
             //ERROR
     }
 
@@ -762,57 +769,122 @@ static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
     if(sys_error == SQLITE_OK) {
 os_step:
         sys_error = sqlite3_step(sys_res);
+        dbfsize = sqlite3_column_text(sys_res, 1);
+        dbfperm = sqlite3_column_text(sys_res, 2);
+        dbfuid = sqlite3_column_text(sys_res, 3);
+        dbfgid = sqlite3_column_text(sys_res, 4);
+        dbhash1 = sqlite3_column_text(sys_res, 8);
+        dbhash2 = sqlite3_column_text(sys_res, 9);
         if(sys_error == SQLITE_ROW) {
             // Check the values
-            if((strncmp(fsize, sqlite3_column_text(sys_res, 1), 32))
-                    != 0) { 
+            if((strncmp(fsize, dbfsize, 32)) != 0) {
                 cfsize++;
                 changed++;
+                snprintf(sdb.size, OS_FLSIZE, "Size changed from '%s' to '%s'\n", dbfsize, fsize);
+            } else {
+                sdb.size[0] = '\0';
             }
-            if((strncmp(fperm, sqlite3_column_text(sys_res, 2), 5))
-                    != 0) { 
+
+            if((strncmp(fperm, dbfperm, 5)) != 0) {
                 cfperm++;
                 changed++;
+                snprintf(sdb.perm, OS_FLSIZE, "Permissions changed from '%9.9s' to '%9.9s'\n", dbfperm, fperm);
+            } else {
+                sdb.perm[0] = '\0';
             }
-            if((strncmp(fuid, sqlite3_column_text(sys_res, 3), 5))
-                    != 0) { 
+            if((strncmp(fuid, dbfuid, 5)) != 0) {
                 cfuid++;
                 changed++;
+                snprintf(sdb.owner, OS_FLSIZE, "Ownership was '%s', now it is '%s'\n", dbfuid, fuid);
+            } else {
+                sdb.owner[0] = '\0';
             }
-            if((strncmp(fgid, sqlite3_column_text(sys_res, 4), 5))
-                   != 0) { 
+            if((strncmp(fgid, dbfgid, 5)) != 0) {
                 cfgid++;
                 changed++;
+                snprintf(sdb.gowner, OS_FLSIZE, "Group ownership was '%s', now it is '%s'\n", dbfgid, fgid);
+            } else {
+                sdb.gowner[0] = '\0';
             }
-            if((strncmp(hash1, sqlite3_column_text(sys_res, 8), HASH1_LEN))
-                    != 0) { 
+            if((strncmp(hash1, dbhash1, HASH1_LEN)) != 0) {
                 chash1++;
                 changed++;
+                snprintf(sdb.md5, OS_FLSIZE, "Old hash1 was: '%s'\nNew hash1 is: '%s'\n", dbhash1, hash1);
+            } else {
+                sdb.md5[0] = '\0';
             }
-            if((strncmp(hash2, sqlite3_column_text(sys_res, 9), HASH2_LEN))
-                    != 0) { 
+            if((strncmp(hash2, dbhash2, HASH2_LEN)) != 0) {
                 chash2++;
                 changed++;
+                snprintf(sdb.sha1, OS_FLSIZE, "Old hash2 was '%s'\nNew hash2 is: '%s'\n", dbhash2, hash2);
+            } else {
+                sdb.sha1[0] = '\0';
             }
+
+            // If nothing changed, return.
+            if(changed == 0) {
+                return(0);
+            }
+
             // Go ahead and grab the count while we're here
             times_count = sqlite3_column_int(sys_res, 0);
+
+            /* Check how many times something has changed, if auto ignore isn't set */
+            if(!Config.syscheck_auto_ignore) {
+                //times_count should be the number of changes to the file
+                if(times_count > 2) {
+                    return(0);
+                }
+            }
+
+            /* Provide information about the file */
+            snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changes for: "
+                    "'%.756s'\n"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s"
+                    "%s%s",
+                    f_name,
+                    sdb.size,
+                    sdb.perm,
+                    sdb.owner,
+                    sdb.gowner,
+                    sdb.md5,
+                    sdb.sha1,
+                    lf->data == NULL ? "" : "What change:\n",
+                    lf->data == NULL ? "" : lf->data
+                    );
+
+            free(lf->full_log);
+            os_strdup(sdb.comment, lf->full_log);
+            lf->log = lf->full_log;
+            lf->data = NULL;
+
+            /* Set decoder */
+            lf->decoder_info = sdb.syscheck_dec;
+            return(1);
+
         } else if(sys_error == SQLITE_BUSY) {
             sleep(1);
             goto os_step;
         } else if(SQLITE_DONE) {
-add_entry:
             // No results - add the entry to the database
             sqlite3_stmt *sys_add;
-            int add_res = 0;
+            int add_res = -1;
             char sys_add_entry[OS_MAXSTR + 1];
-            snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");", times_count, fsize, fperm, fuid, fgid, hash1, hash2);
-            add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
-            if(add_res == SQLITE_OK) {
-                return(0);
-            } else if(add_res == SQLITE_BUSY) {
-                // Try to re-do
-                sleep(1);
-                goto add_entry;
+            snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES\(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\"\)\;", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2);
+            while(add_res == 0 || add_res == 5) {
+                add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
+                if(add_res == SQLITE_OK) {
+                    return(0);
+                } else if(add_res == SQLITE_BUSY) {
+                    // Try to re-do
+                    sleep(1);
+                    add_res = -1;
+                }
             }
         }
 
@@ -820,19 +892,6 @@ add_entry:
         // FAIL
     }
 
-    // If nothing changed, return.
-    if(changed == 0) {
-        return(0);
-    }
-
-    // Something changed.
-    /* Check how many times something has changed, if auto ignore isn't set */
-    if(!Config.syscheck_auto_ignore) {
-        //times_count should be the number of changes to the file
-        if(times_count > 2) {
-            return(0);
-        }
-    }
 
 
 
