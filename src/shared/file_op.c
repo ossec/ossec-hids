@@ -10,6 +10,9 @@
 /* Functions to handle operation with files
  */
 
+#include <errno.h>
+#include <string.h>
+
 #include "shared.h"
 
 #ifndef WIN32
@@ -356,6 +359,23 @@ int CreatePID(const char *name, int pid)
     return (0);
 }
 
+char *GetRandomNoise()
+{
+    FILE *fp;
+    char buf[2048 + 1];
+
+    /* Reading urandom */
+    fp = fopen("/dev/urandom", "r");
+    if(!fp)
+    {
+        return(NULL);
+    }
+
+    buf[2048] = '\0';
+    fread(buf, 1, 2048, fp);
+    return(strdup(buf));
+}
+
 int DeletePID(const char *name)
 {
     char file[256];
@@ -438,8 +458,8 @@ int UnmergeFiles(const char *finalpath, const char *optdir)
         fp = fopen(final_name, "w");
         if (!fp) {
             ret = 0;
-            merror("%s: ERROR: Unable to unmerge file '%s'.",
-                   __local_name, final_name);
+            merror("%s: ERROR: Unable to unmerge file '%s': %s",
+                   __local_name, final_name, strerror(errno));
         }
 
         if (files_size < sizeof(buf) - 1) {
