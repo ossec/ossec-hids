@@ -898,7 +898,17 @@ os_step:
                 //add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
 		add_res = sqlite3_exec(syscheck_conn, sys_add_entry, 0, 0, &error_message);
                 if(add_res == SQLITE_OK) {
-                    return(0);  //XXX What about alert new files?
+                    if(Config.syscheck_alert_new == 1) {
+                        snprintf(sdb.comment, OS_MAXSTR, "New file '%.756s' aded to the file system.", f_name);
+                        free(lf->full_log);
+                        os_strdup(sdb.comment, lf->full_log);
+                        lf->log = lf->full_log;
+                        lf->decoder_info = sdb.syscheck_dec;
+                        lf->data = NULL;
+                        return(1);
+                    } else {
+                        return(0);
+                    }
                 } else if(add_res == SQLITE_BUSY) {
                     // Try to re-do
                     sleep(1);
