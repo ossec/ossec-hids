@@ -707,14 +707,18 @@ int DecodeSyscheck(Eventinfo *lf)
  
 
     /* Search for file changes */
-    return (DB_Search(f_name, c_sum, lf));
+    //return (DB_Search(f_name, c_sum, lf));
+    return (DB_Search2(f_name, c_sum, lf));
 }
 
 /* Search the sqlite db for an entry */
-static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf);
-static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
+int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf);
+int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
     /* c_sum: 2017/06/16 20:00:20 f_name: /etc/ansible/playbooks/common/broids/files/OTX-Apps-Bro-IDS/pulses/555be98eb45ff507dbe5b426.intel   c_sum: 724:33277:0:0:c88286fad6bf0db68fd8371ca2a1804b:f8e329da2ad2a50c93de2dcb8889531cdb841bfe */
+
+
+    debug2("XXX Entered DB_Search2");
 
     char *md5sum, *sha1sum;
     int cfsize = 0, cfperm = 0, cfuid = 0, cfgid = 0, chash1 = 0, chash2 = 0;
@@ -729,11 +733,12 @@ static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
     int count = 0;
 
+    debug2("XXX parsing c_sum");
+
     if((fsize = strsep(&s2, ":")) == NULL) {
         merror("Cannot get the file size.");
             //ERROR
     }
-
     if((fperm = strsep(&s2, ":")) == NULL) {
         merror("Cannot get the file permissions.");
             //ERROR
@@ -755,12 +760,14 @@ static int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
             //ERROR
     }
 
+    debug2("Finished parsing c_sum");
 
     char sys_search[OS_MAXSTR + 1];
     /* hostname, file_name */
     // XXX
     snprintf(sys_search, 2048, "SELECT * from syscheck where hostname=\"%s\" and filename=\"%s\";", lf->hostname, f_name); 
 
+    debug2("XXX Preparing first search");
     extern sqlite3 *syscheck_conn;
     int sys_error = 0;
     const char *sys_tail;
@@ -875,13 +882,16 @@ os_step:
             sqlite3_stmt *sys_add;
             int add_res = -1;
             char sys_add_entry[OS_MAXSTR + 1];
+            debug2("XXX Preparing to INSERT");
             snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES\(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\"\)\;", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2);
             while(add_res == 0 || add_res == 5) {
                 add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
                 if(add_res == SQLITE_OK) {
-                    return(0);
+                    debug2("XXX INSERTED!");
+                    return(0);  //XXX What about alert new files?
                 } else if(add_res == SQLITE_BUSY) {
                     // Try to re-do
+                    debug2("XXX SQLITE_BUSY");
                     sleep(1);
                     add_res = -1;
                 }
