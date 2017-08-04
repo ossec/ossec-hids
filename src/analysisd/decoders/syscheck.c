@@ -20,6 +20,8 @@
 //#include <sqlite3.h>
 #include "syscheck-sqlite.h"
 
+int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf);
+
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
     char comment[OS_MAXSTR + 1];
@@ -712,13 +714,11 @@ int DecodeSyscheck(Eventinfo *lf)
 }
 
 /* Search the sqlite db for an entry */
-int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf);
 int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
     /* c_sum: 2017/06/16 20:00:20 f_name: /etc/ansible/playbooks/common/broids/files/OTX-Apps-Bro-IDS/pulses/555be98eb45ff507dbe5b426.intel   c_sum: 724:33277:0:0:c88286fad6bf0db68fd8371ca2a1804b:f8e329da2ad2a50c93de2dcb8889531cdb841bfe */
 
 
-    debug2("XXX Entered DB_Search2");
 
     char *md5sum, *sha1sum;
     int cfsize = 0, cfperm = 0, cfuid = 0, cfgid = 0, chash1 = 0, chash2 = 0;
@@ -733,7 +733,6 @@ int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
     int count = 0;
 
-    debug2("XXX parsing c_sum");
 
     if((fsize = strsep(&s2, ":")) == NULL) {
         merror("Cannot get the file size.");
@@ -760,14 +759,13 @@ int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
             //ERROR
     }
 
-    debug2("Finished parsing c_sum");
+    merror("Finished parsing c_sum");
 
     char sys_search[OS_MAXSTR + 1];
     /* hostname, file_name */
     // XXX
     snprintf(sys_search, 2048, "SELECT * from syscheck where hostname=\"%s\" and filename=\"%s\";", lf->hostname, f_name); 
 
-    debug2("XXX Preparing first search");
     extern sqlite3 *syscheck_conn;
     int sys_error = 0;
     const char *sys_tail;
@@ -844,6 +842,18 @@ os_step:
                 }
             }
 
+            /* update the entry */
+            char entry_update[2048 + 1];
+            char *error_message;
+            times_count++;
+            snprintf(entry_update, 2048, "UPDATE syscheck SET count = \"%d\", hostname = \"%s\", filename = \"%s\", size = \"%d\", permissions = \"%s\", uid = \"%s\", gid = \"%s\", hash1 = \"%s\", hash2 = \"%s\", timestamp = \"%ld\" where hostname = \"%s\" AND filename = \"%s\";", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2, (long int)lf->time, lf->hostname, f_name);
+            int rc = sqlite3_exec(syscheck_conn, entry_update, 0, 0, &error_message);
+            if(rc != SQLITE_OK) {
+                merror("XXX UPDATE FAILED: %s", error_message);
+            } else {
+                merror("UPDATE succeeded!");
+            }
+
             /* Provide information about the file */
             snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changes for: "
                     "'%.756s'\n"
@@ -880,20 +890,21 @@ os_step:
         } else if(SQLITE_DONE) {
             // No results - add the entry to the database
             sqlite3_stmt *sys_add;
+            char *error_message = '\0';
             int add_res = -1;
             char sys_add_entry[OS_MAXSTR + 1];
-            debug2("XXX Preparing to INSERT");
-            snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES\(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\"\)\;", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2);
-            while(add_res == 0 || add_res == 5) {
-                add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
+            snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES\(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%ld\"\)\;", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2, (long int)lf->time);
+            while(add_res == -1 || add_res == 5) {
+                //add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
+		add_res = sqlite3_exec(syscheck_conn, sys_add_entry, 0, 0, &error_message);
                 if(add_res == SQLITE_OK) {
-                    debug2("XXX INSERTED!");
                     return(0);  //XXX What about alert new files?
                 } else if(add_res == SQLITE_BUSY) {
                     // Try to re-do
-                    debug2("XXX SQLITE_BUSY");
                     sleep(1);
                     add_res = -1;
+                } else {
+                    merror("Cannot insert into db: %s\n", error_message);
                 }
             }
         }
@@ -902,6 +913,7 @@ os_step:
         // FAIL
     }
 
+    sqlite3_finalize(sys_res);
 
 
 
