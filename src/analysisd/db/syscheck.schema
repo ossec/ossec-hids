@@ -1,0 +1,14 @@
+CREATE TABLE syscheck (
+	count INTEGER,
+	hostname TEXT,
+	filename TEXT,
+	size TEXT,
+	permissions TEXT,
+	uid INTEGER,
+	gid INTEGER,
+	hash1 TEXT,
+	hash2 TEXT,
+	timestamp TEXT,
+	PRIMARY KEY (hostname, filename)
+
+);
