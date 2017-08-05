@@ -35,11 +35,11 @@ BIO *bio_err;
  * then load the file containing the CA chain and verify the certifcate
  * sent by the peer.
  */
-SSL_CTX *os_ssl_keys(int is_server, const char *os_dir, const char *cert, const char *key, const char *ca_cert)
+SSL_CTX *os_ssl_keys(int is_server, const char *os_dir, const char *ciphers, const char *cert, const char *key, const char *ca_cert)
 {
     SSL_CTX *ctx = NULL;
 
-    if (!(ctx = get_ssl_context())) {
+    if (!(ctx = get_ssl_context(ciphers))) {
         goto SSL_ERROR;
     }
 
@@ -94,7 +94,7 @@ SSL_ERROR:
     return (SSL_CTX *)NULL;
 }
 
-SSL_CTX *get_ssl_context()
+SSL_CTX *get_ssl_context(const char *ciphers)
 {
     const SSL_METHOD *sslmeth = NULL;
     SSL_CTX *ctx = NULL;
@@ -111,7 +111,7 @@ SSL_CTX *get_ssl_context()
 
     /* Explicitly set options and cipher list */
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
-    if (!(SSL_CTX_set_cipher_list(ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"))) {
+    if (!(SSL_CTX_set_cipher_list(ctx, ciphers))) {
         goto CONTEXT_ERR;
     }
 

@@ -51,7 +51,7 @@ static void clean_exit(SSL_CTX *ctx, int sock) __attribute__((noreturn));
 static void help_authd()
 {
     print_header();
-    print_out("  %s: -[Vhdti] [-g group] [-D dir] [-p port] [-v path] [-x path] [-k path]", ARGV0);
+    print_out("  %s: -[Vhdti] [-g group] [-D dir] [-p port] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
     print_out("    -V          Version and license message");
     print_out("    -h          This help message");
     print_out("    -d          Execute in debug mode. This parameter");
@@ -63,6 +63,7 @@ static void help_authd()
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out("    -p <port>   Manager port (default: %s)", DEFAULT_PORT);
     print_out("    -n          Disable shared password authentication (not recommended).\n");
+    print_out("    -c          SSL cipher list (default: %s)", DEFAULT_CIPHERS);
     print_out("    -v <path>   Full path to CA certificate used to verify clients");
     print_out("    -x <path>   Full path to server certificate");
     print_out("    -k <path>   Full path to server key");
@@ -151,6 +152,7 @@ int main(int argc, char **argv)
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
     char *port = DEFAULT_PORT;
+    char *ciphers = DEFAULT_CIPHERS;
     const char *dir  = DEFAULTDIR;
     const char *group = GROUPGLOBAL;
     const char *server_cert = NULL;
@@ -171,7 +173,7 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:v:x:k:n")) != -1) {
+    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:c:v:x:k:n")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -212,6 +214,12 @@ int main(int argc, char **argv)
                     ErrorExit("%s: Invalid port: %s", ARGV0, optarg);
                 }
                 port = optarg;
+                break;
+            case 'c':
+                if (!optarg) {
+                    ErrorExit("%s: -%c needs an argument", ARGV0, c);
+                }
+                ciphers = optarg;
                 break;
             case 'v':
                 if (!optarg) {
@@ -313,7 +321,7 @@ int main(int argc, char **argv)
     fclose(fp);
 
     /* Start SSL */
-    ctx = os_ssl_keys(1, dir, server_cert, server_key, ca_cert);
+    ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {
         merror("%s: ERROR: SSL error. Exiting.", ARGV0);
         exit(1);
