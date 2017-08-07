@@ -19,7 +19,7 @@ if [ $? = 0 ]; then
 fi
 
 NAME="OSSEC HIDS"
-VERSION="v2.9.1"
+VERSION="v2.9.2"
 AUTHOR="Trend Micro Inc."
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf;

@@ -36,9 +36,9 @@
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
-#define __version       "v2.9.1"
+#define __version       "v2.9.2"
 #define __author        "Trend Micro Inc."
-#define __contact       "contact@ossec.net"
+#define __contact       "support@ossec-hids.org"
 #define __site          "http://www.ossec.net"
 #define __license       "\
 This program is free software; you can redistribute it and/or modify\n\
