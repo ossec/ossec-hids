@@ -18,7 +18,7 @@
 <!-- Bad words matching. Any log containing these messages
   -  will be triggered.
   -->
-<var name="BAD_WORDS">core_dumped|failure|error|attack|bad |illegal |denied|refused|unauthorized|fatal|failed|Segmentation Fault|Corrupted</var>
+<var name="BAD_WORDS">core_dumped|failure|error|attack| bad |illegal |denied|refused|unauthorized|fatal|failed|Segmentation Fault|Corrupted</var>
 
 
 <!-- Syslog errors. -->
@@ -71,6 +71,12 @@
     <match>terminated without error|can't verify hostname: getaddrinfo|</match>
     <match>PPM exceeds tolerance</match>
     <description>Ignoring known false positives on rule 1002..</description>
+  </rule>
+
+  <rule id="1010" level="5">
+    <match>segfault at </match>
+    <description>Process segfaulted.</description>
+    <group>service_availability,</group>
   </rule>
 </group> <!-- SYSLOG,ERRORS -->
 
@@ -474,6 +480,13 @@
     <match>^changed user</match>
     <description>Information from the user was changed</description>
   </rule>
+
+  <rule id="5905" level="0">
+    <program_name>useradd</program_name>
+    <match>failed adding user </match>
+    <description>useradd failed.</description>
+  </rule>
+
 </group> <!-- SYSLOG,ADDUSER -->
 
 

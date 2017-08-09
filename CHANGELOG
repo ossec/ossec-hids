@@ -3,6 +3,34 @@ Release Maintainers
 Dan Parriott
 Scott R. Shinn (Atomicorp, Inc.)
 
+OSSEC changelog (2.9.2) <scott@atomicorp.com>
+
+New Rules / Decoders (Leo Feyer)
+     OpenBDS decoder 
+     Exim decoder
+     Dovecot Rules
+     Exim Rules
+     Chrome remote Desktop Rules (Kevin Branch)
+     Netscreen Firewall Rules
+     OpenBSD rules
+
+Updated Rules / Decoders (Leo Feyer)
+     ssh decoder 
+     dropbear decoder 
+     su decoder
+     vsftpd decoder
+     dovecot decoder
+     postfix decoder
+     pix decoder
+     apache decoder
+     windows decoder
+     Dovecot Rules 
+     SSHd Rules
+     Syslog Rules
+
+
+     
+     
 OSSEC changelog (2.9.1) <ddpbsd@gmail.com>
 
 What's new

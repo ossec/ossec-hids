@@ -1,4 +1,4 @@
-OSSEC v2.9.0
+OSSEC v2.9.2
 Copyright (C) 2017 Trend Micro Inc.
 
 Many thanks to everyone who contributed and helped with
@@ -96,6 +96,7 @@ who helped us since our first release (0.1).
   - Ralf Spenneberg <ralf@os-t.de>
   - Darren Worrall <darren@iweb.co.uk>
   - aalberdi <aalberdi@indra.es>
+  - Leo Feyer
 
 
 -Translations
