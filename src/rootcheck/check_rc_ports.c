@@ -140,7 +140,8 @@ static void test_ports(int proto, int *_errors, int *_total)
 
 #ifdef OSSECHIDS
             /* If we are in the context of OSSEC-HIDS, sleep here (no rush) */
-            sleep(2);
+            debug1("%s: DEBUG: pause for %u", ARGV0, rootcheck.tsleep);
+            sleep(rootcheck.tsleep);
 #endif
 
             if (!run_netstat(proto, i) && conn_port(proto, i)) {
