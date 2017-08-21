@@ -239,34 +239,40 @@ void run_rk_check()
     if (rootcheck.checks.rc_dev) {
         debug1("%s: DEBUG: Going into check_rc_dev", ARGV0);
         check_rc_dev(rootcheck.basedir);
+        debug1("%s: DEBUG: Exiting check_rc_dev", ARGV0);
     }
 
     /* Scan the whole system for additional issues */
     if (rootcheck.checks.rc_sys) {
         debug1("%s: DEBUG: Going into check_rc_sys", ARGV0);
         check_rc_sys(rootcheck.basedir);
+        debug1("%s: DEBUG: Exiting check_rc_sys", ARGV0);
     }
 
     /* Check processes */
     if (rootcheck.checks.rc_pids) {
         debug1("%s: DEBUG: Going into check_rc_pids", ARGV0);
         check_rc_pids();
+        debug1("%s: DEBUG: Exiting check_rc_pids", ARGV0);
     }
 
     /* Check all ports */
     if (rootcheck.checks.rc_ports) {
         debug1("%s: DEBUG: Going into check_rc_ports", ARGV0);
         check_rc_ports();
+        debug1("%s: DEBUG: Exiting check_rc_ports", ARGV0);
 
         /* Check open ports */
         debug1("%s: DEBUG: Going into check_open_ports", ARGV0);
         check_open_ports();
+        debug1("%s: DEBUG: Exiting check_open_ports", ARGV0);
     }
 
     /* Check interfaces */
     if (rootcheck.checks.rc_if) {
         debug1("%s: DEBUG: Going into check_rc_if", ARGV0);
         check_rc_if();
+        debug1("%s: DEBUG: Exiting check_rc_if", ARGV0);
     }
 
     debug1("%s: DEBUG: Completed with all checks.", ARGV0);
