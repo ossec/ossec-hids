@@ -9,6 +9,7 @@
 
 /* Unified function to read the configuration */
 
+#include <libgen.h>
 #include "shared.h"
 #include "os_xml/os_xml.h"
 #include "config.h"
@@ -154,7 +155,9 @@ int ReadConfig(int modules, const char *cfgfile, void *d1, void *d2)
 
     int xml_ret = OS_ReadXML(cfgfile, &xml);
     if (xml_ret < 0) {
-        const char *cfg_base = basename(cfgfile);
+	char *tmpcfg;
+	tmpcfg = strdup(cfgfile);
+        const char *cfg_base = basename(tmpcfg);
 	    if((strncmp(cfg_base, "agent.conf", 10)) == 0 && xml_ret == -2) {
 		    debug2("WARN: Cannot open %s: %s", cfgfile, xml.err);
 	    } else {

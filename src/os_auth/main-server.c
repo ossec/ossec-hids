@@ -307,8 +307,9 @@ int main(int argc, char **argv)
             authpass = __generatetmppass();
             verbose("Accepting connections. Random password chosen for agent authentication: %s", authpass);
         }
-    } else
-        verbose("Accepting insecure connections. No password required (not recommended)");
+    } else {
+        verbose("Accepting connections. No password required (not recommended)");
+    }
 
     /* Getting SSL cert. */
 
@@ -335,6 +336,17 @@ int main(int argc, char **argv)
 
     fcntl(sock, F_SETFL, O_NONBLOCK);
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
+
+    /* Setup random */
+    srandom_init();
+
+    /* Chroot */
+/*
+    if (Privsep_Chroot(dir) < 0)
+        ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
+
+    nowChroot();
+*/
 
     while (1) {
         /* No need to completely pin the cpu, 100ms should be fast enough */

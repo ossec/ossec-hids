@@ -22,6 +22,8 @@
  *
  */
 
+#include <errno.h>
+#include <string.h>
 #include "shared.h"
 #include "check_cert.h"
 
@@ -60,7 +62,7 @@ static void help_agent_auth()
     print_out("    -v <path>   Full path to CA certificate used to verify the server");
     print_out("    -x <path>   Full path to agent certificate");
     print_out("    -k <path>   Full path to agent key");
-    print_out("    -P <path>   Authorization password");
+    print_out("    -P <path>   Authorization password file [default: /var/ossec/etc/authd.pass");
     print_out(" ");
     exit(1);
 }
@@ -70,6 +72,7 @@ int main(int argc, char **argv)
     int key_added = 0;
     int c;
     int test_config = 0;
+    int authenticate = 0;
 #ifndef WIN32
     gid_t gid = 0;
 #endif
@@ -173,10 +176,12 @@ int main(int argc, char **argv)
                 agent_key = optarg;
                 break;
             case 'P':
-            if (!optarg)
-                ErrorExit("%s: -%c needs an argument", ARGV0, c);
-
-            authpass = optarg;
+                if (!optarg) {
+                    ErrorExit("%s: -%c needs an argument", ARGV0, c);
+                }
+                authpass = optarg;
+                authenticate++;
+                break;
             default:
                 help_agent_auth();
                 break;
@@ -241,10 +246,19 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+
+    if(authpass == NULL) {
+        authpass = AUTHDPASS_PATH;
+    }
+
     /* Checking if there is a custom password file */
-    if (authpass == NULL) {
+    if (authpass != NULL && authenticate > 0) {
         FILE *fp;
-        fp = fopen(AUTHDPASS_PATH, "r");
+        fp = fopen(authpass, "r");
+        if(!fp) {
+            fprintf(stderr, "Cannot open %s: %s\n", authpass, strerror(errno));
+            exit(1);
+        }
         buf[0] = '\0';
 
         if (fp) {
@@ -252,11 +266,15 @@ int main(int argc, char **argv)
             fgets(buf, 4095, fp);
 
             if (strlen(buf) > 2) {
-                authpass = buf;
+                authpass = strndup(buf, 32);
+                if(!authpass) {
+                    fprintf(stderr, "Could not set the authpass: %s", strerror(errno));
+                    exit(1);
+                }
             }
 
             fclose(fp);
-            printf("INFO: Using password specified on file: %s\n", AUTHDPASS_PATH);
+            printf("INFO: Using specified password.\n");
         }
     }
     if (!authpass) {
@@ -298,6 +316,7 @@ int main(int argc, char **argv)
 
     printf("INFO: Using agent name as: %s\n", agentname);
 
+    memset(buf, 0, sizeof(buf));
     if (authpass) {
         snprintf(buf, 2048, "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
     }
