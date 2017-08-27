@@ -13,9 +13,20 @@
 #include "os_crypto/blowfish/bf_op.h"
 
 /* Prototypes */
+static void __realloc_keys(keystore *keys) __attribute((nonnull));
 static void __memclear(char *id, char *name, char *ip, char *key, size_t size) __attribute((nonnull));
 static void __chash(keystore *keys, const char *id, const char *name, char *ip, const char *key) __attribute((nonnull));
 
+
+static void __realloc_keys(keystore *keys)
+{
+    /* Allocate for the whole structure */
+    keys->keyentries = (keyentry **)realloc(keys->keyentries,
+                                            (keys->keysize + 2) * sizeof(keyentry *));
+    if (!keys->keyentries) {
+        ErrorExit(MEM_ERROR, __local_name, errno, strerror(errno));
+    }
+}
 
 /* Clear keys entries */
 static void __memclear(char *id, char *name, char *ip, char *key, size_t size)
@@ -35,12 +46,7 @@ static void __chash(keystore *keys, const char *id, const char *name, char *ip, 
     char *tmp_str;
     char _finalstr[KEYSIZE];
 
-    /* Allocate for the whole structure */
-    keys->keyentries = (keyentry **)realloc(keys->keyentries,
-                                            (keys->keysize + 2) * sizeof(keyentry *));
-    if (!keys->keyentries) {
-        ErrorExit(MEM_ERROR, __local_name, errno, strerror(errno));
-    }
+    __realloc_keys(keys);
     os_calloc(1, sizeof(keyentry), keys->keyentries[keys->keysize]);
 
     /* Set configured values for id */
@@ -250,9 +256,14 @@ void OS_ReadKeys(keystore *keys)
     /* Clear one last time before leaving */
     __memclear(id, name, ip, key, KEYSIZE + 1);
 
-    /* Check if there are any agents available */
+    /* Check if there are any keys available, except on remoted
+     * because more keys could be added later */
     if (keys->keysize == 0) {
-        ErrorExit(NO_REM_CONN, __local_name);
+        if (strcmp(__local_name, "ossec-remoted") != 0) {
+            ErrorExit(NO_REM_CONN, __local_name);
+        } else {
+            __realloc_keys(keys);
+        }
     }
 
     /* Add additional entry for sender == keysize */
