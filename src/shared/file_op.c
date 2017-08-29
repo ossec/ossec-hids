@@ -991,7 +991,7 @@ int mkstemp_ex(char *tmp_path)
 
     if (pSD == NULL) {
         log2file(
-            "%s: ERROR: Could not initalize SECURITY_DESCRIPTOR because of a LocalAlloc() failure which returned (%lu)",
+            "%s: ERROR: Could not initialize SECURITY_DESCRIPTOR because of a LocalAlloc() failure which returned (%lu)",
             __local_name,
             GetLastError()
         );
@@ -1001,7 +1001,7 @@ int mkstemp_ex(char *tmp_path)
 
     if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) {
         log2file(
-            "%s: ERROR: Could not initalize SECURITY_DESCRIPTOR because of an InitializeSecurityDescriptor() failure which returned (%lu)",
+            "%s: ERROR: Could not initialize SECURITY_DESCRIPTOR because of an InitializeSecurityDescriptor() failure which returned (%lu)",
             __local_name,
             GetLastError()
         );
