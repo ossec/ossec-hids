@@ -63,7 +63,7 @@
 #define MSG_ERROR       "%s(1214): WARN: Problem receiving message from '%s'."
 #define CLIENT_ERROR    "%s(1215): ERROR: No client configured. Exiting."
 #define CONNS_ERROR     "%s(1216): ERROR: Unable to connect to '%s'."
-#define UNABLE_CONN     "%s(1242): ERROR: Unable to connect to server. Exausted all options."
+#define UNABLE_CONN     "%s(1242): ERROR: Unable to connect to server. Exhausted all options."
 #define SEC_ERROR       "%s(1217): ERROR: Error creating encrypted message."
 #define SEND_ERROR      "%s(1218): ERROR: Unable to send message to '%s'."
 #define RULESLOAD_ERROR "%s(1219): ERROR: Unable to access the rules directory."
