@@ -140,6 +140,11 @@ static void clean_exit(SSL_CTX *ctx, int sock)
     exit(0);
 }
 
+/* Exit handler */
+static void cleanup();
+
+
+
 int main(int argc, char **argv)
 {
     FILE *fp;
@@ -280,6 +285,8 @@ int main(int argc, char **argv)
     if (CreatePID(ARGV0, getpid()) < 0) {
         ErrorExit(PID_ERROR, ARGV0);
     }
+
+    atexit(cleanup);
 
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
@@ -527,5 +534,10 @@ int main(int argc, char **argv)
     clean_exit(ctx, sock);
 
     return (0);
+}
+
+/* Exit handler */
+static void cleanup() {
+	DeletePID(ARGV0);
 }
 #endif /* LIBOPENSSL_ENABLED */
