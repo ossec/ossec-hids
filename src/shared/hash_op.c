@@ -244,8 +244,10 @@ void *OSHash_Get(const OSHash *self, const char *key)
     curr_node = self->table[index];
     while (curr_node != NULL) {
 
-        /* We may have colisions, so double check with strcmp */
+
+        /* We may have collisions, so double check with strcmp */
         if (curr_node->key != NULL && strcmp(curr_node->key, key) == 0) {
+
             return (curr_node->data);
         }
 

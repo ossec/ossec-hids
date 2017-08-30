@@ -138,7 +138,7 @@ extern fpos_t fp_pos;
                         "Choose your action: I or Q: "
 
 /* WIN32 errors */
-#define CONF_ERROR      ARGV0 ": Could not read (%s) (Make sure config exists and executable is running with Administrative priviliges).\n"
+#define CONF_ERROR      ARGV0 ": Could not read (%s) (Make sure config exists and executable is running with Administrative privileges).\n"
 #define GMF_ERROR       ARGV0 ": Could not run GetModuleFileName.\n"
 #define GMF_BUFF_ERROR  ARGV0 ": Could not get path because it is too long and was shrunk by (%d) characters with a max of (%d).\n"
 #define GMF_UNKN_ERROR  ARGV0 ": Could not run GetModuleFileName which returned (%ld).\n"
