@@ -170,6 +170,8 @@ int main(int argc, char **argv)
     memset(process_pool, 0x0, POOL_SIZE * sizeof(*process_pool));
     bio_err = 0;
 
+    OS_PassEmptyKeyfile();
+
     /* Set the name */
     OS_SetName(ARGV0);
 
