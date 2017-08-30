@@ -654,7 +654,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                                         return (-1);
                                     }
                                 } else {
-                                    merror("%s:List feild=\"%s\" is not valid", ARGV0,
+                                    merror("%s:List field=\"%s\" is not valid", ARGV0,
                                            rule_opt[k]->values[list_att_num]);
                                     merror(INVALID_CONFIG, ARGV0,
                                            rule_opt[k]->element, rule_opt[k]->content);
@@ -680,7 +680,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                                 return (-1);
                             }
                         } else {
-                            merror("%s:List must have a correctly formatted feild attribute",
+                            merror("%s:List must have a correctly formatted field attribute",
                                    ARGV0);
                             merror(INVALID_CONFIG,
                                    ARGV0,

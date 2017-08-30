@@ -19,13 +19,12 @@ typedef struct _keyentry {
     unsigned int keyid;
     unsigned int global;
 
-
     char *id;
     char *key;
     char *name;
 
     os_ip *ip;
-    struct sockaddr_in peer_info;
+    struct sockaddr_storage peer_info;
     FILE *fp;
 } keyentry;
 

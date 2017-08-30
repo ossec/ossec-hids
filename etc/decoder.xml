@@ -230,8 +230,24 @@
 
 <decoder name="ssh-scan2">
   <parent>sshd</parent>
-  <prematch>^Did not receive identification|^Bad protocol version</prematch>
+  <prematch>^Did not receive identification</prematch>
   <regex offset="after_prematch"> from (\S+)$</regex>
+  <order>srcip</order>
+</decoder>
+
+<!--
+
+Jul 12 16:10:26 cloud sshd[14486]: Bad protocol version identification 'GET http://m.search.yahoo.com/ HTTP/1.1' from 112.98.69.104 port 3533
+Jul 12 16:10:41 cloud sshd[14530]: Bad protocol version identification 'GET http://check2.zennolab.com/proxy.php HTTP/1.1' from 46.182.129.46 port 60866
+Jul 12 16:11:31 cloud sshd[14582]: Bad protocol version identification 'GET http://www.msftncsi.com/ncsi.txt HTTP/1.1' from 88.244.115.169 port 62240
+Jul 12 16:12:15 cloud sshd[14662]: Bad protocol version identification 'GET http://m.search.yahoo.com/ HTTP/1.1' from 118.76.116.187 port 54513
+
+-->
+
+<decoder name="ssh-scan3">
+  <parent>sshd</parent>
+  <prematch>^Bad protocol version </prematch>
+  <regex offset="after_prematch">\w* from (\S+)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -409,7 +425,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <!--
  - Samba decoder.
- - Will extraxt the username/srcip
+ - Will extract the username/srcip
  - Examples:
  - smbd[832]: Denied connection from (192.168.3.23)
  - smbd[832]: Connection denied from 0.0.0.0
@@ -1480,7 +1496,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 
 <!-- Cisco VPN Concentrator
-  - Will exatract srcip and username.
+  - Will extract srcip and username.
   - Examples:
   -
   - Jan 8 09:10:37 vpn.example.com 11504 01/08/2007 09:10:37.780 SEV=3 AUTH/5 RPT=124 192.168.0.1 Authentication rejected: Reason = Unspecified handle = 805, server = auth.example.com, user = testuser, domain = <not specified>
@@ -2126,7 +2142,7 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
 
 
 <!-- Vmware ESX logs.
-  - Will extract the severity and username/ip when availavle.
+  - Will extract the severity and username/ip when available.
   - Examples:
   - [2008-03-09 22:43:35.924 'ha-eventmgr' 84503472 info] Event 2053 : User root@127.0.0.1 logged in
   - [2008-02-05 02:13:18.112 'ha-eventmgr' 95833272 info] Event xyz : User m@1.2.3.4 logged in
@@ -2880,20 +2896,6 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
 <order>status,user,url,data</order>
 </decoder>
 
-<!-- unbound
-  - 2014-05-20T09:01:07.283219-04:00 arrakis unbound: [9405:0] notice: sendto failed: Can't assign requested address
-  - 2014-07-14T14:00:02.814490-04:00 arrakis unbound: [2541:0] info: 127.0.0.1 talkgadget.google.com. A IN
-  - 2014-07-14T14:00:05.507848-04:00 arrakis unbound: [2541:0] info: server stats for thread 0: 3 queries, 2 answers from cache, 1 recursions, 0 prefetch
-  - 2014-07-14T14:00:05.507955-04:00 arrakis unbound: [2541:0] info: server stats for thread 0: requestlist max 0 avg 0 exceeded 0 jostled 0
-  - 2014-07-14T14:00:05.508075-04:00 arrakis unbound: [2541:0] info: average recursion processing time 0.038814 sec
-  - 2014-07-14T14:00:05.508166-04:00 arrakis unbound: [2541:0] info: histogram of recursion processing times
-  - 2014-07-14T14:00:05.508248-04:00 arrakis unbound: [2541:0] info: [25%]=0 median[50%]=0 [75%]=0
-  - 2014-07-14T14:00:05.508333-04:00 arrakis unbound: [2541:0] info: lower(secs) upper(secs) recursions
-  - 2014-07-14T14:00:05.508414-04:00 arrakis unbound: [2541:0] info:    0.032768    0.065536 1
-  - 2014-07-14T15:05:07.520229-04:00 arrakis unbound: [2541:0] info: 127.0.0.1 github.com. AAAA IN
--->
-
-
 <!-- Squid access log decoder.
   - Will extract the srcip.
   - Author: Ahmet Ozturk
@@ -2909,6 +2911,19 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <regex>^\d+ (\S+) (\w+)/(\d+) \d+ \w+ (\S+) </regex>
   <order>srcip,action,id,url</order>
 </decoder>
+
+<!-- unbound
+  - 2014-05-20T09:01:07.283219-04:00 arrakis unbound: [9405:0] notice: sendto failed: Can't assign requested address
+  - 2014-07-14T14:00:02.814490-04:00 arrakis unbound: [2541:0] info: 127.0.0.1 talkgadget.google.com. A IN
+  - 2014-07-14T14:00:05.507848-04:00 arrakis unbound: [2541:0] info: server stats for thread 0: 3 queries, 2 answers from cache, 1 recursions, 0 prefetch
+  - 2014-07-14T14:00:05.507955-04:00 arrakis unbound: [2541:0] info: server stats for thread 0: requestlist max 0 avg 0 exceeded 0 jostled 0
+  - 2014-07-14T14:00:05.508075-04:00 arrakis unbound: [2541:0] info: average recursion processing time 0.038814 sec
+  - 2014-07-14T14:00:05.508166-04:00 arrakis unbound: [2541:0] info: histogram of recursion processing times
+  - 2014-07-14T14:00:05.508248-04:00 arrakis unbound: [2541:0] info: [25%]=0 median[50%]=0 [75%]=0
+  - 2014-07-14T14:00:05.508333-04:00 arrakis unbound: [2541:0] info: lower(secs) upper(secs) recursions
+  - 2014-07-14T14:00:05.508414-04:00 arrakis unbound: [2541:0] info:    0.032768    0.065536 1
+  - 2014-07-14T15:05:07.520229-04:00 arrakis unbound: [2541:0] info: 127.0.0.1 github.com. AAAA IN
+-->
 
 
 <decoder name="unbound">
@@ -2975,4 +2990,18 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
   <order>srcip</order>
 </decoder>
 
+<!-- NSD
+   - Aug 11 13:21:46 ix nsd[16565]: server initialization failed, nsd could not be started
+   - Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: syntax error
+   - Aug 11 13:22:14 ix nsd[13816]: blocked.hosts:2: unrecognized RR type 'name:'
+   - Aug 12 09:01:00 junction.example.com nsd[7405]: NSTATS 1439384460 1439314258 A=1 AAAA=1
+   - Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=0 RNXD=0 RFwdR=0 RDupR=0 RFail=0 RFErr=0 RErr=0 RAXFR=0 RLame=0 ROpts=0 SSysQ=0 SAn
+s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 SNaAns=0 SNXD=0 RUQ=0 RURQ=0 RUXFR=0 RUUpd=0
+-->
+
+<decoder name="nsd">
+  <program_name>^nsd</program_name>
+</decoder>
+
 <!-- EOF -->
+
