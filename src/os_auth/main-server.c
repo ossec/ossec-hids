@@ -51,7 +51,7 @@ static void clean_exit(SSL_CTX *ctx, int sock) __attribute__((noreturn));
 static void help_authd()
 {
     print_header();
-    print_out("  %s: -[Vhdti] [-g group] [-D dir] [-p port] [-v path] [-x path] [-k path]", ARGV0);
+    print_out("  %s: -[Vhdti] [-g group] [-D dir] [-p port] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
     print_out("    -V          Version and license message");
     print_out("    -h          This help message");
     print_out("    -d          Execute in debug mode. This parameter");
@@ -63,6 +63,7 @@ static void help_authd()
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out("    -p <port>   Manager port (default: %s)", DEFAULT_PORT);
     print_out("    -n          Disable shared password authentication (not recommended).\n");
+    print_out("    -c          SSL cipher list (default: %s)", DEFAULT_CIPHERS);
     print_out("    -v <path>   Full path to CA certificate used to verify clients");
     print_out("    -x <path>   Full path to server certificate");
     print_out("    -k <path>   Full path to server key");
@@ -139,6 +140,11 @@ static void clean_exit(SSL_CTX *ctx, int sock)
     exit(0);
 }
 
+/* Exit handler */
+static void cleanup();
+
+
+
 int main(int argc, char **argv)
 {
     FILE *fp;
@@ -151,6 +157,7 @@ int main(int argc, char **argv)
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
     char *port = DEFAULT_PORT;
+    char *ciphers = DEFAULT_CIPHERS;
     const char *dir  = DEFAULTDIR;
     const char *group = GROUPGLOBAL;
     const char *server_cert = NULL;
@@ -168,10 +175,12 @@ int main(int argc, char **argv)
     memset(process_pool, 0x0, POOL_SIZE * sizeof(*process_pool));
     bio_err = 0;
 
+    OS_PassEmptyKeyfile();
+
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:v:x:k:n")) != -1) {
+    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:c:v:x:k:n")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -213,6 +222,12 @@ int main(int argc, char **argv)
                 }
                 port = optarg;
                 break;
+            case 'c':
+                if (!optarg) {
+                    ErrorExit("%s: -%c needs an argument", ARGV0, c);
+                }
+                ciphers = optarg;
+                break;
             case 'v':
                 if (!optarg) {
                     ErrorExit("%s: -%c needs an argument", ARGV0, c);
@@ -245,6 +260,11 @@ int main(int argc, char **argv)
     if (gid == (gid_t) - 1) {
         ErrorExit(USER_ERROR, ARGV0, "", group);
     }
+    
+    /* Create PID files */
+    if (CreatePID(ARGV0, getpid()) < 0) {
+	ErrorExit(PID_ERROR, ARGV0);
+    }
 
     /* Exit here if test config is set */
     if (test_config) {
@@ -266,10 +286,13 @@ int main(int argc, char **argv)
     /* Signal manipulation */
     StartSIG(ARGV0);
 
+
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
         ErrorExit(PID_ERROR, ARGV0);
     }
+
+    atexit(cleanup);
 
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
@@ -299,8 +322,9 @@ int main(int argc, char **argv)
             authpass = __generatetmppass();
             verbose("Accepting connections. Random password chosen for agent authentication: %s", authpass);
         }
-    } else
-        verbose("Accepting insecure connections. No password required (not recommended)");
+    } else {
+        verbose("Accepting connections. No password required (not recommended)");
+    }
 
     /* Getting SSL cert. */
 
@@ -312,7 +336,7 @@ int main(int argc, char **argv)
     fclose(fp);
 
     /* Start SSL */
-    ctx = os_ssl_keys(1, dir, server_cert, server_key, ca_cert);
+    ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {
         merror("%s: ERROR: SSL error. Exiting.", ARGV0);
         exit(1);
@@ -327,6 +351,17 @@ int main(int argc, char **argv)
 
     fcntl(sock, F_SETFL, O_NONBLOCK);
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
+
+    /* Setup random */
+    srandom_init();
+
+    /* Chroot */
+/*
+    if (Privsep_Chroot(dir) < 0)
+        ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
+
+    nowChroot();
+*/
 
     while (1) {
         /* No need to completely pin the cpu, 100ms should be fast enough */
@@ -505,5 +540,10 @@ int main(int argc, char **argv)
     clean_exit(ctx, sock);
 
     return (0);
+}
+
+/* Exit handler */
+static void cleanup() {
+	DeletePID(ARGV0);
 }
 #endif /* LIBOPENSSL_ENABLED */
