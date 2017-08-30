@@ -260,6 +260,11 @@ int main(int argc, char **argv)
     if (gid == (gid_t) - 1) {
         ErrorExit(USER_ERROR, ARGV0, "", group);
     }
+    
+    /* Create PID files */
+    if (CreatePID(ARGV0, getpid()) < 0) {
+	ErrorExit(PID_ERROR, ARGV0);
+    }
 
     /* Exit here if test config is set */
     if (test_config) {
@@ -280,6 +285,7 @@ int main(int argc, char **argv)
 
     /* Signal manipulation */
     StartSIG(ARGV0);
+
 
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
