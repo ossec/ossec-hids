@@ -4,7 +4,7 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
-EXTERNAL_ZLIB=external/zlib-1.2.8/
+EXTERNAL_ZLIB=external/zlib-1.2.11/
 LUA_PLAT=posix
 MAXAGENTS?=2048
 REUSE_ID?=no
@@ -213,7 +213,7 @@ ifdef DATABASE
 		else
 			MI := $(shell sh -c '${MY_CONFIG} --include 2>/dev/null || echo ')
 
-			ifeq (${MI},) # BEGIN MI manula detection
+			ifeq (${MI},) # BEGIN MI manual detection
 				ifneq (,$(wildcard /usr/include/mysql/mysql.h))
 					MI="-I/usr/include/mysql/"
 				else
@@ -409,7 +409,7 @@ endif
 endif
 
 	install -d -m 0770 -o root -g ${OSSEC_GROUP} ${PREFIX}/etc/shared
-	install -m 0640 -o root -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
+	install -m 0640 -o ossec -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response/bin

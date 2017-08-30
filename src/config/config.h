@@ -27,9 +27,6 @@
 
 #define CAGENT_CONFIG 0010000
 
-#define UDP_PROTO   17
-#define TCP_PROTO   6
-
 #include "os_xml/os_xml.h"
 
 /* Main function to read the config */
