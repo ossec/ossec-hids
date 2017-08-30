@@ -140,6 +140,11 @@ static void clean_exit(SSL_CTX *ctx, int sock)
     exit(0);
 }
 
+/* Exit handler */
+static void cleanup();
+
+
+
 int main(int argc, char **argv)
 {
     FILE *fp;
@@ -169,6 +174,8 @@ int main(int argc, char **argv)
     memset(srcip, '\0', IPSIZE + 1);
     memset(process_pool, 0x0, POOL_SIZE * sizeof(*process_pool));
     bio_err = 0;
+
+    OS_PassEmptyKeyfile();
 
     /* Set the name */
     OS_SetName(ARGV0);
@@ -253,6 +260,11 @@ int main(int argc, char **argv)
     if (gid == (gid_t) - 1) {
         ErrorExit(USER_ERROR, ARGV0, "", group);
     }
+    
+    /* Create PID files */
+    if (CreatePID(ARGV0, getpid()) < 0) {
+	ErrorExit(PID_ERROR, ARGV0);
+    }
 
     /* Exit here if test config is set */
     if (test_config) {
@@ -274,10 +286,13 @@ int main(int argc, char **argv)
     /* Signal manipulation */
     StartSIG(ARGV0);
 
+
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
         ErrorExit(PID_ERROR, ARGV0);
     }
+
+    atexit(cleanup);
 
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
@@ -525,5 +540,10 @@ int main(int argc, char **argv)
     clean_exit(ctx, sock);
 
     return (0);
+}
+
+/* Exit handler */
+static void cleanup() {
+	DeletePID(ARGV0);
 }
 #endif /* LIBOPENSSL_ENABLED */
