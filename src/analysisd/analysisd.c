@@ -468,7 +468,7 @@ int main_analysisd(int argc, char **argv)
     /* Whitelist */
     if (Config.white_list == NULL) {
         if (Config.ar) {
-            verbose("%s: INFO: No IP in the white list for active reponse.", ARGV0);
+            verbose("%s: INFO: No IP in the white list for active response.", ARGV0);
         }
     } else {
         if (Config.ar) {
@@ -488,7 +488,7 @@ int main_analysisd(int argc, char **argv)
     /* Hostname whitelist */
     if (Config.hostname_white_list == NULL) {
         if (Config.ar)
-            verbose("%s: INFO: No Hostname in the white list for active reponse.",
+            verbose("%s: INFO: No Hostname in the white list for active response.",
                     ARGV0);
     } else {
         if (Config.ar) {

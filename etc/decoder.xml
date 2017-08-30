@@ -425,7 +425,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <!--
  - Samba decoder.
- - Will extraxt the username/srcip
+ - Will extract the username/srcip
  - Examples:
  - smbd[832]: Denied connection from (192.168.3.23)
  - smbd[832]: Connection denied from 0.0.0.0
@@ -1496,7 +1496,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 
 <!-- Cisco VPN Concentrator
-  - Will exatract srcip and username.
+  - Will extract srcip and username.
   - Examples:
   -
   - Jan 8 09:10:37 vpn.example.com 11504 01/08/2007 09:10:37.780 SEV=3 AUTH/5 RPT=124 192.168.0.1 Authentication rejected: Reason = Unspecified handle = 805, server = auth.example.com, user = testuser, domain = <not specified>
@@ -2142,7 +2142,7 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
 
 
 <!-- Vmware ESX logs.
-  - Will extract the severity and username/ip when availavle.
+  - Will extract the severity and username/ip when available.
   - Examples:
   - [2008-03-09 22:43:35.924 'ha-eventmgr' 84503472 info] Event 2053 : User root@127.0.0.1 logged in
   - [2008-02-05 02:13:18.112 'ha-eventmgr' 95833272 info] Event xyz : User m@1.2.3.4 logged in
