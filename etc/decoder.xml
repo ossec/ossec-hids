@@ -254,7 +254,7 @@ Jul 12 16:12:15 cloud sshd[14662]: Bad protocol version identification 'GET http
 <decoder name="ssh-osx-refuse">
   <parent>sshd</parent>
   <prematch>^refused connect </prematch>
-  <regex offset="after_prematch">^from (\S+)$</regex>
+  <regex offset="after_prematch">^from (\S+)$|^from \S+ \((\S+\w+)\)$|^from \S+ \((\S+::)\)$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -321,7 +321,7 @@ Jul 12 16:12:15 cloud sshd[14662]: Bad protocol version identification 'GET http
 <decoder name="sshd-exceed">
   <parent>sshd</parent>
   <prematch> exceeded for </prematch>
-  <regex offset="after_prematch">^(\S+) from (\S+) port (\d+) </regex>
+  <regex offset="after_prematch">(\S+) from (\S+) port (\d+) </regex>
   <order>user, srcip, srcport</order>
 </decoder>
 
