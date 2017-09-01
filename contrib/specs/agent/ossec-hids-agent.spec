@@ -49,7 +49,7 @@ rm -rf $RPM_BUILD_ROOT
 # Create OSSEC group
 #
 if ! grep "^ossec" /etc/group > /dev/null ; then
-  /usr/sbin/groupadd ossec
+  /usr/sbin/groupadd --system ossec
 fi
 
 
@@ -58,7 +58,7 @@ fi
 #
 for USER in ossec ; do
   if ! grep "^${USER}" /etc/passwd > /dev/null ; then
-    /usr/sbin/useradd -d /var/ossec -s /bin/false -g ossec ${USER}
+    /usr/sbin/useradd --system -d /var/ossec -s /bin/false -g ossec ${USER}
   fi
 done
 
@@ -192,15 +192,15 @@ fi
 %dir /var/ossec/etc/shared
 %attr(770, root, ossec) /var/ossec/etc/shared
 /var/ossec/etc/shared/win_malware_rcl.txt
-%attr(770, root, ossec) /var/ossec/etc/shared/win_malware_rcl.txt
+%attr(770, ossec, ossec) /var/ossec/etc/shared/win_malware_rcl.txt
 /var/ossec/etc/shared/win_applications_rcl.txt
-%attr(770, root, ossec) /var/ossec/etc/shared/win_applications_rcl.txt
+%attr(770, ossec, ossec) /var/ossec/etc/shared/win_applications_rcl.txt
 /var/ossec/etc/shared/win_audit_rcl.txt
-%attr(770, root, ossec) /var/ossec/etc/shared/win_audit_rcl.txt
+%attr(770, ossec, ossec) /var/ossec/etc/shared/win_audit_rcl.txt
 /var/ossec/etc/shared/rootkit_files.txt
-%attr(770, root, ossec) /var/ossec/etc/shared/rootkit_files.txt
+%attr(770, osse, ossec) /var/ossec/etc/shared/rootkit_files.txt
 /var/ossec/etc/shared/rootkit_trojans.txt
-%attr(770, root, ossec) /var/ossec/etc/shared/rootkit_trojans.txt
+%attr(770, ossec, ossec) /var/ossec/etc/shared/rootkit_trojans.txt
 /var/ossec/etc/ossec.conf
 %attr(440, root, ossec) /var/ossec/etc/ossec.conf
 %dir /var/ossec/logs

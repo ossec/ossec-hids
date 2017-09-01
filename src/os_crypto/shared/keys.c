@@ -16,7 +16,7 @@
 static void __memclear(char *id, char *name, char *ip, char *key, size_t size) __attribute((nonnull));
 static void __chash(keystore *keys, const char *id, const char *name, char *ip, const char *key) __attribute((nonnull));
 
-
+static int pass_empty_keyfile = 0;
 /* Clear keys entries */
 static void __memclear(char *id, char *name, char *ip, char *key, size_t size)
 {
@@ -418,4 +418,7 @@ int OS_IsAllowedDynamicID(keystore *keys, const char *id, const char *srcip)
 
     return (-1);
 }
-
+ /* Configure to pass if keys file is empty */
+ void OS_PassEmptyKeyfile() {
+     pass_empty_keyfile = 1;
+ }

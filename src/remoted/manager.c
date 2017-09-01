@@ -43,7 +43,7 @@ static pthread_cond_t awake_mutex;
 
 
 /* Save a control message received from an agent
- * read_contromsg (other thread) is going to deal with it
+ * read_controlmsg (other thread) is going to deal with it
  * (only if message changed)
  */
 void save_controlmsg(unsigned int agentid, char *r_msg)

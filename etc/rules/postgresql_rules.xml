@@ -74,14 +74,14 @@
   <rule id="50520" level="12">
     <if_sid>50504</if_sid>
     <match>terminating connection due</match>
-    <description>Database shutdown messge.</description>
+    <description>Database shutdown message.</description>
     <group>service_availability,</group>
   </rule>
   
   <rule id="50521" level="12">
     <if_sid>50501</if_sid>
     <match>aborting any active transactions|shutting down</match>
-    <description>Database shutdown messge.</description>
+    <description>Database shutdown message.</description>
     <group>service_availability,</group>
   </rule>
 

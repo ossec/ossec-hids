@@ -98,8 +98,6 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_integrity = "integrity_checking";
     const char *xml_rootcheckd = "rootkit_detection";
     const char *xml_hostinfo = "host_information";
-    const char *xml_picviz = "picviz_output";
-    const char *xml_picviz_socket = "picviz_socket";
     const char *xml_prelude = "prelude_output";
     const char *xml_prelude_profile = "prelude_profile";
     const char *xml_prelude_log_level = "prelude_log_level";
@@ -200,25 +198,6 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 return (OS_INVALID);
             }
         }
-        /* Picviz support */
-        else if (strcmp(node[i]->element, xml_picviz) == 0) {
-            if (strcmp(node[i]->content, "yes") == 0) {
-                if (Config) {
-                    Config->picviz = 1;
-                }
-            } else if (strcmp(node[i]->content, "no") == 0) {
-                if (Config) {
-                    Config->picviz = 0;
-                }
-            } else {
-                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
-                return (OS_INVALID);
-            }
-        } else if (strcmp(node[i]->element, xml_picviz_socket) == 0) {
-            if (Config) {
-                os_strdup(node[i]->content, Config->picviz_socket);
-            }
-        }
         /* Prelude support */
         else if (strcmp(node[i]->element, xml_prelude) == 0) {
             if (strcmp(node[i]->content, "yes") == 0) {
@@ -312,7 +291,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         }
         /* Compress alerts */
         else if (strcmp(node[i]->element, xml_compress_alerts) == 0) {
-            /* removed from here -- compatility issues only */
+            /* removed from here -- compatibility issues only */
         }
         /* Integrity */
         else if (strcmp(node[i]->element, xml_integrity) == 0) {

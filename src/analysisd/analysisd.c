@@ -33,10 +33,6 @@
 #include "dodiff.h"
 #include "output/jsonout.h"
 
-#ifdef PICVIZ_OUTPUT_ENABLED
-#include "output/picviz.h"
-#endif
-
 #ifdef PRELUDE_OUTPUT_ENABLED
 #include "output/prelude.h"
 #endif
@@ -286,17 +282,6 @@ int main_analysisd(int argc, char **argv)
     }
 #endif
 
-#ifdef PICVIZ_OUTPUT_ENABLED
-    /* Open the Picviz socket */
-    if (Config.picviz) {
-        OS_PicvizOpen(Config.picviz_socket);
-
-        if (chown(Config.picviz_socket, uid, gid) == -1) {
-            ErrorExit(CHOWN_ERROR, ARGV0, Config.picviz_socket, errno, strerror(errno));
-        }
-    }
-#endif
-
     /* Set the group */
     if (Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
@@ -483,7 +468,7 @@ int main_analysisd(int argc, char **argv)
     /* Whitelist */
     if (Config.white_list == NULL) {
         if (Config.ar) {
-            verbose("%s: INFO: No IP in the white list for active reponse.", ARGV0);
+            verbose("%s: INFO: No IP in the white list for active response.", ARGV0);
         }
     } else {
         if (Config.ar) {
@@ -503,7 +488,7 @@ int main_analysisd(int argc, char **argv)
     /* Hostname whitelist */
     if (Config.hostname_white_list == NULL) {
         if (Config.ar)
-            verbose("%s: INFO: No Hostname in the white list for active reponse.",
+            verbose("%s: INFO: No Hostname in the white list for active response.",
                     ARGV0);
     } else {
         if (Config.ar) {
@@ -530,12 +515,6 @@ int main_analysisd(int argc, char **argv)
 
     /* Going to main loop */
     OS_ReadMSG(m_queue);
-
-#ifdef PICVIZ_OUTPUT_ENABLED
-    if (Config.picviz) {
-        OS_PicvizClose();
-    }
-#endif
 
     exit(0);
 }
@@ -961,13 +940,6 @@ void OS_ReadMSG_analysisd(int m_queue)
                 }
 #endif
 
-
-#ifdef PICVIZ_OUTPUT_ENABLED
-                /* Log to Picviz */
-                if (Config.picviz) {
-                    OS_PicvizLog(lf);
-                }
-#endif
 
                 /* Execute an active response */
                 if (currently_rule->ar) {

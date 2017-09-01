@@ -4,9 +4,10 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
-EXTERNAL_ZLIB=external/zlib-1.2.8/
+EXTERNAL_ZLIB=external/zlib-1.2.11/
 LUA_PLAT=posix
 MAXAGENTS?=2048
+REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
 PREFIX?=/var/ossec
 PG_CONFIG?=pg_config
@@ -23,10 +24,8 @@ USE_GEOIP?=no
 USE_INOTIFY=no
 
 ifneq (${TARGET},winagent)
-	USE_PICVIZ?=yes
 	USE_OPENSSL?=auto
 else
-	USE_PICVIZ?=no
 	USE_OPENSSL?=no
 endif
 
@@ -40,6 +39,10 @@ DEFINES+=-DREMUSER=\"${OSSEC_USER_REM}\"
 DEFINES+=-DGROUPGLOBAL=\"${OSSEC_GROUP}\"
 DEFINES+=-DMAILUSER=\"${OSSEC_USER_MAIL}\"
 DEFINES+=-D${uname_S}
+
+ifneq (,$(filter ${REUSE_ID},yes y Y 1))
+	DEFINES+=-DREUSE_ID
+endif
 
 OSSEC_LDFLAGS=${LDFLAGS} -lm
 
@@ -60,7 +63,7 @@ ifeq (${uname_S},SunOS)
 		DEFINES+=-DHIGHFIRST
 		OSSEC_LDFLAGS+=-lsocket -lnsl -lresolv
 		LUA_PLAT=solaris
-		PATH=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
+		PATH:=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
 
 else
 ifeq (${uname_S},Darwin)
@@ -192,10 +195,6 @@ ifneq (,$(filter ${USE_ZEROMQ},auto yes y Y 1))
 	OSSEC_LDFLAGS+=-lzmq -lczmq -lm
 endif # USE_ZEROMQ
 
-ifneq (,$(filter ${USE_PICVIZ},auto yes y Y 1))
-	DEFINES+=-DPICVIZ_OUTPUT_ENABLED
-endif # USE_PICVIZ
-
 ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	DEFINES+=-DLIBGEOIP_ENABLED
 	OSSEC_LDFLAGS+=-lGeoIP
@@ -214,7 +213,7 @@ ifdef DATABASE
 		else
 			MI := $(shell sh -c '${MY_CONFIG} --include 2>/dev/null || echo ')
 
-			ifeq (${MI},) # BEGIN MI manula detection
+			ifeq (${MI},) # BEGIN MI manual detection
 				ifneq (,$(wildcard /usr/include/mysql/mysql.h))
 					MI="-I/usr/include/mysql/"
 				else
@@ -410,7 +409,7 @@ endif
 endif
 
 	install -d -m 0770 -o root -g ${OSSEC_GROUP} ${PREFIX}/etc/shared
-	install -m 0640 -o root -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
+	install -m 0640 -o ossec -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response/bin
@@ -497,6 +496,7 @@ help: failtarget
 	@echo "   make DEBUG=1          Build with symbols and without optimization"
 	@echo "   make PREFIX=/path     Install OSSEC to '/path'. Defaults to /var/ossec"
 	@echo "   make MAXAGENTS=NUMBER Set the number of maximum agents to NUMBER. Defaults to 2048"
+	@echo "   make REUSE_ID=yes     Enables agent ID re-use"
 	@echo
 	@echo "Database options: "
 	@echo "   make DATABASE=mysql  Build with MYSQL Support"
@@ -521,6 +521,7 @@ settings:
 	@echo "    DEBUGAD           ${DEBUGAD}"
 	@echo "    PREFIX:           ${PREFIX}"
 	@echo "    MAXAGENTS:        ${MAXAGENTS}"
+	@echo "    REUSE_ID:         ${REUSE_ID}"
 	@echo "    DATABASE:         ${DATABASE}"
 	@echo "    ONEWAY:           ${ONEWAY}"
 	@echo "    CLEANFULL:        ${CLEANFULL}"
@@ -536,7 +537,6 @@ settings:
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
-	@echo "    USE_PICVIZ:       ${USE_PICVIZ}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
