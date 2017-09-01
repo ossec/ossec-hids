@@ -2237,15 +2237,22 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
 <decoder name="asterisk-denied">
   <parent>asterisk</parent>
   <prematch>^NOTICE[\d+]: \S+ in \S+: Registration from </prematch>
-  <regex offset="after_prematch">^\S+ failed for '(\S+)'</regex>
-  <order>srcip</order>
+  <regex offset="after_prematch">^'\.+' failed for '(\S+):(\d+)'|^'\.+' failed for '(\S+)'</regex>
+  <order>srcip,srcport</order>
 </decoder>
 
 <decoder name="asterisk-denied2">
   <parent>asterisk</parent>
   <prematch>Registration from </prematch>
-  <regex offset="after_prematch">failed for '(\S+)'</regex>
-  <order>srcip</order>
+  <regex offset="after_prematch">failed for '(\S+):(\d+)'|failed for '(\S+)'</regex>
+  <order>srcip,srcport</order>
+</decoder>
+
+<decoder name="asterisk-denied3">
+  <parent>asterisk</parent>
+  <prematch>^NOTICE[\d+][\w+]: \S+ in \S+: Call from </prematch>
+  <regex offset="after_prematch">^'\S*' \((\S+):(\d+)\) to extension '(\S+)' rejected because extension not found in context '(\S+)'.$</regex>
+  <order>srcip, srcport, extra_data, extra_data</order>
 </decoder>
 
 <decoder name="asterisk-iax-authentication-denied">
