@@ -85,7 +85,7 @@
 
 <decoder name="pam-ruser">
   <parent>pam</parent>
-  <regex> rhost=(\S+)$</regex>
+  <regex> rhost=(\S+)</regex>
   <order>srcip</order>
 </decoder>
 
