@@ -249,7 +249,7 @@ Sep  4 21:14:25 example sshd[18368]: Did not receive identification string from 
 <decoder name="ssh-osx-refuse">
   <parent>sshd</parent>
   <prematch>^refused connect </prematch>
-  <regex offset="after_prematch">^from (\S+)$</regex>
+  <regex offset="after_prematch">^from (\S+)$|^from \S+ \((\S+\w+)\)$|^from \S+ \((\S+::)\)$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -316,7 +316,7 @@ Sep  4 21:14:25 example sshd[18368]: Did not receive identification string from 
 <decoder name="sshd-exceed">
   <parent>sshd</parent>
   <prematch> exceeded for </prematch>
-  <regex offset="after_prematch">^(\S+) from (\S+) port (\d+) </regex>
+  <regex offset="after_prematch">(\S+) from (\S+) port (\d+) </regex>
   <order>user, srcip, srcport</order>
 </decoder>
 
