@@ -4,9 +4,10 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
-EXTERNAL_ZLIB=external/zlib-1.2.8/
+EXTERNAL_ZLIB=external/zlib-1.2.11/
 LUA_PLAT=posix
 MAXAGENTS?=2048
+REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
 PREFIX?=/var/ossec
 PG_CONFIG?=pg_config
@@ -39,6 +40,10 @@ DEFINES+=-DGROUPGLOBAL=\"${OSSEC_GROUP}\"
 DEFINES+=-DMAILUSER=\"${OSSEC_USER_MAIL}\"
 DEFINES+=-D${uname_S}
 
+ifneq (,$(filter ${REUSE_ID},yes y Y 1))
+	DEFINES+=-DREUSE_ID
+endif
+
 OSSEC_LDFLAGS=${LDFLAGS} -lm
 
 ifneq (${TARGET},winagent)
@@ -58,7 +63,7 @@ ifeq (${uname_S},SunOS)
 		DEFINES+=-DHIGHFIRST
 		OSSEC_LDFLAGS+=-lsocket -lnsl -lresolv
 		LUA_PLAT=solaris
-		PATH=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
+		PATH:=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
 
 else
 ifeq (${uname_S},Darwin)
@@ -208,7 +213,7 @@ ifdef DATABASE
 		else
 			MI := $(shell sh -c '${MY_CONFIG} --include 2>/dev/null || echo ')
 
-			ifeq (${MI},) # BEGIN MI manula detection
+			ifeq (${MI},) # BEGIN MI manual detection
 				ifneq (,$(wildcard /usr/include/mysql/mysql.h))
 					MI="-I/usr/include/mysql/"
 				else
@@ -404,7 +409,7 @@ endif
 endif
 
 	install -d -m 0770 -o root -g ${OSSEC_GROUP} ${PREFIX}/etc/shared
-	install -m 0640 -o root -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
+	install -m 0640 -o ossec -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response/bin
@@ -491,6 +496,7 @@ help: failtarget
 	@echo "   make DEBUG=1          Build with symbols and without optimization"
 	@echo "   make PREFIX=/path     Install OSSEC to '/path'. Defaults to /var/ossec"
 	@echo "   make MAXAGENTS=NUMBER Set the number of maximum agents to NUMBER. Defaults to 2048"
+	@echo "   make REUSE_ID=yes     Enables agent ID re-use"
 	@echo
 	@echo "Database options: "
 	@echo "   make DATABASE=mysql  Build with MYSQL Support"
@@ -515,6 +521,7 @@ settings:
 	@echo "    DEBUGAD           ${DEBUGAD}"
 	@echo "    PREFIX:           ${PREFIX}"
 	@echo "    MAXAGENTS:        ${MAXAGENTS}"
+	@echo "    REUSE_ID:         ${REUSE_ID}"
 	@echo "    DATABASE:         ${DATABASE}"
 	@echo "    ONEWAY:           ${ONEWAY}"
 	@echo "    CLEANFULL:        ${CLEANFULL}"
@@ -599,7 +606,7 @@ endif
 agent: ${BUILD_AGENT}
 
 
-WINDOWS_BINS:=win32/ossec-agent.exe win32/ossec-agent-eventchannel.exe win32/ossec-rootcheck.exe win32/manage_agents.exe win32/setup-windows.exe win32/setup-syscheck.exe win32/setup-iis.exe win32/add-localfile.exe win32/os_win32ui.exe
+WINDOWS_BINS:=win32/ossec-agent.exe win32/ossec-agent-eventchannel.exe win32/ossec-rootcheck.exe win32/manage_agents.exe win32/setup-windows.exe win32/setup-syscheck.exe win32/setup-iis.exe win32/add-localfile.exe win32/os_win32ui.exe win32/agent-auth.exe
 
 ifeq (${MAKECMDGOALS},winagent)
 $(error Do not use 'winagent' directly, use 'TARGET=winagent')
@@ -1237,6 +1244,11 @@ win32/resource.o: win32/ui/win32ui.rc
 
 win32/os_win32ui.exe: win32/resource.o win32/win_service_rk.o ${win32_ui_o} addagent/b64.o ${ossec_libs}
 	${OSSEC_CCBIN} -DARGV0=\"ossec-win32ui\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -mwindows -o $@
+
+win32/agent-auth.exe: win32/win_service_rk.o addagent/validate.c ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB} win32/agent_auth.c os_regex/*.c os_net/*.c os_xml/*.c
+	${OSSEC_CCBIN} -DARGV0=\"agent-auth\" -DOSSECHIDS ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -lshlwapi -lwsock32 -lsecur32 -flto -o $@
+
+
 
 
 ####################

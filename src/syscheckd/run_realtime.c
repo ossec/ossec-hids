@@ -385,7 +385,7 @@ int realtime_adddir(const char *dir)
 
 int realtime_start()
 {
-    verbose("%s: ERROR: Unable to initalize real time file monitoring.", ARGV0);
+    verbose("%s: ERROR: Unable to initialize real time file monitoring.", ARGV0);
 
     return (0);
 }

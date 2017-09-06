@@ -1,0 +1,58 @@
+<group name="syslog,owncloud,">
+  <rule id="53300" level="0">
+    <decoded_as>owncloud</decoded_as>
+    <description>ownCloud messages grouped.</description>
+  </rule>
+
+  <rule id="53301" level="6">
+    <if_sid>53300</if_sid>
+    <match>Login failed: </match>
+    <description>ownCloud authentication failed.</description>
+    <group>authentication_failed,</group>
+  </rule>
+
+  <rule id="53302" level="10" frequency="6" timeframe="120">
+    <if_matched_sid>53301</if_matched_sid>
+    <same_source_ip />
+    <description>ownCloud brute force (multiple failed logins).</description>
+    <group>authentication_failures,</group>
+  </rule>
+
+  <rule id="53303" level="6">
+    <if_sid>53300</if_sid>
+    <match>Passed filename is not valid, might be malicious </match>
+    <description>ownCloud possible malicious request.</description>
+    <group>web,appsec,attack,</group>
+  </rule>
+
+  <rule id="53304" level="8">
+    <if_sid>53300</if_sid>
+    <status>^4$</status>
+    <description>ownCloud FATAL message.</description>
+  </rule>
+
+ <rule id="53305" level="4">
+    <if_sid>53300</if_sid>
+    <status>^3$</status>
+    <description>ownCloud ERROR message.</description>
+  </rule>
+
+  <rule id="53306" level="3">
+    <if_sid>53300</if_sid>
+    <status>^2$</status>
+    <description>ownCloud WARN message.</description>
+  </rule>
+
+  <rule id="53307" level="0">
+    <if_sid>53300</if_sid>
+    <status>^1$</status>
+    <description>ownCloud INFO message.</description>
+  </rule>
+
+  <rule id="53308" level="0">
+    <if_sid>53300</if_sid>
+    <status>^0$</status>
+    <description>ownCloud DEBUG message.</description>
+  </rule>
+
+</group>

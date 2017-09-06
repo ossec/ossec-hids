@@ -33,8 +33,11 @@ int OS_IsValidName(const char *u_name);
 int OS_IsValidID(const char *id);
 int IDExist(const char *id);
 int NameExist(const char *u_name);
+char *IPExist(const char *u_name);
 char *getFullnameById(const char *id);
 char *OS_AddNewAgent(const char *name, const char *ip, const char *id);
+int  OS_RemoveAgent(const char *id);
+double OS_AgentAntiquity(const char *id);
 void FormatID(char *id);
 
 /* Print available agents */
@@ -135,7 +138,7 @@ extern fpos_t fp_pos;
                         "Choose your action: I or Q: "
 
 /* WIN32 errors */
-#define CONF_ERROR      ARGV0 ": Could not read (%s) (Make sure config exists and executable is running with Administrative priviliges).\n"
+#define CONF_ERROR      ARGV0 ": Could not read (%s) (Make sure config exists and executable is running with Administrative privileges).\n"
 #define GMF_ERROR       ARGV0 ": Could not run GetModuleFileName.\n"
 #define GMF_BUFF_ERROR  ARGV0 ": Could not get path because it is too long and was shrunk by (%d) characters with a max of (%d).\n"
 #define GMF_UNKN_ERROR  ARGV0 ": Could not run GetModuleFileName which returned (%ld).\n"
