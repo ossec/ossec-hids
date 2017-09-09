@@ -1,0 +1,50 @@
+<group name="syslog,psad,">
+  <rule id="110201" level="0">
+    <program_name>psad</program_name>
+    <decoded_as>psad</decoded_as>
+    <description>PSAD group</description>
+  </rule>
+  <!-- PSAD Log Types -->
+  <rule id="110211" level="0">
+    <if_sid>110201</if_sid>
+    <match>scan detected</match>
+    <description>PSAD group scan detected</description>
+  </rule>
+  <rule id="110212" level="0">
+    <if_sid>110201</if_sid>
+    <match>added iptables</match>
+    <description>PSAD group added iptables</description>
+  </rule>
+  <!-- PSAD Rule Chains -->
+  <rule id="110221" level="10">
+    <if_sid>110211</if_sid>
+    <match>DL: 4|DL: 5</match>
+    <description>PSAD portscan</description>
+  </rule>
+  <rule id="110222" level="10">
+    <if_sid>110212</if_sid>
+    <match>auto-block against</match>
+    <description>PSAD auto-block</description>
+  </rule>
+ <rule id="110223" level="3">
+    <if_sid>110211</if_sid>
+    <match>DL: 3</match>
+    <description>PSAD level 3 warning</description>
+  </rule>
+ <rule id="110224" level="10" frequency="4" timeframe="600">
+    <if_matched_sid>110223</if_matched_sid>
+    <same_source_ip />
+    <description>many PSAD level 3 warnings from same source</description>
+  </rule>
+ <rule id="110225" level="10" frequency="8" timeframe="3600">
+    <if_matched_sid>110223</if_matched_sid>
+    <same_source_ip />
+    <description>many PSAD level 3 warnings from same source (slow scan)</description>
+  </rule>
+  <!-- PSAD Signature Match -->
+ <rule id="110226" level="10">
+    <if_sid>110201</if_sid>
+    <match>signature match: </match>
+    <description>PSAD signature match</description>
+  </rule>
+</group>
