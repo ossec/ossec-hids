@@ -3083,29 +3083,28 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 -->
 
 <decoder name="psad">
-    <program_name>psad</program_name>
+  <program_name>psad</program_name>
 </decoder>
 
 <decoder name="psad-scan">
-    <parent>psad</parent>
+  <parent>psad</parent>
   <prematch>^scan detected </prematch>
-    <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
-    <order>srcip,dstip,status</order>
+  <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
+  <order>srcip,dstip,status</order>
 </decoder>
 
 <decoder name="psad-repeated">
-    <parent>psad</parent>
+  <parent>psad</parent>
   <prematch>^message repeated</prematch>
-    <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
-    <order>srcip,dstip,status</order>
+  <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
+  <order>srcip,dstip,status</order>
 </decoder>
 
 <decoder name="psad-signature">
-    <parent>psad</parent>
+  <parent>psad</parent>
   <prematch>signature match: </prematch>
-    <regex offset="after_parent">src: (\S+) signature match: \.+ port: (\d+)</regex>
-    <order>srcip,dstport</order>
+  <regex offset="after_parent">src: (\S+) signature match: \.+ port: (\d+)</regex>
+  <order>srcip,dstport</order>
 </decoder>
 
 <!-- EOF -->
-
