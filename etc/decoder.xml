@@ -1548,6 +1548,16 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
    <fts>name,id,srcip,dstip</fts>
 </decoder>
 
+<decoder name="snort3">
+   <parent>snort</parent>
+   <type>ids</type>
+   <prematch>^[Drop] [**] |^[\d+:\d+:\d+] </prematch>
+   <regex>^[Drop] [**] [(\d+:\d+:\d+)] \.+ (\S+)\p*\d* -> </regex>
+   <regex>(\S+)|^[(\d+:\d+:\d+)] \.+ </regex>
+   <regex>(\S+)\p*\d* -> (\S+)</regex>
+   <order>id,srcip,dstip</order>
+   <fts>name,id,srcip,dstip</fts>
+</decoder>
 
 
 <!-- OpenBSD isakmpd decoders -->
