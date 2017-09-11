@@ -459,8 +459,6 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     const char *xml_skip_nfs = "skip_nfs";
     const char *xml_nodiff = "nodiff";
 
-    const char *xml_db_type = "database_type";
-
     /* Configuration example
     <directories check_all="yes">/etc,/usr/bin</directories>
     <directories check_owner="yes" check_group="yes" check_perm="yes"
@@ -553,18 +551,6 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);
-            }
-        }
-
-        /* Set the syscheck db type */
-        else if(strcmp(node[i]->element, xml_db_type) == 0) {
-            if(strncmp(node[i]->content, "legacy", 6) == 0) {
-                syscheck->database_type = SYSCHECK_LEGACY;
-            } else if(strncmp(node[i]->content, "sqlite", 6) == 0) {
-                merror("WARN: The sqlite syscheck database is very experimental, use at your own risk!");
-                syscheck->database_type = SYSCHECK_SQLITE;
-            } else {
-                syscheck->database_type = SYSCHECK_LEGACY;
             }
         }
 

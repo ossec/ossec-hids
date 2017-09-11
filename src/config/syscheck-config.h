@@ -56,7 +56,6 @@ typedef struct _config {
 
     char *remote_db;
     char *db;
-    int database_type;                 /* Syscheck database type: 1 - legacy flat files, 2 - sqlite */
 
     char *scan_day;                 /* run syscheck on this day */
     char *scan_time;                /* run syscheck at this time */
