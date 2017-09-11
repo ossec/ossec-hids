@@ -85,7 +85,7 @@
 
 <decoder name="pam-ruser">
   <parent>pam</parent>
-  <regex> rhost=(\S+)$</regex>
+  <regex> rhost=(\S+)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -228,33 +228,28 @@
   <order>srcip</order>
 </decoder>
 
-<decoder name="ssh-scan2">
-  <parent>sshd</parent>
-  <prematch>^Did not receive identification</prematch>
-  <regex offset="after_prematch"> from (\S+)$</regex>
-  <order>srcip</order>
-</decoder>
-
 <!--
-
 Jul 12 16:10:26 cloud sshd[14486]: Bad protocol version identification 'GET http://m.search.yahoo.com/ HTTP/1.1' from 112.98.69.104 port 3533
 Jul 12 16:10:41 cloud sshd[14530]: Bad protocol version identification 'GET http://check2.zennolab.com/proxy.php HTTP/1.1' from 46.182.129.46 port 60866
 Jul 12 16:11:31 cloud sshd[14582]: Bad protocol version identification 'GET http://www.msftncsi.com/ncsi.txt HTTP/1.1' from 88.244.115.169 port 62240
 Jul 12 16:12:15 cloud sshd[14662]: Bad protocol version identification 'GET http://m.search.yahoo.com/ HTTP/1.1' from 118.76.116.187 port 54513
-
+e.g. OpenSSH > 7.2:
+Sep  4 21:13:05 example sshd[12853]: Did not receive identification string from 192.168.0.1 port 33021
+e.g. OpenSSH <= 7.2:
+Sep  4 21:14:25 example sshd[18368]: Did not receive identification string from 192.168.0.1
 -->
 
-<decoder name="ssh-scan3">
+<decoder name="ssh-scan2">
   <parent>sshd</parent>
-  <prematch>^Bad protocol version </prematch>
-  <regex offset="after_prematch">\w* from (\S+)</regex>
-  <order>srcip</order>
+  <prematch>^Did not receive identification |^Bad protocol version </prematch>
+  <regex offset="after_prematch"> from (\S+)$| from (\S+) port (\d+)$</regex>
+  <order>srcip,srcport</order>
 </decoder>
 
 <decoder name="ssh-osx-refuse">
   <parent>sshd</parent>
   <prematch>^refused connect </prematch>
-  <regex offset="after_prematch">^from (\S+)$</regex>
+  <regex offset="after_prematch">^from (\S+)$|^from \S+ \((\S+\w+)\)$|^from \S+ \((\S+::)\)$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -321,7 +316,7 @@ Jul 12 16:12:15 cloud sshd[14662]: Bad protocol version identification 'GET http
 <decoder name="sshd-exceed">
   <parent>sshd</parent>
   <prematch> exceeded for </prematch>
-  <regex offset="after_prematch">^(\S+) from (\S+) port (\d+) </regex>
+  <regex offset="after_prematch">(\S+) from (\S+) port (\d+) </regex>
   <order>user, srcip, srcport</order>
 </decoder>
 
@@ -968,11 +963,16 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="named-query">
   <parent>named</parent>
-  <prematch>: query: </prematch>
-  <regex>client (\S+)#\d+\s*\S*: query: (\S+) IN </regex>
+  <prematch>: query </prematch>
+  <regex>client (\S+)#\d+\s*\S*: </regex>
   <order>srcip,url</order>
 </decoder>
 
+<decoder name="named-query">
+  <parent>named</parent>
+  <regex>query: (\S+) IN|query \S+ '(\S+)/</regex>
+  <order>url</order>
+</decoder>
 
 <decoder name="named_client">
   <parent>named</parent>
@@ -2237,15 +2237,22 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
 <decoder name="asterisk-denied">
   <parent>asterisk</parent>
   <prematch>^NOTICE[\d+]: \S+ in \S+: Registration from </prematch>
-  <regex offset="after_prematch">^\S+ failed for '(\S+)'</regex>
-  <order>srcip</order>
+  <regex offset="after_prematch">^'\.+' failed for '(\S+):(\d+)'|^'\.+' failed for '(\S+)'</regex>
+  <order>srcip,srcport</order>
 </decoder>
 
 <decoder name="asterisk-denied2">
   <parent>asterisk</parent>
   <prematch>Registration from </prematch>
-  <regex offset="after_prematch">failed for '(\S+)'</regex>
-  <order>srcip</order>
+  <regex offset="after_prematch">failed for '(\S+):(\d+)'|failed for '(\S+)'</regex>
+  <order>srcip,srcport</order>
+</decoder>
+
+<decoder name="asterisk-denied3">
+  <parent>asterisk</parent>
+  <prematch>^NOTICE[\d+][\w+]: \S+ in \S+: Call from </prematch>
+  <regex offset="after_prematch">^'\S*' \((\S+):(\d+)\) to extension '(\S+)' rejected because extension not found in context '(\S+)'.$</regex>
+  <order>srcip, srcport, extra_data, extra_data</order>
 </decoder>
 
 <decoder name="asterisk-iax-authentication-denied">
@@ -3001,6 +3008,65 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 
 <decoder name="nsd">
   <program_name>^nsd</program_name>
+</decoder>
+
+<!-- ownCloud
+   - Examples owncloud.log (Note that the syntax of failed login logs differs between oler and newer ownCloud versions):
+   - {"reqId":"wlioIFa6pOvt6DIAoeHE","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2016-04-12T22:28:20+02:00","method":"POST","url":"\/","user":"--"}
+   - {"reqId":"prLlx9+QIfl1jHtz9C5o","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2015-07-08T12:12:41+02:00"}
+   - {"reqId":"wLP7a3MdzTo8wgCWret9","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2015-07-15T09:40:35+02:00","method":"POST","url":"\/"}
+   - {"reqId":"prLlx9+QIfl1jHtz9C5o","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1)","level":2,"time":"2015-07-08T12:12:41+02:00"}
+   - {"reqId":"wLP7a3MdzTo8wgCWret9","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1)","level":2,"time":"2015-07-15T09:40:35+02:00","method":"POST","url":"\/"}
+   - {"reqId":"f7906a8355f496e3a1947d7839c4a2c3","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1', X-Forwarded-For: '')","level":2,"time":"2015-06-09T08:17:43+00:00"}
+   - {"reqId":"9f8edc5558b2b4f8628663d83a092a7f","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1', X-Forwarded-For: '')","level":2,"time":"2015-06-09T08:19:02   - +00:00","method":"POST","url":"\/cloud\/index.php"}
+   - {"app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1', X-Forwarded-For: '')","level":2,"time":"2015-06-09T08:16:29+00:00"}
+   - {"reqId":"5576a04643d8e","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1', X-Forwarded-For: '')","level":2,"time":"2015-06-09T08:13:58+00:00","method":"POST","url":"\/owncloud\/index.php"}
+   - {"app":"core","message":"Login failed: user 'admin' , wrong password, IP:127.0.0.1","level":2,"time":"2015-06-09T08:10:29+00:00"}
+   - {"reqId":"55769fcacd1e0","app":"core","message":"Login failed: user 'admin' , wrong password, IP:127.0.0.1","level":2,"time":"2015-06-09T08:11:54+00:00","method":"POST","url":"\/owncloud\/index.php"}
+   - {"reqId":"BaW6nfA5rHBoihjDtQVm","remoteAddr":"127.0.0.1","app":"core-preview","message":"Passed filename is not valid, might be malicious (file:\"test\";ip:\"127.0.0.1\")","level":2,"time":"2017-09-01T22:11:25+02:00","method":"POST","url":"\/login","user":"--"}
+   - {"reqId":"4ETnKW0UyDBNmL4z\/umV","remoteAddr":"127.0.0.1","app":"PHP","message":"Redis::connect(): connect() failed: No such file or directory at \/var\/www\/owncloud\/lib\/private\/RedisFactory.php#60","level":3,"time":"2017-08-21T16:00:34+02:00","method":"PROPFIND","url":"\/remote.php\/dav\/addressbooks\/users\/admin\/example\/","user":"admin"}
+   - {"reqId":"4j2DKpvOh0OezXVwfuLO","remoteAddr":"127.0.0.1","app":"PHP","message":"fopen(\/var\/www\/owncloud\/data\/user 1\/thumbnails\/1234\/32-32.png): failed to open stream: No such file or directory at \/var\/www\/owncloud\/lib\/private\/Files\/Storage\/Local.php#278","level":3,"time":"2017-07-15T23:59:20+02:00","method":"GET","url":"\/core\/preview.png?file=%2Fexample.txt&c=123&x=32&y=32&forceIcon=0","user":"user 1"}
+
+   - Examples syslog:
+   - Sep  1 20:16:09 foo ownCloud[15463]: {core} Login failed: 'test' (Remote IP: '127.0.0.1')
+   - Sep  1 22:16:33 foo ownCloud[15467]: {core-preview} Passed filename is not valid, might be malicious (file:"test";ip:"127.0.0.1")
+-->
+
+<decoder name="owncloud">
+  <prematch>^{"reqId":"\S+","message":"\.+","level":\d,"time":"\.+"}$|^{"app":"\S+","message":"\.+","level":\d,"time":"\.+"}$</prematch>
+</decoder>
+
+<!-- Note: This defaults to "ownCloud" but users can change the syslog tag: https://github.com/owncloud/core/blob/v10.0.2/config/config.sample.php#L608-L614 -->
+<decoder name="owncloud">
+  <program_name>^ownCloud</program_name>
+</decoder>
+
+<decoder name="owncloud-failed1">
+  <parent>owncloud</parent>
+  <prematch>Login failed: user </prematch>
+  <regex offset="after_prematch">^'(\w+)' , wrong password, IP:(\d+.\d+.\d+.\d+)</regex>
+  <order>user, srcip</order>
+</decoder>
+
+<decoder name="owncloud-failed2">
+  <parent>owncloud</parent>
+  <prematch>Login failed: </prematch>
+  <regex offset="after_prematch">^'(\w+)' \(Remote IP: '(\d+.\d+.\d+.\d+)</regex>
+  <order>user, srcip</order>
+</decoder>
+
+<decoder name="owncloud-malicious">
+  <parent>owncloud</parent>
+  <prematch>Passed filename is not valid, might be malicious </prematch>
+  <regex offset="after_prematch">;ip:"(\d+.\d+.\d+.\d+)|;ip:\\"(\d+.\d+.\d+.\d+)</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="owncloud-loglevel">
+  <parent>owncloud</parent>
+  <prematch>","level":</prematch>
+  <regex offset="after_prematch">^(\d),"</regex>
+  <order>status</order>
 </decoder>
 
 <!-- EOF -->
