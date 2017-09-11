@@ -709,8 +709,11 @@ int DecodeSyscheck(Eventinfo *lf)
  
 
     /* Search for file changes */
-    //return (DB_Search(f_name, c_sum, lf));
-    return (DB_Search2(f_name, c_sum, lf));
+    if(syscheck->database_type == SYSCHECK_LEGACY) {
+        return (DB_Search(f_name, c_sum, lf));
+    } else if(syscheck->database_type == SYSCHECK_SQLITE) {
+        return (DB_Search2(f_name, c_sum, lf));
+    }
 }
 
 /* Search the sqlite db for an entry */

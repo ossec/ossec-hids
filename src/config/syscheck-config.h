@@ -24,6 +24,10 @@
 #define CHECK_REALTIME      0000100
 #define CHECK_SEECHANGES    0000200
 
+/* syscheck db options */
+#define SYSCHECK_LEGACY    1
+#define SYSCHECK_SQLITE    2
+
 #include <stdio.h>
 
 #include "os_regex/os_regex.h"
@@ -52,6 +56,7 @@ typedef struct _config {
 
     char *remote_db;
     char *db;
+    int database_type;                 /* Syscheck database type: 1 - legacy flat files, 2 - sqlite */
 
     char *scan_day;                 /* run syscheck on this day */
     char *scan_time;                /* run syscheck at this time */
