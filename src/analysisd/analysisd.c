@@ -667,7 +667,7 @@ void OS_ReadMSG_analysisd(int m_queue)
 
     }
 
-    if(syscheck->database_type == SYSCHECK_SQLITE) {
+    if(Config.syscheck_database_type == SYSCHECK_SQLITE) {
         /* Open the syscheck sqlite db */
         extern sqlite3 *syscheck_conn;
         int sys_error = 0;

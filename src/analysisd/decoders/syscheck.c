@@ -709,9 +709,9 @@ int DecodeSyscheck(Eventinfo *lf)
  
 
     /* Search for file changes */
-    if(syscheck->database_type == SYSCHECK_LEGACY) {
+    if(Config.syscheck_database_type == SYSCHECK_LEGACY) {
         return (DB_Search(f_name, c_sum, lf));
-    } else if(syscheck->database_type == SYSCHECK_SQLITE) {
+    } else if(Config.syscheck_database_type == SYSCHECK_SQLITE) {
         return (DB_Search2(f_name, c_sum, lf));
     }
 }

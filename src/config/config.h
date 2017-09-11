@@ -27,6 +27,10 @@
 
 #define CAGENT_CONFIG 0010000
 
+/* syscheck db options */
+#define SYSCHECK_LEGACY 1
+#define SYSCHECK_SQLITE 2
+
 #include "os_xml/os_xml.h"
 
 /* Main function to read the config */

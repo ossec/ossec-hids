@@ -557,12 +557,12 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
         }
 
         /* Set the syscheck db type */
-        /* This is probably more complicated than it needs to be, but I'll let it sit for now */
         else if(strcmp(node[i]->element, xml_db_type) == 0) {
-            if(node[i]->content == SYSCHECK_LEGACY) {
+            if(strncmp(node[i]->content, "legacy", 6) == 0) {
                 syscheck->database_type = SYSCHECK_LEGACY;
-            } else if(node[i]->content == SYSCHECK_SQLITE) {
-                syscheck->databse_type = SYSCHECK_SQLITE;
+            } else if(strncmp(node[i]->content, "sqlite", 6) == 0) {
+                merror("WARN: The sqlite syscheck database is very experimental, use at your own risk!");
+                syscheck->database_type = SYSCHECK_SQLITE;
             } else {
                 syscheck->database_type = SYSCHECK_LEGACY;
             }
