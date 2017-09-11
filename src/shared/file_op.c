@@ -297,8 +297,11 @@
 #endif
 #endif /* WIN32 */
 
-const char *__local_name = "unset";
+#ifdef WIN32
+#define mkstemp(x) 0
+#endif
 
+const char *__local_name = "unset";
 
 /* Set the name of the starting program */
 void OS_SetName(const char *name)
