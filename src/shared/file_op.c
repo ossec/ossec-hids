@@ -297,8 +297,11 @@
 #endif
 #endif /* WIN32 */
 
-const char *__local_name = "unset";
+#ifdef WIN32
+#define mkstemp(x) 0
+#endif
 
+const char *__local_name = "unset";
 
 /* Set the name of the starting program */
 void OS_SetName(const char *name)
@@ -991,7 +994,7 @@ int mkstemp_ex(char *tmp_path)
 
     if (pSD == NULL) {
         log2file(
-            "%s: ERROR: Could not initalize SECURITY_DESCRIPTOR because of a LocalAlloc() failure which returned (%lu)",
+            "%s: ERROR: Could not initialize SECURITY_DESCRIPTOR because of a LocalAlloc() failure which returned (%lu)",
             __local_name,
             GetLastError()
         );
@@ -1001,7 +1004,7 @@ int mkstemp_ex(char *tmp_path)
 
     if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) {
         log2file(
-            "%s: ERROR: Could not initalize SECURITY_DESCRIPTOR because of an InitializeSecurityDescriptor() failure which returned (%lu)",
+            "%s: ERROR: Could not initialize SECURITY_DESCRIPTOR because of an InitializeSecurityDescriptor() failure which returned (%lu)",
             __local_name,
             GetLastError()
         );
