@@ -68,6 +68,11 @@ int OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     }
 
     s = getaddrinfo(_ip, _port, &hints, &result);
+    /* Try to support legacy ipv4 only hosts */
+    if(s == EAI_FAMILY) {
+        hints.ai_family = AF_INET;
+        s = getaddrinfo(_ip, _port, &hints, &result);
+    }
     if (s != 0) {
         verbose("getaddrinfo: %s", gai_strerror(s));
         return(OS_INVALID);
