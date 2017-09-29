@@ -1548,6 +1548,16 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
    <fts>name,id,srcip,dstip</fts>
 </decoder>
 
+<decoder name="snort3">
+   <parent>snort</parent>
+   <type>ids</type>
+   <prematch>^[Drop] [**] |^[\d+:\d+:\d+] </prematch>
+   <regex>^[Drop] [**] [(\d+:\d+:\d+)] \.+ (\S+)\p*\d* -> </regex>
+   <regex>(\S+)|^[(\d+:\d+:\d+)] \.+ </regex>
+   <regex>(\S+)\p*\d* -> (\S+)</regex>
+   <order>id,srcip,dstip</order>
+   <fts>name,id,srcip,dstip</fts>
+</decoder>
 
 
 <!-- OpenBSD isakmpd decoders -->
@@ -3012,6 +3022,7 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 
 <!-- ownCloud
    - Examples owncloud.log (Note that the syntax of failed login logs differs between oler and newer ownCloud versions):
+   - {"reqId":"Jrd4fkwIcXhVjtP8qODR","level":2,"time":"2017-09-20T15:44:23+02:00","remoteAddr":"127.0.0.1","user":"--","app":"core","method":"POST","url":"\/login","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')"}
    - {"reqId":"wlioIFa6pOvt6DIAoeHE","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2016-04-12T22:28:20+02:00","method":"POST","url":"\/","user":"--"}
    - {"reqId":"prLlx9+QIfl1jHtz9C5o","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2015-07-08T12:12:41+02:00"}
    - {"reqId":"wLP7a3MdzTo8wgCWret9","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2015-07-15T09:40:35+02:00","method":"POST","url":"\/"}
@@ -3033,7 +3044,7 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 -->
 
 <decoder name="owncloud">
-  <prematch>^{"reqId":"\S+","message":"\.+","level":\d,"time":"\.+"}$|^{"app":"\S+","message":"\.+","level":\d,"time":"\.+"}$</prematch>
+  <prematch>^{"reqId":"\S+","message":"\.+","level":\d,"time":"\.+"}$|^{"app":"\S+","message":"\.+","level":\d,"time":"\.+"}$|^{"reqId":"\S+","level":\d,"time":"\S+","message":"\.+"}$</prematch>
 </decoder>
 
 <!-- Note: This defaults to "ownCloud" but users can change the syslog tag: https://github.com/owncloud/core/blob/v10.0.2/config/config.sample.php#L608-L614 -->
@@ -3069,5 +3080,42 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <order>status</order>
 </decoder>
 
-<!-- EOF -->
+<!-- psad
+  - Examples: (Note: IPv6 untested)
+  - Sep  8 22:52:30 sni psad: scan detected (Nmap -sT or -sS scan): 212.83.152.232 -> 1.2.3.4 tcp: [21943] flags: SYN tcp pkts: 3 DL: 3
+  - Sep  9 08:36:30 sni psad: src: 62.210.167.199 signature match: "BACKDOOR DoomJuice file upload attempt" (sid: 2375) tcp port: 3180
+  - Sep  9 08:36:30 sni psad: scan detected (Masscan SYN scan): 62.210.167.199 -> 1.2.3.4 tcp: [3320-62210] flags: SYN tcp pkts: 10 DL: 3
+  - Sep  3 14:18:52 sni psad: scan detected ( -sU scan): 192.168.1.42 -> 239.255.255.250 udp: [1900] udp pkts: 16 DL: 3
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "MISC Microsoft PPTP communication attempt" (sid: 100082) tcp port: 1723
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "DOS iParty DOS attempt" (sid: 1605) tcp port: 6004
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "DOS Real Audio Server communication attempt" (sid: 100112) tcp port: 7070
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "BACKDOOR DoomJuice file upload attempt" (sid: 2375) tcp port: 3129
+  - Aug  9 16:46:32 dsc psad: message repeated 2 times: [ scan detected (Nmap -sT or -sS scan): 10.1.0.15 -> 192.168.1.18 tcp: [80] flags: SYN tcp pkts: 3 DL: 3]example logs: 
+-->
 
+<decoder name="psad">
+  <program_name>psad</program_name>
+</decoder>
+
+<decoder name="psad-scan">
+  <parent>psad</parent>
+  <prematch>^scan detected </prematch>
+  <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
+  <order>srcip,dstip,status</order>
+</decoder>
+
+<decoder name="psad-repeated">
+  <parent>psad</parent>
+  <prematch>^message repeated</prematch>
+  <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
+  <order>srcip,dstip,status</order>
+</decoder>
+
+<decoder name="psad-signature">
+  <parent>psad</parent>
+  <prematch>signature match: </prematch>
+  <regex offset="after_parent">src: (\S+) signature match: \.+ port: (\d+)</regex>
+  <order>srcip,dstport</order>
+</decoder>
+
+<!-- EOF -->

@@ -45,6 +45,10 @@ else
         GROUPADD="/usr/sbin/mkgroup"
         USERADD="/usr/sbin/useradd"
         OSMYSHELL="/bin/false"
+    elif [ "$UNAME" = "OpenBSD" ]; then
+        GROUPADD="/usr/sbin/groupadd"
+        USERADD="/usr/sbin/useradd"
+        OSMYSHELL="/sbin/nologin"
     else
 	# All current linux distributions should support system accounts for
 	# users/groups. If not, leave the GROUPADD/USERADD as it was before
