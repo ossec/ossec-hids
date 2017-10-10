@@ -24,7 +24,7 @@
 
 5- View all alerts (with IP as string):
 
-> SELECT rule_id, timestamp, INET_ATON(src_ip) srcip from alert;
+> SELECT rule_id, timestamp, INET_NTOA(src_ip) srcip from alert;
 
 
 6- View all alerts, including locations (IP as string and time as string):
@@ -44,4 +44,3 @@ Output:
 | 2007-08-18 00:38:06 |    5715 | enigma->/var/log/authlog  | 192.168.2.10 | Aug 18 00:38:02 enigma sshd[24284]: Accepted password for dcid from 192.168.2.10 port 34631 ssh2 |
 | 2007-08-18 00:38:21 |    5715 | enigma->/var/log/authlog  | 192.168.2.10 | Aug 18 00:38:15 enigma sshd[20749]: Accepted password for dcid from 192.168.2.10 port 35755 ssh2 |
 +---------------------+---------+---------------------------+--------------+--------------------------------------------------------------------------------------------------+
-
