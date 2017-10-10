@@ -22,9 +22,6 @@ int Read_GlobalSK(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     const char *xml_auto_ignore = "auto_ignore";
     const char *xml_alert_new_files = "alert_new_files";
 
-    /* Syscheck db stuff */
-    const char *xml_db_type = "database_type";
-
     _Config *Config;
     Config = (_Config *)configp;
 
@@ -79,15 +76,6 @@ int Read_GlobalSK(XML_NODE node, void *configp, __attribute__((unused)) void *ma
 
             os_strdup(node[i]->content, Config->syscheck_ignore[ign_size - 2]);
             Config->syscheck_ignore[ign_size - 1] = NULL;
-        } else if(strncmp(node[i]->element, xml_db_type, 13) == 0)  {
-            if(strncmp(node[i]->content, "legacy", 6) == 0) {
-                Config->syscheck_database_type = SYSCHECK_LEGACY;
-            } else if(strncmp(node[i]->content, "sqlite", 6) == 0) {
-                merror("WARN: The sqlite syscheck database is very experimental, use at your own risk!");
-                Config->syscheck_database_type = SYSCHECK_SQLITE;
-            } else {
-                Config->syscheck_database_type = SYSCHECK_LEGACY;
-            }
         }
 
         i++;
@@ -141,6 +129,8 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 
     /* MD5 DB */
     char *xml_md5_whitelist = "md5_whitelist";
+    /* Syscheck db stuff */
+    const char *xml_db_type = "database_type";
 
     _Config *Config;
     MailConfig *Mail;
@@ -510,6 +500,18 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         else if(strcmp(node[i]->element, xml_md5_whitelist) == 0) {
             if(Config) {
                 os_strdup(node[i]->content, Config->md5_whitelist);
+            }
+        }
+
+        /* syscheck database selection */
+        else if(strncmp(node[i]->element, xml_db_type, 13) == 0)  {
+            if(strncmp(node[i]->content, "legacy", 6) == 0) {
+                Config->syscheck_database_type = SYSCHECK_LEGACY;
+            } else if(strncmp(node[i]->content, "sqlite", 6) == 0) {
+                merror("WARN: The sqlite syscheck database is very experimental, use at your own risk!");
+                Config->syscheck_database_type = SYSCHECK_SQLITE;
+            } else {
+                Config->syscheck_database_type = SYSCHECK_LEGACY;
             }
         }
 

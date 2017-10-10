@@ -20,7 +20,7 @@
 //#include <sqlite3.h>
 #include "syscheck-sqlite.h"
 
-int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf);
+int DB_Search_Sqlite(const char *f_name, const char *c_sum, Eventinfo *lf);
 
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
@@ -712,12 +712,12 @@ int DecodeSyscheck(Eventinfo *lf)
     if(Config.syscheck_database_type == SYSCHECK_LEGACY) {
         return (DB_Search(f_name, c_sum, lf));
     } else if(Config.syscheck_database_type == SYSCHECK_SQLITE) {
-        return (DB_Search2(f_name, c_sum, lf));
+        return (DB_Search_Sqlite(f_name, c_sum, lf));
     }
 }
 
 /* Search the sqlite db for an entry */
-int DB_Search2(const char *f_name, const char *c_sum, Eventinfo *lf) {
+int DB_Search_Sqlite(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
     /* c_sum: 2017/06/16 20:00:20 f_name: /etc/ansible/playbooks/common/broids/files/OTX-Apps-Bro-IDS/pulses/555be98eb45ff507dbe5b426.intel   c_sum: 724:33277:0:0:c88286fad6bf0db68fd8371ca2a1804b:f8e329da2ad2a50c93de2dcb8889531cdb841bfe */
 
