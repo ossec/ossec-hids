@@ -714,6 +714,7 @@ int DecodeSyscheck(Eventinfo *lf)
     } else if(Config.syscheck_database_type == SYSCHECK_SQLITE) {
         return (DB_Search_Sqlite(f_name, c_sum, lf));
     }
+    return(0);
 }
 
 /* Search the sqlite db for an entry */
@@ -723,18 +724,19 @@ int DB_Search_Sqlite(const char *f_name, const char *c_sum, Eventinfo *lf) {
 
 
 
-    char *md5sum, *sha1sum;
+    //char *md5sum, *sha1sum;
     int cfsize = 0, cfperm = 0, cfuid = 0, cfgid = 0, chash1 = 0, chash2 = 0;
     int changed = 0, times_count = 0;
 
     /* Grab the checksums from c_sum */
-    char **values, *hash1, *hash2, *fsize, *fperm, *fuid, *fgid;
-    char *dbhash1, *dbhash2, *dbfsize, *dbfperm, *dbfuid, *dbfgid;
+    //char **values, *hash1, *hash2, *fsize, *fperm, *fuid, *fgid;
+    char *hash1, *hash2, *fsize, *fperm, *fuid, *fgid;
+    const unsigned char *dbhash1, *dbhash2, *dbfsize, *dbfperm, *dbfuid, *dbfgid;
     char *s2;
     s2 = strdup(c_sum);
     printf("s2: %s\n", s2);
 
-    int count = 0;
+    //int count = 0;
 
 
     if((fsize = strsep(&s2, ":")) == NULL) {
@@ -849,7 +851,7 @@ os_step:
             char entry_update[2048 + 1];
             char *error_message;
             times_count++;
-            snprintf(entry_update, 2048, "UPDATE syscheck SET count = \"%d\", hostname = \"%s\", filename = \"%s\", size = \"%d\", permissions = \"%s\", uid = \"%s\", gid = \"%s\", hash1 = \"%s\", hash2 = \"%s\", timestamp = \"%ld\" where hostname = \"%s\" AND filename = \"%s\";", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2, (long int)lf->time, lf->hostname, f_name);
+            snprintf(entry_update, 2048, "UPDATE syscheck SET count = \"%d\", hostname = \"%s\", filename = \"%s\", size = \"%d\", permissions = \"%s\", uid = \"%s\", gid = \"%s\", hash1 = \"%s\", hash2 = \"%s\", timestamp = \"%ld\" where hostname = \"%s\" AND filename = \"%s\";", times_count, lf->hostname, f_name, atoi(fsize), fperm, fuid, fgid, hash1, hash2, (long int)lf->time, lf->hostname, f_name);
             int rc = sqlite3_exec(syscheck_conn, entry_update, 0, 0, &error_message);
             if(rc != SQLITE_OK) {
                 merror("XXX UPDATE FAILED: %s", error_message);
@@ -892,11 +894,11 @@ os_step:
             goto os_step;
         } else if(SQLITE_DONE) {
             // No results - add the entry to the database
-            sqlite3_stmt *sys_add;
-            char *error_message = '\0';
+            //sqlite3_stmt *sys_add;
+            char *error_message = NULL;
             int add_res = -1;
             char sys_add_entry[OS_MAXSTR + 1];
-            snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES\(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%ld\"\)\;", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2, (long int)lf->time);
+            snprintf(sys_add_entry, OS_MAXSTR, "INSERT INTO syscheck VALUES\(\"%d\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%ld\");", times_count, lf->hostname, f_name, fsize, fperm, fuid, fgid, hash1, hash2, (long int)lf->time);
             while(add_res == -1 || add_res == 5) {
                 //add_res = sqlite3_prepare_v2(syscheck_conn, sys_add_entry, 1000, &add_res, &sys_tail);
 		add_res = sqlite3_exec(syscheck_conn, sys_add_entry, 0, 0, &error_message);

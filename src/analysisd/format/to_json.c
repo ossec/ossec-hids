@@ -18,7 +18,7 @@
 /* Convert Eventinfo to json */
 char *Eventinfo_to_jsonstr(const Eventinfo *lf)
 {
-    char* time_string;
+    //char* time_string;
  
     cJSON *root;
     cJSON *rule;

@@ -213,5 +213,7 @@ extern const char *__local_name;
 #include "error_messages/error_messages.h"
 #include "custom_output_search.h"
 
+void OS_PassEmptyKeyfile();
+
 #endif /* __SHARED_H */
 
