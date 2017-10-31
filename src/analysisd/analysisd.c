@@ -913,10 +913,12 @@ void OS_ReadMSG_analysisd(int m_queue)
                 if (currently_rule->alert_opts & DO_LOGALERT) {
                     __crt_ftell = ftell(_aflog);
 
-                    if (Config.custom_alert_output) {
-                        OS_CustomLog(lf, Config.custom_alert_output_format);
-                    } else {
-                        OS_Log(lf);
+                    if(Config.alertout_output) {
+                        if (Config.custom_alert_output) {
+                            OS_CustomLog(lf, Config.custom_alert_output_format);
+                        } else {
+                            OS_Log(lf);
+                        }
                     }
                     /* Log to json file */
                     if (Config.jsonout_output) {
