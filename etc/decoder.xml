@@ -2106,7 +2106,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>ossec</parent>
   <type>ossec</type>
   <prematch offset="after_parent">^Agent started:</prematch>
-  <regex offset="after_prematch">^ '(\S+)'</regex>
+  <regex offset="after_prematch">^ '(\S+\S)'</regex>
   <order>extra_data</order>
   <fts>name, location, extra_data</fts>
 </decoder>
