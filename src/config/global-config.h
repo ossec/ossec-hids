@@ -43,8 +43,6 @@ typedef struct __Config {
 
     /* JSONOUT Export */
     u_int8_t jsonout_output;
-    /* Multi-line alerts.log export */
-    u_int8_t alertout_output;
 
     /* Not currently used */
     u_int8_t keeplogdate;
