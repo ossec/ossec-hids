@@ -282,6 +282,11 @@ int main_analysisd(int argc, char **argv)
     }
 #endif
 
+    /* Make sure at least 1 logging option is available */
+    if(!Config.alertout_output && !Config.jsonout_output && !Config.zeromq_output) {
+      merror("%s: No alert logging has been configured!", ARGV0);
+    fi
+
     /* Set the group */
     if (Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
