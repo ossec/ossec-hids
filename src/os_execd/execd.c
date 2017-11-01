@@ -13,6 +13,10 @@
 #include "os_net/os_net.h"
 #include "execd.h"
 
+#include "sqlite3.h"
+sqlite3* ar_db;
+
+
 int repeated_offenders_timeout[] = {0, 0, 0, 0, 0, 0, 0};
 
 #ifndef WIN32
@@ -69,6 +73,10 @@ static void execd_shutdown(int sig)
     }
 
     HandleSIG(sig);
+
+    /* Close DB */
+    sqlite3_close(ar_db);
+
 }
 
 int main(int argc, char **argv)
@@ -142,6 +150,9 @@ int main(int argc, char **argv)
 
     /* Signal manipulation */
     StartSIG2(ARGV0, execd_shutdown);
+
+    SetDBConfig();
+
 
     if (!run_foreground) {
         /* Going daemon */
@@ -336,16 +347,28 @@ static void ExecdStart(int q)
         *tmp_msg = '\0';
         tmp_msg++;
 
-        /* Get the command to execute (valid name) */
-        command = GetCommandbyName(name, &timeout_value);
-        if (!command) {
-            ReadExecConfig();
-            command = GetCommandbyName(name, &timeout_value);
-            if (!command) {
-                merror(EXEC_INV_NAME, ARGV0, name);
-                continue;
-            }
-        }
+       if (strcmp("sqldelete", buffer))
+       {
+
+       
+               /* Getting the command to execute (valid name) */
+                      command = GetCommandbyName(name, &timeout_value);
+               if(!command)
+               {
+                       ReadExecConfig();
+                       command = GetCommandbyName(name, &timeout_value);
+                       if(!command)
+                       {
+                                merror(EXEC_INV_NAME, ARGV0, name);
+                                continue;
+                       }
+               }
+       }
+       else
+       {
+               command = "sqldelete";
+
+       }   
 
         /* Command not present */
         if (command[0] == '\0') {

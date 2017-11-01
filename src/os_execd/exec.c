@@ -11,12 +11,17 @@
 #include "os_regex/os_regex.h"
 #include "execd.h"
 
+
+
 static char exec_names[MAX_AR + 1][OS_FLSIZE + 1];
 static char exec_cmd[MAX_AR + 1][OS_FLSIZE + 1];
 static int  exec_timeout[MAX_AR + 1];
 static int  exec_size = 0;
 static int  f_time_reading = 1;
 
+
+void sql_insert(char *user, char *ip, char *alertid, char *ruleid);
+void sql_remove(char *ip);
 
 /* Read the shared exec config
  * Returns 1 on success or 0 on failure
@@ -175,10 +180,24 @@ void ExecCmd(char *const *cmd)
 {
     pid_t pid;
 
+       // SQL Add
+       if(!strcmp("add", cmd[1]) && strcmp("sqldelete", cmd[0])) {
+               sql_insert(cmd[2], cmd[3], cmd[4], cmd[5]);
+
+       } 
+
+       // SQL delete
+       else if(!strcmp("delete", cmd[1]) || !strcmp("sqldelete", cmd[0])) {
+               sql_remove(cmd[3]);     
+       }
+
+
     /* Fork and leave it running */
     pid = fork();
     if (pid == 0) {
-        if (execv(*cmd, cmd) < 0) {
+        if(execv(*cmd, cmd) < 0 && strcmp("sqldelete", cmd[0]))
+	{
+
             merror(EXEC_CMDERROR, ARGV0, *cmd, strerror(errno));
             exit(1);
         }
@@ -187,6 +206,66 @@ void ExecCmd(char *const *cmd)
     }
 
     return;
+}
+
+
+/* DB */
+void SetDBConfig()
+{
+       int sql_error = 0;
+
+        /*       merror("DEBUG: I am creating the SQLite table. "); */
+
+        sql_error = sqlite3_open("/var/ossec/var/execd.sqlite", &ar_db);
+        if (sql_error) {
+               merror("ERROR: %d Unable to create SQLite database. ", sql_error);
+        }
+        sql_error = sqlite3_exec(ar_db,
+                "DROP TABLE IF EXISTS ar;",
+                0,0,0); 
+
+        if (sql_error) {
+               merror("ERROR: %d Unable to drop SQLite table. ", sql_error);
+        }
+
+        sql_error = sqlite3_exec(ar_db,
+                "CREATE TABLE IF NOT EXISTS ar (user text, ip text unique, time blob not null, rule integer);",
+                0,0,0); 
+
+        if (sql_error) {
+               merror("ERROR: %d Unable to create SQLite table. ", sql_error);
+        }
+
+
+}
+
+void sql_insert(char *user, char *ip, char *alertid, char *ruleid)
+{
+//     int sql_error = 0;
+       char query[180];
+
+
+       sprintf(query, "INSERT INTO ar (user, ip, time, rule) VALUES ('%s', '%s', '%s', %s)", user, ip, alertid, ruleid);
+        sqlite3_exec(ar_db, query, 0,0,0);
+        //sql_error = sqlite3_exec(ar_db, query, 0,0,0);
+//     if (sql_error) {
+ //            merror("ERROR: %d Inserting row in SQLite table. %s", sql_error, ip);
+//     }
+
+}
+
+void sql_remove(char *ip)
+{
+       //int sql_error = 0;
+       char query[120];
+
+       sprintf(query, "DELETE FROM ar WHERE ip='%s'",ip);
+        sqlite3_exec(ar_db, query, 0,0,0);
+        //sql_error = sqlite3_exec(ar_db, query, 0,0,0);
+       //if (sql_error) {
+        //     merror("ERROR: %d Removing row in SQLite table. ", sql_error);
+       //}
+
 }
 
 #else
@@ -215,5 +294,7 @@ void ExecCmd_Win32(char *cmd)
 
     return;
 }
+
+
 #endif
 

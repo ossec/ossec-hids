@@ -131,6 +131,7 @@ OSSEC_CFLAGS+=-Wall -Wextra
 OSSEC_CFLAGS+=-I./ -I./headers/
 
 
+
 CCCOLOR="\033[34m"
 LINKCOLOR="\033[34;1m"
 SRCCOLOR="\033[33m"
@@ -847,7 +848,7 @@ os_execd/%.o: os_execd/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-execd\" -c $^ -o $@
 
 ossec-execd: ${os_execd_o} ${ossec_libs} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${JSON_INCLUDE} $^ -lm ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${JSON_INCLUDE} $^ -lm ${OSSEC_LDFLAGS} -lsqlite3 -o $@
 
 
 #### logcollectord ####

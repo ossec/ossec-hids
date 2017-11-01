@@ -7,6 +7,8 @@
  * Foundation.
  */
 
+#include <sqlite3.h>
+
 #ifndef _EXECD_H
 #define _EXECD_H
 
@@ -48,6 +50,10 @@ typedef struct _timeout_data {
 } timeout_data;
 
 void FreeTimeoutEntry(timeout_data *timeout_entry);
+extern sqlite3 * ar_db;
+void SetDBConfig();
+
+
 
 #endif
 
