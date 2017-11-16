@@ -61,7 +61,11 @@ else
         OSMYSHELL="/sbin/nologin"
     fi
 
-    if ! grep "^${GROUP}" /etc/group > /dev/null 2>&1; then
+    if [ -x /usr/bin/getent ]; then
+        if [ `getent group ossec | wc -l` -lt 1 ]; then
+            ${GROUPADD} "${GROUP}"
+        fi
+    elif ! grep "^${GROUP}" /etc/group > /dev/null 2>&1; then
         ${GROUPADD} "${GROUP}"
     fi
 
@@ -77,12 +81,20 @@ else
     fi
 
     for U in ${USER} ${USER_MAIL} ${USER_REM}; do
-        if ! grep "^${U}" /etc/passwd > /dev/null 2>&1; then
-	    if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
-               ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
-	    else
-	       ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
-	    fi
+        if [ -x /usr/bin/getent ]; then 
+            if [ `getent passwd ${U} | wc -l` -lt 1 ]; then
+	            if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
+                    ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
+	            else
+	                ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
+	            fi
+            fi
+        elif [ ! `grep "^${U}" /etc/passwd > /dev/null 2>&1` ]; then
+	        if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
+                ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
+	        else
+	            ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
+	        fi
         fi
     done
 fi
