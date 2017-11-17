@@ -67,6 +67,12 @@ void generate_reports(int cday, int cmon, int cyear, const struct tm *p)
                 os_ReportdStart(&mond.reports[s]->r_filter);
                 fflush(mond.reports[s]->r_filter.fp);
 
+                time_t tm;
+                tm = time(NULL);
+                const struct tm *p2;
+                p2 = localtime(&tm);
+                
+
                 if (ftell(mond.reports[s]->r_filter.fp) < 10) {
                     merror("%s: INFO: Report '%s' empty.", ARGV0, mond.reports[s]->title);
                 } else if (OS_SendCustomEmail(mond.reports[s]->emailto,
@@ -74,13 +80,16 @@ void generate_reports(int cday, int cmon, int cyear, const struct tm *p)
                                               mond.smtpserver,
                                               mond.emailfrom,
                                               mond.emailidsname,
-                                              mond.reports[s]->r_filter.fp,
-                                              p)
+                                              fname,
+                                              p2)
                            != 0) {
                     merror("%s: WARN: Unable to send report email.", ARGV0);
                 }
                 fclose(mond.reports[s]->r_filter.fp);
-                unlink(fname);
+                if(unlink(fname) < 0) {
+                    merror("%s: ERROR: CAnnot unlink file %s: %s", ARGV0, fname, strerror(errno));
+                }
+
                 free(mond.reports[s]->r_filter.filename);
                 mond.reports[s]->r_filter.filename = NULL;
 
