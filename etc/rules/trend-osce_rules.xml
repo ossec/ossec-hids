@@ -29,7 +29,7 @@
     <if_sid>7600</if_sid>
     <id>^0|$|^1$|^2$|^33|^10$|^11$|^12$</id>
     <group>virus</group>
-    <description>Virus detected and cleaned/quarantined/remved</description>
+    <description>Virus detected and cleaned/quarantined/removed</description>
   </rule>
   
   <rule id="7611" level="9">

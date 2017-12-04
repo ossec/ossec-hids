@@ -480,6 +480,8 @@ int ReadDecodeXML(const char *file)
                         pi->order[order_int] = (void (*)(void *, char *)) Status_FP;
                     } else if (strstr(*norder, "system_name") != NULL) {
                         pi->order[order_int] = (void (*)(void *, char *)) SystemName_FP;
+                    } else if (strstr(*norder, "filename") != NULL) {
+                        pi->order[order_int] = (void (*)(void *, char *)) FileName_FP;
                     } else {
                         ErrorExit("decode-xml: Wrong field '%s' in the order"
                                   " of decoder '%s'", *norder, pi->name);
