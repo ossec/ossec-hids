@@ -287,6 +287,12 @@
     <description>doas authentication failed.</description>
   </rule>
 
+  <rule id="51558" level="4">
+    <program_name>sendsyslog</program_name>
+    <match>^dropped </match>
+    <description>sendsyslog dropped log messages.</description>
+  </rule>
+
 </group> <!-- SYSLOG,LOCAL -->
 
 
