@@ -48,6 +48,7 @@
 
 int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, char *fname, const struct tm *p)
 {
+    merror("YYY OS_SendCustomEmail");
     FILE *sendmail = NULL;
     int socket = -1, i = 0;
     char *msg;
@@ -263,6 +264,20 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         free(msg);
         return(1);
     }
+
+
+    struct stat sb;
+    int sr;
+    sr = stat(fname, &sb);
+    if(sr < 0) {
+        merror("Cannot stat %s: %s", fname, strerror(errno));
+    }
+    if(sb.st_size > 0) {
+        merror("YYY Size is: %lld", sb.st_size);
+    } else {
+        merror("Report is empty");
+        return(0);
+    }
     while (fgets(buffer, 2048, fp) != NULL) {
         if (sendmail) {
             fprintf(sendmail, "%s", buffer);
@@ -270,6 +285,7 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
             OS_SendTCP(socket, buffer);
         }
     }
+    fclose(fp);
 
     if (sendmail) {
         if (pclose(sendmail) == -1) {
