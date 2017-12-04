@@ -1,0 +1,96 @@
+#!/bin/sh
+#
+# ossec-authd  Start the OSSEC-HIDS Authentication Daemon
+#
+# chkconfig: 2345 99 01
+# description: Provides key signing for OSSEC Clients
+# processname: ossec-authd
+# config: /var/ossec/etc/ossec.conf
+# pidfile: /var/run/ossec-authd.pid
+### BEGIN INIT INFO
+# Provides:          ossec-authd
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Authentication Daemon for OSSEC-HIDS.
+# Description:       Provides key signing for OSSEC Clients
+### END INIT INFO
+
+# Author: Brad Lhotsky <brad.lhotsky@gmail.com>
+NAME=ossec-authd
+DAEMON=/var/ossec/bin/ossec-authd
+DAEMON_ARGS="-p 1515 2>&1 >> /var/ossec/logs/ossec-authd.log &"
+PIDDIR=/var/ossec/var/run
+SCRIPTNAME=/etc/init.d/ossec-authd
+
+. /etc/rc.d/init.d/functions
+
+getpid() {
+    for filename in $PIDDIR/${NAME}*.pid; do
+        pidfile=$(basename $filename)
+        pid=$(echo $pidfile |cut -d\- -f 3 |cut -d\. -f 1)
+        kill -0 $pid &> /dev/null
+        RETVAL=$?
+        if [ $RETVAL -eq 0 ]; then
+            PIDFILE=$filename
+            PID=$pid
+        else
+            rm -f $filename
+        fi;
+    done;
+}
+
+start() {
+  echo -n $"Starting $NAME: "
+  daemon $DAEMON $DAEMON_ARGS
+  retval=$?
+  if [ $retval -eq 0 ]; then
+    echo_success
+    echo
+  else
+    echo_failure
+    echo
+  fi
+  return $retval
+}
+
+stop() {
+  echo -n $"Stopping $NAME: "
+  getpid
+  killproc -p $PIDFILE $NAME
+  retval=$?
+  echo
+  return $retval
+}
+
+restart() {
+  stop
+  start
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    getpid
+    if [ -z $PIDFILE ]; then
+        status $NAME
+    else
+        status -p $PIDFILE $NAME
+    fi;
+    ;;
+  restart)
+    restart
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit 2
+    ;;
+esac
+
+exit $?

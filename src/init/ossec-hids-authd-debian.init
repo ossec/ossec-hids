@@ -1,0 +1,60 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          ossec
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Should-Start:      $network
+# Should-Stop:       $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start and stop OSSEC HIDS
+# Description:       Controls OSSEC HIDS daemons
+#
+### END INIT INFO
+ 
+NAME=ossec-authd
+DAEMON=/var/ossec/bin/ossec-authd
+DAEMON_ARGS="-p 1515 >> /var/ossec/logs/ossec-authd.log &"
+PIDFILE=/var/ossec/var/run/ossec-authd.pid
+
+start() {
+  echo -n "Starting $NAME: "
+  start-stop-daemon --start --background --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_ARGS
+  return $?
+}
+
+stop() {
+  echo -n "Stopping $NAME: "
+  start-stop-daemon --stop --pidfile $PIDFILE
+  return $?
+}
+
+status() {
+  start-stop-daemon --status --pidfile $PIDFILE
+}
+
+restart() {
+  stop
+  start
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    status
+    ;;
+  restart)
+    restart
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit 2
+    ;;
+esac
+
+exit $?
