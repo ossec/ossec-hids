@@ -86,9 +86,11 @@ void generate_reports(int cday, int cmon, int cyear, const struct tm *p)
                     merror("%s: WARN: Unable to send report email.", ARGV0);
                 }
                 fclose(mond.reports[s]->r_filter.fp);
+                /*
                 if(unlink(fname) < 0) {
-                    merror("%s: ERROR: CAnnot unlink file %s: %s", ARGV0, fname, strerror(errno));
+                    merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, fname, strerror(errno));
                 }
+                */
 
                 free(mond.reports[s]->r_filter.filename);
                 mond.reports[s]->r_filter.filename = NULL;

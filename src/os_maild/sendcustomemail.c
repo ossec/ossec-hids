@@ -271,6 +271,8 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     sr = stat(fname, &sb);
     if(sr < 0) {
         merror("Cannot stat %s: %s", fname, strerror(errno));
+    } else {
+        merror("YYY size is: %lld", sb.st_size);
     }
     if(sb.st_size > 0) {
         merror("YYY Size is: %lld", sb.st_size);
@@ -279,6 +281,7 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         return(0);
     }
     while (fgets(buffer, 2048, fp) != NULL) {
+        merror("YYY Sending buffer: %s", buffer);
         if (sendmail) {
             fprintf(sendmail, "%s", buffer);
         } else {
