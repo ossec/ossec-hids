@@ -15,7 +15,7 @@ static const char *(monthss[]) = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                  };
 
 
-void generate_reports(int cday, int cmon, int cyear, const struct tm *p)
+void generate_reports(int cday, int cmon, int cyear)
 {
     int s = 0;
 
