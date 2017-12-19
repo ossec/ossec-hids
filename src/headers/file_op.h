@@ -25,7 +25,7 @@ int IsDir(const char *file) __attribute__((nonnull));
 
 int CreatePID(const char *name, int pid) __attribute__((nonnull));
 
-char *GetRandomNoise();
+char *GetRandomNoise(void);
 
 int DeletePID(const char *name) __attribute__((nonnull));
 
