@@ -46,9 +46,8 @@
 #define MAIL_DEBUG(x,y,z) if(MAIL_DEBUG_FLAG) merror(x,y,z)
 
 
-int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, char *fname, const struct tm *p)
+int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, char *fname)
 {
-    merror("YYY OS_SendCustomEmail");
     FILE *sendmail = NULL;
     int socket = -1, i = 0;
     char *msg;
@@ -218,6 +217,10 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
 
     /* Send date */
     memset(snd_msg, '\0', 128);
+    time_t tm;
+    tm = time(NULL);
+    const struct tm *p;
+    p = localtime(&tm);
 
     /* Solaris doesn't have the "%z", so we set the timezone to 0 */
 #ifdef SOLARIS
@@ -256,32 +259,22 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         OS_SendTCP(socket, ENDHEADER);
     }
 
+
+    char fname2[256];
+    fname2[255] = '\0';
+    snprintf(fname2, 255, "/logs/.report-%d.log", getpid());
+
     /* Send body */
     FILE *fp;
-    fp = fopen(fname, "r");
+    fp = fopen(fname2, "r");
     if(!fp) {
-        merror("%s: ERROR: Cannot open %s: %s", __local_name, fname, strerror(errno)); 
+        merror("%s: ERROR: Cannot open %s: %s", __local_name, fname2, strerror(errno)); 
         free(msg);
         return(1);
     }
 
 
-    struct stat sb;
-    int sr;
-    sr = stat(fname, &sb);
-    if(sr < 0) {
-        merror("Cannot stat %s: %s", fname, strerror(errno));
-    } else {
-        merror("YYY size is: %lld", sb.st_size);
-    }
-    if(sb.st_size > 0) {
-        merror("YYY Size is: %lld", sb.st_size);
-    } else {
-        merror("Report is empty");
-        return(0);
-    }
     while (fgets(buffer, 2048, fp) != NULL) {
-        merror("YYY Sending buffer: %s", buffer);
         if (sendmail) {
             fprintf(sendmail, "%s", buffer);
         } else {

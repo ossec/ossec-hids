@@ -32,6 +32,9 @@ endif
 ONEWAY?=no
 CLEANFULL?=no
 
+export MYLDFLAGS= "${LDFLAGS}"
+export MYCFLAGS= "${CFLAGS}"
+
 DEFINES=-DMAX_AGENTS=${MAXAGENTS} -DOSSECHIDS
 DEFINES+=-DDEFAULTDIR=\"${PREFIX}\"
 DEFINES+=-DUSER=\"${OSSEC_USER}\"
@@ -982,7 +985,7 @@ monitor_o := $(monitor_c:.c=.o)
 monitord/%.o: monitord/%.c ${ZLIB_LIB}
 	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-monitord\" -c $< -o $@
 
-ossec-monitord: ${monitor_o} ${ossec_libs} os_maild/sendcustomemail.o ${ZLIB_LIB}
+ossec-monitord: ${monitor_o} ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 
