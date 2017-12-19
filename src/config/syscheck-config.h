@@ -23,6 +23,7 @@
 #define CHECK_SHA1SUM       0000040
 #define CHECK_REALTIME      0000100
 #define CHECK_SEECHANGES    0000200
+#define CHECK_SHA256        0000400
 
 #include <stdio.h>
 
@@ -49,6 +50,9 @@ typedef struct _config {
     int queue;                      /* file descriptor of socket to write to queue */
 
     int *opts;                      /* attributes set in the <directories> tag element */
+
+    char *algorithms;               /* Algorithms to use for FIM */
+    char **alg;
 
     char *remote_db;
     char *db;

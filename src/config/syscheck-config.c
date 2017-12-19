@@ -160,6 +160,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_check_sum = "check_sum";
     const char *xml_check_sha1sum = "check_sha1sum";
     const char *xml_check_md5sum = "check_md5sum";
+    const char *xml_check_sha256sum = "check_sha256sum";
     const char *xml_check_size = "check_size";
     const char *xml_check_owner = "check_owner";
     const char *xml_check_group = "check_group";
@@ -458,6 +459,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     const char *xml_prefilter_cmd = "prefilter_cmd";
     const char *xml_skip_nfs = "skip_nfs";
     const char *xml_nodiff = "nodiff";
+    const char *xml_algorithms = "algorithms";
 
     /* Configuration example
     <directories check_all="yes">/etc,/usr/bin</directories>
@@ -539,6 +541,21 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);
+            }
+        }
+
+        /* Set the algoritms to be used */
+        else if(strcmp(node[i]->element, xml_algorithms) == 0) {
+            char alg[25];
+            strncpy(alg, node[i]->content, 24);
+            char *p, *tokens[3];
+            int i = 0;
+            char *last;
+            for ((p = strtok_r(alg, ",", &last)); p; (p = strtok_r(NULL, ",", &last))) {
+                if(i < 2) {
+                    tokens[i++] = p;
+                }
+                syscheck->alg[i] = p;
             }
         }
 
