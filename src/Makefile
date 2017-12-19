@@ -22,6 +22,7 @@ USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
+USE_LIBSODIUM=no
 
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
@@ -203,6 +204,10 @@ ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	OSSEC_LDFLAGS+=-lGeoIP
 endif # USE_GEOIP
 
+ifneq (,$(filter ${USE_LIBSODIUM},auto yes y Y 1))
+	DEFINES+=-DLIBSODIUM_ENABLED
+	OSSEC_LDFLAGS+=-lsodum
+endif # USE_LIBSODIUM
 
 MI :=
 PI :=
@@ -541,6 +546,7 @@ settings:
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
+	@echo "    USE_LIBSODIUM:    ${USE_LIBSODIUM}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
 	@echo "    libs:             ${ML}"
