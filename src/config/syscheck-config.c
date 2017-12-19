@@ -555,6 +555,12 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                 if(i < 2) {
                     tokens[i++] = p;
                 }
+#ifndef LIBSODIUM_ENABLED
+                if((strncmp(p, "sha256", 6)) == 0) {
+                    merror("sha256 requires libsodium support.");
+                    return(OS_INVALID); // XXX What error here?
+                }
+#endif
                 syscheck->alg[i] = p;
             }
         }
