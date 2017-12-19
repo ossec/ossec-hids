@@ -261,7 +261,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
     }
 
     if (*ip_address == '!') {
-        ip_address++;
+        //ip_address++;
+        os_strdup(in_address+1, ip_address);
     }
 
     /* Use IPv6 here, because it doesn't matter
