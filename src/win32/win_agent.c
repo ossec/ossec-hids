@@ -35,7 +35,7 @@ void send_win32_info(time_t curr_time);
 /* Help message */
 void agent_help()
 {
-    printf("\nOSSEC HIDS %s %s .\n", ARGV0, __version);
+    printf("\n%s %s %s .\n", __ossec_name, ARGV0, __version);
     printf("Available options:\n");
     printf("\t/?                This help message.\n");
     printf("\t-h                This help message.\n");
@@ -434,16 +434,9 @@ int SendMSG(__attribute__((unused)) int queue, const char *message, const char *
     }
 
     /* Send _ssize of crypt_msg */
-    if (agt->protocol == UDP_PROTO) {
-        if (OS_SendUDPbySize(agt->sock, _ssize, crypt_msg) < 0) {
-            merror(SEND_ERROR, ARGV0, "server");
-            sleep(1);
-        }
-    } else {
-        if (OS_SendTCPbySize(agt->sock, _ssize, crypt_msg) < 0) {
-            merror(SEND_ERROR, ARGV0, "server");
-            sleep(1);
-        }
+    if (OS_SendUDPbySize(agt->sock, _ssize, crypt_msg) < 0) {
+        merror(SEND_ERROR, ARGV0, "server");
+        sleep(1);
     }
 
     if (!ReleaseMutex(hMutex)) {
@@ -534,16 +527,9 @@ void send_win32_info(time_t curr_time)
     }
 
     /* Send UDP message */
-    if (agt->protocol == UDP_PROTO) {
-        if (OS_SendUDPbySize(agt->sock, msg_size, crypt_msg) < 0) {
-            merror(SEND_ERROR, ARGV0, "server");
-            sleep(1);
-        }
-    } else {
-        if (OS_SendTCPbySize(agt->sock, msg_size, crypt_msg) < 0) {
-            merror(SEND_ERROR, ARGV0, "server");
-            sleep(1);
-        }
+    if (OS_SendUDPbySize(agt->sock, msg_size, crypt_msg) < 0) {
+        merror(SEND_ERROR, ARGV0, "server");
+        sleep(1);
     }
 
     return;

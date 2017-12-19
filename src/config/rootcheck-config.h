@@ -32,6 +32,10 @@ typedef struct _rkconfig {
     int disabled;
     short skip_nfs;
 
+#ifdef OSSECHIDS
+    unsigned int tsleep;
+#endif /* OSSECHIDS */
+
     int time;
     int queue;
 

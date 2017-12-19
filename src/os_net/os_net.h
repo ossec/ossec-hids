@@ -24,9 +24,15 @@ extern agent *agt;
 typedef unsigned short int sa_family_t;
 #endif /* WIN32 */
 
+
 #ifndef __OS_NET_H
 #define __OS_NET_H
-
+#ifdef _WIN32
+#include <stdint.h>
+typedef uint8_t u_int8_t;
+typedef uint16_t u_int16_t;
+typedef uint32_t u_int32_t;
+#endif
 /* OS_Bindport*
  * Bind a specific port (protocol and a ip).
  * If the IP is not set, it is going to use ADDR_ANY
@@ -46,8 +52,8 @@ int OS_getsocketsize(int ossock);
 /* OS_Connect
  * Connect to a TCP/UDP socket
  */
-int OS_ConnectTCP(const char *_port, const char *_ip);
-int OS_ConnectUDP(const char *_port, const char *_ip);
+int OS_ConnectTCP(char *_port, const char *_ip);
+int OS_ConnectUDP(char *_port, const char *_ip);
 
 /* OS_RecvUDP
  * Receive a UDP packet. Return NULL if failed

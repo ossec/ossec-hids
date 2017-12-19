@@ -36,8 +36,6 @@
 #define OS_HEADER_SIZE  OS_SIZE_128     /* Maximum header size          */
 #define OS_LOG_HEADER   OS_SIZE_256     /* Maximum log header size      */
 #define IPSIZE          INET6_ADDRSTRLEN /* IP Address size             */
-#define POOL_SIZE	512		/* Max number of children */
-#define BACKLOG		SOMAXCONN	/* Socket input queue length 	*/
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
@@ -203,6 +201,8 @@ http://www.ossec.net/main/license/\n"
 #else
 #define KEYS_FILE       "client.keys"
 #define KEYSFILE_PATH   KEYS_FILE
+#define AUTHD_PASS      "authd.pass"
+#define AUTHDPASS_PATH  AUTHD_PASS
 #endif
 
 #ifndef AUTH_FILE

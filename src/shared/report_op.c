@@ -390,7 +390,7 @@ void os_ReportdStart(report_filter *r_filter)
     tm = time(NULL);
     p = localtime(&tm);
 
-    /* Initate file queue - to read the alerts */
+    /* Initiate file queue - to read the alerts */
     os_calloc(1, sizeof(file_queue), fileq);
 
     if (r_filter->report_type == REPORT_TYPE_DAILY && r_filter->filename) {
@@ -522,7 +522,7 @@ void os_ReportdStart(report_filter *r_filter)
                     mgroup++;
                 }
 
-                free(mgroup);
+                //free(mgroup);
             } else {
                 tmp_str = al_data->group;
                 while (*tmp_str == ' ') {

@@ -21,10 +21,8 @@ remoted logr;
 
 
 /* Handle remote connections */
-void HandleRemote(int uid)
+void HandleRemote(int position, int uid)
 {
-    int position = logr.position;
-    
     /* If syslog connection and allowips is not defined, exit */
     if (logr.conn[position] == SYSLOG_CONN) {
         if (logr.allowips == NULL) {
@@ -70,7 +68,7 @@ void HandleRemote(int uid)
 
     /* If secure connection, deal with it */
     if (logr.conn[position] == SECURE_CONN) {
-        HandleSecure(logr.proto[position]);
+        HandleSecure();
     }
 
     else if (logr.proto[position] == IPPROTO_TCP)
@@ -83,3 +81,4 @@ void HandleRemote(int uid)
         HandleSyslog();
     }
 }
+

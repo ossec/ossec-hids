@@ -68,6 +68,11 @@ int OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     }
 
     s = getaddrinfo(_ip, _port, &hints, &result);
+    /* Try to support legacy ipv4 only hosts */
+    if((s == EAI_FAMILY) || (s == EAI_NONAME)) {
+        hints.ai_family = AF_INET;
+        s = getaddrinfo(_ip, _port, &hints, &result);
+    }
     if (s != 0) {
         verbose("getaddrinfo: %s", gai_strerror(s));
         return(OS_INVALID);
@@ -331,13 +336,13 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
 
 
 /* Open a TCP socket */
-int OS_ConnectTCP(const char *_port, const char *_ip)
+int OS_ConnectTCP(char *_port, const char *_ip)
 {
     return (OS_Connect(_port, IPPROTO_TCP, _ip));
 }
 
 /* Open a UDP socket */
-int OS_ConnectUDP(const char *_port, const char *_ip)
+int OS_ConnectUDP(char *_port, const char *_ip)
 {
     return (OS_Connect(_port, IPPROTO_UDP, _ip));
 }

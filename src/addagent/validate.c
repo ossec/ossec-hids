@@ -65,7 +65,10 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
         id = nid;
     }
 
-    fp = fopen(AUTH_FILE, "a");
+    char authentication_file[2048 + 1];
+    snprintf(authentication_file, 2048, "%s%s", DEFAULTDIR, AUTH_FILE);
+
+    fp = fopen(authentication_file, "a");
     if (!fp) {
         return (NULL);
     }
@@ -309,8 +312,9 @@ int OS_IsValidName(const char *u_name)
 
     /* Check if it contains any non-alphanumeric characters */
     for (i = 0; i < uname_length; i++) {
-        if (!isalnum((int)u_name[i]) && (u_name[i] != '-') &&
-                (u_name[i] != '_') && (u_name[i] != '.')) {
+        if ( !( isalnum((int)u_name[i]) || (u_name[i] == '-') ||
+                (u_name[i] == '_') || (u_name[i] == '.') ||
+                (u_name[i] == ':') ) ) {
             return (0);
         }
     }
