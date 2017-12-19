@@ -3,6 +3,48 @@ Release Maintainers
 Dan Parriott
 Scott R. Shinn (Atomicorp, Inc.)
 
+OSSEC changelog (2.9.3) <scott@atomicorp.com>
+
+New Rules / Decoders
+     
+     NSD Rules and Decoders
+     Owncloud Rules and Decoders
+     ProxMox Rules and Decoders
+     PSAD Rules and Decoders
+
+
+Updated Rules / Decoders
+
+     Apache Rules
+     Asterisk Rules 
+     Mailscanner Rules
+     Mysql Rules
+     Nginx Rules
+     OpenBSD Rules
+     Postfix Rules
+     RoundCube Rules
+     Sendmail Rules
+     Syslog Rules
+     WebAppSec Rules
+
+
+General 
+
+     Added authd init scripts for Debian and Redhat/Centos
+     Added Rootcheck CIS Mysql communnity and enterprise auditing
+     Added Rootcheck CIS SSH checks
+     Added Rootcheck CIS SLES 12 checks
+     Update Rootcheck CIS RHEL / CentOS 5 checks
+     Update Rootcheck CIS RHEL / CentOS 6 checks
+     Update Rootcheck CIS RHEL / CentOS 7 checks
+     Update Rootcheck CIS Windows checks
+     Update Rootcheck trojans / malware DB
+     Update Rootcheck Windows application DB 
+     Backported rule unit tests from master
+     PR #915 allows the filename attribute in decoders and active response
+     PR #1275 allow IPv6 addresses in names
+
+
 OSSEC changelog (2.9.2) <scott@atomicorp.com>
 
 New Rules / Decoders (Leo Feyer)
