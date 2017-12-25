@@ -503,6 +503,44 @@ int main(int argc, char **argv)
                     }
                     agentname = fname;
 
+
+                    /* Check for duplicated IP */
+
+                    if (use_ip_address) {
+                        id_exist = IPExist(srcip);
+                        if (id_exist) {
+                            if (force_antiquity >= 0) {
+                                double antiquity = OS_AgentAntiquity(id_exist);
+                                if (antiquity >= force_antiquity || antiquity < 0) {
+                                    /* TODO: Backup info-agent, syscheck and rootcheck */
+                                    	
+					verbose("INFO: Duplicated IP '%s' (%s). Saving backup.", srcip, id_exist);
+					
+					OS_RemoveAgent(id_exist);
+                                } else {
+                                    /* TODO: Send alert */
+                                    merror("%s: ERROR: Duplicated IP %s (another active)", ARGV0, srcip);
+                                    snprintf(response, 2048, "ERROR: Duplicated IP: %s\n\n", srcip);
+                                    SSL_write(ssl, response, strlen(response));
+                                    snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+                                    SSL_write(ssl, response, strlen(response));
+                                    sleep(1);
+                                    exit(0);
+                                }
+
+                            } else {
+                                merror("%s: ERROR: Duplicated IP %s", ARGV0, srcip);
+                                snprintf(response, 2048, "ERROR: Duplicated IP: %s\n\n", srcip);
+                                SSL_write(ssl, response, strlen(response));
+                                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+                                SSL_write(ssl, response, strlen(response));
+                                sleep(1);
+                                exit(0);
+                            }
+                        }
+                    }
+
+
                     /* Add the new agent */
                     if (use_ip_address) {
                         finalkey = OS_AddNewAgent(agentname, srcip, NULL);
