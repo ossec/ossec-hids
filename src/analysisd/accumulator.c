@@ -330,7 +330,12 @@ int acm_str_replace(char **dst, const char *src)
     }
     os_malloc(slen + 1, *dst);
 
-    result = strcpy(*dst, src) == NULL ? -1 : 0;
+    if (strcpy(*dst, src) == NULL) {
+        result = -1;
+    } else {
+        result = 0;
+    }
+    
     if (result < 0) {
         debug1("accumulator: DEBUG: error in acm_str_replace()");
     }
