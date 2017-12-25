@@ -113,7 +113,23 @@ ifdef DEBUGAD
 	DEFINES+=+DDEBUGAD
 endif
 
-OSSEC_CFLAGS=${CFLAGS}
+
+# Flags for hardening the build
+ifeq (${TARGET},test)
+CFLAGS_HARDENING=-fPIC
+else
+CFLAGS_HARDENING=-fPIC -pie
+endif
+CFLAGS_HARDENING+=-Wformat -Wformat-security
+CFLAGS_HARDENING+=-fstack-protector-all -Wstack-protector --param ssp-buffer-size=4
+CFLAGS_HARDENING+=-D_FORTIFY_SOURCE=2
+
+ifneq (${TARGET},winagent)
+CFLAGS_HARDENING+=-Wl,-z,relro,-z,now
+endif
+
+
+OSSEC_CFLAGS=${CFLAGS} ${CFLAGS_HARDENING}
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
@@ -638,13 +654,13 @@ winagent:
 external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
 
 lua:
-	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
+	cd ${EXTERNAL_LUA} && CFLAGS_HARDENING="${CFLAGS_HARDENING}" ${MAKE} ${LUA_PLAT}
 
 ${EXTERNAL_ZLIB}libz.a:
 ifeq (${TARGET},winagent)
 	cd ${EXTERNAL_ZLIB} && cp zconf.h.in zconf.h && ${MAKE} -f win32/Makefile.gcc PREFIX=${MING_BASE} libz.a
 else
-	cd ${EXTERNAL_ZLIB} && ./configure && ${MAKE} libz.a
+	cd ${EXTERNAL_ZLIB} && CFLAGS="${CFLAGS_HARDENING}" ./configure && ${MAKE} libz.a
 endif
 
 #### zlib ##########
