@@ -47,6 +47,7 @@ before_script:
   && ./configure && make all -j && sudo make install
   ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
+- if [[ "${OSSEC_TYPE}" == "server" ]]; then ( sudo apt-get install libsqlite3-dev sqlite3 ); fi
 - if [[ "${OSSEC_TYPE}" == "test" ]]; then ( sudo apt-get update && sudo apt-get install check valgrind ); fi
 
 

@@ -41,6 +41,8 @@
 #include "output/zeromq.h"
 #endif
 
+#include "syscheck-sqlite.h"
+
 /** Prototypes **/
 void OS_ReadMSG(int m_queue);
 RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node);
@@ -652,6 +654,17 @@ void OS_ReadMSG_analysisd(int m_queue)
         }
 
         Free_Eventinfo(lf);
+    }
+
+    /* Open the sqlite db */
+    extern sqlite3 *conn;
+    int s_error = 0;
+    if (Config.md5_whitelist) {
+        debug2("Opening md5_whitelist: %s", Config.md5_whitelist);
+        if((s_error = sqlite3_open(Config.md5_whitelist, &conn))) {
+            merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5_whitelist);
+        }
+
     }
 
     debug1("%s: DEBUG: Startup completed. Waiting for new messages..", ARGV0);
