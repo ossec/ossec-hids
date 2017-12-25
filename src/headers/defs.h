@@ -18,6 +18,9 @@
 #define READ    1
 #define WRITE   2
 
+#define OS_BINARY   0
+#define OS_TEXT     1
+
 /* Size limit control */
 #define OS_SIZE_8192    8192
 #define OS_SIZE_6144    6144
@@ -36,7 +39,7 @@
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
-#define __version       "v2.8"
+#define __version       "v2.9.0"
 #define __author        "Trend Micro Inc."
 #define __contact       "contact@ossec.net"
 #define __site          "http://www.ossec.net"
@@ -56,6 +59,11 @@ http://www.ossec.net/main/license/\n"
 /* Limit of 256 agents */
 #ifndef MAX_AGENTS
 #define MAX_AGENTS  256
+#endif
+
+/* First ID assigned by authd */
+#ifndef AUTHD_FIRST_ID
+#define AUTHD_FIRST_ID  1024
 #endif
 
 /* Notify the manager */
@@ -187,10 +195,14 @@ http://www.ossec.net/main/license/\n"
 /* Authentication keys file */
 #ifndef WIN32
 #define KEYS_FILE       "/etc/client.keys"
+#define AUTHD_PASS      "/etc/authd.pass"
 #define KEYSFILE_PATH   DEFAULTDIR KEYS_FILE
+#define AUTHDPASS_PATH  DEFAULTDIR AUTHD_PASS
 #else
 #define KEYS_FILE       "client.keys"
 #define KEYSFILE_PATH   KEYS_FILE
+#define AUTHD_PASS      "authd.pass"
+#define AUTHDPASS_PATH  AUTHD_PASS
 #endif
 
 #ifndef AUTH_FILE
@@ -302,4 +314,3 @@ http://www.ossec.net/main/license/\n"
 #endif
 
 #endif /* __OS_HEADERS */
-

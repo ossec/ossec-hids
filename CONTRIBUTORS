@@ -1,20 +1,20 @@
-OSSEC v2.8
-Copyright (C) 2014 Trend Micro Inc.
+OSSEC v2.9.0
+Copyright (C) 2017 Trend Micro Inc.
 
 Many thanks to everyone who contributed and helped with
 the ossec project. Below is the list of all the people
 who helped us since our first release (0.1).
-(if you feel you should be here, but it is not, let us know).
+(if you feel you should be here, but it is not, let scott@atomicorp.com know).
 
 -Development
   - Daniel B. Cid <dcid@ossec.net>
+  - Dan Parriott <ddpbsd@gmail.com>
   - Jeremy Rossi <jeremy@jeremyrossi.com>
   - Michael Starks
-  - Dan Parriott <ddpbsd@gmail.com>
   - Meir Michanie <meirgotroot@gmail.com>
   - Slava Semushin <php-coder@altlinux.org>
   - Ahmet Ozturk <oahmet@metu.edu.tr>
-  - Scott R. Shinn
+  - Scott R. Shinn <scott@atomicorp.com
   - George Kargiotakis
   - Jason Stelzer
   - Xavier Mertens

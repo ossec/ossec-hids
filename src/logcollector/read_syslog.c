@@ -28,10 +28,14 @@ void *read_syslog(int pos, int *rc, int drop_it)
     fgetpos(logff[pos].fp, &fp_pos);
 
     while (fgets(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
-        /* Get the last occurence of \n */
+        /* Get the last occurrence of \n */
         if ((p = strrchr(str, '\n')) != NULL) {
             *p = '\0';
-        }
+         /* From issue #913 @ybonnamy */
+         } else if((p = strchr(str, '\0')) != NULL) {
+             /* Replace NUL with a space */
+             *p = ' ';
+         }
 
         /* If we didn't get the new line, because the
          * size is large, send what we got so far.
@@ -87,7 +91,7 @@ void *read_syslog(int pos, int *rc, int drop_it)
             snprintf(buf, OUTSIZE, "%s", str);
             merror("%s: Large message size(length=%d): '%s...'", ARGV0, (int)strlen(str), buf);
             while (fgets(str, OS_MAXSTR - 2, logff[pos].fp) != NULL) {
-                /* Get the last occurence of \n */
+                /* Get the last occurrence of \n */
                 if (strrchr(str, '\n') != NULL) {
                     break;
                 }

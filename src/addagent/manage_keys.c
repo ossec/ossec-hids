@@ -183,13 +183,14 @@ int k_import(const char *cmdimport)
 int k_extract(const char *cmdextract)
 {
     FILE *fp;
-    const char *user_input;
+    char *user_input;
     char *b64_enc;
     char line_read[FILE_SIZE + 1];
     char n_id[USER_SIZE + 1];
 
     if (cmdextract) {
-        user_input = cmdextract;
+        user_input = strdup(cmdextract);
+        FormatID(user_input);
 
         if (!IDExist(user_input)) {
             printf(NO_ID, user_input);
@@ -203,7 +204,7 @@ int k_extract(const char *cmdextract)
             return (0);
         }
 
-        do {
+        while (1) {
             printf(EXTRACT_KEY);
             fflush(stdout);
             user_input = read_from_user();
@@ -213,17 +214,30 @@ int k_extract(const char *cmdextract)
                 return (0);
             }
 
-            if (!IDExist(user_input)) {
+            FormatID(user_input);
+
+            if (IDExist(user_input)) {
+                break;
+            } else {
                 printf(NO_ID, user_input);
             }
 
-        } while (!IDExist(user_input));
+        }
     }
 
     /* Try to open the auth file */
-    fp = fopen(AUTH_FILE, "r");
+    char authfile[257];
+    extern int willchroot;
+    if(willchroot > 0) {
+        snprintf(authfile, 256, "%s", AUTH_FILE);       //XXX
+    } else {
+        const char *dir = DEFAULTDIR;
+        snprintf(authfile, 256, "%s/%s", dir, AUTH_FILE);       //XXX
+    }
+
+    fp = fopen(authfile, "r");
     if (!fp) {
-        ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+        ErrorExit(FOPEN_ERROR, ARGV0, authfile, errno, strerror(errno));
     }
 
     if (fsetpos(fp, &fp_pos)) {
@@ -286,9 +300,17 @@ int k_bulkload(const char *cmdbulk)
     }
 
     /* Check if we can open the auth_file */
-    fp = fopen(AUTH_FILE, "a");
+    char authfile[257];
+    if(willchroot > 0) {
+        snprintf(authfile, 256, "%s", AUTH_FILE);       //XXX
+    } else {
+        const char *dir = DEFAULTDIR;
+        snprintf(authfile, 256, "%s/%s", dir, AUTH_FILE);       //XXX
+    }
+
+    fp = fopen(authfile, "a");
     if (!fp) {
-        ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+        ErrorExit(FOPEN_ERROR, ARGV0, authfile, errno, strerror(errno));
     }
     fclose(fp);
 
@@ -309,8 +331,8 @@ int k_bulkload(const char *cmdbulk)
         strncpy(name, trimwhitespace(token), FILE_SIZE - 1);
 
 #ifndef WIN32
-        if (chmod(AUTH_FILE, 0440) == -1) {
-            ErrorExit(CHMOD_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+        if (chmod(authfile, 0440) == -1) {
+            ErrorExit(CHMOD_ERROR, ARGV0, authfile, errno, strerror(errno));
         }
 #endif
 
@@ -373,13 +395,13 @@ int k_bulkload(const char *cmdbulk)
         time3 = time(0);
         rand2 = random();
 
-        fp = fopen(AUTH_FILE, "a");
+        fp = fopen(authfile, "a");
         if (!fp) {
             ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE, errno, strerror(errno));
         }
 #ifndef WIN32
-        if (chmod(AUTH_FILE, 0440) == -1) {
-            ErrorExit(CHMOD_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+        if (chmod(authfile, 0440) == -1) {
+            ErrorExit(CHMOD_ERROR, ARGV0, authfile, errno, strerror(errno));
         }
 #endif
 
@@ -413,4 +435,3 @@ cleanup:
     fclose(infp);
     return (0);
 }
-

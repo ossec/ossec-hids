@@ -151,7 +151,7 @@ static int OS_DBSearchKeyValue(ListRule *lrule, char *key)
         if (cdb_find(&lrule->db->cdb, key, strlen(key)) > 0 ) {
             vpos = cdb_datapos(&lrule->db->cdb);
             vlen = cdb_datalen(&lrule->db->cdb);
-             val = (char *) calloc(vlen + 1, sizeof(char));
+            val = (char *) calloc(vlen + 1, sizeof(char));
             if(val == NULL) {
                 merror("%s: malloc failed: %s", ARGV0, strerror(errno));
                 return(0);
@@ -302,4 +302,3 @@ int OS_DBSearch(ListRule *lrule, char *key)
             return 0;
     }
 }
-

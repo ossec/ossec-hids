@@ -41,6 +41,9 @@ int delete_agentinfo(const char *name) __attribute__((nonnull));
 /* Get all available agents */
 char **get_agents(int flag);
 
+/* Get all available agents with specified timeout */
+char **get_agents_with_timeout(int flag, int timeout);
+
 /* Free the agent list */
 void free_agents(char **agent_list);
 
@@ -58,6 +61,14 @@ agent_info *get_agent_info(const char *agent_name, const char *agent_ip) __attri
  */
 int connect_to_remoted(void);
 
+#ifndef WIN32
+/* Return the unix permission string based on the syscheck db perm string
+ * agentless logs octal permissions, local syscheck decimal st_mode
+ * Returns a pointer to a local static array
+ */
+const char *agent_file_perm(char *perm);
+#endif
+
 /* Sends a message to an agent
  * Returns -1 on error
  */
@@ -74,4 +85,3 @@ int send_msg_to_agent(int msocket, const char *msg, const char *agt_id, const ch
 #define GA_STATUS_INV       14
 
 #endif
-

@@ -12,6 +12,7 @@
 # New function AddTable to add support for OpenBSD pf rules in firewall-drop active response
 
 # Changelog 29 March 2012 - Adding hybrid mode (standalone + agent)
+# added fix for use of USER_AGENT_CONFIG_PROFILE in preloaded-vars
 
 
 
@@ -23,8 +24,7 @@ cd `dirname $0`
 ECHO="echo -n"
 hs=`echo -n "a"`
 if [ ! "X$hs" = "Xa" ]; then
-    ls "/usr/ucb/echo" > /dev/null 2>&1
-    if [ $? = 0 ]; then
+    if [ -x /usr/ucb/echo ]; then
         ECHO="/usr/ucb/echo -n"
     else
         ECHO=echo
@@ -34,8 +34,7 @@ fi
 # For solaris
 echo "xxxx" | grep -E "xxx" > /dev/null 2>&1
 if [ ! $? = 0 ]; then
-    ls "/usr/xpg4/bin/grep" > /dev/null 2>&1
-    if [ $? = 0 ]; then
+    if [ -x /usr/xpg4/bin/grep ]; then
         PATH=/usr/xpg4/bin:$PATH
     fi
 fi
@@ -269,8 +268,7 @@ SetupLogs()
     LOG_FILES=`cat ${SYSLOG_TEMPLATE}`
     for i in ${LOG_FILES}; do
         # If log file present, add it
-        ls $i > /dev/null 2>&1
-        if [ $? = 0 ]; then
+        if [ -f "$i" ]; then
             echo "    -- $i"
             echo "" >> $NEWCONFIG
             echo "  <localfile>" >> $NEWCONFIG
@@ -284,8 +282,7 @@ SetupLogs()
     # Getting snort files
     SNORT_FILES=`cat ${SNORT_TEMPLATE}`
     for i in ${SNORT_FILES}; do
-        ls $i > /dev/null 2>&1
-        if [ $? = 0 ]; then
+        if [ -f "$i" ]; then
             echo "" >> $NEWCONFIG
             echo "  <localfile>" >> $NEWCONFIG
 
@@ -305,8 +302,7 @@ SetupLogs()
     # Getting apache logs
     APACHE_FILES=`cat ${APACHE_TEMPLATE}`
     for i in ${APACHE_FILES}; do
-        ls $i > /dev/null 2>&1
-        if [ $? = 0 ]; then
+        if [ -f "$i" ]; then
           echo "" >> $NEWCONFIG
           echo "  <localfile>" >> $NEWCONFIG
           echo "    <log_format>apache</log_format>" >> $NEWCONFIG
@@ -320,8 +316,7 @@ SetupLogs()
     # Getting postgresql logs
     PGSQL_FILES=`cat ${PGSQL_TEMPLATE}`
     for i in ${PGSQL_FILES}; do
-        ls $i > /dev/null 2>&1
-        if [ $? = 0 ]; then
+        if [ -f "$i" ]; then
           echo "" >> $NEWCONFIG
           echo "  <localfile>" >> $NEWCONFIG
           echo "    <log_format>postgresql_log</log_format>" >> $NEWCONFIG
@@ -336,7 +331,7 @@ SetupLogs()
       echo "" >> $NEWCONFIG
       echo "  <localfile>" >> $NEWCONFIG
       echo "    <log_format>command</log_format>" >> $NEWCONFIG
-      echo "    <command>df -h</command>" >> $NEWCONFIG
+      echo "    <command>df -P</command>" >> $NEWCONFIG
       echo "  </localfile>" >> $NEWCONFIG
       echo "" >> $NEWCONFIG
       echo "  <localfile>" >> $NEWCONFIG
@@ -406,6 +401,10 @@ ConfigureClient()
         echo "    <server-ip>$IP</server-ip>" >> $NEWCONFIG
     elif [ "X${HNAME}" != "X" ]; then
         echo "    <server-hostname>$HNAME</server-hostname>" >> $NEWCONFIG
+    fi
+    if [ "$X{USER_AGENT_CONFIG_PROFILE}" != "X" ]; then      
+         PROFILE=${USER_AGENT_CONFIG_PROFILE}
+         echo "    <config-profile>$PROFILE</config-profile>" >> $NEWCONFIG
     fi
     echo "  </client>" >> $NEWCONFIG
     echo "" >> $NEWCONFIG
@@ -492,8 +491,7 @@ ConfigureServer()
                 EMAIL=${USER_EMAIL_ADDRESS}
             fi
 
-            ls ${HOST_CMD} > /dev/null 2>&1
-            if [ $? = 0 ]; then
+            if [ -x "$HOST_CMD" ]; then
               HOSTTMP=`${HOST_CMD} -W 5 -t mx ossec.net 2>/dev/null`
               if [ $? = 1 ]; then
                  # Trying without the -W
@@ -778,8 +776,7 @@ setEnv()
         CEXTRA="$CEXTRA -DLOCAL"
     fi
 
-    ls $INSTALLDIR >/dev/null 2>&1
-    if [ $? = 0 ]; then
+    if [ -d "$INSTALLDIR" ]; then
         if [ "X${USER_DELETE_DIR}" = "X" ]; then
             echo ""
             $ECHO "    - ${deletedir} ($yes/$no) [$yes]: "
@@ -933,8 +930,7 @@ main()
             USER_LG="en"
         fi
 
-        ls "${TEMPLATE}/${USER_LG}" > /dev/null 2>&1
-        if [ $? = 0 ]; then
+        if [ -d "${TEMPLATE}/${USER_LG}" ]; then
             break;
         fi
         done;
@@ -944,8 +940,7 @@ main()
     else
 
         # If provided language is not valid, default to english
-        ls "${TEMPLATE}/${USER_LANGUAGE}" > /dev/null 2>&1
-        if [ $? = 0 ]; then
+        if [ -d "${TEMPLATE}/${USER_LANGUAGE}" ]; then
             LANGUAGE=${USER_LANGUAGE}
         else
             LANGUAGE="en"

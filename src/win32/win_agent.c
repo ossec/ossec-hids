@@ -35,7 +35,7 @@ void send_win32_info(time_t curr_time);
 /* Help message */
 void agent_help()
 {
-    printf("\nOSSEC HIDS %s %s .\n", ARGV0, __version);
+    printf("\n%s %s %s .\n", __ossec_name, ARGV0, __version);
     printf("Available options:\n");
     printf("\t/?                This help message.\n");
     printf("\t-h                This help message.\n");
@@ -140,6 +140,8 @@ int local_start()
     }
     accept_manager_commands = getDefine_Int("logcollector",
                                             "remote_commands", 0, 1);
+    loop_timeout = getDefine_Int("logcollector",  "loop_timeout", 1, 120);
+    open_file_attempts = getDefine_Int("logcollector", "open_attempts", 2, 998);
 
     /* Configuration file not present */
     if (File_DateofChange(cfg) < 0) {
@@ -505,7 +507,7 @@ void send_win32_info(time_t curr_time)
     /* Create message */
     if (File_DateofChange(AGENTCONFIGINT) > 0) {
         os_md5 md5sum;
-        if (OS_MD5_File(AGENTCONFIGINT, md5sum) != 0) {
+        if (OS_MD5_File(AGENTCONFIGINT, md5sum, OS_TEXT) != 0) {
             snprintf(tmp_msg, OS_SIZE_1024, "#!-%s\n%s", __win32_uname, __win32_shared);
         } else {
             snprintf(tmp_msg, OS_SIZE_1024, "#!-%s / %s\n%s", __win32_uname, md5sum, __win32_shared);

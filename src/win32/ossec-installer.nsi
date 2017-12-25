@@ -25,7 +25,7 @@
 ; general
 !define MUI_ICON favicon.ico
 !define MUI_UNICON ossec-uninstall.ico
-!define VERSION "2.8"
+!define VERSION "2.9.0"
 !define NAME "OSSEC HIDS"
 !define SERVICE "OssecSvc"
 
@@ -150,6 +150,7 @@ Section "OSSEC Agent (required)" MainSec
     File ossec-luac.exe
     File ossec-agent.exe
     File ossec-agent-eventchannel.exe
+    File agent-auth.exe
     File default-ossec.conf
     File manage_agents.exe
     File /oname=win32ui.exe os_win32ui.exe

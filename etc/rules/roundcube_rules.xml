@@ -12,25 +12,32 @@
   -  License details: http://www.ossec.net/en/licensing.html
   -->
 
-<group name="syslog,roundcube,"> 
+<group name="syslog,roundcube,">
   <rule id="9400" level="0">
     <decoded_as>roundcube</decoded_as>
-    <description>Roundcube messages groupe.d</description>
+    <description>Roundcube messages grouped.</description>
   </rule>
-   
-  <rule id="9401" level="5">
+
+  <rule id="9401" level="6">
     <if_sid>9400</if_sid>
-    <match>failed (LOGIN)</match>
+    <match>failed (LOGIN)| Login failed | Authentication failed| Failed login </match>
     <description>Roundcube authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
-       
+
   <rule id="9402" level="3">
     <if_sid>9400</if_sid>
     <match>Successful login</match>
     <description>Roundcube authentication succeeded.</description>
     <group>authentication_success,</group>
-  </rule> 
+  </rule>
+
+  <rule id="9403" level="10" frequency="6" timeframe="120">
+    <if_matched_sid>9401</if_matched_sid>
+    <same_source_ip />
+    <description>Roundcube brute force (multiple failed logins).</description>
+    <group>authentication_failures,</group>
+  </rule>
 </group>
   
 

@@ -145,7 +145,7 @@ int realtime_adddir(const char *dir)
                                REALTIME_MONITOR_FLAGS);
         if (wd < 0) {
             merror("%s: ERROR: Unable to add directory to real time "
-                   "monitoring: '%s'. %d %d", ARGV0, dir, wd, errno);
+                   "monitoring: '%s'. %d %s", ARGV0, dir, wd, strerror(errno));
         } else {
             char wdchar[32 + 1];
             wdchar[32] = '\0';
@@ -385,7 +385,7 @@ int realtime_adddir(const char *dir)
 
 int realtime_start()
 {
-    verbose("%s: ERROR: Unable to initalize real time file monitoring.", ARGV0);
+    verbose("%s: ERROR: Unable to initialize real time file monitoring.", ARGV0);
 
     return (0);
 }

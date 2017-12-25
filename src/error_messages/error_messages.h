@@ -14,7 +14,7 @@
 
 /* SYSTEM ERRORS */
 #define FORK_ERROR    "%s(1101): ERROR: Could not fork due to [(%d)-(%s)]."
-#define MEM_ERROR     "%s(1102): ERROR: Could not aquire memory due to [(%d)-(%s)]."
+#define MEM_ERROR     "%s(1102): ERROR: Could not acquire memory due to [(%d)-(%s)]."
 #define FOPEN_ERROR   "%s(1103): ERROR: Could not open file '%s' due to [(%d)-(%s)]."
 #define SIZE_ERROR    "%s(1104): ERROR: Maximum string size reached for: %s."
 #define NULL_ERROR    "%s(1105): ERROR: Attempted to use null string. "
@@ -63,7 +63,7 @@
 #define MSG_ERROR       "%s(1214): WARN: Problem receiving message from '%s'."
 #define CLIENT_ERROR    "%s(1215): ERROR: No client configured. Exiting."
 #define CONNS_ERROR     "%s(1216): ERROR: Unable to connect to '%s'."
-#define UNABLE_CONN     "%s(1242): ERROR: Unable to connect to server. Exausted all options."
+#define UNABLE_CONN     "%s(1242): ERROR: Unable to connect to server. Exhausted all options."
 #define SEC_ERROR       "%s(1217): ERROR: Error creating encrypted message."
 #define SEND_ERROR      "%s(1218): ERROR: Unable to send message to '%s'."
 #define RULESLOAD_ERROR "%s(1219): ERROR: Unable to access the rules directory."
@@ -111,7 +111,8 @@
 #define SK_INV_MSG      "%s(1755): ERROR: Invalid syscheck message received."
 #define SK_DUP          "%s(1756): ERROR: Duplicated directory given: '%s'."
 #define SK_INV_REG      "%s(1757): ERROR: Invalid syscheck registry entry: '%s'."
-#define SK_REG_OPEN     "%s(1758): ERROR: Unable to open registry key: '%s'."
+#define SK_REG_OPEN     "%s(1758): ERROR: Unable to open registry key using 32 bit registry: '%s'."
+#define SK_REG_OPEN64   "%s(1759): ERROR: Unable to open registry key using 64 bit registry: '%s'."
 
 /* analysisd */
 #define FTS_LIST_ERROR   "%s(1260): ERROR: Error initiating FTS list"

@@ -110,4 +110,14 @@
     <if_matched_sid>4513</if_matched_sid>
     <description>Multiple Netscreen alert messages.</description>
   </rule>
+
+  <rule id="4560" level="3">
+    <if_sid>4500</if_sid>
+    <match>SYN flood! </match>
+    <description>netscreen detected a SYN flood.</description>
+  </rule>
+
+
+
 </group> <!-- SYSLOG,NETSCREENFW -->
+

@@ -153,6 +153,20 @@ int OS_IPFound(const char *ip_address, const os_ip *that_ip)
     int _true = 1;
     os_ip temp_ip;
 
+    /* If negate is set */
+    char *ip = that_ip->ip;
+    if (ip[0] == '!') {
+        ip++;
+        _true = 0;
+    }
+
+    /* The simplest case is the 'any' case.
+     *  We just return true
+     */
+    if( strcmp(ip, "any") == 0 ) {
+        return _true;
+    }
+
     memset(&temp_ip, 0, sizeof(struct _os_ip));
 
     /* Extract IP address */
@@ -160,13 +174,9 @@ int OS_IPFound(const char *ip_address, const os_ip *that_ip)
         return (!_true);
     }
 
-    /* If negate is set */
-    if (that_ip->ip[0] == '!') {
-        _true = 0;
-    }
 
     /* Check if IP is in thatip & netmask */
-    if (sacmp((struct sockaddr *) &temp_ip.ss, 
+    if (sacmp((struct sockaddr *) &temp_ip.ss,
               (struct sockaddr *) &that_ip->ss,
               that_ip->prefixlength)) {
         return (_true);
@@ -195,12 +205,24 @@ int OS_IPFoundList(const char *ip_address, os_ip **list_of_ips)
     while (*list_of_ips) {
         os_ip *l_ip = *list_of_ips;
 
-        if (l_ip->ip[0] == '!') {
+        char *ip = l_ip->ip;
+        if (ip[0] == '!') {
+            ip++;
             _true = 0;
+        }
+        else {
+            _true = 1;
+        }
+
+        /* Simplest case, if the list contains an any
+         * ip, we return true.
+         */
+        if( strcmp(ip,"any" ) == 0 ) {
+            return _true;
         }
 
         /* Checking if ip is in thatip & netmask */
-        if (sacmp((struct sockaddr *) &temp_ip.ss, 
+        if (sacmp((struct sockaddr *) &temp_ip.ss,
                   (struct sockaddr *) &l_ip->ss,
                   l_ip->prefixlength)) {
             return (_true);
@@ -216,28 +238,40 @@ int OS_IPFoundList(const char *ip_address, os_ip **list_of_ips)
  * Returns 0 if doesn't match or 1 if it is an IP or 2 an IP with CIDR.
  * WARNING: On success this function may modify the value of ip_address
  */
-int OS_IsValidIP(const char *ip_address, os_ip *final_ip)
+int OS_IsValidIP(const char *in_address, os_ip *final_ip)
 {
     char *tmp_str;
     int cidr = -1, prefixlength;
     struct addrinfo hints, *result;
+    char *ip_address = NULL;
 
     /* Can't be null */
-    if (!ip_address) {
+    if (!in_address) {
         return (0);
     }
 
-    /* Assign the IP address */
+    /* We mess with in_address later and we set 'const'
+     *  in the signature, so we need to copy it
+     *  here.
+     */
+    os_strdup(in_address, ip_address);
+
     if (final_ip) {
         os_strdup(ip_address, final_ip->ip);
     }
 
     if (*ip_address == '!') {
-        ip_address++;
+        //ip_address++;
+        os_strdup(in_address+1, ip_address);
     }
 
+    /* Use IPv6 here, because it doesn't matter
+     * OS_IPFound and OS_IPFoundList will
+     * return true if the os_ip.ip element is 'any'
+     */
     if(strcmp(ip_address, "any") == 0) {
-        strcpy((char *) ip_address, "::/0");   
+        //strcpy(ip_address, "::/0");
+	os_strdup("::/0", ip_address);
     }
 
     /* Getting the cidr/netmask if available */
@@ -250,6 +284,7 @@ int OS_IsValidIP(const char *ip_address, os_ip *final_ip)
         if(strlen(tmp_str) <= 3) {
             cidr = atoi(tmp_str);
         } else {
+            free(ip_address);
             return(0);
         }
     }
@@ -258,6 +293,7 @@ int OS_IsValidIP(const char *ip_address, os_ip *final_ip)
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_flags = AI_NUMERICHOST;
     if (getaddrinfo(ip_address, NULL, &hints, &result) != 0) {
+        free(ip_address);
         return(0);
     }
 
@@ -271,6 +307,7 @@ int OS_IsValidIP(const char *ip_address, os_ip *final_ip)
             prefixlength = 32;
             break;
         }
+        free(ip_address);
         return(0);
     case AF_INET6:
         if (cidr >=0 && cidr <= 128) {
@@ -280,8 +317,10 @@ int OS_IsValidIP(const char *ip_address, os_ip *final_ip)
             prefixlength = 128;
             break;
         }
+        free(ip_address);
         return(0);
-    default:  
+    default:
+        free(ip_address);
         return(0);
     }
 
@@ -291,6 +330,8 @@ int OS_IsValidIP(const char *ip_address, os_ip *final_ip)
     }
 
     freeaddrinfo(result);
+
+    free(ip_address);
     return((cidr >= 0) ? 2 : 1);
 }
 
@@ -304,6 +345,12 @@ int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
     int i, realaf1, realaf2;
     div_t ip_div;
     char *addr1, *addr2, modbits;
+
+    // If we have no prefixlength just return a match
+    //   * This handles the "any" case
+    if (!prefixlength) {
+        return _true;
+    }
 
     switch (sa1->sa_family)
     {

@@ -97,7 +97,7 @@ void start_daemon()
 
     /* SCHED_BATCH forces the kernel to assume this is a cpu intensive
      * process and gives it a lower priority. This keeps ossec-syscheckd
-     * from reducing the interactity of an ssh session when checksumming
+     * from reducing the interactivity of an ssh session when checksumming
      * large files. This is available in kernel flavors >= 2.6.16.
      */
 #ifdef SCHED_BATCH
@@ -372,7 +372,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     {
         if (sha1sum || md5sum) {
             /* Generate checksums of the file */
-            if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0) {
+            if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                 strncpy(sf_sum, "xxx", 4);
                 strncpy(mf_sum, "xxx", 4);
             }
@@ -386,7 +386,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             if (S_ISREG(statbuf_lnk.st_mode)) {
                 if (sha1sum || md5sum) {
                     /* Generate checksums of the file */
-                    if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum) < 0) {
+                    if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                         strncpy(sf_sum, "xxx", 4);
                         strncpy(mf_sum, "xxx", 4);
                     }

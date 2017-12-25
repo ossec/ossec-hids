@@ -9,14 +9,13 @@
 
 #include "shared.h"
 #include "monitord.h"
-#include "os_maild/maild.h"
 
 static const char *(monthss[]) = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
                                  };
 
 
-void generate_reports(int cday, int cmon, int cyear, const struct tm *p)
+void generate_reports(int cday, int cmon, int cyear)
 {
     int s = 0;
 
@@ -67,20 +66,35 @@ void generate_reports(int cday, int cmon, int cyear, const struct tm *p)
                 os_ReportdStart(&mond.reports[s]->r_filter);
                 fflush(mond.reports[s]->r_filter.fp);
 
-                if (ftell(mond.reports[s]->r_filter.fp) < 10) {
+                time_t tm;
+                tm = time(NULL);
+                const struct tm *p2;
+                p2 = localtime(&tm);
+
+                fclose(mond.reports[s]->r_filter.fp);
+
+                struct stat sb;
+                int sr;
+                if((sr = stat(fname, &sb)) < 0) {
+                    merror("Cannot stat %s: %s", fname, strerror(errno));
+                }
+
+                if (sb.st_size == 0) {
                     merror("%s: INFO: Report '%s' empty.", ARGV0, mond.reports[s]->title);
-                } else if (OS_SendCustomEmail(mond.reports[s]->emailto,
+                } else if (OS_SendCustomEmail2(mond.reports[s]->emailto,
                                               mond.reports[s]->title,
                                               mond.smtpserver,
                                               mond.emailfrom,
                                               mond.emailidsname,
-                                              mond.reports[s]->r_filter.fp,
-                                              p)
+                                              fname)
                            != 0) {
                     merror("%s: WARN: Unable to send report email.", ARGV0);
                 }
-                fclose(mond.reports[s]->r_filter.fp);
-                unlink(fname);
+
+                if(unlink(fname) < 0) {
+                    merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, fname, strerror(errno));
+                }
+
                 free(mond.reports[s]->r_filter.filename);
                 mond.reports[s]->r_filter.filename = NULL;
 
