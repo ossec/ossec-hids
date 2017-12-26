@@ -49,6 +49,8 @@ typedef struct _keystore {
 /* Check if the authentication keys are present */
 int OS_CheckKeys(void);
 
+void OS_PassEmptyKeyfile(void);
+
 /* Read the keys */
 void OS_ReadKeys(keystore *keys) __attribute((nonnull));
 
