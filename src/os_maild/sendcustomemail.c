@@ -48,7 +48,6 @@
 
 int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, char *fname, const struct tm *p)
 {
-    merror("YYY OS_SendCustomEmail");
     FILE *sendmail = NULL;
     int socket = -1, i = 0;
     char *msg;
@@ -270,17 +269,12 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     sr = stat(fname, &sb);
     if(sr < 0) {
         merror("Cannot stat %s: %s", fname, strerror(errno));
-    } else {
-        merror("YYY size is: %ld", sb.st_size);
     }
-    if(sb.st_size > 0) {
-        merror("YYY Size is: %ld", sb.st_size);
-    } else {
+    if(sb.st_size == 0) {
         merror("Report is empty");
         return(0);
     }
     while (fgets(buffer, 2048, fp) != NULL) {
-        merror("YYY Sending buffer: %s", buffer);
         if (sendmail) {
             fprintf(sendmail, "%s", buffer);
         } else {
