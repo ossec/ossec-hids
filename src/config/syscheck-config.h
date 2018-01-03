@@ -24,10 +24,6 @@
 #define CHECK_REALTIME      0000100
 #define CHECK_SEECHANGES    0000200
 
-/* syscheck db options */
-#define SYSCHECK_LEGACY    1
-#define SYSCHECK_SQLITE    2
-
 #include <stdio.h>
 
 #include "os_regex/os_regex.h"
