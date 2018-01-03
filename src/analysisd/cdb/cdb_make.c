@@ -77,14 +77,14 @@ int cdb_make_addbegin(struct cdb_make *c, unsigned int keylen, unsigned int data
 {
     char buf[8];
 
-    if (keylen > 0xffffffff) {
+    /*if (keylen > 0xffffffff) {
         errno = ENOMEM;
         return -1;
     }
     if (datalen > 0xffffffff) {
         errno = ENOMEM;
         return -1;
-    }
+    }*/
 
     uint32_pack(buf, keylen);
     uint32_pack(buf + 4, datalen);

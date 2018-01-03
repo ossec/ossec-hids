@@ -66,11 +66,6 @@ void generate_reports(int cday, int cmon, int cyear)
                 os_ReportdStart(&mond.reports[s]->r_filter);
                 fflush(mond.reports[s]->r_filter.fp);
 
-                time_t tm;
-                tm = time(NULL);
-                const struct tm *p2;
-                p2 = localtime(&tm);
-
                 fclose(mond.reports[s]->r_filter.fp);
 
                 struct stat sb;
