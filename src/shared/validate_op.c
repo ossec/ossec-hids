@@ -402,7 +402,7 @@ int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
         }
     }
     if (ip_div.rem) {
-        modbits = ((char) ~0) << (8 - ip_div.rem);
+        modbits = ((unsigned char) ~0) << (8 - ip_div.rem);
         if ( (addr1[i] & modbits) != (addr2[i] & modbits) ) {
             return(!_true);
         }
