@@ -505,14 +505,16 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 
         /* syscheck database selection */
         else if(strncmp(node[i]->element, xml_db_type, 13) == 0)  {
-            if(strncmp(node[i]->content, "legacy", 6) == 0) {
-                Config->syscheck_database_type = SYSCHECK_LEGACY;
-            } else if(strncmp(node[i]->content, "sqlite", 6) == 0) {
-                merror("WARN: The sqlite syscheck database is very experimental, use at your own risk!");
-                Config->syscheck_database_type = SYSCHECK_SQLITE;
-            } else {
-                Config->syscheck_database_type = SYSCHECK_LEGACY;
-            }
+	        if(Config) {
+                if(strncmp(node[i]->content, "legacy", 6) == 0) {
+                    Config->syscheck_database_type = SYSCHECK_LEGACY;
+                } else if(strncmp(node[i]->content, "sqlite", 6) == 0) {
+                    merror("WARN: The sqlite syscheck database is very experimental, use at your own risk!");
+                    Config->syscheck_database_type = SYSCHECK_SQLITE;
+                } else {
+                    Config->syscheck_database_type = SYSCHECK_LEGACY;
+                }
+	        }
         }
 
         else {
