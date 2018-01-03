@@ -260,8 +260,7 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     FILE *fp;
     fp = fopen(fname, "r");
     if(!fp) {
-        merror("%s: ERROR: Cannot open %s: %s", __local_name, fname, strerror(errno)); 
-        free(msg);
+        merror("%s: ERROR: Cannot open %s: %s", __local_name, fname, strerror(errno));
         return(1);
     }
 
@@ -272,10 +271,10 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     if(sr < 0) {
         merror("Cannot stat %s: %s", fname, strerror(errno));
     } else {
-        merror("YYY size is: %lld", sb.st_size);
+        merror("YYY size is: %ld", sb.st_size);
     }
     if(sb.st_size > 0) {
-        merror("YYY Size is: %lld", sb.st_size);
+        merror("YYY Size is: %ld", sb.st_size);
     } else {
         merror("Report is empty");
         return(0);
