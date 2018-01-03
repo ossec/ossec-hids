@@ -522,7 +522,7 @@ void os_ReportdStart(report_filter *r_filter)
                     mgroup++;
                 }
 
-                free(mgroup);
+                //free(mgroup);
             } else {
                 tmp_str = al_data->group;
                 while (*tmp_str == ' ') {
