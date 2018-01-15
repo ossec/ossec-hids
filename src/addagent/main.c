@@ -21,6 +21,10 @@ static int setenv(const char *name, const char *val, __attribute__((unused)) int
 {
     int len = strlen(name) + strlen(val) + 2;
     char *str = (char *)malloc(len);
+    if(str == NULL) {
+        merror("%s: malloc failed", ARGV0);
+        exit(errno);
+    }
     snprintf(str, len, "%s=%s", name, val);
     putenv(str);
     return 0;

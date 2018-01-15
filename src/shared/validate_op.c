@@ -261,7 +261,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
     }
 
     if (*ip_address == '!') {
-        ip_address++;
+        //ip_address++;
+        os_strdup(in_address+1, ip_address);
     }
 
     /* Use IPv6 here, because it doesn't matter
@@ -401,7 +402,7 @@ int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
         }
     }
     if (ip_div.rem) {
-        modbits = ((char) ~0) << (8 - ip_div.rem);
+        modbits = ((unsigned char) ~0) << (8 - ip_div.rem);
         if ( (addr1[i] & modbits) != (addr2[i] & modbits) ) {
             return(!_true);
         }
@@ -501,7 +502,9 @@ static const char *__gethour(const char *str, char *ossec_hour)
     } else if ((*str == 'p') || (*str == 'P')) {
         str++;
         if ((*str == 'm') || (*str == 'M')) {
-            chour += 12;
+            if(chour != 12) {
+                chour += 12;
+            }
 
             /* New hour must be valid */
             if (chour < 0 || chour >= 24) {

@@ -167,8 +167,10 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                  db_config->server_id, al_data->rule,
                  al_data->level,
                  (unsigned int)time(0), *loc_id,
-                 al_data->srcip, (unsigned short)s_port,
-                 al_data->dstip, (unsigned short)d_port,
+                 al_data->srcip,
+                 (unsigned short)s_port,
+                 al_data->dstip,
+                 (unsigned short)d_port,
                  al_data->alertid,
                  al_data->user, fulllog, al_data->srcgeoip);
 	break;
@@ -181,10 +183,13 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                  db_config->server_id, al_data->rule,
                  al_data->level,
                  (unsigned int)time(0), *loc_id,
-                 al_data->srcip, (unsigned short)s_port,
-                 al_data->dstip, (unsigned short)d_port,
+                 al_data->srcip != NULL ? al_data->srcip : "NULL",
+                 (unsigned short)s_port,
+                 al_data->dstip != NULL ? al_data->dstip : "NULL",
+                 (unsigned short)d_port,
                  al_data->alertid,
-                 al_data->user, fulllog);
+                 al_data->user != NULL ? al_data->user : "NULL",
+                 fulllog);
 	break;
     }
 

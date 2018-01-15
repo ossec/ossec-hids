@@ -46,7 +46,7 @@
 #define MAIL_DEBUG(x,y,z) if(MAIL_DEBUG_FLAG) merror(x,y,z)
 
 
-int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, FILE *fp, const struct tm *p)
+int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, char *fname, const struct tm *p)
 {
     FILE *sendmail = NULL;
     int socket = -1, i = 0;
@@ -256,7 +256,24 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     }
 
     /* Send body */
-    fseek(fp, 0, SEEK_SET);
+    FILE *fp;
+    fp = fopen(fname, "r");
+    if(!fp) {
+        merror("%s: ERROR: Cannot open %s: %s", __local_name, fname, strerror(errno));
+        return(1);
+    }
+
+
+    struct stat sb;
+    int sr;
+    sr = stat(fname, &sb);
+    if(sr < 0) {
+        merror("Cannot stat %s: %s", fname, strerror(errno));
+    }
+    if(sb.st_size == 0) {
+        merror("Report is empty");
+        return(0);
+    }
     while (fgets(buffer, 2048, fp) != NULL) {
         if (sendmail) {
             fprintf(sendmail, "%s", buffer);
@@ -264,6 +281,7 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
             OS_SendTCP(socket, buffer);
         }
     }
+    fclose(fp);
 
     if (sendmail) {
         if (pclose(sendmail) == -1) {

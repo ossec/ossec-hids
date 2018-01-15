@@ -90,6 +90,11 @@ int rootcheck_init(int test_config)
     rootcheck.checks.rc_ports = 1;
     rootcheck.checks.rc_sys = 1;
     rootcheck.checks.rc_trojans = 1;
+
+#ifdef OSSECHIDS
+    rootcheck.tsleep = (unsigned int) getDefine_Int("rootcheck", "sleep", 0, 64);
+#endif
+
 #ifdef WIN32
     rootcheck.checks.rc_winaudit = 1;
     rootcheck.checks.rc_winmalware = 1;

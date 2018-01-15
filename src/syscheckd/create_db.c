@@ -261,7 +261,7 @@ static int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     f_name[PATH_MAX + 1] = '\0';
 
     /* Directory should be valid */
-    if ((dir_name == NULL) || ((dir_size = strlen(dir_name)) > PATH_MAX)) {
+    if ((dir_size = strlen(dir_name)) > PATH_MAX) {
         merror(NULL_ERROR, ARGV0);
         return (-1);
     }

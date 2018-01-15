@@ -1548,6 +1548,16 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
    <fts>name,id,srcip,dstip</fts>
 </decoder>
 
+<decoder name="snort3">
+   <parent>snort</parent>
+   <type>ids</type>
+   <prematch>^[Drop] [**] |^[\d+:\d+:\d+] </prematch>
+   <regex>^[Drop] [**] [(\d+:\d+:\d+)] \.+ (\S+)\p*\d* -> </regex>
+   <regex>(\S+)|^[(\d+:\d+:\d+)] \.+ </regex>
+   <regex>(\S+)\p*\d* -> (\S+)</regex>
+   <order>id,srcip,dstip</order>
+   <fts>name,id,srcip,dstip</fts>
+</decoder>
 
 
 <!-- OpenBSD isakmpd decoders -->
@@ -1637,9 +1647,10 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - Examples:
   - WPsyslog[14382]: [127.0.0.1 na] Info: User authentication failed. User name: lala
   - WPsyslog[14382]: [127.0.0.1 na] Info: User logged in. User name: admin (admin).
+  - wpcore[14554]: [127.0.0.1 na] http://megasite.com/wordpress Info: User authentication failed. User name: qwe.
   -->
 <decoder name="wordpress">
-  <program_name>^WPsyslog</program_name>
+  <program_name>^WPsyslog|^wpcore</program_name>
   <prematch>^[</prematch>
   <regex offset="after_prematch">^(\S+) </regex>
   <order>srcip</order>
@@ -1649,30 +1660,47 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <!-- Roundcube decoder
  - Will extract username and src IP from the logs, when available.
-   Examples:
- - Apr 10 22:45:20 hostname roundcube: [10-Apr-2009 22:45:20 -0500] IMAP
-   Error: Authentication for username failed (LOGIN): "a001 NO Authentication
-   failed." (POST /roundcube/?_task=&_action=login)
- - Apr 10 23:01:23 hostname roundcube: [10-Apr-2009 23:01:23 -0500]:
-   Successful login for username (id 1) from 127.0.0.1
+
+   Examples syslog: (older and newer versions of roundcube)
+ - Apr 10 22:45:20 hostname roundcube: [10-Apr-2009 22:45:20 -0500] IMAP Error: Authentication for username failed (LOGIN): "a001 NO Authentication failed." (POST /roundcube/?_task=&_action=login)
+ - Apr 10 23:01:23 hostname roundcube: [10-Apr-2009 23:01:23 -0500]: Successful login for username (id 1) from 127.0.0.1
+ - Oct 28 19:31:08 hostname roundcube: <isj89gtf> IMAP Error: Login failed for username from 127.0.0.1. AUTHENTICATE PLAIN: Authentication failed. in /var/www/html/roundcube/program/lib/Roundcube/rcube_imap.php on line 193 (POST /roundcube/?_task=login&_action=login)
+
+   Example from roundcube internal logfile (/path/to/roundcube/logs/errors):
+ - [04-Oct-2017 17:03:30 +0200]: <jkgnfe79> IMAP Error: Login failed for username from 127.0.0.1. AUTHENTICATE PLAIN: Authentication failed. in /var/www/html/roundcube/program/lib/Roundcube/rcube_imap.php on line 193 (POST /roundcube/?_task=login&_action=login)
+
+   Examples if log_logins is enabled (/path/to/roundcube/logs/userlogins):
+ - [04-Oct-2017 16:08:01 +0200]: <lrpo6s0r> Failed login for test from 127.0.0.1 in session abcdefg (error: 0)
+ - [04-Oct-2017 16:09:17 +0200]: <4bd4jqqc> Successful login for test (ID: 6) from 127.0.0.1 in session abcdefg
 -->
+
 <decoder name="roundcube">
   <program_name>^roundcube</program_name>
+</decoder>
+
+<decoder name="roundcube">
   <prematch>^[\d\d-\w\w\w-\d\d\d\d \d\d:\d\d:\d\d \S+]</prematch>
 </decoder>
 
 <decoder name="roundcube-success">
   <parent>roundcube</parent>
-  <prematch>^: Successful login for </prematch>
-  <regex offset="after_prematch">^(\S+) \(id \d+\) from (\S+)$</regex>
+  <prematch> Successful login for </prematch>
+  <regex offset="after_prematch">^(\S+) \(id \d+\) from (\S+)$|^(\S+) \(ID: \d+\) from (\S+)</regex>
   <order>user, srcip</order>
 </decoder>
 
-<decoder name="roundcube-denied">
+<decoder name="roundcube-denied-old">
   <parent>roundcube</parent>
-  <prematch>^ \w+ Error: Authentication </prematch>
-  <regex offset="after_prematch">^for (\.+) failed</regex>
+  <prematch>] \w+ Error: Authentication </prematch>
+  <regex offset="after_prematch">^for (\S+) failed</regex>
   <order>user</order>
+</decoder>
+
+<decoder name="roundcube-denied-new">
+  <parent>roundcube</parent>
+  <prematch>> \w+ Error: Login failed |> Failed login </prematch>
+  <regex offset="after_prematch">^for (\S+) from (\S+)\. |^for (\S+) from (\S+) in session </regex>
+  <order>user, srcip</order>
 </decoder>
 
 
@@ -2096,7 +2124,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>ossec</parent>
   <type>ossec</type>
   <prematch offset="after_parent">^Agent started:</prematch>
-  <regex offset="after_prematch">^ '(\S+)'</regex>
+  <regex offset="after_prematch">^ '(\S+\S)'</regex>
   <order>extra_data</order>
   <fts>name, location, extra_data</fts>
 </decoder>
@@ -3012,6 +3040,7 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 
 <!-- ownCloud
    - Examples owncloud.log (Note that the syntax of failed login logs differs between oler and newer ownCloud versions):
+   - {"reqId":"Jrd4fkwIcXhVjtP8qODR","level":2,"time":"2017-09-20T15:44:23+02:00","remoteAddr":"127.0.0.1","user":"--","app":"core","method":"POST","url":"\/login","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')"}
    - {"reqId":"wlioIFa6pOvt6DIAoeHE","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2016-04-12T22:28:20+02:00","method":"POST","url":"\/","user":"--"}
    - {"reqId":"prLlx9+QIfl1jHtz9C5o","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2015-07-08T12:12:41+02:00"}
    - {"reqId":"wLP7a3MdzTo8wgCWret9","remoteAddr":"127.0.0.1","app":"core","message":"Login failed: 'admin' (Remote IP: '127.0.0.1')","level":2,"time":"2015-07-15T09:40:35+02:00","method":"POST","url":"\/"}
@@ -3033,7 +3062,7 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 -->
 
 <decoder name="owncloud">
-  <prematch>^{"reqId":"\S+","message":"\.+","level":\d,"time":"\.+"}$|^{"app":"\S+","message":"\.+","level":\d,"time":"\.+"}$</prematch>
+  <prematch>^{"reqId":"\S+","message":"\.+","level":\d,"time":"\.+"}$|^{"app":"\S+","message":"\.+","level":\d,"time":"\.+"}$|^{"reqId":"\S+","level":\d,"time":"\S+","message":"\.+"}$</prematch>
 </decoder>
 
 <!-- Note: This defaults to "ownCloud" but users can change the syslog tag: https://github.com/owncloud/core/blob/v10.0.2/config/config.sample.php#L608-L614 -->
@@ -3069,5 +3098,101 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <order>status</order>
 </decoder>
 
-<!-- EOF -->
+<!-- psad
+  - Examples: (Note: IPv6 untested)
+  - Sep  8 22:52:30 sni psad: scan detected (Nmap -sT or -sS scan): 212.83.152.232 -> 1.2.3.4 tcp: [21943] flags: SYN tcp pkts: 3 DL: 3
+  - Sep  9 08:36:30 sni psad: src: 62.210.167.199 signature match: "BACKDOOR DoomJuice file upload attempt" (sid: 2375) tcp port: 3180
+  - Sep  9 08:36:30 sni psad: scan detected (Masscan SYN scan): 62.210.167.199 -> 1.2.3.4 tcp: [3320-62210] flags: SYN tcp pkts: 10 DL: 3
+  - Sep  3 14:18:52 sni psad: scan detected ( -sU scan): 192.168.1.42 -> 239.255.255.250 udp: [1900] udp pkts: 16 DL: 3
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "MISC Microsoft PPTP communication attempt" (sid: 100082) tcp port: 1723
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "DOS iParty DOS attempt" (sid: 1605) tcp port: 6004
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "DOS Real Audio Server communication attempt" (sid: 100112) tcp port: 7070
+  - Sep  4 11:33:23 sni psad: src: 46.17.46.8 signature match: "BACKDOOR DoomJuice file upload attempt" (sid: 2375) tcp port: 3129
+  - Aug  9 16:46:32 dsc psad: message repeated 2 times: [ scan detected (Nmap -sT or -sS scan): 10.1.0.15 -> 192.168.1.18 tcp: [80] flags: SYN tcp pkts: 3 DL: 3]example logs: 
+-->
 
+<decoder name="psad">
+  <program_name>psad</program_name>
+</decoder>
+
+<decoder name="psad-scan">
+  <parent>psad</parent>
+  <prematch>^scan detected </prematch>
+  <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
+  <order>srcip,dstip,status</order>
+</decoder>
+
+<decoder name="psad-repeated">
+  <parent>psad</parent>
+  <prematch>^message repeated</prematch>
+  <regex offset="after_prematch"> (\S+) -> (\S+) \.+ DL: (\d)</regex>
+  <order>srcip,dstip,status</order>
+</decoder>
+
+<decoder name="psad-signature">
+  <parent>psad</parent>
+  <prematch>signature match: </prematch>
+  <regex offset="after_parent">src: (\S+) signature match: \.+ port: (\d+)</regex>
+  <order>srcip,dstport</order>
+</decoder>
+
+<!-- Proxmox Virtual Environment (Proxmox VE)
+   - Examples syslog:
+   - Sep 10 22:12:41 example pvedaemon[6427]: authentication failure; rhost=192.168.0.1 user=root@pam msg=Authentication failure
+   - Sep 10 22:12:49 example pvedaemon[6428]: authentication failure; rhost=192.168.0.1 user=root@pve msg=no such user ('root@pve')
+   - Sep 10 22:12:54 example pvedaemon[6428]: <root@pam> successful auth for user 'root@pam'
+   - Sep 10 22:13:44 example pvedaemon[6427]: <root@pam> starting task UPID:example:00000000:11111111:22222222:vzstart:100:root@pam:
+   - Sep 10 22:13:44 example pvedaemon[13735]: starting CT 100: UPID:example:00000000:11111111:22222222:vzstart:100:root@pam:
+   - Sep 10 22:13:46 example pvedaemon[6427]: <root@pam> end task UPID:example:00000000:11111111:22222222:vzstart:100:root@pam: OK
+   - Sep 10 22:13:47 example pvestatd[1892]: modified cpu set for lxc/100: 4
+   - Sep 10 06:25:44 example pveproxy[15342]: received signal TERM
+   - Sep 10 06:25:44 example pveproxy[15342]: server closing
+   - Sep 10 06:25:44 example pveproxy[15345]: worker exit
+   - Sep 10 06:25:44 example pveproxy[15344]: worker exit
+   - Sep 10 06:25:44 example pveproxy[15343]: worker exit
+   - Sep 10 06:25:44 example pveproxy[15342]: worker 15343 finished
+   - Sep 10 06:25:44 example pveproxy[15342]: worker 15344 finished
+   - Sep 10 06:25:44 example pveproxy[15342]: worker 15345 finished
+   - Sep 10 06:25:44 example pveproxy[15342]: server stopped
+   - Sep 10 06:25:45 example pveproxy[22375]: Using '/etc/pve/local/pveproxy-ssl.pem' as certificate for the web interface.
+   - Sep 10 06:25:45 example pveproxy[22413]: starting server
+   - Sep 10 06:25:45 example pveproxy[22413]: starting 3 worker(s)
+   - Sep 10 06:25:45 example pveproxy[22413]: worker 22414 started
+   - Sep 10 06:25:45 example pveproxy[22413]: worker 22415 started
+   - Sep 10 06:25:45 example pveproxy[22413]: worker 22416 started
+   - Sep 10 06:25:47 example pvepw-logger[15428]: received terminate request (signal)
+   - Sep 10 06:25:47 example pvepw-logger[15428]: stopping pvefw logger
+   - Sep 10 06:25:48 example pvepw-logger[22551]: starting pvefw logger
+-->
+
+<decoder name="pvedaemon">
+  <program_name>^pvedaemon</program_name>
+</decoder>
+
+<decoder name="pvestatd">
+  <program_name>^pvestatd</program_name>
+</decoder>
+
+<decoder name="pveproxy">
+  <program_name>^pveproxy</program_name>
+</decoder>
+
+<decoder name="pvepw-logger">
+  <program_name>^pvepw-logger</program_name>
+</decoder>
+
+<decoder name="pvedaemon-auth-failed">
+  <parent>pvedaemon</parent>
+  <prematch>authentication failure; </prematch>
+  <regex offset="after_prematch">^rhost=(\S+) user=(\S+)@pam msg=|^rhost=(\S+) user=(\S+)@pve msg=</regex>
+  <order>srcip, user</order>
+</decoder>
+
+<decoder name="pvedaemon-auth-success">
+  <parent>pvedaemon</parent>
+  <prematch>successful auth for user '</prematch>
+  <regex offset="after_prematch">^(\S+)@pam'$|^(\S+)@pve'$</regex>
+  <order>user</order>
+</decoder>
+
+<!-- EOF -->
