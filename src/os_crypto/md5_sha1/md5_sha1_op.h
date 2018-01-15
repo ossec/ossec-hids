@@ -17,3 +17,13 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 
 #endif
 
+#ifdef LIBSODIUM_ENABLED
+
+struct alg_output {
+    os_md5 md5output;
+    os_sha1 sha1output;
+    char sha256output[crypto_hash_sha256_BYTES];
+};
+int OS_algorithms_File(const char *fname, const char *prefilter_cmd, alg_output file_output, int mode);
+#endif
+

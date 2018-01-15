@@ -13,6 +13,10 @@
 #include <sched.h>
 #endif
 
+#ifdef LIBSODIUM_ENABLED
+#include <sodium.h>
+#endif
+
 #include "shared.h"
 #include "syscheck.h"
 #include "os_crypto/md5/md5_op.h"
@@ -309,7 +313,14 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
+#ifdef LIBSODIUM_ENABLED
+    alg_output file_sums;
 
+    /* Clean sums */
+    strncpy(file_sums.md5output, "xxx", 4);
+    strncpy(file_sums.sha1output, "xxx", 4);
+    strncpy(file_sums.sha256output, "xxx", 4);
+#endif
     /* Clean sums */
     strncpy(mf_sum, "xxx", 4);
     strncpy(sf_sum, "xxx", 4);
@@ -372,6 +383,13 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     {
         if (sha1sum || md5sum) {
             /* Generate checksums of the file */
+#ifdef LIBSODIUM_ENABLED
+            if (OS_algorithms_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                    strncpy(file_sums.md5output, "xxx", 4);
+                    strncpy(file_sums.sha1output, "xxx", 4);
+                    strncpy(file_sums.sha256output, "xxx", 4);
+            }
+#endif
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                 strncpy(sf_sum, "xxx", 4);
                 strncpy(mf_sum, "xxx", 4);
