@@ -46,7 +46,7 @@
 #define MAIL_DEBUG(x,y,z) if(MAIL_DEBUG_FLAG) merror(x,y,z)
 
 
-int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, char *fname)
+int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, char *replyto, char *idsname, __attribute__((unused)) char *fname)
 {
     FILE *sendmail = NULL;
     int socket = -1, i = 0;
@@ -268,8 +268,7 @@ int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, 
     FILE *fp;
     fp = fopen(fname2, "r");
     if(!fp) {
-        merror("%s: ERROR: Cannot open %s: %s", __local_name, fname2, strerror(errno)); 
-        free(msg);
+        merror("%s: ERROR: Cannot open %s: %s", __local_name, fname2, strerror(errno));
         return(1);
     }
 

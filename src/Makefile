@@ -1,11 +1,13 @@
-# TODO: mysql and postgresql?
+
 
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
+ZLIB_SYSTEM?=no
 LUA_PLAT=posix
+LUA_ENABLE?=yes
 MAXAGENTS?=2048
 REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
@@ -99,7 +101,7 @@ ifeq (${uname_S},HP-UX)
 		DEFINES+=-DHIGHFIRST
 		DEFINES+=-D_REENTRANT
 else
-	    # Unknow platform
+	    $(warning Unknown platform)
 endif # HPUX
 endif # OpenBSD
 endif # NetBSD
@@ -115,6 +117,7 @@ ifdef DEBUGAD
 endif
 
 OSSEC_CFLAGS=${CFLAGS}
+ANALYSISD_FLAGS="-lsqlite3"
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
@@ -130,10 +133,13 @@ ifneq (,$(filter ${ONEWAY},yes y Y 1))
 	DEFINES+=-DONEWAY_ENABLED
 endif
 
+ifneq (${ZLIB_SYSTEM},no)
+	DEFINES+=-DZLIB_SYSTEM
+endif
+
 OSSEC_CFLAGS+=${DEFINES}
 OSSEC_CFLAGS+=-Wall -Wextra
 OSSEC_CFLAGS+=-I./ -I./headers/
-
 
 CCCOLOR="\033[34m"
 LINKCOLOR="\033[34;1m"
@@ -173,7 +179,7 @@ endif #winagent
 
 OSSEC_CC      =${QUIET_CC}${MING_BASE}${CC}
 OSSEC_CCBIN   =${QUIET_CCBIN}${MING_BASE}${CC}
-OSSEC_LINK    =${QUIET_LINK}${MING_BASE}ar -crus
+OSSEC_LINK    =${QUIET_LINK}${MING_BASE}ar -crs
 OSSEC_RANLIB  =${QUIET_RANLIB}${MING_BASE}ranlib
 OSSEC_WINDRES =${QUIET_CCBIN}${MING_BASE}windres
 
@@ -370,17 +376,20 @@ install-common: build
 	install -m 0660 -o ${OSSEC_USER} -g ${OSSEC_GROUP} /dev/null ${PREFIX}/logs/ossec.log
 
 	install -d -m 0550 -o root -g 0 ${PREFIX}/bin
-	install -d -m 0550 -o root -g 0 ${PREFIX}/lua
-	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/native
-	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/compiled
 	install -m 0550 -o root -g 0 ossec-logcollector ${PREFIX}/bin
 	install -m 0550 -o root -g 0 ossec-syscheckd ${PREFIX}/bin
 	install -m 0550 -o root -g 0 ossec-execd ${PREFIX}/bin
 	install -m 0550 -o root -g 0 manage_agents ${PREFIX}/bin
-	install -m 0550 -o root -g 0 external/lua/src/ossec-lua ${PREFIX}/bin/
-	install -m 0550 -o root -g 0 external/lua/src/ossec-luac ${PREFIX}/bin/
 	install -m 0550 -o root -g 0 ../contrib/util.sh ${PREFIX}/bin/
 	install -m 0550 -o root -g 0 ${OSSEC_CONTROL_SRC} ${PREFIX}/bin/ossec-control
+
+ifeq (${LUA_ENABLE},yes)
+	install -d -m 0550 -o root -g 0 ${PREFIX}/lua
+	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/native
+	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/compiled
+	install -m 0550 -o root -g 0 external/lua/src/ossec-lua ${PREFIX}/bin/
+	install -m 0550 -o root -g 0 external/lua/src/ossec-luac ${PREFIX}/bin/
+endif
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/queue
 	install -d -m 0770 -o ${OSSEC_USER} -g ${OSSEC_GROUP} ${PREFIX}/queue/alerts
@@ -399,7 +408,7 @@ endif
 # Solaris Needs some extra files
 ifeq (${uname_S},SunOS)
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/usr/share/lib/zoneinfo/
-	install -m 0440 -o root -g ${OSSEC_GROUP} /usr/share/lib/zoneinfo/* ${PREFIX}/usr/share/lib/zoneinfo/
+	cp -r /usr/share/lib/zoneinfo/* ${PREFIX}/usr/share/lib/zoneinfo/
 endif
 	install -m 0640 -o root -g ${OSSEC_GROUP} -b ../etc/internal_options.conf ${PREFIX}/etc/
 ifeq (,$(wildcard ${PREFIX}/etc/local_internal_options.conf))
@@ -507,14 +516,17 @@ help: failtarget
 	@echo "   make REUSE_ID=yes     Enables agent ID re-use"
 	@echo
 	@echo "Database options: "
-	@echo "   make DATABASE=mysql  Build with MYSQL Support"
-	@echo "                        Use MYSQL_CFLAGS adn MYSQL_LIBS to override defaults"
-	@echo "   make DATABASE=pgsql  Build with PostgreSQL Support "
-	@echo "                        Use PGSQL_CFLAGS adn PGSQL_LIBS to override defaults"
+	@echo "   make DATABASE=mysql   Build with MYSQL Support"
+	@echo "                         Use MYSQL_CFLAGS and MYSQL_LIBS to override defaults"
+	@echo "   make DATABASE=pgsql   Build with PostgreSQL Support "
+	@echo "                         Use PGSQL_CFLAGS and PGSQL_LIBS to override defaults"
 	@echo
 	@echo "Geoip support: "
-	@echo "   make USE_GEOIP=1     Build with GeoIP support"
+	@echo "   make USE_GEOIP=1      Build with GeoIP support"
 	@echo
+	@echo "External source options: "
+	@echo "   make LUA_ENABLE=no    Disable LUA build"
+	@echo "   make ZLIB_SYSTEM=yes  Use zlib sources from system"
 	@echo
 	@echo "Examples: Client with debugging enabled"
 	@echo "   make TARGET=agent DEBUG=1"
@@ -526,7 +538,7 @@ settings:
 	@echo "    TARGET:           ${TARGET}"
 	@echo "    V:                ${V}"
 	@echo "    DEBUG:            ${DEBUG}"
-	@echo "    DEBUGAD           ${DEBUGAD}"
+	@echo "    DEBUGAD:          ${DEBUGAD}"
 	@echo "    PREFIX:           ${PREFIX}"
 	@echo "    MAXAGENTS:        ${MAXAGENTS}"
 	@echo "    REUSE_ID:         ${REUSE_ID}"
@@ -538,8 +550,13 @@ settings:
 	@echo "    OSSEC_USER:       ${OSSEC_USER}"
 	@echo "    OSSEC_USER_MAIL:  ${OSSEC_USER_MAIL}"
 	@echo "    OSSEC_USER_REM:   ${OSSEC_USER_REM}"
+	@echo "ZLIB settings:"
+	@echo "    ZLIB_SYSTEM:      ${ZLIB_SYSTEM}"
+	@echo "    ZLIB_INCLUDE:     ${ZLIB_INCLUDE}"
+	@echo "    ZLIB_LIB:         ${ZLIB_LIB}"
 	@echo "Lua settings:"
 	@echo "    LUA_PLAT:         ${LUA_PLAT}"
+	@echo "    LUA_ENABLE:       ${LUA_ENABLE}"
 	@echo "USE settings:"
 	@echo "    USE_ZEROMQ:       ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
@@ -644,24 +661,34 @@ winagent:
 external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
 
 lua:
+ifeq (${LUA_ENABLE},yes)
 	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
+endif
 
 ${EXTERNAL_ZLIB}libz.a:
 ifeq (${TARGET},winagent)
 	cd ${EXTERNAL_ZLIB} && cp zconf.h.in zconf.h && ${MAKE} -f win32/Makefile.gcc PREFIX=${MING_BASE} libz.a
 else
+ifeq (${ZLIB_SYSTEM},no)
 	cd ${EXTERNAL_ZLIB} && ./configure && ${MAKE} libz.a
+endif
 endif
 
 #### zlib ##########
 
+ifeq (${ZLIB_SYSTEM},no)
 ZLIB_LIB=os_zlib.a ${EXTERNAL_ZLIB}libz.a
 ZLIB_INCLUDE=-I./${EXTERNAL_ZLIB}
+else
+ZLIB_LIB=os_zlib.a
+ZLIB_INCLUDE=
+OSSEC_LDFLAGS+=-lz
+endif
 
 os_zlib_c := os_zlib/os_zlib.c
 os_zlib_o := $(os_zlib_c:.c=.o)
 
-os_zlib/%.o: os_zlib/%.c ${EXTERNAL_ZLIB}libz.a
+os_zlib/%.o: os_zlib/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -c $< -o $@
 
 os_zlib.a: ${os_zlib_o}
@@ -762,7 +789,7 @@ crypto_blowfish_c := os_crypto/blowfish/bf_op.c \
 crypto_blowfish_o := $(crypto_blowfish_c:.c=.o)
 
 os_crypto/blowfish/%.o: os_crypto/blowfish/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -Wno-implicit-fallthrough -c $^ -o $@
 
 crypto_md5_c := os_crypto/md5/md5.c \
 							 os_crypto/md5/md5_op.c
@@ -775,7 +802,7 @@ crypto_sha1_c := os_crypto/sha1/sha1_op.c
 crypto_sha1_o := $(crypto_sha1_c:.c=.o)
 
 os_crypto/sha1/%.o: os_crypto/sha1/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -Wno-implicit-fallthrough -c $^ -o $@
 
 crypto_md5_sha1_c := os_crypto/md5_sha1/md5_sha1_op.c
 crypto_md5_sha1_o := $(crypto_md5_sha1_c:.c=.o)
@@ -1118,13 +1145,13 @@ analysisd/%-test.o: analysisd/%.c analysisd/compiled_rules/compiled_rules.h
 
 
 ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-test.o analysisd/analysisd-test.o alerts.a cdb.a decoders-test.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -DTESTRULE $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -DTESTRULE $^ ${OSSEC_LDFLAGS} ${ANALYSISD_FLAGS} -o $@
 
 ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} ${ANALYSISD_FLAGS} -o $@
 
 ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} -o $@
 
 
 ####################

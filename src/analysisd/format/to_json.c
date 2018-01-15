@@ -18,8 +18,6 @@
 /* Convert Eventinfo to json */
 char *Eventinfo_to_jsonstr(const Eventinfo *lf)
 {
-    char* time_string;
- 
     cJSON *root;
     cJSON *rule;
     cJSON *file_diff;
@@ -115,7 +113,7 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->generated_rule->last_events && lf->generated_rule->last_events[1] && lf->generated_rule->last_events[1][0]) {
         cJSON_AddStringToObject(root, "previous_output", lf->generated_rule->last_events[1]);
     }
-    
+
     if (lf->filename) {
         cJSON_AddItemToObject(root, "file", file_diff = cJSON_CreateObject());
 
