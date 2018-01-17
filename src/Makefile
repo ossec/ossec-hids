@@ -212,7 +212,7 @@ endif # USE_GEOIP
 
 ifneq (,$(filter ${USE_LIBSODIUM},auto yes y Y 1))
 	DEFINES+=-DLIBSODIUM_ENABLED
-	OSSEC_LDFLAGS+=-lsodum
+	OSSEC_LDFLAGS+=-lsodium
 endif # USE_LIBSODIUM
 
 MI :=
@@ -1007,7 +1007,7 @@ syscheck_o := $(syscheck_c:.c=.o)
 syscheckd/%.o: syscheckd/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
 
-ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB}
+ossec-syscheckd: ${syscheck_o} rootcheck.a os_crypto.a ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 #### Monitor #######
