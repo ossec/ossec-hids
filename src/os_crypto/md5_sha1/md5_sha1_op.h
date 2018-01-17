@@ -10,6 +10,7 @@
 #ifndef __MD5SHA1_OP_H
 #define __MD5SHA1_OP_H
 
+#include <sodium.h>
 #include "../md5/md5_op.h"
 #include "../sha1/sha1_op.h"
 
@@ -24,6 +25,6 @@ struct alg_output {
     os_sha1 sha1output;
     char sha256output[crypto_hash_sha256_BYTES];
 };
-int OS_algorithms_File(const char *fname, const char *prefilter_cmd, alg_output file_output, int mode);
+int OS_algorithms_File(const char *fname, const char *prefilter_cmd, struct alg_output file_output, int mode, char **alg);
 #endif
 
