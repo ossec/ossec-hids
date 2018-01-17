@@ -160,7 +160,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_check_sum = "check_sum";
     const char *xml_check_sha1sum = "check_sha1sum";
     const char *xml_check_md5sum = "check_md5sum";
-    const char *xml_check_sha256sum = "check_sha256sum";
+    //const char *xml_check_sha256sum = "check_sha256sum";
     const char *xml_check_size = "check_size";
     const char *xml_check_owner = "check_owner";
     const char *xml_check_group = "check_group";
