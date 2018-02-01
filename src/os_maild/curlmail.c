@@ -75,7 +75,6 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *msg) {
     curl_easy_setopt(curl, CURLOPT_URL, mail->smtpserver);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
     curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-    curl_easy_setopt(curl, CURLOPT_DNS_SERVERS, "10.0.0.2,8.8.8.8,8.8.4.4");
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
     if(mail->authsmtp) {
