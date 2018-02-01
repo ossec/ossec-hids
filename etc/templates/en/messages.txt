@@ -41,6 +41,15 @@ yoursmtp="We found your SMTP server as"
 usesmtp="Do you want to use it?"
 usingsmtp="Using SMTP server: "
 whatsmtp="What's your SMTP server ip/host?"
+useauthsmtp="Want to use authenticated SMTP?"
+
+noauthsmtp="SMTP authenticated not enabled"
+yesauthsmtp="SMTP authenticated enabled"
+userauthsmtp="Please, enter your SMTP username"
+passauthsmtp="Please, enter your SMTP password"
+usesecuresmtp="This server requires a secure connection (SSL)?"
+nosecuresmtp="SMTP with SSL disabled"
+yessecuresmtp="SMTP with SSL enabled"
 
 # Part 3.1/agent
 serveraddr="What's the IP Address or hostname of the OSSEC HIDS server?"

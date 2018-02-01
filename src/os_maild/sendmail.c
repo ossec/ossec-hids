@@ -9,6 +9,7 @@
 
 /* Basic e-mailing operations */
 
+#ifndef SENDMAIL_CURL
 #include "shared.h"
 #include "os_net/os_net.h"
 #include "maild.h"
@@ -623,3 +624,5 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     memset_secure(snd_msg, '\0', 128);
     return (0);
 }
+#endif
+

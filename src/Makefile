@@ -51,6 +51,11 @@ endif
 
 OSSEC_LDFLAGS=${LDFLAGS} -lm
 
+ifeq (${SENDMAIL_CURL},yes)
+	DEFINES +=-DSENDMAIL_CURL=\"1\"
+	OSSEC_LDFLAGS+=-lcurl
+endif
+
 ifneq (${TARGET},winagent)
 ifeq (${uname_S},Linux)
 		DEFINES+=-DINOTIFY_ENABLED

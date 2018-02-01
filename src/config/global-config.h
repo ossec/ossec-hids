@@ -50,6 +50,10 @@ typedef struct __Config {
     /* Mail alerting */
     short int mailnotify;
 
+    /* Mail smtp auth */
+    short int authsmtp;
+    short int securesmtp;
+
     /* Custom Alert output*/
     short int custom_alert_output;
     char *custom_alert_output_format;

@@ -19,7 +19,6 @@
 ### Looking up for the execution directory
 cd `dirname $0`
 
-
 ### Looking for echo -n
 ECHO="echo -n"
 hs=`echo -n "a"`
@@ -130,6 +129,8 @@ Install()
     chmod 600 ${OSSEC_INIT}
     cp -pr ${OSSEC_INIT} ${INSTALLDIR}${OSSEC_INIT}
     chmod 640 ${INSTALLDIR}${OSSEC_INIT}
+    mkdir ${INSTALLDIR}/lib
+    cp -R /lib/* ${INSTALLDIR}/lib
 
 
     # If update_rules is set, we need to tweak
@@ -241,7 +242,104 @@ UseRootcheck()
     fi
 }
 
+###############
+# UseSecureSMTP()
+###############
+UseSecureSMTP()
+{
 
+    # SMTP Authenticaction configuration (SSL)
+    echo ""
+    $ECHO "  ${usesecuresmtp} ($yes/$no) [$yes]: "
+
+    if [ "X${USER_ENABLE_SECURESMTP}" = "X" ]; then
+        read ESS
+    else
+        ESS=${USER_ENABLE_SECURESMTP}
+    fi
+
+    echo ""
+    case $ESS in
+        $nomatch)
+            echo "   - ${nosecuresmtp}."
+            ;;
+        *)
+            SECURESMTP="yes"
+            echo "   - ${yessecuresmtp}."
+            ;;
+    esac
+
+    # Adding to the config file
+    if [ "X${SECURESMTP}" = "Xyes" ]; then
+        echo "" >> $NEWCONFIG
+        echo "    <secure_smtp>yes</secure_smtp>" >> $NEWCONFIG
+        echo "" >> $NEWCONFIG
+    else
+      echo "" >> $NEWCONFIG
+      echo "    <secure_smtp>no</secure_smtp>" >> $NEWCONFIG
+      echo "" >> $NEWCONFIG
+    fi
+}
+
+
+###############
+# UseAuthSMTP()
+###############
+UseAuthSMTP()
+{
+
+    # SMTP Authenticaction configuration
+    echo ""
+    $ECHO "  ${useauthsmtp} ($yes/$no) [$yes]: "
+
+    if [ "X${USER_ENABLE_AUTHSMTP}" = "X" ]; then
+        read EAS
+    else
+        EAS=${USER_ENABLE_AUTHSMTP}
+    fi
+
+    echo ""
+    case $EAS in
+        $nomatch)
+            echo "   - ${noauthsmtp}."
+            ;;
+        *)
+            AUTHSMTP="yes"
+            echo "   - ${yesauthsmtp}."
+            ;;
+    esac
+
+    if [ "X${AUTHSMTP}" = "Xyes" ]; then
+      if [ "X${AUTHSMTP_USER}" = "X" ]; then
+        echo ""
+        $ECHO "  ${userauthsmtp}: "
+        read AUTHSMTP_USER
+      fi
+
+      if [ "X${AUTHSMTP_PASS}" = "X" ]; then
+        echo ""
+        $ECHO "  ${passauthsmtp}: "
+        stty -echo # turn off terminal echo to prevent peeping!
+        read AUTHSMTP_PASS
+        stty echo # turn on
+        echo ""
+      fi
+    fi
+
+    # Adding to the config file
+    if [ "X${AUTHSMTP}" = "Xyes" ]; then
+        echo "" >> $NEWCONFIG
+        echo "    <auth_smtp>yes</auth_smtp>" >> $NEWCONFIG
+        echo "    <smtp_user>$AUTHSMTP_USER</smtp_user>" >> $NEWCONFIG
+        echo "    <smtp_password>$AUTHSMTP_PASS</smtp_password>" >> $NEWCONFIG
+        echo "" >> $NEWCONFIG
+        UseSecureSMTP
+    else
+      echo "" >> $NEWCONFIG
+      echo "    <auth_smtp>no</auth_smtp>" >> $NEWCONFIG
+      echo "" >> $NEWCONFIG
+    fi
+}
 
 
 ##########
@@ -552,6 +650,8 @@ ConfigureServer()
         echo "    <email_notification>no</email_notification>" >> $NEWCONFIG
     fi
 
+    UseAuthSMTP
+
     echo "  </global>" >> $NEWCONFIG
     echo "" >> $NEWCONFIG
 
@@ -817,6 +917,9 @@ checkDependencies()
 
     PATH=$OLDOPATH
     export PATH
+
+    # Re-export sendmail_curl if curl support should be compiled in
+    export SENDMAIL_CURL
 }
 
 ##########
