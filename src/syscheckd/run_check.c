@@ -389,11 +389,12 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     strncpy(file_sums.sha1output, "xxx", 4);
                     strncpy(file_sums.sha256output, "xxx", 4);
             }
-#endif
+#else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                 strncpy(sf_sum, "xxx", 4);
                 strncpy(mf_sum, "xxx", 4);
             }
+#endif
         }
     }
 #ifndef WIN32
@@ -404,10 +405,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             if (S_ISREG(statbuf_lnk.st_mode)) {
                 if (sha1sum || md5sum) {
                     /* Generate checksums of the file */
+#ifdef LIBSODIUM_ENABLED
+                    if (OS_algorithms_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY, syscheck.alg) < 0) {
+                            strncpy(file_sums.md5output, "xxx", 4);
+                            strncpy(file_sums.sha1output, "xxx", 4);
+                            strncpy(file_sums.sha256output, "xxx", 4);
+                    }
+#else
                     if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                         strncpy(sf_sum, "xxx", 4);
                         strncpy(mf_sum, "xxx", 4);
                     }
+#endif
                 }
             }
         }
