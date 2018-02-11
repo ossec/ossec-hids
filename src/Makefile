@@ -116,7 +116,7 @@ ifdef DEBUGAD
 endif
 
 OSSEC_CFLAGS=${CFLAGS}
-ANALYSISD_FLAGS="-lsqlite3"
+#ANALYSISD_FLAGS="-lsqlite3"
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
@@ -209,6 +209,10 @@ ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	OSSEC_LDFLAGS+=-lGeoIP
 endif # USE_GEOIP
 
+ifneq (,$(filter ${USE_SQLITE},auto yes y Y 1))
+	DEFINES+=-DSQLITE_ENABLED
+	ANALYSISD_FLAGS="-lsqlite3"
+endif # USE_SQLITE
 
 MI :=
 PI :=
