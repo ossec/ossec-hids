@@ -562,6 +562,7 @@ settings:
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
+	@echo "    USE_SQLITE:       ${USE_SQLITE}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
 	@echo "    libs:             ${ML}"
