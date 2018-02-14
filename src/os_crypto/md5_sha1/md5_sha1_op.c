@@ -93,7 +93,7 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 }
 
 
-int OS_algorithms_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char **alg)
+int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char **alg)
 {
     size_t n;
     FILE *fp;
@@ -133,6 +133,7 @@ int OS_algorithms_File(const char *fname, const char *prefilter_cmd, struct hash
     MD5_CTX md5_ctx;
 
 #ifdef LIBSODIUM_ENABLED
+    // Initialize libsodium and clear the sha256output
     unsigned char sha256_digest[crypto_hash_sha256_BYTES];
     if(sodium_init() < 0) {
         //merror("Hash failed: (%d) %s", errno, strerror(errno));
@@ -175,7 +176,7 @@ int OS_algorithms_File(const char *fname, const char *prefilter_cmd, struct hash
         SHA1_Init(&sha1_ctx);
     }
 
-    /* Update for each one */
+    /* Update for each hash */
     while ((n = fread(buf, 1, 2048, fp)) > 0) {
         buf[n] = '\0';
         if(c_sha1 > 0) {

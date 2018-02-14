@@ -25,6 +25,6 @@ struct hash_output {
     os_sha1 sha1output;
     char sha256output[crypto_hash_sha256_BYTES];
 };
-int OS_algorithms_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char **alg);
+int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char **alg);
 #endif
 
