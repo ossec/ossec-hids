@@ -314,7 +314,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     os_md5 mf_sum;
     os_sha1 sf_sum;
 #ifdef LIBSODIUM_ENABLED
-    struct alg_output file_sums;
+    struct hash_output file_sums;
 
     /* Clean sums */
     strncpy(file_sums.md5output, "xxx", 4);
@@ -425,6 +425,9 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 
     newsum[0] = '\0';
     newsum[255] = '\0';
+#ifdef LIBSODIUM_ENABLED
+
+    if(
     snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
              perm == 0 ? 0 : (int)statbuf.st_mode,
@@ -432,6 +435,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              group == 0 ? 0 : (int)statbuf.st_gid,
              md5sum   == 0 ? "xxx" : mf_sum,
              sha1sum  == 0 ? "xxx" : sf_sum);
+#else
+    snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s",
+             size == 0 ? 0 : (long)statbuf.st_size,
+             perm == 0 ? 0 : (int)statbuf.st_mode,
+             owner == 0 ? 0 : (int)statbuf.st_uid,
+             group == 0 ? 0 : (int)statbuf.st_gid,
+             md5sum   == 0 ? "xxx" : mf_sum,
+             sha1sum  == 0 ? "xxx" : sf_sum);
+#endif
 
     return (0);
 }

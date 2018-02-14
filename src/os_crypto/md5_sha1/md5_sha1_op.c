@@ -93,7 +93,7 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 }
 
 
-int OS_algorithms_File(const char *fname, const char *prefilter_cmd, struct alg_output file_output, int mode, char **alg)
+int OS_algorithms_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char **alg)
 {
     size_t n;
     FILE *fp;
