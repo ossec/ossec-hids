@@ -205,29 +205,36 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
 #endif
 
     /* Set output for MD5 */
-    for (n = 0; n < 16; n++) {
-        if(n == 0) {
-            snprintf(file_output.md5output, 3, "%02x", md5_digest[n]);
-        } else {
-            snprintf(file_output.md5output, strnlen(file_output.md5output, 33) + 3, "%s%02x", file_output.md5output, md5_digest[n]);
+    if(c_md5 > 0) {
+        for (n = 0; n < 16; n++) {
+            if(n == 0) {
+                snprintf(file_output.md5output, 3, "%02x", md5_digest[n]);
+            } else {
+                snprintf(file_output.md5output, strnlen(file_output.md5output, 33) + 3, "%s%02x", file_output.md5output, md5_digest[n]);
+            }
         }
     }
 
     /* Set output for SHA-1 */
-    for (n = 0; n < SHA_DIGEST_LENGTH; n++) {
-        if(n == 0) {
-            snprintf(file_output.sha1output, 3, "%02x", sha1_digest[n]);
-        } else {
-            snprintf(file_output.sha1output, strnlen(file_output.sha1output, 65) + 3, "%s%02x", file_output.sha1output, sha1_digest[n]);
+    if(c_sha1 > 0) {
+        for (n = 0; n < SHA_DIGEST_LENGTH; n++) {
+            if(n == 0) {
+                snprintf(file_output.sha1output, 3, "%02x", sha1_digest[n]);
+            } else {
+                snprintf(file_output.sha1output, strnlen(file_output.sha1output, 65) + 3, "%s%02x", file_output.sha1output, sha1_digest[n]);
+            }
         }
     }
 
 #ifdef LIBSODIUM_ENABLED
-    for (n = 0; n < crypto_hash_sha256_BYTES; n++) {
-        if(n == 0) {
-            snprintf(file_output.sha256output, 3, "%02x", sha256_digest[n]);
-        } else {
-            snprintf(file_output.sha256output, strnlen(file_output.sha256output, 66) + 3, "%s%02x", file_output.sha256output, sha256_digest[n]);
+    /* Set output for SHA256 */
+    if(c_sha256 > 0) {
+        for (n = 0; n < crypto_hash_sha256_BYTES; n++) {
+            if(n == 0) {
+                snprintf(file_output.sha256output, 3, "%02x", sha256_digest[n]);
+            } else {
+                snprintf(file_output.sha256output, strnlen(file_output.sha256output, 66) + 3, "%s%02x", file_output.sha256output, sha256_digest[n]);
+            }
         }
     }
 #endif
@@ -241,3 +248,4 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
 
     return (0);
 }
+
