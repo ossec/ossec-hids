@@ -686,7 +686,7 @@ int DecodeSyscheck(Eventinfo *lf)
                 return(0);
             }
             debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_whitelist);
-            sprintf(stmt, "select md5sum from files where md5sum = \"%s\"", p);
+            snprintf(stmt, OS_MAXSTR, "select md5sum from files where md5sum = \"%s\"", p);
             error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
             if (error == SQLITE_OK) {
                 while (sqlite3_step(res) == SQLITE_ROW) {
