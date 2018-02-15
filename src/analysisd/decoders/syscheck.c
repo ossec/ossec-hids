@@ -681,25 +681,30 @@ int DecodeSyscheck(Eventinfo *lf)
     if (Config.md5_whitelist)  {
         extern sqlite3 *conn;
         if ((p = extract_token(c_sum, ":", 4))) {
-            if (!validate_md5(p)) { /* Never trust input from other origin */
-                merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
-                return(0);
-            }
-            debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_whitelist);
-            snprintf(stmt, OS_MAXSTR, "select md5sum from files where md5sum = \"%s\"", p);
-            error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
-            if (error == SQLITE_OK) {
-                while (sqlite3_step(res) == SQLITE_ROW) {
-                    rec_count++;
-                }
-                if (rec_count) {    
-                    sqlite3_finalize(res);
-                    //sqlite3_close(conn);
-                    merror(MD5_NOT_CHECKED, ARGV0, p);
+            if((stenlen(p, "xxx", 3)) != 0) {
+                if (!validate_md5(p)) { /* Never trust input from other origin */
+                    merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
                     return(0);
                 }
+                debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_whitelist);
+                if((snprintf(stmt, OS_MAXSTR, "select md5sum from files where md5sum = \"%s\"", p)) < 0) {
+                    merror("ERROR: snprintf failed for md5sum: %s", p);
+                }
+                stmt[OS_MAXSTR] = '\0';
+                error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
+                if (error == SQLITE_OK) {
+                    while (sqlite3_step(res) == SQLITE_ROW) {
+                        rec_count++;
+                    }
+                    if (rec_count) {
+                        sqlite3_finalize(res);
+                        //sqlite3_close(conn);
+                        merror(MD5_NOT_CHECKED, ARGV0, p);
+                        return(0);
+                    }
+                }
+                sqlite3_finalize(res);
             }
-            sqlite3_finalize(res);
         }
     }
  
