@@ -555,13 +555,27 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                 if(i < 2) {
                     tokens[i++] = p;
                 }
+                if(!p) {
+                    merror("NOT p!");
+                }
+
+                /* remove spaces */
+                if(*p == ' ') {
+                    p++;
+                }
 #ifndef LIBSODIUM_ENABLED
                 if((strncmp(p, "sha256", 6)) == 0) {
                     merror("sha256 requires libsodium support.");
                     return(OS_INVALID); // XXX What error here?
                 }
 #endif
-                syscheck->alg[i] = p;
+                if(i == 1) {
+                    syscheck->hash1_alg = p;
+                } else if(i == 2) {
+                    syscheck->hash2_alg = p;
+                } else {
+                    merror("XXX oops. %s", p);
+                }
             }
         }
 

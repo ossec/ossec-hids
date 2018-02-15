@@ -52,7 +52,8 @@ typedef struct _config {
     int *opts;                      /* attributes set in the <directories> tag element */
 
     char *algorithms;               /* Algorithms to use for FIM */
-    char **alg;
+    char *hash1_alg;
+    char *hash2_alg;
 
     char *remote_db;
     char *db;
