@@ -681,7 +681,7 @@ int DecodeSyscheck(Eventinfo *lf)
     if (Config.md5_whitelist)  {
         extern sqlite3 *conn;
         if ((p = extract_token(c_sum, ":", 4))) {
-            if((stenlen(p, "xxx", 3)) != 0) {
+            if((strncmp(p, "xxx", 3)) != 0) {
                 if (!validate_md5(p)) { /* Never trust input from other origin */
                     merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
                     return(0);
