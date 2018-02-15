@@ -313,6 +313,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
+
 #ifdef LIBSODIUM_ENABLED
     struct hash_output file_sums;
 
@@ -320,7 +321,10 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     strncpy(file_sums.md5output, "xxx", 4);
     strncpy(file_sums.sha1output, "xxx", 4);
     strncpy(file_sums.sha256output, "xxx", 4);
+    strncpy(file_sums.hash1, "xxx", 4);
+    strncpy(file_sums.hash2, "xxx", 4);
 #endif
+
     /* Clean sums */
     strncpy(mf_sum, "xxx", 4);
     strncpy(sf_sum, "xxx", 4);
@@ -343,6 +347,11 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     }
 
     /* Get the old sum values */
+#ifdef DEBUG
+    if(oldsum) {
+        merror("XXX oldsum: %s", oldsum);
+    }
+#endif
 
     /* size */
     if (oldsum[0] == '+') {
@@ -384,10 +393,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (sha1sum || md5sum) {
             /* Generate checksums of the file */
 #ifdef LIBSODIUM_ENABLED
-            if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY, syscheck.alg) < 0) {
+            if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY, syscheck.hash1_alg, syscheck.hash2_alg) < 0) {
                     strncpy(file_sums.md5output, "xxx", 4);
                     strncpy(file_sums.sha1output, "xxx", 4);
                     strncpy(file_sums.sha256output, "xxx", 4);
+                    strncpy(file_sums.hash1, "xxx", 4);
+                    strncpy(file_sums.hash2, "xxx", 4);
+            } else {
+                merror("XXX hash1: %s", file_sums.hash1);
+                merror("XXX hash2: %s", file_sums.hash2);
             }
 #else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
@@ -406,10 +420,12 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                 if (sha1sum || md5sum) {
                     /* Generate checksums of the file */
 #ifdef LIBSODIUM_ENABLED
-                    if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY, syscheck.alg) < 0) {
+                    if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY, syscheck.hash1_alg, syscheck.hash2_alg) < 0) {
                             strncpy(file_sums.md5output, "xxx", 4);
                             strncpy(file_sums.sha1output, "xxx", 4);
                             strncpy(file_sums.sha256output, "xxx", 4);
+                            strncpy(file_sums.hash1, "xxx", 4);
+                            strncpy(file_sums.hash2, "xxx", 4);
                     }
 #else
                     if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
@@ -425,9 +441,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 
     newsum[0] = '\0';
     newsum[255] = '\0';
-#ifdef LIBSODIUM_ENABLED
 
-    if(
+#ifdef LIBSODIUM_ENABLED
     snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
              perm == 0 ? 0 : (int)statbuf.st_mode,
