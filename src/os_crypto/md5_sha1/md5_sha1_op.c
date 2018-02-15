@@ -92,8 +92,8 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
     return (0);
 }
 
-
-int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char **alg)
+#ifdef LIBSODIUM_ENABLED
+int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char *hash1_alg, char *hash2_alg)
 {
     size_t n;
     FILE *fp;
@@ -102,38 +102,30 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
     unsigned char md5_digest[16];
 
     int c_sha1 = 0, c_md5 = 0, c_sha256 = 0, al = 0;
-    while(alg[al]) {
-        if((strncmp(alg[al], "md5", 3) == 0 || strncmp(alg[al],
-                        "MD5", 3) == 0)) {
-            c_md5 = 1;
-        } else if((strncmp(alg[al], "sha1", 4) == 0 || strncmp(alg[al],
-                        "SHA1", 4) == 0)) {
-            c_sha1 = 1;
-        } else if((strncmp(alg[al], "sha256", 6) == 0 || strncmp(alg[al],
-                        "SHA256", 6) == 0)) {
-#ifdef LIBSODIUM_ENABLED
-            c_sha256 = 1;
-#else
-            //merror("syscheck: Not compiled with libsodium support, enabling sha1");
-            c_sha1 = 1;
-#endif
-        }
-        al++;
+    if((strncmp(hash1_alg, "md5", 3) == 0 || strncmp(hash1_alg,
+                    "MD5", 3) == 0)) {
+        c_md5 = 1;
+        file_output.md5output[0] = '\0';
+    } else if((strncmp(hash2_alg, "sha1", 4) == 0 || strncmp(hash2_alg,
+                    "SHA1", 4) == 0)) {
+        c_sha1 = 1;
+        file_output.sha1output[0] = '\0';
+    } else if((strncmp(hash2_alg, "sha256", 6) == 0 || strncmp(hash2_alg,
+                    "SHA256", 6) == 0)) {
+        c_sha256 = 1;
+        file_output.sha256output[0] = '\0';
     }
 
-#ifdef LIBSODIUM_ENABLED
     if(c_sha1 == 1 && c_sha256 == 1) {
         //merror("syscheckd: sha1 and sha256 enabled, disabling sha1.");
         c_sha1 = 0;
     }
-#endif
 
 
     SHA_CTX sha1_ctx;
     MD5_CTX md5_ctx;
 
-#ifdef LIBSODIUM_ENABLED
-    // Initialize libsodium and clear the sha256output
+    /* Initialize libsodium */
     unsigned char sha256_digest[crypto_hash_sha256_BYTES];
     if(sodium_init() < 0) {
         //merror("Hash failed: (%d) %s", errno, strerror(errno));
@@ -141,12 +133,7 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
     }
     crypto_hash_sha256_state sha256_state;
     crypto_hash_sha256_init(&sha256_state);
-    file_output.sha256output[0] = '\0';
-#endif
 
-    /* Clear the memory */
-    file_output.md5output[0] = '\0';
-    file_output.sha1output[0] = '\0';
     buf[2048 + 1] = '\0';
 
     /* Use prefilter_cmd if set */
@@ -171,9 +158,13 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
     /* Initialize both hashes */
     if(c_md5 > 0) {
         MD5Init(&md5_ctx);
+        snprintf(file_output.hash1, 4, "MD5=");
+        file_output.hash1[4] = '\0';
     }
     if(c_sha1 > 0) {
         SHA1_Init(&sha1_ctx);
+        snprintf(file_output.hash2, 5, "SHA1=");
+        file_output.hash2[5] = '\0';
     }
 
     /* Update for each hash */
@@ -185,11 +176,9 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
         if(c_md5 > 0) {
             MD5Update(&md5_ctx, buf, (unsigned)n);
         }
-#ifdef LIBSODIUM_ENABLED
         if(c_sha256 > 0) {
             crypto_hash_sha256_update(&sha256_state, buf, n);
         }
-#endif
     }
 
     if(c_sha1 > 0) {
@@ -198,11 +187,9 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
     if(c_md5 > 0) {
         MD5Final(md5_digest, &md5_ctx);
     }
-#ifdef LIBSODIUM_ENABLED
     if(c_sha256 > 0) {
         crypto_hash_sha256_final(&sha256_state, sha256_digest);
     }
-#endif
 
     /* Set output for MD5 */
     if(c_md5 > 0) {
@@ -212,6 +199,7 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             } else {
                 snprintf(file_output.md5output, strnlen(file_output.md5output, 33) + 3, "%s%02x", file_output.md5output, md5_digest[n]);
             }
+            snprintf(file_output.hash1, strnlen(file_output.hash1, 37) + 3, "%s%02x", file_output.hash1, md5_digest[n]);
         }
     }
 
@@ -223,10 +211,10 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             } else {
                 snprintf(file_output.sha1output, strnlen(file_output.sha1output, 65) + 3, "%s%02x", file_output.sha1output, sha1_digest[n]);
             }
+            snprintf(file_output.hash2, strnlen(file_output.hash2, 65) + 3, "%s%02x", file_output.hash2, sha1_digest[n]);
         }
     }
 
-#ifdef LIBSODIUM_ENABLED
     /* Set output for SHA256 */
     if(c_sha256 > 0) {
         for (n = 0; n < crypto_hash_sha256_BYTES; n++) {
@@ -235,9 +223,9 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             } else {
                 snprintf(file_output.sha256output, strnlen(file_output.sha256output, 66) + 3, "%s%02x", file_output.sha256output, sha256_digest[n]);
             }
+            snprintf(file_output.hash2, strnlen(file_output.hash2, 66) + 3, "%s%02x", file_output.hash2, sha256_digest[n]);
         }
     }
-#endif
 
     /* Close it */
     if (prefilter_cmd == NULL) {
@@ -248,4 +236,5 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
 
     return (0);
 }
+#endif  // LIBSODIUM_ENABLED
 
