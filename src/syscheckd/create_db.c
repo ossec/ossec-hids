@@ -60,16 +60,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 #endif
     {
         if(errno == ENOTDIR){
-		/*Deletion message sending*/
-		char alert_msg[PATH_MAX+4];
-		alert_msg[PATH_MAX + 3] = '\0';
-		snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-		send_syscheck_msg(alert_msg);
-		return (0);
-	}else{
-		merror("%s: Error accessing '%s'.", ARGV0, file_name);
-		return (-1);
-	}
+    		/*Deletion message sending*/
+	    	char alert_msg[PATH_MAX+4];
+		    alert_msg[PATH_MAX + 3] = '\0';
+		    snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+		    send_syscheck_msg(alert_msg);
+		    return (0);
+	    }else{
+		    merror("%s: Error accessing '%s'.", ARGV0, file_name);
+		    return (-1);
+	    }
     }
 
     if (S_ISDIR(statbuf.st_mode)) {
@@ -114,20 +114,49 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         strncpy(sf_sum3, "xxx", 4);
 
         /* Generate checksums */
+#ifdef LIBSODIUM_ENABLED
+        /* Prep file_sums */
+        struct hash_output file_sums;
+        strncpy(file_sums.md5output, "xxx", 4);
+        strncpy(file_sums.sha1output, "xxx", 4);
+        strncpy(file_sums.sha256output, "xxx", 4);
+        strncpy(file_sums.hash1, "xxx", 4);
+        strncpy(file_sums.hash2, "xxx", 4);
+
+        if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM)) {
+#else
         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
+#endif  //LIBSODIUM_ENABLED
             /* If it is a link, check if dest is valid */
 #ifndef WIN32
+
+            /* XXX This is all weird */
             if (S_ISLNK(statbuf.st_mode)) {
                 struct stat statbuf_lnk;
                 if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
+#ifdef LIBSODIUM_ENABLED
+                        if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY, syscheck.hash1_alg, syscheck.hash2_alg) < 0) {
+                            strncpy(file_sums.md5output, "xxx", 4);
+                            strncpy(file_sums.sha1output, "xxx", 4);
+                            strncpy(file_sums.sha256output, "xxx", 4);
+                            strncpy(file_sums.hash1, "xxx", 4);
+                            strncpy(file_sums.hash2, "xxx", 4);
+                        }
+
+#else   //LIBSODIUM_ENABLED
                         if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
+#endif  //LIBSODIUM_ENABLED
                     }
                 }
+#ifdef LIBSODIUM_ENABLED
+            } else if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY, syscheck.hash1_alg, syscheck.hash2_alg) < 0) 
+#else   //LIBSODIUM_ENABLED
             } else if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
+#endif  //LIBSODIUM_ENABLED
 #else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
 #endif
@@ -173,8 +202,13 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
                      opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+#ifdef LIBSODIUM_ENABLED
+                     opts & CHECK_MD5SUM ? file_sums.md5output : "xxx",
+                     opts & CHECK_SHA256SUM ? file_sums.sha256output : "xxx");
+#else   //LIBSODIUM_ENABLED
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx");
+#endif  //LIBSODIUM_ENABLED
 
             if (OSHash_Add(syscheck.fp, file_name, strdup(alert_msg)) <= 0) {
                 merror("%s: ERROR: Unable to add file to db: %s", ARGV0, file_name);
@@ -188,8 +222,13 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
                      opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+#ifdef LIBSODIUM_ENABLED
+                     opts & CHECK_MD5SUM ? file_sums.md5output : "xxx",
+                     opts & CHECK_SHA256SUM ? file_sums.sha256output : "xxx",
+#else   //LIBSODIUM_ENABLED
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+#endif  //LIBSODIUM_ENABLED
                      file_name);
             send_syscheck_msg(alert_msg);
         } else {
