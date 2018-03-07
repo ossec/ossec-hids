@@ -117,7 +117,7 @@ ifdef DEBUGAD
 endif
 
 OSSEC_CFLAGS=${CFLAGS}
-ANALYSISD_FLAGS="-lsqlite3"
+#ANALYSISD_FLAGS="-lsqlite3"
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-ggdb
@@ -214,6 +214,11 @@ ifneq (,$(filter ${USE_LIBSODIUM},auto yes y Y 1))
 	DEFINES+=-DLIBSODIUM_ENABLED
 	OSSEC_LDFLAGS+=-lsodium
 endif # USE_LIBSODIUM
+
+ifneq (,$(filter ${USE_SQLITE},auto yes y Y 1))
+	DEFINES+=-DSQLITE_ENABLED
+	ANALYSISD_FLAGS="-lsqlite3"
+endif # USE_SQLITE
 
 MI :=
 PI :=
@@ -564,6 +569,7 @@ settings:
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
 	@echo "    USE_LIBSODIUM:    ${USE_LIBSODIUM}"
+	@echo "    USE_SQLITE:       ${USE_SQLITE}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
 	@echo "    libs:             ${ML}"

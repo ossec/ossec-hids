@@ -3195,4 +3195,28 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <order>user</order>
 </decoder>
 
+<decoder name="dhcpd">
+  <program_name>^dhcpd$</program_name>
+</decoder>
+
+<decoder name="dhcpd-data">
+  <parent>dhcpd</parent>
+  <regex offset="after_parent">^(\S+) \S+ (\S+) \S+ (\S+) via (\S+)$</regex>
+  <order>action, srcip, extra_data, extra_data</order>
+</decoder>
+
+<decoder name="dhcpd-ack">
+  <parent>dhcpd</parent>
+  <prematch> acking </prematch>
+  <regex offset="after_parent">already acking lease (\S+)</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="dhcpd-release">
+  <parent>dhcpd</parent>
+  <prematch>^IP address</prematch>
+  <regex offset="after_parent">^IP address (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+
 <!-- EOF -->
