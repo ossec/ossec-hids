@@ -64,7 +64,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 	    	char alert_msg[PATH_MAX+4];
 		    alert_msg[PATH_MAX + 3] = '\0';
 		    snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-            merror("ZZZ1 Sending: %s", alert_msg);
 		    send_syscheck_msg(alert_msg);
 		    return (0);
 	    }else{
@@ -127,13 +126,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         strncpy(file_sums->hash1, "xxx", 4);
         strncpy(file_sums->hash2, "xxx", 4);
 
-        int xxx = OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY);
-        if(xxx < 0) {
-            merror("xxx that sucks");
-        } else {
-            merror("xxx file_sums->md5output: %s", file_sums->md5output);
-        }
-
         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM)) {
 #else
         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
@@ -147,7 +139,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
 #ifdef LIBSODIUM_ENABLED
-                        merror("UUU1 OS_Hash_File: %s", file_name);
                         if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
                             merror("AAA1");
                             strncpy(file_sums->md5output, "xxx", 4);
@@ -229,21 +220,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             /* Send the new checksum to the analysis server */
             alert_msg[916] = '\0';
 
-            if(opts & CHECK_MD5SUM) {
-                merror("HHH MD5");
-            } else {
-                merror("HHH NO MD5");
-            }
-#ifdef LIBSODIUM_ENABLED
-            if(opts & CHECK_SHA256SUM) {
-                merror("HHH SHA256");
-            } else {
-                merror("HHH NO SHA256");
-            }
-            merror("UUU file_sums->md5output: %s", file_sums->md5output);
-#endif
-
-
             snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
@@ -257,7 +233,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
 #endif  //LIBSODIUM_ENABLED
                      file_name);
-            merror("ZZZ2 Sending: %s", alert_msg);
             send_syscheck_msg(alert_msg);
         } else {
             char alert_msg[OS_MAXSTR + 1];
@@ -293,7 +268,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
                 }
                 #endif
-                merror("YYY3 sending: %s", alert_msg);
                 send_syscheck_msg(alert_msg);
             }
         }

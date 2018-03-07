@@ -260,7 +260,6 @@ void start_daemon()
             }
 
             /* Send database completed message */
-            merror("ZZZ4 Sending db complete");
             send_syscheck_msg(HC_SK_DB_COMPLETED);
             debug2("%s: DEBUG: Sending database completed message.", ARGV0);
 
@@ -345,19 +344,13 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 
         alert_msg[PATH_MAX + 3] = '\0';
         snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-        merror("ZZZ5 Sending: %s", alert_msg);
         send_syscheck_msg(alert_msg);
 
+        free(file_sums);
         return (-1);
     }
 
     /* Get the old sum values */
-#ifdef DEBUG
-    if(oldsum) {
-        merror("XXX oldsum: %s", oldsum);
-    }
-#endif
-
     /* size */
     if (oldsum[0] == '+') {
         size = 1;
@@ -403,9 +396,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     strncpy(file_sums->sha256output, "xxx", 4);
                     strncpy(file_sums->hash1, "xxx", 4);
                     strncpy(file_sums->hash2, "xxx", 4);
-            } else {
-                merror("XXX hash1: %s", file_sums->hash1);
-                merror("XXX hash2: %s", file_sums->hash2);
             }
 #else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
@@ -463,6 +453,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              sha1sum  == 0 ? "xxx" : sf_sum);
 #endif
 
+    free(file_sums);
     return (0);
 }
 
