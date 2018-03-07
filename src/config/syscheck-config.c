@@ -160,7 +160,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_check_sum = "check_sum";
     const char *xml_check_sha1sum = "check_sha1sum";
     const char *xml_check_md5sum = "check_md5sum";
-    //const char *xml_check_sha256sum = "check_sha256sum";
+    const char *xml_check_sha256sum = "check_sha256sum";
     const char *xml_check_size = "check_size";
     const char *xml_check_owner = "check_owner";
     const char *xml_check_group = "check_group";
@@ -224,16 +224,24 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             /* Check all */
             if (strcmp(*attrs, xml_check_all) == 0) {
                 if (strcmp(*values, "yes") == 0) {
-                    opts |= CHECK_MD5SUM;
-                    opts |= CHECK_SHA1SUM;
+#ifdef LIBSODIUM_ENABLED
                     opts |= CHECK_SHA256SUM;
+#else   //LIBSODIUM_ENABLED
+                    opts |= CHECK_SHA1SUM;
+#endif  //LIBSODIUM_ENABLED
+                    opts |= CHECK_MD5SUM;
                     opts |= CHECK_PERM;
                     opts |= CHECK_SIZE;
                     opts |= CHECK_OWNER;
                     opts |= CHECK_GROUP;
                 } else if (strcmp(*values, "no") == 0) {
+#ifdef LIBSODIUM_ENABLED
+		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_PERM
+		       | CHECK_SIZE | CHECK_OWNER | CHECK_GROUP | CHECK_SHA256SUM );
+#else   //LIBSODIUM_ENABLED
 		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_PERM
 		       | CHECK_SIZE | CHECK_OWNER | CHECK_GROUP );
+#endif  //LIBSODIUM_ENABLED
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
                     ret = 0;
@@ -277,6 +285,20 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                     goto out_free;
                 }
             }
+#ifdef LIBSODIUM_ENABLED
+            else if(strncmp(*attrs, xml_check_sha256sum, 15) == 0) {
+                if(strncmp(*values, "yes", 3) ==0) {
+                    opts |= CHECK_SHA256SUM;
+                    merror("ZZZ sha256 set");
+                } else if(strncmp(*values, "no", 2) == 0) {
+                    opts &= ~ CHECK_SHA256SUM;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
+            }
+#endif  //LIBSODIUM_ENABLED
             /* Check permission */
             else if (strcmp(*attrs, xml_check_perm) == 0) {
                 if (strcmp(*values, "yes") == 0) {
@@ -460,7 +482,6 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     const char *xml_prefilter_cmd = "prefilter_cmd";
     const char *xml_skip_nfs = "skip_nfs";
     const char *xml_nodiff = "nodiff";
-    const char *xml_algorithms = "algorithms";
 
     /* Configuration example
     <directories check_all="yes">/etc,/usr/bin</directories>
@@ -542,41 +563,6 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);
-            }
-        }
-
-        /* Set the algoritms to be used */
-        else if(strcmp(node[i]->element, xml_algorithms) == 0) {
-            char alg[25];
-            strncpy(alg, node[i]->content, 24);
-            char *p, *tokens[3];
-            int i = 0;
-            char *last;
-            for ((p = strtok_r(alg, ",", &last)); p; (p = strtok_r(NULL, ",", &last))) {
-                if(i < 2) {
-                    tokens[i++] = p;
-                }
-                if(!p) {
-                    merror("NOT p!");
-                }
-
-                /* remove spaces */
-                if(*p == ' ') {
-                    p++;
-                }
-#ifndef LIBSODIUM_ENABLED
-                if((strncmp(p, "sha256", 6)) == 0) {
-                    merror("sha256 requires libsodium support.");
-                    return(OS_INVALID); // XXX What error here?
-                }
-#endif
-                if(i == 1) {
-                    syscheck->hash1_alg = p;
-                } else if(i == 2) {
-                    syscheck->hash2_alg = p;
-                } else {
-                    merror("XXX oops. %s", p);
-                }
             }
         }
 
@@ -862,10 +848,13 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_SIZE,
         CHECK_OWNER,
         CHECK_GROUP,
-	CHECK_MD5SUM,
+	    CHECK_MD5SUM,
         CHECK_SHA1SUM,
         CHECK_REALTIME,
         CHECK_SEECHANGES,
+#ifdef LIBSODIUM_ENABLED
+        CHECK_SHA256SUM,
+#endif
 	0
 	};
     char *check_strings[] = {
@@ -873,7 +862,8 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         "size",
         "owner",
         "group",
-	"md5sum",
+	    "md5sum",
+        "sha256sum",
         "sha1sum",
         "realtime",
         "report_changes",

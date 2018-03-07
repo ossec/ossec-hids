@@ -93,42 +93,19 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 }
 
 #ifdef LIBSODIUM_ENABLED
-int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char *hash1_alg, char *hash2_alg)
+int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output *file_output, int mode)
 {
+
     size_t n;
     FILE *fp;
     unsigned char buf[2048 + 2];
-    unsigned char sha1_digest[SHA_DIGEST_LENGTH];
     unsigned char md5_digest[16];
 
-    int c_sha1 = 0, c_md5 = 0, c_sha256 = 0, al = 0;
-    if((strncmp(hash1_alg, "md5", 3) == 0 || strncmp(hash1_alg,
-                    "MD5", 3) == 0)) {
-        c_md5 = 1;
-        file_output.md5output[0] = '\0';
-    } else if((strncmp(hash2_alg, "sha1", 4) == 0 || strncmp(hash2_alg,
-                    "SHA1", 4) == 0)) {
-        c_sha1 = 1;
-        file_output.sha1output[0] = '\0';
-    } else if((strncmp(hash2_alg, "sha256", 6) == 0 || strncmp(hash2_alg,
-                    "SHA256", 6) == 0)) {
-        c_sha256 = 1;
-        file_output.sha256output[0] = '\0';
-    }
-
-    if(c_sha1 == 1 && c_sha256 == 1) {
-        //merror("syscheckd: sha1 and sha256 enabled, disabling sha1.");
-        c_sha1 = 0;
-    }
-
-
-    SHA_CTX sha1_ctx;
     MD5_CTX md5_ctx;
 
     /* Initialize libsodium */
     unsigned char sha256_digest[crypto_hash_sha256_BYTES];
     if(sodium_init() < 0) {
-        //merror("Hash failed: (%d) %s", errno, strerror(errno));
         exit(errno);    // XXX - doesn't seem right
     }
     crypto_hash_sha256_state sha256_state;
@@ -156,75 +133,38 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
     }
 
     /* Initialize both hashes */
-    if(c_md5 > 0) {
-        MD5Init(&md5_ctx);
-        snprintf(file_output.hash1, 4, "MD5=");
-        file_output.hash1[4] = '\0';
-    }
-    if(c_sha1 > 0) {
-        SHA1_Init(&sha1_ctx);
-        snprintf(file_output.hash2, 5, "SHA1=");
-        file_output.hash2[5] = '\0';
-    }
+    MD5Init(&md5_ctx);
+    snprintf(file_output->hash1, 4, "MD5=");
+    file_output->hash1[4] = '\0';
 
     /* Update for each hash */
     while ((n = fread(buf, 1, 2048, fp)) > 0) {
         buf[n] = '\0';
-        if(c_sha1 > 0) {
-            SHA1_Update(&sha1_ctx, buf, n);
-        }
-        if(c_md5 > 0) {
-            MD5Update(&md5_ctx, buf, (unsigned)n);
-        }
-        if(c_sha256 > 0) {
-            crypto_hash_sha256_update(&sha256_state, buf, n);
-        }
+        MD5Update(&md5_ctx, buf, (unsigned)n);
+        crypto_hash_sha256_update(&sha256_state, buf, n);
     }
 
-    if(c_sha1 > 0) {
-        SHA1_Final(&(sha1_digest[0]), &sha1_ctx);
-    }
-    if(c_md5 > 0) {
-        MD5Final(md5_digest, &md5_ctx);
-    }
-    if(c_sha256 > 0) {
-        crypto_hash_sha256_final(&sha256_state, sha256_digest);
-    }
+    MD5Final(md5_digest, &md5_ctx);
+    crypto_hash_sha256_final(&sha256_state, sha256_digest);
 
     /* Set output for MD5 */
-    if(c_md5 > 0) {
-        for (n = 0; n < 16; n++) {
-            if(n == 0) {
-                snprintf(file_output.md5output, 3, "%02x", md5_digest[n]);
-            } else {
-                snprintf(file_output.md5output, strnlen(file_output.md5output, 33) + 3, "%s%02x", file_output.md5output, md5_digest[n]);
-            }
-            snprintf(file_output.hash1, strnlen(file_output.hash1, 37) + 3, "%s%02x", file_output.hash1, md5_digest[n]);
+    for (n = 0; n < 16; n++) {
+        if(n == 0) {
+            snprintf(file_output->md5output, 3, "%02x", md5_digest[n]);
+        } else {
+            snprintf(file_output->md5output, strnlen(file_output->md5output, 33) + 3, "%s%02x", file_output->md5output, md5_digest[n]);
         }
-    }
-
-    /* Set output for SHA-1 */
-    if(c_sha1 > 0) {
-        for (n = 0; n < SHA_DIGEST_LENGTH; n++) {
-            if(n == 0) {
-                snprintf(file_output.sha1output, 3, "%02x", sha1_digest[n]);
-            } else {
-                snprintf(file_output.sha1output, strnlen(file_output.sha1output, 65) + 3, "%s%02x", file_output.sha1output, sha1_digest[n]);
-            }
-            snprintf(file_output.hash2, strnlen(file_output.hash2, 65) + 3, "%s%02x", file_output.hash2, sha1_digest[n]);
-        }
+        snprintf(file_output->hash1, strnlen(file_output->hash1, 37) + 3, "%s%02x", file_output->hash1, md5_digest[n]);
     }
 
     /* Set output for SHA256 */
-    if(c_sha256 > 0) {
-        for (n = 0; n < crypto_hash_sha256_BYTES; n++) {
-            if(n == 0) {
-                snprintf(file_output.sha256output, 3, "%02x", sha256_digest[n]);
-            } else {
-                snprintf(file_output.sha256output, strnlen(file_output.sha256output, 66) + 3, "%s%02x", file_output.sha256output, sha256_digest[n]);
-            }
-            snprintf(file_output.hash2, strnlen(file_output.hash2, 66) + 3, "%s%02x", file_output.hash2, sha256_digest[n]);
+    for (n = 0; n < crypto_hash_sha256_BYTES; n++) {
+        if(n == 0) {
+            snprintf(file_output->sha256output, 3, "%02x", sha256_digest[n]);
+        } else {
+            snprintf(file_output->sha256output, strnlen(file_output->sha256output, 66) + 3, "%s%02x", file_output->sha256output, sha256_digest[n]);
         }
+        snprintf(file_output->hash2, strnlen(file_output->hash2, 66) + 3, "%s%02x", file_output->hash2, sha256_digest[n]);
     }
 
     /* Close it */

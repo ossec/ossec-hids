@@ -22,12 +22,11 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 
 struct hash_output {
     os_md5 md5output;
-    os_sha1 sha1output;
     char sha256output[crypto_hash_sha256_BYTES];
     char hash1[523];
     char hash2[523];
 };
 
-int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output file_output, int mode, char *hash1_alg, char *hash2_alg);
+int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output *file_output, int mode);
 #endif
 
