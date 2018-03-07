@@ -15,8 +15,9 @@
 #include "alerts/alerts.h"
 #include "decoder.h"
 
-//#include <sqlite3.h>
+#ifdef SQLITE_ENABLED
 #include "syscheck-sqlite.h"
+#endif
 
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
@@ -622,7 +623,9 @@ int DecodeSyscheck(Eventinfo *lf)
 
     char *p;
     char stmt[OS_MAXSTR + 1];
+#ifdef SQLITE_ENABLED
     sqlite3_stmt *res;
+#endif
     int error = 0;
     int rec_count = 0;
     const char *tail;
@@ -678,6 +681,7 @@ int DecodeSyscheck(Eventinfo *lf)
      * Sample message:
      * 0:0:0:0:78f5c869675b1d09ddad870adad073f9:bd6c8d7a58b462aac86475e59af0e22954039c50
      */
+#ifdef SQLITE_ENABLED
     if (Config.md5_whitelist)  {
         extern sqlite3 *conn;
         if ((p = extract_token(c_sum, ":", 4))) {
@@ -702,6 +706,7 @@ int DecodeSyscheck(Eventinfo *lf)
             sqlite3_finalize(res);
         }
     }
+#endif
  
 
     /* Search for file changes */

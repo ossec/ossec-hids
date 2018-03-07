@@ -41,7 +41,9 @@
 #include "output/zeromq.h"
 #endif
 
+#ifdef SQLITE_ENABLED
 #include "syscheck-sqlite.h"
+#endif
 
 /** Prototypes **/
 void OS_ReadMSG(int m_queue);
@@ -656,6 +658,7 @@ void OS_ReadMSG_analysisd(int m_queue)
         Free_Eventinfo(lf);
     }
 
+#ifdef SQLITE_ENABLED
     /* Open the sqlite db */
     extern sqlite3 *conn;
     int s_error = 0;
@@ -666,6 +669,7 @@ void OS_ReadMSG_analysisd(int m_queue)
         }
 
     }
+#endif
 
     debug1("%s: DEBUG: Startup completed. Waiting for new messages..", ARGV0);
 
