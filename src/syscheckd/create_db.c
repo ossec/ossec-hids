@@ -234,6 +234,13 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 #endif  //LIBSODIUM_ENABLED
                      file_name);
             send_syscheck_msg(alert_msg);
+#ifdef LIBSODIUM_ENABLED
+#ifdef DEBUG
+            if(file_sums->hash1) {
+                merror("DEBUG: file_sums->hash1: %s", file_sums->hash1);
+            }
+#endif  //DEBUG
+#endif  //LIBSODIUM_ENABLED
         } else {
             char alert_msg[OS_MAXSTR + 1];
             char c_sum[256 + 2];
@@ -269,6 +276,13 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 }
                 #endif
                 send_syscheck_msg(alert_msg);
+#ifdef LIBSODIUM_ENABLED
+#ifdef DEBUG
+                if(file_sums->hash1) {
+                    merror("DEBUG: file_sums->hash1: %s", file_sums->hash1);
+                }
+#endif  //DEBUG
+#endif  //LIBSODIUM_ENABLED
             }
         }
 

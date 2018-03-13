@@ -220,6 +220,12 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
         attrs = g_attrs;
         values = g_values;
 
+#ifdef LIBSODIUM_ENABLED
+#ifdef DEBUG
+        merror("DEBUG: libsodium enabled");
+#endif  //DEBUG
+#endif  //LIBSODIUM_ENABLED
+
         while (*attrs && *values) {
             /* Check all */
             if (strcmp(*attrs, xml_check_all) == 0) {
@@ -252,9 +258,17 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             else if (strcmp(*attrs, xml_check_sum) == 0) {
                 if (strcmp(*values, "yes") == 0) {
                     opts |= CHECK_MD5SUM;
+#ifdef LIBSODIUM_ENABLED
+                    opts |= CHECK_SHA256SUM;
+#else   //LIBSODIUM_ENABLED
                     opts |= CHECK_SHA1SUM;
+#endif  //LIBSODIUM_ENABLED
                 } else if (strcmp(*values, "no") == 0) {
+#ifdef LIBSODIUM_ENABLED
+		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA256SUM );
+#else   //LIBSODIUM_ENALBED
 		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM );
+#endif
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
                     ret = 0;
@@ -510,6 +524,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             ExpandEnvironmentStrings(node[i]->content, dirs, sizeof(dirs) - 1);
 #else
             strncpy(dirs, node[i]->content, sizeof(dirs) - 1);
+            dirs[sizeof(dirs) - 1] = '\0';
 #endif
 
             if (!read_attr(syscheck,
@@ -808,12 +823,14 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             ExpandEnvironmentStrings(node[i]->content, cmd, sizeof(cmd) - 1);
 #else
             strncpy(cmd, node[i]->content, sizeof(cmd) - 1);
+            cmd[sizeof(cmd) - 1] = '\0';
 #endif
 
             if (strlen(cmd) > 0) {
                 char statcmd[OS_MAXSTR];
                 char *ix;
                 strncpy(statcmd, cmd, sizeof(statcmd) - 1);
+                statcmd[sizeof(statcmd) - 1] = '\0';
                 if (NULL != (ix = strchr(statcmd, ' '))) {
                     *ix = '\0';
                 }
@@ -821,6 +838,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                     /* More checks needed (perms, owner, etc.) */
                     os_calloc(1, strlen(cmd) + 1, syscheck->prefilter_cmd);
                     strncpy(syscheck->prefilter_cmd, cmd, strlen(cmd));
+                    syscheck->prefilter_cmd[sizeof(syscheck->prefilter_cmd) - 1] = '\0';
                 } else {
                     merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                     return (OS_INVALID);
@@ -854,7 +872,7 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_SEECHANGES,
 #ifdef LIBSODIUM_ENABLED
         CHECK_SHA256SUM,
-#endif
+#endif  //LIBSODIUM_ENABLED
 	0
 	};
     char *check_strings[] = {
@@ -863,10 +881,12 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         "owner",
         "group",
 	    "md5sum",
-        "sha256sum",
         "sha1sum",
         "realtime",
         "report_changes",
+#ifdef LIBSODIUM_ENABLED
+        "sha256sum",
+#endif  //LIBSODIUM_ENABLED
 	NULL
 	};
 
