@@ -621,9 +621,9 @@ int DecodeSyscheck(Eventinfo *lf)
     const char *c_sum;
     char *f_name;
 
+#ifdef SQLITE_ENABLED
     char *p;
     char stmt[OS_MAXSTR + 1];
-#ifdef SQLITE_ENABLED
     sqlite3_stmt *res;
 #endif
     int error = 0;
