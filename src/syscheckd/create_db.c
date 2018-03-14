@@ -206,16 +206,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
             #endif
 
-            if(opts & CHECK_MD5SUM) {
-                merror("BBB1: MD5");
-            } else {
-                merror("BBB1: NO MD5");
-            }
-            if(opts & CHECK_SHA256SUM) {
-                merror("BBB1: SHA256");
-            } else {
-                merror("BBB1: NO SHA256");
-            }
             snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
                      opts & CHECK_SIZE ? '+' : '-',
                      opts & CHECK_PERM ? '+' : '-',
@@ -243,16 +233,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             /* Send the new checksum to the analysis server */
             alert_msg[916] = '\0';
 
-            if(opts & CHECK_MD5SUM) {
-                merror("BBB2: MD5");
-            } else {
-                merror("BBB2: NO MD5");
-            }
-            if(opts & CHECK_SHA256SUM) {
-                merror("BBB2: SHA256");
-            } else {
-                merror("BBB2: NO SHA256");
-            }
             snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
