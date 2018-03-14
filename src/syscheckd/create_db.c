@@ -135,25 +135,24 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 
             /* XXX This is all weird */
             if (S_ISLNK(statbuf.st_mode)) {
-                merror("QQQ1: link: %s", file_name);
 
                 /* Get the file the link points to */
+                /* XXX not working
                 char new_file_name[255];
                 ssize_t rlret = readlink(file_name, new_file_name, 254);
                 if(rlret < 0) {
                     merror("Cannot find the file: %s", strerror(errno));
                 } else {
                     new_file_name[sizeof(new_file_name) - 1] = '\0';
-                    merror("QQQ3: new_file_name: %s", new_file_name);
                 }
+                */
 
                 struct stat statbuf_lnk;
-                if (stat(new_file_name, &statbuf_lnk) == 0) {
+                //if (stat(new_file_name, &statbuf_lnk) == 0) {
+                if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
-                        merror("QQQ2: not link: %s", file_name);
 #ifdef LIBSODIUM_ENABLED
-                        if(OS_Hash_File(new_file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
-                            merror("AAA1");
+                        if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
                             strncpy(file_sums->md5output, "xxx", 4);
                             strncpy(file_sums->sha256output, "xxx", 4);
                             strncpy(file_sums->hash1, "xxx", 4);
@@ -161,7 +160,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                         }
 
 #else   //LIBSODIUM_ENABLED
-                        if (OS_MD5_SHA1_File(new_file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                        if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
@@ -177,7 +176,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
 #endif
             {
-                merror("AAA2");
                 strncpy(mf_sum, "xxx", 4);
                 strncpy(sf_sum, "xxx", 4);
             }
@@ -269,11 +267,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 #endif  //LIBSODIUM_ENABLED
                      file_name);
             send_syscheck_msg(alert_msg);
-#ifdef LIBSODIUM_ENABLED
-#ifdef DEBUG
-            merror("DEBUG1: file_sums->hash1: %s", file_sums->hash1);
-#endif  //DEBUG
-#endif  //LIBSODIUM_ENABLED
         } else {
             char alert_msg[OS_MAXSTR + 1];
             char c_sum[256 + 2];
@@ -309,11 +302,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 }
                 #endif
                 send_syscheck_msg(alert_msg);
-#ifdef LIBSODIUM_ENABLED
-                if(file_sums->hash1) {
-                    merror("DEBUG2: file_sums->hash1: %s", file_sums->hash1);
-                }
-#endif  //LIBSODIUM_ENABLED
             }
         }
 
