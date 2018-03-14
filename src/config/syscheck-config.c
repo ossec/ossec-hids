@@ -304,7 +304,6 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             else if(strncmp(*attrs, xml_check_sha256sum, 15) == 0) {
                 if(strncmp(*values, "yes", 3) ==0) {
                     opts |= CHECK_SHA256SUM;
-                    merror("ZZZ sha256 set");
                 } else if(strncmp(*values, "no", 2) == 0) {
                     opts &= ~ CHECK_SHA256SUM;
                 } else {

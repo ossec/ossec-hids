@@ -24,6 +24,7 @@ USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
+USE_SQLITE=no
 USE_LIBSODIUM=no
 
 ifneq (${TARGET},winagent)
