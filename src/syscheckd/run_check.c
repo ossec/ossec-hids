@@ -393,6 +393,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             /* Generate checksums of the file */
 #ifdef LIBSODIUM_ENABLED
             if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                merror("AAA3");
                     strncpy(file_sums->md5output, "xxx", 4);
                     strncpy(file_sums->sha256output, "xxx", 4);
                     strncpy(file_sums->hash1, "xxx", 4);
@@ -416,6 +417,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     /* Generate checksums of the file */
 #ifdef LIBSODIUM_ENABLED
                     if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                        merror("AAA4");
                             strncpy(file_sums->md5output, "xxx", 4);
                             strncpy(file_sums->sha256output, "xxx", 4);
                             strncpy(file_sums->hash1, "xxx", 4);
@@ -442,8 +444,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              perm == 0 ? 0 : (int)statbuf.st_mode,
              owner == 0 ? 0 : (int)statbuf.st_uid,
              group == 0 ? 0 : (int)statbuf.st_gid,
-             md5sum   == 0 ? "xxx" : mf_sum,
-             sha1sum  == 0 ? "xxx" : sf_sum);
+             file_sums->md5output,
+             file_sums->sha256output);
 #else
     snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,

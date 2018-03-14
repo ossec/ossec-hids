@@ -230,9 +230,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             /* Check all */
             if (strcmp(*attrs, xml_check_all) == 0) {
                 if (strcmp(*values, "yes") == 0) {
-#ifdef LIBSODIUM_ENABLED
-                    opts |= CHECK_SHA256SUM;
-#else   //LIBSODIUM_ENABLED
+#ifndef LIBSODIUM_ENABLED
                     opts |= CHECK_SHA1SUM;
 #endif  //LIBSODIUM_ENABLED
                     opts |= CHECK_MD5SUM;
@@ -240,6 +238,9 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                     opts |= CHECK_SIZE;
                     opts |= CHECK_OWNER;
                     opts |= CHECK_GROUP;
+#ifdef LIBSODIUM_ENABLED
+                    opts |= CHECK_SHA256SUM;
+#endif  //LIBSODIUM_ENABLED
                 } else if (strcmp(*values, "no") == 0) {
 #ifdef LIBSODIUM_ENABLED
 		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_PERM

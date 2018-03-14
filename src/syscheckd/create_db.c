@@ -98,9 +98,9 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
     /* No S_ISLNK on Windows */
 #ifdef WIN32
     if (S_ISREG(statbuf.st_mode))
-#else
+#else   //WIN32
     if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode))
-#endif
+#endif  //WIN32
     {
         os_md5 mf_sum;
         os_sha1 sf_sum;
@@ -135,11 +135,24 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 
             /* XXX This is all weird */
             if (S_ISLNK(statbuf.st_mode)) {
+                merror("QQQ1: link: %s", file_name);
+
+                /* Get the file the link points to */
+                char new_file_name[255];
+                ssize_t rlret = readlink(file_name, new_file_name, 254);
+                if(rlret < 0) {
+                    merror("Cannot find the file: %s", strerror(errno));
+                } else {
+                    new_file_name[sizeof(new_file_name) - 1] = '\0';
+                    merror("QQQ3: new_file_name: %s", new_file_name);
+                }
+
                 struct stat statbuf_lnk;
-                if (stat(file_name, &statbuf_lnk) == 0) {
+                if (stat(new_file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
+                        merror("QQQ2: not link: %s", file_name);
 #ifdef LIBSODIUM_ENABLED
-                        if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                        if(OS_Hash_File(new_file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
                             merror("AAA1");
                             strncpy(file_sums->md5output, "xxx", 4);
                             strncpy(file_sums->sha256output, "xxx", 4);
@@ -148,7 +161,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                         }
 
 #else   //LIBSODIUM_ENABLED
-                        if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                        if (OS_MD5_SHA1_File(new_file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
@@ -164,6 +177,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
 #endif
             {
+                merror("AAA2");
                 strncpy(mf_sum, "xxx", 4);
                 strncpy(sf_sum, "xxx", 4);
             }
@@ -194,6 +208,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
             #endif
 
+            if(opts & CHECK_MD5SUM) {
+                merror("BBB1: MD5");
+            } else {
+                merror("BBB1: NO MD5");
+            }
+            if(opts & CHECK_SHA256SUM) {
+                merror("BBB1: SHA256");
+            } else {
+                merror("BBB1: NO SHA256");
+            }
             snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
                      opts & CHECK_SIZE ? '+' : '-',
                      opts & CHECK_PERM ? '+' : '-',
@@ -213,6 +237,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx");
 #endif  //LIBSODIUM_ENABLED
 
+
             if (OSHash_Add(syscheck.fp, file_name, strdup(alert_msg)) <= 0) {
                 merror("%s: ERROR: Unable to add file to db: %s", ARGV0, file_name);
             }
@@ -220,6 +245,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             /* Send the new checksum to the analysis server */
             alert_msg[916] = '\0';
 
+            if(opts & CHECK_MD5SUM) {
+                merror("BBB2: MD5");
+            } else {
+                merror("BBB2: NO MD5");
+            }
+            if(opts & CHECK_SHA256SUM) {
+                merror("BBB2: SHA256");
+            } else {
+                merror("BBB2: NO SHA256");
+            }
             snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
@@ -236,9 +271,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             send_syscheck_msg(alert_msg);
 #ifdef LIBSODIUM_ENABLED
 #ifdef DEBUG
-            if(file_sums->hash1) {
-                merror("DEBUG: file_sums->hash1: %s", file_sums->hash1);
-            }
+            merror("DEBUG1: file_sums->hash1: %s", file_sums->hash1);
 #endif  //DEBUG
 #endif  //LIBSODIUM_ENABLED
         } else {
@@ -277,11 +310,9 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 #endif
                 send_syscheck_msg(alert_msg);
 #ifdef LIBSODIUM_ENABLED
-#ifdef DEBUG
                 if(file_sums->hash1) {
-                    merror("DEBUG: file_sums->hash1: %s", file_sums->hash1);
+                    merror("DEBUG2: file_sums->hash1: %s", file_sums->hash1);
                 }
-#endif  //DEBUG
 #endif  //LIBSODIUM_ENABLED
             }
         }

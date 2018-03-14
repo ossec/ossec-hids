@@ -539,8 +539,13 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0) {
                 sdb.sha1[0] = '\0';
             } else {
+#ifdef LIBSODIUM_ENABLED
+                snprintf(sdb.sha1, OS_FLSIZE, "Old sha256sum was: '%s'\n"
+                         "New sha256sum is : '%s'\n",
+#else   //LIBSODIUM_ENABLED
                 snprintf(sdb.sha1, OS_FLSIZE, "Old sha1sum was: '%s'\n"
                          "New sha1sum is : '%s'\n",
+#endif  //LIBSODIUM_ENABLED
                          oldsha1, newsha1);
                 os_strdup(oldsha1, lf->sha1_before);
                 os_strdup(newsha1, lf->sha1_after);
