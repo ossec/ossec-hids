@@ -150,21 +150,28 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
     crypto_hash_sha256_final(&sha256_state, sha256_digest);
 
     /* Set output for MD5 */
+    char md5tmp[3], sha256tmp[3];
+
     for (n = 0; n < 16; n++) {
         if(n == 0) {
             snprintf(file_output->md5output, 3, "%02x", md5_digest[n]);
         } else {
-            snprintf(file_output->md5output, strnlen(file_output->md5output, 33) + 3, "%s%02x", file_output->md5output, md5_digest[n]);
+            snprintf(md5tmp, 3, "%02x", md5_digest[n]);
+            strncat(file_output->md5output, md5tmp, sizeof(file_output->md5output) - 1 - strlen(file_output->md5output));
         }
         snprintf(file_output->hash1, strnlen(file_output->hash1, 37) + 3, "%s%02x", file_output->hash1, md5_digest[n]);
     }
+
 
     /* Set output for SHA256 */
     for (n = 0; n < crypto_hash_sha256_BYTES; n++) {
         if(n == 0) {
             snprintf(file_output->sha256output, 3, "%02x", sha256_digest[n]);
         } else {
-            snprintf(file_output->sha256output, strnlen(file_output->sha256output, 66) + 3, "%s%02x", file_output->sha256output, sha256_digest[n]);
+            //snprintf(file_output->sha256output, strnlen(file_output->sha256output, 66) + 3, "%s%02x", file_output->sha256output, sha256_digest[n]);
+            sha256tmp[0] = '\0';
+            snprintf(sha256tmp, 3, "%02x", sha256_digest[n]);
+            strncat(file_output->sha256output, sha256tmp, sizeof(file_output->sha256output) - 1 - strlen(file_output->md5output));
         }
         snprintf(file_output->hash2, strnlen(file_output->hash2, 66) + 3, "%s%02x", file_output->hash2, sha256_digest[n]);
     }
