@@ -135,7 +135,7 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
     }
 
     /* We have two subject options - full and normal */
-    if (Mail->subject_full) {
+    if (Mail->subject_full == 0) {
         /* Option for a clean full subject (without ossec in the name) */
 #ifdef CLEANFULL
         snprintf(mail->subject, SUBJECT_SIZE - 1, MAIL_SUBJECT_FULL2,
