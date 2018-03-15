@@ -10,7 +10,10 @@
 #ifndef __MD5SHA1_OP_H
 #define __MD5SHA1_OP_H
 
+#ifdef LIBSODIUM_ENABLED
 #include <sodium.h>
+#endif  //LIBSODIUM_ENABLED
+
 #include "../md5/md5_op.h"
 #include "../sha1/sha1_op.h"
 
