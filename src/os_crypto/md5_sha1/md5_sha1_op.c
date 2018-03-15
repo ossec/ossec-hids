@@ -159,7 +159,7 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             snprintf(md5tmp, 3, "%02x", md5_digest[n]);
             strncat(file_output->md5output, md5tmp, sizeof(file_output->md5output) - 1 - strlen(file_output->md5output));
         }
-        snprintf(file_output->hash1, strnlen(file_output->hash1, 37) + 3, "%s%02x", file_output->hash1, md5_digest[n]);
+        //snprintf(file_output->hash1, strnlen(file_output->hash1, 37) + 3, "%s%02x", file_output->hash1, md5_digest[n]);
     }
 
 
@@ -173,7 +173,7 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             snprintf(sha256tmp, 3, "%02x", sha256_digest[n]);
             strncat(file_output->sha256output, sha256tmp, sizeof(file_output->sha256output) - 1 - strlen(file_output->md5output));
         }
-        snprintf(file_output->hash2, strnlen(file_output->hash2, 66) + 3, "%s%02x", file_output->hash2, sha256_digest[n]);
+        //snprintf(file_output->hash2, strnlen(file_output->hash2, 66) + 3, "%s%02x", file_output->hash2, sha256_digest[n]);
     }
 
     /* Close it */
