@@ -23,8 +23,18 @@
 /* cJSON */
 /* JSON parser in C. */
 
+/* disable warnings about old C89 functions in MSVC */
+#if !defined(_CRT_SECURE_NO_DEPRECATE) && defined(_MSC_VER)
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+
 #ifdef __GNUC__
 #pragma GCC visibility push(default)
+#endif
+#if defined(_MSC_VER)
+#pragma warning (push)
+/* disable warning about single line comments in system headers */
+#pragma warning (disable : 4001)
 #endif
 
 #include <string.h>
@@ -34,8 +44,14 @@
 #include <float.h>
 #include <limits.h>
 #include <ctype.h>
-#include <locale.h>
 
+#ifdef ENABLE_LOCALES
+#include <locale.h>
+#endif
+
+#if defined(_MSC_VER)
+#pragma warning (pop)
+#endif
 #ifdef __GNUC__
 #pragma GCC visibility pop
 #endif
@@ -57,8 +73,16 @@ CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void)
     return (const char*) (global_error.json + global_error.position);
 }
 
+CJSON_PUBLIC(char *) cJSON_GetStringValue(cJSON *item) {
+    if (!cJSON_IsString(item)) {
+        return NULL;
+    }
+
+    return item->valuestring;
+}
+
 /* This is a safeguard to prevent copy-pasters from using incompatible C and header files */
-#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 5) || (CJSON_VERSION_PATCH != 7)
+#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 7) || (CJSON_VERSION_PATCH != 1)
     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
 #endif
 
@@ -101,7 +125,27 @@ typedef struct internal_hooks
     void *(*reallocate)(void *pointer, size_t size);
 } internal_hooks;
 
-static internal_hooks global_hooks = { malloc, free, realloc };
+#if defined(_MSC_VER)
+/* work around MSVC error C2322: '...' address of dillimport '...' is not static */
+static void *internal_malloc(size_t size)
+{
+    return malloc(size);
+}
+static void internal_free(void *pointer)
+{
+    free(pointer);
+}
+static void *internal_realloc(void *pointer, size_t size)
+{
+    return realloc(pointer, size);
+}
+#else
+#define internal_malloc malloc
+#define internal_free free
+#define internal_realloc realloc
+#endif
+
+static internal_hooks global_hooks = { internal_malloc, internal_free, internal_realloc };
 
 static unsigned char* cJSON_strdup(const unsigned char* string, const internal_hooks * const hooks)
 {
@@ -114,7 +158,8 @@ static unsigned char* cJSON_strdup(const unsigned char* string, const internal_h
     }
 
     length = strlen((const char*)string) + sizeof("");
-    if (!(copy = (unsigned char*)hooks->allocate(length)))
+    copy = (unsigned char*)hooks->allocate(length);
+    if (copy == NULL)
     {
         return NULL;
     }
@@ -193,8 +238,12 @@ CJSON_PUBLIC(void) cJSON_Delete(cJSON *item)
 /* get the decimal point character of the current locale */
 static unsigned char get_decimal_point(void)
 {
+#ifdef ENABLE_LOCALES
     struct lconv *lconv = localeconv();
     return (unsigned char) lconv->decimal_point[0];
+#else
+    return '.';
+#endif
 }
 
 typedef struct
@@ -208,7 +257,6 @@ typedef struct
 
 /* check if the given size is left to read in a given parse buffer (starting with 1) */
 #define can_read(buffer, size) ((buffer != NULL) && (((buffer)->offset + size) <= (buffer)->length))
-#define cannot_read(buffer, size) (!can_read(buffer, size))
 /* check if the buffer can be accessed at the given index (starting with 0) */
 #define can_access_at_index(buffer, index) ((buffer != NULL) && (((buffer)->offset + index) < (buffer)->length))
 #define cannot_access_at_index(buffer, index) (!can_access_at_index(buffer, index))
@@ -464,7 +512,7 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
     }
 
     /* reserve appropriate space in the output */
-    output_pointer = ensure(output_buffer, (size_t)length);
+    output_pointer = ensure(output_buffer, (size_t)length + sizeof(""));
     if (output_pointer == NULL)
     {
         return false;
@@ -933,6 +981,22 @@ static parse_buffer *buffer_skip_whitespace(parse_buffer * const buffer)
     return buffer;
 }
 
+/* skip the UTF-8 BOM (byte order mark) if it is at the beginning of a buffer */
+static parse_buffer *skip_utf8_bom(parse_buffer * const buffer)
+{
+    if ((buffer == NULL) || (buffer->content == NULL) || (buffer->offset != 0))
+    {
+        return NULL;
+    }
+
+    if (can_access_at_index(buffer, 4) && (strncmp((const char*)buffer_at_offset(buffer), "\xEF\xBB\xBF", 3) == 0))
+    {
+        buffer->offset += 3;
+    }
+
+    return buffer;
+}
+
 /* Parse an object - create a new root, and populate. */
 CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return_parse_end, cJSON_bool require_null_terminated)
 {
@@ -959,7 +1023,7 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithOpts(const char *value, const char **return
         goto fail;
     }
 
-    if (!parse_value(item, buffer_skip_whitespace(&buffer)))
+    if (!parse_value(item, buffer_skip_whitespace(skip_utf8_bom(&buffer))))
     {
         /* parse failure. ep is set. */
         goto fail;
@@ -1006,10 +1070,8 @@ fail:
         {
             *return_parse_end = (const char*)local_error.json + local_error.position;
         }
-        else
-        {
-            global_error = local_error;
-        }
+
+        global_error = local_error;
     }
 
     return NULL;
@@ -1025,13 +1087,15 @@ CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value)
 
 static unsigned char *print(const cJSON * const item, cJSON_bool format, const internal_hooks * const hooks)
 {
+    static const size_t default_buffer_size = 256;
     printbuffer buffer[1];
     unsigned char *printed = NULL;
 
     memset(buffer, 0, sizeof(buffer));
 
     /* create buffer */
-    buffer->buffer = (unsigned char*) hooks->allocate(256);
+    buffer->buffer = (unsigned char*) hooks->allocate(default_buffer_size);
+    buffer->length = default_buffer_size;
     buffer->format = format;
     buffer->hooks = *hooks;
     if (buffer->buffer == NULL)
@@ -1049,7 +1113,7 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
     /* check if reallocate is available */
     if (hooks->reallocate != NULL)
     {
-        printed = (unsigned char*) hooks->reallocate(buffer->buffer, buffer->length);
+        printed = (unsigned char*) hooks->reallocate(buffer->buffer, buffer->offset + 1);
         buffer->buffer = NULL;
         if (printed == NULL) {
             goto fail;
@@ -1196,7 +1260,6 @@ static cJSON_bool parse_value(cJSON * const item, parse_buffer * const input_buf
     {
         return parse_object(item, input_buffer);
     }
-
 
     return false;
 }
@@ -1783,14 +1846,13 @@ static cJSON *create_reference(const cJSON *item, const internal_hooks * const h
     return reference;
 }
 
-/* Add item to array/object. */
-CJSON_PUBLIC(void) cJSON_AddItemToArray(cJSON *array, cJSON *item)
+static cJSON_bool add_item_to_array(cJSON *array, cJSON *item)
 {
     cJSON *child = NULL;
 
     if ((item == NULL) || (array == NULL))
     {
-        return;
+        return false;
     }
 
     child = array->child;
@@ -1809,46 +1871,74 @@ CJSON_PUBLIC(void) cJSON_AddItemToArray(cJSON *array, cJSON *item)
         }
         suffix_object(child, item);
     }
+
+    return true;
 }
 
-CJSON_PUBLIC(void) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
+/* Add item to array/object. */
+CJSON_PUBLIC(void) cJSON_AddItemToArray(cJSON *array, cJSON *item)
 {
-    if (item == NULL)
-    {
-        return;
-    }
-
-    /* call cJSON_AddItemToObjectCS for code reuse */
-    cJSON_AddItemToObjectCS(object, (char*)cJSON_strdup((const unsigned char*)string, &global_hooks), item);
-    /* remove cJSON_StringIsConst flag */
-    item->type &= ~cJSON_StringIsConst;
+    add_item_to_array(array, item);
 }
 
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined(__clang__) || (defined(__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
     #pragma GCC diagnostic push
 #endif
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #endif
+/* helper function to cast away const */
+static void* cast_away_const(const void* string)
+{
+    return (void*)string;
+}
+#if defined(__clang__) || (defined(__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+    #pragma GCC diagnostic pop
+#endif
+
+
+static cJSON_bool add_item_to_object(cJSON * const object, const char * const string, cJSON * const item, const internal_hooks * const hooks, const cJSON_bool constant_key)
+{
+    if ((object == NULL) || (string == NULL) || (item == NULL))
+    {
+        return false;
+    }
+
+    if (!(item->type & cJSON_StringIsConst) && (item->string != NULL))
+    {
+        hooks->deallocate(item->string);
+    }
+
+    if (constant_key)
+    {
+        item->string = (char*)cast_away_const(string);
+        item->type |= cJSON_StringIsConst;
+    }
+    else
+    {
+        char *key = (char*)cJSON_strdup((const unsigned char*)string, hooks);
+        if (key == NULL)
+        {
+            return false;
+        }
+
+        item->string = key;
+        item->type &= ~cJSON_StringIsConst;
+    }
+
+    return add_item_to_array(object, item);
+}
+
+CJSON_PUBLIC(void) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
+{
+    add_item_to_object(object, string, item, &global_hooks, false);
+}
 
 /* Add an item to an object with constant string as key */
 CJSON_PUBLIC(void) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
 {
-    if ((item == NULL) || (string == NULL))
-    {
-        return;
-    }
-    if (!(item->type & cJSON_StringIsConst) && item->string)
-    {
-        global_hooks.deallocate(item->string);
-    }
-    item->string = (char*)string;
-    item->type |= cJSON_StringIsConst;
-    cJSON_AddItemToArray(object, item);
+    add_item_to_object(object, string, item, &global_hooks, true);
 }
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
-    #pragma GCC diagnostic pop
-#endif
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
 {
@@ -1857,7 +1947,7 @@ CJSON_PUBLIC(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
         return;
     }
 
-    cJSON_AddItemToArray(array, create_reference(item, &global_hooks));
+    add_item_to_array(array, create_reference(item, &global_hooks));
 }
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
@@ -1867,7 +1957,115 @@ CJSON_PUBLIC(void) cJSON_AddItemReferenceToObject(cJSON *object, const char *str
         return;
     }
 
-    cJSON_AddItemToObject(object, string, create_reference(item, &global_hooks));
+    add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddNullToObject(cJSON * const object, const char * const name)
+{
+    cJSON *null = cJSON_CreateNull();
+    if (add_item_to_object(object, name, null, &global_hooks, false))
+    {
+        return null;
+    }
+
+    cJSON_Delete(null);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddTrueToObject(cJSON * const object, const char * const name)
+{
+    cJSON *true_item = cJSON_CreateTrue();
+    if (add_item_to_object(object, name, true_item, &global_hooks, false))
+    {
+        return true_item;
+    }
+
+    cJSON_Delete(true_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddFalseToObject(cJSON * const object, const char * const name)
+{
+    cJSON *false_item = cJSON_CreateFalse();
+    if (add_item_to_object(object, name, false_item, &global_hooks, false))
+    {
+        return false_item;
+    }
+
+    cJSON_Delete(false_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddBoolToObject(cJSON * const object, const char * const name, const cJSON_bool boolean)
+{
+    cJSON *bool_item = cJSON_CreateBool(boolean);
+    if (add_item_to_object(object, name, bool_item, &global_hooks, false))
+    {
+        return bool_item;
+    }
+
+    cJSON_Delete(bool_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObject(cJSON * const object, const char * const name, const double number)
+{
+    cJSON *number_item = cJSON_CreateNumber(number);
+    if (add_item_to_object(object, name, number_item, &global_hooks, false))
+    {
+        return number_item;
+    }
+
+    cJSON_Delete(number_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string)
+{
+    cJSON *string_item = cJSON_CreateString(string);
+    if (add_item_to_object(object, name, string_item, &global_hooks, false))
+    {
+        return string_item;
+    }
+
+    cJSON_Delete(string_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw)
+{
+    cJSON *raw_item = cJSON_CreateRaw(raw);
+    if (add_item_to_object(object, name, raw_item, &global_hooks, false))
+    {
+        return raw_item;
+    }
+
+    cJSON_Delete(raw_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddObjectToObject(cJSON * const object, const char * const name)
+{
+    cJSON *object_item = cJSON_CreateObject();
+    if (add_item_to_object(object, name, object_item, &global_hooks, false))
+    {
+        return object_item;
+    }
+
+    cJSON_Delete(object_item);
+    return NULL;
+}
+
+CJSON_PUBLIC(cJSON*) cJSON_AddArrayToObject(cJSON * const object, const char * const name)
+{
+    cJSON *array = cJSON_CreateArray();
+    if (add_item_to_object(object, name, array, &global_hooks, false))
+    {
+        return array;
+    }
+
+    cJSON_Delete(array);
+    return NULL;
 }
 
 CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(cJSON *parent, cJSON * const item)
@@ -1952,7 +2150,7 @@ CJSON_PUBLIC(void) cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newit
     after_inserted = get_array_item(array, (size_t)which);
     if (after_inserted == NULL)
     {
-        cJSON_AddItemToArray(array, newitem);
+        add_item_to_array(array, newitem);
         return;
     }
 
@@ -2127,6 +2325,39 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string)
             cJSON_Delete(item);
             return NULL;
         }
+    }
+
+    return item;
+}
+
+CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string)
+{
+    cJSON *item = cJSON_New_Item(&global_hooks);
+    if (item != NULL)
+    {
+        item->type = cJSON_String | cJSON_IsReference;
+        item->valuestring = (char*)cast_away_const(string);
+    }
+
+    return item;
+}
+
+CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child)
+{
+    cJSON *item = cJSON_New_Item(&global_hooks);
+    if (item != NULL) {
+        item->type = cJSON_Object | cJSON_IsReference;
+        item->child = (cJSON*)cast_away_const(child);
+    }
+
+    return item;
+}
+
+CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child) {
+    cJSON *item = cJSON_New_Item(&global_hooks);
+    if (item != NULL) {
+        item->type = cJSON_Array | cJSON_IsReference;
+        item->child = (cJSON*)cast_away_const(child);
     }
 
     return item;

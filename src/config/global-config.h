@@ -89,6 +89,9 @@ typedef struct __Config {
     int geoip_jsonout;
 #endif
 
+    /* MD5 DB support */
+    char *md5_whitelist;
+
 } _Config;
 
 #endif /* _CCONFIG__H */

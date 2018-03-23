@@ -700,12 +700,12 @@ char *getuname()
     if (uname(&uts_buf) >= 0) {
         char *ret;
 
-        ret = (char *) calloc(256, sizeof(char));
+        ret = (char *) calloc(512, sizeof(char));
         if (ret == NULL) {
             return (NULL);
         }
 
-        snprintf(ret, 255, "%s %s %s %s %s - %s %s",
+        snprintf(ret, 511, "%s %s %s %s %s - %s %s",
                  uts_buf.sysname,
                  uts_buf.nodename,
                  uts_buf.release,
@@ -716,12 +716,12 @@ char *getuname()
         return (ret);
     } else {
         char *ret;
-        ret = (char *) calloc(256, sizeof(char));
+        ret = (char *) calloc(512, sizeof(char));
         if (ret == NULL) {
             return (NULL);
         }
 
-        snprintf(ret, 255, "No system info available -  %s %s",
+        snprintf(ret, 511, "No system info available -  %s %s",
                  __ossec_name, __version);
 
         return (ret);

@@ -152,6 +152,10 @@ static int OS_DBSearchKeyValue(ListRule *lrule, char *key)
             vpos = cdb_datapos(&lrule->db->cdb);
             vlen = cdb_datalen(&lrule->db->cdb);
             val = (char *) calloc(vlen + 1, sizeof(char));
+            if(val == NULL) {
+                merror("%s: malloc failed: %s", ARGV0, strerror(errno));
+                return(0);
+            }
             cdb_read(&lrule->db->cdb, val, vlen, vpos);
             result = OSMatch_Execute(val, vlen, lrule->matcher);
             free(val);
@@ -218,6 +222,10 @@ static int OS_DBSearchKeyAddressValue(ListRule *lrule, char *key)
             vpos = cdb_datapos(&lrule->db->cdb);
             vlen = cdb_datalen(&lrule->db->cdb);
             val = (char *) malloc(vlen);
+            if(val == NULL) {
+                merror("%s: malloc failed", ARGV0);
+                return(0);
+            }
             cdb_read(&lrule->db->cdb, val, vlen, vpos);
             result = OSMatch_Execute(val, vlen, lrule->matcher);
             free(val);
