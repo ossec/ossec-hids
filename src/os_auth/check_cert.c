@@ -129,8 +129,8 @@ int check_subject_cn(X509 *cert, const char *manager)
  */
 int check_hostname(ASN1_STRING *cert_astr, const char *manager)
 {
-    label c_labels[DNS_MAX_LABELS];
-    label m_labels[DNS_MAX_LABELS];
+    OS_label c_labels[DNS_MAX_LABELS];
+    OS_label m_labels[DNS_MAX_LABELS];
     int c_label_num = 0;
     int m_label_num = 0;
     int wildcard_cert = 0;
@@ -209,7 +209,7 @@ int check_ipaddr(const ASN1_STRING *cert_astr, const char *manager)
  * of labels found. strtok() is not used as we want to detect labels with
  * length zero.
  */
-int label_array(const char *domain_name, label result[DNS_MAX_LABELS])
+int label_array(const char *domain_name, OS_label result[DNS_MAX_LABELS])
 {
     int label_count = 0;
     const char *label_start = domain_name;
@@ -221,7 +221,7 @@ int label_array(const char *domain_name, label result[DNS_MAX_LABELS])
         }
 
         if (*label_end == '.' || *label_end == '\0') {
-            label *new_label = &result[label_count];
+            OS_label *new_label = &result[label_count];
 
             if ((new_label->len = (size_t)(label_end - label_start)) > DNS_MAX_LABEL_LEN) {
                 return VERIFY_FALSE;
@@ -249,7 +249,7 @@ int label_array(const char *domain_name, label result[DNS_MAX_LABELS])
 /* Validate a label according to the guidelines in RFC 1035. This could
  * be relaxed if necessary.
  */
-int label_valid(const label *l)
+int label_valid(const OS_label *l)
 {
     size_t i;
 
@@ -272,7 +272,7 @@ int label_valid(const label *l)
 
 /* Compare two labels and determine whether they match.
  */
-int label_match(const label *label1, const label *label2)
+int label_match(const OS_label *label1, const OS_label *label2)
 {
     size_t i;
 
