@@ -1,4 +1,4 @@
-OSSEC v2.9 Copyright (C) 2017 Trend Micro Inc.
+OSSEC v3.0 Copyright (C) 2017 Trend Micro Inc.
 
 # Information about OSSEC 
 
@@ -24,15 +24,6 @@ The development version is hosted on GitHub and just a simple git clone away.
 [![Build Status](https://travis-ci.org/ossec/ossec-hids.png?branch=master)](https://travis-ci.org/ossec/ossec-hids)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/1847/badge.svg)](https://scan.coverity.com/projects/1847)
 
-
-## Quick install 
-
-```
-$ (ossec_version="2.9.0" ; ossec_checksum="abd5741dc474cbce5cc116f46a5ef2528c847918" ; cd /tmp/ && wget https://github.com/ossec/ossec-hids/archive/${ossec_version}.tar.gz && mv ${ossec_version}.tar.gz ossec-hids-${ossec_version}.tar.gz && checksum=$(sha1sum ossec-hids-${ossec_version}.tar.gz | cut -d" " -f1); if [ $checksum == $ossec_checksum ]; then tar xfz ossec-hids-${ossec_version}.tar.gz && cd ossec-hids-${ossec_version} && sudo ./install.sh ; else "Wrong checksum. Download again or check if file has been tampered with."; fi)
-
-```
-
-Then follow the prompts.  You should still Read the Documentation [here](http://ossec.github.io/docs/).
 
 ## Credits and Thanks ##
 
