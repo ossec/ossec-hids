@@ -61,7 +61,7 @@ else
 ifeq (${uname_S},AIX)
 		DEFINES+=-DAIX
 		DEFINES+=-DHIGHFIRST
-		PATH=${PATH}:/usr/vac/bin
+		PATH:=${PATH}:/usr/vac/bin
 else
 ifeq (${uname_S},SunOS)
 		DEFINES+=-DSOLARIS
@@ -116,7 +116,7 @@ ifdef DEBUGAD
 endif
 
 OSSEC_CFLAGS=${CFLAGS}
-ANALYSISD_FLAGS="-lsqlite3"
+#ANALYSISD_FLAGS="-lsqlite3"
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
@@ -209,6 +209,10 @@ ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	OSSEC_LDFLAGS+=-lGeoIP
 endif # USE_GEOIP
 
+ifneq (,$(filter ${USE_SQLITE},auto yes y Y 1))
+	DEFINES+=-DSQLITE_ENABLED
+	ANALYSISD_FLAGS="-lsqlite3"
+endif # USE_SQLITE
 
 MI :=
 PI :=
@@ -558,6 +562,7 @@ settings:
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
+	@echo "    USE_SQLITE:       ${USE_SQLITE}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
 	@echo "    libs:             ${ML}"
