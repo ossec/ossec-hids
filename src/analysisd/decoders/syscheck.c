@@ -491,9 +491,9 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 		char npstr[10];
 
 		strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr));
-        opstr[9] = '\0';
+		opstr[9] = '\0';
 		strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr));
-        npstr[9] = '\0';
+		npstr[9] = '\0';
 
                 snprintf(sdb.perm, OS_FLSIZE, "Permissions changed from "
                          "'%9.9s' to '%9.9s'\n", opstr, npstr);
