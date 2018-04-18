@@ -237,11 +237,6 @@ r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -
 r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> EnableForcedLogOff -> !1;
 #
 #
-#2.3.10.2 Ensure 'Network access: Do not allow anonymous enumeration of SAM accounts' is set to 'Enabled' (MS only)
-[CIS - Microsoft Windows Server 2012 R2 - 2.3.10.2: Ensure 'Network access: Do not allow anonymous enumeration of SAM accounts' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
-r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Lsa -> RestrictAnonymousSAM -> 0;
-#
-#
 #2.3.10.5 Ensure 'Network access: Let Everyone permissions apply to anonymous users' is set to 'Disabled'
 [CIS - Microsoft Windows Server 2012 R2 - 2.3.10.5: Ensure 'Network access: Let Everyone permissions apply to anonymous users' is set to 'Disabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
 r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Lsa -> EveryoneIncludesAnonymous -> 1;
@@ -304,6 +299,11 @@ r:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\K
 #2.3.11.5 Ensure 'Network security: Do not store LAN Manager hash value on next password change' is set to 'Enabled'
 [CIS - Microsoft Windows Server 2012 R2 - 2.3.11.5: Ensure 'Network security: Do not store LAN Manager hash value on next password change' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
 r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Lsa -> NoLMHash -> 0;
+#
+#
+#2.3.11.6 Ensure 'Network security: Force logoff when logon hours expire' is set to 'Enabled'
+[CIS - Microsoft Windows Server 2012 R2 - 2.3.11.6: Ensure 'Network security: Force logoff when logon hours expire' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
+r:HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters -> EnableForcedLogOff -> !1;
 #
 #
 #2.3.11.7 Ensure 'Network security: LAN Manager authentication level' is set to 'Send NTLMv2 response only. Refuse LM & NTLM'
@@ -388,6 +388,7 @@ r:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System -
 #
 #
 #2.3.17.8 Ensure 'User Account Control: Switch to the secure desktop when prompting for elevation' is set to 'Enabled'
+[CIS - Microsoft Windows Server 2012 R2 - 2.3.17.8: Ensure 'User Account Control: Switch to the secure desktop when prompting for elevation' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
 r:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System -> PromptOnSecureDesktop -> 0;
 #
 #
@@ -881,7 +882,7 @@ r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EventLog\System -> MaxS
 r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\EventLog\System -> !MaxSize;
 #
 #
-#18.9.30.1 Ensure 'Configure Windows SmartScreen' is set to 'Enabled: Require approval from an administrator before running downloaded unknown software'
+#18.9.30.2 Ensure 'Configure Windows SmartScreen' is set to 'Enabled: Require approval from an administrator before running downloaded unknown software'
 [CIS - Microsoft Windows Server 2012 R2 - 18.9.30.2: Ensure 'Configure Windows SmartScreen' is set to 'Enabled: Require approval from an administrator before running downloaded unknown software'] [any] [https://workbench.cisecurity.org/benchmarks/288]
 r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System -> EnableSmartScreen -> !2;
 r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System -> !EnableSmartScreen;
@@ -940,37 +941,6 @@ r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services ->
 #18.9.52.3.9.3 Ensure 'Set client connection encryption level' is set to 'Enabled: High Level'
 [CIS - Microsoft Windows Server 2012 R2 - 18.9.52.3.9.3: Ensure 'Set client connection encryption level' is set to 'Enabled: High Level'] [any] [https://workbench.cisecurity.org/benchmarks/288]
 r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MinEncryptionLevel -> !3;
-#
-#
-#18.9.52.3.10.1 Ensure 'Set time limit for active but idle Remote Desktop Services sessions' is set to 'Enabled: 15 minutes or less'
-[CIS - Microsoft Windows Server 2012 R2 - 18.9.52.3.10.1: Ensure 'Set time limit for active but idle Remote Desktop Services sessions' is set to 'Enabled: 15 minutes or less'] [any] [https://workbench.cisecurity.org/benchmarks/288]
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba1;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba2;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba3;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba4;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba5;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba6;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba7;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba8;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba9;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbba\D;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbbb\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbbc\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbbd\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbbe\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbbf\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbc\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbd\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbe\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dbf\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dc\w\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:dd\w\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:de\w\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:df\w\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:e\w\w\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:f\w\w\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> MaxIdleTime -> r:\w\w\w\w\w\w;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services -> !MaxIdleTime;
 #
 #
 #18.9.52.3.11.1 Ensure 'Do not delete temp folders upon exit' is set to 'Disabled'
