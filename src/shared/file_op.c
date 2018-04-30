@@ -379,6 +379,7 @@ char *GetRandomNoise()
     if(frr == 0) {
         if(errno == EOVERFLOW) {
             merror("ERROR: GetRandomNoise() fread() overflow.");  // XXX
+            fclose(fp);
             return(NULL);
         } else {
             merror("ERROR: GetRandomNoise() fread() returned 0.");
@@ -387,6 +388,7 @@ char *GetRandomNoise()
     }
 
     buf[2048] = '\0';
+    fclose(fp);
     return(strdup(buf));
 }
 
