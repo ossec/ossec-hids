@@ -207,16 +207,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             #endif
 
             snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
-                     opts & CHECK_SIZE ? '+' : '-',
-                     opts & CHECK_PERM ? '+' : '-',
-                     opts & CHECK_OWNER ? '+' : '-',
-                     opts & CHECK_GROUP ? '+' : '-',
-                     opts & CHECK_MD5SUM ? '+' : '-',
+                     (opts & CHECK_SIZE) ? '+' : '-',
+                     (opts & CHECK_PERM) ? '+' : '-',
+                     (opts & CHECK_OWNER) ? '+' : '-',
+                     (opts & CHECK_GROUP) ? '+' : '-',
+                     (opts & CHECK_MD5SUM) ? '+' : '-',
                      sha1s,
-                     opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
-                     opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
-                     opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
-                     opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+                     (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
+                     (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
+                     (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
+                     (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
 #ifdef LIBSODIUM_ENABLED
                      (opts & CHECK_MD5SUM) ? file_sums->md5output : "xxx",
                      (opts & CHECK_SHA256SUM) ? file_sums->sha256output : "xxx");
@@ -234,16 +234,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             alert_msg[916] = '\0';
 
             snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
-                     opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
-                     opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
-                     opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
-                     opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+                     (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
+                     (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
+                     (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
+                     (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
 #ifdef LIBSODIUM_ENABLED
-                     opts & CHECK_MD5SUM ? file_sums->md5output : "xxx",
-                     opts & CHECK_SHA256SUM ? file_sums->sha256output : "xxx",
+                     (opts & CHECK_MD5SUM) ? file_sums->md5output : "xxx",
+                     (opts & CHECK_SHA256SUM) ? file_sums->sha256output : "xxx",
 #else   //LIBSODIUM_ENABLED
-                     opts & CHECK_MD5SUM ? mf_sum : "xxx",
-                     opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                     (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
+                     (opts & CHECK_SHA1SUM) ? sf_sum : "xxx",
 #endif  //LIBSODIUM_ENABLED
                      file_name);
             send_syscheck_msg(alert_msg);
