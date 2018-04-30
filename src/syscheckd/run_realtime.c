@@ -220,7 +220,7 @@ typedef struct _win32rtfim {
     OVERLAPPED overlap;
 
     char *dir;
-    TCHAR buffer[12288];
+    TCHAR buffer[1228800];
 } win32rtfim;
 
 int realtime_win32read(win32rtfim *rtlocald);
@@ -238,6 +238,10 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
 
     if (dwBytes == 0) {
         merror("%s: ERROR: real time call back called, but 0 bytes.", ARGV0);
+        rtlocald = OSHash_Get(syscheck.realtime->dirtb, "0");
+        if(rtlocald)
+            realtime_win32read(rtlocald);
+
         return;
     }
 
