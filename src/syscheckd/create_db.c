@@ -218,11 +218,11 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
                      opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
 #ifdef LIBSODIUM_ENABLED
-                     opts & CHECK_MD5SUM ? file_sums->md5output : "xxx",
-                     opts & CHECK_SHA256SUM ? file_sums->sha256output : "xxx");
+                     (opts & CHECK_MD5SUM) ? file_sums->md5output : "xxx",
+                     (opts & CHECK_SHA256SUM) ? file_sums->sha256output : "xxx");
 #else   //LIBSODIUM_ENABLED
-                     opts & CHECK_MD5SUM ? mf_sum : "xxx",
-                     opts & CHECK_SHA1SUM ? sf_sum : "xxx");
+                     (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
+                     (opts & CHECK_SHA1SUM) ? sf_sum : "xxx");
 #endif  //LIBSODIUM_ENABLED
 
 
