@@ -50,7 +50,9 @@ before_script:
   ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
 - if [[ "${USE_SQLITE}" == "yes" ]]; then ( sudo apt-get install libsqlite3-dev sqlite3 ); fi
-- if [[ "${USE_LIBSODIUM}" == "yes" ]]; then ( sudo apt-get install libsodium-dev libsodium ); fi
+- if [[ "${USE_LIBSODIUM}" == "yes" ]]; then ( sudo add-apt-repository ppa:chris-lea/libsodium
+  && sudo apt-get install libsodium-dev libsodium
+  ); fi
 - if [[ "${OSSEC_TYPE}" == "test" ]]; then ( sudo apt-get update && sudo apt-get install check valgrind ); fi
 
 
