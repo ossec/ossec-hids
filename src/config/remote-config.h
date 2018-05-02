@@ -14,6 +14,7 @@
 #define SECURE_CONN 2
 
 #include "shared.h"
+#include "os_net/os_net.h"
 
 /* socklen_t header */
 typedef struct _remoted {
@@ -28,6 +29,7 @@ typedef struct _remoted {
 
     int m_queue;
     int sock;
+    OSNetInfo *netinfo;
     socklen_t peer_size;
 } remoted;
 
