@@ -708,7 +708,7 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
 
     rc = getnameinfo ((struct sockaddr *) sa, sizeof (sa), ipaddr,
                       sizeof (ipaddr), ipport, sizeof (ipport),
-                      NI_NUMERICHOST | AI_NUMERICSERV);
+                      NI_NUMERICHOST | NI_NUMERICSERV);
 
     if (rc) {
         sprintf (buf, "Error %d on getnameinfo: %s", rc, gai_strerror (rc));
