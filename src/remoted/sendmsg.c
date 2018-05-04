@@ -92,8 +92,6 @@ int send_msg(unsigned int agentid, const char *msg)
     size_t msg_size, sa_size;
     char crypt_msg[OS_MAXSTR + 1];
     struct sockaddr * dest_sa;
-    int i;
-    int ok = 0;
 
     /* If we don't have the agent id, ignore it */
     if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * NOTIFY_TIME))) {
@@ -125,7 +123,9 @@ int send_msg(unsigned int agentid, const char *msg)
     */
 
     if (logr.sock == 0) {
-        /* not initialized */
+        int i, ok = 0;
+
+        /* socket not established - try current sockets */
         for (i = 0; i < logr.netinfo->fdcnt; i++) {
             if (sendto(logr.netinfo->fds[i], crypt_msg, msg_size, 0,
                        dest_sa, sa_size) < 0) {
@@ -141,7 +141,7 @@ int send_msg(unsigned int agentid, const char *msg)
             merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
         }
     } else {
-        /* working socket identified */
+        /* working socket identified in secure.c */
         if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
             merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
         }

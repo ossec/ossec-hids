@@ -78,16 +78,16 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
 #if defined(__linux__) && !defined(NOV4MAP)
 #if defined (AI_V4MAPPED)
     hints.ai_family = AF_INET6;		/* Allow IPv4 and IPv6 */
-    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
+    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
 #else
     /* handle as normal IPv4 and IPv6 multi request */
     hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
+    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
 #endif /* AI_V4MAPPED */
 #else
     /* FreeBSD, OpenBSD, NetBSD, and others */
     hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
+    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
 #endif
 
     hints.ai_protocol = _proto;
@@ -107,6 +107,7 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     /* Try to support legacy ipv4 only hosts */
     if((s == EAI_FAMILY) || (s == EAI_NONAME)) {
         hints.ai_family = AF_INET;
+        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
         s = getaddrinfo(_ip, _port, &hints, &result);
     }
 
@@ -174,11 +175,11 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
                 close (ossock);
                 continue;
             }
-            verbose ("Request for TCP listen() succeeded.\n");
+            verbose ("Request for TCP listen() succeeded.");
         }
 
         /* success - accumulate data for select call */
-        verbose ("Socket bound for %s\n", OS_DecodeSockaddr (rp->ai_addr));
+        verbose ("Socket bound for %s", OS_DecodeSockaddr (rp->ai_addr));
 
         /* save bound socket info for select() */
         ni->fds[ni->fdcnt++] = ossock;  /* increment after use! */
@@ -689,7 +690,7 @@ int OS_DecodeAddrinfo (struct addrinfo *res) {
     struct addrinfo *p;			/* pointer to addrinfo structs */
 
     for (p = res; p != NULL; p = p->ai_next)
-        verbose ("%s\n",OS_DecodeSockaddr (p->ai_addr));
+        verbose ("%s",OS_DecodeSockaddr (p->ai_addr));
     return 0;
 }
 
@@ -705,7 +706,7 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
     char ipport[NI_MAXSERV];		/* printed port */
     static char buf[256];		/* message buffer */
 
-    rc = getnameinfo ((struct sockaddr *) sa, sa->sa_len, ipaddr,
+    rc = getnameinfo ((struct sockaddr *) sa, sizeof (sa), ipaddr,
                       sizeof (ipaddr), ipport, sizeof (ipport),
                       NI_NUMERICHOST | AI_NUMERICSERV);
 
@@ -714,7 +715,7 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
         return (buf);
     }
 
-    sprintf (buf, "%s: %s on port %s\n",
+    sprintf (buf, "%s: %s on port %s",
              DecodeFamily (sa->sa_family), ipaddr, ipport);
     return buf;
 }

@@ -104,11 +104,10 @@ void HandleSecure()
                /*
                 * send_msg() needs a socket, but we don't know which
                 * socket is active until we receive our first packet.
-                * This sets the socket for send_msg() once it is known.
+                * This sets the socket for send_msg().
                 */
 
-                if (logr.sock == 0)
-                  logr.sock = sock;
+                logr.sock = sock;
 
                 /* Set the source IP */
                 satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
