@@ -190,7 +190,7 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     }
 
     /* check to see if at least one address succeeded */
-    if (ni->fdmax == 0) {
+    if (ni->fdcnt == 0) {
         verbose ("Request to allocate and bind sockets failed.");
         OS_CloseSocket(ossock);
         ni->status = -1;
@@ -706,9 +706,17 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
     char ipport[NI_MAXSERV];		/* printed port */
     static char buf[256];		/* message buffer */
 
+#if defined(__linux__)
+    /* most Linux systems do not have sa_len in the sockaddr struct */
     rc = getnameinfo ((struct sockaddr *) sa, sizeof (sa), ipaddr,
                       sizeof (ipaddr), ipport, sizeof (ipport),
                       NI_NUMERICHOST | NI_NUMERICSERV);
+#else
+    /* BSD systems require the value in sa->sa_len or error 4 occurs */
+    rc = getnameinfo ((struct sockaddr *) sa, sa->sa_len, ipaddr,
+                      sizeof (ipaddr), ipport, sizeof (ipport),
+                      NI_NUMERICHOST | NI_NUMERICSERV);
+#endif
 
     if (rc) {
         sprintf (buf, "Error %d on getnameinfo: %s", rc, gai_strerror (rc));
