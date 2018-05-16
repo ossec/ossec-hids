@@ -706,7 +706,7 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
     char ipport[NI_MAXSERV];		/* printed port */
     static char buf[256];		/* message buffer */
 
-#if defined(__linux__)
+#if defined(__linux__) || defined (WIN32)
     /* most Linux systems do not have sa_len in the sockaddr struct */
     rc = getnameinfo ((struct sockaddr *) sa, sizeof (sa), ipaddr,
                       sizeof (ipaddr), ipport, sizeof (ipport),
