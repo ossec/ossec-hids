@@ -101,7 +101,7 @@ else
         elif [ ! `grep "^${U}" /etc/passwd > /dev/null 2>&1` ]; then
 	        if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
                     ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
-                elif [ -e "/etc/alpine-release ]; then
+                elif [ -e "/etc/alpine-release" ]; then
                     ${USERADD} -G ${GROUP} -s ${OSMYSHELL} -h ${DIR} -S ${U}
 	        else
 	            ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
