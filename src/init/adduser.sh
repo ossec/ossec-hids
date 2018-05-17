@@ -92,7 +92,7 @@ else
             if [ `getent passwd ${U} | wc -l` -lt 1 ]; then
 	            if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
                         ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
-                    if [ -e "/etc/alpine-release" ]; then
+                    elif [ -e "/etc/alpine-release" ]; then
                         ${USERADD} -G ${GROUP} -s ${OSMYSHELL} -h ${DIR} -S ${U}
 	            else
 	                ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
