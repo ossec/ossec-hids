@@ -134,10 +134,6 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
 
     /* Initialize both hashes */
     MD5Init(&md5_ctx);
-    snprintf(file_output->hash1, 4, "MD5=");
-    file_output->hash1[4] = '\0';
-    snprintf(file_output->hash2, 7, "SHA256=");
-    file_output->hash2[7] = '\0';
 
     /* Update for each hash */
     while ((n = fread(buf, 1, 2048, fp)) > 0) {
@@ -159,7 +155,6 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             snprintf(md5tmp, 3, "%02x", md5_digest[n]);
             strncat(file_output->md5output, md5tmp, sizeof(file_output->md5output) - 1 - strlen(file_output->md5output));
         }
-        //snprintf(file_output->hash1, strnlen(file_output->hash1, 37) + 3, "%s%02x", file_output->hash1, md5_digest[n]);
     }
 
 
@@ -173,7 +168,6 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             snprintf(sha256tmp, 3, "%02x", sha256_digest[n]);
             strncat(file_output->sha256output, sha256tmp, sizeof(file_output->sha256output) - 1 - strlen(file_output->sha256output));
         }
-        //snprintf(file_output->hash2, strnlen(file_output->hash2, 66) + 3, "%s%02x", file_output->hash2, sha256_digest[n]);
     }
 
     /* Close it */
