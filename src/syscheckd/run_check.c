@@ -14,7 +14,7 @@
 #endif
 #ifdef WIN32
 #include <aclapi.h>
-#include <Sddl.h>
+#include <sddl.h>
 #endif
 
 #include "shared.h"

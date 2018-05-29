@@ -14,7 +14,7 @@
 #include "os_crypto/md5_sha1/md5_sha1_op.h"
 #ifdef WIN32
 #include <aclapi.h>
-#include <Sddl.h>
+#include <sddl.h>
 #endif
 
 /* Prototypes */
@@ -234,7 +234,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
-                     opts & CHECK_OWNER ? st_uid : "0",
+                     (opts & CHECK_OWNER) ? st_uid : "0",
                      opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
