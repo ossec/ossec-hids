@@ -383,6 +383,7 @@ char *GetRandomNoise()
             return(NULL);
         } else {
             merror("ERROR: GetRandomNoise() fread() returned 0.");
+            fclose(fp);
             return(NULL);
         }
     }
