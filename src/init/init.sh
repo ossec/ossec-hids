@@ -130,6 +130,14 @@ runInit()
             chown root:ossec /etc/init.d/ossec
             update-rc.d ossec defaults > /dev/null 2>&1
             return 0;
+        elif [ -e "/etc/alpine-release" ]; then
+            echo " - ${systemis} Alpine Linux."
+            echo " - ${modifiedinit}"
+            cp -pr ./src/init/ossec-hids-alpine.init /etc/init.d/ossec
+            chmod +x /etc/init.d/ossec
+            chmod go-w /etc/init.d/ossec
+            chown root:ossec /etc/init.d/ossec
+            return 0;
         else
             echo " - ${noboot}"
         fi
