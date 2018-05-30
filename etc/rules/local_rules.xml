@@ -20,12 +20,12 @@
 
   <!-- Note that rule id 5711 is defined at the ssh_rules file
     -  as a ssh failed login. This is just an example
-    -  since ip 1.1.1.1 shouldn't be used anywhere.
+    -  since ip 192.0.2.1 shouldn't be used anywhere.
     -  Level 0 means ignore.
     -->
   <rule id="100001" level="0">
     <if_sid>5711</if_sid>
-    <srcip>1.1.1.1</srcip>
+    <srcip>192.0.2.1</srcip>
     <description>Example of rule that will ignore sshd </description>
     <description>failed logins from IP 1.1.1.1.</description>
   </rule>

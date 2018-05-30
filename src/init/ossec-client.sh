@@ -83,7 +83,7 @@ unlock()
 help()
 {
     # Help message
-    echo "Usage: $0 {start|stop|restart|status}";
+    echo "Usage: $0 {start|stop|reload|restart|status}";
     exit 1;
 }
 
