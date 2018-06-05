@@ -26,7 +26,7 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 struct hash_output {
     os_md5 md5output;
     os_sha1 sha1output;
-    char blake2boutput[crypto_generichash_BYTES];
+    char blake2boutput[130];
     char sha256output[crypto_hash_sha256_BYTES];
 };
 
