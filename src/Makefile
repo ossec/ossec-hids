@@ -25,7 +25,7 @@ USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
 USE_SQLITE?=no
-USE_LIBSODIUM?=no
+USE_LIBSODIUM?=yes
 
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
