@@ -127,8 +127,22 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         }
         strncpy(file_sums->md5output, "xxx", 4);
         strncpy(file_sums->sha256output, "xxx", 4);
-        strncpy(file_sums->hash1, "xxx", 4);
-        strncpy(file_sums->hash2, "xxx", 4);
+        strncpy(file_sums->sha1output, "xxx", 4);
+        strncpy(file_sums->genericoutput, "xxx", 4);
+
+        /* set the checks */
+        if(opts & CHECK_MD5SUM) {
+            file_sums->check_md5 = 1;
+        }
+        if(opts & CHECK_SHA1SUM) {
+            file_sums->check_sha1 = 1;
+        }
+        if(opts & CHECK_SHA256SUM) {
+            file_sums->check_sha256 = 1;
+        }
+        if(opts & CHECK_GENERIC) {
+            file_sums->check_generic = 1;
+        }
 
         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM)) {
 #else
@@ -159,8 +173,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                         if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
                             strncpy(file_sums->md5output, "xxx", 4);
                             strncpy(file_sums->sha256output, "xxx", 4);
-                            strncpy(file_sums->hash1, "xxx", 4);
-                            strncpy(file_sums->hash2, "xxx", 4);
                         }
 
 #else   //LIBSODIUM_ENABLED
@@ -210,7 +222,48 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
 #endif
 
+#ifdef LIBSODIUM_ENABLED
+            char new_hashes[512], new_hashes_tmp[512];
+            int hashc = 0;
+            if(opts & CHECK_SHA256SUM) {
+                snprintf(new_hashes, 511, "%s", file_sums->sha256output);
+                hashc++;
+            }
+            if((opts & CHECK_SHA1SUM) && hashc < 2) {
+                if(hashc > 0) {
+                    snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->sha1output);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                    hashc++;
+                } else if(hashc == 0) {
+                    snprintf(new_hashes, 511, "%s", file_sums->sha1output);
+                    hashc++;
+                }
+            }
+            if((opts & CHECK_MD5SUM) && hashc < 2) {
+                if(hashc > 0) {
+                    snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->md5output);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                    hashc++;
+                } else if(hashc == 0) {
+                    snprintf(new_hashes, 511, "%s", file_sums->md5output);
+                    hashc++;
+                }
+            }
+            if(hashc < 2) {
+                if(hashc == 0) {
+                    strncpy(new_hashes, "xxx:xxx", 8);
+                } else if (hashc == 1) {
+                    snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                }
+            }
+
+
+
+            snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s",
+#else   // LIBSODIUM_ENABLED
             snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
+#endif  // LIBSODIUM_ENABLED
                      (opts & CHECK_SIZE) ? '+' : '-',
                      (opts & CHECK_PERM) ? '+' : '-',
                      (opts & CHECK_OWNER) ? '+' : '-',
@@ -222,8 +275,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
 #ifdef LIBSODIUM_ENABLED
-                     (opts & CHECK_MD5SUM) ? file_sums->md5output : "xxx",
-                     (opts & CHECK_SHA256SUM) ? file_sums->sha256output : "xxx");
+                     new_hashes);
 #else   //LIBSODIUM_ENABLED
                      (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
                      (opts & CHECK_SHA1SUM) ? sf_sum : "xxx");
@@ -238,14 +290,17 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             alert_msg[916] = '\0';
 
 #ifndef WIN32
+#ifdef LIBSODIUM_ENABLED
+            snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s %s",
+#else   // LIBSODIUM_ENABLED
             snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
+#endif
                      (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
                      (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
                      (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
 #ifdef LIBSODIUM_ENABLED
-                     (opts & CHECK_MD5SUM) ? file_sums->md5output : "xxx",
-                     (opts & CHECK_SHA256SUM) ? file_sums->sha256output : "xxx",
+                     new_hashes,
 #else   //LIBSODIUM_ENABLED
                      (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
                      (opts & CHECK_SHA1SUM) ? sf_sum : "xxx",
