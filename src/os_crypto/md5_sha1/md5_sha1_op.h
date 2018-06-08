@@ -24,9 +24,16 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
 #ifdef LIBSODIUM_ENABLED
 
 struct hash_output {
+    // What are we looking for?
+    int check_md5;
+    int check_sha1;
+    int check_sha256;
+    int check_generic;
+
+    // Here's where we put it.
     os_md5 md5output;
     os_sha1 sha1output;
-    char blake2boutput[130];
+    char genericoutput[130];
     char sha256output[crypto_hash_sha256_BYTES];
 };
 
