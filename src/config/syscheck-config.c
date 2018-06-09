@@ -161,6 +161,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_check_sha1sum = "check_sha1sum";
     const char *xml_check_md5sum = "check_md5sum";
     const char *xml_check_sha256sum = "check_sha256sum";
+    const char *xml_check_genericsum = "check_genericsum";
     const char *xml_check_size = "check_size";
     const char *xml_check_owner = "check_owner";
     const char *xml_check_group = "check_group";
@@ -232,19 +233,20 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                 if (strcmp(*values, "yes") == 0) {
 #ifndef LIBSODIUM_ENABLED
                     opts |= CHECK_SHA1SUM;
-#endif  //LIBSODIUM_ENABLED
                     opts |= CHECK_MD5SUM;
+#endif  //LIBSODIUM_ENABLED
                     opts |= CHECK_PERM;
                     opts |= CHECK_SIZE;
                     opts |= CHECK_OWNER;
                     opts |= CHECK_GROUP;
 #ifdef LIBSODIUM_ENABLED
                     opts |= CHECK_SHA256SUM;
+                    opts |= CHECK_GENERIC;
 #endif  //LIBSODIUM_ENABLED
                 } else if (strcmp(*values, "no") == 0) {
 #ifdef LIBSODIUM_ENABLED
 		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_PERM
-		       | CHECK_SIZE | CHECK_OWNER | CHECK_GROUP | CHECK_SHA256SUM );
+		       | CHECK_SIZE | CHECK_OWNER | CHECK_GROUP | CHECK_SHA256SUM | CHECK_GENERIC );
 #else   //LIBSODIUM_ENABLED
 		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_PERM
 		       | CHECK_SIZE | CHECK_OWNER | CHECK_GROUP );
@@ -258,15 +260,18 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             /* Check sum */
             else if (strcmp(*attrs, xml_check_sum) == 0) {
                 if (strcmp(*values, "yes") == 0) {
+#ifndef LIBSODIUM_ENALBED
                     opts |= CHECK_MD5SUM;
+#endif  // LIBSODIUM_ENABLED
 #ifdef LIBSODIUM_ENABLED
                     opts |= CHECK_SHA256SUM;
+                    opts |= CHECK_GENERIC;
 #else   //LIBSODIUM_ENABLED
                     opts |= CHECK_SHA1SUM;
 #endif  //LIBSODIUM_ENABLED
                 } else if (strcmp(*values, "no") == 0) {
 #ifdef LIBSODIUM_ENABLED
-		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA256SUM );
+		    opts &= ~ ( CHECK_GENERIC | CHECK_SHA256SUM );
 #else   //LIBSODIUM_ENALBED
 		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM );
 #endif
@@ -302,10 +307,21 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             }
 #ifdef LIBSODIUM_ENABLED
             else if(strncmp(*attrs, xml_check_sha256sum, 15) == 0) {
-                if(strncmp(*values, "yes", 3) ==0) {
+                if(strncmp(*values, "yes", 3) == 0) {
                     opts |= CHECK_SHA256SUM;
                 } else if(strncmp(*values, "no", 2) == 0) {
                     opts &= ~ CHECK_SHA256SUM;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
+            }
+            else if(strncmp(*attrs, xml_check_genericsum, 16) == 0) {
+                if(strncmp(*values, "yes", 3) == 0) {
+                    opts |= CHECK_GENERIC;
+                } else if(strncmp(*values, "no", 2) == 0) {
+                    opts &= ~ CHECK_GENERIC;
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
                     ret = 0;
