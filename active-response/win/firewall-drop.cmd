@@ -5,7 +5,7 @@ echo Will will %ACTION% IP %SRCIP%
 
 IF "%ACTION%"=="add" (
   ECHO adding
-	netsh advfirewall firewall add rule name="OSSEC-%SRCIP%" dir=in interface=any action=block remoteip=%SRCIP%/32
+	netsh advfirewall firewall add rule name="OSSEC-%SRCIP%" dir=in interface=any action=block remoteip=%SRCIP%
 ) ELSE (
   ECHO removing
   netsh advfirewall firewall delete rule name="OSSEC-%SRCIP%" dir=in
