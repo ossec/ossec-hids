@@ -1,4 +1,4 @@
-OSSEC v2.9 Copyright (C) 2017 Trend Micro Inc.
+OSSEC v2.9 Copyright (C) 2018 Trend Micro Inc.
 
 # Information about OSSEC 
 
