@@ -1,4 +1,4 @@
-# rootkit_files.txt, (C) 2017 OSSEC Project
+# rootkit_files.txt, (C) 2018 OSSEC Project
 # Imported from the rootcheck project.
 #
 # Released under the same license as OSSEC.
