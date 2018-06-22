@@ -231,17 +231,20 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             /* Check all */
             if (strcmp(*attrs, xml_check_all) == 0) {
                 if (strcmp(*values, "yes") == 0) {
-#ifndef LIBSODIUM_ENABLED
-                    opts |= CHECK_SHA1SUM;
-                    opts |= CHECK_MD5SUM;
-#endif  //LIBSODIUM_ENABLED
+#ifdef LIBSODIUM_ENABLED
                     opts |= CHECK_PERM;
                     opts |= CHECK_SIZE;
                     opts |= CHECK_OWNER;
                     opts |= CHECK_GROUP;
-#ifdef LIBSODIUM_ENABLED
                     opts |= CHECK_SHA256SUM;
                     opts |= CHECK_GENERIC;
+#else   //LIBSODIUM_ENABLED
+                    opts |= CHECK_SHA1SUM;
+                    opts |= CHECK_MD5SUM;
+                    opts |= CHECK_PERM;
+                    opts |= CHECK_SIZE;
+                    opts |= CHECK_OWNER;
+                    opts |= CHECK_GROUP;
 #endif  //LIBSODIUM_ENABLED
                 } else if (strcmp(*values, "no") == 0) {
 #ifdef LIBSODIUM_ENABLED
@@ -260,15 +263,14 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             /* Check sum */
             else if (strcmp(*attrs, xml_check_sum) == 0) {
                 if (strcmp(*values, "yes") == 0) {
-#ifndef LIBSODIUM_ENALBED
-                    opts |= CHECK_MD5SUM;
-#endif  // LIBSODIUM_ENABLED
 #ifdef LIBSODIUM_ENABLED
                     opts |= CHECK_SHA256SUM;
                     opts |= CHECK_GENERIC;
 #else   //LIBSODIUM_ENABLED
+                    opts |= CHECK_MD5SUM;
                     opts |= CHECK_SHA1SUM;
 #endif  //LIBSODIUM_ENABLED
+
                 } else if (strcmp(*values, "no") == 0) {
 #ifdef LIBSODIUM_ENABLED
 		    opts &= ~ ( CHECK_GENERIC | CHECK_SHA256SUM );
@@ -888,6 +890,7 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_SEECHANGES,
 #ifdef LIBSODIUM_ENABLED
         CHECK_SHA256SUM,
+        CHECK_GENERIC,
 #endif  //LIBSODIUM_ENABLED
 	0
 	};
@@ -902,6 +905,7 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         "report_changes",
 #ifdef LIBSODIUM_ENABLED
         "sha256sum",
+	    "genericsum",
 #endif  //LIBSODIUM_ENABLED
 	NULL
 	};
