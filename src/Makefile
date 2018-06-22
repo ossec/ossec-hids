@@ -27,6 +27,8 @@ USE_INOTIFY=no
 USE_SQLITE?=no
 USE_LIBSODIUM?=yes
 
+DEBUG?=yes
+
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
 else
@@ -121,7 +123,7 @@ OSSEC_CFLAGS=${CFLAGS}
 #ANALYSISD_FLAGS="-lsqlite3"
 
 ifdef DEBUG
-	OSSEC_CFLAGS+=-g
+	OSSEC_CFLAGS+=-ggdb
 else
 	OSSEC_CFLAGS+=-O2
 endif #DEBUG
