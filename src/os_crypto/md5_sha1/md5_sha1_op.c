@@ -186,43 +186,53 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
     /* Set output for MD5 */
     char hashtmp[3];
 
-    for (n = 0; n < 16; n++) {
-        if(n == 0) {
-            if(file_output->check_md5) {
+    if(file_output->check_md5) {
+        for (n = 0; n < 16; n++) {
+            if(n == 0) {
                 snprintf(file_output->md5output, 3, "%02x", md5_digest[n]);
-            }
-            if(file_output->check_sha256) {
-                snprintf(file_output->sha256output, 3, "%02x", sha256_digest[n]);
-            }
-            if(file_output->check_sha1) {
-                snprintf(file_output->sha1output, 3, "%02x", sha1_digest[n]);
-            }
-            if(file_output->check_generic) {
-                snprintf(file_output->genericoutput, 3, "%02x", generic_digest[n]);
-            }
-        } else {
-            if(file_output->check_md5) {
+            } else {
                 hashtmp[0] = '\0';
                 snprintf(hashtmp, 3, "%02x", md5_digest[n]);
                 strncat(file_output->md5output, hashtmp, sizeof(file_output->md5output) - 1 - strlen(file_output->md5output));
             }
-            if(file_output->check_sha256) {
-                hashtmp[0] = '\0';
-                snprintf(hashtmp, 3, "%02x", sha256_digest[n]);
-                strncat(file_output->sha256output, hashtmp, sizeof(file_output->sha256output) - 1 - strlen(file_output->sha256output));
-            }
-            if(file_output->check_sha256) {
+        }
+    }
+    if(file_output->check_sha1) {
+        for (n = 0; n < 16; n++) {
+            if(n == 0) {
+                snprintf(file_output->sha1output, 3, "%02x", sha1_digest[n]);
+            } else {
                 hashtmp[0] = '\0';
                 snprintf(hashtmp, 3, "%02x", sha1_digest[n]);
                 strncat(file_output->sha1output, hashtmp, sizeof(file_output->sha1output) - 1 - strlen(file_output->sha1output));
             }
-            if(file_output->check_generic) {
+        }
+    }
+    if(file_output->check_generic) {
+        for (n = 0; n < crypto_generichash_BYTES_MAX; ++n) {
+            if(n == 0) {
+                snprintf(file_output->genericoutput, 3, "%02x", generic_digest[n]);
+            } else {
                 hashtmp[0] = '\0';
                 snprintf(hashtmp, 3, "%02x", generic_digest[n]);
                 strncat(file_output->genericoutput, hashtmp, sizeof(file_output->genericoutput) - 1 - strlen(file_output->genericoutput));
             }
         }
     }
+    if(file_output->check_sha256) {
+        for (n = 0; n < crypto_hash_sha256_BYTES; ++n) {
+            if(n == 0) {
+                snprintf(file_output->sha256output, 3, "%02x", sha256_digest[n]);
+            } else {
+                hashtmp[0] = '\0';
+                snprintf(hashtmp, 3, "%02x", sha256_digest[n]);
+                strncat(file_output->sha256output, hashtmp, sizeof(file_output->sha256output) - 1 - strlen(file_output->genericoutput));
+            }
+        }
+    }
+
+
+
 
 
     /* Close it */
