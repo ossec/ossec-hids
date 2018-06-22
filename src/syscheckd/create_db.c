@@ -171,12 +171,14 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     if (S_ISREG(statbuf_lnk.st_mode)) {
 #ifdef LIBSODIUM_ENABLED
                         if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                            merror("AAA1");
                             strncpy(file_sums->md5output, "xxx", 4);
                             strncpy(file_sums->sha256output, "xxx", 4);
-                        }
+                        } else { merror("XXX %s", file_sums->sha256output); }
 
 #else   //LIBSODIUM_ENABLED
                         if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                            merror("BBB1");
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
@@ -192,9 +194,10 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
 #endif
             {
+                merror("AAA2");
                 strncpy(mf_sum, "xxx", 4);
                 strncpy(sf_sum, "xxx", 4);
-            }
+            } else { merror("XXX2 %s", file_sums->sha256output); }
 
             if (opts & CHECK_SEECHANGES) {
                 sha1s = 's';
@@ -226,33 +229,52 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             char new_hashes[512], new_hashes_tmp[512];
             int hashc = 0;
             if(opts & CHECK_SHA256SUM) {
+                merror("CCC CHECK_SHA256: %s", file_sums->sha256output);
                 snprintf(new_hashes, 511, "%s", file_sums->sha256output);
                 hashc++;
             }
             if((opts & CHECK_SHA1SUM) && hashc < 2) {
                 if(hashc > 0) {
+                    merror("CCC CHECK_SHA1 1");
                     snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->sha1output);
                     strncpy(new_hashes, new_hashes_tmp, 511);
                     hashc++;
                 } else if(hashc == 0) {
+                    merror("CCC CHECK_SHA1 2");
                     snprintf(new_hashes, 511, "%s", file_sums->sha1output);
                     hashc++;
                 }
             }
             if((opts & CHECK_MD5SUM) && hashc < 2) {
                 if(hashc > 0) {
+                    merror("CCC CHECK_MD5 1");
                     snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->md5output);
                     strncpy(new_hashes, new_hashes_tmp, 511);
                     hashc++;
                 } else if(hashc == 0) {
+                    merror("CCC CHECK_MD5 2");
                     snprintf(new_hashes, 511, "%s", file_sums->md5output);
+                    hashc++;
+                }
+            }
+            if((opts & CHECK_GENERIC) && hashc < 2) {
+                if(hashc > 0) {
+                    merror("CCC CHECK_GENERIC 1: %s", file_sums->genericoutput);
+                    snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->genericoutput);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                    hashc++;
+                } else if(hashc == 0) {
+                    merror("CCC CHECK_GENERIC 2");
+                    snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
                     hashc++;
                 }
             }
             if(hashc < 2) {
                 if(hashc == 0) {
+                    merror("CCC1");
                     strncpy(new_hashes, "xxx:xxx", 8);
                 } else if (hashc == 1) {
+                    merror("CCC2");
                     snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
                     strncpy(new_hashes, new_hashes_tmp, 511);
                 }
@@ -350,7 +372,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
                      file_name);
             free(st_uid);
-#endif
+#endif  // WIN32
             send_syscheck_msg(alert_msg);
         } else {
             char alert_msg[OS_MAXSTR + 1];
