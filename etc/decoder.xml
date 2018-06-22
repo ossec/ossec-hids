@@ -522,6 +522,13 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <fts>name, srcuser, location</fts>
 </decoder>
 
+<decoder name="su-failed">
+  <parent>su</parent>
+  <prematch>^FAILED SU </prematch>
+  <regex offset="after_prematch">^\(to (\S+) (\S+) on</regex>
+  <order>dstuser, srcuser</order>
+</decoder>
+
 <decoder name="su-detail2">
   <parent>su</parent>
   <prematch> </prematch>
