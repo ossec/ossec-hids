@@ -412,7 +412,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             /* Generate checksums of the file */
 #ifdef LIBSODIUM_ENABLED
             if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
-                merror("AAA3");
                     strncpy(file_sums->md5output, "xxx", 4);
                     strncpy(file_sums->sha256output, "xxx", 4);
             }
@@ -434,7 +433,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     /* Generate checksums of the file */
 #ifdef LIBSODIUM_ENABLED
                     if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
-                        merror("AAA4");
                             strncpy(file_sums->md5output, "xxx", 4);
                             strncpy(file_sums->sha256output, "xxx", 4);
                     }
