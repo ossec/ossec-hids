@@ -1,4 +1,4 @@
-# rootkit_trojans.txt, (C) 2017 OSSEC Project
+# rootkit_trojans.txt, (C) 2018 OSSEC Project
 # Imported from the rootcheck project.
 # Some entries taken from the chkrootkit project.
 #
