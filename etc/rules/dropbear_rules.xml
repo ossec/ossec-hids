@@ -92,6 +92,13 @@
     <description>User successfully logged in using a public key.</description>
     <group>authentication_success,</group>
   </rule>
+
+  <rule id="51011" level="1">
+    <decoded_as>dropbear</decoded_as>
+    <if_sid>1002</if_sid>
+    <match>Error listening: Address already in use</match>
+    <description>Dropbear cannot listen on port.</description>
+  </rule>      
  
    
 </group> <!-- SYSLOG,LOCAL -->
