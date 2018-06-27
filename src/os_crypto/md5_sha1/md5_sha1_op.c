@@ -226,7 +226,7 @@ int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_outpu
             } else {
                 hashtmp[0] = '\0';
                 snprintf(hashtmp, 3, "%02x", sha256_digest[n]);
-                strncat(file_output->sha256output, hashtmp, sizeof(file_output->sha256output) - 1 - strlen(file_output->genericoutput));
+                strncat(file_output->sha256output, hashtmp, sizeof(file_output->sha256output) - 1 - strlen(file_output->sha256output));
             }
         }
     }
