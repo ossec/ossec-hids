@@ -17,6 +17,9 @@
 #include <sddl.h>
 #endif
 
+/* Make this big enough for most things. Might adjust later */
+#define ALERT_MSG_LEN 2048
+
 /* Prototypes */
 static int read_file(const char *dir_name, int opts, OSMatch *restriction)  __attribute__((nonnull(1)));
 static int read_dir(const char *dir_name, int opts, OSMatch *restriction) __attribute__((nonnull(1)));
@@ -209,8 +212,8 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 
         buf = (char *) OSHash_Get(syscheck.fp, file_name);
         if (!buf) {
-            char alert_msg[916 + 1];    /* to accommodate a long */
-            alert_msg[916] = '\0';
+            char alert_msg[ALERT_MSG_LEN];
+            alert_msg[ALERT_MSG_LEN - 1] = '\0';
 
 #ifndef WIN32
             if (opts & CHECK_SEECHANGES) {
@@ -270,9 +273,9 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 
 
 
-            snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s",
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s",
 #else   // LIBSODIUM_ENABLED
-            snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
 #endif  // LIBSODIUM_ENABLED
                      (opts & CHECK_SIZE) ? '+' : '-',
                      (opts & CHECK_PERM) ? '+' : '-',
@@ -297,13 +300,13 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
 
             /* Send the new checksum to the analysis server */
-            alert_msg[916] = '\0';
+            alert_msg[ALERT_MSG_LEN - 1] = '\0';
 
 #ifndef WIN32
 #ifdef LIBSODIUM_ENABLED
-            snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s %s",
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%d:%d:%s %s",
 #else   // LIBSODIUM_ENABLED
-            snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%d:%d:%s:%s %s",
 #endif
                      (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
                      (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
@@ -351,7 +354,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             LocalFree(szSID);
             CloseHandle(hFile);
     
-            snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s %s",
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%s:%d:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      (opts & CHECK_OWNER) ? st_uid : "0",
