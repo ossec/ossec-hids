@@ -3226,4 +3226,12 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <order>srcip</order>
 </decoder>
 
+<!-- OpenBSD httpd -->
+<decoder name="openbsd-httpd">
+  <prematch> [\d+/\w+/\d+:\d+:\d+:\d+ -\d+] "</prematch>
+  <regex>^(\S+) (\S+) \S+ \S+ [\d+/\w+/\d+:\d+:\d+:\d+ -\d+] "(\S+) (\S+) HTTP/\d.\d" (\d+) \d$</regex>
+  <order>url, srcip, protocol, url, status</order>
+  <type>web-log</type>
+</decoder>
+
 <!-- EOF -->
