@@ -12,6 +12,10 @@
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
 #include "os_crypto/md5_sha1/md5_sha1_op.h"
+#ifdef WIN32
+#include <aclapi.h>
+#include <sddl.h>
+#endif
 
 /* Prototypes */
 static int read_file(const char *dir_name, int opts, OSMatch *restriction)  __attribute__((nonnull(1)));
@@ -152,7 +156,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             char alert_msg[916 + 1];    /* to accommodate a long */
             alert_msg[916] = '\0';
 
-            #ifndef WIN32
+#ifndef WIN32
             if (opts & CHECK_SEECHANGES) {
                 char *alertdump = seechanges_addfile(file_name);
                 if (alertdump) {
@@ -160,7 +164,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     alertdump = NULL;
                 }
             }
-            #endif
+#endif
 
             snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
                      opts & CHECK_SIZE ? '+' : '-',
@@ -183,6 +187,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             /* Send the new checksum to the analysis server */
             alert_msg[916] = '\0';
 
+#ifndef WIN32
             snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
@@ -191,6 +196,51 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
                      file_name);
+#else
+
+            HANDLE hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE) {
+                DWORD dwErrorCode = GetLastError();
+                char alert_msg[PATH_MAX+4];
+                alert_msg[PATH_MAX + 3] = '\0';
+                snprintf(alert_msg, PATH_MAX + 4, "CreateFile=%ld %s", dwErrorCode, file_name);
+                send_syscheck_msg(alert_msg);
+                return -1;
+            }
+
+            PSID pSidOwner = NULL;
+            PSECURITY_DESCRIPTOR pSD = NULL;
+            DWORD dwRtnCode = GetSecurityInfo(hFile, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, &pSidOwner, NULL, NULL, NULL, &pSD);
+            if (dwRtnCode != ERROR_SUCCESS) {
+                DWORD dwErrorCode = GetLastError();
+                CloseHandle(hFile);
+                char alert_msg[PATH_MAX+4];
+                alert_msg[PATH_MAX + 3] = '\0';
+                snprintf(alert_msg, PATH_MAX + 4, "GetSecurityInfo=%ld %s", dwErrorCode, file_name);
+                send_syscheck_msg(alert_msg);
+                return -1;
+            }
+
+            LPSTR szSID = NULL;
+            ConvertSidToStringSid(pSidOwner, &szSID);
+            char* st_uid = NULL;
+            if(szSID) {
+              st_uid = (char *) calloc(strlen(szSID) + 1, 1);
+              memcpy(st_uid, szSID, strlen(szSID));
+            }
+            LocalFree(szSID);
+            CloseHandle(hFile);
+    
+            snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s %s",
+                     opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
+                     opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
+                     (opts & CHECK_OWNER) ? st_uid : "0",
+                     opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+                     opts & CHECK_MD5SUM ? mf_sum : "xxx",
+                     opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                     file_name);
+            free(st_uid);
+#endif
             send_syscheck_msg(alert_msg);
         } else {
             char alert_msg[OS_MAXSTR + 1];

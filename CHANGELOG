@@ -1,94 +1,178 @@
-OSSEC changelog (2.9.0) <scott@atomicorp.com>
+OSSEC changelog (3.0.0) <scott@atomicorp.com>
 
 Release Maintainers
 
 Dan Parriott
 Scott R. Shinn (Atomicorp, Inc.)
 
+
+
 Whats New
-    Alert Output support for JSON and ZeroMQ
-    Syscheck improvements
-    Report file deletion, even without realtime enabled
-    Report modifications made on directories
-    Corrects bug so that files created between the first and second scan are reported as new files
-    Corrects bug that made changes reverting a file to the state it was in when ossec started unreported
-    Avoids computing hashes multiple times to improve performance
-    Make the time between two syscheck wakeups configurable in internal_options
-    Add support for the “nodiff” option when using report_changes, sensitive files tagged with in ossec.conf will not have their contents included in an alert.
-    IPv6 support
-    Support to call an external mailer. This solves the problem of supporting encryption when sending mail alerts in OSSEC. The <smtp_server> field can now be prepended with “/” to designate a local binary. Example: “<smtp_server>/usr/sbin/sendmail -t</smtp_server>”.
-    Slack notification support
+	SQLite support for syscheck
+		PR #1091 - whitelist for files in sqlite DB
+		PR #1364 - add some ifdefs for the md5 whitelist database (USE_SQLITE)
+
+	Update cJSON 1.7.0
+		PR #1351
+
+	Add Pagerduty Active response
+		PR #1302
+
+	OSSEC-authd 
+
+		PR #890 / #873 - Dichotomic search to add agents with authd
+		PR #1154 / #1210 - password support
+		PR #1161 - avoid IP duplication, time limit agent deletion with duplicate IP, and option for re-using an agent ID
+		PR #1190 - Exit handler for authd to delete PID file
+		PR #1208 - add cipher configuration support
+
+	zlib update to 1.2.11
+		PR #1198
+
+	ossec-agent selinux module
+		PR #1193
+
+	windows agent
+		PR #1170 - add agent-auth.exe support
+
+	add tcp support for agent communications
+		PR #1162
+
+	GeoIP support in rules and events
+		PR #840 - Support in alerts
+		PR #927 - add geoip support to JSON output analysisd.geoip_jsonout=0
+		PR #929 - Modify rule token different_geoip rule to different_srcgeoip
+		PR #984 - fix some geoIP bugs
+		PR #1108 - decoder fixes
+
+	Slack support
+		Bugfix #947 - Escape the '.' in the grep for '.ALERTLAST' #947
+		Bugfix #959 - silent curl in ossec-slack
+
+	Decoders filename attribute
+		PR #915 - A few fixes, but most importantly the ability to set the filename attribute from a decoder. This will help create automated pipelines for FIM Verification. I currently need to compare FIM events against 1) Puppet, 2) GIT, and 3) RPM. This patch allows FIM events to be intercepted by my custom FIM Verification script, which generates logging events which OSSEC can read and turn back into an event with the filename attribute set.
 
 
 
 New Rules / Decoders
 
-    PR#572: Rules/Decoders, Better Dropbear events detection
-    PR#602: Rules/Decoders, Add dropbear_rules and unbound_rules
-    PR#604: Rules/Decoders,sid 5300 incorrectly alerts on OS X
-    PR#607, Rules/Decoders, Update syslog_rules for OSX false positive
-    PR#611: Rules/Decoders, Sysmon decoder update, This should better support Windows 2003 R2.
-    PR#643, Rules/Decoders, update to IIS decoder
-    PR#654, Rules/Decoders, update to the vsftpd decoder
-    PR#668: Rules/Decoders, Fix for Cisco PIX decoder, ms-se_rules.xml, msauth_rules.xml
-    PR#721: Rules/Decoders, Update for sytemd rules to add support for new program_name, systemctl
-    PR#746: Rules/Decoders, Update to the apache decoders to handle Apache 2.4 events more gracefully
-    PR#755: Rules/Decoders, Update to ssh rules. Adds rules 5750-5753 to dedect client, protocol, and hostkey events
-    PR#762: Rules/Decoders, Update to ssh rules. Associates 5751 with 5700 instead of 1002
-    PR#763: Rules/Decoders, Add rules for OpenBSD smtpd
-    PR#774: Rules/Decoders, Add OpenBSD smtpd rules
-    PR#787: Rules/Decoders, Update to OpenBSD smtpd decoder to not conflict with postfix
-    PR#786: Rules/Decoders, SSH Rule improvements
-    PR#799: Rules/Decoders, Add rule for users not in sudoers
-    PR#803: Rules/Decoders, Add additional sshd decoders for ssh-pam & ssh invalid auth requests
+PR #1297 / #1335 - update named rules
+PR #1324 - Bitcoin wallet scans to suspicious URLs
+PR #1356 - Openbsd DHCP rules
+
 
 General
 
-    PR #2, Output, Adds ZeroMQ and Json output support
-    PR #4, Authd, Bugfix for Openssl operations on non-blocking socket
-    PR #563: IPv6 support
-    PR #599, Allow for the log format in proftpd 1.3.5+
-    PR #610: Execd, Reduce system load caused by simultaneous active response processes during ossec stop. #610
-    PR #615: Adds support for Binding src IP to ‘local_ip’ config value in agentd. In mulihomed host environment we have a big problem with binding agent to correct ip. By default agentd used ip-addr of interface, from which sented ip-packets.
-    PR #617: Agentd, Add CLIENT to DEFINES for winagent target #617 Bugfix #595
-    PR #622: Fix for CVE-2015-3222
-    PR #631, Log failure when ossec fails to remove a PID file
-    PR #652, Syscheck, add support for the “-t” flag to display XML parsing errors in agent.conf on agents
-    PR #657: Syscheck, Allows scanning of directories with , in the name. Let directory check_something=”no” options to work. This means you can do instead of listing out all the ones you want to use.
-    PR #670: Syscheck, Bugfix for report_changes
-    PR #689: Maild, add support to call an external MTA to send alert emails. The smtp_server setting can now be written as “/usr/sbin/sendmail -t”
-    PR #690: Cleanup for building on OSX
-    PR #691: adds support for syslog messages that prepend the year, ie: “2015 Nov 13 ....”
-    PR #696: Bugfix for OpenBSD sendto() sockaddr length restrictions.
-    PR #699: Encompassing only complete statements with conditional directives.
-    PR #717: Active Response, add Slack (www.slack.com) notification support
-    PR #720: Fixes for the statfs error spam
-    PR #724: Authd, bugfix for issue #642, This brings ossec-authd into parity with whatever the MAX_AGENTS is set at build time
-    PR #726: Make syslog/cef consistent with json/splunk and add classification field to alerts.
-    PR #727: Maild, Add support for “email_reply_to”. This allows configuing the Reply-To: field in email alerts sent from ossec-maild
-    PR #740: Remoted, bugfix for issue #739, Ossec will now report the agent ID of the agent that tries to conect
-    PR #744: Syscheck, Bugfix for issue #42, corrects issue on windows that would produce an incorrect hash
-    PR #749: Windows, Changed Makefile to use Windows subsystem only wth UI manager
-    PR #750: Analysisd, Fixes glob() impelemtation bug, adds Hourly/Daily options to logcollector, improved dfalts to analysisd diff alerts.
-    PR #751: Add simple python rule updater script
-    PR #754: Install.sh, Bugfix for OpenBSD adduser support
-    PR #765: Syscheck, add “nodiff” support. Sensitive data may leak through the diff attached to alerts when some file changes. This pull request add a nodiff option, which allows to explicitely set files for which we never want to output a diff.
-    PR #768: Analysisd, Bugfix for Issue #767, increase of value for stats
-    PR #770: Database support, Postgres support updates
-    PR #781: Syscheck, Bugfix for Issue #780
-    PR #788: System Audit, Add PCI DSS tags to RHEL/CentOS/Cloudlinux auditing tests
-    PR #789: Install.sh, Use ls for file existance checks, for cross platform compatibility
-    PR #791: Syscheck, add /boot to default directories. Fix for Issue #675
-    PR #797: Rootcheck, Remove legacy rootcheck options
-    PR #798: System Audit, Add RHEL/CentOS/Cloudlinux 7 CIS benchmarks
-    PR #802: Database support, Allow for longer entries in the system informtaion column
-    PR #849 Format string security fix
-    PR #864 Fix ossec-logtest to chroot when testing check_diff rules
-    PR #870 Fix installer permissions on the etc/shared directory
-    PR #878 Fix version field to correctly report "2.9.0" instead of 2.8.3
-    PR #909 Bugfix for decoders.d/rules.d logtest
-    PR #920 Bugfixes for OS_IPFound, OS_IPFoundList, OS_IsValidIP
-    PR #923 Security fix for SQLi in al_data->location
-    PR #926 Rootcheck, updates or EL7
-    PR #945 Remove debug message
-    PR #986 - Prevent manage_agents from chrooting in bulk mode
+Bugfix #42 - Add option to use unaltered hashes with Windows syscheck 
+Bugfix #210 - Time option in rules is rejecting valid syntax. 
+Bugfix #425 - manage_agents unable to access /dev/random due to chroot 
+Bugfix #454 - Prevent manage_agents from chrooting in bulk mode
+Bugfix #780 - Compile warning (and potential segfault) after merge from calve/do_not_show_diff 
+Bugfix #829 - Segmentation fault at logcollector
+Bugfix #888 - Pull Request #840 reverts some ipv6 support
+Bugfix #869 - ossec-agentd is unable to unmerge files
+Bugfix #892 - Contrib tools need to be updated for IPv6. 
+Bugfix #911 - "any" is broken after change to sacmp for ipv4 networks #911
+Bugfix #913 - logcollector goes into loop when a NULL is in the log
+Bugfix #960 - do not attempt to start ossec-maild when it is enabled
+Bugfix #961 - fix for open file handle when rotating alerts.json
+Bugfix #976 - win32: 2 values in internal_options.conf ignored 
+Bugfix #994 - rootcheck, fix for false positive trojaned /bin/grep
+Bugfix #998 - IPv6 triggers Rule 1002 
+Bugfix #1065 - fix for negating IP/CIDR rules
+Bugfix #1084 - fix a double free 
+Bugfix #1106 - ossec-remoted, Fix for clang checks, and a potential DOS caused by a warning
+Bugfix #1142 - CEF field uniqueness fix
+Bugfix #1145 - if getaddrinfo fails with WAI_FAMILY try ipv4
+Bugfix #1165 - rpm spec files generate ossec user and group in user space
+Bugfix #1180 - Add last events (previous output) to JSON output 
+Bugfix #1205 - Avoid EOL conversion of received files in the windows receiver
+Bugfix #1227 - Fix for daily reports not being sent
+Bugfix #1237 - Custom CFLAGS/CXXFLAGS/LDFLAGS support
+Bugfix #1274 - ossec-authd, ipv6 returns an invalid key
+Bugfix #1278 - Use getent to check for users/group
+Bugfix #1366 - Update to rule ID map
+Bugfix #1370 - Bugfix for full subject handling 
+
+
+ 
+PR #770 - ossec-dbd, postgresql fixes on the user colume, schema, and not null conditions
+PR #778 - syscheck, Selective opening mode to extract file hash #778
+PR #792 - Check for a null from malloc
+PR #802 - ossec-dbd, allow for longer entries in the system.information column
+PR #804 - ossec-dbd, allow for mysql/postgres format changing based on MYSQLDB/POSTGDB
+PR #806 - ossec-reportd, report fixes on IP and user fields
+PR #808 - Igngore openBSD's random seed
+PR #824 - ossec-dbd, fix for mysql/postgres insert condition
+PR #839 - JSON output, Add group field to json output
+PR #843 - Add support for CZMQ v3
+PR #848 - Fixed bug at logcollector that inhibited alerts about file reduction
+PR #849 - ossec-maild, Format string security fix 
+PR #855 - Fixed memory error on CDB lists management
+PR #859 - added utils to rename an agent or change its IP address (rename_agent.sh, renumber_agent.sh)
+PR #862 - ossec-analysisd, fixed memory leaks
+PR #864 - There is an error when running ossec-logtest to test rules with check_diff, since it doesn't change root directory and tries to create a directory at/queue/diff`.
+PR #866 - JSON output, Add timestamp for events
+PR #881 - Add debugging output to active repsonse xml config read
+PR #883 - Bugfix for agents failing to bind to a specific local IP address and the server is specified by hostname. 
+PR #887 - agent status needs to be verified before using agt->lip
+PR #893 - Prelude IDS support, Do not use absolute indexes in prelude fields
+PR #899 - manage_agents, OSSEC agent IDs can only be numbers but they are treated as strings. Because of this, it's possible to add the agent "00" and "000", or "1" and "00001" at the same time, and they can be confused on extracting keys or on deleting agents.
+PR #909 - ossec-logtest, Bugfix for decoders.d/rules.d segfault
+PR #910 - Update intcheck_op.c 
+PR #912 - update validate_op.c 
+PR #918 - ossec-logtest, add -q "quiet" flag support
+PR #920 - Bugfixes for OS_IPFound, OS_IPFoundList, OS_IsValidIP. #920
+PR #921 - JSON output, This removes the double addition of the 'action' field and adds a few other interesting fields that I need for my analysis in ELK. Most notably, the rule.group is now passed out via the zmq output.
+PR #923 - ossec-dbd, fix SQLi in al_data->location
+PR #928 - ossec-logtest, add geoip to logtest output
+PR #930 - fix memory leak in decode-xml.c
+PR #931 - Custom output, fix common realloc mistake in custom_output_search_replace.
+PR #934 - Create OSSEC users and group as system members
+PR #944 - Don't pass null variables to snprintf. 
+PR #950 - Exclude btrfs-Filesystem from searching for hidden files inside directorie
+PR #953 - Prevent manage_agents from doing invalid actions on interactive mode
+PR #964 -  Csyslogd patch for sending additional FIM event information
+PR #991 - set default AR level to 7
+PR #1003 - JSON output, bugfix for duplicated group field 
+PR #1004 - memory fixes in XML decoding, no-terminated strings, and searchAndReplace()
+PR #1016 - bugfix that prevents ossec-control from starting ossec-maild on server
+PR #1017 - ossec-remoted, fix for openbsd canary violation
+PR #1020 - Allow notify_timeout to be configured server-side. #1020
+PR #1021 - Windows Agent, fix for build related issues
+PR #1027 -Fx for the "USER_AGENT_CONFIG_PROFILE" preloaded-vars.conf file usage. This fixes that and adds a profile config line if the variable is defined. Very useful for unattended installs or binary installs.
+PR #1089 - Retire picviz support
+PR #1090 - JSON output, add "id" to the json log
+PR #1093 - pf.sh, update support FreeBSD, OpenBSD, and Darwein
+PR #1097 - ossec-batch-manager.pl, support "any" IP address
+PR #1099 - AR, prevent duplication in hosts.deny
+PR #1100 - Windows agent, Open received files in binary mode cause of cr/lf and let hashes match. 
+PR #1102 - JSON ouput, Fix timestamp 
+PR #1116 - ossec-remoted, systemd support
+PR #1135 - ossec-dbd, UMYSQL_DATABASE_ENABLED does not exist in the tree except this one place.
+PR #1137 - Windows agent, administrators group might not be present on non-english installs
+PR #1148 - Update for gmake to compile on Solaris 11.2
+PR #1149 - Update adduser.sh for Solaris 11.2
+PR #1158 - Update shell on ossec-hids-solaris.init Solaris 11.2
+PR #1159 - Update Makefile for Solaris
+PR #1179 - ossec-dbd, fix readme display IP as string
+PR #1235 - spelling fixes 
+PR #1238 - fix for edead oop in hash_op.c
+PR #1255 - syscheck, update windows syscheck directories
+PR #1256 - ossec-dbd, use port for postgresql connections
+PR #1257 - rootcheck, make sleep interval configurable (rootcheck.sleep)
+PR #1258 - adduser.sh, fix the useradd and groupadd script for openbsd
+PR #1262 - agentless ssh.exp, remove the P's entirely to support upper and lower case
+PR #1304 - syscheck, Don't display the errno, show the error message 
+PR #1307 - Allow alerts.log to be turned off (DOUBLE CHECK, THIS WAS REVERTED)
+PR #1322 - rootcheck, mysql/mariadb auditing checks
+PR #1336 - Disable warning on OS_PassEmptyKeyfile
+PR #1342 - remove execute flag on rules and config files
+PR #1343 - Makefile fix ar warning
+PR #1344 - add option to exclude lua and use system zlib
+PR #1345 - gitignore, Ignore zlib paths 
+PR #1347 - Fix compiler warnings: Wall, Wextra 
+PR #1374 - Bugfix for AIX building 
+PR #1382 - added rootcheck file for apache 2.2/2.4
+
+

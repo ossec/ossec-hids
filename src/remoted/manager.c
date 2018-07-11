@@ -119,6 +119,8 @@ void save_controlmsg(unsigned int agentid, char *r_msg)
         if (fp) {
             fprintf(fp, "%s\n", uname);
             fclose(fp);
+        } else {
+            merror("ossec-remoted: ERROR: Could not open %s: %s", _keep_alive[agentid], strerror(errno));
         }
     }
 

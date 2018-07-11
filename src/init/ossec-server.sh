@@ -93,7 +93,7 @@ help()
 {
     # Help message
     echo ""
-    echo "Usage: $0 {start|stop|restart|status|enable|disable}";
+    echo "Usage: $0 {start|stop|reload|restart|status|enable|disable}";
     exit 1;
 }
 
