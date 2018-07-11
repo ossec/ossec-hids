@@ -175,7 +175,7 @@ r:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer
 #
 #18.8.20.1.12 Ensure 'Turn off the Windows Messenger Customer Experience Improvement Program' is set to 'Enabled'
 [CIS - Microsoft Windows Server 2012 R2 - 18.8.20.1.12: Ensure 'Turn off the Windows Messenger Customer Experience Improvement Program' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Messenger\Client -> CEIP -> !0;
+r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Messenger\Client -> CEIP -> !2;
 r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Messenger\Client -> !CEIP;
 #
 #
@@ -200,13 +200,11 @@ r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Control Panel\International -> 
 #18.8.29.5.1 Ensure 'Require a password when a computer wakes (on battery)' is set to 'Enabled'
 [CIS - Microsoft Windows Server 2012 R2 - 18.8.29.5.1: Ensure 'Require a password when a computer wakes (on battery)' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
 r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51 -> DCSettingIndex -> !1;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51 -> !DCSettingIndex;
 #
 #
 #18.8.29.5.2 Ensure 'Require a password when a computer wakes (plugged in)' is set to 'Enabled'
 [CIS - Microsoft Windows Server 2012 R2 - 18.8.29.5.2: Ensure 'Require a password when a computer wakes (plugged in)' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/288]
 r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51 -> ACSettingIndex -> !1;
-r:HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51 -> !ACSettingIndex;
 #
 #
 #18.8.39.5.1 Ensure 'Microsoft Support Diagnostic Tool: Turn on MSDT interactive communication with support provider' is set to 'Disabled'
