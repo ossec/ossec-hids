@@ -250,7 +250,7 @@ r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Lsa -> EveryoneIncludesAno
 #
 #2.3.10.6 Configure 'Network access: Named Pipes that can be accessed anonymously'
 [CIS - Microsoft Windows Server 2012 R2 - 2.3.10.6: Configure 'Network access: Named Pipes that can be accessed anonymously'] [any] [https://workbench.cisecurity.org/benchmarks/288]
-r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionPipes -> !r:lsarpc|netlogon|samr;
+r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionPipes -> r:\.;
 r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> !NullSessionPipes;
 #
 #
