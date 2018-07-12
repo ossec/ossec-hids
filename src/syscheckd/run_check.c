@@ -317,11 +317,13 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
-    extern int syscheck_opts;
 
 #ifdef LIBSODIUM_ENABLED
+    extern int syscheck_opts;
+
     struct hash_output *file_sums;
-    file_sums = malloc(sizeof(struct hash_output));
+    //file_sums = malloc(sizeof(struct hash_output));
+    file_sums = calloc(1, sizeof(file_sums));
     if(file_sums == NULL) {
         merror("run_check file_sums malloc failed: %s", strerror(errno));
     }
@@ -334,15 +336,23 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     /* set the checks */
     if(syscheck_opts & CHECK_MD5SUM) {
         file_sums->check_md5 = 1;
+merror("XXX check_md5");
     }
     if(syscheck_opts & CHECK_SHA1SUM) {
         file_sums->check_sha1 = 1;
+merror("XXX check_sha1");
     }
     if(syscheck_opts & CHECK_SHA256SUM) {
         file_sums->check_sha256 = 1;
+merror("XXX check_sha256");
     }
     if(syscheck_opts & CHECK_GENERIC) {
         file_sums->check_generic = 1;
+merror("XXX check_generic");
+    }
+
+    if(file_sums->check_md5 != 1 && file_sums->check_sha1 != 1 && file_sums->check_sha256 != 1 && file_sums->check_generic != 1) {
+        merror("XXX DOES NOT COMPUTER!");
     }
 
 #endif // LIBSODIUM_ENABLED
@@ -454,11 +464,20 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #ifdef LIBSODIUM_ENABLED
     char new_hashes[512], new_hashes_tmp[512];
     int hashc = 0;
-    if(syscheck_opts & CHECK_SHA256SUM) {
+    if(file_sums->check_sha256 > 0) {
         snprintf(new_hashes, 511, "%s", file_sums->sha256output);
         hashc++;
     }
-    if((syscheck_opts & CHECK_SHA1SUM) && hashc < 2) {
+    if(file_sums->check_generic > 0) {
+        if(hashc > 0) {
+            snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->genericoutput);
+            hashc++;
+        } else if(hashc == 0) {
+            snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
+            hashc++;
+        }
+    }
+    if(file_sums->check_sha1 > 0 && hashc < 2) {
         if(hashc > 0) {
             snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->sha1output);
             strncpy(new_hashes, new_hashes_tmp, 511);
@@ -467,20 +486,22 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             hashc++;
         }
     }
-        if((syscheck_opts & CHECK_MD5SUM) && hashc < 2) {
-            if(hashc > 0) {                                                                                                                         snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->md5output);
-                strncpy(new_hashes, new_hashes_tmp, 511);
-                hashc++;
-            } else if(hashc == 0) {
-                snprintf(new_hashes, 511, "%s", file_sums->md5output);                                                                              hashc++;
-            }
+    if(file_sums->check_md5 > 0 && hashc < 2) {
+        if(hashc > 0) {                                                                                                                         snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->md5output);
+            strncpy(new_hashes, new_hashes_tmp, 511);
+            hashc++;
+        } else if(hashc == 0) {
+            snprintf(new_hashes, 511, "%s", file_sums->md5output);                                                                              hashc++;
         }
-        if(hashc < 2) {
-            if(hashc == 0) {
-                strncpy(new_hashes, "xxx:xxx", 8);
-            } else if (hashc == 1) {                                                                                                                snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
-                strncpy(new_hashes, new_hashes_tmp, 511);
-            }                                                                                                                               }
+    }
+    if(hashc < 2) {
+        if(hashc == 0) {
+            strncpy(new_hashes, "xxx:xxx", 8);
+        } else if (hashc == 1) {                                                                                                                snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
+            strncpy(new_hashes, new_hashes_tmp, 511);
+        }                                                                                                                               }
+
+merror("XXX new_hashes: %s\n", new_hashes);
 
     snprintf(newsum, 255, "%ld:%d:%d:%d:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
