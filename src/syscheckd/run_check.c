@@ -564,8 +564,10 @@ merror("XXX new_hashes: %s\n", new_hashes);
 #endif //WIN32
 #endif //LIBSODIUM_ENABLED
 
+/*
 #ifdef LIBSODIUM_ENABLED
     free(file_sums);
 #endif
+*/
     return (0);
 }

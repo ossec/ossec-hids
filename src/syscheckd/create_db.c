@@ -285,6 +285,7 @@ merror("XXX new_hashes(create_db): %s", new_hashes);
                      (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
                      new_hashes);
+merror("YYY alert_msg: %s\n", alert_msg);
 #endif  // LIBSODIUM_ENABLED
             snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
                      (opts & CHECK_SIZE) ? '+' : '-',
