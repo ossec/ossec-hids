@@ -136,18 +136,22 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         /* set the checks */
         if(opts & CHECK_MD5SUM) {
             file_sums->check_md5 = 1;
+            verbose("QQQ CHECK_MD5");
         }
         if(opts & CHECK_SHA1SUM) {
             file_sums->check_sha1 = 1;
+            verbose("QQQ CHECK_SHA1");
         }
         if(opts & CHECK_SHA256SUM) {
             file_sums->check_sha256 = 1;
+            verbose("QQQ CHECK_SHA256");
         }
         if(opts & CHECK_GENERIC) {
             file_sums->check_generic = 1;
+            verbose("QQQ CHECK_GENERIC");
         }
 
-        if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM)) {
+        if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM) || (opts & CHECK_GENERIC)) {
 #else
         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
 #endif  //LIBSODIUM_ENABLED
@@ -383,7 +387,7 @@ merror("YYY alert_msg: %s\n", alert_msg);
             alert_msg[OS_MAXSTR] = '\0';
 
             /* If it returns < 0, we have already alerted */
-            if (c_read_file(file_name, buf, c_sum) < 0) {
+            if (c_read_file(file_name, buf, c_sum, opts) < 0) {
                 return (0);
             }
 

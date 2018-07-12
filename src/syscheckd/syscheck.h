@@ -52,7 +52,7 @@ int realtime_process(void);
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));
 
 /* Get checksum changes */
-int c_read_file(const char *file_name, const char *oldsum, char *newsum) __attribute__((nonnull));
+int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sysopts) __attribute__((nonnull));
 
 int send_syscheck_msg(const char *msg) __attribute__((nonnull));
 int send_rootcheck_msg(const char *msg) __attribute__((nonnull));

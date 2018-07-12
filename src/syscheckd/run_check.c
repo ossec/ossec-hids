@@ -310,7 +310,7 @@ void start_daemon()
 }
 
 /* Read file information and return a pointer to the checksum */
-int c_read_file(const char *file_name, const char *oldsum, char *newsum)
+int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sysopts)
 {
     int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0;
     int return_error = 0;
@@ -319,11 +319,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     os_sha1 sf_sum;
 
 #ifdef LIBSODIUM_ENABLED
-    extern int syscheck_opts;
-
     struct hash_output *file_sums;
-    //file_sums = malloc(sizeof(struct hash_output));
-    file_sums = calloc(1, sizeof(file_sums));
+    file_sums = malloc(sizeof(struct hash_output));
     if(file_sums == NULL) {
         merror("run_check file_sums malloc failed: %s", strerror(errno));
     }
@@ -334,19 +331,20 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     strncpy(file_sums->sha1output, "xxx", 4);
     strncpy(file_sums->genericoutput, "xxx", 4);
     /* set the checks */
-    if(syscheck_opts & CHECK_MD5SUM) {
+    if(sysopts & CHECK_MD5SUM) {
         file_sums->check_md5 = 1;
 merror("XXX check_md5");
     }
-    if(syscheck_opts & CHECK_SHA1SUM) {
+    if(sysopts & CHECK_SHA1SUM) {
         file_sums->check_sha1 = 1;
 merror("XXX check_sha1");
     }
-    if(syscheck_opts & CHECK_SHA256SUM) {
+    if(sysopts & CHECK_SHA256SUM) {
         file_sums->check_sha256 = 1;
 merror("XXX check_sha256");
-    }
-    if(syscheck_opts & CHECK_GENERIC) {
+    } else { merror("XXX NOPE256\n"); }
+
+    if(sysopts & CHECK_GENERIC) {
         file_sums->check_generic = 1;
 merror("XXX check_generic");
     }

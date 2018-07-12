@@ -50,7 +50,7 @@ int realtime_checksumfile(const char *file_name)
         c_sum[255] = '\0';
 
         /* If it returns < 0, we have already alerted */
-        if (c_read_file(file_name, buf, c_sum) < 0) {
+        if (c_read_file(file_name, buf, c_sum, syscheck.opts) < 0) {
             return (0);
         }
 
