@@ -302,8 +302,8 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
         if (agt) {
             if (agt->lip) {
                 if (bind(ossock, local_ai->ai_addr, local_ai->ai_addrlen)) {
-                    verbose("Unable to bind to local address %s.  Ignoring...",
-                            agt->lip);
+                    verbose("Unable to bind to local address %s.  Ignoring. (%s)",
+                            agt->lip, strerror(errno));
                 }
                 else verbose("Connecting from local address %s", agt->lip);
             }
