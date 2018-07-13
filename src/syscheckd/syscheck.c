@@ -105,8 +105,6 @@ int Start_win32_Syscheck()
         merror("%s: WARN: Syscheck disabled.", ARGV0);
     }
 
-    syscheck_opts = syscheck.opts;
-
     /* Rootcheck config */
     if (rootcheck_init(0) == 0) {
         syscheck.rootcheck = 1;
