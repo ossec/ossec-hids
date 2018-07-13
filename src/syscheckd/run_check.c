@@ -319,6 +319,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
     os_sha1 sf_sum;
 
 #ifdef LIBSODIUM_ENABLED
+
     struct hash_output *file_sums;
     file_sums = malloc(sizeof(struct hash_output));
     if(file_sums == NULL) {
@@ -333,20 +334,16 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
     /* set the checks */
     if(sysopts & CHECK_MD5SUM) {
         file_sums->check_md5 = 1;
-merror("XXX check_md5");
     }
     if(sysopts & CHECK_SHA1SUM) {
         file_sums->check_sha1 = 1;
-merror("XXX check_sha1");
     }
     if(sysopts & CHECK_SHA256SUM) {
         file_sums->check_sha256 = 1;
-merror("XXX check_sha256");
-    } else { merror("XXX NOPE256\n"); }
+    }
 
     if(sysopts & CHECK_GENERIC) {
         file_sums->check_generic = 1;
-merror("XXX check_generic");
     }
 
     if(file_sums->check_md5 != 1 && file_sums->check_sha1 != 1 && file_sums->check_sha256 != 1 && file_sums->check_generic != 1) {
@@ -469,6 +466,7 @@ merror("XXX check_generic");
     if(file_sums->check_generic > 0) {
         if(hashc > 0) {
             snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->genericoutput);
+            strncpy(new_hashes, new_hashes_tmp, 511);
             hashc++;
         } else if(hashc == 0) {
             snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
@@ -498,8 +496,6 @@ merror("XXX check_generic");
         } else if (hashc == 1) {                                                                                                                snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
             strncpy(new_hashes, new_hashes_tmp, 511);
         }                                                                                                                               }
-
-merror("XXX new_hashes: %s\n", new_hashes);
 
     snprintf(newsum, 255, "%ld:%d:%d:%d:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
