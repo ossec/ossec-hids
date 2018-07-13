@@ -136,19 +136,15 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         /* set the checks */
         if(opts & CHECK_MD5SUM) {
             file_sums->check_md5 = 1;
-            verbose("QQQ CHECK_MD5");
         }
         if(opts & CHECK_SHA1SUM) {
             file_sums->check_sha1 = 1;
-            verbose("QQQ CHECK_SHA1");
         }
         if(opts & CHECK_SHA256SUM) {
             file_sums->check_sha256 = 1;
-            verbose("QQQ CHECK_SHA256");
         }
         if(opts & CHECK_GENERIC) {
             file_sums->check_generic = 1;
-            verbose("QQQ CHECK_GENERIC");
         }
 
         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM) || (opts & CHECK_GENERIC)) {
@@ -162,7 +158,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             if (S_ISLNK(statbuf.st_mode)) {
 
                 /* Get the file the link points to */
-                /* XXX not working
+                /* XXX not working?
                 char new_file_name[255];
                 ssize_t rlret = readlink(file_name, new_file_name, 254);
                 if(rlret < 0) {
@@ -274,8 +270,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     strncpy(new_hashes, new_hashes_tmp, 511);
                 }
             }
-merror("XXX new_hashes(create_db): %s", new_hashes);
-
 
             snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s",
                      (opts & CHECK_SIZE) ? '+' : '-',
@@ -289,7 +283,6 @@ merror("XXX new_hashes(create_db): %s", new_hashes);
                      (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
                      new_hashes);
-merror("YYY alert_msg: %s\n", alert_msg);
 #endif  // LIBSODIUM_ENABLED
             snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
                      (opts & CHECK_SIZE) ? '+' : '-',
