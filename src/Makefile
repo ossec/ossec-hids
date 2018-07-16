@@ -1301,7 +1301,7 @@ clean-test:
 clean-external:
 	rm -f ${cjson_o} libcJSON.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
-	cd ${EXTERNAL_} && ${MAKE} clean
+	cd ${EXTERNAL_ZLIB} && ${MAKE} clean
 
 
 clean-internals:
