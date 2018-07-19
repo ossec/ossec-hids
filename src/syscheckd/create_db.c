@@ -128,10 +128,10 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         if(file_sums == NULL) {
             merror("file_sums malloc failed: %s", strerror(errno));
         }
-        strncpy(file_sums->md5output, "xxx", 4);
-        strncpy(file_sums->sha256output, "xxx", 4);
-        strncpy(file_sums->sha1output, "xxx", 4);
-        strncpy(file_sums->genericoutput, "xxx", 4);
+        strncpy(file_sums->md5output, "MD5=", 5);
+        strncpy(file_sums->sha256output, "SHA256=", 8);
+        strncpy(file_sums->sha1output, "SHA1=", 5);
+        strncpy(file_sums->genericoutput, "GENERIC=", 9);
 
         /* set the checks */
         if(opts & CHECK_MD5SUM) {
@@ -174,8 +174,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     if (S_ISREG(statbuf_lnk.st_mode)) {
 #ifdef LIBSODIUM_ENABLED
                         if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
-                            strncpy(file_sums->md5output, "xxx", 4);
-                            strncpy(file_sums->sha256output, "xxx", 4);
+                            merror("ossec-syscheckd: ERROR: OS_Hash_File() failed (0x00)");
                         }
 
 #else   //LIBSODIUM_ENABLED
@@ -231,6 +230,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             if(opts & CHECK_SHA256SUM) {
                 snprintf(new_hashes, 511, "%s", file_sums->sha256output);
                 hashc++;
+merror("XXX sha256! %s", new_hashes);
             }
             if((opts & CHECK_SHA1SUM) && hashc < 2) {
                 if(hashc > 0) {
@@ -241,6 +241,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     snprintf(new_hashes, 511, "%s", file_sums->sha1output);
                     hashc++;
                 }
+merror("XXX sha1! %s", new_hashes);
             }
             if((opts & CHECK_MD5SUM) && hashc < 2) {
                 if(hashc > 0) {
@@ -251,6 +252,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     snprintf(new_hashes, 511, "%s", file_sums->md5output);
                     hashc++;
                 }
+merror("XXX md5! %s", new_hashes);
             }
             if((opts & CHECK_GENERIC) && hashc < 2) {
                 if(hashc > 0) {
@@ -261,8 +263,10 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
                     hashc++;
                 }
+merror("XXX generic! %s", new_hashes);
             }
             if(hashc < 2) {
+merror("XXX uh-oh");
                 if(hashc == 0) {
                     strncpy(new_hashes, "xxx:xxx", 8);
                 } else if (hashc == 1) {
@@ -283,7 +287,8 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
                      new_hashes);
-#endif  // LIBSODIUM_ENABLED
+merror("AAA alert_msg: %s (0x00)", alert_msg);
+#else  // LIBSODIUM_ENABLED XXX - is this the source of my xxxes?
             snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
                      (opts & CHECK_SIZE) ? '+' : '-',
                      (opts & CHECK_PERM) ? '+' : '-',
@@ -297,7 +302,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
                      (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
                      (opts & CHECK_SHA1SUM) ? sf_sum : "xxx");
-
+#endif	// LIBSODIUM_ENABLED
 
             if (OSHash_Add(syscheck.fp, file_name, strdup(alert_msg)) <= 0) {
                 merror("%s: ERROR: Unable to add file to db: %s", ARGV0, file_name);
@@ -315,7 +320,8 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
                      new_hashes,
                      file_name);
-#endif   // LIBSODIUM_ENABLED
+merror("AAA alert_msg: %s (0x01)", alert_msg);
+#else   // LIBSODIUM_ENABLED
             snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%d:%d:%s:%s %s",
                      (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
                      (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
@@ -324,6 +330,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
                      (opts & CHECK_SHA1SUM) ? sf_sum : "xxx",
                      file_name);
+#endif  // LIBSODIUM_ENABLED
 #else
 
             HANDLE hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -369,6 +376,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      file_name);
             free(st_uid);
 #endif  // WIN32
+            merror("AAA alert_msg: %s (0x02)", alert_msg);
             send_syscheck_msg(alert_msg);
         } else {
             char alert_msg[OS_MAXSTR + 1];
@@ -404,6 +412,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
                 }
                 #endif
+                merror("AAA alert_msg: %s (0x03)", alert_msg);
                 send_syscheck_msg(alert_msg);
             }
         }

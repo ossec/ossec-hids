@@ -31,10 +31,10 @@ struct hash_output {
     int check_generic;
 
     // Here's where we put it.
-    os_md5 md5output;
-    os_sha1 sha1output;
-    char genericoutput[130];
-    char sha256output[crypto_hash_sha256_BYTES];
+    char md5output[37];
+    char sha1output[70];
+    char genericoutput[138];
+    char sha256output[crypto_hash_sha256_BYTES + 7];
 };
 
 int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output *file_output, int mode);
