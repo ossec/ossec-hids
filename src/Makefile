@@ -3,7 +3,7 @@
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
-EXTERNAL_LUA=external/lua/
+EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
 ZLIB_SYSTEM?=no
 LUA_PLAT=posix
@@ -386,8 +386,8 @@ ifeq (${LUA_ENABLE},yes)
 	install -d -m 0550 -o root -g 0 ${PREFIX}/lua
 	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/native
 	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/compiled
-	install -m 0550 -o root -g 0 external/lua/src/ossec-lua ${PREFIX}/bin/
-	install -m 0550 -o root -g 0 external/lua/src/ossec-luac ${PREFIX}/bin/
+	install -m 0550 -o root -g 0 ${EXTERNAL_LUA}src/ossec-lua ${PREFIX}/bin/
+	install -m 0550 -o root -g 0 ${EXTERNAL_LUA}src/ossec-luac ${PREFIX}/bin/
 endif
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/queue
@@ -1341,9 +1341,9 @@ clean-windows:
 	rm -f ${win32_o} ${win32_ui_o} win32/win_service_rk.o
 	rm -f win32/icon.o win32/resource.o
 	rm -f ${WINDOWS_BINS}
-	rm -f external/lua-5.2.3/src/lua52.dll
-	rm -f external/lua-5.2.3/src/ossec-lua.exe
-	rm -f external/lua-5.2.3/src/ossec-luac.exe
+	rm -f ${EXTERNAL_LUA}src/lua52.dll
+	rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
+	rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
 	rm -f win32/ossec-lua.exe
 	rm -f win32/ossec-luac.exe
 	rm -f win32/ossec-win32-agent.exe
