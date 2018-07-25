@@ -24,6 +24,9 @@ void HandleSecure()
     ssize_t recv_b;
     struct sockaddr_storage peer_info;
     socklen_t peer_size;
+    fd_set fdsave, fdwork;			/* select() work areas */
+    int fdmax;					/* max socket number + 1 */
+    int sock;					/* active socket */
 
     /* Send msg init */
     send_msg_init();
@@ -44,9 +47,10 @@ void HandleSecure()
         ErrorExit(THREAD_ERROR, ARGV0);
     }
 
-    /* Connect to the message queue
-     * Exit if it fails.
-     */
+   /*
+    * Connect to the message queue
+    * Exit if it fails.
+    */
     if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
@@ -72,105 +76,133 @@ void HandleSecure()
     memset(srcmsg, '\0', OS_FLSIZE + 1);
     tmp_msg = NULL;
 
-    while (1) {
-        /* Receive message  */
-        recv_b = recvfrom(logr.sock, buffer, OS_MAXSTR, 0,
-                          (struct sockaddr *)&peer_info, &peer_size);
+    /* initialize select() save area */
+    fdsave = logr.netinfo->fdset;
+    fdmax  = logr.netinfo->fdmax;	/* value preset to max fd + 1 */
 
-        /* Nothing received */
-        if (recv_b <= 0) {
-            continue;
+    while (1) {
+        /* process connections through select() for multiple sockets */
+        fdwork = fdsave;
+        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            ErrorExit("ERROR: Call to secure select() failed, errno %d - %s",
+                      errno, strerror (errno));
         }
 
-        /* Set the source IP */
-        satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
-        srcip[IPSIZE] = '\0';
+        /* read through socket list for active socket */
+        for (sock = 0; sock <= fdmax; sock++) {
+            if (FD_ISSET (sock, &fdwork)) {
 
-        /* Get a valid agent id */
-        if (buffer[0] == '!') {
-            tmp_msg = buffer;
-            tmp_msg++;
+                /* Receive message  */
+                recv_b = recvfrom(sock, buffer, OS_MAXSTR, 0,
+                                  (struct sockaddr *)&peer_info, &peer_size);
 
-            /* We need to make sure that we have a valid id
-             * and that we reduce the recv buffer size
-             */
-            while (isdigit((int)*tmp_msg)) {
-                tmp_msg++;
-                recv_b--;
-            }
+                /* Nothing received */
+                if (recv_b <= 0) {
+                    continue;
+                }
 
-            if (*tmp_msg != '!') {
-                merror(ENCFORMAT_ERROR, __local_name, srcip);
-                continue;
-            }
+               /*
+                * send_msg() needs a socket, but we don't know which
+                * socket is active until we receive our first packet.
+                * This sets the socket for send_msg().
+                */
 
-            *tmp_msg = '\0';
-            tmp_msg++;
-            recv_b -= 2;
+                logr.sock = sock;
 
-            agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
-            if (agentid == -1) {
-                if (check_keyupdate()) {
+                /* Set the source IP */
+                satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
+                srcip[IPSIZE] = '\0';
+
+                /* Get a valid agent id */
+                if (buffer[0] == '!') {
+                    tmp_msg = buffer;
+                    tmp_msg++;
+
+                   /*
+                    * We need to make sure that we have a valid id
+                    * and that we reduce the recv buffer size
+                    */
+                    while (isdigit((int)*tmp_msg)) {
+                        tmp_msg++;
+                        recv_b--;
+                    }
+
+                    if (*tmp_msg != '!') {
+                        merror(ENCFORMAT_ERROR, __local_name, srcip);
+                        continue;
+                    }
+
+                    *tmp_msg = '\0';
+                    tmp_msg++;
+                    recv_b -= 2;
+
                     agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
                     if (agentid == -1) {
-                        merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
-                        continue;
+                        if (check_keyupdate()) {
+                            agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
+                            if (agentid == -1) {
+                                merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
+                                continue;
+                            }
+                        } else {
+                            merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
+                            continue;
+                        }
                     }
                 } else {
-                    merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
-                    continue;
-                }
-            }
-        } else {
-            agentid = OS_IsAllowedIP(&keys, srcip);
-            if (agentid < 0) {
-                if (check_keyupdate()) {
                     agentid = OS_IsAllowedIP(&keys, srcip);
-                    if (agentid == -1) {
-                        merror(DENYIP_WARN, ARGV0, srcip);
-                        continue;
+                    if (agentid < 0) {
+                        if (check_keyupdate()) {
+                            agentid = OS_IsAllowedIP(&keys, srcip);
+                            if (agentid == -1) {
+                                merror(DENYIP_WARN, ARGV0, srcip);
+                                continue;
+                            }
+                        } else {
+                            merror(DENYIP_WARN, ARGV0, srcip);
+                            continue;
+                        }
                     }
-                } else {
-                    merror(DENYIP_WARN, ARGV0, srcip);
+                    tmp_msg = buffer;
+                }
+
+                /* Decrypt the message */
+                tmp_msg = ReadSecMSG(&keys, tmp_msg, cleartext_msg,
+                                     agentid, recv_b - 1);
+                if (tmp_msg == NULL) {
+                    /* If duplicated, a warning was already generated */
                     continue;
                 }
-            }
-            tmp_msg = buffer;
-        }
 
-        /* Decrypt the message */
-        tmp_msg = ReadSecMSG(&keys, tmp_msg, cleartext_msg,
-                             agentid, recv_b - 1);
-        if (tmp_msg == NULL) {
-            /* If duplicated, a warning was already generated */
-            continue;
-        }
+                /* Check if it is a control message */
+                if (IsValidHeader(tmp_msg)) {
+                    /* We need to save the peerinfo if it is a control msg */
+                    memcpy(&keys.keyentries[agentid]->peer_info,
+                           &peer_info, peer_size);
+                    keys.keyentries[agentid]->rcvd = time(0);
+                    save_controlmsg((unsigned)agentid, tmp_msg);
+                    continue;
+                }
 
-        /* Check if it is a control message */
-        if (IsValidHeader(tmp_msg)) {
-            /* We need to save the peerinfo if it is a control msg */
-            memcpy(&keys.keyentries[agentid]->peer_info, &peer_info, peer_size);
-            keys.keyentries[agentid]->rcvd = time(0);
+                /* Generate srcmsg */
+                snprintf(srcmsg, OS_FLSIZE, "(%s) %s",
+                         keys.keyentries[agentid]->name,
+                         keys.keyentries[agentid]->ip->ip);
 
-            save_controlmsg((unsigned)agentid, tmp_msg);
+               /*
+                * If we can't send the message, try to connect to the
+                * socket again. If it fails exit.
+                */
+                if (SendMSG(logr.m_queue, tmp_msg, srcmsg,
+                            SECURE_MQ) < 0) {
+                    merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
 
-            continue;
-        }
-
-        /* Generate srcmsg */
-        snprintf(srcmsg, OS_FLSIZE, "(%s) %s", keys.keyentries[agentid]->name,
-                 keys.keyentries[agentid]->ip->ip);
-
-        /* If we can't send the message, try to connect to the
-         * socket again. If it not exit.
-         */
-        if (SendMSG(logr.m_queue, tmp_msg, srcmsg,
-                    SECURE_MQ) < 0) {
-            merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
-
-            if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
-                ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
-            }
-        }
-    }
+                    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
+                        ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
+                    }
+                }
+            } /* if socket active */
+        } /* for() loop on sockets */
+    } /* while(1) loop for messages */
 }
+

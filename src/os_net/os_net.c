@@ -17,8 +17,13 @@
 agent *agt;
 
 /* Prototypes */
-static int OS_Bindport(char *_port, unsigned int _proto, const char *_ip);
+static OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip);
 static int OS_Connect(char *_port, unsigned int protocol, const char *_ip);
+static int OS_DecodeAddrinfo (struct addrinfo *res);
+static char *OS_DecodeSockaddr (struct sockaddr *sa);
+static char *DecodeFamily (int val);
+static char *DecodeSocktype (int val);
+static char *DecodeProtocol (int val);
 
 /* Unix socket -- not for windows */
 #ifndef WIN32
@@ -40,92 +45,173 @@ static socklen_t us_l = sizeof(n_us);
 #endif /* WIN32*/
 
 
-/* Bind a specific port */
-int OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
+/* Bind all relevant ports */
+OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
 {
     int ossock = 0, s;
     struct addrinfo hints, *result, *rp;
+    OSNetInfo *ni;			/* return data */
 
+    /* Allocate the return data structure and initialize it. */
+    ni = malloc (sizeof (OSNetInfo));
+    memset(ni, 0, sizeof (OSNetInfo));
+    FD_ZERO (&(ni->fdset));
+    ni->fdmax  = 0;
+    ni->fdcnt  = 0;
+    ni->status = 0;
+    ni->retval = 0;
 
+    /* init hints for getaddrinfo() */
     memset(&hints, 0, sizeof(struct addrinfo));
-#ifdef AI_V4MAPPED
-    hints.ai_family = AF_INET6;    /* Allow IPv4 and IPv6 */
-    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
+
+   /*
+    * If you cannot bind both IPv4 and IPv6, the problem is likely due to the
+    * AF_INET6 family with the AI_V4MAPPED flag. Alter your Makefile to use the
+    * NOV4MAP define and it should work like a breeze. All of the *BSDs fall
+    * into this category even though AI_V4MAPPED exists in netdb.h (true for
+    * all modern OS's). This should work with all Linux versions too, but the
+    * original code for AF_INET6 was left for Linux because it works.
+    *
+    * d. stoddard - 4/19/2018
+    */
+
+#if defined(__linux__) && !defined(NOV4MAP)
+#if defined (AI_V4MAPPED)
+    hints.ai_family = AF_INET6;		/* Allow IPv4 and IPv6 */
+    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
 #else
-    /* Certain *BSD OS (eg. OpenBSD) do not allow binding to a
-       single-socket for both IPv4 and IPv6 per RFC 3493.  This will 
-       allow one or the other based on _ip. */
-    hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-    hints.ai_flags = AI_PASSIVE;
+    /* handle as normal IPv4 and IPv6 multi request */
+    hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
+    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
+#endif /* AI_V4MAPPED */
+#else
+    /* FreeBSD, OpenBSD, NetBSD, and others */
+    hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
+    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
 #endif
+
     hints.ai_protocol = _proto;
     if (_proto == IPPROTO_UDP) {
         hints.ai_socktype = SOCK_DGRAM;
     } else if (_proto == IPPROTO_TCP) {
         hints.ai_socktype = SOCK_STREAM;
     } else {
-        return(OS_INVALID);
+        ni->status = -1;
+        ni->retval = OS_INVALID;
+        return(ni);
     }
 
+    /* get linked list of adresses */
     s = getaddrinfo(_ip, _port, &hints, &result);
+
     /* Try to support legacy ipv4 only hosts */
     if((s == EAI_FAMILY) || (s == EAI_NONAME)) {
         hints.ai_family = AF_INET;
+        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
         s = getaddrinfo(_ip, _port, &hints, &result);
     }
+
     if (s != 0) {
         verbose("getaddrinfo: %s", gai_strerror(s));
-        return(OS_INVALID);
+        ni->status = -1;
+        ni->retval = OS_INVALID;
+        return(ni);
     }
 
-           /* getaddrinfo() returns a list of address structures.
-              Try each address until we successfully connect(2).
-              If socket(2) (or bind(2)) fails, we (close the socket
-              and) try the next address. */
+    /* log the list of connections available */
+    OS_DecodeAddrinfo (result);
+
+   /*
+    * getaddrinfo() returns a list of address structures.  We try each
+    * address and attempt to connect to it.  If a socket(2) or bind(2) fails,
+    * we close the socket and try the next address. We repeat this for every
+    * address getaddrinfo() returns in the addrinfo linked list.
+    */
 
     for (rp = result; rp != NULL; rp = rp->ai_next) {
         ossock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (ossock == -1) {
+            verbose ("socket error: family %s type %s protocol %s: %s",
+                     DecodeFamily (rp->ai_family),
+                     DecodeSocktype (rp->ai_socktype),
+                     DecodeProtocol (rp->ai_protocol),
+                     strerror(errno));
             continue;
-        } 
+        }
+
         if (_proto == IPPROTO_TCP) {
             int flag = 1;
             if (setsockopt(ossock, SOL_SOCKET, SO_REUSEADDR,
                           (char *)&flag, sizeof(flag)) < 0) {
+                verbose ("setsockopt error: SO_REUSEADDR %d: %s",
+                         errno, strerror(errno));
                 OS_CloseSocket(ossock);
-                return(OS_SOCKTERR);
+                continue;
             }
-        } 
-        if (bind(ossock, rp->ai_addr, rp->ai_addrlen) == 0) {
-            break;                  /* Success */
+        }
+
+        if (bind(ossock, rp->ai_addr, rp->ai_addrlen) == -1) {
+           /*
+            * Don't issue an error message if the address and port is already
+            * bound.  This can happen when 0.0.0.0 or :: are bound in a
+            * previous iteration of this loop.
+            */
+            if (errno == EADDRINUSE) {
+                close (ossock);
+                continue;
+            }
+
+            /* tell them why this address failed */
+            verbose ("Bind failed on socket for %s: %s",
+                     OS_DecodeSockaddr (rp->ai_addr), strerror (errno));
+            close (ossock);
+            continue;
+        }
+
+        if (_proto == IPPROTO_TCP) {
+            if (listen(ossock, 32) < 0) {
+                verbose ("Request to listen() failed on socket for %s: %s",
+                          OS_DecodeSockaddr (rp->ai_addr), strerror (errno));
+                close (ossock);
+                continue;
+            }
+            verbose ("Request for TCP listen() succeeded.");
+        }
+
+        /* success - accumulate data for select call */
+        verbose ("Socket bound for %s", OS_DecodeSockaddr (rp->ai_addr));
+
+        /* save bound socket info for select() */
+        ni->fds[ni->fdcnt++] = ossock;  /* increment after use! */
+        FD_SET (ossock, &(ni->fdset));
+        if (ossock > ni->fdmax) {
+          ni->fdmax = ossock;
         }
     }
-    if (rp == NULL) {               /* No address succeeded */
+
+    /* check to see if at least one address succeeded */
+    if (ni->fdcnt == 0) {
+        verbose ("Request to allocate and bind sockets failed.");
         OS_CloseSocket(ossock);
-        return (OS_SOCKTERR);
+        ni->status = -1;
+        ni->retval = OS_SOCKTERR;
+        return(ni);
     }
 
-    freeaddrinfo(result);           /* No longer needed */
-
-    if (_proto == IPPROTO_TCP) {
-        if (listen(ossock, 32) < 0) {
-            OS_CloseSocket(ossock);
-            return (OS_SOCKTERR);
-        }
-    }
-
-    return (ossock);
+    freeaddrinfo(result);		/* No longer needed */
+    ni->fdmax += 1;			/* prep for use with select() */
+    return (ni);
 }
 
 
 /* Bind a TCP port, using the OS_Bindport */
-int OS_Bindporttcp(char *_port, const char *_ip)
+OSNetInfo *OS_Bindporttcp(char *_port, const char *_ip)
 {
     return (OS_Bindport(_port, IPPROTO_TCP, _ip));
 }
 
 /* Bind a UDP port, using the OS_Bindport */
-int OS_Bindportudp(char *_port, const char *_ip)
+OSNetInfo *OS_Bindportudp(char *_port, const char *_ip)
 {
     return (OS_Bindport(_port, IPPROTO_UDP, _ip));
 }
@@ -538,7 +624,7 @@ char *OS_GetHost(const char *host, unsigned int attempts)
     return (NULL);
 }
 
-/* satop(struct sockaddr *sa, char *dst, socklen_t size) 
+/* satop(struct sockaddr *sa, char *dst, socklen_t size)
  * Convert a sockaddr to a printable address.
  */
 int satop(struct sockaddr *sa, char *dst, socklen_t size)
@@ -558,7 +644,7 @@ int satop(struct sockaddr *sa, char *dst, socklen_t size)
         sa4 = (struct sockaddr_in *) sa;
 #ifdef WIN32
         newlength = size;
-        WSAAddressToString((LPSOCKADDR) sa4, sizeof(struct sockaddr_in), 
+        WSAAddressToString((LPSOCKADDR) sa4, sizeof(struct sockaddr_in),
                            NULL, dst, (LPDWORD) &newlength);
 #else
         inet_ntop(af, (const void *) &(sa4->sin_addr), dst, size);
@@ -568,7 +654,7 @@ int satop(struct sockaddr *sa, char *dst, socklen_t size)
         sa6 = (struct sockaddr_in6 *) sa;
 #ifdef WIN32
         newlength = size;
-        WSAAddressToString((LPSOCKADDR) sa6, sizeof(struct sockaddr_in6), 
+        WSAAddressToString((LPSOCKADDR) sa6, sizeof(struct sockaddr_in6),
                            NULL, dst, (LPDWORD) &newlength);
 #else
         inet_ntop(af, (const void *) &(sa6->sin6_addr), dst, size);
@@ -578,9 +664,9 @@ int satop(struct sockaddr *sa, char *dst, socklen_t size)
             memmove(dst, dst+7, size-7);
         }
         return(0);
-    default:  
+    default:
         *dst = '\0';
-        return(-1);     
+        return(-1);
     }
 }
 
@@ -591,5 +677,135 @@ int OS_CloseSocket(int socket)
 #else
     return (close(socket));
 #endif /* WIN32 */
+}
+
+
+/*
+ * OS_DecodeAddrinfo() will decode the contents of an addrinfo structure and
+ * log the IP version, address, and port number for each item in the
+ * linked list of addrinfo structs.
+ */
+
+int OS_DecodeAddrinfo (struct addrinfo *res) {
+    struct addrinfo *p;			/* pointer to addrinfo structs */
+
+    for (p = res; p != NULL; p = p->ai_next)
+        verbose ("%s",OS_DecodeSockaddr (p->ai_addr));
+    return 0;
+}
+
+
+/*
+ * OS_DecodeSockaddr() will decode a socket address and return a string with
+ * the IP version, address, and port number.
+ */
+
+char *OS_DecodeSockaddr (struct sockaddr *sa) {
+    int rc;				/* return code */
+    char ipaddr[INET6_ADDRSTRLEN];	/* printed address */
+    char ipport[NI_MAXSERV];		/* printed port */
+    static char buf[256];		/* message buffer */
+
+#if defined(__linux__) || defined (WIN32)
+    /* most Linux systems do not have sa_len in the sockaddr struct */
+    rc = getnameinfo ((struct sockaddr *) sa, sizeof (sa), ipaddr,
+                      sizeof (ipaddr), ipport, sizeof (ipport),
+                      NI_NUMERICHOST | NI_NUMERICSERV);
+#else
+    /* BSD systems require the value in sa->sa_len or error 4 occurs */
+    rc = getnameinfo ((struct sockaddr *) sa, sa->sa_len, ipaddr,
+                      sizeof (ipaddr), ipport, sizeof (ipport),
+                      NI_NUMERICHOST | NI_NUMERICSERV);
+#endif
+
+    if (rc) {
+        sprintf (buf, "Error %d on getnameinfo: %s", rc, gai_strerror (rc));
+        return (buf);
+    }
+
+    sprintf (buf, "%s: %s on port %s",
+             DecodeFamily (sa->sa_family), ipaddr, ipport);
+    return buf;
+}
+
+
+/*
+ * DecodeFamily() is used to convert the IP family into a string for info
+ * and debugging purposes.
+ */
+
+char *DecodeFamily (int val) {
+    static char buf[32];		/* response */
+
+    switch (val) {
+        case AF_INET:
+            strcpy (buf,"IPv4");
+            break;
+        case AF_INET6:
+            strcpy (buf,"IPv6");
+            break;
+        default:
+            sprintf (buf, "Unknown Family %d", val);
+            break;
+    }
+
+    return (buf);
+}
+
+
+/*
+ * DecodeSocktype() is used to convert the IP socket type into a string for
+ * info and debugging purposes.
+ */
+
+char *DecodeSocktype (int val) {
+    static char buf[32];		/* response */
+
+    switch (val) {
+        case SOCK_STREAM:
+            strcpy (buf,"STREAM");
+            break;
+        case SOCK_DGRAM:
+            strcpy (buf,"DGRAM");
+            break;
+        case SOCK_RAW:
+            strcpy (buf,"RAW");
+            break;
+        default:
+            sprintf (buf, "Unknown Sock Type %d", val);
+            break;
+    }
+
+    return (buf);
+}
+
+
+/*
+ * DecodeProtocol() is used to convert the IP protocol into a string for info
+ * and debugging purposes.
+ */
+
+char *DecodeProtocol (int val) {
+    static char buf[32];		/* response */
+
+    switch (val) {
+        case IPPROTO_IP:
+            strcpy (buf,"IP");
+            break;
+        case IPPROTO_ICMP:
+            strcpy (buf,"ICMP");
+            break;
+        case IPPROTO_TCP:
+            strcpy (buf,"TCP");
+            break;
+        case IPPROTO_UDP:
+            strcpy (buf,"UDP");
+            break;
+        default:
+            sprintf (buf, "Unknown Protocol %d", val);
+            break;
+    }
+
+    return (buf);
 }
 
