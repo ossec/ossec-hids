@@ -230,7 +230,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             if(opts & CHECK_SHA256SUM) {
                 snprintf(new_hashes, 511, "%s", file_sums->sha256output);
                 hashc++;
-merror("XXX sha256! %s", new_hashes);
             }
             if((opts & CHECK_SHA1SUM) && hashc < 2) {
                 if(hashc > 0) {
@@ -241,7 +240,6 @@ merror("XXX sha256! %s", new_hashes);
                     snprintf(new_hashes, 511, "%s", file_sums->sha1output);
                     hashc++;
                 }
-merror("XXX sha1! %s", new_hashes);
             }
             if((opts & CHECK_MD5SUM) && hashc < 2) {
                 if(hashc > 0) {
@@ -252,7 +250,6 @@ merror("XXX sha1! %s", new_hashes);
                     snprintf(new_hashes, 511, "%s", file_sums->md5output);
                     hashc++;
                 }
-merror("XXX md5! %s", new_hashes);
             }
             if((opts & CHECK_GENERIC) && hashc < 2) {
                 if(hashc > 0) {
@@ -263,10 +260,8 @@ merror("XXX md5! %s", new_hashes);
                     snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
                     hashc++;
                 }
-merror("XXX generic! %s", new_hashes);
             }
             if(hashc < 2) {
-merror("XXX uh-oh");
                 if(hashc == 0) {
                     strncpy(new_hashes, "xxx:xxx", 8);
                 } else if (hashc == 1) {
@@ -287,7 +282,6 @@ merror("XXX uh-oh");
                      (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
                      new_hashes);
-merror("AAA alert_msg: %s (0x00)", alert_msg);
 #else  // LIBSODIUM_ENABLED XXX - is this the source of my xxxes?
             snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
                      (opts & CHECK_SIZE) ? '+' : '-',
@@ -320,7 +314,6 @@ merror("AAA alert_msg: %s (0x00)", alert_msg);
                      (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
                      new_hashes,
                      file_name);
-merror("AAA alert_msg: %s (0x01)", alert_msg);
 #else   // LIBSODIUM_ENABLED
             snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%d:%d:%s:%s %s",
                      (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
@@ -376,7 +369,6 @@ merror("AAA alert_msg: %s (0x01)", alert_msg);
                      file_name);
             free(st_uid);
 #endif  // WIN32
-            merror("AAA alert_msg: %s (0x02)", alert_msg);
             send_syscheck_msg(alert_msg);
         } else {
             char alert_msg[OS_MAXSTR + 1];
@@ -412,7 +404,6 @@ merror("AAA alert_msg: %s (0x01)", alert_msg);
                     snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
                 }
                 #endif
-                merror("AAA alert_msg: %s (0x03)", alert_msg);
                 send_syscheck_msg(alert_msg);
             }
         }
