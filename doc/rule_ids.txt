@@ -65,27 +65,30 @@
 20100 - 20299 IDS
 20300 - 20499 IDS (Snort specific)
 
-30100 - 30999 Apache error log.
+30100 - 30999 Apache error log
 31100 - 31199 Web access log
 
-31501 - 32000 Web Appsec rules.
+31501 - 32000 Web Appsec rules
 
 35000 - 35999 Squid
 
-40100 - 40499 Attack patterns.
-40500 - 40599 Privilege escalation.
+40100 - 40499 Attack patterns
+40500 - 40599 Privilege escalation
 
-40600 - 40699 Scan patterns.
+40600 - 40699 Scan patterns
 40700 - 40899 Systemd
 40900 - 40999 Firewalld
 
-51500 - 51999 OpenBSD rules.
-52000 - 52499 Apparmor rules.
+51500 - 51999 OpenBSD rules
+52000 - 52499 Apparmor rules
 52500 - 53199 clam av rules
 53200 - 53499 nsd rules
 53500 - 53299 opensmtpd rules
 53300 - 53399 owncloud rules
-53400 - xxxxx proxmox ve rules
+53400 - 53500 proxmox ve rules
+53501 - 53550 OpenSMTPd rules
+53551 - xxxxx dnsmasq
 56000 - 56200 FreeBSD rules
 
 100000 - 109999 User defined rules
+

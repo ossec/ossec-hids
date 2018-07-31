@@ -3234,4 +3234,19 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <type>web-log</type>
 </decoder>
 
+<!-- dnsmasq -->
+<decoder name="dnsmasq">
+  <!--<program_name>^dnsmasq</program_name>-->
+  <prematch>^dnsmasq</prematch>
+</decoder>
+
+<decoder name="dnsmasq2">
+  <parent>dnsmasq</parent>
+  <regex offset="after_parent">^[\d+]: \d+ (\S+)/\d+ (\S+) (\S+) to (\S+)|</regex>
+  <regex>^[\d+]: \d+ (\S+)/\d+ (\S+) (\S+) from (\S+)|</regex>
+  <regex>^[\d+]: \d+ (\S+)/\d+ (\S+) (\S+) is (\S+)</regex>
+  <order>srcip, action, url, extra_data</order>
+</decoder>
+
+
 <!-- EOF -->
