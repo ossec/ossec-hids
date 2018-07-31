@@ -69,7 +69,7 @@ else
     fi
 
     if [ -x /usr/bin/getent ]; then
-        if [ `getent group ossec | wc -l` -lt 1 ]; then
+        if [ `getent group "${GROUP}" | wc -l` -lt 1 ]; then
             ${GROUPADD} "${GROUP}"
         fi
     elif ! grep "^${GROUP}" /etc/group > /dev/null 2>&1; then
