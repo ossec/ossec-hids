@@ -217,7 +217,7 @@
 <decoder name="ssh-invalid-user">
   <parent>sshd</parent>
   <prematch>^Invalid user|^Illegal user</prematch>
-  <regex offset="after_prematch"> from (\S+)$</regex>
+  <regex offset="after_prematch"> from (\S+)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -225,6 +225,41 @@
   <parent>sshd</parent>
   <prematch>^scanned from</prematch>
   <regex offset="after_prematch"> (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="ssh-received">
+  <parent>sshd</parent>
+  <prematch>^Received disconnect </prematch>
+  <regex offset="after_prematch">^from (\S+): |^from (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="ssh-disconnected">
+  <parent>sshd</parent>
+  <prematch>^Disconnected from invalid user</prematch>
+  <regex offset="after_prematch">\S+ (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="ssh-connection">
+  <parent>sshd</parent>
+  <prematch>^Connection closed by </prematch>
+  <regex offset="after_prematch">user (\S+) (\S+) </regex>
+  <order>user, srcip</order>
+</decoder>
+
+<decoder name="ssh-negotiate">
+  <parent>sshd</parent>
+  <prematch>^Unable to negotiate with </prematch>
+  <regex offset="after_prematch">^(\S+) port (\d+)</regex>
+  <order>srcip, srcport</order>
+</decoder>
+
+<decoder name="ssh-protocol">
+  <parent>sshd</parent>
+  <prematch>^Protocol major versions differ for </prematch>
+  <regex offset="after_prematch">^(\S+)</regex>
   <order>srcip</order>
 </decoder>
 
