@@ -81,9 +81,12 @@ void send_msg_init()
     pthread_mutex_init(&sendmsg_mutex, NULL);
 }
 
-/* Send message to an agent
+
+/*
+ * Send message to an agent
  * Returns -1 on error
  */
+
 int send_msg(unsigned int agentid, const char *msg)
 {
     size_t msg_size, sa_size;
@@ -111,8 +114,37 @@ int send_msg(unsigned int agentid, const char *msg)
     dest_sa = (struct sockaddr *)&keys.keyentries[agentid]->peer_info;
     sa_size = (dest_sa->sa_family == AF_INET) ?
               sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-    if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
-        merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
+
+   /*
+    * Because we handle multiple IP addresses, we won't know what interfaces
+    * are active for network communication until we receive something on one
+    * of them.  This is a work around in the event we need to send before
+    * we have identified the working interface in secure.c. (dgs - 2/26/18)
+    */
+
+    if (logr.sock == 0) {
+        int i, ok = 0;
+
+        /* socket not established - try current sockets */
+        for (i = 0; i < logr.netinfo->fdcnt; i++) {
+            if (sendto(logr.netinfo->fds[i], crypt_msg, msg_size, 0,
+                       dest_sa, sa_size) < 0) {
+                continue;
+            }
+
+            ok = 1;
+            break;
+        }
+
+        /* if we tried all the sockets and noe of them worked, send an error */
+        if (ok == 0) {       
+            merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
+        }
+    } else {
+        /* working socket identified in secure.c */
+        if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
+            merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
+        }
     }
 
     /* Unlock mutex */

@@ -47,6 +47,11 @@ DEFINES+=-DGROUPGLOBAL=\"${OSSEC_GROUP}\"
 DEFINES+=-DMAILUSER=\"${OSSEC_USER_MAIL}\"
 DEFINES+=-D${uname_S}
 
+# Uncomment the DEFINES statement below if you are
+# running Linux and want to use AF_UNSPEC instead of
+# AF_INET6 to fully support IPv4 addresses.
+#DEFINES+=NOV4MAP
+
 ifneq (,$(filter ${REUSE_ID},yes y Y 1))
 	DEFINES+=-DREUSE_ID
 endif
@@ -83,11 +88,15 @@ ifeq (${uname_S},FreeBSD)
 		DEFINES+=-DFreeBSD
 		OSSEC_LDFLAGS+=-pthread
 		LUA_PLAT=freebsd
+		CFLAGS+=-I/usr/local/include
+		OSSEC_LDFLAGS+=-L/usr/local/lib
 else
 ifeq (${uname_S},NetBSD)
 		DEFINES+=-DNetBSD
 		OSSEC_LDFLAGS+=-pthread
 		LUA_PLAT=posix
+		CFLAGS+=-I/usr/local/include
+		OSSEC_LDFLAGS+=-L/usr/local/lib
 else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
@@ -432,7 +441,7 @@ endif
 endif
 
 	install -d -m 0770 -o root -g ${OSSEC_GROUP} ${PREFIX}/etc/shared
-	install -m 0640 -o ossec -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
+	install -m 0640 -o ${OSSEC_USER} -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response/bin
