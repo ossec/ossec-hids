@@ -184,6 +184,7 @@ int realtime_process()
     if (len < 0) {
         merror("%s: ERROR: Unable to read from real time buffer.", ARGV0);
     } else if (len > 0) {
+        buf[len] = '\0';
         while (i < (size_t) len) {
             event = (struct inotify_event *) (void *) &buf[i];
 
