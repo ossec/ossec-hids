@@ -100,7 +100,9 @@ int OS_RemoveAgent(const char *u_id) {
         return 0;
 
 #ifndef WIN32
-    chmod(AUTH_FILE, 0440);
+    if((chmod(AUTH_FILE, 0440)) < 0) {
+        merror("addagent: ERROR: Cannot chmod %s", AUTHFILE, strerror(errno));
+    }
 #endif
 
 #ifdef REUSE_ID
