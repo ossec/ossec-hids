@@ -278,7 +278,7 @@ int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, 
             close(socket);
         }
         if(sendmail) {
-            pclosE(sendmail);
+            pclose(sendmail);
         }
         return(1);
     }
