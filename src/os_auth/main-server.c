@@ -109,6 +109,11 @@ char *__generatetmppass()
     snprintf(str1, STR_SIZE, "%d%d%s%d%s%s",(int)time(0), rand1, muname, rand2, md3, md4);
     OS_MD5_Str(str1, md1);
     fstring = strdup(md1);
+    free(rand3);
+    free(rand4);
+    if(muname) {
+        free(muname);
+    }
     return(fstring);
 }
 
