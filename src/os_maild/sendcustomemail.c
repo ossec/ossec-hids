@@ -260,6 +260,12 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     fp = fopen(fname, "r");
     if(!fp) {
         merror("%s: ERROR: Cannot open %s: %s", __local_name, fname, strerror(errno));
+        if(socket) {
+            close(socket);
+        }
+        if(sendmail) {
+            pclose(sendmail);
+        }
         return(1);
     }
 
