@@ -371,6 +371,9 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
     s = getaddrinfo(_ip, _port, &hints, &result);
     if (s != 0) {
         verbose("getaddrinfo: %s", gai_strerror(s));
+        if(result) {
+            freeaddrinfo(result);
+        }
         return(OS_INVALID);
     }
 
@@ -401,6 +404,9 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
     }
     if (rp == NULL) {               /* No address succeeded */
         OS_CloseSocket(ossock);
+        if(result) {
+            freeaddrinfo(result);
+        }
         return(OS_SOCKTERR);
     }
     satop(rp->ai_addr, tempaddr, sizeof tempaddr);
