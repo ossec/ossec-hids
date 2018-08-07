@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 #else //CLIENT
                 k_import(NULL);
                 break;
-#ifndef
+#endif
             case 'l':
             case 'L':
                 list_agents(0);
