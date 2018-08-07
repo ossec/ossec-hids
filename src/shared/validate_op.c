@@ -309,6 +309,7 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
             break;
         }
         free(ip_address);
+        free(result);
         return(0);
     case AF_INET6:
         if (cidr >=0 && cidr <= 128) {
@@ -319,9 +320,11 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
             break;
         }
         free(ip_address);
+        free(result);
         return(0);
     default:
         free(ip_address);
+        free(result);
         return(0);
     }
 
