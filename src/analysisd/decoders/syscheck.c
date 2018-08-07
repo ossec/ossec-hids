@@ -625,10 +625,10 @@ int DecodeSyscheck(Eventinfo *lf)
     char stmt[OS_MAXSTR + 1];
 #ifdef SQLITE_ENABLED
     sqlite3_stmt *res;
-#endif
     int error = 0;
     int rec_count = 0;
     const char *tail;
+#endif // SQLITE_ENABLED
 
     /* Every syscheck message must be in the following format:
      * checksum filename
