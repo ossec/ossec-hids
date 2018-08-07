@@ -366,6 +366,7 @@ char *GetRandomNoise()
 {
     FILE *fp;
     char buf[2048 + 1];
+    size_t frr = 0;
 
     /* Reading urandom */
     fp = fopen("/dev/urandom", "r");
@@ -375,7 +376,12 @@ char *GetRandomNoise()
     }
 
     buf[2048] = '\0';
-    fread(buf, 1, 2048, fp);
+    frr = fread(buf, 1, 2048, fp);
+    if(frr == 0) {
+        merror("ERROR: GetRandomNoise() fread() returned 0.");
+        fclose(fp);
+        return(NULL);
+    }
     return(strdup(buf));
 }
 

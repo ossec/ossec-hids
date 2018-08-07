@@ -33,13 +33,31 @@ typedef uint8_t u_int8_t;
 typedef uint16_t u_int16_t;
 typedef uint32_t u_int32_t;
 #endif
-/* OS_Bindport*
+
+/*
+ * OSNetInfo is used to exchange a set of bound sockets for use with the
+ * select() function for monitoring incoming packets on multiple interfaces.
+ * This allows you to support IPv4 and IPv6 simultaneously.
+ */
+
+typedef struct _OSNetInfo {
+  fd_set fdset;                         /* set of sockets used by select ()*/
+  int fdmax;                            /* fd max socket for select() */
+  int fds[FD_SETSIZE];                  /* array of bound sockets for send() */
+  int fdcnt;                            /* number of sockets in array */
+  int status;                           /* return status (-1 is error) */
+  int retval;                           /* return value (additional info) */
+} OSNetInfo;
+
+/*
+ * OS_Bindport*
  * Bind a specific port (protocol and a ip).
  * If the IP is not set, it is going to use ADDR_ANY
- * Return the socket.
+ * Return a pointer to the OSNetInfo struct.
  */
-int OS_Bindporttcp(char *_port, const char *_ip);
-int OS_Bindportudp(char *_port, const char *_ip);
+
+OSNetInfo *OS_Bindporttcp(char *_port, const char *_ip);
+OSNetInfo *OS_Bindportudp(char *_port, const char *_ip);
 
 /* OS_BindUnixDomain
  * Bind to a specific file, using the "mode" permissions in

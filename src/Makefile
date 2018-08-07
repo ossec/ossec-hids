@@ -3,7 +3,7 @@
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
-EXTERNAL_LUA=external/lua/
+EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
 ZLIB_SYSTEM?=no
 LUA_PLAT=posix
@@ -45,6 +45,11 @@ DEFINES+=-DGROUPGLOBAL=\"${OSSEC_GROUP}\"
 DEFINES+=-DMAILUSER=\"${OSSEC_USER_MAIL}\"
 DEFINES+=-D${uname_S}
 
+# Uncomment the DEFINES statement below if you are
+# running Linux and want to use AF_UNSPEC instead of
+# AF_INET6 to fully support IPv4 addresses.
+#DEFINES+=NOV4MAP
+
 ifneq (,$(filter ${REUSE_ID},yes y Y 1))
 	DEFINES+=-DREUSE_ID
 endif
@@ -81,11 +86,15 @@ ifeq (${uname_S},FreeBSD)
 		DEFINES+=-DFreeBSD
 		OSSEC_LDFLAGS+=-pthread
 		LUA_PLAT=freebsd
+		CFLAGS+=-I/usr/local/include
+		OSSEC_LDFLAGS+=-L/usr/local/lib
 else
 ifeq (${uname_S},NetBSD)
 		DEFINES+=-DNetBSD
 		OSSEC_LDFLAGS+=-pthread
 		LUA_PLAT=posix
+		CFLAGS+=-I/usr/local/include
+		OSSEC_LDFLAGS+=-L/usr/local/lib
 else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
@@ -386,8 +395,8 @@ ifeq (${LUA_ENABLE},yes)
 	install -d -m 0550 -o root -g 0 ${PREFIX}/lua
 	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/native
 	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/compiled
-	install -m 0550 -o root -g 0 external/lua/src/ossec-lua ${PREFIX}/bin/
-	install -m 0550 -o root -g 0 external/lua/src/ossec-luac ${PREFIX}/bin/
+	install -m 0550 -o root -g 0 ${EXTERNAL_LUA}src/ossec-lua ${PREFIX}/bin/
+	install -m 0550 -o root -g 0 ${EXTERNAL_LUA}src/ossec-luac ${PREFIX}/bin/
 endif
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/queue
@@ -425,7 +434,7 @@ endif
 endif
 
 	install -d -m 0770 -o root -g ${OSSEC_GROUP} ${PREFIX}/etc/shared
-	install -m 0640 -o ossec -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
+	install -m 0640 -o ${OSSEC_USER} -g ${OSSEC_GROUP} rootcheck/db/*.txt ${PREFIX}/etc/shared/
 
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/active-response/bin
@@ -1341,9 +1350,9 @@ clean-windows:
 	rm -f ${win32_o} ${win32_ui_o} win32/win_service_rk.o
 	rm -f win32/icon.o win32/resource.o
 	rm -f ${WINDOWS_BINS}
-	rm -f external/lua-5.2.3/src/lua52.dll
-	rm -f external/lua-5.2.3/src/ossec-lua.exe
-	rm -f external/lua-5.2.3/src/ossec-luac.exe
+	rm -f ${EXTERNAL_LUA}src/lua52.dll
+	rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
+	rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
 	rm -f win32/ossec-lua.exe
 	rm -f win32/ossec-luac.exe
 	rm -f win32/ossec-win32-agent.exe

@@ -32,11 +32,11 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
 
     if ( lf->time ) {
 
-        char alert_id[19];
+        char alert_id[23];
         double timestamp_ms;
         timestamp_ms = ((double)lf->time)*1000;
-        alert_id[18] = '\0';
-        if((snprintf(alert_id, 18, "%ld.%ld", (long int)lf->time, __crt_ftell)) < 0) {
+        alert_id[22] = '\0';
+        if((snprintf(alert_id, 22, "%ld.%ld", (long int)lf->time, __crt_ftell)) < 0) {
             merror("snprintf failed");
         }
 

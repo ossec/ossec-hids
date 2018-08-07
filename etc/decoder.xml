@@ -217,7 +217,7 @@
 <decoder name="ssh-invalid-user">
   <parent>sshd</parent>
   <prematch>^Invalid user|^Illegal user</prematch>
-  <regex offset="after_prematch"> from (\S+)$</regex>
+  <regex offset="after_prematch"> from (\S+)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -225,6 +225,41 @@
   <parent>sshd</parent>
   <prematch>^scanned from</prematch>
   <regex offset="after_prematch"> (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="ssh-received">
+  <parent>sshd</parent>
+  <prematch>^Received disconnect </prematch>
+  <regex offset="after_prematch">^from (\S+): |^from (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="ssh-disconnected">
+  <parent>sshd</parent>
+  <prematch>^Disconnected from invalid user</prematch>
+  <regex offset="after_prematch">\S+ (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="ssh-connection">
+  <parent>sshd</parent>
+  <prematch>^Connection closed by </prematch>
+  <regex offset="after_prematch">user (\S+) (\S+) </regex>
+  <order>user, srcip</order>
+</decoder>
+
+<decoder name="ssh-negotiate">
+  <parent>sshd</parent>
+  <prematch>^Unable to negotiate with </prematch>
+  <regex offset="after_prematch">^(\S+) port (\d+)</regex>
+  <order>srcip, srcport</order>
+</decoder>
+
+<decoder name="ssh-protocol">
+  <parent>sshd</parent>
+  <prematch>^Protocol major versions differ for </prematch>
+  <regex offset="after_prematch">^(\S+)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -3225,5 +3260,28 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <regex offset="after_parent">^IP address (\S+) </regex>
   <order>srcip</order>
 </decoder>
+
+<!-- OpenBSD httpd -->
+<decoder name="openbsd-httpd">
+  <prematch> [\d+/\w+/\d+:\d+:\d+:\d+ -\d+] "</prematch>
+  <regex>^(\S+) (\S+) \S+ \S+ [\d+/\w+/\d+:\d+:\d+:\d+ -\d+] "(\S+) (\S+) HTTP/\d.\d" (\d+) \d$</regex>
+  <order>url, srcip, protocol, url, status</order>
+  <type>web-log</type>
+</decoder>
+
+<!-- dnsmasq -->
+<decoder name="dnsmasq">
+  <!--<program_name>^dnsmasq</program_name>-->
+  <prematch>^dnsmasq</prematch>
+</decoder>
+
+<decoder name="dnsmasq2">
+  <parent>dnsmasq</parent>
+  <regex offset="after_parent">^[\d+]: \d+ (\S+)/\d+ (\S+) (\S+) to (\S+)|</regex>
+  <regex>^[\d+]: \d+ (\S+)/\d+ (\S+) (\S+) from (\S+)|</regex>
+  <regex>^[\d+]: \d+ (\S+)/\d+ (\S+) (\S+) is (\S+)</regex>
+  <order>srcip, action, url, extra_data</order>
+</decoder>
+
 
 <!-- EOF -->

@@ -382,7 +382,7 @@ int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
         realaf2 = AF_INET6;
         if (IN6_IS_ADDR_V4MAPPED((struct in6_addr *) addr2)) {
             /* shift the pointer for a mapped address */
-            addr1 += (sizeof (struct in6_addr)) - (sizeof (struct in_addr));
+            addr2 += (sizeof (struct in6_addr)) - (sizeof (struct in_addr));
             realaf2 = AF_INET;
         }
         break;
