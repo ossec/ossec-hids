@@ -264,7 +264,7 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     fp = fopen(fname, "r");
     if(!fp) {
         merror("%s: ERROR: Cannot open %s: %s", __local_name, fname, strerror(errno));
-        if(socket) {
+        if(socket > 0) {
             close(socket);
         }
         if(sendmail) {
@@ -282,6 +282,15 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     }
     if(sb.st_size == 0) {
         merror("Report is empty");
+        if(socket > 0) {
+            close(socket);
+        }
+        if(sendmail) {
+            close(sendmail);
+        }
+        if(fp) {
+            fclose(fp);
+        }
         return(0);
     }
     while (fgets(buffer, 2048, fp) != NULL) {
