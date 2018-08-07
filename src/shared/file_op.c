@@ -382,6 +382,8 @@ char *GetRandomNoise()
         fclose(fp);
         return(NULL);
     }
+    buf[2048] = '\0';
+    fclose(fp);
     return(strdup(buf));
 }
 
