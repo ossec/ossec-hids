@@ -157,6 +157,14 @@ status()
 {
     RETVAL=0
     for i in ${DAEMONS}; do
+        ## If ossec-maild is disabled, don't try to start it.
+        if [ X"$i" = "Xossec-maild" ]; then
+            grep "<email_notification>no<" ${DIR}/etc/ossec.conf >/dev/null 2>&1
+            if [ $? = 0 ]; then
+                continue
+            fi
+        fi
+
         pstatus ${i};
         if [ $? = 0 ]; then
             echo "${i} not running..."
