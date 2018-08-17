@@ -41,7 +41,6 @@ static int read_main_elements(const OS_XML *xml, int modules,
     const char *osremote = "remote";                    /* Agent Config  */
     const char *osclient = "client";                    /* Agent Config  */
     const char *oscommand = "command";                  /* ? Config      */
-    const char *osreports = "reports";                  /* Server Config */
     const char *osactive_response = "active-response";  /* Agent Config  */
 
     while (node[i]) {
@@ -113,10 +112,6 @@ static int read_main_elements(const OS_XML *xml, int modules,
             if ((modules & CAR) && (ReadActiveResponses(chld_node, d1, d2) < 0)) {
                 goto fail;
             }
-        } else if (strcmp(node[i]->element, osreports) == 0) {
-            if ((modules & CREPORTS) && (Read_CReports(chld_node, d1, d2) < 0)) {
-                goto fail;
-            }
         } else {
             merror(XML_INVELEM, __local_name, node[i]->element);
             goto fail;
@@ -154,16 +149,17 @@ int ReadConfig(int modules, const char *cfgfile, void *d1, void *d2)
     const char *xml_agent_profile = "profile";
 
     int xml_ret = OS_ReadXML(cfgfile, &xml);
+
     if (xml_ret < 0) {
-	char *tmpcfg;
-	tmpcfg = strdup(cfgfile);
-        const char *cfg_base = basename(tmpcfg);
-	    if((strncmp(cfg_base, "agent.conf", 10)) == 0 && xml_ret == -2) {
-		    debug2("WARN: Cannot open %s: %s", cfgfile, xml.err);
-	    } else {
-		    merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
-	    }
-        return (OS_INVALID);
+        char *tmpcfg;
+        tmpcfg = strdup(cfgfile);
+	    const char *cfg_base = basename(tmpcfg);
+        if((strncmp(cfg_base, "agent.conf", 10)) == 0 && xml_ret == -2) {
+            debug2("WARN: Cannot open %s: %s", cfgfile, xml.err);
+        } else {
+            merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
+        }
+        return(OS_INVALID);
     }
 
     node = OS_GetElementsbyNode(&xml, NULL);

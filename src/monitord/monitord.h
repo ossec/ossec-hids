@@ -10,16 +10,15 @@
 #ifndef _MONITORD_H
 #define _MONITORD_H
 
+#include "config/reports-config.h"
+
 #ifndef ARGV0
 #define ARGV0 "ossec-monitord"
 #endif
 
-#include "config/reports-config.h"
-
 /* Prototypes */
 void Monitord(void) __attribute__((noreturn));
 void manage_files(int cday, int cmon, int cyear);
-void generate_reports(int cday, int cmon, int cyear);
 void monitor_agents(void);
 void OS_SignLog(const char *logfile, const char *logfile_old, int log_missing);
 void OS_CompressLog(const char *logfile);
