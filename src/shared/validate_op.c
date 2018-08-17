@@ -271,7 +271,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
      */
     if(strcmp(ip_address, "any") == 0) {
         //strcpy(ip_address, "::/0");
-	os_strdup("::/0", ip_address);
+        free(ip_address);   // Free the old value before writing the new one?
+        os_strdup("::/0", ip_address);
     }
 
     /* Getting the cidr/netmask if available */
@@ -308,6 +309,7 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
             break;
         }
         free(ip_address);
+        free(result);
         return(0);
     case AF_INET6:
         if (cidr >=0 && cidr <= 128) {
@@ -318,9 +320,11 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
             break;
         }
         free(ip_address);
+        free(result);
         return(0);
     default:
         free(ip_address);
+        free(result);
         return(0);
     }
 

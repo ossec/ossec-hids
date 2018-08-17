@@ -279,9 +279,10 @@ int main(int argc, char **argv)
 #ifndef CLIENT
                 printf("\n ** Key import only available on an agent ** \n\n");
                 break;
-#endif
+#else //CLIENT
                 k_import(NULL);
                 break;
+#endif
             case 'l':
             case 'L':
                 list_agents(0);

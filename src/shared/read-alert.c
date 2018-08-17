@@ -459,6 +459,9 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_clearnl(str,p);
 
                 p = str + SIZE_BEGIN_SZ;
+                if(file_size) {
+                    free(file_size);
+                }
                 os_strdup(p, file_size);
             }
             /* File Ownership */
@@ -467,6 +470,9 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_clearnl(str,p);
 
                 p = str + OWNER_BEGIN_SZ;
+                if(owner_chg) {
+                    free(owner_chg);
+                }
                 os_strdup(p, owner_chg);
             }
             /* File Group Ownership */
@@ -475,6 +481,9 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_clearnl(str,p);
 
                 p = str + GROUP_BEGIN_SZ;
+                if(group_chg) {
+                    free(group_chg);
+                }
                 os_strdup(p, group_chg);
             }
             /* File Permissions */
@@ -483,6 +492,9 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_clearnl(str,p);
 
                 p = str + PERM_BEGIN_SZ;
+                if(perm_chg) {
+                    free(perm_chg);
+                }
                 os_strdup(p, perm_chg);
             }
          /* "9/19/2016 - Sivakumar Nellurandi - parsing additions" */
