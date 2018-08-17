@@ -23,8 +23,6 @@ void monitor_agents(void);
 void OS_SignLog(const char *logfile, const char *logfile_old, int log_missing);
 void OS_CompressLog(const char *logfile);
 
-int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, char *idsname, char *fname);
-
 /* Global variables */
 extern monitor_config mond;
 
