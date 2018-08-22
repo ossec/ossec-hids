@@ -297,7 +297,7 @@ stopa()
             ${SYSTEMCTL} stop ossec-server.target
         fi
         exit 0
-    if
+    fi
 
     checkpid;
     for i in ${DAEMONS}; do
