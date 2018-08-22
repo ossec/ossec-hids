@@ -1,6 +1,7 @@
 [Unit]
 Description=OSSEC Execd
 PartOf=ossec-agent.target
+Before=ossec-syscheckd.service ossec-agentd.service ossec-logcollector.service
 
 [Service]
 EnvironmentFile=/etc/ossec-init.conf

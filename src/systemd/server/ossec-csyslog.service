@@ -1,6 +1,8 @@
 [Unit]
 Description=OSSEC Syslog client
 PartOf=ossec-server.target
+After=ossec-analysisd.service ossec-dbd.service ossec-execd.service ossec-logcollector.service ossec-maild.service ossec-monitord.service ossec-remoted.service ossec-syscheckd.service
+ConditionPathExists=/var/ossec/etc/.csyslogd
 
 [Service]
 EnvironmentFile=/etc/ossec-init.conf

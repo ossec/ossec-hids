@@ -1,6 +1,8 @@
 [Unit]
 Description=OSSEC Execd
 PartOf=ossec-server.target
+After=ossec-maild.service
+Before=ossec-agentless.service ossec-analysisd.service ossec-csyslog.service ossec-dbd.service ossec-logcollector.service ossec-monitord.service ossec-remoted.service ossec-syscheckd.service
 
 [Service]
 EnvironmentFile=/etc/ossec-init.conf

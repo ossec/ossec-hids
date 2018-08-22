@@ -9,6 +9,10 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 
 
+if [ X`uname` = "XLinux" ]; then
+	SYSTEMCTL=`which systemctl`
+fi
+
 ###  Do not modify bellow here ###
 NAME="OSSEC HIDS"
 VERSION="v3.0.0"
@@ -124,6 +128,13 @@ start()
     lock;
     checkpid;
 
+    if [ X`uname` = "XLinux" ]; then
+        if [ -x ${SYSTEMCTL} ]; then
+            ${SYSTEMCTL} start ossec-agent.target
+        fi
+        exit 0
+    fi
+
     # We actually start them now.
     for i in ${SDAEMONS}; do
         pstatus ${i};
@@ -180,6 +191,14 @@ pstatus()
 stopa()
 {
     lock;
+
+    if [ X`uname` = "XLinux" ]; then
+        if [ -x ${SYSTEMCTL} ]; then
+            ${SYSTEMCTL} stop ossec-agent.target
+        fi
+        exit 0
+    fi
+
     checkpid;
     for i in ${DAEMONS}; do
         pstatus ${i};
