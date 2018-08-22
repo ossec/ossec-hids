@@ -173,7 +173,8 @@ static void loop_all_pids(const char *ps, pid_t max_pid, int *_errors, int *_tot
 
         /* If we are run in the context of OSSEC-HIDS, sleep here (no rush) */
 #ifdef OSSECHIDS
-        sleep(2);
+        debug1("%s: DEBUG: pause for %u", ARGV0, rootcheck.tsleep);
+        sleep(rootcheck.tsleep);
 #endif
 
         /* Everything fine, move on */

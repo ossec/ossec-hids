@@ -97,10 +97,10 @@ ansi:
 	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_ANSI"
 
 bsd:
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" SYSLIBS="-Wl,-E"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN -I/usr/local/include" SYSLIBS="-Wl,-E -lreadline -L/usr/local/lib"
 
 freebsd:
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-Wl,-E -lreadline"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX -I/usr/local/include" SYSLIBS="-Wl,-E -lreadline -L/usr/local/lib"
 
 generic: $(ALL)
 

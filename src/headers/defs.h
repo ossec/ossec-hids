@@ -39,7 +39,7 @@
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
-#define __version       "v2.9.0"
+#define __version       "v3.0.0"
 #define __author        "Trend Micro Inc."
 #define __contact       "contact@ossec.net"
 #define __site          "http://www.ossec.net"
@@ -195,10 +195,14 @@ http://www.ossec.net/main/license/\n"
 /* Authentication keys file */
 #ifndef WIN32
 #define KEYS_FILE       "/etc/client.keys"
+#define AUTHD_PASS      "/etc/authd.pass"
 #define KEYSFILE_PATH   DEFAULTDIR KEYS_FILE
+#define AUTHDPASS_PATH  DEFAULTDIR AUTHD_PASS
 #else
 #define KEYS_FILE       "client.keys"
 #define KEYSFILE_PATH   KEYS_FILE
+#define AUTHD_PASS      "authd.pass"
+#define AUTHDPASS_PATH  AUTHD_PASS
 #endif
 
 #ifndef AUTH_FILE
@@ -310,4 +314,3 @@ http://www.ossec.net/main/license/\n"
 #endif
 
 #endif /* __OS_HEADERS */
-

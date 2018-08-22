@@ -261,11 +261,19 @@ int mysql_osdb_query_select(void *db_conn, const char *query)
  * Returns NULL on error
  */
 void *postgresql_osdb_connect(const char *host, const char *user, const char *pass, const char *db,
-                              __attribute__((unused)) unsigned int port, __attribute__((unused)) const char *sock)
+                              unsigned int port, __attribute__((unused)) const char *sock)
 {
     PGconn *conn;
+    char portAsString[6];
 
-    conn = PQsetdbLogin(host, NULL, NULL, NULL, db, user, pass);
+    if (port > 0) {
+        snprintf(portAsString, 6, "%u", port);
+    } else {
+        snprintf(portAsString, 6, "");
+    }
+
+    conn = PQsetdbLogin(host, portAsString, NULL, NULL, db, user, pass);
+
     if (PQstatus(conn) == CONNECTION_BAD) {
         merror(DBCONN_ERROR, ARGV0, host, db, PQerrorMessage(conn));
         PQfinish(conn);

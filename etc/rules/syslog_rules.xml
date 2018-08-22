@@ -291,13 +291,13 @@
   <rule id="5106" level="0">
     <if_sid>5100</if_sid>
     <match>svc: unknown program 100227 (me 100003)</match>
-    <description>NFS incompability between Linux and Solaris.</description>
+    <description>NFS incompatibility between Linux and Solaris.</description>
   </rule>
 
   <rule id="5107" level="0">
     <if_sid>5100</if_sid>
     <match>svc: bad direction </match>
-    <description>NFS incompability between Linux and Solaris.</description>
+    <description>NFS incompatibility between Linux and Solaris.</description>
   </rule>
 
   <rule id="5108" level="12">
@@ -585,7 +585,15 @@
 <group name="syslog,dpkg,">
   <rule id="2900" level="0">
     <decoded_as>windows-date-format</decoded_as>
-    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d \w+ </regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d startup |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d status |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d remove |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d configure |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d install |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d purge |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d trigproc |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d conffile |</regex>
+    <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d upgrade </regex>
     <description>Dpkg (Debian Package) log.</description>
   </rule>
   

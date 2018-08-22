@@ -21,6 +21,10 @@ static int setenv(const char *name, const char *val, __attribute__((unused)) int
 {
     int len = strlen(name) + strlen(val) + 2;
     char *str = (char *)malloc(len);
+    if(str == NULL) {
+        merror("%s: malloc failed", ARGV0);
+        exit(errno);
+    }
     snprintf(str, len, "%s=%s", name, val);
     putenv(str);
     return 0;
@@ -275,9 +279,10 @@ int main(int argc, char **argv)
 #ifndef CLIENT
                 printf("\n ** Key import only available on an agent ** \n\n");
                 break;
-#endif
+#else //CLIENT
                 k_import(NULL);
                 break;
+#endif
             case 'l':
             case 'L':
                 list_agents(0);

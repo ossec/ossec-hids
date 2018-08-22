@@ -22,7 +22,7 @@ static void help_dbd(void) __attribute__((noreturn));
 /* Print information regarding enabled databases */
 static void print_db_info()
 {
-#ifdef UMYSQL_DATABASE_ENABLED
+#ifdef MYSQL_DATABASE_ENABLED
     print_out("    Compiled with MySQL support");
 #endif
 
@@ -159,8 +159,13 @@ int main(int argc, char **argv)
 
     /* Maybe disable this debug? */
     debug1("%s: DEBUG: Connecting to '%s', using '%s', '%s', '%s', %d,'%s'.",
-           ARGV0, db_config.host, db_config.user,
-           db_config.pass, db_config.db, db_config.port, db_config.sock);
+           ARGV0,
+           db_config.host != NULL ? db_config.host : "NoHost",
+           db_config.user != NULL ? db_config.user : "NoUser",
+           db_config.pass != NULL ? db_config.pass : "NoPass",
+           db_config.db != NULL ? db_config.db : "NoDB",
+           db_config.port,
+           db_config.sock != NULL ? db_config.sock : "NoSock");
 
     /* Set config pointer */
     osdb_setconfig(&db_config);

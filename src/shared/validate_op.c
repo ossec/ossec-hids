@@ -261,7 +261,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
     }
 
     if (*ip_address == '!') {
-        ip_address++;
+        //ip_address++;
+        os_strdup(in_address+1, ip_address);
     }
 
     /* Use IPv6 here, because it doesn't matter
@@ -270,7 +271,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
      */
     if(strcmp(ip_address, "any") == 0) {
         //strcpy(ip_address, "::/0");
-	os_strdup("::/0", ip_address);
+        free(ip_address);   // Free the old value before writing the new one?
+        os_strdup("::/0", ip_address);
     }
 
     /* Getting the cidr/netmask if available */
@@ -307,6 +309,7 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
             break;
         }
         free(ip_address);
+        free(result);
         return(0);
     case AF_INET6:
         if (cidr >=0 && cidr <= 128) {
@@ -317,9 +320,11 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
             break;
         }
         free(ip_address);
+        free(result);
         return(0);
     default:
         free(ip_address);
+        free(result);
         return(0);
     }
 
@@ -381,7 +386,7 @@ int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
         realaf2 = AF_INET6;
         if (IN6_IS_ADDR_V4MAPPED((struct in6_addr *) addr2)) {
             /* shift the pointer for a mapped address */
-            addr1 += (sizeof (struct in6_addr)) - (sizeof (struct in_addr));
+            addr2 += (sizeof (struct in6_addr)) - (sizeof (struct in_addr));
             realaf2 = AF_INET;
         }
         break;
@@ -401,7 +406,7 @@ int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
         }
     }
     if (ip_div.rem) {
-        modbits = ((char) ~0) << (8 - ip_div.rem);
+        modbits = ((unsigned char) ~0) << (8 - ip_div.rem);
         if ( (addr1[i] & modbits) != (addr2[i] & modbits) ) {
             return(!_true);
         }
@@ -501,7 +506,9 @@ static const char *__gethour(const char *str, char *ossec_hour)
     } else if ((*str == 'p') || (*str == 'P')) {
         str++;
         if ((*str == 'm') || (*str == 'M')) {
-            chour += 12;
+            if(chour != 12) {
+                chour += 12;
+            }
 
             /* New hour must be valid */
             if (chour < 0 || chour >= 24) {

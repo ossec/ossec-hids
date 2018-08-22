@@ -10,6 +10,9 @@
 /* Functions to handle operation with files
  */
 
+#include <errno.h>
+#include <string.h>
+
 #include "shared.h"
 
 #ifndef WIN32
@@ -294,8 +297,11 @@
 #endif
 #endif /* WIN32 */
 
-const char *__local_name = "unset";
+#ifdef WIN32
+#define mkstemp(x) 0
+#endif
 
+const char *__local_name = "unset";
 
 /* Set the name of the starting program */
 void OS_SetName(const char *name)
@@ -354,6 +360,31 @@ int CreatePID(const char *name, int pid)
     fclose(fp);
 
     return (0);
+}
+
+char *GetRandomNoise()
+{
+    FILE *fp;
+    char buf[2048 + 1];
+    size_t frr = 0;
+
+    /* Reading urandom */
+    fp = fopen("/dev/urandom", "r");
+    if(!fp)
+    {
+        return(NULL);
+    }
+
+    buf[2048] = '\0';
+    frr = fread(buf, 1, 2048, fp);
+    if(frr == 0) {
+        merror("ERROR: GetRandomNoise() fread() returned 0.");
+        fclose(fp);
+        return(NULL);
+    }
+    buf[2048] = '\0';
+    fclose(fp);
+    return(strdup(buf));
 }
 
 int DeletePID(const char *name)
@@ -438,8 +469,8 @@ int UnmergeFiles(const char *finalpath, const char *optdir)
         fp = fopen(final_name, "w");
         if (!fp) {
             ret = 0;
-            merror("%s: ERROR: Unable to unmerge file '%s'.",
-                   __local_name, final_name);
+            merror("%s: ERROR: Unable to unmerge file '%s': %s",
+                   __local_name, final_name, strerror(errno));
         }
 
         if (files_size < sizeof(buf) - 1) {
@@ -677,12 +708,12 @@ char *getuname()
     if (uname(&uts_buf) >= 0) {
         char *ret;
 
-        ret = (char *) calloc(256, sizeof(char));
+        ret = (char *) calloc(512, sizeof(char));
         if (ret == NULL) {
             return (NULL);
         }
 
-        snprintf(ret, 255, "%s %s %s %s %s - %s %s",
+        snprintf(ret, 511, "%s %s %s %s %s - %s %s",
                  uts_buf.sysname,
                  uts_buf.nodename,
                  uts_buf.release,
@@ -693,12 +724,12 @@ char *getuname()
         return (ret);
     } else {
         char *ret;
-        ret = (char *) calloc(256, sizeof(char));
+        ret = (char *) calloc(512, sizeof(char));
         if (ret == NULL) {
             return (NULL);
         }
 
-        snprintf(ret, 255, "No system info available -  %s %s",
+        snprintf(ret, 511, "No system info available -  %s %s",
                  __ossec_name, __version);
 
         return (ret);
@@ -971,7 +1002,7 @@ int mkstemp_ex(char *tmp_path)
 
     if (pSD == NULL) {
         log2file(
-            "%s: ERROR: Could not initalize SECURITY_DESCRIPTOR because of a LocalAlloc() failure which returned (%lu)",
+            "%s: ERROR: Could not initialize SECURITY_DESCRIPTOR because of a LocalAlloc() failure which returned (%lu)",
             __local_name,
             GetLastError()
         );
@@ -981,7 +1012,7 @@ int mkstemp_ex(char *tmp_path)
 
     if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) {
         log2file(
-            "%s: ERROR: Could not initalize SECURITY_DESCRIPTOR because of an InitializeSecurityDescriptor() failure which returned (%lu)",
+            "%s: ERROR: Could not initialize SECURITY_DESCRIPTOR because of an InitializeSecurityDescriptor() failure which returned (%lu)",
             __local_name,
             GetLastError()
         );

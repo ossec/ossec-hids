@@ -43,7 +43,7 @@ static pthread_cond_t awake_mutex;
 
 
 /* Save a control message received from an agent
- * read_contromsg (other thread) is going to deal with it
+ * read_controlmsg (other thread) is going to deal with it
  * (only if message changed)
  */
 void save_controlmsg(unsigned int agentid, char *r_msg)
@@ -119,6 +119,8 @@ void save_controlmsg(unsigned int agentid, char *r_msg)
         if (fp) {
             fprintf(fp, "%s\n", uname);
             fclose(fp);
+        } else {
+            merror("ossec-remoted: ERROR: Could not open %s: %s", _keep_alive[agentid], strerror(errno));
         }
     }
 

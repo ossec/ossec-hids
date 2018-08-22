@@ -14,7 +14,7 @@
 
 /* SYSTEM ERRORS */
 #define FORK_ERROR    "%s(1101): ERROR: Could not fork due to [(%d)-(%s)]."
-#define MEM_ERROR     "%s(1102): ERROR: Could not aquire memory due to [(%d)-(%s)]."
+#define MEM_ERROR     "%s(1102): ERROR: Could not acquire memory due to [(%d)-(%s)]."
 #define FOPEN_ERROR   "%s(1103): ERROR: Could not open file '%s' due to [(%d)-(%s)]."
 #define SIZE_ERROR    "%s(1104): ERROR: Maximum string size reached for: %s."
 #define NULL_ERROR    "%s(1105): ERROR: Attempted to use null string. "
@@ -63,7 +63,7 @@
 #define MSG_ERROR       "%s(1214): WARN: Problem receiving message from '%s'."
 #define CLIENT_ERROR    "%s(1215): ERROR: No client configured. Exiting."
 #define CONNS_ERROR     "%s(1216): ERROR: Unable to connect to '%s'."
-#define UNABLE_CONN     "%s(1242): ERROR: Unable to connect to server. Exausted all options."
+#define UNABLE_CONN     "%s(1242): ERROR: Unable to connect to server. Exhausted all options."
 #define SEC_ERROR       "%s(1217): ERROR: Error creating encrypted message."
 #define SEND_ERROR      "%s(1218): ERROR: Unable to send message to '%s'."
 #define RULESLOAD_ERROR "%s(1219): ERROR: Unable to access the rules directory."
@@ -122,6 +122,8 @@
 #define INVALID_CONFIG   "%s(1274): ERROR: Invalid configuration. Element '%s': %s."
 #define INVALID_HOSTNAME "%s(1275): ERROR: Invalid hostname in syslog message: '%s'."
 #define INVALID_GEOIP_DB "%s(1276): ERROR: Cannot open GeoIP database: '%s'."
+#define INVALID_IGNORE_MD5DB "%s(1277) ERROR: Cannot open MD5 database: '%s'."
+#define MD5_NOT_CHECKED	 "%s(1278) WARN: File with MD5 '%s' not processed."
 
 /* logcollector */
 #define SYSTEM_ERROR     "%s(1600): ERROR: Internal error. Exiting.."

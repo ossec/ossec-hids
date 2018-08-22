@@ -145,7 +145,7 @@ int realtime_adddir(const char *dir)
                                REALTIME_MONITOR_FLAGS);
         if (wd < 0) {
             merror("%s: ERROR: Unable to add directory to real time "
-                   "monitoring: '%s'. %d %d", ARGV0, dir, wd, errno);
+                   "monitoring: '%s'. %d %s", ARGV0, dir, wd, strerror(errno));
         } else {
             char wdchar[32 + 1];
             wdchar[32] = '\0';
@@ -184,6 +184,7 @@ int realtime_process()
     if (len < 0) {
         merror("%s: ERROR: Unable to read from real time buffer.", ARGV0);
     } else if (len > 0) {
+        buf[len] = '\0';
         while (i < (size_t) len) {
             event = (struct inotify_event *) (void *) &buf[i];
 
@@ -220,7 +221,7 @@ typedef struct _win32rtfim {
     OVERLAPPED overlap;
 
     char *dir;
-    TCHAR buffer[12288];
+    TCHAR buffer[1228800];
 } win32rtfim;
 
 int realtime_win32read(win32rtfim *rtlocald);
@@ -238,6 +239,10 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
 
     if (dwBytes == 0) {
         merror("%s: ERROR: real time call back called, but 0 bytes.", ARGV0);
+        rtlocald = OSHash_Get(syscheck.realtime->dirtb, "0");
+        if(rtlocald)
+            realtime_win32read(rtlocald);
+
         return;
     }
 
@@ -307,7 +312,7 @@ int realtime_win32read(win32rtfim *rtlocald)
                                rtlocald->buffer,
                                sizeof(rtlocald->buffer) / sizeof(TCHAR),
                                TRUE,
-                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE,
+                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY,
                                0,
                                &rtlocald->overlap,
                                RTCallBack);
@@ -385,7 +390,7 @@ int realtime_adddir(const char *dir)
 
 int realtime_start()
 {
-    verbose("%s: ERROR: Unable to initalize real time file monitoring.", ARGV0);
+    verbose("%s: ERROR: Unable to initialize real time file monitoring.", ARGV0);
 
     return (0);
 }

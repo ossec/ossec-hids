@@ -203,7 +203,8 @@ static void *_Rules_ReadInsertDB(RuleInfo *rule, void *db_config)
              "REPLACE INTO "
              "signature(rule_id, level, description) "
              "VALUES ('%u','%u','%s')",
-             rule->sigid, rule->level, rule->comment);
+             rule->sigid, rule->level,
+             rule->comment != NULL ? rule->comment : "NULL");
 
     /* XXX We don't actually insert!?
     if(!osdb_query_insert(dbc->conn, sql_query))

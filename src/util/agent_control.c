@@ -94,7 +94,7 @@ int main(int argc, char **argv)
                 break;
             case 'i':
                 info_agent++;
-            /* no break; */
+            	//FALLTHRU
             case 'u':
                 if (!optarg) {
                     merror("%s: -u needs an argument", ARGV0);

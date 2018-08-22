@@ -15,7 +15,7 @@ fi
 
 ###  Do not modify bellow here ###
 NAME="OSSEC HIDS"
-VERSION="v2.9.0"
+VERSION="v3.0.0"
 AUTHOR="Trend Micro Inc."
 DAEMONS="ossec-logcollector ossec-syscheckd ossec-agentd ossec-execd"
 
@@ -52,7 +52,7 @@ lock()
         mkdir ${LOCK} > /dev/null 2>&1
         MSL=$?
         if [ "${MSL}" = "0" ]; then
-            # Lock aquired (setting the pid)
+            # Lock acquired (setting the pid)
             echo "$$" > ${LOCK_PID}
             return;
         fi
@@ -87,7 +87,7 @@ unlock()
 help()
 {
     # Help message
-    echo "Usage: $0 {start|stop|restart|status}";
+    echo "Usage: $0 {start|stop|reload|restart|status}";
     exit 1;
 }
 

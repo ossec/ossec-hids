@@ -45,19 +45,34 @@ else
         GROUPADD="/usr/sbin/mkgroup"
         USERADD="/usr/sbin/useradd"
         OSMYSHELL="/bin/false"
-    else
-	# All current linux distributions should support system accounts for
-	# users/groups. If not, leave the GROUPADD/USERADD as it was before
-	# this change
-	sys_acct_chk () {
-	    $1 --help 2>&1 | grep -e " *-r.*system account" >/dev/null 2>&1 && echo "$1 -r" || echo "$1"
-	  }
-	GROUPADD=$(sys_acct_chk "/usr/sbin/groupadd")
-	USERADD=$(sys_acct_chk "/usr/sbin/useradd")
+    elif [ "$UNAME" = "OpenBSD" ]; then
+        GROUPADD="/usr/sbin/groupadd"
+        USERADD="/usr/sbin/useradd"
         OSMYSHELL="/sbin/nologin"
+    else
+        # Alpine linux has adduser/addgroup
+        if [ -e "/etc/alpine-release" ]; then
+            GROUPADD="/usr/sbin/addgroup"
+            USERADD="/usr/sbin/adduser"
+            OSMYSHELL="/sbin/nologin"
+        else
+	    # All current linux distributions should support system accounts for
+	    # users/groups. If not, leave the GROUPADD/USERADD as it was before
+	    # this change
+	    sys_acct_chk () {
+	        $1 --help 2>&1 | grep -e " *-r.*system account" >/dev/null 2>&1 && echo "$1 -r" || echo "$1"
+	    }
+	    GROUPADD=$(sys_acct_chk "/usr/sbin/groupadd -f")
+	    USERADD=$(sys_acct_chk "/usr/sbin/useradd")
+            OSMYSHELL="/sbin/nologin"
+        fi
     fi
 
-    if ! grep "^${GROUP}" /etc/group > /dev/null 2>&1; then
+    if [ -x /usr/bin/getent ]; then
+        if [ `getent group "${GROUP}" | wc -l` -lt 1 ]; then
+            ${GROUPADD} "${GROUP}"
+        fi
+    elif ! grep "^${GROUP}" /etc/group > /dev/null 2>&1; then
         ${GROUPADD} "${GROUP}"
     fi
 
@@ -73,12 +88,24 @@ else
     fi
 
     for U in ${USER} ${USER_MAIL} ${USER_REM}; do
-        if ! grep "^${U}" /etc/passwd > /dev/null 2>&1; then
-	    if [ "$UNAME" = "OpenBSD" ]; then
-               ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
-	    else
-	       ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
-	    fi
+        if [ -x /usr/bin/getent ]; then 
+            if [ `getent passwd ${U} | wc -l` -lt 1 ]; then
+	            if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
+                        ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
+                    elif [ -e "/etc/alpine-release" ]; then
+                        ${USERADD} -G ${GROUP} -s ${OSMYSHELL} -h ${DIR} -S ${U}
+	            else
+	                ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
+	            fi
+            fi
+        elif [ ! `grep "^${U}" /etc/passwd > /dev/null 2>&1` ]; then
+	        if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
+                    ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
+                elif [ -e "/etc/alpine-release" ]; then
+                    ${USERADD} -G ${GROUP} -s ${OSMYSHELL} -h ${DIR} -S ${U}
+	        else
+	            ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
+	        fi
         fi
     done
 fi

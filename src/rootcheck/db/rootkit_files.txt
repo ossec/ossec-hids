@@ -1,5 +1,9 @@
-# rootkit_files.txt, (C) Daniel B. Cid
+# rootkit_files.txt, (C) 2018 OSSEC Project
 # Imported from the rootcheck project.
+#
+# Released under the same license as OSSEC.
+# More details at the LICENSE file included with OSSEC or online
+# at: https://github.com/ossec/ossec-hids/blob/master/LICENSE
 #
 # Blank lines and lines starting with '#' are ignored.
 #

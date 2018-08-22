@@ -15,6 +15,10 @@
 #include "alerts/alerts.h"
 #include "decoder.h"
 
+#ifdef SQLITE_ENABLED
+#include "syscheck-sqlite.h"
+#endif
+
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
     char comment[OS_MAXSTR + 1];
@@ -49,6 +53,37 @@ typedef struct __sdb {
 
 /* Local variables */
 static _sdb sdb;
+
+/* Extract a token from a string */
+char *extract_token(const char *s, char *delim, int position) {
+    int count = 0;
+    char tmp[OS_MAXSTR + 1];
+    char *token;
+    strncpy(tmp,s, OS_MAXSTR);
+    token = strtok(tmp, delim);
+    while (token != NULL) {
+        count++;
+        token = strtok(NULL, delim);
+        if (count == position) {
+            return(token);
+        }
+    }
+    return(NULL);
+}
+
+
+/* Validate a MD5 string format */
+int validate_md5(char *s) {
+    unsigned int i;
+    char *hex_chars = "abcdefABCDEF0123456789";
+    if (strlen(s) != 32) {
+        return(0);
+    }
+    for (i = 0; i < strlen(s); i++) {
+        if (!strchr(hex_chars, s[i])) return(0);
+    }
+    return(1);
+}
 
 
 /* Initialize the necessary information to process the syscheck information */
@@ -455,8 +490,8 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 		char opstr[10];
 		char npstr[10];
 
-		strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr));
-		strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr));
+		strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr) - 1);
+		strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr) - 1);
 
                 snprintf(sdb.perm, OS_FLSIZE, "Permissions changed from "
                          "'%9.9s' to '%9.9s'\n", opstr, npstr);
@@ -586,6 +621,15 @@ int DecodeSyscheck(Eventinfo *lf)
     const char *c_sum;
     char *f_name;
 
+#ifdef SQLITE_ENABLED
+    char *p;
+    char stmt[OS_MAXSTR + 1];
+    sqlite3_stmt *res;
+    int error = 0;
+    int rec_count = 0;
+    const char *tail;
+#endif // SQLITE_ENABLED
+
     /* Every syscheck message must be in the following format:
      * checksum filename
      */
@@ -632,6 +676,38 @@ int DecodeSyscheck(Eventinfo *lf)
 
     /* Checksum is at the beginning of the log */
     c_sum = lf->log;
+
+    /* Extract the MD5 hash and search for it in the whitelist
+     * Sample message:
+     * 0:0:0:0:78f5c869675b1d09ddad870adad073f9:bd6c8d7a58b462aac86475e59af0e22954039c50
+     */
+#ifdef SQLITE_ENABLED
+    if (Config.md5_whitelist)  {
+        extern sqlite3 *conn;
+        if ((p = extract_token(c_sum, ":", 4))) {
+            if (!validate_md5(p)) { /* Never trust input from other origin */
+                merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
+                return(0);
+            }
+            debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_whitelist);
+            sprintf(stmt, "select md5sum from files where md5sum = \"%s\"", p);
+            error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
+            if (error == SQLITE_OK) {
+                while (sqlite3_step(res) == SQLITE_ROW) {
+                    rec_count++;
+                }
+                if (rec_count) {    
+                    sqlite3_finalize(res);
+                    //sqlite3_close(conn);
+                    merror(MD5_NOT_CHECKED, ARGV0, p);
+                    return(0);
+                }
+            }
+            sqlite3_finalize(res);
+        }
+    }
+#endif
+ 
 
     /* Search for file changes */
     return (DB_Search(f_name, c_sum, lf));
