@@ -10,7 +10,7 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 PLIST=${DIR}/bin/.process_list;
 
-###  Do not modify bellow here ###
+###  Do not modify below here ###
 
 # Getting additional processes
 ls -la ${PLIST} > /dev/null 2>&1
