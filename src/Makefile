@@ -32,7 +32,6 @@ else
 endif
 
 ONEWAY?=no
-CLEANFULL?=no
 
 export MYLDFLAGS= "${LDFLAGS}"
 export MYCFLAGS= "${CFLAGS}"
@@ -132,10 +131,6 @@ ifdef DEBUG
 else
 	OSSEC_CFLAGS+=-O2
 endif #DEBUG
-
-ifneq (,$(filter ${CLEANFULL},yes y Y 1))
-	DEFINES+=-DCLEANFULL
-endif
 
 ifneq (,$(filter ${ONEWAY},yes y Y 1))
 	DEFINES+=-DONEWAY_ENABLED
@@ -552,7 +547,6 @@ settings:
 	@echo "    REUSE_ID:         ${REUSE_ID}"
 	@echo "    DATABASE:         ${DATABASE}"
 	@echo "    ONEWAY:           ${ONEWAY}"
-	@echo "    CLEANFULL:        ${CLEANFULL}"
 	@echo "User settings:"
 	@echo "    OSSEC_GROUP:      ${OSSEC_GROUP}"
 	@echo "    OSSEC_USER:       ${OSSEC_USER}"
