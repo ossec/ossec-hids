@@ -30,11 +30,11 @@ The development version is hosted on GitHub and just a simple git clone away.
 * OSSEC comes with a modified version of zlib and a small part 
   of openssl (sha1 and blowfish libraries)
 * This product includes software developed by the OpenSSL Project
-  for use in the OpenSSL Toolkit (http://www.openssl.org/).
+  for use in the OpenSSL Toolkit (http://www.openssl.org/)
 * This product includes cryptographic software written by Eric 
   Young (eay@cryptsoft.com)
 * This product include software developed by the zlib project 
-  (Jean-loup Gailly and Mark Adler).
+  (Jean-loup Gailly and Mark Adler)
 * This product include software developed by the cJSON project 
   (Dave Gamble)
 
