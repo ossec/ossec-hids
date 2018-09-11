@@ -66,6 +66,23 @@ static void read_internal(int debug_level)
     return;
 }
 
+/* Send a message to the monitor that we allow one change events on
+   this file until timestamp
+ */
+static int allowChange(char* filename, time_t timestamp)
+{
+    char msg[OS_MAXPATH*2];
+    sprintf(msg, "%ld %s", timestamp, filename);
+    if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
+        ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
+    }
+    if (SendMSG(syscheck.queue, msg, ALLOWCHANGE, ALLOWCHANGE_MQ) < 0) {
+        merror(QUEUE_SEND, ARGV0);
+    }
+    debug1("%s: send_allowchange_msg: %s to %s\n", ARGV0, msg, DEFAULTQPATH);
+    return 0;
+}
+
 #ifdef WIN32
 /* syscheck main for Windows */
 int Start_win32_Syscheck()
@@ -167,15 +184,17 @@ int Start_win32_Syscheck()
 static void help_syscheckd()
 {
     print_header();
-    print_out("  %s: -[Vhdtf] [-c config]", ARGV0);
-    print_out("    -V          Version and license message");
-    print_out("    -h          This help message");
-    print_out("    -d          Execute in debug mode. This parameter");
-    print_out("                can be specified multiple times");
-    print_out("                to increase the debug level.");
-    print_out("    -t          Test configuration");
-    print_out("    -f          Run in foreground");
-    print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
+    print_out("  %s: -[Vhdtf] [-c config] [-a filename -u timestamp]", ARGV0);
+    print_out("    -V             Version and license message");
+    print_out("    -h             This help message");
+    print_out("    -d             Execute in debug mode. This parameter");
+    print_out("                   can be specified multiple times");
+    print_out("                   to increase the debug level.");
+    print_out("    -t             Test configuration");
+    print_out("    -f             Run in foreground");
+    print_out("    -c <config>    Configuration file to use (default: %s)", DEFAULTCPATH);
+    print_out("    -a <filename>  Allow changes on filename");
+    print_out("    -u <timestamp> Allow changes until timestamp");
     print_out(" ");
     exit(1);
 }
@@ -187,12 +206,16 @@ int main(int argc, char **argv)
     int c, r;
     int debug_level = 0;
     int test_config = 0, run_foreground = 0;
+    int allow_change = 0;
     const char *cfg = DEFAULTCPATH;
+    char allow_filename[OS_MAXPATH];
+    time_t allow_timestamp = 0;
 
     /* Set the name */
     OS_SetName(ARGV0);
+    *allow_filename = '\0';
 
-    while ((c = getopt(argc, argv, "Vtdhfc:")) != -1) {
+    while ((c = getopt(argc, argv, "Vtdhfc:a:u:")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -212,6 +235,20 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -c needs an argument", ARGV0);
                 }
                 cfg = optarg;
+                break;
+            case 'a':
+                if (!optarg) {
+                    ErrorExit("%s: -a needs a filename", ARGV0);
+                }
+                strncpy(allow_filename, optarg, OS_MAXPATH);
+                allow_change = 1;
+                break;
+            case 'u':
+                if (!optarg) {
+                    ErrorExit("%s: -w needs a timestamp", ARGV0);
+                }
+                allow_timestamp = atoi(optarg);
+                allow_change = 1;
                 break;
             case 't':
                 test_config = 1;
@@ -249,6 +286,27 @@ int main(int argc, char **argv)
         syscheck.dir[0] = NULL;
         if (!test_config) {
             merror("%s: WARN: Syscheck disabled.", ARGV0);
+        }
+    }
+
+
+    if (allow_change){
+        if (allow_timestamp == 0){
+            merror("%s: WARN: Missing timestamp for allow change", ARGV0);
+            exit(1);
+        } else if (*allow_filename != '\0') {
+            allowChange(allow_filename, allow_timestamp);
+            exit(0);
+        } else {
+            debug1("%s: Reading filenames from stdin, one path per line", ARGV0);
+            while (fgets(allow_filename, OS_MAXPATH, stdin)) {
+                /* Remove the newline character */
+                if (allow_filename[strlen(allow_filename) - 1] == '\n') {
+                    allow_filename[strlen(allow_filename) - 1] = '\0';
+                }
+                allowChange(allow_filename, allow_timestamp);
+            }
+            exit(0);
         }
     }
 
@@ -360,4 +418,3 @@ int main(int argc, char **argv)
 }
 
 #endif /* !WIN32 */
-

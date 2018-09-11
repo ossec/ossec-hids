@@ -14,6 +14,7 @@
 #include "config.h"
 #include "alerts/alerts.h"
 #include "decoder.h"
+#include "syscheck-allow.h"
 
 #ifdef SQLITE_ENABLED
 #include "syscheck-sqlite.h"
@@ -159,6 +160,7 @@ static int __iscompleted(const char *agent)
     return (0);
 }
 
+
 /* Set the database of a specific agent as completed */
 static void DB_SetCompleted(const Eventinfo *lf)
 {
@@ -211,7 +213,6 @@ static FILE *DB_File(const char *agent, int *agent_id)
 
     /* Get agent file */
     snprintf(sdb.buf, OS_FLSIZE , "%s/%s", SYSCHECK_DIR, agent);
-
     /* r+ to read and write. Do not truncate */
     sdb.agent_fps[i] = fopen(sdb.buf, "r+");
     if (!sdb.agent_fps[i]) {
@@ -339,9 +340,8 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         }
 
         /* Check the number of changes */
-        if (!Config.syscheck_auto_ignore) {
-            sdb.syscheck_dec->id = sdb.id1;
-        } else {
+        sdb.syscheck_dec->id = sdb.id1;
+        if (Config.syscheck_auto_ignore) {
             switch (p) {
                 case 0:
                     sdb.syscheck_dec->id = sdb.id1;
@@ -620,6 +620,7 @@ int DecodeSyscheck(Eventinfo *lf)
 {
     const char *c_sum;
     char *f_name;
+    int status;
 
 #ifdef SQLITE_ENABLED
     char *p;
@@ -710,6 +711,12 @@ int DecodeSyscheck(Eventinfo *lf)
  
 
     /* Search for file changes */
-    return (DB_Search(f_name, c_sum, lf));
-}
+    status = DB_Search(f_name, c_sum, lf);
 
+    /* Check if the file have been allowed to change */
+    if (consumeAllowchange(f_name, lf)){
+        lf->decoder_info->id = getDecoderfromlist(SYSCHECK_ALLOWED);
+        lf->decoder_info->name = SYSCHECK_ALLOWED;
+    }
+    return status;
+}

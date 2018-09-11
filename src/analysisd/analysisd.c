@@ -32,6 +32,7 @@
 #include "cleanevent.h"
 #include "dodiff.h"
 #include "output/jsonout.h"
+#include "decoders/syscheck-allow.h"
 
 #ifdef PRELUDE_OUTPUT_ENABLED
 #include "output/prelude.h"
@@ -771,6 +772,15 @@ void OS_ReadMSG_analysisd(int m_queue)
             else if (msg[0] == ROOTCHECK_MQ) {
                 if (!DecodeRootcheck(lf)) {
                     /* We don't process rootcheck events further */
+                    goto CLMEM;
+                }
+                lf->size = strlen(lf->log);
+            }
+
+            /* Allowchange event decoding */
+            else if (msg[0] == ALLOWCHANGE_MQ) {
+                if (!DecodeAllowchange(lf)) {
+                    /* We don't process allowchange events further */
                     goto CLMEM;
                 }
                 lf->size = strlen(lf->log);

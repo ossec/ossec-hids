@@ -35,6 +35,7 @@
 #define OS_FLSIZE       OS_SIZE_256     /* Maximum file size            */
 #define OS_HEADER_SIZE  OS_SIZE_128     /* Maximum header size          */
 #define OS_LOG_HEADER   OS_SIZE_256     /* Maximum log header size      */
+#define OS_MAXPATH      OS_SIZE_1024    /* Maximum filepath length      */
 #define IPSIZE          INET6_ADDRSTRLEN /* IP Address size             */
 
 /* Some global names */
@@ -125,6 +126,9 @@ http://www.ossec.net/main/license/\n"
 /* Rootcheck directory */
 #define ROOTCHECK_DIR    "/queue/rootcheck"
 
+/* Allowchange directory */
+#define ALLOWCHANGE_DIR     "/queue/syscheck-allowchange"
+
 /* Diff queue */
 #define DIFF_DIR        "/queue/diff"
 #define DIFF_DIR_PATH   DEFAULTDIR DIFF_DIR
@@ -134,6 +138,7 @@ http://www.ossec.net/main/license/\n"
 /* Syscheck data */
 #define SYSCHECK        "syscheck"
 #define SYSCHECK_REG    "syscheck-registry"
+#define ALLOWCHANGE     "syscheck-allowchange"
 
 /* Rule path */
 #define RULEPATH        "/rules"
