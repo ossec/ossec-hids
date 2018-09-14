@@ -43,7 +43,7 @@
     <description>many PSAD level 3 warnings from same source (slow scan)</description>
   </rule>
   <!-- PSAD Signature Match -->
- <rule id="110226" level="10">
+ <rule id="110226" level="6">
     <if_sid>110201</if_sid>
     <match>signature match: </match>
     <description>PSAD signature match</description>
