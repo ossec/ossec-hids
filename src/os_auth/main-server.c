@@ -397,6 +397,12 @@ int main(int argc, char **argv)
         memset(&_nc, 0, sizeof(_nc));
         _ncl = sizeof(_nc);
 
+        fdwork = fdsave;
+        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            ErrorExit("ERROR: Call to os_auth select() failed, errno %d - %s",
+                      errno, strerror (errno));
+        }
+
         /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
