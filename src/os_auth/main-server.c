@@ -58,6 +58,7 @@ static void help_authd()
     print_out("                can be specified multiple times");
     print_out("                to increase the debug level.");
     print_out("    -t          Test configuration");
+    print_out("    -f          Run in foreground.");
     print_out("    -i          Use client's source IP address");
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
@@ -159,6 +160,7 @@ int main(int argc, char **argv)
     /* Count of pids we are wait()ing on */
     int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
     int use_pass = 1;
+    int run_foreground = 0;
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
     char *port = DEFAULT_PORT;
@@ -218,6 +220,9 @@ int main(int argc, char **argv)
             case 't':
                 test_config = 1;
                 break;
+            case 'f':
+                run_foreground = 1;
+                break;
             case 'n':
                 use_pass = 0;
                 break;
@@ -268,6 +273,11 @@ int main(int argc, char **argv)
     gid = Privsep_GetGroup(group);
     if (gid == (gid_t) - 1) {
         ErrorExit(USER_ERROR, ARGV0, "", group);
+    }
+
+    if (!run_foreground) {
+        nowDaemon();
+        goDaemon();
     }
     
     /* Create PID files */
