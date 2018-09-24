@@ -191,7 +191,7 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:c:v:x:k:n")) != -1) {
+    while ((c = getopt(argc, argv, "Vdhtfig:D:m:p:c:v:x:k:n")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
