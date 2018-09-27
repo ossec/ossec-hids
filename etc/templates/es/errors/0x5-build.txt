@@ -1,4 +1,5 @@
 
  Error 0x5.
- Building error. Unable to finish the installation.
+ Error durante la construcción. No se ha podido finalizar la instalación.
+
  
