@@ -1,5 +1,5 @@
 
- - Debe de añadir este agente en el servidor así podrán
+ - Debe añadir este agente en el servidor así podrán
    comunicarse el úno con el ótro. Una vez culminada la tarea
    podra ejecutar la herramienta 'manage_agents' para importar
    la autenticación por medio de las llaves extraidas del servidor.
