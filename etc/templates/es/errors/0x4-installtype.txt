@@ -1,4 +1,5 @@
 
  Error 0x4.
- Wrong installation type. It can only be agent, server or local.
+ Fallo en el tipo de instalación. Unicamente puede ser 'agente', 'servidor' o 'local'.
+
 

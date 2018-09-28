@@ -1,6 +1,6 @@
 
- - Usted debe de añadir este agente en el servidor así podran
+ - Debe añadir este agente en el servidor así podrán
    comunicarse el úno con el ótro. Una vez culminada la tarea
    podra ejecutar la herramienta 'manage_agents' para importar
-   la autentificación de llaves extraidas del servidor.
+   la autenticación por medio de las llaves extraidas del servidor.
 
