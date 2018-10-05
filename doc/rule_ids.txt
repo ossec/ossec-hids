@@ -88,6 +88,11 @@
 53400 - 53500 proxmox ve rules
 53501 - 53550 OpenSMTPd rules
 53551 - xxxxx dnsmasq
+
+53600 - 53625 linux usb detection rules
+53626 - 53630 ms usb detection rules
+53631 - 53699 ms firewall rules
+
 56000 - 56200 FreeBSD rules
 
 100000 - 109999 User defined rules
