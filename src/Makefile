@@ -3,11 +3,8 @@
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
-EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
 ZLIB_SYSTEM?=no
-LUA_PLAT=posix
-LUA_ENABLE?=yes
 MAXAGENTS?=2048
 REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
@@ -72,34 +69,29 @@ ifeq (${uname_S},SunOS)
 		DEFINES+=-DSOLARIS
 		DEFINES+=-DHIGHFIRST
 		OSSEC_LDFLAGS+=-lsocket -lnsl -lresolv
-		LUA_PLAT=solaris
 		PATH:=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
 
 else
 ifeq (${uname_S},Darwin)
 		DEFINES+=-DDarwin
 		DEFINES+=-DHIGHFIRST
-		LUA_PLAT=macosx
 
 else
 ifeq (${uname_S},FreeBSD)
 		DEFINES+=-DFreeBSD
 		OSSEC_LDFLAGS+=-pthread
-		LUA_PLAT=freebsd
 		CFLAGS+=-I/usr/local/include
 		OSSEC_LDFLAGS+=-L/usr/local/lib
 else
 ifeq (${uname_S},NetBSD)
 		DEFINES+=-DNetBSD
 		OSSEC_LDFLAGS+=-pthread
-		LUA_PLAT=posix
 		CFLAGS+=-I/usr/local/include
 		OSSEC_LDFLAGS+=-L/usr/local/lib
 else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
 		DEFINES+=-pthread
-		LUA_PLAT=posix
 		CFLAGS+=-I/usr/local/include
 		OSSEC_LDFLAGS+=-L/usr/local/lib
 else
@@ -391,14 +383,6 @@ install-common: build
 	install -m 0550 -o root -g 0 ../contrib/util.sh ${PREFIX}/bin/
 	install -m 0550 -o root -g 0 ${OSSEC_CONTROL_SRC} ${PREFIX}/bin/ossec-control
 
-ifeq (${LUA_ENABLE},yes)
-	install -d -m 0550 -o root -g 0 ${PREFIX}/lua
-	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/native
-	install -d -m 0550 -o root -g 0 ${PREFIX}/lua/compiled
-	install -m 0550 -o root -g 0 ${EXTERNAL_LUA}src/ossec-lua ${PREFIX}/bin/
-	install -m 0550 -o root -g 0 ${EXTERNAL_LUA}src/ossec-luac ${PREFIX}/bin/
-endif
-
 	install -d -m 0550 -o root -g ${OSSEC_GROUP} ${PREFIX}/queue
 	install -d -m 0770 -o ${OSSEC_USER} -g ${OSSEC_GROUP} ${PREFIX}/queue/alerts
 	install -d -m 0750 -o ${OSSEC_USER} -g ${OSSEC_GROUP} ${PREFIX}/queue/ossec
@@ -533,7 +517,6 @@ help: failtarget
 	@echo "   make USE_GEOIP=1      Build with GeoIP support"
 	@echo
 	@echo "External source options: "
-	@echo "   make LUA_ENABLE=no    Disable LUA build"
 	@echo "   make ZLIB_SYSTEM=yes  Use zlib sources from system"
 	@echo
 	@echo "Examples: Client with debugging enabled"
@@ -562,9 +545,6 @@ settings:
 	@echo "    ZLIB_SYSTEM:      ${ZLIB_SYSTEM}"
 	@echo "    ZLIB_INCLUDE:     ${ZLIB_INCLUDE}"
 	@echo "    ZLIB_LIB:         ${ZLIB_LIB}"
-	@echo "Lua settings:"
-	@echo "    LUA_PLAT:         ${LUA_PLAT}"
-	@echo "    LUA_ENABLE:       ${LUA_ENABLE}"
 	@echo "USE settings:"
 	@echo "    USE_ZEROMQ:       ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
@@ -648,9 +628,6 @@ endif
 .PHONY: winagent
 winagent:
 	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB}" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
-	cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
-	cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
-	cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
 	cd win32/ && ./unix2dos.pl ossec.conf > default-ossec.conf
 	cd win32/ && ./unix2dos.pl help.txt > help_win.txt
 	cd win32/ && ./unix2dos.pl ../../etc/internal_options.conf > internal_options.conf
@@ -667,11 +644,6 @@ winagent:
 
 .PHONY: external lua
 external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
-
-lua:
-ifeq (${LUA_ENABLE},yes)
-	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
-endif
 
 ${EXTERNAL_ZLIB}libz.a:
 ifeq (${TARGET},winagent)
@@ -1310,7 +1282,6 @@ clean-test:
 clean-external:
 	rm -f ${cjson_o} libcJSON.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
-	cd ${EXTERNAL_LUA} && ${MAKE} clean
 
 
 clean-internals:
@@ -1350,9 +1321,4 @@ clean-windows:
 	rm -f ${win32_o} ${win32_ui_o} win32/win_service_rk.o
 	rm -f win32/icon.o win32/resource.o
 	rm -f ${WINDOWS_BINS}
-	rm -f ${EXTERNAL_LUA}src/lua52.dll
-	rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
-	rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
-	rm -f win32/ossec-lua.exe
-	rm -f win32/ossec-luac.exe
 	rm -f win32/ossec-win32-agent.exe
