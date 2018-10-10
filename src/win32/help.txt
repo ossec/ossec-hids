@@ -1,4 +1,4 @@
-** OSSEC Windows Agent v3.0.0 **
+** OSSEC Windows Agent v3.0.1 **
 ** Copyright (C) 2014 Trend Micro Inc. **
 
 
