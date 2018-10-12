@@ -40,6 +40,10 @@
 #include <sys/time.h>
 #include <sys/param.h>
 
+#ifdef __OpenBSD__
+#include <sys/mount.h>
+#endif
+
 #ifndef WIN32
 #include <sys/wait.h>
 
