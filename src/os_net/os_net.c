@@ -145,7 +145,9 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
                           (char *)&flag, sizeof(flag)) < 0) {
                 verbose ("setsockopt error: SO_REUSEADDR %d: %s",
                          errno, strerror(errno));
-                OS_CloseSocket(ossock);
+                if(ossock) {
+                    OS_CloseSocket(ossock);
+                }
                 continue;
             }
         }
@@ -192,7 +194,9 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     /* check to see if at least one address succeeded */
     if (ni->fdcnt == 0) {
         verbose ("Request to allocate and bind sockets failed.");
-        OS_CloseSocket(ossock);
+        if(ossock) {
+            OS_CloseSocket(ossock);
+        }
         ni->status = -1;
         ni->retval = OS_SOCKTERR;
         return(ni);
@@ -371,6 +375,9 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
     s = getaddrinfo(_ip, _port, &hints, &result);
     if (s != 0) {
         verbose("getaddrinfo: %s", gai_strerror(s));
+        if(result) {
+            freeaddrinfo(result);
+        }
         return(OS_INVALID);
     }
 
@@ -401,6 +408,9 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
     }
     if (rp == NULL) {               /* No address succeeded */
         OS_CloseSocket(ossock);
+        if(result) {
+            freeaddrinfo(result);
+        }
         return(OS_SOCKTERR);
     }
     satop(rp->ai_addr, tempaddr, sizeof tempaddr);
@@ -708,7 +718,19 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
 
 #if defined(__linux__) || defined (WIN32)
     /* most Linux systems do not have sa_len in the sockaddr struct */
-    rc = getnameinfo ((struct sockaddr *) sa, sizeof (sa), ipaddr,
+    socklen_t slen = 0;
+    switch(sa->sa_family) {
+        case AF_INET:
+            slen = sizeof(struct sockaddr_in);
+            break;
+        case AF_INET6:
+            slen = sizeof(struct sockaddr_in6);
+            break;
+        default:
+            // XXX WTF
+            break;
+    }
+    rc = getnameinfo ((struct sockaddr *) sa, slen, ipaddr,
                       sizeof (ipaddr), ipport, sizeof (ipport),
                       NI_NUMERICHOST | NI_NUMERICSERV);
 #else

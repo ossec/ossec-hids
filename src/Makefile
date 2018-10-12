@@ -50,7 +50,7 @@ DEFINES+=-D${uname_S}
 # Uncomment the DEFINES statement below if you are
 # running Linux and want to use AF_UNSPEC instead of
 # AF_INET6 to fully support IPv4 addresses.
-#DEFINES+=NOV4MAP
+#DEFINES+=-DNOV4MAP
 
 ifneq (,$(filter ${REUSE_ID},yes y Y 1))
 	DEFINES+=-DREUSE_ID
