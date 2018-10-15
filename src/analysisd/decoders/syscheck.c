@@ -490,10 +490,8 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 		char opstr[10];
 		char npstr[10];
 
-		strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr));
-		opstr[9] = '\0';
-		strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr));
-		npstr[9] = '\0';
+		strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr) - 1);
+		strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr) - 1);
 
                 snprintf(sdb.perm, OS_FLSIZE, "Permissions changed from "
                          "'%9.9s' to '%9.9s'\n", opstr, npstr);
@@ -595,7 +593,9 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
     fflush(fp);
 
     /* Alert if configured to notify on new files */
-    if ((Config.syscheck_alert_new == 1) && (DB_IsCompleted(agent_id))) {
+    /* TODO: debugging this - Scott */
+    /* if ((Config.syscheck_alert_new == 1) && (DB_IsCompleted(agent_id))) { */
+    if (Config.syscheck_alert_new == 1)  {
         sdb.syscheck_dec->id = sdb.idn;
 
         /* New file message */
@@ -632,10 +632,10 @@ int DecodeSyscheck(Eventinfo *lf)
     char *p;
     char stmt[OS_MAXSTR + 1];
     sqlite3_stmt *res;
-#endif
     int error = 0;
     int rec_count = 0;
     const char *tail;
+#endif // SQLITE_ENABLED
 
     /* Every syscheck message must be in the following format:
      * checksum filename

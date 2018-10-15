@@ -10,7 +10,7 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 PLIST=${DIR}/bin/.process_list;
 
-###  Do not modify bellow here ###
+###  Do not modify below here ###
 
 # Getting additional processes
 ls -la ${PLIST} > /dev/null 2>&1
@@ -19,7 +19,7 @@ if [ $? = 0 ]; then
 fi
 
 NAME="OSSEC HIDS"
-VERSION="v3.0.0"
+VERSION="v3.1.0"
 AUTHOR="Trend Micro Inc."
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf;
@@ -157,6 +157,14 @@ status()
 {
     RETVAL=0
     for i in ${DAEMONS}; do
+        ## If ossec-maild is disabled, don't try to start it.
+        if [ X"$i" = "Xossec-maild" ]; then
+            grep "<email_notification>no<" ${DIR}/etc/ossec.conf >/dev/null 2>&1
+            if [ $? = 0 ]; then
+                continue
+            fi
+        fi
+
         pstatus ${i};
         if [ $? = 0 ]; then
             echo "${i} not running..."

@@ -366,7 +366,7 @@ char *GetRandomNoise()
 {
     FILE *fp;
     char buf[2048 + 1];
-    int frr = 0;
+    size_t frr = 0;
 
     /* Reading urandom */
     fp = fopen("/dev/urandom", "r");

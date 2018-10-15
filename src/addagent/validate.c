@@ -100,7 +100,9 @@ int OS_RemoveAgent(const char *u_id) {
         return 0;
 
 #ifndef WIN32
-    chmod(AUTH_FILE, 0440);
+    if((chmod(AUTH_FILE, 0440)) < 0) {
+        merror("addagent: ERROR: Cannot chmod %s: %s", AUTH_FILE, strerror(errno));
+    }
 #endif
 
 #ifdef REUSE_ID
@@ -445,13 +447,20 @@ double OS_AgentAntiquity(const char *id)
     char file_name[OS_FLSIZE];
     char *full_name = getFullnameById(id);
 
-    if (!full_name)
+    if (!full_name) {
         return -1;
+    }
 
     snprintf(file_name, OS_FLSIZE - 1, "%s/%s", AGENTINFO_DIR, full_name);
 
-    if (stat(file_name, &file_stat) < 0)
+    if (stat(file_name, &file_stat) < 0) {
+        if(full_name) {
+            free(full_name);
+        }
         return -1;
+    }
+
+    free(full_name);
 
     return difftime(time(NULL), file_stat.st_mtime);
 }

@@ -191,7 +191,12 @@ int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, 
     if (replyto) {
         memset(snd_msg, '\0', 128);
         snprintf(snd_msg, 127, REPLYTO, replyto);
-        OS_SendTCP(socket, snd_msg);
+        if(sendmail) {
+            fprintf(sendmail, "%s", snd_msg);
+        } else {
+            OS_SendTCP(socket, snd_msg);
+        }
+
     }
 
     /* Add CCs */
@@ -269,6 +274,12 @@ int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, 
     fp = fopen(fname2, "r");
     if(!fp) {
         merror("%s: ERROR: Cannot open %s: %s", __local_name, fname2, strerror(errno));
+        if(socket >= 0) {
+            close(socket);
+        }
+        if(sendmail) {
+            pclose(sendmail);
+        }
         return(1);
     }
 
