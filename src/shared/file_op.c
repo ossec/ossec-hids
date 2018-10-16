@@ -396,7 +396,6 @@ char *GetRandomNoise()
         return(NULL);
     }
     buf[2048] = '\0';
->>>>>>> 897c7872535b185d912ad19eca18016496150474
     fclose(fp);
     return(strdup(buf));
 }
