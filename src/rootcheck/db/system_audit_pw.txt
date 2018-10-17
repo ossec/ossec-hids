@@ -31,10 +31,46 @@
 [Password Hardening - 1: Not all Passwords in /etc/shadow are hashed with SHA-256 or SHA-512] [any] [https://linux-audit.com/password-security-with-linux-etc-shadow-file/, https://docs.oracle.com/cd/E19253-01/816-4557/concept-23/index.html]
 f:/etc/shadow -> !r:^# && !r:^\w+:NP:\d+:\d*:\d*:\d*:\d*:\d*:\d*$ && r:^\w+:\w\.*:\d+:\d*:\d*:\d*:\d*:\d*:\d*$;
 f:/etc/shadow -> !r:^# && r:\w+:$1$\.+;
+f:/etc/shadow -> !r:^# && r:\w+:$2$\.+;
 f:/etc/shadow -> !r:^# && r:\w+:$2a$\.+;
+f:/etc/shadow -> !r:^# && r:\w+:$2x$\.+;
 f:/etc/shadow -> !r:^# && r:\w+:$2y$\.+;
 f:/etc/shadow -> !r:^# && r:\w+:$md5$\.+;
 f:/etc/shadow -> !r:^# && r:\w+:$__unix__$\.+;
 #
 #
-#
+#2 Set Password Creation Requirement Parameters
+[Password Hardening - 2: Set Password Creation Requirement Parameters] [any] [https://linux-audit.com/configure-the-minimum-password-length-on-linux-systems/, https://workbench.cisecurity.org]
+f:/etc/pam.d/common-password -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_pwquality.so\.+try_first_pass;
+f:/etc/pam.d/common-password -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_pwquality.so\.+retry=\d+;
+f:/etc/pam.d/password-auth -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_pwquality.so\.+try_first_pass;
+f:/etc/pam.d/password-auth -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_pwquality.so\.+retry=\d+;
+f:/etc/pam.d/system-auth -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_pwquality.so\.+try_first_pass;
+f:/etc/pam.d/system-auth -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_pwquality.so\.+retry=\d+;
+f:/etc/pam.d/passwd -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_cracklib.so\.+try_first_pass|^password\s*\t*required\s*\t*pam_pwquality.so\.+try_first_pass|^@include\s+common-password;
+f:/etc/pam.d/passwd -> !r:^password\s*\t*requisite\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*requisite\s*\t*pam_pwquality.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_cracklib.so\.+retry=\d+|^password\s*\t*required\s*\t*pam_pwquality.so\.+retry=\d+|^@include\s+common-password;
+f:/etc/pam.d/common-password -> r:pam_cracklib.so && !r:minlen=\d\d+;
+f:/etc/pam.d/password-auth -> r:pam_cracklib.so && !r:minlen=\d\d+;
+f:/etc/pam.d/system-auth -> r:pam_cracklib.so && !r:minlen=\d\d+;
+f:/etc/pam.d/passwd -> r:pam_cracklib.so && !r:minlen=\d\d+;
+f:/etc/security/pwquality.conf -> !r:^minlen=\d\d+;
+f:/etc/pam.d/common-password -> r:pam_cracklib.so && !r:dcredit=\p*\d+;
+f:/etc/pam.d/password-auth -> r:pam_cracklib.so && !r:dcredit=\p*\d+;
+f:/etc/pam.d/system-auth -> r:pam_cracklib.so && !r:dcredit=\p*\d+;
+f:/etc/pam.d/passwd -> r:pam_cracklib.so && !r:dcredit=\p*\d+;
+f:/etc/security/pwquality.conf -> !r:^dcredit=\p*\d+;
+f:/etc/pam.d/common-password -> r:pam_cracklib.so && !r:lcredit=\p*\d+;
+f:/etc/pam.d/password-auth -> r:pam_cracklib.so && !r:lcredit=\p*\d+;
+f:/etc/pam.d/system-auth -> r:pam_cracklib.so && !r:lcredit=\p*\d+;
+f:/etc/pam.d/passwd -> r:pam_cracklib.so && !r:lcredit=\p*\d+;
+f:/etc/security/pwquality.conf -> !r:^lcredit=\p*\d+;
+f:/etc/pam.d/common-password -> r:pam_cracklib.so && !r:ocredit=\p*\d+;
+f:/etc/pam.d/password-auth -> r:pam_cracklib.so && !r:ocredit=\p*\d+;
+f:/etc/pam.d/system-auth -> r:pam_cracklib.so && !r:ocredit=\p*\d+;
+f:/etc/pam.d/passwd -> r:pam_cracklib.so && !r:ocredit=\p*\d+;
+f:/etc/security/pwquality.conf -> !r:^ocredit=\p*\d+;
+f:/etc/pam.d/common-password -> r:pam_cracklib.so && !r:ucredit=\p*\d+;
+f:/etc/pam.d/password-auth -> r:pam_cracklib.so && !r:ucredit=\p*\d+;
+f:/etc/pam.d/system-auth -> r:pam_cracklib.so && !r:ucredit=\p*\d+;
+f:/etc/pam.d/passwd -> r:pam_cracklib.so && !r:ucredit=\p*\d+;
+f:/etc/security/pwquality.conf -> !r:^ucredit=\p*\d+;
