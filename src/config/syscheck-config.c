@@ -167,6 +167,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_real_time = "realtime";
     const char *xml_report_changes = "report_changes";
     const char *xml_restrict = "restrict";
+    const char *xml_skip_subdir = "skip_subdir";
 
     char *restrictfile = NULL;
     char **dir;
@@ -348,6 +349,16 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                     restrictfile = NULL;
                 }
                 os_strdup(*values, restrictfile);
+            } else if (strcmp(*attrs, xml_skip_subdir) == 0) {
+                if (strcmp(*values, "yes") == 0) {
+                    opts |= CHECK_SKIP_SUBDIR;
+                } else if (strcmp(*values, "no") == 0) {
+                    opts &= ~ CHECK_SKIP_SUBDIR;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
             } else {
                 merror(SK_INV_ATTR, __local_name, *attrs);
                 ret = 0;
@@ -381,7 +392,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
 	/* The mingw32 builder used by travis.ci can't find glob.h 
 	 * Yet glob must work on actual win32.  
 	 */
-#ifndef __MINGW32__ 
+#ifndef __MINGW32__
         if (strchr(tmp_dir, '*') ||
                 strchr(tmp_dir, '?') ||
                 strchr(tmp_dir, '[')) {
@@ -828,8 +839,11 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_SHA1SUM,
         CHECK_REALTIME,
         CHECK_SEECHANGES,
+#ifdef CHECK_SKIP_SUBDIR
+	CHECK_SKIP_SUBDIR,
+#endif
 	0
-	};
+    };
     char *check_strings[] = {
         "perm",
         "size",
@@ -839,8 +853,11 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         "sha1sum",
         "realtime",
         "report_changes",
+#ifdef CHECK_SKIP_SUBDIR
+        "skip_subdir",
++#endif
 	NULL
-	};
+    };
 
     buf[0] = '\0';
     for ( i = 0; check_bits[ i ]; i++ ) {

@@ -23,6 +23,8 @@
 #define CHECK_SHA1SUM       0000040
 #define CHECK_REALTIME      0000100
 #define CHECK_SEECHANGES    0000200
+#define CHECK_SAME_DEV      0000400
+#define CHECK_SKIP_SUBDIR   0001000
 
 #include <stdio.h>
 
