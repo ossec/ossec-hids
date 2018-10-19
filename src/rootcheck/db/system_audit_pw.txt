@@ -91,3 +91,13 @@ f:/etc/pam.d/password-auth -> r:pam_cracklib.so && !r:ucredit=\p*\d+;
 f:/etc/pam.d/system-auth -> r:pam_cracklib.so && !r:ucredit=\p*\d+;
 f:/etc/pam.d/passwd -> r:pam_cracklib.so && !r:ucredit=\p*\d+;
 f:/etc/security/pwquality.conf -> !r:^ucredit=\p*\d+;
+#
+#
+#4 Set default password expiration / aging parameters
+[Password Hardening - 4: Set password expiration / aging parameters] [any] [https://www.thegeekdiary.com/understanding-etclogin-defs-file, https://workbench.cisecurity.org/sections/26024/recommendations/63001]
+f:/etc/default/passwd -> !r:^MAXWEEKS=\d\d$;
+f:/etc/default/passwd -> !r:^MINWEEKS=\d;
+f:/etc/default/passwd -> !r:^WARNWEEKS=\d;
+f:/etc/login.defs -> !r:^PASS_MAX_DAYS\s*\t*\d\d$;
+f:/etc/login.defs -> !r:^PASS_MIN_DAYS\s*\t*\d;
+f:/etc/login.defs -> !r:^PASS_WARN_AGE\s*\t*\d;
