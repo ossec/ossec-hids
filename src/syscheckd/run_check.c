@@ -356,7 +356,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
     }
 
     if(file_sums->check_md5 != 1 && file_sums->check_sha1 != 1 && file_sums->check_sha256 != 1 && file_sums->check_generic != 1) {
-        merror("XXX DOES NOT COMPUTER!");
+        merror("XXX DOES NOT COMPUTER!"); // TODO replace with real message or something respectable
     }
 
 #endif // LIBSODIUM_ENABLED
@@ -469,7 +469,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
     if(file_sums->check_sha256 > 0) {
         snprintf(new_hashes, 511, "%s", file_sums->sha256output);
         hashc++;
-        merror("YYY sha256! %s", new_hashes);
     }
     if(file_sums->check_generic > 0) {
         if(hashc > 0) {
@@ -480,7 +479,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
             snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
             hashc++;
         }
-        merror("YYY generic! %s", new_hashes);
     }
     if(file_sums->check_sha1 > 0 && hashc < 2) {
         if(hashc > 0) {
@@ -490,7 +488,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
         } else if(hashc == 0) {                                                                                                                 snprintf(new_hashes, 511, "%s", file_sums->sha1output);
             hashc++;
         }
-        merror("YYY sha1! %s", new_hashes);
     }
     if(file_sums->check_md5 > 0 && hashc < 2) {
         if(hashc > 0) {
@@ -500,7 +497,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
         } else if(hashc == 0) {
             snprintf(new_hashes, 511, "%s", file_sums->md5output);                                                                              hashc++;
         }
-        merror("YYY md5! %s", new_hashes);
     }
     if(hashc < 2) {
         if(hashc == 0) {
@@ -508,7 +504,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sys
         } else if (hashc == 1) {                                                                                                                snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
             strncpy(new_hashes, new_hashes_tmp, 511);
         }
-        merror("YYY uh-oh! %s", new_hashes);
     }
 
     snprintf(newsum, 255, "%ld:%d:%d:%d:%s",
