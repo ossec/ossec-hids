@@ -27,8 +27,13 @@ typedef struct __sdb {
     char perm[OS_FLSIZE + 1];
     char owner[OS_FLSIZE + 1];
     char gowner[OS_FLSIZE + 1];
+#ifdef LIBSODIUM_ENABLED
+    char md5[(OS_FLSIZE * 2) + 1];
+    char sha1[(OS_FLSIZE * 2) + 1];
+#else   //LIBSODIUM_ENABLED
     char md5[OS_FLSIZE + 1];
     char sha1[OS_FLSIZE + 1];
+#endif
 
     char agent_cp[MAX_AGENTS + 1][1];
     char *agent_ips[MAX_AGENTS + 1];
@@ -528,9 +533,22 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0) {
                 sdb.md5[0] = '\0';
             } else {
+#ifdef LIBSODIUM_ENABLED
+                char *hash_type;
+                if(strncmp(newmd5, "GENERIC", 7) == 0) {
+                    hash_type = "blake2b";
+                } else if(strncmp(newmd5, "SHA256", 6) == 0) {
+                    hash_type = "sha256";
+                } else {
+                    hash_type = "unknown";
+                }
+                snprintf(sdb.md5, OS_FLSIZE * 2, "Old %s was: '%s'\n"
+                        "New %s is: '%s'\n", hash_type, oldmd5, hash_type, newmd5);
+#else   //LIBSODIUM_ENABLED
                 snprintf(sdb.md5, OS_FLSIZE, "Old md5sum was: '%s'\n"
-                         "New md5sum is : '%s'\n",
+                         "New md5sum is: '%s'\n",
                          oldmd5, newmd5);
+#endif  //LIBSODIUM_ENABLED
                 os_strdup(oldmd5, lf->md5_before);
                 os_strdup(newmd5, lf->md5_after);
             }
@@ -540,13 +558,21 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                 sdb.sha1[0] = '\0';
             } else {
 #ifdef LIBSODIUM_ENABLED
-                snprintf(sdb.sha1, OS_FLSIZE, "Old sha256sum was: '%s'\n"
-                         "New sha256sum is : '%s'\n",
+                char *hash_type;
+                if(strncmp(newsha1, "GENERIC", 7) == 0) {
+                    hash_type = "blake2b";
+                } else if(strncmp(newsha1, "SHA256", 6) == 0) {
+                    hash_type = "sha256";
+                } else {
+                    hash_type = "unknown";
+                }
+                snprintf(sdb.sha1, OS_FLSIZE * 2, "Old %s was: '%s'\n"
+                         "New %s is : '%s'\n", hash_type, oldsha1, hash_type, newsha1);
 #else   //LIBSODIUM_ENABLED
                 snprintf(sdb.sha1, OS_FLSIZE, "Old sha1sum was: '%s'\n"
                          "New sha1sum is : '%s'\n",
-#endif  //LIBSODIUM_ENABLED
                          oldsha1, newsha1);
+#endif  //LIBSODIUM_ENABLED
                 os_strdup(oldsha1, lf->sha1_before);
                 os_strdup(newsha1, lf->sha1_after);
             }
