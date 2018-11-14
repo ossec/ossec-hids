@@ -3283,5 +3283,41 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <order>srcip, action, url, extra_data</order>
 </decoder>
 
+<!-- Kaspersky Endpoint Security 10 for Linux -->
+<!-- Kesl example Logs -->
+<!-- Nov  5 00:11:21 hostname kesl: {"EventType": "AVBasesAreTotallyOutOfDate","EventId": "27336","TaskName": "Update","TaskId": "6","AVBasesDate": "2018-10-17 09:49:00"} -->
+<!-- Oct 25 13:11:21 hostname kesl: {"EventType": "AVBasesAreOutOfDate","EventId": "27311","TaskName": "Update","TaskId": "6","AVBasesDate": "2018-10-17 09:49:00"} -->
+<!-- Nov 10 13:19:27 hostname kesl: {"EventType": "UpdateError","EventId": "27381","TaskType": "Update","TaskName": "Update","TaskId": "6","RuntimeTaskId": "120"} -->
+<!-- Nov 10 13:22:09 hostname kesl: {"EventType": "ThreatDetected","EventId": "27384","DetectName": "EICAR-Test-File","DetectType": "Virware","DetectCertainty": "Sure","DetectSource": "Local","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "20","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "root","AccessUserId": "0","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 13:50:01 hostname kesl: {"EventType": "ObjectSavedToBackup","EventId": "27448","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "126","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "userlogin","AccessUserId": "1000","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 13:50:01 hostname kesl: {"EventType": "ObjectNotDisinfected","EventId": "27449","ObjectNotDisinfectedReason": "NonCurable","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "126","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "userlogin","AccessUserId": "1000","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 13:50:01 hostname kesl: {"EventType": "ObjectDeleted","EventId": "27450","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "126","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "userlogin","AccessUserId": "1000","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 12:44:04 hostname kesl: {"EventType": "TaskStateChanged","EventId": "27438","TaskName": "Update","TaskType": "Update","TaskId": "6","TaskState": "Starting","PrevTaskState": "Stopped","TaskRequestInitiator": "User","RuntimeTaskId": "127"} -->
+<!-- Nov 14 12:44:04 hostname kesl: {"EventType": "TaskStateChanged","EventId": "27439","TaskName": "Update","TaskType": "Update","TaskId": "6","TaskState": "Started","PrevTaskState": "Starting","TaskRequestInitiator": "User","RuntimeTaskId": "127"} -->
+
+<decoder name="kesl">
+  <program_name>^kesl</program_name>
+</decoder>
+
+<decoder name="kesl-avbases-old">
+  <parent>kesl</parent>
+  <prematch>^\p\pEventType\p: \p\S+\p,\pEventId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pAVBasesDate\p: \p\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\p\p</prematch>
+  <regex offset="after_parent">^\p\pEventType\p: \p(\S+)\p,\pEventId\p: \p(\d+)\p,\pTaskName\p: \p(\S+)\p,\pTaskId\p: \p\d+\p,\pAVBasesDate\p: \p(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)\p\p</regex>
+  <order>status, id, action, extra_data</order> 
+</decoder>
+
+<decoder name="kesl-threat-detected">
+  <parent>kesl</parent>
+  <prematch>^\p\pEventType\p: \p\S+\p,\pEventID\p: \p\d+\p,\pDetectName\p: \p\S+\p,\pDetectType\p: \p\S+\p,\pDetectCertainty\p: \p\S+\p,\pDetectSource\p: \p\S+\p,\pFileName\p: \p\S+,\pObjectName\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pRuntimeTaskId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p\S+\p,\pAccessUser\p: \p\S+\p,\pAccessUserId\p: \p\d+\p,\pFileOwner\p: \p\S+\p,\pFileOwnerId\p: \p\d+\p\p</prematch>
+  <regex offset="after_parent">^\p\pEventType\p: \p(\S+)\p,\pEventID\p: \p(\d+)\p,\pDetectName\p: \p\S+\p,\pDetectType\p: \p\S+\p,\pDetectCertainty\p: \p(\S+)\p,\pDetectSource\p: \p\S+\p,\pFileName\p: \S+,\pObjectName\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pRuntimeTaskId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p(\S+)\p,\pAccessUser\p: \p\S+\p,\pAccessUserId\p: \p\d+\p,\pFileOwner\p: \p\S+\p,\pFileOwnerId\p: \p\d+\p\p</regex>
+  <order>status, id, extra_data, action</order>
+</decoder>
+
+<decoder name="kesl-taskstatechange">
+  <parent>kesl</parent>
+  <prematch>^\p\pEventType\p: \p\S+\p,\pEventId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pTaskState\p: \p\S+\p,\pPrevTaskState\p: \p\S+\p,\pTaskRequestInitiator\p: \p\S+\p,\pRuntimeTaskId\p: \p\d+\p\p</prematch>
+  <regex offset="after_parent">^\p\pEventType\p: \p(\S+)\p,\pEventId\p: \p(\d+)\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p(\S+)\p,\pTaskId\p: \p\d+\p,\pTaskState\p: \p(\S+)\p,\pPrevTaskState\p: \p\S+\p,\pTaskRequestInitiator\p: \p(\S+)\p,\pRuntimeTaskId\p: \p\d+\p\p</regex>
+  <order>action, id, extra_data, status, srcuser</order>
+</decoder>
 
 <!-- EOF -->
