@@ -94,7 +94,7 @@
 53631 - 53699 ms firewall rules
 53700 - 53749 PSAD rules
 53750 - 53799 unbound rules
-
+53800 - 53825 Kaspersky Endpoint Security 10 for Linux rules
 56000 - 56200 FreeBSD rules
 
 100000 - 109999 User defined rules
