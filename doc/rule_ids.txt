@@ -95,6 +95,8 @@
 53700 - 53749 PSAD rules
 53750 - 53799 unbound rules
 53800 - 53825 Kaspersky Endpoint Security 10 for Linux rules
+53826 - 53829 MHN - Dionaea
+53830 - 53840 MHN - Cowrie
 56000 - 56200 FreeBSD rules
 
 100000 - 109999 User defined rules

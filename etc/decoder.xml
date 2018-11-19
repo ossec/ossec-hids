@@ -3320,4 +3320,44 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <order>action, id, extra_data, status, srcuser</order>
 </decoder>
 
+<!-- MHN - Json log decoder - Dionaea -->
+<!-- include /var/log/mhn/mhn-json.log to ossec.conf -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "timestamp": "2018-09-14T11:02:54.215411", "dionaea_action": "reject", "type": "dionaea.connections", "app": "dionaea", "src_ip": "16.10.10.10", "vendor_product": "Dionaea", "dest_port": 365, "signature": "Connection to Honeypot", "src_port": 45302, "dest_ip": "16.10.10.11", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "transport": "tcp", "severity": "high"} -->
+<decoder name="dionaea">
+  <prematch>dionaea.connections</prematch>
+  <regex>^\p\pdirection\p: \p(\S+)\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p\S+\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d\.\d+\p, \pdionaea_action\p: \p(\S+)\p, \ptype\p: \pdionaea.connections\p, \papp\p: \pdionaea\p, \psrc_ip\p: \p(\d+.\d+.\d+.\d+)\p, \pvendor_product\p: \pDionaea\p, \pdest_port\p: (\d+), \psignature\p: \p\.+\p, \psrc_port\p: (\d+), \pdest_ip\p: \p(\d+.\d+.\d+.\d+)\p, \psensor\p: \S+, \ptransport\p: \p\S+\p, \pseverity\p: \p\S+\p\p</regex>
+  <order>extra_data, protocol, action, srcip, dstport, srcport, dstip</order>
+</decoder>
+
+<!-- MHN - Json log decoder - Cowrie -->
+<!-- include /var/log/mhn/mhn-json.log to ossec.conf -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "ssh_username": "admin", "app": "cowrie", "transport": "tcp", "dest_port": 22, "src_port": 45302, "severity": "high", "timestamp": "2018-10-23T11:22:36.597864", "vendor_product": "Cowrie", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "src_ip": "16.10.10.10", "ssh_password": "password", "signature": "SSH login attempted on cowrie honeypot", "ssh_version": "'SSH-2.0-Sun_SSH_1.1.4'", "type": "cowrie.sessions", "dest_ip": "16.10.10.11"} -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "timestamp": "2018-10-23T07:45:56.937787", "vendor_product": "Cowrie", "type": "cowrie.sessions", "app": "cowrie", "src_ip": "16.10.10.10", "dest_port": 22, "signature": "SSH session on cowrie honeypot", "ssh_version": "'SSH-2.0-Sun_SSH_1.1.4'", "src_port": 45302, "dest_ip": "16.10.10.11", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "transport": "tcp", "severity": "high"} -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "timestamp": "2018-11-14T10:32:38.686578", "app": "cowrie", "transport": "tcp", "dest_port": 22, "src_port": 45302, "severity": "high", "vendor_product": "Cowrie", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "src_ip": "16.10.10.10", "command": "whoami", "signature": "command attempted on cowrie honeypot", "ssh_version": "'SSH-2.0-OpenSSH_7.4p1 Debian-10+deb9u4'", "type": "cowrie.sessions", "dest_ip": "16.10.10.11"} -->
+
+<decoder name="cowrie">
+  <prematch>cowrie.sessions</prematch>
+</decoder>
+
+<decoder name="cowrie-attempt">
+  <parent>cowrie</parent>
+  <prematch>"SSH login attempted</prematch>
+  <regex>^\p\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \pssh_username\p: \p(\S+)\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: \p(\d+.\d+.\d+.\d+)\p, \pssh_password\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: \p(\d+.\d+.\d+.\d+)\p\p</regex>
+  <order>protocol, extra_data, user, dstport, srcport, srcip, action, dstip</order>
+</decoder>
+
+<decoder name="cowrie-session">
+  <parent>cowrie</parent>
+  <prematch>"SSH session on cowrie honeypot</prematch>
+  <regex>^\p\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \ptype\p: \pcowrie.sessions\p, \papp\p: \pcowrie\p, \psrc_ip\p: \p(\d+.\d+.\d+.\d+)\p, \pdest_port\p: (\d+), \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \psrc_port\p: (\d+), \pdest_ip\p: \p(\d+.\d+.\d+.\d+)\p, \psensor\p: \S+, \ptransport\p: \p\S+\p, \pseverity\p: \p\S+\p\p</regex>
+  <order>protocol, extra_data, srcip, dstport, action, srcport, dstip</order>
+</decoder>
+
+<decoder name="cowrie-command">
+  <parent>cowrie</parent>
+  <prematch>"command attempted on cowrie honeypot</prematch>
+  <regex>^\p\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: \p(\d+.\d+.\d+.\d+)\p, \pcommand\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: \p(\d+.\d+.\d+.\d+)\p\p</regex>
+  <order>protocol, extra_data, dstport, srcport, srcip, action, dstip</order>
+</decoder>
+
 <!-- EOF -->
