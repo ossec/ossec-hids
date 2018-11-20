@@ -65,6 +65,7 @@
 18651 - 18750 MS IPSec rules
 20100 - 20299 IDS
 20300 - 20499 IDS (Snort specific)
+20500 - 20509 Windows PowerShell
 
 30100 - 30999 Apache error log
 31100 - 31199 Web access log
