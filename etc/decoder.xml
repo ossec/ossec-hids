@@ -3342,21 +3342,21 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 <decoder name="cowrie-attempt">
   <parent>cowrie</parent>
   <prematch>"SSH login attempted</prematch>
-  <regex>^\p\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \pssh_username\p: \p(\S+)\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: \p(\d+.\d+.\d+.\d+)\p, \pssh_password\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: \p(\d+.\d+.\d+.\d+)\p\p</regex>
+  <regex>^{\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \pssh_username\p: \p(\S+)\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: "(\S+)", \pssh_password\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: "(\S+)"}</regex>
   <order>protocol, extra_data, user, dstport, srcport, srcip, action, dstip</order>
 </decoder>
 
 <decoder name="cowrie-session">
   <parent>cowrie</parent>
   <prematch>"SSH session on cowrie honeypot</prematch>
-  <regex>^\p\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \ptype\p: \pcowrie.sessions\p, \papp\p: \pcowrie\p, \psrc_ip\p: \p(\d+.\d+.\d+.\d+)\p, \pdest_port\p: (\d+), \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \psrc_port\p: (\d+), \pdest_ip\p: \p(\d+.\d+.\d+.\d+)\p, \psensor\p: \S+, \ptransport\p: \p\S+\p, \pseverity\p: \p\S+\p\p</regex>
+  <regex>^{\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \ptype\p: \pcowrie.sessions\p, \papp\p: \pcowrie\p, \psrc_ip\p: "(\S+)", \pdest_port\p: (\d+), \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \psrc_port\p: (\d+), \pdest_ip\p: "(\S+)", \psensor\p: \S+, \ptransport\p: \p\S+\p, \pseverity\p: \p\S+\p}</regex>
   <order>protocol, extra_data, srcip, dstport, action, srcport, dstip</order>
 </decoder>
 
 <decoder name="cowrie-command">
   <parent>cowrie</parent>
   <prematch>"command attempted on cowrie honeypot</prematch>
-  <regex>^\p\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: \p(\d+.\d+.\d+.\d+)\p, \pcommand\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: \p(\d+.\d+.\d+.\d+)\p\p</regex>
+  <regex>^{\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: "(\S+)", \pcommand\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: "(\S+)"}</regex>
   <order>protocol, extra_data, dstport, srcport, srcip, action, dstip</order>
 </decoder>
 
