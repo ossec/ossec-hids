@@ -2,7 +2,6 @@
 
 <!-- Not recommended by CIS due to Windows default ACL settings -->
 <!-- Turn on logging: Computer Configuration > Policies > Administrative Templates > Windows Components > Windows PowerShell -> Turn on PowerShell Script Block Logging -->
-<!-- Turn on logging: Computer Configuration > Policies > Administrative Templates > Windows Components > Windows PowerShell -> Turn on Module Logging -->
 
 <!-- Rule IDs 20500-2509 -->
 
