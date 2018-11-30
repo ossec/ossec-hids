@@ -1,0 +1,26 @@
+<!-- Rules for Modern Honeypot Network - Cowrie, -->
+
+<!-- IDs: 53830 - 53840 -->
+<!-- include /var/log/mhn/mhn-json.log to ossec.conf -->
+
+<group name="mhn,json">
+
+  <rule id="53830" level="8">
+    <decoded_as>cowrie</decoded_as>
+    <action>SSH login attempted on cowrie honeypot</action>
+    <description>SSH login attempted on cowrie honeypot</description>
+  </rule>
+
+  <rule id="53831" level="8">
+    <decoded_as>cowrie</decoded_as>
+    <action>SSH session on cowrie honeypot</action>
+    <description>SSH session established on cowrie honeypot</description>
+  </rule>
+
+  <rule id="53832" level="8">
+    <decoded_as>cowrie</decoded_as>
+    <action>command attempted on cowrie honeypot</action>
+    <description>A command was attempted in SSH session on cowrie honeypot</description>
+  </rule>
+
+</group>

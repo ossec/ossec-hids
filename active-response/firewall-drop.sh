@@ -192,7 +192,7 @@ if [ "X${UNAME}" = "XLinux" ]; then
                 IPV6KEY="0"
         fi
                 
-        if [ "$IPV4KEY" == "0" ] && [ "$IPV6KEY" == "0" ]
+        if [ "$IPV4KEY" = "0" ] && [ "$IPV6KEY" = "0" ]
         then
                 break
         fi

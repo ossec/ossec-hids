@@ -588,7 +588,9 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
     fflush(fp);
 
     /* Alert if configured to notify on new files */
-    if ((Config.syscheck_alert_new == 1) && (DB_IsCompleted(agent_id))) {
+    /* TODO: debugging this - Scott */
+    /* if ((Config.syscheck_alert_new == 1) && (DB_IsCompleted(agent_id))) { */
+    if (Config.syscheck_alert_new == 1)  {
         sdb.syscheck_dec->id = sdb.idn;
 
         /* New file message */

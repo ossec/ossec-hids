@@ -1,4 +1,4 @@
-OSSEC changelog (3.0.0) <scott@atomicorp.com>
+OSSEC changelog (3.1.0) <scott@atomicorp.com>
 
 Release Maintainers
 
@@ -6,6 +6,79 @@ Dan Parriott
 Scott R. Shinn (Atomicorp, Inc.)
 
 
+3.1.0
+
+Release Notes
+
+	Special thanks on this release go out to:
+	 davestoddard for an amazingly well thought out, and well documented update to the networking code
+	 Bob-Andrews for the largest update to the auditing system in the project history
+         phamvoung for resolving some very subtle bugs and high profile issues with the authd daemon
+
+	We'd also like to thank all the other fantastic contributors to the project, whom are referenced in parenthesis in the changelog. We cannot thank you enough!
+	
+		
+	
+
+Whats New
+	(davestoddard) Modification to Correct IP Connectivity Issues on BSD Servers PR #1412
+
+New Rules / Decoders
+	(Bob-Andrews) - linux_usbdetect_rules.xml, ms1016_usbdetect_rules.xml, ms_firewall_rules.xml
+	(Bob-Andrews) - Added ms_ipsec_rules PR #1549
+	(Bob-Andrews) - Rootchecks for Debian 7+8, cis_debianlinux7-8_L1_rcl.txt, cis_debianlinux7-8_L2_rcl.txt, cis_win10_enterprise_L1_rcl.txt, cis_win10_enterprise_L2_rcl.txt PR #1531
+	(Bob-Andrews) - acsc_office2016_rcl.txt, Added rootcheck PR #1510
+	(Bob-Andrews) - added cis_win2016_memberL1_rcl.txt, cis_win2016_memberL2_rcl.txt PR #1496
+	(Bob-Andrews) - cis_win2012r2_memberL1_rcl.txt, Added Check Description/Alert PR #1495
+	(ddpbsd) - additional sshd decoders PR #1480
+	(ddpbsd) - basic support for Dnsmasq PR #1461
+
+General
+	(iasdeoupxe) - host-deny.sh: Move duplicate entry check into the add action PR #1554
+	(iasdeoupxe) - host-deny.sh: Use consistent indentation PR #1553
+	(iasdeoupxe) - host-deny.sh: Remove unnecessary echo for duplicated entry PR #1552
+	(Bob-Andrews) - Added new id ranges for linux usb detection rules, ms1016 usb detection rules and ms firewall rules from PR #1543
+	(Bob-Andrews) - Corrected IDs to a non user defined range PR #1547 (psad_rules.xml, sysmon_rules.xml, unbound_rules.xml)
+	(c0r3dump3d) - Correct and expand spanish translation PR #1541
+	(ddpbsd) - Adjust the tests for sysmon rules PR #1548
+	(MangyCoyote) - install.sh - case for s-nail patch can't be applied if `mail` is not installed PR #1539
+	(atomicturtle) - ossec-authd Fix for foreground flags PR #1538
+	(atomicturtle) - ossec-authd Add -f foreground flag support PR #1537
+	(featzor) - psad signature match level 6 PR #1517
+	(Bob-Andrews) - Corrected rootcheck CIS tests for cis_win2012r2_domainL2_rcl.txt, is_win2012r2_memberL2_rcl.txt, cis_win2016_domainL2_rcl.txt PR #1521
+	(franciosi) - Updated README.md, correts small typos PR #1519
+	(ddpbsd) - Fix the subject handling. Issue submitted by Michael Starks #1370 PR #1377
+	(foygl) - ossec-slack.sh, Fix and clean up output for Slack integration PR #1508
+	(ddpbsd) - From issue #1514, a duplicate `_gsid1 == 0` -> `_gsid0 == 0` PR #1515
+	(Bob-Andrews) - cis_win2016_domainL1_rcl.txt, Corrected Check - Registry Hive PR #1511
+	(ashley-dunn) - Fix "bellow" typos in ossec-[client|local|server].sh files PR #1512
+	(ddpbsd) - Fix the log location in the ossec-slack AR script. PR #1422
+	(phamvuong) - BUGFIX: remove default value for authpass PR #1464
+	(calve) - Bump version definition in defs.h PR #1504
+	(ddpbsd) - More coverity fixes PR #1497
+	(ddpbsd) - Modify status() to not return 1 when maild is not running PR #1501
+	(ddpbsd) - Coverity fixes PR #1490
+	(Bob-Andrews) - Moved file to ossec-hids/ src/rootcheck/db/ PR #1493
+	(ddpbsd) - Make sure there's room for the full alert id in json alerts PR #1487
+	(ddpbsd) - Fix an issue in the nodiff option which could ignore files it isn't supposed to PR #1486
+	(ddpbsd) - Hard coded user/group changed to appropriate variables PR #1484
+	(ddpbsd) - Add FreeBSD's php.ini location to rootcheck db PR #1483
+	(ddpbsd) - Replace hard coded directories with the appropriate variables PR #1482
+	(ddpbsd) - When trying to bind to a local address, present the error on failure. PR #1457
+	(ddpbsd) - version_bump.sh Quick script to make version bumping easier PR #1532
+	(phamvuong)  - Call select() before checking active socket PR #1529
+	(stephengroat) - use nicer looking travis build badge PR #1460
+	(stevhsu) - Correct lua version variable PR #1459
+
+
+
+
+OSSEC changelog (3.0.0) <scott@atomicorp.com>
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (Atomicorp, Inc.)
 
 Whats New
 	SQLite support for syscheck

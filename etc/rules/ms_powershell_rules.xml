@@ -1,0 +1,31 @@
+<!-- OSSEC PowerShell event rules for Windows (https://www.rootusers.com/enable-and-configure-module-script-block-and-transcription-logging-in-windows-powershell/, https://www.searchdatacenter.de/tipp/PowerShell-Logging-steigert-die-Unternehmenssicherheit, https://static1.squarespace.com/static/552092d5e4b0661088167e5c/t/5760096ecf80a129e0b17634/1465911664070/Windows-PowerShell+Logging+Cheat+Sheet+ver+June+2016+v2.pdf -->
+
+<!-- Not recommended by CIS due to Windows default ACL settings -->
+<!-- Turn on logging: Computer Configuration > Policies > Administrative Templates > Windows Components > Windows PowerShell -> Turn on PowerShell Script Block Logging -->
+
+<!-- Rule IDs 20500-2509 -->
+
+<group name="windows,powershell,">
+
+  <rule id="20500" level="8">
+    <if_sid>18101</if_sid>
+    <id>^400$</id>
+    <match>PowerShell</match>
+    <description>Windows PowerShell was started.</description>
+  </rule>
+
+  <rule id="20501" level="8">
+    <if_sid>18101</if_sid>
+    <id>^800$</id>
+    <match>PowerShell</match>
+    <description>Windows PowerShell command executed.</description>
+  </rule>
+
+  <rule id="20502" level="8">
+    <if_sid>18101</if_sid>
+    <id>^403$</id>
+    <match>PowerShell</match>
+    <description>Windows PowerShell was stopped.</description>
+  </rule>
+
+</group>
