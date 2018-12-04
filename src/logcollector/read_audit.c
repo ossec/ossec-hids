@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Wazuh Inc.
+/* Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
