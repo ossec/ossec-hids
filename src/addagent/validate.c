@@ -466,7 +466,7 @@ double OS_AgentAntiquity(const char *id)
 }
 
 /* Print available agents */
-int print_agents(int print_status, int active_only, int csv_output)
+int print_agents(int print_status, int active_only, int csv_output, int json_output)
 {
     int total = 0;
     FILE *fp;
@@ -520,11 +520,11 @@ int print_agents(int print_status, int active_only, int csv_output)
                         }
 
                         if (csv_output) {
-                            printf("%s,%s,%s,%s,\n", line_read, name, ip,
-                                   print_agent_status(agt_status));
-                        } else {
-                            printf(PRINT_AGENT_STATUS, line_read, name, ip,
-                                   print_agent_status(agt_status));
+                            printf("%s,%s,%s,%s,\n", line_read, name, ip, print_agent_status(agt_status));
+			}else if (json_output) {
+			   printf(", { \"ID\" : \"%s\", \"Name\" : \"%s\", \"IP\": \"%s\", \"Status\" : \"%s\" }",line_read, name, ip, print_agent_status(agt_status));
+			} else {
+                            printf(PRINT_AGENT_STATUS, line_read, name, ip, print_agent_status(agt_status));
                         }
                     } else {
                         printf(PRINT_AGENT, line_read, name, ip);
@@ -540,7 +540,7 @@ int print_agents(int print_status, int active_only, int csv_output)
         DIR *dirp;
         struct dirent *dp;
 
-        if (!csv_output) {
+        if (!csv_output && !json_output) {
             printf("\nList of agentless devices:\n");
         }
 
