@@ -388,7 +388,11 @@ int remove_agent()
 
             /* Remove the agent, but keep the id */
             fsetpos(fp, &fp_pos);
+#ifdef REUSE_ID
+            fprintf(fp, "#%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+#else
             fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+#endif
 
             fclose(fp);
 
