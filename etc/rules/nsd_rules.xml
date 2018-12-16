@@ -85,6 +85,12 @@ Dec 16 12:51:17 pine nsd[90235]: xfrd: zone example.com received error code NOT 
     <description>Attempted zone transfer not configured.</description>
   </rule>
 
+  <rule id="53212" level="1">
+    <if_sid>53208</if_sid>
+    <match>received error code SERVER NOT AUTHORITATIVE FOR ZONE</match>
+    <description>Server not authoritative for zone transfer.</description>
+  </rule>
+
 
 </group>
 
