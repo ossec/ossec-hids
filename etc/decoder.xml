@@ -3074,10 +3074,17 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
    - Aug 12 09:01:00 junction.example.com nsd[7405]: NSTATS 1439384460 1439314258 A=1 AAAA=1
    - Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=0 RNXD=0 RFwdR=0 RDupR=0 RFail=0 RFErr=0 RErr=0 RAXFR=0 RLame=0 ROpts=0 SSysQ=0 SAn
 s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 SNaAns=0 SNXD=0 RUQ=0 RURQ=0 RUXFR=0 RUUpd=0
+   - Dec 16 12:51:17 pine nsd[90235]: xfrd: zone example.com received error code NOT IMPL from 192.168.17.9@153
 -->
 
 <decoder name="nsd">
   <program_name>^nsd</program_name>
+</decoder>
+
+<decoder name="nsd-from">
+  <parent>nsd</parent>
+  <regex> from (\S+)@| from (\S+)</regex>
+  <order>srcip</order>
 </decoder>
 
 <!-- ownCloud
