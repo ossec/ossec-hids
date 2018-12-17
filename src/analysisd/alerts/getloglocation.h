@@ -23,6 +23,7 @@ int OS_GetLogLocation(const Eventinfo *lf);
 
 /* Global declarations */
 extern FILE *_eflog;
+extern FILE *_ejflog;
 extern FILE *_aflog;
 extern FILE *_fflog;
 extern FILE *_jflog;
