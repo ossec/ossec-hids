@@ -534,6 +534,19 @@ int main(int argc, char **argv)
                                 }
                             }
                             agentname = fname;
+
+                            /* Check for duplicate IP addresses */
+                            char *check_ip_address = NULL;
+                            check_ip_address = IPExist(srcip);
+                            if(check_ip_address) {
+                                merror("%s: ERROR: Invalid IP address %s (duplicated)", ARGV0, check_ip_address);
+                                snprintf(response, 2048, "ERROR: Invalid IP address: %s\n\n", check_ip_address);
+                                SSL_write(ssl, response, strlen(response));
+                                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+                                SSL_write(ssl, response, strlen(response));
+                                sleep(1);
+                                exit(0);
+                            }
         
                             /* Add the new agent */
                             if (use_ip_address) {
