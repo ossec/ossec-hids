@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2018 OSSEC Foundation
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -45,6 +45,9 @@ int main(int argc, char **argv)
     const char *agent_id = NULL;
     const char *ip_address = NULL;
     const char *ar = NULL;
+
+    cJSON *root = NULL;
+    cJSON *response = NULL;
 
     int arq = 0;
     gid_t gid;
@@ -141,6 +144,11 @@ int main(int argc, char **argv)
 
     }
 
+    /* Prepare JSON Structure */
+    if(json_output){
+        root = cJSON_CreateObject();
+        cJSON_AddItemToObject(root, "response", response = cJSON_CreateObject());
+    }
     /* Get the group name */
     gid = Privsep_GetGroup(group);
     uid = Privsep_GetUser(user);
@@ -254,8 +262,6 @@ int main(int argc, char **argv)
             agt_id = OS_IsAllowedID(&keys, agent_id);
             if (agt_id < 0) {
                 if(json_output){
-                    cJSON *root;
-                    root = cJSON_CreateObject();
                     cJSON_AddNumberToObject(root, "error", 1); 
                     cJSON_AddStringToObject(root, "description", "Invalid agent id"); 
                     printf("%s",cJSON_PrintUnformatted(root));
@@ -280,13 +286,6 @@ int main(int argc, char **argv)
 
         final_ip[(sizeof final_ip) - 1] = '\0';
 
-        cJSON *root;
-        cJSON *response;
-
-        if(json_output){
-            root = cJSON_CreateObject();
-            cJSON_AddItemToObject(root, "response", response = cJSON_CreateObject());
-        }
         if (!csv_output && !json_output) {
             printf("\nOSSEC HIDS %s. Agent information:", ARGV0);
         }
@@ -359,8 +358,15 @@ int main(int argc, char **argv)
                 cJSON_AddStringToObject(response, "operating_system", agt_info->os); 
                 cJSON_AddStringToObject(response, "client_version", agt_info->version); 
                 cJSON_AddStringToObject(response, "last_keepalive", agt_info->last_keepalive);
-                cJSON_AddStringToObject(response, "syscheck_last", agt_info->syscheck_time);    
-                cJSON_AddStringToObject(response, "rootcheck_last", agt_info->rootcheck_time);        
+                
+                cJSON_AddStringToObject(response, "syscheck_last_started", agt_info->syscheck_time);
+                if (end_time)
+                    cJSON_AddStringToObject(response, "syscheck_last_ended", agt_info->syscheck_endtime);    
+
+                cJSON_AddStringToObject(response, "rootcheck_last_started", agt_info->rootcheck_time);  
+                if (end_time)
+                    cJSON_AddStringToObject(response, "rootcheck_last_ended", agt_info->rootcheck_endtime);  
+                 
         } else {
             printf("%s,%s,%s,%s,%s,\n",
                    agt_info->os,
@@ -379,22 +385,42 @@ int main(int argc, char **argv)
 
     /* Restart syscheck everywhere */
     if (restart_all_agents && restart_syscheck) {
-
         /* Connect to remoted */
         debug1("%s: DEBUG: Connecting to remoted...", ARGV0);
         arq = connect_to_remoted();
         if (arq < 0) {
-            printf("\n** Unable to connect to remoted.\n");
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 1); 
+                cJSON_AddStringToObject(root, "description", "Unable to connect to remoted(1)"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\n** Unable to connect to remoted.\n");
+            }
             exit(1);
         }
         debug1("%s: DEBUG: Connected...", ARGV0);
 
         /* Send restart message to all agents */
         if (send_msg_to_agent(arq, HC_SK_RESTART, NULL, NULL) == 0) {
-            printf("\nOSSEC HIDS %s: Restarting Syscheck/Rootcheck on all agents.",
-                   ARGV0);
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 0); 
+                cJSON_AddStringToObject(root, "description", ""); 
+                cJSON_AddStringToObject(response, "message", "Restarting Syscheck/Rootcheck on all agents"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\nOSSEC HIDS %s: Restarting Syscheck/Rootcheck on all agents.",ARGV0);
+            }
         } else {
-            printf("\n** Unable to restart syscheck on all agents.\n");
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 1); 
+                cJSON_AddStringToObject(root, "description", "Unable to restart syscheck on all agents"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\n** Unable to restart syscheck on all agents.\n");
+            }
             exit(1);
         }
 
@@ -405,10 +431,15 @@ int main(int argc, char **argv)
         /* Restart on the server */
         if (strcmp(agent_id, "000") == 0) {
             os_set_restart_syscheck();
-
-            printf("\nOSSEC HIDS %s: Restarting Syscheck/Rootcheck "
-                   "locally.\n", ARGV0);
-
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 0); 
+                cJSON_AddStringToObject(root, "description", ""); 
+                cJSON_AddStringToObject(response, "message", "Restarting Syscheck/Rootcheck locally."); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\nOSSEC HIDS %s: Restarting Syscheck/Rootcheck ""locally.\n", ARGV0);
+            }
             exit(0);
         }
 
@@ -416,16 +447,37 @@ int main(int argc, char **argv)
         debug1("%s: DEBUG: Connecting to remoted...", ARGV0);
         arq = connect_to_remoted();
         if (arq < 0) {
-            printf("\n** Unable to connect to remoted.\n");
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 1); 
+                cJSON_AddStringToObject(root, "description", "Unable to connect to remoted(2)"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\n** Unable to connect to remoted.\n");
+            }
             exit(1);
         }
         debug1("%s: DEBUG: Connected...", ARGV0);
 
         if (send_msg_to_agent(arq, HC_SK_RESTART, agent_id, NULL) == 0) {
-            printf("\nOSSEC HIDS %s: Restarting Syscheck/Rootcheck on agent: %s\n",
-                   ARGV0, agent_id);
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 0); 
+                cJSON_AddStringToObject(root, "description", ""); 
+                cJSON_AddStringToObject(response, "message", "Restarting Syscheck/Rootcheck on agent"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\nOSSEC HIDS %s: Restarting Syscheck/Rootcheck on agent: %s\n",ARGV0, agent_id);
+            }
         } else {
-            printf("\n** Unable to restart syscheck on agent: %s\n", agent_id);
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 1); 
+                cJSON_AddStringToObject(root, "description", "Unable to restart syscheck on agent"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\n** Unable to restart syscheck on agent: %s\n", agent_id);
+            }
             exit(1);
         }
 
@@ -433,20 +485,57 @@ int main(int argc, char **argv)
     }
 
     if (restart_agent && agent_id) {
+
         /* Connect to remoted */
         debug1("%s: DEBUG: Connecting to remoted...", ARGV0);
         arq = connect_to_remoted();
         if (arq < 0) {
-            printf("\n** Unable to connect to remoted.\n");
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 1); 
+                cJSON_AddStringToObject(root, "description", "Unable to connect to remoted(3)"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\n** Unable to connect to remoted.\n");
+            }
             exit(1);
         }
         debug1("%s: DEBUG: Connected...", ARGV0);
 
         if (send_msg_to_agent(arq, "restart-ossec0", agent_id, "null") == 0) {
-            printf("\nOSSEC HIDS %s: Restarting agent: %s\n",
-                   ARGV0, agent_id);
+            if(json_output){
+
+	        char final_ip[IPSIZE + 4];
+		final_ip[(sizeof final_ip) - 1] = '\0';
+		
+	        /* Getting full address/prefix length from ip. */
+		snprintf(final_ip, sizeof final_ip, "%s/%u",
+                     keys.keyentries[agt_id]->ip->ip,
+                     keys.keyentries[agt_id]->ip->prefixlength);
+
+
+                cJSON_AddStringToObject(response, "id", keys.keyentries[agt_id]->id); 
+                cJSON_AddStringToObject(response, "name", keys.keyentries[agt_id]->name); 
+                cJSON_AddStringToObject(response, "ip", final_ip); 
+
+                cJSON_AddNumberToObject(root, "error", 0); 
+                cJSON_AddStringToObject(root, "description", ""); 
+                cJSON_AddStringToObject(response, "message", "Restarting agent"); 
+
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\nOSSEC HIDS %s: Restarting agent: %s\n",ARGV0, agent_id);
+            }
         } else {
-            printf("\n** Unable to restart agent: %s\n", agent_id);
+            if(json_output){
+                cJSON_AddNumberToObject(root, "error", 1); 
+                cJSON_AddStringToObject(root, "description", "Unable to restart agent"); 
+                printf("%s",cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            }else{
+                printf("\n** Unable to restart agent: %s\n", agent_id);
+            }
             exit(1);
         }
 
