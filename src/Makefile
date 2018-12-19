@@ -132,8 +132,6 @@ OSSEC_CFLAGS=${CFLAGS}
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
-else
-	OSSEC_CFLAGS+=-O2
 endif #DEBUG
 
 ifneq (,$(filter ${CLEANFULL},yes y Y 1))
