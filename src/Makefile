@@ -159,16 +159,6 @@ BINCOLOR="\033[37;1m"
 MAKECOLOR="\033[32;1m"
 ENDCOLOR="\033[0m"
 
-ifndef V
-	QUIET_CC      = @printf '    %b %b\n' ${CCCOLOR}CC${ENDCOLOR} ${SRCCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_LINK    = @printf '    %b %b\n' ${LINKCOLOR}LINK${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_CCBIN   = @printf '    %b %b\n' ${LINKCOLOR}CC${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_INSTALL = @printf '    %b %b\n' ${LINKCOLOR}INSTALL${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_RANLIB  = @printf '    %b %b\n' ${LINKCOLOR}RANLIB${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_NOTICE  = @printf '%b' ${MAKECOLOR} 1>&2;
-	QUIET_ENDCOLOR= @printf '%b' ${ENDCOLOR} 1>&2;
-endif
-
 MING_BASE:=
 ifeq (${TARGET}, winagent)
 CC=gcc
