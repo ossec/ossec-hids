@@ -320,7 +320,7 @@ int remove_agent()
         
 
 
-    if (!print_agents(0, 0, 0)) {
+    if (!print_agents(0, 0, 0, 0)) {
         printf(NO_AGENT);
         return (0);
     }
@@ -388,7 +388,11 @@ int remove_agent()
 
             /* Remove the agent, but keep the id */
             fsetpos(fp, &fp_pos);
+#ifdef REUSE_ID
+            fprintf(fp, "#%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+#else
             fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+#endif
 
             fclose(fp);
 
@@ -412,7 +416,7 @@ int remove_agent()
 
 int list_agents(int cmdlist)
 {
-    if (!print_agents(0, 0, 0)) {
+    if (!print_agents(0, 0, 0, 0)) {
         printf(NO_AGENT);
     }
 

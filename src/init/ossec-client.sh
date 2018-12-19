@@ -11,7 +11,7 @@ DIR=`dirname $PWD`;
 
 ###  Do not modify below here ###
 NAME="OSSEC HIDS"
-VERSION="v3.0.0"
+VERSION="v3.1.0"
 AUTHOR="Trend Micro Inc."
 DAEMONS="ossec-logcollector ossec-syscheckd ossec-agentd ossec-execd"
 

@@ -41,7 +41,7 @@ double OS_AgentAntiquity(const char *id);
 void FormatID(char *id);
 
 /* Print available agents */
-int print_agents(int print_status, int active_only, int csv_output);
+int print_agents(int print_status, int active_only, int csv_output, int json_output);
 int list_agents(int cmdlist);
 
 /* Clear a line */

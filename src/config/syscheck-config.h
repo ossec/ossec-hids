@@ -23,6 +23,10 @@
 #define CHECK_SHA1SUM       0000040
 #define CHECK_REALTIME      0000100
 #define CHECK_SEECHANGES    0000200
+#define CHECK_SHA256SUM     0000400
+#define CHECK_GENERIC       0001000
+#define CHECK_NORECURSE     0002000
+
 
 #include <stdio.h>
 
