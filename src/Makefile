@@ -653,9 +653,9 @@ endif
 .PHONY: winagent
 winagent:
 	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB}" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
-	cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
-	cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
-	cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
+	#cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
+	#cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
+	#cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
 	cd win32/ && ./unix2dos.pl ossec.conf > default-ossec.conf
 	cd win32/ && ./unix2dos.pl help.txt > help_win.txt
 	cd win32/ && ./unix2dos.pl ../../etc/internal_options.conf > internal_options.conf
@@ -1355,9 +1355,9 @@ clean-windows:
 	rm -f ${win32_o} ${win32_ui_o} win32/win_service_rk.o
 	rm -f win32/icon.o win32/resource.o
 	rm -f ${WINDOWS_BINS}
-	rm -f ${EXTERNAL_LUA}src/lua52.dll
-	rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
-	rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
-	rm -f win32/ossec-lua.exe
-	rm -f win32/ossec-luac.exe
+	#rm -f ${EXTERNAL_LUA}src/lua52.dll
+	#rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
+	#rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
+	#rm -f win32/ossec-lua.exe
+	#rm -f win32/ossec-luac.exe
 	rm -f win32/ossec-win32-agent.exe
