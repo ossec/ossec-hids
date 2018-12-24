@@ -7,7 +7,7 @@ EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
 ZLIB_SYSTEM?=no
 LUA_PLAT=posix
-LUA_ENABLE?=yes
+LUA_ENABLE?=no
 MAXAGENTS?=2048
 REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
