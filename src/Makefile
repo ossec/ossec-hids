@@ -5,7 +5,7 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
-ZLIB_SYSTEM?=no
+ZLIB_SYSTEM?=yes
 LUA_PLAT=posix
 LUA_ENABLE?=yes
 MAXAGENTS?=2048
@@ -172,6 +172,7 @@ endif
 MING_BASE:=
 ifeq (${TARGET}, winagent)
 CC=gcc
+ZLIB_SYSTEM=yes
 ifneq (,$(shell which amd64-mingw32msvc-gcc))
 	MING_BASE:=amd64-mingw32msvc-
 else
