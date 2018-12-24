@@ -172,7 +172,7 @@ endif
 MING_BASE:=
 ifeq (${TARGET}, winagent)
 CC=gcc
-ZLIB_SYSTEM=yes
+ZLIB_SYSTEM=no
 ifneq (,$(shell which amd64-mingw32msvc-gcc))
 	MING_BASE:=amd64-mingw32msvc-
 else
