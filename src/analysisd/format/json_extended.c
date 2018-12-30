@@ -234,7 +234,7 @@ int W_isRootcheck(cJSON *root, int nested){
 	cJSON_AddItemToObject(rule,"groups", groups = cJSON_CreateArray());
 	 
 	char buffer[MAX_STRING];
-	strncpy(buffer, lf->generated_rule->group, sizeof(buffer));	
+	strncpy(buffer, lf->generated_rule->group, sizeof(buffer) - 1);	
 	char delim[2];
 	delim[0] = ',';
 	delim[1] = 0;
