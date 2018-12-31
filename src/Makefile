@@ -5,9 +5,9 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
-ZLIB_SYSTEM?=no
+ZLIB_SYSTEM?=yes
 LUA_PLAT=posix
-LUA_ENABLE?=yes
+LUA_ENABLE?=no
 MAXAGENTS?=2048
 REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
@@ -132,8 +132,6 @@ OSSEC_CFLAGS=${CFLAGS}
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
-else
-	OSSEC_CFLAGS+=-O2
 endif #DEBUG
 
 ifneq (,$(filter ${CLEANFULL},yes y Y 1))
@@ -159,19 +157,10 @@ BINCOLOR="\033[37;1m"
 MAKECOLOR="\033[32;1m"
 ENDCOLOR="\033[0m"
 
-ifndef V
-	QUIET_CC      = @printf '    %b %b\n' ${CCCOLOR}CC${ENDCOLOR} ${SRCCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_LINK    = @printf '    %b %b\n' ${LINKCOLOR}LINK${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_CCBIN   = @printf '    %b %b\n' ${LINKCOLOR}CC${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_INSTALL = @printf '    %b %b\n' ${LINKCOLOR}INSTALL${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_RANLIB  = @printf '    %b %b\n' ${LINKCOLOR}RANLIB${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_NOTICE  = @printf '%b' ${MAKECOLOR} 1>&2;
-	QUIET_ENDCOLOR= @printf '%b' ${ENDCOLOR} 1>&2;
-endif
-
 MING_BASE:=
 ifeq (${TARGET}, winagent)
 CC=gcc
+ZLIB_SYSTEM=no
 ifneq (,$(shell which amd64-mingw32msvc-gcc))
 	MING_BASE:=amd64-mingw32msvc-
 else
@@ -653,9 +642,9 @@ endif
 .PHONY: winagent
 winagent:
 	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB}" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
-	cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
-	cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
-	cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
+	#cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
+	#cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
+	#cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
 	cd win32/ && ./unix2dos.pl ossec.conf > default-ossec.conf
 	cd win32/ && ./unix2dos.pl help.txt > help_win.txt
 	cd win32/ && ./unix2dos.pl ../../etc/internal_options.conf > internal_options.conf
@@ -1355,9 +1344,9 @@ clean-windows:
 	rm -f ${win32_o} ${win32_ui_o} win32/win_service_rk.o
 	rm -f win32/icon.o win32/resource.o
 	rm -f ${WINDOWS_BINS}
-	rm -f ${EXTERNAL_LUA}src/lua52.dll
-	rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
-	rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
-	rm -f win32/ossec-lua.exe
-	rm -f win32/ossec-luac.exe
+	#rm -f ${EXTERNAL_LUA}src/lua52.dll
+	#rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
+	#rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
+	#rm -f win32/ossec-lua.exe
+	#rm -f win32/ossec-luac.exe
 	rm -f win32/ossec-win32-agent.exe
