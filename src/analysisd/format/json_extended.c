@@ -216,7 +216,7 @@ int W_isRootcheck(cJSON *root){
 void W_JSON_ParseHostname(cJSON *root, char *hostname){
 	if(hostname[0] == '('){
 		char *e;
-		char string[strlen(hostname)];
+		char string[strlen(hostname) + 1];
 		strcpy(string,hostname);
 		int index;
 		e = strchr(string, ')');
