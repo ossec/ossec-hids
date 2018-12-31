@@ -11,12 +11,12 @@
 
 void W_ParseJSON(cJSON *root, const Eventinfo *lf){
 		 // Parse hostname & Parse AGENTIP
-	 if(lf->hostname){
+	 if (lf->hostname){
 		 W_JSON_ParseHostname(root, lf->hostname);
 		 W_JSON_ParseAgentIP(root, lf);
 	 }
-	 // Parse timestamp 
-	 if(lf->year && lf->mon && lf->day && lf->hour){ 
+	 // Parse timestamp
+	 if (lf->year && strnlen(lf->mon, 4) && lf->day && strnlen(lf->hour, 10)){ 
 		 W_JSON_ParseTimestamp(root, lf);
 	 }
 	 // Parse Location
@@ -84,7 +84,7 @@ int W_isRootcheck(cJSON *root, int nested){
 	groups = cJSON_GetObjectItem(rule,"groups");
 	 
 	// Getting full log string
-	strncpy(fullog, lf->full_log,MAX_STRING);
+	strncpy(fullog, lf->full_log, MAX_STRING - 1);
 	// Searching regex
 	regex_text = "\\{([A-Za-z0-9_]*: [A-Za-z0-9_., ]*)\\}";
 	find_text = fullog;
@@ -176,7 +176,7 @@ int W_isRootcheck(cJSON *root, int nested){
 			}
 			 
 			memset(buffer, '\0', sizeof(buffer));
-			strncpy(buffer, results[0], sizeof(buffer));
+			strncpy(buffer, results[0], sizeof(buffer) - 1);
 			cJSON_AddItemToArray(compliance1, cJSON_CreateString(buffer));
 			 
 			for (j = 0; j < matches; j++)
@@ -252,7 +252,7 @@ int W_isRootcheck(cJSON *root, int nested){
 void W_JSON_ParseHostname(cJSON *root, char *hostname){
 	if(hostname[0] == '('){
 		char *e;
-		char string[strlen(hostname)];
+		char string[strlen(hostname) + 1];
 		strcpy(string,hostname);
 		int index;
 		e = strchr(string, ')');
@@ -277,7 +277,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
  void W_JSON_ParseAgentIP(cJSON *root, const Eventinfo *lf){
     if(lf->hostname[0] == '('){
        char *e;
-       char string[strlen(lf->hostname)];
+       char string[strlen(lf->hostname) + 1];
        strcpy(string,lf->hostname);
        int index;
        e = strchr(string, ')');
@@ -314,7 +314,6 @@ void W_JSON_ParseLocation(cJSON *root, const Eventinfo *lf, int archives){
 	} 	 
 
 }
- 
 
 #define MAX_ERROR_MSG 0x1000
 // Regex compilator 
