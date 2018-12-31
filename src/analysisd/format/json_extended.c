@@ -77,7 +77,7 @@ int W_isRootcheck(cJSON *root){
 	groups = cJSON_GetObjectItem(rule,"groups");
 
 	// Getting full log string
-	strncpy(fullog, lf->full_log,MAX_STRING);
+	strncpy(fullog, lf->full_log, MAX_STRING - 1);
 	// Searching regex
 	regex_text = "\\{([A-Za-z0-9_]*: [A-Za-z0-9_., ]*)\\}";
 	find_text = fullog;
