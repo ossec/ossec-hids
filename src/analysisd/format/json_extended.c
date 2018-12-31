@@ -154,7 +154,7 @@ int W_isRootcheck(cJSON *root){
 				cJSON_AddItemToObject(rule,"PCI_DSS", compliance1);
 			}
 			memset(buffer, '\0', sizeof(buffer));
-			strncpy(buffer, results[0], sizeof(buffer));
+			strncpy(buffer, results[0], sizeof(buffer) - 1);
 			cJSON_AddItemToArray(compliance1, cJSON_CreateString(buffer));
 			for (j = 0; j < matches; j++)
 				free(results[j]);
