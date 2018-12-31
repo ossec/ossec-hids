@@ -267,7 +267,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
 // Parse timestamp  
  void W_JSON_ParseTimestamp(cJSON *root, const Eventinfo *lf){
 	char *dateTimestamp = malloc(21);
-	sprintf(dateTimestamp, "%d %s %02d %s", lf->year, strnlen(lf->mon, 4), lf->day, strnlen(lf->hour, 10));
+	sprintf(dateTimestamp, "%d %s %02d %s", lf->year, lf->mon, lf->day, lf->hour);
 	cJSON_AddStringToObject(root, "timestamp", dateTimestamp);
 	free (dateTimestamp);
  }
