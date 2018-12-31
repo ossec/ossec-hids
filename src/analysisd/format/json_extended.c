@@ -11,12 +11,12 @@
 
 void W_ParseJSON(cJSON *root, const Eventinfo *lf){
 		 // Parse hostname & Parse AGENTIP
-	 if(lf->hostname){
+	 if (lf->hostname){
 		 W_JSON_ParseHostname(root, lf->hostname);
 		 W_JSON_ParseAgentIP(root, lf);
 	 }
 	 // Parse timestamp
-	 if(lf->year && strnlen(lf->mon, 4) && lf->day && strnlen(lf->hour, 10)){ 
+	 if (lf->year && strnlen(lf->mon, 4) && lf->day && strnlen(lf->hour, 10)){ 
 		 W_JSON_ParseTimestamp(root, lf);
 	 }
 	 // Parse Location
