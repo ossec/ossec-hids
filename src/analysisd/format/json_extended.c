@@ -16,7 +16,7 @@ void W_ParseJSON(cJSON *root, const Eventinfo *lf){
 		 W_JSON_ParseAgentIP(root, lf);
 	 }
 	 // Parse timestamp
-	 if(lf->year && lf->mon && lf->day && lf->hour){ 
+	 if(lf->year && strnlen(lf->mon, 4) && lf->day && lf->hour){ 
 		 W_JSON_ParseTimestamp(root, lf);
 	 }
 	 // Parse Location
@@ -231,7 +231,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
 // Parse timestamp  
  void W_JSON_ParseTimestamp(cJSON *root, const Eventinfo *lf){
 	char *dateTimestamp = malloc(21);
-	sprintf(dateTimestamp, "%d %s %02d %s", lf->year, lf->mon, lf->day, lf->hour);
+	sprintf(dateTimestamp, "%d %s %02d %s", lf->year, strnlen(lf->mon, 4), lf->day, lf->hour);
 	cJSON_AddStringToObject(root, "timestamp", dateTimestamp);
 	free (dateTimestamp);
  }
@@ -241,7 +241,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
  void W_JSON_ParseAgentIP(cJSON *root, const Eventinfo *lf){
     if(lf->hostname[0] == '('){
        char *e;
-       char string[strlen(lf->hostname)];
+       char string[strlen(lf->hostname) + 1];
        strcpy(string,lf->hostname);
        int index;
        e = strchr(string, ')');
@@ -259,7 +259,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
  void W_JSON_ParseLocation(cJSON *root, const Eventinfo *lf){
   if(lf->location[0] == '('){
 	 char *e;
-	 char string[strlen(lf->location)];
+	 char string[strlen(lf->location) + 1];
 	 strcpy(string,lf->location);
 	 int index;
 	 e = strchr(string, '>');
