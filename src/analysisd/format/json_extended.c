@@ -72,7 +72,6 @@ int W_isRootcheck(cJSON* root, int nested)
 void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
 {
     regex_t r;
-    cJSON* groups;
     cJSON* rule;
     cJSON* compliance;
     const char* regex_text;
@@ -94,8 +93,6 @@ void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
         rule = root;
     else
         rule = cJSON_GetObjectItem(root, "rule");
-
-    groups = cJSON_GetObjectItem(rule, "groups");
 
     // Getting full log string
     strncpy(fullog, lf->full_log, MAX_STRING - 1);
