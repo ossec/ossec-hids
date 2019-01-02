@@ -118,6 +118,9 @@ int OS_ReadXMLRules(const char *rulefile,
     /* Apply any variables found */
     if (OS_ApplyVariables(&xml) != 0) {
         merror(XML_ERROR_VAR, __local_name, rulepath, xml.err);
+        if(rulepath) {
+            free(rulepath);
+        }
         return (-1);
     }
     debug1("%s: DEBUG: XML Variables applied.", __local_name);
@@ -127,6 +130,9 @@ int OS_ReadXMLRules(const char *rulefile,
     if (!node) {
         merror(CONFIG_ERROR, __local_name, rulepath);
         OS_ClearXML(&xml);
+        if(rulepath) {
+            free(rulepath);
+        }
         return (-1);
     }
 
