@@ -196,6 +196,9 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
         verbose ("Request to allocate and bind sockets failed.");
         ni->status = -1;
         ni->retval = OS_SOCKTERR;
+        if(result) {
+            freeaddrinfo(result);
+        }
         return(ni);
     }
 
