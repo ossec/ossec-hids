@@ -13,6 +13,7 @@
 #include "rules.h"
 #include "cJSON.h"
 #include "config.h"
+#include <sys/resource.h>
 
 
 
@@ -117,7 +118,8 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     }
 
     if (lf->filename) {
-        cJSON_AddItemToObject(root, "file", file_diff = cJSON_CreateObject());
+        file_diff = cJSON_CreateObject();
+        cJSON_AddItemToObject(root, "SyscheckFile", file_diff);
 
         cJSON_AddStringToObject(file_diff, "path", lf->filename);
 
