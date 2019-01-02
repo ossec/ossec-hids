@@ -181,7 +181,7 @@ int add_groupPCI(cJSON* rule, char* group, int firstPCI)
     cJSON* pci;
     char aux[strlen(group)];
     // If group begin with pci_dss_ we have a PCI group
-    if((len = strstr(group, "pci_dss_")) != NULL) {
+    if((startsWith("pci_dss_", group)) == 1) {
         // Once we add pci_dss group and create array for PCI_DSS requirements
         if(firstPCI == 1) {
             pci = cJSON_CreateArray();
@@ -204,7 +204,7 @@ int add_groupCIS(cJSON* rule, char* group, int firstCIS)
     char* len = NULL;
     cJSON* cis;
     char aux[strlen(group)];
-    if((len = strstr(group, "cis_")) != NULL) {
+    if((startsWith("cis_", group)) == 1) {
         if(firstCIS == 1) {
             cis = cJSON_CreateArray();
             cJSON_AddItemToObject(rule, "CIS", cis);
@@ -372,3 +372,11 @@ void trim(char* s)
 
     memmove(s, p, l + 1);
 }
+
+int startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? 0 : strncmp(pre, str, lenpre) == 0;
+}
+
