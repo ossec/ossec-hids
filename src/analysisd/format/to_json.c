@@ -144,24 +144,35 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
             cJSON_AddNumberToObject(file_diff, "perm_after", lf->perm_after);
         }
     }
-    if ( lf->data ) {
-        cJSON_AddStringToObject(root, "data", lf->data);
-    }
-    if ( lf->url ) {
-        cJSON_AddStringToObject(root, "url", lf->url);
-    }
-    if ( lf->systemname ) {
-        cJSON_AddStringToObject(root, "system_name", lf->systemname);
-    }
-    if ( lf->status ) {
-        cJSON_AddStringToObject(root, "status", lf->status);
-    }
     if ( lf->hostname ) {
         cJSON_AddStringToObject(root, "hostname", lf->hostname);
     }
     if ( lf->program_name ) {
         cJSON_AddStringToObject(root, "program_name", lf->program_name);
     }
+    if ( lf->status ) {
+        cJSON_AddStringToObject(root, "status", lf->status);
+    }
+    if(lf->command)
+        cJSON_AddStringToObject(root, "command", lf->command);
+ 
+    if ( lf->url ) {
+        cJSON_AddStringToObject(root, "url", lf->url);
+    }
+    if ( lf->data ) {
+        cJSON_AddStringToObject(root, "data", lf->data);
+    }
+    if ( lf->systemname ) {
+        cJSON_AddStringToObject(root, "systemname", lf->systemname);
+    }
+    if (lf->generated_rule->frequency) 
+        cJSON_AddNumberToObject(rule, "frequency", lf->generated_rule->frequency);
+ 
+    if (lf->generated_rule->firedtimes) 
+         cJSON_AddNumberToObject(rule, "firedtimes", lf->generated_rule->frequency);
+
+
+
 
     W_ParseJSON(root, lf);
 
@@ -279,6 +290,14 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
 
         if (lf->generated_rule->firedtimes) 
             cJSON_AddNumberToObject(rule, "firedtimes", lf->generated_rule->frequency);
+
+        if (lf->generated_rule->group) {
+            W_JSON_ParseGroups(root,lf,1);
+        }
+
+        if (lf->full_log && W_isRootcheck(root,1)) {
+            W_JSON_ParseRootcheck(root,lf,1);
+        }  
 
     }
 
