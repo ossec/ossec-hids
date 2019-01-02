@@ -295,7 +295,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
 void W_JSON_ParseLocation(cJSON *root, const Eventinfo *lf, int archives){
 	if(lf->location[0] == '('){
 		char *e;
-		char string[strlen(lf->location)];
+		char string[strlen(lf->location) + 1];
 		strcpy(string,lf->location);
 		int index;
 		e = strchr(string, '>');
