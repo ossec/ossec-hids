@@ -194,9 +194,6 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     /* check to see if at least one address succeeded */
     if (ni->fdcnt == 0) {
         verbose ("Request to allocate and bind sockets failed.");
-        if(ossock) {
-            OS_CloseSocket(ossock);
-        }
         ni->status = -1;
         ni->retval = OS_SOCKTERR;
         return(ni);
