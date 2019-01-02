@@ -255,11 +255,14 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
 		char string[strlen(hostname) + 1];
 		strncpy(string,hostname, strlen(hostname));
 		int index;
-		e = strchr(string, ')');
-		index = (int)(e - string);
-		str_cut(string, index, -1);
-		str_cut(string, 0, 1);
-		cJSON_AddStringToObject(root, "hostname", string);
+                search = strchr(string, ')');
+                if(search){
+                       index = (int)(search - string);
+                       str_cut(string, index, -1);
+                       str_cut(string, 0, 1);
+                       cJSON_AddStringToObject(root, "hostname", string);
+                }
+
 	}else{
 		cJSON_AddStringToObject(root, "hostname", hostname); 
 	}  
@@ -280,14 +283,16 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
        char string[strlen(lf->hostname) + 1];
        strncpy(string,lf->hostname, strlen(lf->hostname));
        int index;
-       e = strchr(string, ')');
-       index = (int)(e - string);
-       str_cut(string, 0, index);
-       str_cut(string, 0, 2);
-       e = strchr(string, '-');
-       index = (int)(e - string);
-       str_cut(string, index, -1);
-       cJSON_AddStringToObject(root, "agentip", string);
+       search = strchr(string, ')');
+       if(search){
+              index = (int)(search - string);
+              str_cut(string, 0, index);
+              str_cut(string, 0, 2);
+              search = strchr(string, '-');
+              index = (int)(search - string);
+              str_cut(string, index, -1);
+              cJSON_AddStringToObject(root, "agentip", string);
+          }
     }
 	 
  }
@@ -298,14 +303,17 @@ void W_JSON_ParseLocation(cJSON *root, const Eventinfo *lf, int archives){
 		char string[strlen(lf->location) + 1];
 		strncpy(string,lf->location, strlen(lf->location));
 		int index;
-		e = strchr(string, '>');
-		index = (int)(e - string);
-		str_cut(string, 0, index);
-		str_cut(string, 0, 1);
-		if(archives == 1)
-			cJSON_AddStringToObject(root, "location_desc", string);
-		else
-			cJSON_AddStringToObject(root, "location", string);
+                search = strchr(string, '>');
+                if(search){
+                        index = (int)(search - string);
+                        str_cut(string, 0, index);
+                        str_cut(string, 0, 1);
+
+                        if(archives == 1)
+                                cJSON_AddStringToObject(root, "location_desc", string);
+                        else
+                                cJSON_AddStringToObject(root, "location", string);
+                }
 	}else{
 		if(archives == 1)
 			cJSON_AddStringToObject(root, "location_desc", lf->location);
@@ -381,10 +389,4 @@ void trim(char * s) {
     while(* p && isspace(* p)) ++p, --l;
 
     memmove(s, p, l + 1);
-}
-void removeChar( char * string, char letter ) {
-	unsigned int i;
-	for(i = 0; i < strlen( string ); i++ )
-		if( string[i] == letter )
-	  		strcpy( string + i, string + i + 1 );
 }
