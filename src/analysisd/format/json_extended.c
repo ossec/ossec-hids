@@ -1,6 +1,6 @@
 /* Copyright (C) 2015 Wazuh Inc
  * All rights reserved.
- * 
+ *
  */
 
 #include "json_extended.h"

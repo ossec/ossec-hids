@@ -4,7 +4,7 @@
  * This program is a free software; you can redistribute it
  * and/or modify it under the terms of the GNU General Public
  * License (version 2) as published by the FSF - Free Software
- * Foundation.
+ * Foundation.  
  */
 
 #include "to_json.h"
@@ -31,8 +31,6 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     
     cJSON_AddItemToObject(root, "rule", rule = cJSON_CreateObject());
 
-    cJSON_AddNumberToObject(rule, "level", lf->generated_rule->level);
-
     if ( lf->time ) {
 
         char alert_id[23];
@@ -47,20 +45,29 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         cJSON_AddNumberToObject(root, "TimeStamp", timestamp_ms);
     }
 
-    if (lf->generated_rule->comment) {
-        cJSON_AddStringToObject(rule, "comment", lf->generated_rule->comment);
-    }
-    if (lf->generated_rule->sigid) {
-        cJSON_AddNumberToObject(rule, "sidid", lf->generated_rule->sigid);
-    }
-    if (lf->generated_rule->group) {
-        cJSON_AddStringToObject(rule, "group", lf->generated_rule->group);
-    }
-    if (lf->generated_rule->cve) {
-        cJSON_AddStringToObject(rule, "cve", lf->generated_rule->cve);
-    }
-    if (lf->generated_rule->info) {
-        cJSON_AddStringToObject(rule, "info", lf->generated_rule->info);
+
+    if(lf->generated_rule){
+        if(lf->generated_rule->level) {
+            cJSON_AddNumberToObject(rule, "level", lf->generated_rule->level);
+        }
+        if(lf->generated_rule->comment) {
+            cJSON_AddStringToObject(rule, "comment", lf->generated_rule->comment);
+        }
+        if(lf->generated_rule->sigid) {
+            cJSON_AddNumberToObject(rule, "sidid", lf->generated_rule->sigid);
+        }
+        if(lf->generated_rule->cve) {
+            cJSON_AddStringToObject(rule, "cve", lf->generated_rule->cve);
+        }
+        if(lf->generated_rule->info) {
+            cJSON_AddStringToObject(rule, "info", lf->generated_rule->info);
+        }
+        if(lf->generated_rule->frequency){
+            cJSON_AddNumberToObject(rule, "frequency", lf->generated_rule->frequency);
+        }
+        if(lf->generated_rule->firedtimes){
+            cJSON_AddNumberToObject(rule, "firedtimes", lf->generated_rule->firedtimes);
+        }
     }
 
     if( lf->decoder_info->name ) {
@@ -165,14 +172,6 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if ( lf->systemname ) {
         cJSON_AddStringToObject(root, "systemname", lf->systemname);
     }
-    if (lf->generated_rule->frequency) 
-        cJSON_AddNumberToObject(rule, "frequency", lf->generated_rule->frequency);
- 
-    if (lf->generated_rule->firedtimes) 
-         cJSON_AddNumberToObject(rule, "firedtimes", lf->generated_rule->frequency);
-
-
-
 
     W_ParseJSON(root, lf);
 
@@ -289,7 +288,7 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
             cJSON_AddNumberToObject(rule, "frequency", lf->generated_rule->frequency);
 
         if (lf->generated_rule->firedtimes) 
-            cJSON_AddNumberToObject(rule, "firedtimes", lf->generated_rule->frequency);
+            cJSON_AddNumberToObject(rule, "firedtimes", lf->generated_rule->firedtimes);
 
         if (lf->generated_rule->group) {
             W_JSON_ParseGroups(root,lf,1);
@@ -333,7 +332,7 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
     }
 
     if (lf->location)
-       W_JSON_ParseLocation(root,lf,1);
+       W_JSON_ParseLocation(root,lf,0);
 
 
 
