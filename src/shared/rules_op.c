@@ -812,6 +812,9 @@ int OS_ReadXMLRules(const char *rulefile,
                                      config_ruleinfo->if_matched_group, 0)) {
                     merror(REGEX_COMPILE, __local_name, if_matched_group,
                            config_ruleinfo->if_matched_group->error);
+                    if(if_matched_group) {
+                        free(if_matched_group);
+                    }
                     return (-1);
                 }
                 free(if_matched_group);
