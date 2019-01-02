@@ -251,7 +251,7 @@ int W_isRootcheck(cJSON *root, int nested){
 // ** TODO ** Regex instead str_cut
 void W_JSON_ParseHostname(cJSON *root, char *hostname){
 	if(hostname[0] == '('){
-		char *e;
+		char *search;
 		char string[strlen(hostname) + 1];
 		strncpy(string,hostname, strlen(hostname));
 		int index;
@@ -279,7 +279,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
 // ** TODO ** Regex instead str_cut
  void W_JSON_ParseAgentIP(cJSON *root, const Eventinfo *lf){
     if(lf->hostname[0] == '('){
-       char *e;
+       char *search;
        char string[strlen(lf->hostname) + 1];
        strncpy(string,lf->hostname, strlen(lf->hostname));
        int index;
@@ -299,7 +299,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
  // The file location usually comes with more information about the alert (like hostname or ip) we will extract just the "/var/folder/file.log".
 void W_JSON_ParseLocation(cJSON *root, const Eventinfo *lf, int archives){
 	if(lf->location[0] == '('){
-		char *e;
+		char *search;
 		char string[strlen(lf->location) + 1];
 		strncpy(string,lf->location, strlen(lf->location));
 		int index;
