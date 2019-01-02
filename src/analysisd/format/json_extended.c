@@ -253,7 +253,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
 	if(hostname[0] == '('){
                 char *search;
                 char string[MAX_STRING];
-                strncpy(string,hostname,MAX_STRING);
+                strncpy(string,hostname,MAX_STRING - 1);
 		int index;
                 search = strchr(string, ')');
                 if(search){
@@ -281,7 +281,7 @@ void W_JSON_ParseHostname(cJSON *root, char *hostname){
     if(lf->hostname[0] == '('){
        char *search;
        char string[MAX_STRING];
-       strncpy(string,lf->hostname,MAX_STRING);
+       strncpy(string,lf->hostname,MAX_STRING - 1);
        int index;
        search = strchr(string, ')');
        if(search){
@@ -301,7 +301,7 @@ void W_JSON_ParseLocation(cJSON *root, const Eventinfo *lf, int archives){
 	if(lf->location[0] == '('){
                 char *search;
                 char string[MAX_STRING];
-                strncpy(string,lf->location,MAX_STRING);
+                strncpy(string,lf->location,MAX_STRING - 1);
 		int index;
                 search = strchr(string, '>');
                 if(search){
