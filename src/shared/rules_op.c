@@ -676,6 +676,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSRegex_Compile(regex, config_ruleinfo->regex, 0)) {
                     merror(REGEX_COMPILE, __local_name, regex,
                            config_ruleinfo->regex->error);
+                    if(regex) {
+                        free(regex);
+                    }
                     return (-1);
                 }
                 free(regex);
@@ -688,6 +691,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(match, config_ruleinfo->match, 0)) {
                     merror(REGEX_COMPILE, __local_name, match,
                            config_ruleinfo->match->error);
+                    if(match) {
+                        free(match);
+                    }
                     return (-1);
                 }
                 free(match);
@@ -700,6 +706,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(id, config_ruleinfo->id, 0)) {
                     merror(REGEX_COMPILE, __local_name, id,
                            config_ruleinfo->id->error);
+                    if(id) {
+                        free(id);
+                    }
                     return (-1);
                 }
                 free(id);
@@ -712,6 +721,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(srcport, config_ruleinfo->srcport, 0)) {
                     merror(REGEX_COMPILE, __local_name, srcport,
                            config_ruleinfo->id->error);
+                    if(srcport) {
+                        free(srcport);
+                    }
                     return (-1);
                 }
                 free(srcport);
@@ -724,6 +736,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(dstport, config_ruleinfo->dstport, 0)) {
                     merror(REGEX_COMPILE, __local_name, dstport,
                            config_ruleinfo->id->error);
+                    if(dstport) {
+                        free(dstport);
+                    }
                     return (-1);
                 }
                 free(dstport);
@@ -736,6 +751,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(status, config_ruleinfo->status, 0)) {
                     merror(REGEX_COMPILE, __local_name, status,
                            config_ruleinfo->status->error);
+                    if(status) {
+                        free(status);
+                    }
                     return (-1);
                 }
                 free(status);
@@ -748,6 +766,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(hostname, config_ruleinfo->hostname, 0)) {
                     merror(REGEX_COMPILE, __local_name, hostname,
                            config_ruleinfo->hostname->error);
+                    if(hostname) {
+                        free(hostname);
+                    }
                     return (-1);
                 }
                 free(hostname);
@@ -761,6 +782,9 @@ int OS_ReadXMLRules(const char *rulefile,
                                      config_ruleinfo->extra_data, 0)) {
                     merror(REGEX_COMPILE, __local_name, extra_data,
                            config_ruleinfo->extra_data->error);
+                    if(extra_data) {
+                        free(extra_data);
+                    }
                     return (-1);
                 }
                 free(extra_data);
@@ -774,6 +798,9 @@ int OS_ReadXMLRules(const char *rulefile,
                                      config_ruleinfo->program_name, 0)) {
                     merror(REGEX_COMPILE, __local_name, program_name,
                            config_ruleinfo->program_name->error);
+                    if(program_name) {
+                        free(program_name);
+                    }
                     return (-1);
                 }
                 free(program_name);
@@ -786,6 +813,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(user, config_ruleinfo->user, 0)) {
                     merror(REGEX_COMPILE, __local_name, user,
                            config_ruleinfo->user->error);
+                    if(user) {
+                        free(user);
+                    }
                     return (-1);
                 }
                 free(user);
@@ -798,6 +828,9 @@ int OS_ReadXMLRules(const char *rulefile,
                 if (!OSMatch_Compile(url, config_ruleinfo->url, 0)) {
                     merror(REGEX_COMPILE, __local_name, url,
                            config_ruleinfo->url->error);
+                    if(url) {
+                        free(url);
+                    }
                     return (-1);
                 }
                 free(url);
