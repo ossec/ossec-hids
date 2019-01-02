@@ -33,8 +33,8 @@ struct hash_output {
     // Here's where we put it.
     char md5output[37];
     char sha1output[70];
-    char genericoutput[138];
-    char sha256output[crypto_hash_sha256_BYTES + 7];
+    char genericoutput[256];
+    char sha256output[96];
 };
 
 int OS_Hash_File(const char *fname, const char *prefilter_cmd, struct hash_output *file_output, int mode);
