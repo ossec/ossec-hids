@@ -157,7 +157,7 @@ void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
         rule = cJSON_GetObjectItem(root, "rule");
 
     cJSON_AddItemToObject(rule, "groups", groups = cJSON_CreateArray());
-    strncpy(buffer, lf->generated_rule->group, sizeof(buffer));
+    strncpy(buffer, lf->generated_rule->group, sizeof(buffer) - 1);
 
     token = strtok(buffer, delim);
     while(token) {
@@ -195,7 +195,7 @@ int add_groupPCI(cJSON* rule, char* group, int firstPCI)
             pci = cJSON_GetObjectItem(rule, "PCI_DSS");
         }
         // Prepare string and add it to PCI dss array
-        strncpy(aux, group, strlen(group));
+        strncpy(aux, group, strlen(group) - 1 );
         str_cut(aux, 0, 8);
         cJSON_AddItemToArray(pci, cJSON_CreateString(aux));
         return 1;
@@ -216,7 +216,7 @@ int add_groupCIS(cJSON* rule, char* group, int firstCIS)
         } else {
             cis = cJSON_GetObjectItem(rule, "CIS");
         }
-        strncpy(aux, group, strlen(group));
+        strncpy(aux, group, strlen(group) - 1);
         str_cut(aux, 0, 4);
         cJSON_AddItemToArray(cis, cJSON_CreateString(aux));
         return 1;
