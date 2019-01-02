@@ -91,6 +91,9 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
                  lf->location,
                  filename ? filename : "-");
 
+        if(execq < 1) {
+            merror("%s: Error communicating with execd (q < 1).", ARGV0);
+        }
         if (OS_SendUnix(execq, exec_msg, 0) < 0) {
             merror("%s: Error communicating with execd.", ARGV0);
         }
