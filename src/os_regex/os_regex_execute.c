@@ -7,6 +7,7 @@
  * Foundation
  */
 
+#include "shared.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -116,15 +117,16 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
     const char *pt = pattern;
     const char *next_pt;
 
-    const char *pt_error[4] = {NULL, NULL, NULL, NULL};
-    const char *pt_error_str[4] = {NULL, NULL, NULL, NULL};
+    const char **pt_error = NULL;
+    const char **pt_error_str = NULL;
+    unsigned int pt_size = 0;
 
     /* Will loop the whole string, trying to find a match */
     do {
         switch (*pt) {
             case '\0':
                 if (!(flags & END_SET) || ((flags & END_SET) && (*st == '\0'))) {
-                    return (r_code);
+                    goto cleanpt;
                 }
                 break;
 
@@ -145,7 +147,7 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
                 pt++;
                 if (*pt == '\0') {
                     if (!(flags & END_SET) || ((flags & END_SET) && (*st == '\0'))) {
-                        return (r_code);
+                        goto cleanpt;
                     }
                 }
                 break;
@@ -247,20 +249,29 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
                         if (ok_here) {
                             next_pt += ok_here;
                         }
-
-                        if (!pt_error[0]) {
-                            pt_error[0] = pt;
-                            pt_error_str[0] = st;
-                        } else if (!pt_error[1]) {
-                            pt_error[1] = pt;
-                            pt_error_str[1] = st;
-                        } else if (!pt_error[2]) {
-                            pt_error[2] = pt;
-                            pt_error_str[2] = st;
-
-                        } else if (!pt_error[3]) {
-                            pt_error[3] = pt;
-                            pt_error_str[3] = st;
+                        if (!pt_error) {
+                            os_calloc(2, sizeof(char *), pt_error);
+                            pt_error[0] = NULL;
+                            pt_error[1] = NULL;
+                            os_calloc(2, sizeof(char *), pt_error_str);
+                            pt_error_str[0] = NULL;
+                            pt_error_str[1] = NULL;
+                        } else {
+                            while (pt_error[pt_size] != NULL) {
+                                pt_size++;
+                            }
+                            os_realloc(pt_error,
+                                    sizeof(char *) * (pt_size + 2),
+                                    pt_error);
+                            pt_error[pt_size+1] = NULL;
+                            os_realloc(pt_error_str,
+                                    sizeof(char *) * (pt_size + 2),
+                                    pt_error_str);
+                            pt_error_str[pt_size+1] = NULL;
+                        }
+                        if(!pt_error[pt_size]){
+                            pt_error[pt_size] = pt;
+                            pt_error_str[pt_size] = st;
                         }
 
                         pt = next_pt;
@@ -295,7 +306,7 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
             else if ((*(pt + 3) == '\0') && (_regex_matched == 1) && (r_code)) {
                 r_code = st;
                 if (!(flags & END_SET) || ((flags & END_SET) && (*st == '\0'))) {
-                    return (r_code);
+                    goto cleanpt;
                 }
             }
 
@@ -333,31 +344,25 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
         }
 
         /* Error Handling */
-        if (pt_error[3]) {
-            pt = pt_error[3];
-            st = pt_error_str[3];
-            pt_error[3] = NULL;
-            continue;
-        } else if (pt_error[2]) {
-            pt = pt_error[2];
-            st = pt_error_str[2];
-            pt_error[2] = NULL;
-            continue;
-        } else if (pt_error[1]) {
-            pt = pt_error[1];
-            st = pt_error_str[1];
-            pt_error[1] = NULL;
-            continue;
-        } else if (pt_error[0]) {
-            pt = pt_error[0];
-            st = pt_error_str[0];
-            pt_error[0] = NULL;
-            continue;
+        while(pt_size>0){
+            if(!pt_error[pt_size]){
+                pt_size--;
+            }
+            break;
+        }
+        if(pt_error){
+            if(pt_error[pt_size]){
+                pt = pt_error[pt_size];
+                st = pt_error_str[pt_size];
+                pt_error_str[pt_size] = NULL;
+                continue;
+            }
         } else if (flags & BEGIN_SET) {
             /* If we get an error and the "^" option is
              * set, we can return "not matched" in here.
              */
-            return (NULL);
+            r_code = NULL;
+            goto cleanpt;
         } else if (st_error) {
             st = st_error;
             st_error = NULL;
@@ -408,9 +413,37 @@ static const char *_OS_Regex(const char *pattern, const char *str, const char **
              (pt++) &&
              ENDOFFILE(pt))
        ) {
-        return (r_code);
+        goto cleanpt;
     }
 
-    return (NULL);
+    r_code = NULL;
+    cleanpt:
+        if(pt_error){
+            pt_size = 0;
+            do{
+                if(pt_error[pt_size]){
+                    os_free(pt_error[pt_size]);
+                    pt_error[pt_size] = NULL;
+                }else{
+                    break;
+                }
+            }while(pt_size++);
+            os_free(pt_error);
+            pt_error = NULL;
+        }
+        if(pt_error_str){
+            pt_size = 0;
+            do{
+                if(pt_error_str[pt_size]){
+                    os_free(pt_error_str[pt_size]);
+                    pt_error_str[pt_size] = NULL;
+                }else{
+                    break;
+                }
+            }while(pt_size++);
+            os_free(pt_error_str);
+            pt_error_str = NULL;
+        }
+        return (r_code);
 }
 
