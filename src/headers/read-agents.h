@@ -10,6 +10,9 @@
 #ifndef __CRAGENT_H
 #define __CRAGENT_H
 
+#include <external/cJSON/cJSON.h>
+
+
 /* Unique key for each agent */
 typedef struct _agent_info {
     char *last_keepalive;
@@ -27,7 +30,8 @@ int print_syscheck(const char *sk_name, const char *sk_ip, const char *fname, in
 
 /* Print rootcheck db */
 int print_rootcheck(const char *sk_name, const char *sk_ip, const char *fname, int resolved,
-                    int csv_output, int show_last);
+                    int csv_output, cJSON *json_output, int show_last);
+
 
 /* Delete syscheck db */
 int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete) __attribute__((nonnull));
