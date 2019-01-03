@@ -30,10 +30,16 @@ void W_JSON_ParseGroupsCompliance(cJSON *root, int nested);
 void W_JSON_ParseRootcheck(cJSON *root, const Eventinfo *lf, int nested);
 // Detecting if an alert comes from rootcheck
 int W_isRootcheck(cJSON *root, int nested);
+// Parsing PCI Compliance groups^M
+int add_groupPCI(cJSON *rule, char * group, int firstPCI);
+// Parsing CIS Compliance groups^M
+int add_groupCIS(cJSON *rule, char * group, int firstCIS);
 // Aux functions
 int str_cut(char *str, int begin, int len);
 int compile_regex (regex_t * r, const char * regex_text);
 int match_regex (regex_t * r, const char * to_match, char * results[MAX_MATCHES]);
 void trim(char * s);
 void removeChar( char * string, char letter );
+int startsWith(const char *pre, const char *str);
+
 #endif
