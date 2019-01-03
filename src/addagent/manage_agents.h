@@ -9,6 +9,7 @@
 
 #include "shared.h"
 #include "sec.h"
+#include "external/cJSON/cJSON.h"
 
 /** Prototypes **/
 
@@ -41,7 +42,7 @@ double OS_AgentAntiquity(const char *id);
 void FormatID(char *id);
 
 /* Print available agents */
-int print_agents(int print_status, int active_only, int csv_output, int json_output);
+int print_agents(int print_status, int active_only, int csv_output, cJSON *json_output);
 int list_agents(int cmdlist);
 
 /* Clear a line */
