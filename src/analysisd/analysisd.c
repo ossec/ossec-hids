@@ -991,7 +991,7 @@ void OS_ReadMSG_analysisd(int m_queue)
                             }
                         }
 
-                        if (do_ar) {
+                        if (do_ar && execdq > 0) {
                             OS_Exec(execdq, arq, lf, *rule_ar);
                         }
                         rule_ar++;
