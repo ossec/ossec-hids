@@ -50,8 +50,6 @@ src/syscheck_update
 src/verify-agent-conf
 
 # Windows agent
-src/external/lua-5.2.3/src/lua52.dll
-src/external/lua-5.2.3/src/ossec-lua*.exe
 src/win32/*.exe
 src/win32/LICENSE.txt
 src/win32/default-local_internal_options.conf
