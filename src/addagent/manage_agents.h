@@ -21,11 +21,12 @@ char *encode_base64(int size, char *src);
 char *read_from_user(void);
 
 /* Add or remove an agent */
-int add_agent(void);
-int remove_agent(void);
+int add_agent(int json_output);
+int remove_agent(int json_output);
+
 
 /* Extract or import a key */
-int k_extract(const char *cmdextract);
+int k_extract(const char *cmdextract, int json_output);
 int k_import(const char *cmdimport);
 int k_bulkload(const char *cmdbulk);
 
