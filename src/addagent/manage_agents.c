@@ -319,7 +319,7 @@ int add_agent(int json_output)
                     snprintf(buffer, 1023, "%s: Could not chmod file %s due to [(%d)-(%s)]", ARGV0, authfile, errno, strerror(errno));
                     cJSON *json_root = cJSON_CreateObject();
                     cJSON_AddNumberToObject(json_root, "error", 76);
-                    cJSON_AddStringToObject(json_root, "description", buffer));
+                    cJSON_AddStringToObject(json_root, "description", buffer);
                     printf("%s", cJSON_PrintUnformatted(json_root));
                     exit(errno);
                 } else {
