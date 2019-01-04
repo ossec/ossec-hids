@@ -324,6 +324,7 @@ int add_agent(int json_output)
                     exit(errno);
                 } else {
                     ErrorExit("%s: Cannot chmod %s: %s", ARGV0, authfile, strerror(errno));
+                }
             }
 #endif
 
