@@ -17,6 +17,7 @@ static void __memclear(char *id, char *name, char *ip, char *key, size_t size) _
 static void __chash(keystore *keys, const char *id, const char *name, char *ip, const char *key) __attribute((nonnull));
 
 static int pass_empty_keyfile = 0;
+
 /* Clear keys entries */
 static void __memclear(char *id, char *name, char *ip, char *key, size_t size)
 {
@@ -112,7 +113,7 @@ int OS_CheckKeys()
 
     if (File_DateofChange(KEYSFILE_PATH) < 0) {
         merror(NO_AUTHFILE, __local_name, KEYSFILE_PATH);
-        merror(NO_REM_CONN, __local_name);
+        merror(NO_CLIENT_KEYS, __local_name);
         return (0);
     }
 
@@ -121,7 +122,7 @@ int OS_CheckKeys()
         /* We can leave from here */
         merror(FOPEN_ERROR, __local_name, KEYSFILE_PATH, errno, strerror(errno));
         merror(NO_AUTHFILE, __local_name, KEYSFILE_PATH);
-        merror(NO_REM_CONN, __local_name);
+        merror(NO_CLIENT_KEYS, __local_name);
         return (0);
     }
 
@@ -146,13 +147,15 @@ void OS_ReadKeys(keystore *keys)
     /* Check if the keys file is present and we can read it */
     if ((keys->file_change = File_DateofChange(KEYS_FILE)) < 0) {
         merror(NO_AUTHFILE, __local_name, KEYS_FILE);
-        ErrorExit(NO_REM_CONN, __local_name);
+        ErrorExit(NO_CLIENT_KEYS, __local_name);
+
     }
     fp = fopen(KEYS_FILE, "r");
     if (!fp) {
         /* We can leave from here */
         merror(FOPEN_ERROR, __local_name, KEYS_FILE, errno, strerror(errno));
-        ErrorExit(NO_REM_CONN, __local_name);
+        ErrorExit(NO_CLIENT_KEYS, __local_name);
+
     }
 
     /* Initialize hashes */
@@ -163,7 +166,7 @@ void OS_ReadKeys(keystore *keys)
     }
 
     /* Initialize structure */
-    keys->keyentries = NULL;
+    os_calloc(1, sizeof(keyentry*), keys->keyentries);
     keys->keysize = 0;
 
     /* Zero the buffers */
@@ -252,7 +255,10 @@ void OS_ReadKeys(keystore *keys)
 
     /* Check if there are any agents available */
     if (keys->keysize == 0) {
-        ErrorExit(NO_REM_CONN, __local_name);
+        merror(NO_CLIENT_KEYS, __local_name);
+        if (!pass_empty_keyfile) {
+            exit(1);
+        }
     }
 
     /* Add additional entry for sender == keysize */
