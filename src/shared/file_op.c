@@ -1540,3 +1540,45 @@ char *getuname()
 }
 
 #endif /* WIN32 */
+
+
+int w_ref_parent_folder(const char * path) {
+    const char * str;
+    char * ptr;
+
+    switch (path[0]) {
+    case '\0':
+        return 0;
+
+    case '.':
+        switch (path[1]) {
+        case '\0':
+            return 0;
+
+        case '.':
+            switch (path[2]) {
+            case '\0':
+                return 1;
+
+            case '/':
+#ifdef WIN32
+            case '\\':
+#endif
+                return 1;
+            }
+        }
+    }
+
+#ifdef WIN32
+    for (str = path; ptr = strstr(str, "/.."), ptr || (ptr = strstr(str, "\\.."), ptr); str = ptr + 3) {
+        if (ptr[3] == '\0' || ptr[3] == '/' || ptr[3] == '\\') {
+#else
+    for (str = path; ptr = strstr(str, "/.."), ptr; str = ptr + 3) {
+        if (ptr[3] == '\0' || ptr[3] == '/') {
+#endif
+            return 1;
+        }
+    }
+
+    return 0;
+}

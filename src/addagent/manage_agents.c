@@ -313,7 +313,19 @@ int add_agent(int json_output)
                     ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE, errno, strerror(errno));
             }
 #ifndef WIN32
-            chmod(authfile, 0440);
+            if ((chmod(authfile, 0440)) != 0) {
+                if(json_output) {
+                    char buffer[1024];
+                    snprintf(buffer, 1023, "%s: Could not chmod file %s due to [(%d)-(%s)]", ARGV0, authfile, errno, strerror(errno));
+                    cJSON *json_root = cJSON_CreateObject();
+                    cJSON_AddNumberToObject(json_root, "error", 76);
+                    cJSON_AddStringToObject(json_root, "description", buffer);
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(errno);
+                } else {
+                    ErrorExit("%s: Cannot chmod %s: %s", ARGV0, authfile, strerror(errno));
+                }
+            }
 #endif
 
             /* Random 1: Time took to write the agent information
