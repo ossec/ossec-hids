@@ -131,6 +131,7 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
 int OS_RemoveAgent(const char *u_id) {
     FILE *fp;
     int id_exist;
+    char *full_name;
 
     id_exist = IDExist(u_id);
 
@@ -191,6 +192,10 @@ int OS_RemoveAgent(const char *u_id) {
     fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
 #endif
     fclose(fp);
+
+    full_name = getFullnameById(u_id);
+    if (full_name)
+        delete_agentinfo(full_name);
 
     /* Remove counter for ID */
     OS_RemoveCounter(u_id);
@@ -433,7 +438,7 @@ char *IPExist(const char *u_ip)
     char line_read[FILE_SIZE + 1];
     line_read[FILE_SIZE] = '\0';
 
-    if (!(u_ip && strncmp(u_ip, "any", 3)))
+    if (!(u_ip && strncmp(u_ip, "any", 3)) || strchr(u_ip, '/'))
         return NULL;
 
     if (isChroot())
