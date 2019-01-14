@@ -34,6 +34,7 @@ static void helpmsg()
     printf("\t-L          List available active responses.\n");
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
 	printf("\t-j          Changes the output to JSON .\n");
+    printf("\t-u <id>     Specifies the agent to use.\n");
     exit(1);
 }
 
