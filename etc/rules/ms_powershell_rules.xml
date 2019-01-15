@@ -2,7 +2,7 @@
 
 <!-- Not recommended by CIS due to Windows default ACL settings -->
 <!-- Turn on logging: Computer Configuration > Policies > Administrative Templates > Windows Components > Windows PowerShell -> Turn on PowerShell Script Block Logging -->
-
+<!-- Add <localfile> <location>Powershell</location> <log_format>eventlog</log_format> </localfile> to ossec.conf on Windows Agent -->
 <!-- Rule IDs 20500-2509 -->
 
 <group name="windows,powershell,">
