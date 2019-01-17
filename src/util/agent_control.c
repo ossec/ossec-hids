@@ -28,12 +28,13 @@ static void helpmsg()
     printf("\t-i <id>     Extracts information from an agent.\n");
     printf("\t-R <id>     Restarts agent.\n");
     printf("\t-r -a       Runs the integrity/rootkit checking on all agents now.\n");
-    printf("\t-r -u <id>  Runs the integrity/rootkit checking on one agent now.\n\n");
+    printf("\t-r          Runs the integrity/rootkit checking on one agent now.\n\n");
     printf("\t-b <ip>     Blocks the specified ip address.\n");
     printf("\t-f <ar>     Used with -b, specifies which response to run.\n");
     printf("\t-L          List available active responses.\n");
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
 	printf("\t-j          Changes the output to JSON .\n");
+    printf("\t-u <id>     Used with -r and -b Specifies the agent to use.\n");
     exit(1);
 }
 
