@@ -6,6 +6,10 @@
 
 **Phase 2: Completed decoding.
        decoder: 'sudo'
+       dstuser: 'dcid'
+       url: '/home/dcid'
+       srcuser: 'root'
+       status: '/usr/bin/vi /etc/sudoers'
 
 **Phase 3: Completed filtering (rules).
        Rule id: '5403'
