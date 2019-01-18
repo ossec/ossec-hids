@@ -31,7 +31,7 @@
   
   <rule id="20503" level="2">
     <if_sid>20501</if_sid>
-    <regex>Set-StrictMode -Version 1; \.+OriginInfo | Set-StrictMode -Version 1; \.+\w+</regex>
+    <regex>Set-StrictMode -Version 1; \.+\w+</regex>
     <description>A wrong/misspelled command was tried</description>
   </rule>
 
