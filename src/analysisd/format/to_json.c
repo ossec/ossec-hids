@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 Trend Micro Inc.
+/* Copyright (C) 2019 OSSEC Foundation
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -24,6 +24,8 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     cJSON *rule;
     cJSON *file_diff;
     char *out;
+    int i;
+
 
     extern long int __crt_ftell;
 
@@ -120,6 +122,19 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->full_log) {
         cJSON_AddStringToObject(root, "full_log", lf->full_log);
     }
+
+
+    //Dynamic fields
+    if(lf->decoder_info){
+        //ToDO: use constant instead of 8.
+        for(i=0;i<8;i++){
+            if (lf->decoder_info->fields[i] && lf->fields[i])
+                cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+        }
+    }
+
+
+
     if (lf->generated_rule->last_events && lf->generated_rule->last_events[1] && lf->generated_rule->last_events[1][0]) {
         cJSON_AddStringToObject(root, "previous_output", lf->generated_rule->last_events[1]);
     }
@@ -185,6 +200,8 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
 {
     cJSON *root;
     char *out;
+    int i;
+
 
     root = cJSON_CreateObject();
 
@@ -232,6 +249,15 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
 
    if(lf->data)
        cJSON_AddStringToObject(root, "data", lf->data);
+
+    //Dynamic fields
+    if(lf->decoder_info){
+        //ToDO: use constant instead of 8.
+        for(i=0;i<8;i++){
+            if (lf->decoder_info->fields[i] && lf->fields[i])
+                cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+        }
+    }
 
    if(lf->systemname)
        cJSON_AddStringToObject(root, "systemname", lf->systemname);
