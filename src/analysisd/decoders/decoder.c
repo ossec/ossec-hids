@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 OSSEC Foundation
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -146,7 +146,7 @@ void DecodeEvent(Eventinfo *lf)
         /* Get the regex */
         while (child_node) {
             if (nnode->regex) {
-                int i = 0;
+                int i;
 
                 /* With regex we have multiple options
                  * regarding the offset:
@@ -186,18 +186,14 @@ void DecodeEvent(Eventinfo *lf)
                     regex_prev++;
                 }
 
-                while (nnode->regex->sub_strings[i]) {
-                    if (nnode->order[i]) {
-                        nnode->order[i](lf, nnode->regex->sub_strings[i]);
-                        nnode->regex->sub_strings[i] = NULL;
-                        i++;
-                        continue;
-                    }
+                for (i = 0; nnode->regex->sub_strings[i]; i++) {
+                    if (nnode->order[i])
+                        nnode->order[i](lf, nnode->regex->sub_strings[i], i);
+                    else
+                        /* We do not free any memory used above */
+                        os_free(nnode->regex->sub_strings[i]);
 
-                    /* We do not free any memory used above */
-                    os_free(nnode->regex->sub_strings[i]);
                     nnode->regex->sub_strings[i] = NULL;
-                    i++;
                 }
 
                 /* If we have a next regex, try getting it */
@@ -227,7 +223,7 @@ void DecodeEvent(Eventinfo *lf)
 
 /*** Event decoders ****/
 
-void *DstUser_FP(Eventinfo *lf, char *field)
+void *DstUser_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -239,7 +235,7 @@ void *DstUser_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *SrcUser_FP(Eventinfo *lf, char *field)
+void *SrcUser_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -251,7 +247,7 @@ void *SrcUser_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *SrcIP_FP(Eventinfo *lf, char *field)
+void *SrcIP_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -277,7 +273,7 @@ void *SrcIP_FP(Eventinfo *lf, char *field)
 
 }
 
-void *DstIP_FP(Eventinfo *lf, char *field)
+void *DstIP_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -301,7 +297,7 @@ void *DstIP_FP(Eventinfo *lf, char *field)
 
 }
 
-void *SrcPort_FP(Eventinfo *lf, char *field)
+void *SrcPort_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -313,7 +309,7 @@ void *SrcPort_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *DstPort_FP(Eventinfo *lf, char *field)
+void *DstPort_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -325,7 +321,7 @@ void *DstPort_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Protocol_FP(Eventinfo *lf, char *field)
+void *Protocol_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -337,7 +333,7 @@ void *Protocol_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Action_FP(Eventinfo *lf, char *field)
+void *Action_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -349,7 +345,7 @@ void *Action_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *ID_FP(Eventinfo *lf, char *field)
+void *ID_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -361,7 +357,7 @@ void *ID_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Url_FP(Eventinfo *lf, char *field)
+void *Url_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -373,7 +369,7 @@ void *Url_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Data_FP(Eventinfo *lf, char *field)
+void *Data_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -385,7 +381,7 @@ void *Data_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Status_FP(Eventinfo *lf, char *field)
+void *Status_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -397,7 +393,7 @@ void *Status_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *SystemName_FP(Eventinfo *lf, char *field)
+void *SystemName_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -409,7 +405,8 @@ void *SystemName_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *FileName_FP(Eventinfo *lf, char *field)
+
+void *FileName_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -422,9 +419,21 @@ void *FileName_FP(Eventinfo *lf, char *field)
 }
 
 
-void *None_FP(__attribute__((unused)) Eventinfo *lf, char *field)
+
+void *DynamicField_FP(Eventinfo *lf, char *field, int order)
+{
+#ifdef TESTRULE
+    if (!alert_only) {
+        print_out("       %s: '%s'", lf->decoder_info->fields[order], field);
+    }
+#endif
+
+    lf->fields[order] = field;
+    return (NULL);
+}
+
+void *None_FP(__attribute__((unused)) Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
     free(field);
     return (NULL);
 }
-
