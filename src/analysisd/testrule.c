@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 OSSEC Foundation
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -184,6 +184,8 @@ int main(int argc, char **argv)
         ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
     }
     nowChroot();
+
+    Config.decoder_order_size = (size_t)getDefine_Int("analysisd", "decoder_order_size", 8, MAX_DECODER_ORDER_SIZE);
 
     /*
      * Anonymous Section: Load rules, decoders, and lists

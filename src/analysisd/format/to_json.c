@@ -124,17 +124,6 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     }
 
 
-    //Dynamic fields
-    if(lf->decoder_info){
-        //ToDO: use constant instead of 8.
-        for(i=0;i<8;i++){
-            if (lf->decoder_info->fields[i] && lf->fields[i])
-                cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
-        }
-    }
-
-
-
     if (lf->generated_rule->last_events && lf->generated_rule->last_events[1] && lf->generated_rule->last_events[1][0]) {
         cJSON_AddStringToObject(root, "previous_output", lf->generated_rule->last_events[1]);
     }
@@ -187,6 +176,35 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if ( lf->systemname ) {
         cJSON_AddStringToObject(root, "systemname", lf->systemname);
     }
+
+    // DecoderInfo
+    if(lf->decoder_info){
+        cJSON *decoder;
+        // Dynamic fields
+        if (lf->decoder_info->fields) {
+            for (i = 0; i < Config.decoder_order_size; i++) {
+                if (lf->decoder_info->fields[i] && lf->fields[i]) {
+                    cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+                }
+            }
+        }
+
+        cJSON_AddItemToObject(root, "decoder", decoder = cJSON_CreateObject());
+
+        if (lf->decoder_info->fts)
+            cJSON_AddNumberToObject(decoder, "fts", lf->decoder_info->fts);
+        if (lf->decoder_info->accumulate)
+            cJSON_AddNumberToObject(decoder, "accumulate", lf->decoder_info->accumulate);
+
+        if (lf->decoder_info->parent)
+            cJSON_AddStringToObject(decoder, "parent", lf->decoder_info->parent);
+        if (lf->decoder_info->name)
+            cJSON_AddStringToObject(decoder, "name", lf->decoder_info->name);
+        if (lf->decoder_info->ftscomment)
+            cJSON_AddStringToObject(decoder, "ftscomment", lf->decoder_info->ftscomment);
+
+    }
+
 
     W_ParseJSON(root, lf);
 
@@ -249,15 +267,6 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
 
    if(lf->data)
        cJSON_AddStringToObject(root, "data", lf->data);
-
-    //Dynamic fields
-    if(lf->decoder_info){
-        //ToDO: use constant instead of 8.
-        for(i=0;i<8;i++){
-            if (lf->decoder_info->fields[i] && lf->fields[i])
-                cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
-        }
-    }
 
    if(lf->systemname)
        cJSON_AddStringToObject(root, "systemname", lf->systemname);
@@ -329,6 +338,15 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
     // DecoderInfo
     if(lf->decoder_info){
         cJSON *decoder;
+        // Dynamic fields
+        if (lf->decoder_info->fields) {
+            for (i = 0; i < Config.decoder_order_size; i++) {
+                if (lf->decoder_info->fields[i] && lf->fields[i]) {
+                    cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+                }
+            }
+        }
+
         cJSON_AddItemToObject(root, "decoder", decoder = cJSON_CreateObject());
 
         if (lf->decoder_info->fts) 

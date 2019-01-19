@@ -25,6 +25,7 @@ typedef struct __Config {
     u_int8_t mailbylevel;
     u_int8_t logbylevel;
     u_int8_t logfw;
+    int decoder_order_size;
 
     /* Prelude support */
     u_int8_t prelude;

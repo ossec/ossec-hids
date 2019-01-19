@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 OSSEC Foundation 
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -1464,6 +1464,7 @@ RuleInfo *zerorulemember(int id, int level,
     ruleinfo_pt->hostname = NULL;
     ruleinfo_pt->program_name = NULL;
     ruleinfo_pt->action = NULL;
+    os_calloc(Config.decoder_order_size, sizeof(FieldInfo*), ruleinfo_pt->fields);
 
     /* Zero last matched events */
     ruleinfo_pt->__frequency = 0;

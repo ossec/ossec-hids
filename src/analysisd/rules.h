@@ -1,5 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
- * All right reserved.
+/* Copyright (C) 2019 OSSEC Foundation 
+ * All rights reserved.
  *
  * This program is a free software; you can redistribute it
  * and/or modify it under the terms of the GNU General Public
@@ -148,7 +148,8 @@ typedef struct _RuleInfo {
     OSMatch *hostname;
     OSMatch *program_name;
     OSMatch *extra_data;
-    FieldInfo *fields[8];
+    FieldInfo **fields;
+
     char *action;
 
     char *comment; /* description in the xml */
