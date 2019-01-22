@@ -40,6 +40,12 @@ matrix:
 
 before_script:
 - sudo apt-get update -qq
+- wget https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz
+  && tar xzf pcre2-10.32.tar.gz -C src/external
+  && cd src/external/pcre2-10.32
+  && ./configure --enable-jit
+  && make -j
+  && sudo make install
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev libtool autoconf
@@ -48,7 +54,7 @@ before_script:
   && ./configure && make all -j && sudo make install
   ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
-- if [[ "${OSSEC_TYPE}" == "server" ]]; then ( sudo apt-get install libsqlite3-dev sqlite3 libpcre2-dev ); fi
+- if [[ "${OSSEC_TYPE}" == "server" ]]; then ( sudo apt-get install libsqlite3-dev sqlite3 ); fi
 - if [[ "${OSSEC_TYPE}" == "test" ]]; then ( sudo apt-get update && sudo apt-get install check valgrind ); fi
 
 
