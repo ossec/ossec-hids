@@ -30,7 +30,11 @@ const char *OSPcre2_Execute_pcre2_match(const char *str, OSPcre2 *reg)
     PCRE2_SIZE *ov = NULL;
 
     /* Execute the reg */
+#ifdef USE_PCRE2_JIT
+    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, reg->match_data, NULL);
+#else
     rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, reg->match_data, NULL);
+#endif
 
     /* Check execution result */
     if (rc <= 0) {
