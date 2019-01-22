@@ -78,7 +78,7 @@ int OSRegex_Compile(const char *pattern, OSRegex *reg, int flags)
                 if (flags & OS_CASE_SENSITIVE) {
                     reg->exec_function = OSRegex_Execute_strcmp;
                 } else {
-                    reg->exec_function = OSRegex_Execute_strncasecmp;
+                    reg->exec_function = OSRegex_Execute_strcasecmp;
                 }
                 return (1);
             } else {

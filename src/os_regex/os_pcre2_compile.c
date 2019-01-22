@@ -70,7 +70,7 @@ int OSPcre2_Compile(const char *pattern, OSPcre2 *reg, int flags)
                 reg->pattern_len = pattern_len - 2;
                 reg->pattern[reg->pattern_len] = '\0';
                 if (flags & PCRE2_CASELESS) {
-                    reg->exec_function = OSPcre2_Execute_strncasecmp;
+                    reg->exec_function = OSPcre2_Execute_strcasecmp;
                 } else {
                     reg->exec_function = OSPcre2_Execute_strcmp;
                 }

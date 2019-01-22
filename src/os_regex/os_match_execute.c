@@ -68,8 +68,7 @@ int OSMatch_Execute_strrcmp(const char *subject, size_t len, OSMatch *match)
 
 int OSMatch_Execute_strcasecmp(const char *subject, size_t len, OSMatch *match)
 {
-    (void)len;
-    return !strcasecmp(match->pattern, subject);
+    return (len == match->pattern_len && !strcasecmp(match->pattern, subject));
 }
 
 int OSMatch_Execute_strncasecmp(const char *subject, size_t len, OSMatch *match)

@@ -79,7 +79,7 @@ int OSMatch_Compile(const char *pattern, OSMatch *reg, int flags)
                 if (flags & OS_CASE_SENSITIVE) {
                     reg->exec_function = OSMatch_Execute_strcmp;
                 } else {
-                    reg->exec_function = OSMatch_Execute_strncasecmp;
+                    reg->exec_function = OSMatch_Execute_strcasecmp;
                 }
                 return (1);
             } else {
