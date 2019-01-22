@@ -45,13 +45,13 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
         /* Check if it is a hostname */
         if (Config.hostname_white_list) {
             size_t srcip_size;
-            OSMatch **wl;
+            char **wl;
 
             srcip_size = strlen(ip);
 
             wl = Config.hostname_white_list;
             while (*wl) {
-                if (OSMatch_Execute(ip, srcip_size, *wl)) {
+                if (strncmp(*wl, ip, srcip_size) == 0) {
                     return;
                 }
                 wl++;

@@ -18,46 +18,22 @@
 /* Release all the memory created by the compilation/execution phases */
 void OSRegex_FreePattern(OSRegex *reg)
 {
-    int i = 0;
-
-    /* Free the patterns */
-    if (reg->patterns) {
-        char **pattern = reg->patterns;
-        while (*pattern) {
-            if (*pattern) {
-                free(*pattern);
-            }
-            pattern++;
-        }
-
-        free(reg->patterns);
-        reg->patterns = NULL;
+    /* Free the match data */
+    if (reg->match_data) {
+        pcre2_match_data_free(reg->match_data);
+        reg->match_data = NULL;
     }
 
-    /* Free the flags */
-    free(reg->flags);
-    reg->flags = NULL;
-
-    /* Free the closure */
-    if (reg->prts_closure) {
-        i = 0;
-        while (reg->prts_closure[i]) {
-            free(reg->prts_closure[i]);
-            i++;
-        }
-        free(reg->prts_closure);
-        reg->prts_closure = NULL;
+    /* Free the regex */
+    if (reg->regex) {
+        pcre2_code_free(reg->regex);
+        reg->regex = NULL;
     }
 
-    /* Free the str */
-    if (reg->prts_str) {
-        i = 0;
-        while (reg->prts_str[i]) {
-            free(reg->prts_str[i]);
-            i++;
-        }
-        free(reg->prts_str);
-        reg->prts_str = NULL;
+    /* Free the patter, */
+    if (reg->pattern) {
+        free(reg->pattern);
+        reg->pattern = NULL;
     }
 
     /* Free the sub strings */

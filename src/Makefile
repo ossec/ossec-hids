@@ -1,5 +1,4 @@
 
-
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
@@ -27,6 +26,7 @@ USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
+USE_PCRE2_JIT=auto
 
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
@@ -57,7 +57,7 @@ ifneq (,$(filter ${REUSE_ID},yes y Y 1))
 	DEFINES+=-DREUSE_ID
 endif
 
-OSSEC_LDFLAGS=${LDFLAGS} -lm
+OSSEC_LDFLAGS=${LDFLAGS} -lm -lpcre2-8
 
 ifneq (${TARGET},winagent)
 ifeq (${uname_S},Linux)
@@ -183,6 +183,26 @@ OSSEC_LINK    =${QUIET_LINK}${MING_BASE}ar -crs
 OSSEC_RANLIB  =${QUIET_RANLIB}${MING_BASE}ranlib
 OSSEC_WINDRES =${QUIET_CCBIN}${MING_BASE}windres
 
+
+ifneq (,$(filter ${USE_PCRE2_JIT},yes y Y 1))
+	DEFINES+=-DUSE_PCRE2_JIT
+else
+ifneq (,$(filter ${USE_PCRE2_JIT},auto))
+define python_pcre2_has_jit
+from __future__ import print_function;
+import ctypes, ctypes.util;
+pcre2_8 = ctypes.CDLL(ctypes.util.find_library('pcre2-8'));
+has_jit = ctypes.c_uint(0);
+PCRE2_CONFIG_JIT = ctypes.c_uint(1);
+pcre2_8.pcre2_config_8(PCRE2_CONFIG_JIT, ctypes.byref(has_jit));
+print(has_jit.value)
+endef
+	_HAS_JIT = $(shell python -c "$(python_pcre2_has_jit)")
+ifneq (0, $(_HAS_JIT))
+	DEFINES+=-DUSE_PCRE2_JIT
+endif
+endif
+endif
 
 ifneq (,$(filter ${USE_INOTIFY},auto yes y Y 1))
 	DEFINES+=-DINOTIFY_ENABLED
@@ -566,6 +586,7 @@ settings:
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
 	@echo "    USE_SQLITE:       ${USE_SQLITE}"
+	@echo "    USE_PCRE2_JIT:    ${USE_PCRE2_JIT}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
 	@echo "    libs:             ${ML}"
@@ -939,7 +960,7 @@ manage_agents: ${addagent_o} ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 
 #### Util ##########
 
-util_programs = syscheck_update clear_stats list_agents agent_control syscheck_control rootcheck_control verify-agent-conf ossec-regex
+util_programs = syscheck_update clear_stats list_agents agent_control syscheck_control rootcheck_control verify-agent-conf ossec-regex ossec-regex-convert
 
 .PHONY: utils
 utils: ${util_programs}
@@ -973,6 +994,9 @@ rootcheck_control: util/rootcheck_control.o addagent/validate.o ${ossec_libs} ${
 
 ossec-regex: util/ossec-regex.o ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+
+ossec-regex-convert: util/ossec-regex-convert.o ${ossec_libs} ${ZLIB_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 #### rootcheck #####
 
