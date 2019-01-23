@@ -749,7 +749,7 @@ os_regex/%.o: os_regex/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
 
 os_regex.a: ${os_regex_o}
-	${OSSEC_LINK} -T $@ $^ $(shell pkg-config --libs-only-L libpcre2-8 | sed -re 's,^-L,,; s,/? *$$,/libpcre2-8.a,')
+	${OSSEC_LINK} -T $@ $^ $(shell pkg-config --variable=libdir libpcre2-8 | sed -re 's,/? *$$,/libpcre2-8.a,')
 	${OSSEC_RANLIB} $@
 
 #### os_net ##########
@@ -1199,19 +1199,19 @@ tests/%.o: tests/%.c
 test_os_zlib: tests/test_os_zlib.o ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_xml: tests/test_os_xml.o ${os_xml_o}
+test_os_xml: tests/test_os_xml.o os_xml.a
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_regex: tests/test_os_regex.c ${os_regex_o} 
+test_os_regex: tests/test_os_regex.c os_regex.a
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_crypto: tests/test_os_crypto.c ${crypto_o} ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o} ${ZLIB_LIB}  ${JSON_LIB}
+test_os_crypto: tests/test_os_crypto.c os_crypto.a shared.a os_xml.a os_net.a os_regex.a ${ZLIB_LIB}  ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-#test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
+#test_os_net: tests/test_os_net.c os_net.a shared.a os_regex.a os_xml.a
 #	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_shared: tests/test_shared.c ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o} ${JSON_LIB}
+test_shared: tests/test_shared.c shared.a os_xml.a os_net.a os_regex.a ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 test_valgrind: build_tests
