@@ -57,7 +57,7 @@ ifneq (,$(filter ${REUSE_ID},yes y Y 1))
 	DEFINES+=-DREUSE_ID
 endif
 
-OSSEC_LDFLAGS=${LDFLAGS} -lm -lpcre2-8
+OSSEC_LDFLAGS=${LDFLAGS} -lm
 
 ifneq (${TARGET},winagent)
 ifeq (${uname_S},Linux)
