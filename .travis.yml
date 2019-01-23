@@ -43,7 +43,7 @@ before_script:
 - ( wget https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz
   && tar xzf pcre2-10.32.tar.gz -C src/external
   && cd src/external/pcre2-10.32
-  && ./configure --enable-jit
+  && ./configure --enable-jit --enable-static --disable-shared
   && make -j
   && sudo make install
   )
