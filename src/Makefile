@@ -753,7 +753,7 @@ ifeq (${TARGET}, winagent)
 		--disable-shared \
 		--enable-static \
 		--host=${MING_BASE:%-=%} && \
-	make install
+	make install-libLTLIBRARIES install-nodist_includeHEADERS
 else
 	cd ${EXTERNAL_PCRE2} && \
 	./configure \
@@ -761,7 +761,7 @@ else
 		${PCRE2_CONFIGURE_JIT} \
 		--disable-shared \
 		--enable-static && \
-	make install
+	make install-libLTLIBRARIES install-nodist_includeHEADERS
 endif
 
 
