@@ -4,7 +4,9 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
+EXTERNAL_PCRE2=external/pcre2-10.32/
 ZLIB_SYSTEM?=yes
+PCRE2_SYSTEM?=yes
 LUA_PLAT=posix
 LUA_ENABLE?=no
 MAXAGENTS?=2048
@@ -146,6 +148,14 @@ ifneq (${ZLIB_SYSTEM},no)
 	DEFINES+=-DZLIB_SYSTEM
 endif
 
+ifeq (${PCRE2_SYSTEM},no)
+	PCRE2_INCLUDE=-I./${EXTERNAL_PCRE2}/install/include/
+	DEFINES+=${PCRE2_INCLUDE}
+else
+	OSSEC_LDFLAGS+=-lpcre2-8
+endif
+
+
 OSSEC_CFLAGS+=${DEFINES}
 OSSEC_CFLAGS+=-Wall -Wextra
 OSSEC_CFLAGS+=-I./ -I./headers/
@@ -161,6 +171,7 @@ MING_BASE:=
 ifeq (${TARGET}, winagent)
 CC=gcc
 ZLIB_SYSTEM=no
+PCRE2_SYSTEM=no
 ifneq (,$(shell which amd64-mingw32msvc-gcc))
 	MING_BASE:=amd64-mingw32msvc-
 else
@@ -186,6 +197,9 @@ OSSEC_WINDRES =${QUIET_CCBIN}${MING_BASE}windres
 
 ifneq (,$(filter ${USE_PCRE2_JIT},yes y Y 1))
 	DEFINES+=-DUSE_PCRE2_JIT
+	PCRE2_CONFIGURE_JIT=--enable-jit
+else
+	PCRE2_CONFIGURE_JIT=--disable-jit
 endif
 
 ifneq (,$(filter ${USE_INOTIFY},auto yes y Y 1))
@@ -533,6 +547,7 @@ help: failtarget
 	@echo "External source options: "
 	@echo "   make LUA_ENABLE=no    Disable LUA build"
 	@echo "   make ZLIB_SYSTEM=yes  Use zlib sources from system"
+	@echo "   make PCRE2_SYSTEM=yes Use pcre2 sources from system"
 	@echo
 	@echo "Examples: Client with debugging enabled"
 	@echo "   make TARGET=agent DEBUG=1"
@@ -560,6 +575,9 @@ settings:
 	@echo "    ZLIB_SYSTEM:      ${ZLIB_SYSTEM}"
 	@echo "    ZLIB_INCLUDE:     ${ZLIB_INCLUDE}"
 	@echo "    ZLIB_LIB:         ${ZLIB_LIB}"
+	@echo "PCRE2 settings:"
+	@echo "    PCRE2_SYSTEM:     ${PCRE2_SYSTEM}"
+	@echo "    PCRE2_INCLUDE:    ${PCRE2_INCLUDE}"
 	@echo "Lua settings:"
 	@echo "    LUA_PLAT:         ${LUA_PLAT}"
 	@echo "    LUA_ENABLE:       ${LUA_ENABLE}"
@@ -646,7 +664,7 @@ $(error Do not use 'winagent' directly, use 'TARGET=winagent')
 endif
 .PHONY: winagent
 winagent:
-	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB}" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
+	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB} -I./${EXTERNAL_PCRE2}/install/include" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
 	#cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
 	#cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
 	#cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
@@ -665,7 +683,7 @@ winagent:
 ####################
 
 .PHONY: external lua
-external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua libpcre2-8.a
 
 lua:
 ifeq (${LUA_ENABLE},yes)
@@ -718,6 +736,33 @@ ${EXTERNAL_JSON}%.o: ${EXTERNAL_JSON}%.c
 libcJSON.a: ${cjson_o}
 	${OSSEC_LINK} $@ $^
 	${OSSEC_RANLIB} $@
+
+
+
+#### pcre2 ##########
+
+libpcre2-8.a: ${EXTERNAL_PCRE2}/install/lib/libpcre2-8.a
+	cp $< $@
+
+${EXTERNAL_PCRE2}/install/lib/libpcre2-8.a:
+ifeq (${TARGET}, winagent)
+	cd ${EXTERNAL_PCRE2} && \
+	./configure \
+		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/install \
+		${PCRE2_CONFIGURE_JIT} \
+		--disable-shared \
+		--enable-static \
+		--host=${MING_BASE:%-=%} && \
+	make install
+else
+	cd ${EXTERNAL_PCRE2} && \
+	./configure \
+		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/install \
+		${PCRE2_CONFIGURE_JIT} \
+		--disable-shared \
+		--enable-static && \
+	make install
+endif
 
 
 
