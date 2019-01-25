@@ -1338,7 +1338,7 @@ win32/resource.o: win32/ui/win32ui.rc
 win32/os_win32ui.exe: win32/resource.o win32/win_service_rk.o ${win32_ui_o} addagent/b64.o ${ossec_libs}
 	${OSSEC_CCBIN} -DARGV0=\"ossec-win32ui\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -mwindows -o $@
 
-win32/agent-auth.exe: win32/win_service_rk.o addagent/validate.c win32/agent_auth.c ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+win32/agent-auth.exe: win32/win_service_rk.o addagent/validate.c win32/agent_auth.c ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB} libpcre2-8.a
 	${OSSEC_CCBIN} -DARGV0=\"agent-auth\" -DOSSECHIDS ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -lshlwapi -lwsock32 -lsecur32 -flto -o $@
 
 
