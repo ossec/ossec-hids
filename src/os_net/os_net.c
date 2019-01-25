@@ -530,7 +530,7 @@ int OS_RecvTCPBuffer(int socket, char *buffer, int sizet)
 
     if ((retsize = recv(socket, buffer, sizet - 1, 0)) > 0) {
         buffer[retsize] = '\0';
-        return (0);
+        return (retsize);
     }
     return (-1);
 }
