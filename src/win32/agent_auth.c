@@ -73,7 +73,7 @@ void CreateSecureConnection(char *manager, int port, int *socket, CtxtHandle *co
     *socket = OS_ConnectTCP(port, manager);
     
     if (socket == 0)
-        ErrorExit("%s: Unable to connect to %s:%s", ARGV0, manager, port);
+        ErrorExit("%s: Unable to connect to %s:%d", ARGV0, manager, port);
 	
 
 
@@ -148,7 +148,7 @@ void CreateSecureConnection(char *manager, int port, int *socket, CtxtHandle *co
     // Send remaining tokens if any
     SendSecurityToken(*socket, OutBuffers);
 
-    printf("INFO: Connected to %s:%s\n", manager, port);
+    printf("INFO: Connected to %s:%d\n", manager, port);
     LocalFree(buffer);
 }
 
