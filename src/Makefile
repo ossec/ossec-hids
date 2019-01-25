@@ -794,7 +794,7 @@ os_regex/%.o: os_regex/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
 
 os_regex.a: ${os_regex_o}
-	${OSSEC_LINK} -T $@ $^ $(shell pkg-config --variable=libdir libpcre2-8 | sed -re 's,/? *$$,/libpcre2-8.a,')
+	${OSSEC_LINK} -T $@ $^ libpcre2-8.a
 	${OSSEC_RANLIB} $@
 
 #### os_net ##########
