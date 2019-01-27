@@ -13,7 +13,9 @@
 /* Prototypes */
 static void helpmsg(void) __attribute__((noreturn));
 static void print_banner(void);
+#ifndef WIN32
 static void manage_shutdown(int sig) __attribute__((noreturn));
+#endif
 
 
 #if defined(__MINGW32__)
@@ -66,6 +68,7 @@ static void print_banner()
     return;
 }
 
+#ifndef WIN32
 /* Clean shutdown on kill */
 static void manage_shutdown(__attribute__((unused)) int sig)
 {
@@ -79,6 +82,7 @@ static void manage_shutdown(__attribute__((unused)) int sig)
 
     exit(0);
 }
+#endif
 
 int main(int argc, char **argv)
 {
