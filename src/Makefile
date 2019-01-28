@@ -797,7 +797,7 @@ os_regex/%.o: os_regex/%.c
 
 os_regex.a: ${os_regex_o} libpcre2-8.a
 	(mkdir -p libpcre2_objs && cd libpcre2_objs && ${QUIET_LINK}${MING_BASE}ar -x ../libpcre2-8.a)
-	${OSSEC_LINK} $@ ${os_regex_o} $(wildcard libpcre2_objs/*.o)
+	${OSSEC_LINK} $@ ${os_regex_o} $(addprefix libpcre2_objs/,$(shell ${MING_BASE}ar -t libpcre2-8.a))
 	${OSSEC_RANLIB} $@
 	rm -rf libpcre2_objs
 
@@ -1359,9 +1359,10 @@ clean-test:
 	find . -name "*.gcda" -exec rm {} \;
 
 clean-external:
-	rm -f ${cjson_o} libcJSON.a
+	rm -f ${cjson_o} libcJSON.a libpcre2-8.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
 	cd ${EXTERNAL_LUA} && ${MAKE} clean
+	cd ${EXTERNAL_PCRE2} && ${MAKE} distclean
 
 
 clean-internals:
