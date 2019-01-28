@@ -1310,37 +1310,37 @@ win32_ui_o := $(win32_ui_c:.c=.o)
 win32/ui/%.o: win32/ui/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -UOSSECHIDS -DARGV0=\"ossec-win32ui\" -c $^ -o $@
 
-win32/ossec-agent.exe: win32/icon.o win32/win_agent.o win32/win_service.o $(filter-out syscheckd/seechanges.o, ${syscheck_o}) ${rootcheck_o} $(filter-out client-agent/main.o, $(filter-out client-agent/agentd.o, $(filter-out client-agent/event-forward.o, ${client_agent_o}))) $(filter-out logcollector/main.o, ${os_logcollector_o}) ${os_execd_o} ${ossec_libs} ${ZLIB_LIB}
+win32/ossec-agent.exe: win32/icon.o win32/win_agent.o win32/win_service.o $(filter-out syscheckd/seechanges.o, ${syscheck_o}) ${rootcheck_o} $(filter-out client-agent/main.o, $(filter-out client-agent/agentd.o, $(filter-out client-agent/event-forward.o, ${client_agent_o}))) $(filter-out logcollector/main.o, ${os_logcollector_o}) ${os_execd_o} ${ossec_libs} libpcre2-8.a ${ZLIB_LIB}
 	${OSSEC_CCBIN} -DARGV0=\"ossec-agent\" -DOSSECHIDS ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/ossec-agent-eventchannel.exe: win32/icon.o win32/win_agent.o win32/win_service.o $(filter-out syscheckd/seechanges.o, ${syscheck_o}) ${rootcheck_o} $(filter-out client-agent/main.o, $(filter-out client-agent/agentd.o, $(filter-out client-agent/event-forward.o, ${client_agent_o}))) $(filter-out logcollector/main-event.o, ${os_logcollector_eventchannel_o}) ${os_execd_o} ${ossec_libs} ${ZLIB_LIB}
+win32/ossec-agent-eventchannel.exe: win32/icon.o win32/win_agent.o win32/win_service.o $(filter-out syscheckd/seechanges.o, ${syscheck_o}) ${rootcheck_o} $(filter-out client-agent/main.o, $(filter-out client-agent/agentd.o, $(filter-out client-agent/event-forward.o, ${client_agent_o}))) $(filter-out logcollector/main-event.o, ${os_logcollector_eventchannel_o}) ${os_execd_o} ${ossec_libs} libpcre2-8.a ${ZLIB_LIB}
 	${OSSEC_CCBIN} -DARGV0=\"ossec-agent\" -DOSSECHIDS -DEVENTCHANNEL_SUPPORT ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/ossec-rootcheck.exe: win32/icon.o win32/win_service_rk.o ${rootcheck_rk_o} ${ossec_libs}
+win32/ossec-rootcheck.exe: win32/icon.o win32/win_service_rk.o ${rootcheck_rk_o} ${ossec_libs} libpcre2-8.a
 	${OSSEC_CCBIN} -DARGV0=\"ossec-rootcheck\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/manage_agents.exe: win32/win_service_rk.o ${addagent_o} ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+win32/manage_agents.exe: win32/win_service_rk.o ${addagent_o} ${ossec_libs} libpcre2-8.a ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} -DARGV0=\"manage-agents\" -DMA ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/setup-windows.exe: win32/win_service_rk.o win32/setup-win.o win32/setup-shared.o ${ossec_libs}
+win32/setup-windows.exe: win32/win_service_rk.o win32/setup-win.o win32/setup-shared.o ${ossec_libs} libpcre2-8.a
 	${OSSEC_CCBIN} -DARGV0=\"setup-windows\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/setup-syscheck.exe: win32/setup-syscheck.o win32/setup-shared.o ${ossec_libs}
+win32/setup-syscheck.exe: win32/setup-syscheck.o win32/setup-shared.o ${ossec_libs} libpcre2-8.a
 	${OSSEC_CCBIN} -DARGV0=\"setup-syscheck\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/setup-iis.exe: win32/setup-iis.o ${ossec_libs}
+win32/setup-iis.exe: win32/setup-iis.o ${ossec_libs} libpcre2-8.a
 	${OSSEC_CCBIN} -DARGV0=\"setup-iis\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/add-localfile.exe: win32/add-localfile.o ${ossec_libs}
+win32/add-localfile.exe: win32/add-localfile.o ${ossec_libs} libpcre2-8.a
 	${OSSEC_CCBIN} -DARGV0=\"add-localfile\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 win32/resource.o: win32/ui/win32ui.rc
 	${OSSEC_WINDRES} -i $< -o $@
 
-win32/os_win32ui.exe: win32/resource.o win32/win_service_rk.o ${win32_ui_o} addagent/b64.o ${ossec_libs}
+win32/os_win32ui.exe: win32/resource.o win32/win_service_rk.o ${win32_ui_o} addagent/b64.o ${ossec_libs} libpcre2-8.a
 	${OSSEC_CCBIN} -DARGV0=\"ossec-win32ui\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -mwindows -o $@
 
-win32/agent-auth.exe: win32/win_service_rk.o addagent/validate.c win32/agent_auth.c ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+win32/agent-auth.exe: win32/win_service_rk.o addagent/validate.c win32/agent_auth.c ${ossec_libs} libpcre2-8.a ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} -DARGV0=\"agent-auth\" -DOSSECHIDS ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -lshlwapi -lwsock32 -lsecur32 -flto -o $@
 
 
