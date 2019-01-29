@@ -258,6 +258,7 @@ static void OS_Run(MailConfig *mail)
                 goto snd_check_hour;
             }
 
+            fflush(fileq->fp);
             pid = fork();
             if (pid < 0) {
                 merror(FORK_ERROR, ARGV0, errno, strerror(errno));
