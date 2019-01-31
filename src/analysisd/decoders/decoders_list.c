@@ -64,12 +64,14 @@ static OSDecoderNode *_OS_AddOSDecoder(OSDecoderNode *s_node, OSDecoderInfo *pi)
             if ((strcmp(tmp_node->osdecoder->name, pi->name) == 0) &&
                     (pi->parent != NULL)) {
                 if ((tmp_node->osdecoder->prematch ||
-                        tmp_node->osdecoder->regex) && pi->regex_offset) {
+                        tmp_node->osdecoder->regex ||
+                        tmp_node->osdecoder->prematch_pcre2 ||
+                        tmp_node->osdecoder->pcre2) && pi->regex_offset) {
                     rm_f = 1;
                 }
 
                 /* Multi-regexes patterns cannot have prematch */
-                if (pi->prematch) {
+                if (pi->prematch || pi->prematch_pcre2) {
                     merror(PDUP_INV, ARGV0, pi->name);
                     goto error;
                 }
@@ -81,6 +83,8 @@ static OSDecoderNode *_OS_AddOSDecoder(OSDecoderNode *s_node, OSDecoderInfo *pi)
                 }
 
                 if (tmp_node->osdecoder->regex && pi->regex) {
+                    tmp_node->osdecoder->get_next = 1;
+                } else if (tmp_node->osdecoder->pcre2 && pi->pcre2) {
                     tmp_node->osdecoder->get_next = 1;
                 } else {
                     merror(DUP_INV, ARGV0, pi->name);
@@ -140,7 +144,7 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
     /* We can actually have two lists. One with program
      * name and the other without.
      */
-    if (pi->program_name) {
+    if (pi->program_name || pi->program_name_pcre2) {
         osdecodernode = osdecodernode_forpname;
     } else {
         osdecodernode = osdecodernode_nopname;
@@ -192,7 +196,7 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
         }
 
         /* Update global decoder pointers */
-        if (pi->program_name) {
+        if (pi->program_name || pi->program_name_pcre2) {
             osdecodernode_forpname = osdecodernode;
         } else {
             osdecodernode_nopname = osdecodernode;

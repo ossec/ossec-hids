@@ -43,11 +43,18 @@ void DecodeEvent(Eventinfo *lf)
 
         /* First check program name */
         if (lf->program_name) {
-            if (!OSMatch_Execute(lf->program_name, lf->p_name_size,
-                                 nnode->program_name)) {
-                continue;
+            if (nnode->program_name) {
+                if (!OSMatch_Execute(lf->program_name, lf->p_name_size,
+                                     nnode->program_name)) {
+                    continue;
+                }
+                pmatch = lf->log;
+            } else if (nnode->program_name_pcre2) {
+                if (!OSPcre2_Execute(lf->program_name, nnode->program_name_pcre2)) {
+                    continue;
+                }
+                pmatch = lf->log;
             }
-            pmatch = lf->log;
         }
 
         /* If prematch fails, go to the next osdecoder in the list */
@@ -55,10 +62,10 @@ void DecodeEvent(Eventinfo *lf)
             if (!(pmatch = OSRegex_Execute(lf->log, nnode->prematch))) {
                 continue;
             }
-
-            /* Next character */
-            if (*pmatch != '\0') {
-                pmatch++;
+        }
+        else if (nnode->prematch_pcre2) {
+            if (!(pmatch = OSPcre2_Execute(lf->log, nnode->prematch_pcre2))) {
+                continue;
             }
         }
 
@@ -98,10 +105,21 @@ void DecodeEvent(Eventinfo *lf)
                     }
 
                     if ((cmatch = OSRegex_Execute(llog2, nnode->prematch))) {
-                        if (*cmatch != '\0') {
-                            cmatch++;
-                        }
+                        lf->decoder_info = nnode;
 
+                        break;
+                    }
+                } else if (nnode->prematch_pcre2) {
+                    const char *llog2;
+
+                    /* If we have an offset set, use it */
+                    if (nnode->prematch_offset & AFTER_PARENT) {
+                        llog2 = pmatch;
+                    } else {
+                        llog2 = lf->log;
+                    }
+
+                    if ((cmatch = OSPcre2_Execute(llog2, nnode->prematch_pcre2))) {
                         lf->decoder_info = nnode;
 
                         break;
@@ -181,11 +199,6 @@ void DecodeEvent(Eventinfo *lf)
                     return;
                 }
 
-                /* Fix next pointer */
-                if (*regex_prev != '\0') {
-                    regex_prev++;
-                }
-
                 while (nnode->regex->sub_strings[i]) {
                     if (nnode->order[i]) {
                         nnode->order[i](lf, nnode->regex->sub_strings[i]);
@@ -209,6 +222,66 @@ void DecodeEvent(Eventinfo *lf)
 
                 break;
             }
+            else if (nnode->pcre2) {
+                int i = 0;
+
+                /* With regex we have multiple options
+                 * regarding the offset:
+                 * after the prematch,
+                 * after the parent,
+                 * after some previous regex,
+                 * or any offset
+                 */
+                if (nnode->regex_offset) {
+                    if (nnode->regex_offset & AFTER_PARENT) {
+                        llog = pmatch;
+                    } else if (nnode->regex_offset & AFTER_PREMATCH) {
+                        llog = cmatch;
+                    } else if (nnode->regex_offset & AFTER_PREVREGEX) {
+                        if (!regex_prev) {
+                            llog = cmatch;
+                        } else {
+                            llog = regex_prev;
+                        }
+                    }
+                } else {
+                    llog = lf->log;
+                }
+
+                /* If Regex does not match, return */
+                if (!(regex_prev = OSPcre2_Execute(llog, nnode->pcre2))) {
+                    if (nnode->get_next) {
+                        child_node = child_node->next;
+                        nnode = child_node->osdecoder;
+                        continue;
+                    }
+                    return;
+                }
+
+                while (nnode->pcre2->sub_strings[i]) {
+                    if (nnode->order[i]) {
+                        nnode->order[i](lf, nnode->pcre2->sub_strings[i]);
+                        nnode->pcre2->sub_strings[i] = NULL;
+                        i++;
+                        continue;
+                    }
+
+                    /* We do not free any memory used above */
+                    os_free(nnode->pcre2->sub_strings[i]);
+                    nnode->pcre2->sub_strings[i] = NULL;
+                    i++;
+                }
+
+                /* If we have a next regex, try getting it */
+                if (nnode->get_next) {
+                    child_node = child_node->next;
+                    nnode = child_node->osdecoder;
+                    continue;
+                }
+
+                break;
+            }
+
 
             /* If we don't have a regex, we may leave now */
             return;

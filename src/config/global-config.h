@@ -68,7 +68,7 @@ typedef struct __Config {
     os_ip **white_list;
 
     /* List of hostnames to never block */
-    OSMatch **hostname_white_list;
+    char **hostname_white_list;
 
     /* List of rules */
     char **includes;

@@ -151,7 +151,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 
     /* Get right white_size */
     if (Config && Config->hostname_white_list) {
-        OSMatch **ww;
+        char **ww;
         ww = Config->hostname_white_list;
 
         while (*ww != NULL) {
@@ -393,28 +393,16 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
             /* Add hostname */
             else if (Config) {
                 hostname_white_size++;
-                Config->hostname_white_list = (OSMatch **)
+                Config->hostname_white_list = (char **)
                                               realloc(Config->hostname_white_list,
-                                                      sizeof(OSMatch *)*hostname_white_size);
+                                                      sizeof(char *)*hostname_white_size);
 
                 if (!Config->hostname_white_list) {
                     merror(MEM_ERROR, __local_name, errno, strerror(errno));
                     return (OS_INVALID);
                 }
-                os_calloc(1,
-                          sizeof(OSMatch),
-                          Config->hostname_white_list[hostname_white_size - 2]);
+                os_strdup(node[i]->content, Config->hostname_white_list[hostname_white_size - 2]);
                 Config->hostname_white_list[hostname_white_size - 1] = NULL;
-
-                if (!OSMatch_Compile(
-                            node[i]->content,
-                            Config->hostname_white_list[hostname_white_size - 2],
-                            0)) {
-                    merror(REGEX_COMPILE, __local_name, node[i]->content,
-                           Config->hostname_white_list
-                           [hostname_white_size - 2]->error);
-                    return (-1);
-                }
             }
 #endif
 

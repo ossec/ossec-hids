@@ -124,7 +124,9 @@ typedef struct _RuleInfo {
 
     char *group;
     OSMatch *match;
+    OSPcre2 *match_pcre2;
     OSRegex *regex;
+    OSPcre2 *pcre2;
 
     /* Policy-based rules */
     char *day_time;
@@ -143,6 +145,17 @@ typedef struct _RuleInfo {
     OSMatch *hostname;
     OSMatch *program_name;
     OSMatch *extra_data;
+    OSPcre2 *srcgeoip_pcre2;
+    OSPcre2 *dstgeoip_pcre2;
+    OSPcre2 *srcport_pcre2;
+    OSPcre2 *dstport_pcre2;
+    OSPcre2 *user_pcre2;
+    OSPcre2 *url_pcre2;
+    OSPcre2 *id_pcre2;
+    OSPcre2 *status_pcre2;
+    OSPcre2 *hostname_pcre2;
+    OSPcre2 *program_name_pcre2;
+    OSPcre2 *extra_data_pcre2;
     char *action;
 
     char *comment; /* description in the xml */
