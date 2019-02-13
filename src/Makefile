@@ -93,7 +93,6 @@ ifeq (${uname_S},FreeBSD)
 		LUA_PLAT=freebsd
 		CFLAGS+=-I/usr/local/include
 		OSSEC_LDFLAGS+=-L/usr/local/lib
-		#PCRE2_LOCATION?=$(shell pcre2-config --prefix)/lib
 else
 ifeq (${uname_S},NetBSD)
 		DEFINES+=-DNetBSD
@@ -108,7 +107,6 @@ ifeq (${uname_S},OpenBSD)
 		LUA_PLAT=posix
 		CFLAGS+=-I/usr/local/include
 		OSSEC_LDFLAGS+=-L/usr/local/lib
-		#PCRE2_LOCATION?=$(shell pcre2-config --prefix)/lib
 else
 ifeq (${uname_S},HP-UX)
 		DEFINES+=-DHPUX
