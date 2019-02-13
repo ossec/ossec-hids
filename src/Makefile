@@ -153,6 +153,7 @@ ifeq (${PCRE2_SYSTEM},no)
 	DEFINES+=${PCRE2_INCLUDE}
 	DEFINES+=-DPCRE2_STATIC
 else
+	PCRE2_LOCATION?=$(shell pcre2-config --prefix)/lib
 	OSSEC_LDFLAGS+=-lpcre2-8
 endif
 
@@ -742,6 +743,7 @@ libcJSON.a: ${cjson_o}
 
 #### pcre2 ##########
 
+ifeq (${PCRE2_SYSTEM},no)
 libpcre2-8.a: ${EXTERNAL_PCRE2}/install/lib/libpcre2-8.a
 	cp $< $@
 	${OSSEC_RANLIB} $@
@@ -765,7 +767,11 @@ else
 		--enable-static && \
 	make install-libLTLIBRARIES install-nodist_includeHEADERS
 endif
-
+else
+libpcre2-8.a: ${PCRE2_LOCATION}/libpcre2-8.a
+	cp $< $@
+	${OSSEC_RANLIB} $@
+endif
 
 
 ####################
@@ -1362,7 +1368,7 @@ clean-external:
 	rm -f ${cjson_o} libcJSON.a libpcre2-8.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
 	cd ${EXTERNAL_LUA} && ${MAKE} clean
-	cd ${EXTERNAL_PCRE2} && ${MAKE} distclean
+	#cd ${EXTERNAL_PCRE2} && ${MAKE} distclean
 
 
 clean-internals:
