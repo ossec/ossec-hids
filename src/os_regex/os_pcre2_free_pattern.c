@@ -8,15 +8,13 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "os_regex.h"
-#include "os_regex_internal.h"
-
 
 /* Release all the memory created by the compilation/execution phases */
-void OSMatch_FreePattern(OSMatch *reg)
+void OSPcre2_FreePattern(OSPcre2 *reg)
 {
     /* Free the match data */
     if (reg->match_data) {
@@ -34,6 +32,13 @@ void OSMatch_FreePattern(OSMatch *reg)
     if (reg->pattern) {
         free(reg->pattern);
         reg->pattern = NULL;
+    }
+
+    /* Free the sub strings */
+    if (reg->sub_strings) {
+        OSPcre2_FreeSubStrings(reg);
+        free(reg->sub_strings);
+        reg->sub_strings = NULL;
     }
 
     return;

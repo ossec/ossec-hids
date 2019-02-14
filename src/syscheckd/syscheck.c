@@ -17,7 +17,9 @@
 
 /* Prototypes */
 static void read_internal(int debug_level);
+#ifndef WIN32
 static void help_syscheckd(void) __attribute__((noreturn));
+#endif
 
 syscheck_config syscheck;
 
@@ -163,6 +165,7 @@ int Start_win32_Syscheck()
 }
 #endif /* WIN32 */
 
+#ifndef WIN32
 /* Print help statement */
 static void help_syscheckd()
 {
@@ -180,7 +183,6 @@ static void help_syscheckd()
     exit(1);
 }
 
-#ifndef WIN32
 /* Syscheck unix main */
 int main(int argc, char **argv)
 {

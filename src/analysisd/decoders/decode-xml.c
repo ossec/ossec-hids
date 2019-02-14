@@ -167,6 +167,9 @@ int ReadDecodeXML(const char *file)
     const char *xml_program_name = "program_name";
     const char *xml_prematch = "prematch";
     const char *xml_regex = "regex";
+    const char *xml_program_name_pcre2 = "program_name_pcre2";
+    const char *xml_prematch_pcre2 = "prematch_pcre2";
+    const char *xml_pcre2 = "pcre2";
     const char *xml_order = "order";
     const char *xml_type = "type";
     const char *xml_fts = "fts";
@@ -222,6 +225,9 @@ int ReadDecodeXML(const char *file)
         char *regex;
         char *prematch;
         char *p_name;
+        char *pcre2;
+        char *prematch_pcre2;
+        char *p_name_pcre2;
 
         if (!node[i]->element ||
                 strcasecmp(node[i]->element, xml_decoder) != 0) {
@@ -276,6 +282,9 @@ int ReadDecodeXML(const char *file)
         pi->prematch = NULL;
         pi->program_name = NULL;
         pi->regex = NULL;
+        pi->prematch_pcre2 = NULL;
+        pi->program_name_pcre2 = NULL;
+        pi->pcre2 = NULL;
         pi->use_own_name = 0;
         pi->get_next = 0;
         pi->regex_offset = 0;
@@ -284,6 +293,9 @@ int ReadDecodeXML(const char *file)
         regex = NULL;
         prematch = NULL;
         p_name = NULL;
+        pcre2 = NULL;
+        prematch_pcre2 = NULL;
+        p_name_pcre2 = NULL;
 
         /* Check if strdup worked */
         if (!pi->name) {
@@ -343,6 +355,35 @@ int ReadDecodeXML(const char *file)
                                 elements[j]->content);
             }
 
+            /* Get the PCRE2 */
+            else if (strcasecmp(elements[j]->element, xml_pcre2) == 0) {
+                int r_offset;
+                r_offset = ReadDecodeAttrs(elements[j]->attributes,
+                                           elements[j]->values);
+
+                if (r_offset & AFTER_ERROR) {
+                    merror(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    return (0);
+                }
+
+                /* Only the first regex entry may have an offset */
+                if (pcre2 && r_offset) {
+                    merror(DUP_REGEX, ARGV0, pi->name);
+                    merror(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    return (0);
+                }
+
+                /* regex offset */
+                if (r_offset) {
+                    pi->regex_offset = r_offset;
+                }
+
+                /* Assign regex */
+                pcre2 =
+                    _loadmemory(pcre2,
+                                elements[j]->content);
+            }
+
             /* Get the pre match */
             else if (strcasecmp(elements[j]->element, xml_prematch) == 0) {
                 int r_offset;
@@ -369,10 +410,38 @@ int ReadDecodeXML(const char *file)
                     _loadmemory(prematch,
                                 elements[j]->content);
             }
+            else if (strcasecmp(elements[j]->element, xml_prematch_pcre2) == 0) {
+                int r_offset;
+
+                r_offset = ReadDecodeAttrs(
+                               elements[j]->attributes,
+                               elements[j]->values);
+
+                if (r_offset & AFTER_ERROR) {
+                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                }
+
+                /* Only the first prematch entry may have an offset */
+                if (prematch_pcre2 && r_offset) {
+                    merror(DUP_REGEX, ARGV0, pi->name);
+                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                }
+
+                if (r_offset) {
+                    pi->prematch_offset = r_offset;
+                }
+
+                prematch_pcre2 =
+                    _loadmemory(prematch_pcre2,
+                                elements[j]->content);
+            }
 
             /* Get program name */
             else if (strcasecmp(elements[j]->element, xml_program_name) == 0) {
                 p_name = _loadmemory(p_name, elements[j]->content);
+            }
+            else if (strcasecmp(elements[j]->element, xml_program_name_pcre2) == 0) {
+                p_name_pcre2 = _loadmemory(p_name_pcre2, elements[j]->content);
             }
 
             /* Get the FTS comment */
@@ -571,14 +640,14 @@ int ReadDecodeXML(const char *file)
 
 
         /* Prematch must be set */
-        if (!prematch && !pi->parent && !p_name) {
+        if (!(prematch || prematch_pcre2) && !pi->parent && !(p_name || p_name_pcre2)) {
             merror(DECODE_NOPRE, ARGV0, pi->name);
             merror(DEC_REGEX_ERROR, ARGV0, pi->name);
             return (0);
         }
 
         /* If pi->regex is not set, fts must not be set too */
-        if ((!regex && (pi->fts || pi->order)) || (regex && !pi->order)) {
+        if ((!(regex || pcre2) && (pi->fts || pi->order)) || ((regex || pcre2) && !pi->order)) {
             merror(DEC_REGEX_ERROR, ARGV0, pi->name);
             return (0);
         }
@@ -598,7 +667,7 @@ int ReadDecodeXML(const char *file)
             if (!pi->parent) {
                 pi->regex_offset = 0;
                 pi->regex_offset |= AFTER_PARENT;
-            } else if (!prematch) {
+            } else if (!(prematch || prematch_pcre2)) {
                 merror(INV_OFFSET, ARGV0, "after_prematch");
                 merror(DEC_REGEX_ERROR, ARGV0, pi->name);
                 return (0);
@@ -607,7 +676,7 @@ int ReadDecodeXML(const char *file)
 
         /* For the after_regex offset */
         if (pi->regex_offset & AFTER_PREVREGEX) {
-            if (!pi->parent || !regex) {
+            if (!pi->parent || !(regex || pcre2)) {
                 merror(INV_OFFSET, ARGV0, "after_regex");
                 merror(DEC_REGEX_ERROR, ARGV0, pi->name);
                 return (0);
@@ -639,6 +708,15 @@ int ReadDecodeXML(const char *file)
 
             free(prematch);
         }
+        else if (prematch_pcre2) {
+            os_calloc(1, sizeof(OSPcre2), pi->prematch_pcre2);
+            if (!OSPcre2_Compile(prematch_pcre2, pi->prematch_pcre2, PCRE2_CASELESS)) {
+                merror(REGEX_COMPILE, ARGV0, prematch_pcre2, pi->prematch_pcre2->error);
+                return (0);
+            }
+
+            free(prematch_pcre2);
+        }
 
         /* Compile the p_name */
         if (p_name) {
@@ -649,6 +727,15 @@ int ReadDecodeXML(const char *file)
             }
 
             free(p_name);
+        }
+        else if (p_name_pcre2) {
+            os_calloc(1, sizeof(OSPcre2), pi->program_name_pcre2);
+            if (!OSPcre2_Compile(p_name_pcre2, pi->program_name_pcre2, PCRE2_CASELESS)) {
+                merror(REGEX_COMPILE, ARGV0, p_name_pcre2, pi->program_name_pcre2->error);
+                return (0);
+            }
+
+            free(p_name_pcre2);
         }
 
         /* We may not have the pi->regex */
@@ -666,6 +753,15 @@ int ReadDecodeXML(const char *file)
             }
 
             free(regex);
+        }
+        else if (pcre2) {
+            os_calloc(1, sizeof(OSPcre2), pi->pcre2);
+            if (!OSPcre2_Compile(pcre2, pi->pcre2, PCRE2_CASELESS)) {
+                merror(REGEX_COMPILE, ARGV0, pcre2, pi->pcre2->error);
+                return (0);
+            }
+
+            free(pcre2);
         }
 
         /* Validate arguments */
@@ -724,7 +820,7 @@ char *_loadmemory(char *at, char *str)
 {
     if (at == NULL) {
         size_t strsize = 0;
-        if ((strsize = strlen(str)) < OS_SIZE_1024) {
+        if ((strsize = strlen(str)) < OS_SIZE_8192) {
             at = (char *) calloc(strsize + 1, sizeof(char));
             if (at == NULL) {
                 merror(MEM_ERROR, ARGV0, errno, strerror(errno));
@@ -742,7 +838,7 @@ char *_loadmemory(char *at, char *str)
         size_t strsize = strlen(str);
         size_t atsize = strlen(at);
         size_t finalsize = atsize + strsize + 1;
-        if (finalsize > OS_SIZE_1024) {
+        if (finalsize > OS_SIZE_8192) {
             merror(SIZE_ERROR, ARGV0, str);
             return (NULL);
         }

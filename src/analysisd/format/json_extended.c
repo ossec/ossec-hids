@@ -177,7 +177,7 @@ void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
  // Parse groups PCI
 int add_groupPCI(cJSON* rule, char* group, int firstPCI)
 {
-    char* len = NULL;
+    //char* len = NULL;
     cJSON* pci;
     char aux[strlen(group)];
     // If group begin with pci_dss_ we have a PCI group
@@ -201,7 +201,7 @@ int add_groupPCI(cJSON* rule, char* group, int firstPCI)
 
 int add_groupCIS(cJSON* rule, char* group, int firstCIS)
 {
-    char* len = NULL;
+    //char* len = NULL;
     cJSON* cis;
     char aux[strlen(group)];
     if((startsWith("cis_", group)) == 1) {

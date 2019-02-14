@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -123,6 +123,8 @@ static int _os_report_check_filters(const alert_data *al_data, const report_filt
             if (!strstr(al_data->srcip, r_filter->srcip)) {
                 return (0);
             }
+        } else {
+            return (0);
         }
     }
     if (r_filter->user) {
@@ -133,6 +135,8 @@ static int _os_report_check_filters(const alert_data *al_data, const report_filt
             if (!strstr(al_data->user, r_filter->user)) {
                 return (0);
             }
+        } else {
+            return (0);
         }
     }
     if (r_filter->files) {
@@ -143,6 +147,8 @@ static int _os_report_check_filters(const alert_data *al_data, const report_filt
             if (!strstr(al_data->filename, r_filter->files)) {
                 return (0);
             }
+        } else {
+            return (0);
         }
     }
     return (1);

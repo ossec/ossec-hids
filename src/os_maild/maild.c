@@ -237,31 +237,6 @@ static void OS_Run(MailConfig *mail)
         tm = time(NULL);
         p = localtime(&tm);
 
-        /* SMS messages are sent without delay */
-        if (msg_sms) {
-            pid_t pid;
-
-            pid = fork();
-
-            if (pid < 0) {
-                merror(FORK_ERROR, ARGV0, errno, strerror(errno));
-                sleep(30);
-                continue;
-            } else if (pid == 0) {
-                if (OS_Sendsms(mail, p, msg_sms) < 0) {
-                    merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
-                }
-
-                exit(0);
-            }
-
-            /* Free SMS structure */
-            FreeMailMsg(msg_sms);
-            msg_sms = NULL;
-
-            /* Increase child count */
-            childcount++;
-        }
 
         /* If mail_timeout == NEXTMAIL_TIMEOUT, we will try to get
          * more messages, before sending anything
@@ -283,6 +258,7 @@ static void OS_Run(MailConfig *mail)
                 goto snd_check_hour;
             }
 
+            fflush(fileq->fp);
             pid = fork();
             if (pid < 0) {
                 merror(FORK_ERROR, ARGV0, errno, strerror(errno));

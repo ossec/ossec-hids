@@ -17,7 +17,6 @@
 /* Prototypes */
 static void helpmsg(void) __attribute__((noreturn));
 
-
 static void helpmsg()
 {
     printf("\nOSSEC HIDS %s: Control remote agents.\n", ARGV0);
@@ -28,12 +27,14 @@ static void helpmsg()
     printf("\t-i <id>     Extracts information from an agent.\n");
     printf("\t-R <id>     Restarts agent.\n");
     printf("\t-r -a       Runs the integrity/rootkit checking on all agents now.\n");
-    printf("\t-r -u <id>  Runs the integrity/rootkit checking on one agent now.\n\n");
+    printf("\t-r          Runs the integrity/rootkit checking on one agent now.\n\n");
     printf("\t-b <ip>     Blocks the specified ip address.\n");
     printf("\t-f <ar>     Used with -b, specifies which response to run.\n");
     printf("\t-L          List available active responses.\n");
+    printf("\t-m          Show the limit of agents that can be added.\n");
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
-	printf("\t-j          Changes the output to JSON .\n");
+    printf("\t-j          Changes the output to JSON .\n");
+    printf("\t-u <id>     Used with -r and -b Specifies the agent to use.\n");
     exit(1);
 }
 
@@ -51,9 +52,19 @@ int main(int argc, char **argv)
     int arq = 0;
     gid_t gid;
     uid_t uid;
-    int c = 0, restart_syscheck = 0, restart_all_agents = 0, list_agents = 0;
-    int info_agent = 0, agt_id = 0, active_only = 0, csv_output = 0, json_output = 0;
-    int list_responses = 0, end_time = 0, restart_agent = 0;
+    int c = 0;
+    int restart_syscheck = 0;
+    int restart_all_agents = 0;
+    int list_agents = 0;
+    int info_agent = 0;
+    int agt_id = 0;
+    int active_only = 0;
+    int csv_output = 0;
+    int json_output = 0;
+    int list_responses = 0;
+    int end_time = 0;
+    int restart_agent = 0;
+    int show_max_agents = 0;
 
     char shost[512];
 
@@ -67,7 +78,7 @@ int main(int argc, char **argv)
         helpmsg();
     }
 
-    while ((c = getopt(argc, argv, "VehdlLcsjaru:i:b:f:R:")) != -1) {
+    while ((c = getopt(argc, argv, "VehdlLcsjarmu:i:b:f:R:")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -89,6 +100,9 @@ int main(int argc, char **argv)
                 break;
             case 'l':
                 list_agents++;
+                break;
+            case 'm':
+                show_max_agents++;
                 break;
             case 's':
                 csv_output = 1;
@@ -233,7 +247,6 @@ int main(int argc, char **argv)
 
     /* List available agents */
     if (list_agents) {
-        cJSON *root = NULL;
         cJSON *agents = NULL;
         
         if (!csv_output && !json_output) {
@@ -241,9 +254,8 @@ int main(int argc, char **argv)
                    ARGV0);
             printf("\n   ID: 000, Name: %s (server), IP: 127.0.0.1, Active/Local\n",
                    shost);
-		} else if(json_output){
+        } else if(json_output){
                 cJSON *first = cJSON_CreateObject();
-                root = cJSON_CreateObject();
                 agents = cJSON_CreateArray();
                 
                 if (!(first && root && agents))
@@ -262,14 +274,41 @@ int main(int argc, char **argv)
         }
         
         print_agents(1, active_only, csv_output, agents);
-		// Closing JSON Object array
-		if(json_output) {
-			 char *render = cJSON_PrintUnformatted(root);
-             printf("%s", render);
-             cJSON_Delete(root);
-             free(render);
+        // Closing JSON Object array
+        if(json_output) {
+            char *render = cJSON_PrintUnformatted(root);
+            printf("%s", render);
+            cJSON_Delete(root);
+            free(render);
         } else
-			printf("\n");
+            printf("\n");
+        exit(0);
+    }
+
+    /* Show limit of agents */
+
+    if (show_max_agents) {
+        if (json_output) {
+            cJSON *data = cJSON_CreateObject();
+
+            if (!(root && data)) {
+                exit(1);
+            }
+
+            cJSON_AddNumberToObject(data, "max_agents", MAX_AGENTS);
+            cJSON_AddNumberToObject(root, "error", 0);
+            cJSON_AddItemToObject(root, "data", data);
+
+            char *render = cJSON_PrintUnformatted(root);
+            printf("%s", render);
+            cJSON_Delete(root);
+            free(render);
+        } else if (csv_output) {
+            printf("%d\n", MAX_AGENTS);
+        } else {
+            printf("Limit of agents: %d\n", MAX_AGENTS);
+        }
+
         exit(0);
     }
 

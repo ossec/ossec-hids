@@ -6,6 +6,10 @@
 
 **Phase 2: Completed decoding.
        decoder: 'sudo'
+       dstuser: 'dcid'
+       url: '/var/www/htdocs'
+       srcuser: 'root'
+       status: '/usr/bin/tail /var/log/secure'
 
 **Phase 3: Completed filtering (rules).
        Rule id: '5403'
