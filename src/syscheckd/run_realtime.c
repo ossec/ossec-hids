@@ -82,7 +82,33 @@ int realtime_checksumfile(const char *file_name)
             return (1);
         }
         return (0);
+    } else {
+        /* New file */
+        char *c;
+        int i;
+        buf = strdup(file_name);
+
+        /* Find container directory */
+
+        while (c = strrchr(buf, '/'), c && c != buf) {
+            *c = '\0';
+
+            for (i = 0; syscheck.dir[i]; i++) {
+                if (strcmp(syscheck.dir[i], buf) == 0) {
+                    debug1("%s: DEBUG: Scanning new file '%s' with options for directory '%s'.", ARGV0, file_name, buf);
+                    read_dir(file_name, syscheck.opts[i], syscheck.filerestrict[i]);
+                    break;
+                }
+            }
+
+            if (syscheck.dir[i]) {
+                break;
+            }
+        }
+
+        free(buf);
     }
+
     return (0);
 }
 
@@ -184,6 +210,7 @@ int realtime_process()
     if (len < 0) {
         merror("%s: ERROR: Unable to read from real time buffer.", ARGV0);
     } else if (len > 0) {
+        buf[len] = '\0';
         while (i < (size_t) len) {
             event = (struct inotify_event *) (void *) &buf[i];
 
@@ -220,7 +247,7 @@ typedef struct _win32rtfim {
     OVERLAPPED overlap;
 
     char *dir;
-    TCHAR buffer[12288];
+    TCHAR buffer[1228800];
 } win32rtfim;
 
 int realtime_win32read(win32rtfim *rtlocald);
@@ -238,6 +265,10 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
 
     if (dwBytes == 0) {
         merror("%s: ERROR: real time call back called, but 0 bytes.", ARGV0);
+        rtlocald = OSHash_Get(syscheck.realtime->dirtb, "0");
+        if(rtlocald)
+            realtime_win32read(rtlocald);
+
         return;
     }
 
@@ -307,7 +338,7 @@ int realtime_win32read(win32rtfim *rtlocald)
                                rtlocald->buffer,
                                sizeof(rtlocald->buffer) / sizeof(TCHAR),
                                TRUE,
-                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE,
+                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY,
                                0,
                                &rtlocald->overlap,
                                RTCallBack);

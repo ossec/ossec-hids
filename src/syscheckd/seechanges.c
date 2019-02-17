@@ -48,7 +48,7 @@ int is_nodiff(const char *filename){
         int i;
         for (i = 0; syscheck.nodiff[i] != NULL; i++){
             if (strncasecmp(syscheck.nodiff[i], filename,
-                            strlen(filename)) == 0) {
+                            strlen(syscheck.nodiff[i])) == 0) {
                 return (TRUE);
             }
         }
@@ -299,7 +299,9 @@ char *seechanges_addfile(const char *filename)
     );
 
 
-    rename(old_location, tmp_location);
+    if((rename(old_location, tmp_location)) < 0) {
+        merror("%s: ERROR rename of %s failed: %s", ARGV0, old_location, strerror(errno));
+    }
     if(seechanges_dupfile(filename, old_location) != 1)
     {
         merror("%s: ERROR: Unable to create snapshot for %s",ARGV0, filename);

@@ -1,0 +1,307 @@
+#!/bin/sh
+
+# Global Variables
+OSSEC_HOME="/var/ossec/"
+OSSEC_CONF_FILE="$OSSEC_HOME/etc/ossec.conf"
+RULES_TEMPLATE="$OSSEC_HOME/etc/templates/rules.template"
+SYSCHECK_TEMPLATE="$OSSEC_HOME/etc/templates/syscheck.template"
+HOST_DENY_TEMPLATE="$OSSEC_HOME/etc/templates/ar-host-deny.template"
+FIREWALL_DROP_TEMPLATE="$OSSEC_HOME/etc/templates/ar-firewall-drop.template"
+DISABLE_ACCOUNT_TEMPLATE="$OSSEC_HOME/etc/templates/ar-disable-account.template"
+ROUTENULL_TEMPLATE="$OSSEC_HOME/etc/templates/ar-routenull.template"
+SYSLOG_TEMPLATE="$OSSEC_HOME//etc/templates/syslog-logs.template"
+SNORT_TEMPLATE="$OSSEC_HOME/etc/templates/snort-logs.template"
+APACHE_TEMPLATE="$OSSEC_HOME/etc/templates/apache-logs.template"
+PGSQL_TEMPLATE="$OSSEC_HOME/etc/templates/pgsql-logs.template"
+ACTIVE_RESPONSE_TEMPLATE="$OSSEC_HOME/etc/templates/active-response.template"
+
+HOSTNAME=$(hostname)
+
+# Module specific functions
+
+# Input validation function 
+# check_input <msg> <valid responses regex> <default>
+# if <default> is passed on as null, then there is no default
+# Example: check_input  "Some question (yes/no) " "yes|no"  "yes"
+function check_input {
+  message=$1
+  validate=$2
+  default=$3
+
+  while [ $? -ne 1 ]; do
+    echo -n "$message "
+    read INPUTTEXT < /dev/tty
+    if [ "$INPUTTEXT" == "" -a "$default" != "" ]; then
+      INPUTTEXT=$default
+      return 1
+    fi
+    echo $INPUTTEXT | egrep -q "$validate" && return 1
+    echo "Invalid input"
+  done
+}
+
+
+# Main
+echo
+echo "OSSEC Configuration utility v0.1"
+echo
+
+echo "<ossec_config>" > ${OSSEC_CONF_FILE}.new
+
+# Back up config file
+cp ${OSSEC_CONF_FILE} ${OSSEC_CONF_FILE}.bak
+
+# Set language
+
+# grabs System/User/Host
+
+# Ossec installed? 
+
+# server/agent/local or help
+check_input "1- What kind of installation do you want? (server, agent, local) [Default: server]:" "server|agent|local" "server"
+OSSEC_TYPE=$INPUTTEXT
+echo
+
+echo "2- Setting up the configuration environment."
+echo
+
+# email notification
+echo "3- Configuring the OSSEC HIDS."
+echo
+check_input "  3.1- Do you want e-mail notification? (y/n) [Default: y]:" "y|n" "y"
+EMAIL_NOTIFICATION=$INPUTTEXT
+
+echo "  <global>" >>  ${OSSEC_CONF_FILE}.new
+if [ "$EMAIL_NOTIFICATION" == "y" ]; then
+  # Get default email address
+  echo -n "   - What's your e-mail address? "
+  read EMAIL_ADDRESS < /dev/tty
+  echo "    <email_notification>yes</email_notification>" >> ${OSSEC_CONF_FILE}.new
+  echo "    <email_to>$EMAIL_ADDRESS</email_to>" >> ${OSSEC_CONF_FILE}.new
+ 
+  # find local smtp server, use it?
+
+  # else enter it manually
+  echo -n "   - What's your SMTP server ip/host? "
+  read SMTP_SERVER < /dev/tty
+  echo "    <smtp_server>$SMTP_SERVER</smtp_server>"  >> ${OSSEC_CONF_FILE}.new
+  echo "    <email_from>ossecm@$HOSTNAME</email_from>" >> ${OSSEC_CONF_FILE}.new
+else
+  echo "    <email_notification>no</email_notification>" >> ${OSSEC_CONF_FILE}.new
+fi
+echo "  </global>" >> ${OSSEC_CONF_FILE}.new
+echo "" >> ${OSSEC_CONF_FILE}.new
+
+
+
+# update the rules?
+cat $RULES_TEMPLATE >> ${OSSEC_CONF_FILE}.new
+echo "" >> ${OSSEC_CONF_FILE}.new
+echo
+
+
+
+# where is ossec
+
+# run integrity check daemon?
+check_input "  3.2- Do you want to run the integrity check daemon? (y/n) [y]:" "y|n" "y"
+INTEGRITY_CHECK=$INPUTTEXT
+if [ "$INTEGRITY_CHECK" == "y" ]; then
+  echo "" >> ${OSSEC_CONF_FILE}.new
+  cat $SYSCHECK_TEMPLATE >> ${OSSEC_CONF_FILE}.new
+  echo "" >> ${OSSEC_CONF_FILE}.new
+fi
+echo
+
+# run rootkit detection engine?
+check_input "  3.3- Do you want to run the rootkit detection engine? (y/n) [y]:" "y|n" "y" 
+ROOTCHECK=$INPUTTEXT
+if [ "$ROOTCHECK" == "y" ]; then
+  echo "" >> ${OSSEC_CONF_FILE}.new
+  echo "  <rootcheck>" >> ${OSSEC_CONF_FILE}.new
+  echo "    <rootkit_files>$OSSEC_HOME/etc/shared/rootkit_files.txt</rootkit_files>" >> ${OSSEC_CONF_FILE}.new
+  echo "    <rootkit_trojans>$OSSEC_HOME/etc/shared/rootkit_trojans.txt</rootkit_trojans>" >> ${OSSEC_CONF_FILE}.new
+  echo "    <system_audit>$OSSEC_HOME/etc/shared/system_audit_rcl.txt</system_audit>" >> ${OSSEC_CONF_FILE}.new
+  echo "    <system_audit>$OSSEC_HOME/etc/shared/cis_rhel_linux_rcl.txt</system_audit>" >> ${OSSEC_CONF_FILE}.new
+  echo "    <system_audit>$OSSEC_HOME/etc/shared/cis_rhel5_linux_rcl.txt</system_audit>" >> ${OSSEC_CONF_FILE}.new
+  echo "  </rootcheck>" >> ${OSSEC_CONF_FILE}.new
+  echo "" >> ${OSSEC_CONF_FILE}.new
+else
+  echo "" >> ${OSSEC_CONF_FILE}.new
+  echo "  <rootcheck>" >> ${OSSEC_CONF_FILE}.new
+  echo "    <disabled>yes</disabled>" >> ${OSSEC_CONF_FILE}.new
+  echo "  </rootcheck>" >> ${OSSEC_CONF_FILE}.new
+fi
+echo
+
+
+# enable active response
+echo "  3.4- Active response allows you to execute a specific 
+       command based on the events received. For example,
+       you can block an IP address or disable access for
+       a specific user.  
+       More information at:
+       http://www.ossec.net/en/manual.html#active-response
+       
+"
+check_input "   - Do you want to enable active response? (y/n) [y]:" "y|n" "y"
+ACTIVE_RESPONSE=$INPUTTEXT
+if [ "$ACTIVE_RESPONSE" == "y" ]; then
+  echo "     - Active response enabled.
+   
+   - By default, we can enable the host-deny and the 
+     firewall-drop responses. The first one will add
+     a host to the /etc/hosts.deny and the second one
+     will block the host on iptables (if linux) or on
+     ipfilter (if Solaris, FreeBSD or NetBSD).
+   - They can be used to stop SSHD brute force scans, 
+     portscans and some other forms of attacks. You can 
+     also add them to block on snort events, for example.
+
+  "
+  check_input "   - Do you want to enable the firewall-drop response? (y/n) [y]:" "y|n" "y"
+  FIREWALL_DROP=$INPUTTEXT
+
+  if [ "$FIREWALL_DROP" == "y" ]; then
+    echo "  <global>" >> ${OSSEC_CONF_FILE}.new
+    echo "    <white_list>127.0.0.1</white_list>" >> ${OSSEC_CONF_FILE}.new
+    echo "    <white_list>^localhost.localdomain$</white_list>" >> ${OSSEC_CONF_FILE}.new
+    # Add stuff to whitelist, default w/ local IP
+    for ip in `awk '/nameserver/ {print $2}' /etc/resolv.conf`; do
+      echo "    <white_list>$ip</white_list>" >> ${OSSEC_CONF_FILE}.new
+    done 
+   
+    check_input "   - Do you want to add more IPs to the white list? (y/n)? [n]:" "y|n" "n"
+    if [ "$INPUTTEXT" == "y" ]; then
+      echo -n "   - IPs (space separated): "
+      read WHITELIST_IPS < /dev/tty
+
+      for ip in $WHITELIST_IPS; do
+        echo "<white_list>$ip</white_list>" >> ${OSSEC_CONF_FILE}.new
+      done
+    fi
+    
+    echo "  </global>" >> ${OSSEC_CONF_FILE}.new
+    
+  fi
+  
+
+fi
+echo
+
+# enable remote syslog?
+check_input "  3.5- Do you want to enable remote syslog (port 514 udp)? (y/n) [y]:" "y|n" "y"
+if [ "$INPUTTEXT" == "y" ]; then
+  echo "  <remote>"  >> ${OSSEC_CONF_FILE}.new
+  echo "    <connection>syslog</connection>" >> ${OSSEC_CONF_FILE}.new
+  echo "  </remote>" >> ${OSSEC_CONF_FILE}.new
+
+  echo "  <remote>"  >> ${OSSEC_CONF_FILE}.new
+  echo "    <connection>secure</connection>" >> ${OSSEC_CONF_FILE}.new
+  echo "  </remote>" >> ${OSSEC_CONF_FILE}.new
+fi
+
+# Email/log alerts
+echo "  <alerts>" >> ${OSSEC_CONF_FILE}.new
+echo "    <log_alert_level>1</log_alert_level>" >>${OSSEC_CONF_FILE}.new
+if [ "$EMAIL_NOTIFICATION" == "y" ]; then
+  echo "    <email_alert_level>7</email_alert_level>" >> ${OSSEC_CONF_FILE}.new
+fi
+echo "  </alerts>" >> ${OSSEC_CONF_FILE}.new
+
+if [ "$ACTIVE_RESPONSE" == "y" ]; then
+  # Add commands in here
+  echo "" >> ${OSSEC_CONF_FILE}.new
+  cat ${HOST_DENY_TEMPLATE} >> ${OSSEC_CONF_FILE}.new
+  echo "" >> ${OSSEC_CONF_FILE}.new
+  cat ${FIREWALL_DROP_TEMPLATE} >> ${OSSEC_CONF_FILE}.new
+  echo "" >> ${OSSEC_CONF_FILE}.new
+  cat ${DISABLE_ACCOUNT_TEMPLATE} >> ${OSSEC_CONF_FILE}.new
+  echo "" >> ${OSSEC_CONF_FILE}.new
+  cat ${ROUTENULL_TEMPLATE} >> ${OSSEC_CONF_FILE}.new
+  echo "" >> ${OSSEC_CONF_FILE}.new
+
+  if [ "$FIREWALL_DROP" = "y" ]; then
+    echo "" >> ${OSSEC_CONF_FILE}.new
+    cat ${ACTIVE_RESPONSE_TEMPLATE} >> ${OSSEC_CONF_FILE}.new
+    echo "" >> ${OSSEC_CONF_FILE}.new
+  fi
+
+fi
+
+# detect log files
+echo "" >> ${OSSEC_CONF_FILE}.new
+echo
+
+# Syslog
+for i in `cat $SYSLOG_TEMPLATE`; do
+  if [ -f $i ] ; then
+    echo "    -- $i (syslog)"
+    echo "" >> ${OSSEC_CONF_FILE}.new
+    echo "  <localfile>" >> ${OSSEC_CONF_FILE}.new
+    echo "    <log_format>syslog</log_format>" >> ${OSSEC_CONF_FILE}.new
+    echo "    <location>$i</location>" >> ${OSSEC_CONF_FILE}.new
+    echo "  </localfile>" >> ${OSSEC_CONF_FILE}.new
+
+  fi
+done
+
+# Snort
+SNORT_FILES=`cat ${SNORT_TEMPLATE}`
+for i in ${SNORT_FILES}; do
+    ls $i > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        echo "" >> ${OSSEC_CONF_FILE}.new
+        echo "  <localfile>" >> ${OSSEC_CONF_FILE}.new
+
+        head -n 1 $i|grep "\[**\] "|grep -v "Classification:" > /dev/null
+        if [ $? = 0 ]; then
+            echo "    <log_format>snort-full</log_format>" >> ${OSSEC_CONF_FILE}.new
+            echo "    -- $i (snort-full file)"
+        else
+            echo "    <log_format>snort-fast</log_format>" >> ${OSSEC_CONF_FILE}.new
+            echo "    -- $i (snort-fast file)"
+        fi
+        echo "    <location>$i</location>" >>${OSSEC_CONF_FILE}.new
+        echo "  </localfile>" >> ${OSSEC_CONF_FILE}.new
+    fi
+done
+
+# Apache
+APACHE_FILES=`cat ${APACHE_TEMPLATE}`
+for i in ${APACHE_FILES}; do
+    ls $i > /dev/null 2>&1
+    if [ $? = 0 ]; then
+      echo "" >> ${OSSEC_CONF_FILE}.new
+      echo "  <localfile>" >> ${OSSEC_CONF_FILE}.new
+      echo "    <log_format>apache</log_format>" >> ${OSSEC_CONF_FILE}.new
+      echo "    <location>$i</location>" >>${OSSEC_CONF_FILE}.new
+      echo "  </localfile>" >> ${OSSEC_CONF_FILE}.new
+
+      echo "    -- $i (apache log)"
+    fi
+done
+
+# Postgres
+PGSQL_FILES=`cat ${PGSQL_TEMPLATE}`
+for i in ${PGSQL_FILES}; do
+    ls $i > /dev/null 2>&1
+    if [ $? = 0 ]; then
+      echo "" >> ${OSSEC_CONF_FILE}.new
+      echo "  <localfile>" >> ${OSSEC_CONF_FILE}.new
+      echo "    <log_format>postgresql_log</log_format>" >> ${OSSEC_CONF_FILE}.new
+      echo "    <location>$i</location>" >>${OSSEC_CONF_FILE}.new
+      echo "  </localfile>" >> ${OSSEC_CONF_FILE}.new
+
+      echo "    -- $i (postgresql log)"
+    fi
+done
+
+# 
+
+echo "</ossec_config>" >> ${OSSEC_CONF_FILE}.new
+mv ${OSSEC_CONF_FILE} ${OSSEC_CONF_FILE}.bak
+mv ${OSSEC_CONF_FILE}.new ${OSSEC_CONF_FILE}
+echo "Configuration complete."
+echo
+

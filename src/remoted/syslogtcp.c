@@ -141,9 +141,16 @@ void HandleSyslogTCP()
 {
     int childcount = 0;
     char srcip[IPSIZE + 1];
+    fd_set fdsave, fdwork;			/* select() work areas */
+    int fdmax;					/* max socket number + 1 */
+    int sock;					/* active socket */
 
     /* Initialize some variables */
     memset(srcip, '\0', IPSIZE + 1);
+
+    /* initialize select() save area */
+    fdsave = logr.netinfo->fdset;
+    fdmax  = logr.netinfo->fdmax;		/* value preset to max fd + 1 */
 
     /* Connecting to the message queue
      * Exit if it fails.
@@ -169,31 +176,44 @@ void HandleSyslogTCP()
             }
         }
 
-        /* Accept new connections */
-        int client_socket = OS_AcceptTCP(logr.sock, srcip, IPSIZE);
-        if (client_socket < 0) {
-            merror("%s: WARN: Accepting tcp connection from client failed.", ARGV0);
-            continue;
+        /* process connections through select() for multiple sockets */
+        fdwork = fdsave;
+        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            ErrorExit("ERROR: Call to syslogtcp select() failed, errno %d - %s",
+                      errno, strerror (errno));
         }
 
-        /* Check if IP is allowed here */
-        if (OS_IPNotAllowed(srcip)) {
-            merror(DENYIP_WARN, ARGV0, srcip);
-            close(client_socket);
-            continue;
-        }
+        /* read through socket list for active socket */
+        for (sock = 0; sock <= fdmax; sock++) {
+            if (FD_ISSET (sock, &fdwork)) {
 
-        /* Fork to deal with new client */
-        if (fork() == 0) {
-            HandleClient(client_socket, srcip);
-            exit(0);
-        } else {
-            childcount++;
+                /* Accept new connections */
+                int client_socket = OS_AcceptTCP(sock, srcip, IPSIZE);
+                if (client_socket < 0) {
+                    merror("%s: WARN: Accepting tcp connection from client failed.", ARGV0);
+                    continue;
+                }
 
-            /* Close client socket, since the child is handling it */
-            close(client_socket);
-            continue;
-        }
-    }
+                /* Check if IP is allowed here */
+                if (OS_IPNotAllowed(srcip)) {
+                    merror(DENYIP_WARN, ARGV0, srcip);
+                    close(client_socket);
+                    continue;
+                }
+
+                /* Fork to deal with new client */
+                if (fork() == 0) {
+                    HandleClient(client_socket, srcip);
+                    exit(0);
+                } else {
+                    childcount++;
+
+                    /* Close client socket, since the child is handling it */
+                    close(client_socket);
+                    continue;
+                }
+            } /* if socket active */
+        } /* for() loop on available sockets */
+    } /* while(1) loop for messages */
 }
 

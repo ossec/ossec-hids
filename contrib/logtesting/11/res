@@ -10,9 +10,9 @@
        dstuser: 'root'
 
 **Phase 3: Completed filtering (rules).
-       Rule id: '5303'
-       Level: '3'
-       Description: 'User successfully changed UID to root.'
+       Rule id: '5305'
+       Level: '4'
+       Description: 'First time (su) is executed by user.'
 **Alert to be generated.
 
 

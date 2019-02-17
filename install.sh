@@ -230,7 +230,7 @@ UseRootcheck()
         echo "    <system_audit>$INSTALLDIR/etc/shared/cis_rhel5_linux_rcl.txt</system_audit>" >> $NEWCONFIG
         echo "  </rootcheck>" >> $NEWCONFIG
 	# Patch for systems that use s-nail instead of GNU Mailutils (such as Arch Linux).
-	if strings /usr/bin/mail | grep "x-shsh bash" 1> /dev/null; then
+	if [ -r /usr/bin/mail ] && strings /usr/bin/mail | grep "x-shsh bash" 1> /dev/null; then
 	  sed -i 's/mail        !bash|/mail        !/' ./src/rootcheck/db/rootkit_trojans.txt
 	fi
     else
@@ -615,7 +615,7 @@ ConfigureServer()
             echo "  <global>" >> $NEWCONFIG
             echo "    <white_list>127.0.0.1</white_list>" >> $NEWCONFIG
             echo "    <white_list>::1</white_list>" >> $NEWCONFIG
-            echo "    <white_list>^localhost.localdomain$</white_list>">>$NEWCONFIG
+            echo "    <white_list>localhost.localdomain</white_list>">>$NEWCONFIG
             echo ""
             echo "   - ${defaultwhitelist}"
             for ip in ${NAMESERVERS} ${NAMESERVERS2};

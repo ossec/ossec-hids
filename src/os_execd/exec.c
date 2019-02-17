@@ -52,21 +52,13 @@ int ReadExecConfig()
         str_pt = buffer;
 
         /* Clean up the buffer */
-        tmp_str = strchr(buffer, ' ');
+        tmp_str = strstr(buffer, " - ");
         if (!tmp_str) {
             merror(EXEC_INV_CONF, ARGV0, DEFAULTARPATH);
             continue;
         }
         *tmp_str = '\0';
-        tmp_str++;
-
-        /* Search for ' ' and - */
-        if (*tmp_str == '-') {
-            tmp_str += 2;
-        } else {
-            merror(EXEC_INV_CONF, ARGV0, DEFAULTARPATH);
-            continue;
-        }
+        tmp_str += 3;
 
         /* Set the name */
         strncpy(exec_names[exec_size], str_pt, OS_FLSIZE);
@@ -74,38 +66,38 @@ int ReadExecConfig()
 
         str_pt = tmp_str;
 
-        tmp_str = strchr(tmp_str, ' ');
+        /* Search for ' ' and - */
+        tmp_str = strstr(tmp_str, " - ");
         if (!tmp_str) {
             merror(EXEC_INV_CONF, ARGV0, DEFAULTARPATH);
             continue;
         }
         *tmp_str = '\0';
+        tmp_str += 3;
 
-        /* Write the full command path */
-        snprintf(exec_cmd[exec_size], OS_FLSIZE,
-                 "%s/%s",
-                 AR_BINDIRPATH,
-                 str_pt);
-        process_file = fopen(exec_cmd[exec_size], "r");
-        if (!process_file) {
-            if (f_time_reading) {
-                verbose("%s: INFO: Active response command not present: '%s'. "
-                        "Not using it on this system.",
-                        ARGV0, exec_cmd[exec_size]);
+        // Directory traversal test
+
+        if (w_ref_parent_folder(str_pt)) {
+            merror("Active response command '%s' vulnerable to directory transversal attack. Ignoring.", str_pt);
+             exec_cmd[exec_size][0] = '\0';
+         } else {
+            /* Write the full command path */
+            snprintf(exec_cmd[exec_size], OS_FLSIZE,
+                     "%s/%s",
+                     AR_BINDIRPATH,
+                     str_pt);
+            process_file = fopen(exec_cmd[exec_size], "r");
+            if (!process_file) {
+                if (f_time_reading) {
+                    verbose("%s: INFO: Active response command not present: '%s'. "
+                            "Not using it on this system.",
+                            ARGV0, exec_cmd[exec_size]);
+                }
+
+                exec_cmd[exec_size][0] = '\0';
+            } else {
+                fclose(process_file);
             }
-
-            exec_cmd[exec_size][0] = '\0';
-        } else {
-            fclose(process_file);
-        }
-
-        /* Search for ' ' and - */
-        tmp_str++;
-        if (*tmp_str == '-') {
-            tmp_str += 2;
-        } else {
-            merror(EXEC_INV_CONF, ARGV0, DEFAULTARPATH);
-            continue;
         }
 
         str_pt = tmp_str;

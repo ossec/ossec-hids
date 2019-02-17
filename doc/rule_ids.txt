@@ -61,31 +61,44 @@
 17100 - 17399 Policy
 
 18100 - 18499 Windows system
-
+18500 - 18650 Sysmon rules
+18651 - 18750 MS IPSec rules
 20100 - 20299 IDS
 20300 - 20499 IDS (Snort specific)
+20500 - 20509 Windows PowerShell
 
-30100 - 30999 Apache error log.
+30100 - 30999 Apache error log
 31100 - 31199 Web access log
 
-31501 - 32000 Web Appsec rules.
+31501 - 32000 Web Appsec rules
 
 35000 - 35999 Squid
 
-40100 - 40499 Attack patterns.
-40500 - 40599 Privilege escalation.
+40100 - 40499 Attack patterns
+40500 - 40599 Privilege escalation
 
-40600 - 40699 Scan patterns.
+40600 - 40699 Scan patterns
 40700 - 40899 Systemd
 40900 - 40999 Firewalld
 
-51500 - 51999 OpenBSD rules.
-52000 - 52499 Apparmor rules.
+51500 - 51999 OpenBSD rules
+52000 - 52499 Apparmor rules
 52500 - 53199 clam av rules
 53200 - 53499 nsd rules
 53500 - 53299 opensmtpd rules
 53300 - 53399 owncloud rules
-53400 - xxxxx proxmox ve rules
+53400 - 53500 proxmox ve rules
+53501 - 53550 OpenSMTPd rules
+53551 - 53599 dnsmasq
+53600 - 53625 linux usb detection rules
+53626 - 53630 ms usb detection rules
+53631 - 53699 ms firewall rules
+53700 - 53749 PSAD rules
+53750 - 53799 unbound rules
+53800 - 53825 Kaspersky Endpoint Security 10 for Linux rules
+53826 - 53829 MHN - Dionaea
+53830 - 53840 MHN - Cowrie
 56000 - 56200 FreeBSD rules
 
 100000 - 109999 User defined rules
+

@@ -87,13 +87,14 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
 
     /* Check for the syslog date format
      * ( ex: Dec 29 10:00:01
-     *   or  2015 Dec 29 10:00:01
+     *   or  2015-04-16 21:51:02,805 for proftpd 1.3.5
      *   or  2007-06-14T15:48:55-04:00 for syslog-ng isodate
-     *   or  2009-05-22T09:36:46.214994-07:00 for rsyslog )
-     *   or  2015-04-16 21:51:02,805 (proftpd 1.3.5)
+     *   or  2007-06-14T15:48:55.3352-04:00 for syslog-ng isodate with up to 6 optional fraction of a second
+     *   or  2009-05-22T09:36:46.214994-07:00 for rsyslog
+     *   or  2015 Dec 29 10:00:01 )
      */
     if (
-        (
+        (   /* ex: Dec 29 10:00:01 */
             (loglen > 17) &&
             (pieces[3] == ' ') &&
             (pieces[6] == ' ') &&
@@ -102,17 +103,17 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             (pieces[15] == ' ') && (lf->log += 16)
         )
         ||
-	(
-	    (loglen > 24) &&
-	    (pieces[4] == '-') &&
-	    (pieces[7] == '-') &&
-	    (pieces[10] == ' ') &&
-	    (pieces[13] == ':') &&
-	    (pieces[16] == ':') &&
-	    (pieces[19] == ',') &&
-	    (lf->log += 23)
-	)
-	||
+        (   /* ex: 2015-04-16 21:51:02,805 */
+            (loglen > 24) &&
+            (pieces[4] == '-') &&
+            (pieces[7] == '-') &&
+            (pieces[10] == ' ') &&
+            (pieces[13] == ':') &&
+            (pieces[16] == ':') &&
+            (pieces[19] == ',') &&
+            (lf->log += 23)
+        )
+        ||
         (
             (loglen > 33) &&
             (pieces[4] == '-') &&
@@ -120,17 +121,31 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             (pieces[10] == 'T') &&
             (pieces[13] == ':') &&
             (pieces[16] == ':') &&
-
-            (
-                ((pieces[22] == ':') &&
-                 (pieces[25] == ' ') && (lf->log += 26)) ||
-
-                ((pieces[19] == '.') &&
-                 (pieces[29] == ':') && (lf->log += 32))
+            (   /* ex: 2007-06-14T15:48:55-04:00 */
+                (
+                    (pieces[22] == ':') &&
+                    (pieces[25] == ' ') && (lf->log += 26)
+                )
+                ||
+                /* ex: 2007-06-14T15:48:55.3-04:00 or 2009-05-22T09:36:46,214994-07:00 */
+                (
+                    (
+                        (pieces[19] == '.') || (pieces[19] == ',')
+                    )
+                    &&
+                    (
+                        ( (pieces[24] == ':') && (lf->log += 27) ) ||
+                        ( (pieces[25] == ':') && (lf->log += 28) ) ||
+                        ( (pieces[26] == ':') && (lf->log += 29) ) ||
+                        ( (pieces[27] == ':') && (lf->log += 30) ) ||
+                        ( (pieces[28] == ':') && (lf->log += 31) ) ||
+                        ( (pieces[29] == ':') && (lf->log += 32) )
+                    )
+                )
             )
         )
-     ||
-        (
+        ||
+        (   /* ex: 2015 Dec 29 10:00:01 */
             (loglen > 21) &&
             (isdigit(pieces[0])) &&
             (pieces[4] == ' ') &&
@@ -140,7 +155,6 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             (pieces[17] == ':') &&
             (pieces[20] == ' ') && (lf->log += 21)
         )
-
     ) {
         /* Check for an extra space in here */
         if (*lf->log == ' ') {

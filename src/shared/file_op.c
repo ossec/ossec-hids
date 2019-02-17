@@ -366,6 +366,7 @@ char *GetRandomNoise()
 {
     FILE *fp;
     char buf[2048 + 1];
+    size_t frr = 0;
 
     /* Reading urandom */
     fp = fopen("/dev/urandom", "r");
@@ -375,7 +376,14 @@ char *GetRandomNoise()
     }
 
     buf[2048] = '\0';
-    fread(buf, 1, 2048, fp);
+    frr = fread(buf, 1, 2048, fp);
+    if(frr == 0) {
+        merror("ERROR: GetRandomNoise() fread() returned 0.");
+        fclose(fp);
+        return(NULL);
+    }
+    buf[2048] = '\0';
+    fclose(fp);
     return(strdup(buf));
 }
 
@@ -1532,3 +1540,45 @@ char *getuname()
 }
 
 #endif /* WIN32 */
+
+
+int w_ref_parent_folder(const char * path) {
+    const char * str;
+    char * ptr;
+
+    switch (path[0]) {
+    case '\0':
+        return 0;
+
+    case '.':
+        switch (path[1]) {
+        case '\0':
+            return 0;
+
+        case '.':
+            switch (path[2]) {
+            case '\0':
+                return 1;
+
+            case '/':
+#ifdef WIN32
+            case '\\':
+#endif
+                return 1;
+            }
+        }
+    }
+
+#ifdef WIN32
+    for (str = path; ptr = strstr(str, "/.."), ptr || (ptr = strstr(str, "\\.."), ptr); str = ptr + 3) {
+        if (ptr[3] == '\0' || ptr[3] == '/' || ptr[3] == '\\') {
+#else
+    for (str = path; ptr = strstr(str, "/.."), ptr; str = ptr + 3) {
+        if (ptr[3] == '\0' || ptr[3] == '/') {
+#endif
+            return 1;
+        }
+    }
+
+    return 0;
+}

@@ -25,7 +25,7 @@
 ; general
 !define MUI_ICON favicon.ico
 !define MUI_UNICON ossec-uninstall.ico
-!define VERSION "2.9.0"
+!define VERSION "3.2.0"
 !define NAME "OSSEC HIDS"
 !define SERVICE "OssecSvc"
 
@@ -146,8 +146,8 @@ Section "OSSEC Agent (required)" MainSec
     CreateDirectory "$INSTDIR\tmp"
 
     ; install files
-    File ossec-lua.exe
-    File ossec-luac.exe
+    ;File ossec-lua.exe
+    ;File ossec-luac.exe
     File ossec-agent.exe
     File ossec-agent-eventchannel.exe
     File agent-auth.exe
@@ -408,8 +408,8 @@ Section "Uninstall"
 
     ; remove files and uninstaller
     Delete "$INSTDIR\ossec-agent.exe"
-    Delete "$INSTDIR\ossec-lua.exe"
-    Delete "$INSTDIR\ossec-luac.exe"
+    ;Delete "$INSTDIR\ossec-lua.exe"
+    ;Delete "$INSTDIR\ossec-luac.exe"
     Delete "$INSTDIR\manage_agents.exe"
     Delete "$INSTDIR\ossec.conf"
     Delete "$INSTDIR\uninstall.exe"

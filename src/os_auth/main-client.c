@@ -246,11 +246,6 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-
-    if(authpass == NULL) {
-        authpass = AUTHDPASS_PATH;
-    }
-
     /* Checking if there is a custom password file */
     if (authpass != NULL && authenticate > 0) {
         FILE *fp;

@@ -9,10 +9,9 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 
 
-###  Do not modify bellow here ###
+###  Do not modify below here ###
 NAME="OSSEC HIDS"
-VERSION="v2.9.0"
-AUTHOR="Trend Micro Inc."
+VERSION="v3.2.0"
 DAEMONS="ossec-logcollector ossec-syscheckd ossec-agentd ossec-execd"
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf
@@ -83,7 +82,7 @@ unlock()
 help()
 {
     # Help message
-    echo "Usage: $0 {start|stop|restart|status}";
+    echo "Usage: $0 {start|stop|reload|restart|status}";
     exit 1;
 }
 
@@ -120,7 +119,7 @@ start()
 {
     SDAEMONS="ossec-execd ossec-agentd ossec-logcollector ossec-syscheckd"
 
-    echo "Starting $NAME $VERSION (by $AUTHOR)..."
+    echo "Starting $NAME $VERSION..."
     lock;
     checkpid;
 

@@ -18,25 +18,23 @@
 /* Release all the memory created by the compilation/execution phases */
 void OSMatch_FreePattern(OSMatch *reg)
 {
-    /* Free the patterns */
-    if (reg->patterns) {
-        char **pattern = reg->patterns;
-        while (*pattern) {
-            if (*pattern) {
-                free(*pattern);
-            }
-            pattern++;
-        }
-
-        free(reg->patterns);
-        reg->patterns = NULL;
+    /* Free the match data */
+    if (reg->match_data) {
+        pcre2_match_data_free(reg->match_data);
+        reg->match_data = NULL;
     }
 
-    free(reg->size);
-    free(reg->match_fp);
+    /* Free the regex */
+    if (reg->regex) {
+        pcre2_code_free(reg->regex);
+        reg->regex = NULL;
+    }
 
-    reg->size = NULL;
-    reg->match_fp = NULL;
+    /* Free the patter, */
+    if (reg->pattern) {
+        free(reg->pattern);
+        reg->pattern = NULL;
+    }
 
     return;
 }
