@@ -44,5 +44,10 @@
     <description>DNS AAAA request.</description>
   </rule>
  
+  <rule id="53773" level="7">
+    <if_sid>53771,53772</if_sid>
+    <url>.top|.to|.gq|.cf|.men|.loan|.ml|.work|.click|.tk|.country|.pw|.party|.trade|.review|.club|.bid|.country|.stream|.download|.xin|.gdn|.racing|.jetzt|.win|.vip|.ren|.kim|.mom|.date|.wang|.accountants|.science|.work|.ninja|.xyz|.faith|.zip|.racing|.cricket|.space|.realtor|.christmas|.gdn|.pro</url>
+    <description>Maybe critical URL requested</description>
+  </rule>
 
 </group>
