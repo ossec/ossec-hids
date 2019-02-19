@@ -24,6 +24,7 @@ int GlobalConf(const char *cfgfile)
 
     /* Default values */
     Config.logall = 0;
+    Config.logall_json = 0;
     Config.stats = 4;
     Config.integrity = 8;
     Config.rootcheck = 8;
@@ -34,7 +35,7 @@ int GlobalConf(const char *cfgfile)
     Config.zeromq_output_server_cert = NULL;
     Config.zeromq_output_client_cert = NULL;
     Config.jsonout_output = 0;
-    Config.memorysize = 1024;
+    Config.memorysize = 8192;
     Config.mailnotify = -1;
     Config.keeplogdate = 0;
     Config.syscheck_alert_new = 0;
@@ -66,10 +67,9 @@ int GlobalConf(const char *cfgfile)
     }
 
     /* Minimum memory size */
-    if (Config.memorysize < 64) {
-        Config.memorysize = 64;
+    if (Config.memorysize < 2048) {
+        Config.memorysize = 2048;
     }
 
     return (0);
 }
-

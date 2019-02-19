@@ -528,6 +528,21 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
         *s_name = '\0';
         strncpy(s_name, entry->d_name, PATH_MAX - dir_size - 2);
 
+        /* Check if the file is a directory */
+        if(opts & CHECK_NORECURSE) {
+            struct stat recurse_sb;
+            if((stat(f_name, &recurse_sb)) < 0) {
+                merror("%s: ERR: Cannot stat %s: %s", ARGV0, f_name, strerror(errno));
+            } else {
+                switch (recurse_sb.st_mode & S_IFMT) {
+                    case S_IFDIR:
+                        continue;
+                        break;
+                }
+            }
+        }
+
+
         /* Check integrity of the file */
         read_file(f_name, opts, restriction);
     }

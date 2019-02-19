@@ -145,7 +145,7 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
                           (char *)&flag, sizeof(flag)) < 0) {
                 verbose ("setsockopt error: SO_REUSEADDR %d: %s",
                          errno, strerror(errno));
-                if(ossock) {
+                if(ossock > 0) {
                     OS_CloseSocket(ossock);
                 }
                 continue;
@@ -194,11 +194,11 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     /* check to see if at least one address succeeded */
     if (ni->fdcnt == 0) {
         verbose ("Request to allocate and bind sockets failed.");
-        if(ossock) {
-            OS_CloseSocket(ossock);
-        }
         ni->status = -1;
         ni->retval = OS_SOCKTERR;
+        if(result) {
+            freeaddrinfo(result);
+        }
         return(ni);
     }
 
@@ -407,7 +407,9 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
         }
     }
     if (rp == NULL) {               /* No address succeeded */
-        OS_CloseSocket(ossock);
+        if (ossock > 0) {
+            OS_CloseSocket(ossock);
+        }
         if(result) {
             freeaddrinfo(result);
         }
@@ -528,7 +530,7 @@ int OS_RecvTCPBuffer(int socket, char *buffer, int sizet)
 
     if ((retsize = recv(socket, buffer, sizet - 1, 0)) > 0) {
         buffer[retsize] = '\0';
-        return (0);
+        return (retsize);
     }
     return (-1);
 }
@@ -621,6 +623,9 @@ char *OS_GetHost(const char *host, unsigned int attempts)
         }
 
         if ((ip = (char *) calloc(IPSIZE, sizeof(char))) == NULL) {
+            if (result) {
+                freeaddrinfo(result);
+            }
             return (NULL);
         }
 

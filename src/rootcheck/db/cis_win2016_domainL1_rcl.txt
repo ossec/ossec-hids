@@ -241,7 +241,7 @@ r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -
 #
 #2.3.10.11 Ensure 'Network access: Shares that can be accessed anonymously' is set to 'None'
 [CIS - Microsoft Windows Server 2016 - 2.3.10.11 Ensure 'Network access: Shares that can be accessed anonymously' is set to 'None'] [any] [https://workbench.cisecurity.org/benchmarks/515]
-r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionShares -> r:\.+;
+r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionShares -> r:\S*;
 #
 #
 #2.3.10.12 Ensure 'Network access: Sharing and security model for local accounts' is set to 'Classic - local users authenticate as themselves'

@@ -9,6 +9,7 @@
 
 #include "shared.h"
 #include "sec.h"
+#include "external/cJSON/cJSON.h"
 
 /** Prototypes **/
 
@@ -20,11 +21,12 @@ char *encode_base64(int size, char *src);
 char *read_from_user(void);
 
 /* Add or remove an agent */
-int add_agent(void);
-int remove_agent(void);
+int add_agent(int json_output);
+int remove_agent(int json_output);
+
 
 /* Extract or import a key */
-int k_extract(const char *cmdextract);
+int k_extract(const char *cmdextract, int json_output);
 int k_import(const char *cmdimport);
 int k_bulkload(const char *cmdbulk);
 
@@ -41,7 +43,7 @@ double OS_AgentAntiquity(const char *id);
 void FormatID(char *id);
 
 /* Print available agents */
-int print_agents(int print_status, int active_only, int csv_output);
+int print_agents(int print_status, int active_only, int csv_output, cJSON *json_output);
 int list_agents(int cmdlist);
 
 /* Clear a line */
@@ -79,7 +81,7 @@ extern fpos_t fp_pos;
 #define AGENT_INFO      "Agent information:\n   ID:%s\n   Name:%s\n   " \
                         "IP Address:%s\n\n"
 #define ADD_CONFIRM     "Confirm adding it?(y/n): "
-#define AGENT_ADD       "Agent added.\n"
+#define AGENT_ADD       "Agent added with ID %s.\n"
 #define ADDED           "Added.\n"
 #define ADD_NOT         "Not Adding.\n"
 #define PRESS_ENTER     "** Press ENTER to return to the main menu.\n"
@@ -90,6 +92,7 @@ extern fpos_t fp_pos;
 #define ADD_ERROR_ID    "\n** ID '%s' already present. They must be unique.\n\n"
 #define ADD_ERROR_NAME  "\n** Name '%s' already present. Please enter a new name.\n\n"
 #define IP_ERROR        "\n** Invalid IP '%s'. Please enter a valid IP Address.\n\n"
+#define IP_DUP_ERROR    "\n** Duplicated IP '%s'. Please enter an unique IP Address.\n\n"
 #define NO_AGENT        "\n** No agent available. You need to add one first.\n"
 #define NO_ID           "\n** Invalid ID '%s' given. ID is not present.\n"
 #define NO_KEY          "\n** Invalid authentication key. Starting over again.\n"

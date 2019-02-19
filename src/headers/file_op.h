@@ -59,4 +59,5 @@ int checkVista();
 int isVista;
 #endif
 
+int w_ref_parent_folder(const char * path);
 #endif /* __FILE_H */

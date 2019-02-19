@@ -13,6 +13,7 @@
 #include <sched.h>
 #endif
 #ifdef WIN32
+#include <winsock2.h>
 #include <aclapi.h>
 #include <sddl.h>
 #endif

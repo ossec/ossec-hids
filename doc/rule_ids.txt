@@ -65,6 +65,7 @@
 18651 - 18750 MS IPSec rules
 20100 - 20299 IDS
 20300 - 20499 IDS (Snort specific)
+20500 - 20509 Windows PowerShell
 
 30100 - 30999 Apache error log
 31100 - 31199 Web access log
@@ -94,7 +95,9 @@
 53631 - 53699 ms firewall rules
 53700 - 53749 PSAD rules
 53750 - 53799 unbound rules
-
+53800 - 53825 Kaspersky Endpoint Security 10 for Linux rules
+53826 - 53829 MHN - Dionaea
+53830 - 53840 MHN - Cowrie
 56000 - 56200 FreeBSD rules
 
 100000 - 109999 User defined rules

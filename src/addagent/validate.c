@@ -14,6 +14,53 @@
 /* Global variables */
 fpos_t fp_pos;
 
+/*Number bit of int type*/
+#define INT_BIT_SIZE          (sizeof(int)*CHAR_BIT)
+/*Enable bit at a position*/
+#define SetBit(Array,pos)     ( Array[(pos/INT_BIT_SIZE)] |= (1 << (pos%INT_BIT_SIZE)) )
+/*Check state of bit at a */
+#define TestBit(Array,pos)    ( Array[(pos/INT_BIT_SIZE)] & (1 << (pos%INT_BIT_SIZE)) )
+
+int *MapIDToBitArray()
+{
+    FILE *fp;
+    char line_read[FILE_SIZE + 1];
+    line_read[FILE_SIZE] = '\0';
+    int *arrayID;
+    int max = MAX_AGENTS + AUTHD_FIRST_ID;
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "r");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "r");
+    }
+
+    if (!fp) {
+        return (NULL);
+    }
+
+    os_calloc(MAX_AGENTS/INT_BIT_SIZE + 1, sizeof(int), arrayID);
+
+    while (fgets(line_read, FILE_SIZE - 1, fp) != NULL) {
+        char *name;
+
+        if (line_read[0] == '#') {
+            continue;
+        }
+
+        name = strchr(line_read, ' ');
+        if (name) {
+            *name = '\0';
+            int name_num=atoi(line_read);
+            /*Enable bit at ID already allocated*/
+            if (name_num >= AUTHD_FIRST_ID && name_num < max) {
+                SetBit(arrayID, (name_num-AUTHD_FIRST_ID));
+            }
+        }
+
+    }
+    fclose(fp);
+    return arrayID;
+}
 
 char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
 {
@@ -24,7 +71,7 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
     char str2[STR_SIZE + 1];
     char *muname;
     char *finals;
-    char nid[9] = { '\0' }, nid_p[9] = { '\0' };
+    char nid[9] = { '\0' };
 
     srandom_init();
     muname = getuname();
@@ -37,29 +84,25 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
     free(muname);
 
     if (id == NULL) {
-        int i = AUTHD_FIRST_ID;
-        int j = MAX_AGENTS + AUTHD_FIRST_ID;
-        int m = (i + j) / 2;
+        int *arrayID;
+        int i;
+        arrayID=(int *)MapIDToBitArray();
+        if (arrayID != NULL) {
+            /*Find first item in bit array which is not marked as allocated*/
+            for (i=0; i<MAX_AGENTS; i++) {
+                if(!TestBit(arrayID, i)) {
+                    snprintf(nid, 8, "%d", (i + AUTHD_FIRST_ID));
+                    break;
+                }
+            }
+            os_free(arrayID);
 
-        snprintf(nid, 8, "%d", m);
-        snprintf(nid_p, 8, "%d", m - 1);
-
-        /* Dichotomic search */
-
-        while (1) {
-            if (IDExist(nid)) {
-                if (m == i)
-                    return NULL;
-
-                i = m;
-            } else if (!IDExist(nid_p) && m > i )
-                j = m;
-            else
-                break;
-
-            m = (i + j) / 2;
-            snprintf(nid, 8, "%d", m);
-            snprintf(nid_p, 8, "%d", m - 1);
+            if (i == MAX_AGENTS) {
+                return (NULL);
+            }
+        }
+        else {
+            return (NULL);
         }
 
         id = nid;
@@ -88,6 +131,7 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
 int OS_RemoveAgent(const char *u_id) {
     FILE *fp;
     int id_exist;
+    char *full_name;
 
     id_exist = IDExist(u_id);
 
@@ -148,6 +192,10 @@ int OS_RemoveAgent(const char *u_id) {
     fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
 #endif
     fclose(fp);
+
+    full_name = getFullnameById(u_id);
+    if (full_name)
+        delete_agentinfo(full_name);
 
     /* Remove counter for ID */
     OS_RemoveCounter(u_id);
@@ -390,7 +438,7 @@ char *IPExist(const char *u_ip)
     char line_read[FILE_SIZE + 1];
     line_read[FILE_SIZE] = '\0';
 
-    if (!(u_ip && strncmp(u_ip, "any", 3)))
+    if (!(u_ip && strncmp(u_ip, "any", 3)) || strchr(u_ip, '/'))
         return NULL;
 
     if (isChroot())
@@ -466,7 +514,7 @@ double OS_AgentAntiquity(const char *id)
 }
 
 /* Print available agents */
-int print_agents(int print_status, int active_only, int csv_output)
+int print_agents(int print_status, int active_only, int csv_output, cJSON *json_output)
 {
     int total = 0;
     FILE *fp;
@@ -520,11 +568,20 @@ int print_agents(int print_status, int active_only, int csv_output)
                         }
 
                         if (csv_output) {
-                            printf("%s,%s,%s,%s,\n", line_read, name, ip,
-                                   print_agent_status(agt_status));
+                            printf("%s,%s,%s,%s,\n", line_read, name, ip, print_agent_status(agt_status));
+                        } else if (json_output) {
+                            cJSON *json_agent = cJSON_CreateObject();
+                          
+                            if (!json_agent)
+                                return 0;
+                            
+                            cJSON_AddStringToObject(json_agent, "id", line_read);
+                            cJSON_AddStringToObject(json_agent, "name", name);
+                            cJSON_AddStringToObject(json_agent, "ip", ip);
+                            cJSON_AddStringToObject(json_agent, "status", print_agent_status(agt_status));
+                            cJSON_AddItemToArray(json_output, json_agent);
                         } else {
-                            printf(PRINT_AGENT_STATUS, line_read, name, ip,
-                                   print_agent_status(agt_status));
+                            printf(PRINT_AGENT_STATUS, line_read, name, ip, print_agent_status(agt_status));
                         }
                     } else {
                         printf(PRINT_AGENT, line_read, name, ip);
@@ -540,7 +597,7 @@ int print_agents(int print_status, int active_only, int csv_output)
         DIR *dirp;
         struct dirent *dp;
 
-        if (!csv_output) {
+        if (!csv_output && !json_output) {
             printf("\nList of agentless devices:\n");
         }
 

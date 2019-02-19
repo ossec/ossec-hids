@@ -46,7 +46,7 @@ void SendSecurityToken(const int socket, SecBuffer *OutBuffers)
     }
 }
 
-void CreateSecureConnection(char *manager, int port, int *socket, CtxtHandle *context, CredHandle *cred)
+void CreateSecureConnection(char *manager, char *port, int *socket, CtxtHandle *context, CredHandle *cred)
 {
     SECURITY_STATUS status;
     SCHANNEL_CRED auth_cred;
@@ -73,7 +73,7 @@ void CreateSecureConnection(char *manager, int port, int *socket, CtxtHandle *co
     *socket = OS_ConnectTCP(port, manager);
     
     if (socket == 0)
-        ErrorExit("%s: Unable to connect to %s:%d", ARGV0, manager, port);
+        ErrorExit("%s: Unable to connect to %s:%s", ARGV0, manager, port);
 	
 
 
@@ -148,7 +148,7 @@ void CreateSecureConnection(char *manager, int port, int *socket, CtxtHandle *co
     // Send remaining tokens if any
     SendSecurityToken(*socket, OutBuffers);
 
-    printf("INFO: Connected to %s:%d\n", manager, port);
+    printf("INFO: Connected to %s:%s\n", manager, port);
     LocalFree(buffer);
 }
 
@@ -391,15 +391,18 @@ int main(int argc, char **argv)
                     ErrorExit("%s: -%c needs an argument",ARGV0, c);
                 agentname = optarg;
                 break;
-            case 'p':
+            case 'p': {
                if(!optarg)
                     ErrorExit("%s: -%c needs an argument",ARGV0, c);
-                port = atoi(optarg);
-                if(port <= 0 || port >= 65536)
+                int tmp_port;
+                tmp_port = atoi(optarg);
+                if(tmp_port <= 0 || tmp_port >= 65536)
                 {
                     ErrorExit("%s: Invalid port: %s", ARGV0, optarg);
                 }
+                port = optarg;
                 break;
+            }
             case 'P':
                 if (!optarg)
                     ErrorExit("%s: -%c needs an argument", ARGV0, c);

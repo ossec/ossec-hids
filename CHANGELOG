@@ -1,3 +1,101 @@
+OSSEC changelog (3.2.0) <scott@atomicorp.com>
+
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (Atomicorp, Inc.)
+
+Contributors on this release
+
+atomicturtle
+Bob-Andrews
+ddpbsd
+knqyf263
+jubois
+mig5
+mwmahlberg
+nhatking16591
+pillarsdotnet
+
+
+Release Notes
+	The great JSON-in-ing has begun! New features in this release focus on extending JSON output support to control commands like agent_control, syscheck_control, and rootcheck_control. Additional extensions add support for archives.log in native json format, and improving the alert.json output. This release also also brings some much needed enhancements to ossec-authd to streamline the agent registration experience (thanks nhatking16591!), Bob-Andrews continues on major auditing improvements plus support for Solaris 11. 
+
+	We'd like to thank all the great contributors (named and anonymous!) who continue to improve ossec and support our community. We'd also like to welcome all our new contributors to OSSEC on this release. They have helped us on bug testing, documentation, new features, rules, compliance checks, code and more. There are no small contributions to a project like OSSEC, and we continue to thrive with your support. Special thanks to security researchers A.P. and S.S. for their audit of the ossec project, your work has greatly benefited the community. 
+
+	If you're interested in joining our team, or just interacting with us on slack email us at: invite@ossec.net
+	
+
+
+
+Whats New
+
+	(atomicturtle) - add ossec-configure to contrib - PR#1559
+	(atomicturtle) - add <log_format>audit</log_format> for native audit.log support - PR#1589
+	(nhatking16591) - authd, Allow reuse ID and improve search algorithm finding available ID key. Fixes issue#1587, PR#1594
+	(ddpbsd) - syscheck, add <no_recurse> option to keep FIM from going down directories. Addresses Issue#1595 - PR#1597
+	(atomicturtle) - archives.json, JSON support for archives.log with <logall_json>yes</logall_json> - PR#1596, PR#1601, PR#1608
+	(atomicturtle) - agent_control, -j for JSON output - PR#1625
+	(atomicturtle) - syscheck/rootchec_control, add -j for JSON output - PR#1626
+	(atomicturtle) - manage_agents, add -j for JSON output, -a to add new agent, -a -n add new agent with declared name - PR#1627
+	(atomicturtle) - internal_options.conf, remoted.pass_empty_keyfile will toggle if remoted exits on an empty client.keys file - PR#1628 
+	(atomicturtle) - manage_agents, add -d modifier to -a (add) to remove an agent pinned to an already declared IP - PR#1632
+	(atomicturtle) - manage_agents, add -F <sec> modifier to -a (add), this will delete an agent with the same IP if it has not been seen in -F <secs> - PR#1639
+	(atomicturtle) - manage_agents, add -m flag to show the max agent limit - PR#1650
+
+
+New Rules / Decoders
+	(Bob-Andrews) - rootcheck, add Solaris11 CIS checks - PR#1557
+	(Bob-Andrews) - rootcheck, add password requirement checks - PR#1558, PR#1562
+	(Bob-Andrews) - Kasperskey Endpoint Security rules/decoders - PR#1573
+	(Bob-Andrews) - Cowrie / Dionaea Modern Honeypot Network rules/decoders - PR#1574
+	(Bob-Andrews) - Dionaea/Cowrie decoder, Changed IPv4 to IPv4/IPv6 - PR#1578
+	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml, add powershell rules - PR#1579
+	(jubois) - proftpd decoder: decoder simplification - PR#1657
+	(ddpbsd) - nsd rules: nsd_rules.xml, detect zone transfer attempts - PR#1598
+	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml,  dangerous commands/background activity - PR#1646
+
+
+General
+	(mig5) - firewall-drop.sh, modify to support non-bash environments - PR#1572
+	(mwmahlberg) - ossec-agent.conf, remove double hyphen in comment. Fixes issue#1582 - PR#1583
+	(ddpbsd) - ossec-maild, allow permission changes to make it into email alerts. Fixes issue#1571 - PR#1593
+	(ddpbsd) - installation, addresses issue#1570, allow installation as unpriv user - PR#1599
+	(atomicturtle) - JSON output, basic json functions for agent_control - PR#1600, PR#1602
+	(ddpbsd) - ossec-authd, use IPExist to check for duplicate IP addresses - PR#1603
+	(ddpbsd) - general, default to not setting the compiler optimization level - PR#1604
+	(ddpbsd) - general, default to showing verbose compiler output - PR#1605
+	(atomicturtle) - agent_control, JSON output prep work - PR#1606
+	(atomicturtle) - JSON output, adding functions for rootcheck compliance output in JSON - PR#1607
+	(atomicturtle) - JSON output, minor optimization - PR#1609
+	(atomicturtle) - agent_control, minor fixes for JSON output - PR#1610
+	(ddpbsd) - zlib, shifting dependencies to the system zlib - PR#1612
+	(ddpbsd) - LUA, disable lua by default, shifting dependencies to the system lua - PR#1613
+	(ddpbsd) - security review, coverity fixes - PR#1616
+	(atomicturtle) - JSON output, minor update for JSON log dirs/files - PR#1617
+	(atomicturtle) - JSON output, fix lf location array from unknown syslog - PR#1618
+	(atomicturtle) - manage_agents, bugfix  when generating keys from a file - PR#1619
+	(atomicturtle) - ossec-analysisd, increase default memory size from 1024 to 8192 (dcid) - PR#1620
+	(ddpbsd) - security review, coverity fixes - PR#1621
+	(atomicturtle) - JSON output, adding more groups, and clean up formatting - PR#1622
+	(ddpbsd) - security review, coverity fixes for PR#1624 - PR#1629	
+	(ddpbsd) - manage_agents, add an error path for being unable to chmod authfile - PR#1629	
+	(pillarsdotnet) - active-response, directory traversal fix - PR#1630
+	(ddpbsd) - ossec-control, remove author tag from output - PR#1633
+	(atomicturtle) - agent management cleanup, rootcheck/syscheck data is removed on a delete event - PR#1634
+	(ddpbsd) - json output, add prototype for function/ fixing compile warnings - PR#1636
+	(ddpbsd) - json output, cleanup for unused variables - PR#1637
+	(ddpbsd) - ossec-maild, remove legacy sms output type - PR#1638
+	(ddpbsd) - agent_control, usage output update - PR#1640
+	(jubois) - dotests.sh, Improved dotests.sh output - PR#1641
+	(jubois) - Correct tests in contrib/logtesting - PR#1645
+	(atomicturtle) - ossec-analysisd, fix for analysisd segfault in overwrite rule condition - PR#1649
+	(atomicturtle) - ossec-csyslogd, fix for size returned from a tcp syslog event - PR#1653
+	(jubois) - fix compilation warnings - PR#1654
+	(knqyf263) - ossec-maild, fix for email being sent infinitely - PR#1658
+
+
 OSSEC changelog (3.1.0) <scott@atomicorp.com>
 
 Release Maintainers
@@ -5,8 +103,6 @@ Release Maintainers
 Dan Parriott
 Scott R. Shinn (Atomicorp, Inc.)
 
-
-3.1.0
 
 Release Notes
 
@@ -220,7 +316,7 @@ PR #1093 - pf.sh, update support FreeBSD, OpenBSD, and Darwein
 PR #1097 - ossec-batch-manager.pl, support "any" IP address
 PR #1099 - AR, prevent duplication in hosts.deny
 PR #1100 - Windows agent, Open received files in binary mode cause of cr/lf and let hashes match. 
-PR #1102 - JSON ouput, Fix timestamp 
+PR #1102 - JSON output, Fix timestamp 
 PR #1116 - ossec-remoted, systemd support
 PR #1135 - ossec-dbd, UMYSQL_DATABASE_ENABLED does not exist in the tree except this one place.
 PR #1137 - Windows agent, administrators group might not be present on non-english installs

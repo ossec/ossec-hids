@@ -95,6 +95,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     /* XML definitions */
     const char *xml_mailnotify = "email_notification";
     const char *xml_logall = "logall";
+    const char *xml_logall_json = "logall_json";
     const char *xml_integrity = "integrity_checking";
     const char *xml_rootcheckd = "rootkit_detection";
     const char *xml_hostinfo = "host_information";
@@ -150,7 +151,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 
     /* Get right white_size */
     if (Config && Config->hostname_white_list) {
-        OSMatch **ww;
+        char **ww;
         ww = Config->hostname_white_list;
 
         while (*ww != NULL) {
@@ -294,6 +295,21 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 return (OS_INVALID);
             }
         }
+        /* Log all JSON*/
+        else if (strcmp(node[i]->element, xml_logall_json) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                if (Config) {
+                    Config->logall_json = 1;
+                }
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                if (Config) {
+                    Config->logall_json = 0;
+                }
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                return (OS_INVALID);
+            }
+        }           
         /* Compress alerts */
         else if (strcmp(node[i]->element, xml_compress_alerts) == 0) {
             /* removed from here -- compatibility issues only */
@@ -377,28 +393,16 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
             /* Add hostname */
             else if (Config) {
                 hostname_white_size++;
-                Config->hostname_white_list = (OSMatch **)
+                Config->hostname_white_list = (char **)
                                               realloc(Config->hostname_white_list,
-                                                      sizeof(OSMatch *)*hostname_white_size);
+                                                      sizeof(char *)*hostname_white_size);
 
                 if (!Config->hostname_white_list) {
                     merror(MEM_ERROR, __local_name, errno, strerror(errno));
                     return (OS_INVALID);
                 }
-                os_calloc(1,
-                          sizeof(OSMatch),
-                          Config->hostname_white_list[hostname_white_size - 2]);
+                os_strdup(node[i]->content, Config->hostname_white_list[hostname_white_size - 2]);
                 Config->hostname_white_list[hostname_white_size - 1] = NULL;
-
-                if (!OSMatch_Compile(
-                            node[i]->content,
-                            Config->hostname_white_list[hostname_white_size - 2],
-                            0)) {
-                    merror(REGEX_COMPILE, __local_name, node[i]->content,
-                           Config->hostname_white_list
-                           [hostname_white_size - 2]->error);
-                    return (-1);
-                }
             }
 #endif
 
