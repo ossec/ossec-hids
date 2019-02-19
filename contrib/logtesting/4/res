@@ -6,7 +6,7 @@
 
 **Phase 2: Completed decoding.
        decoder: 'cimserver'
-       dstuser: 'jones_b.'
+       dstuser: 'jones_b'
 
 **Phase 3: Completed filtering (rules).
        Rule id: '9610'

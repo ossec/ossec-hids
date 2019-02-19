@@ -601,7 +601,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="proftpd-ip">
   <parent>proftpd</parent>
-  <regex>^\S+ \(\S+[(\S+)]\)|^\S+ \(\S+[(\S+)]\)</regex>
+  <regex>^\S+ \(\S+[(\S+)]\)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -906,7 +906,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="courier-generic">
   <parent>courier</parent>
-  <regex>, ip=[(\S+)]$|, ip=[(\S+)]$</regex>
+  <regex>, ip=[(\S+)]$</regex>
   <order>srcip</order>
 </decoder>
 

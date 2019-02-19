@@ -1,13 +1,14 @@
 
-
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
 EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
-ZLIB_SYSTEM?=no
+EXTERNAL_PCRE2=external/pcre2-10.32/
+ZLIB_SYSTEM?=yes
+PCRE2_SYSTEM?=no
 LUA_PLAT=posix
-LUA_ENABLE?=yes
+LUA_ENABLE?=no
 MAXAGENTS?=2048
 REUSE_ID?=no
 # XXX Becareful NO EXTRA Spaces here
@@ -27,6 +28,7 @@ USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
+USE_PCRE2_JIT=yes
 
 WINBIT?=32
 
@@ -134,8 +136,6 @@ OSSEC_CFLAGS=${CFLAGS}
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
-else
-	OSSEC_CFLAGS+=-O2
 endif #DEBUG
 
 ifneq (,$(filter ${CLEANFULL},yes y Y 1))
@@ -150,6 +150,16 @@ ifneq (${ZLIB_SYSTEM},no)
 	DEFINES+=-DZLIB_SYSTEM
 endif
 
+ifeq (${PCRE2_SYSTEM},no)
+	PCRE2_INCLUDE=-I./${EXTERNAL_PCRE2}/install/include/
+	DEFINES+=${PCRE2_INCLUDE}
+	DEFINES+=-DPCRE2_STATIC
+else
+	PCRE2_LOCATION?=$(shell pcre2-config --prefix)/lib
+	OSSEC_LDFLAGS+=-lpcre2-8
+endif
+
+
 OSSEC_CFLAGS+=${DEFINES}
 OSSEC_CFLAGS+=-Wall -Wextra
 OSSEC_CFLAGS+=-I./ -I./headers/
@@ -161,21 +171,12 @@ BINCOLOR="\033[37;1m"
 MAKECOLOR="\033[32;1m"
 ENDCOLOR="\033[0m"
 
-ifndef V
-	QUIET_CC      = @printf '    %b %b\n' ${CCCOLOR}CC${ENDCOLOR} ${SRCCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_LINK    = @printf '    %b %b\n' ${LINKCOLOR}LINK${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_CCBIN   = @printf '    %b %b\n' ${LINKCOLOR}CC${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_INSTALL = @printf '    %b %b\n' ${LINKCOLOR}INSTALL${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_RANLIB  = @printf '    %b %b\n' ${LINKCOLOR}RANLIB${ENDCOLOR} ${BINCOLOR}$@${ENDCOLOR} 1>&2;
-	QUIET_NOTICE  = @printf '%b' ${MAKECOLOR} 1>&2;
-	QUIET_ENDCOLOR= @printf '%b' ${ENDCOLOR} 1>&2;
-endif
-
 MING_BASE:=
 ifeq (${TARGET}, winagent)
 CC=gcc
 LUA_ENABLE=no
 ZLIB_SYSTEM=no
+PCRE2_SYSTEM=no
 ifeq (${WINBIT}, 64)
 ifneq (,$(shell which x86_64-w64-mingw32-gcc))
         MING_BASE:=x86_64-w64-mingw32-
@@ -206,6 +207,13 @@ OSSEC_LINK    =${QUIET_LINK}${MING_BASE}ar -crs
 OSSEC_RANLIB  =${QUIET_RANLIB}${MING_BASE}ranlib
 OSSEC_WINDRES =${QUIET_CCBIN}${MING_BASE}windres
 
+
+ifneq (,$(filter ${USE_PCRE2_JIT},yes y Y 1))
+	DEFINES+=-DUSE_PCRE2_JIT
+	PCRE2_CONFIGURE_JIT=--enable-jit
+else
+	PCRE2_CONFIGURE_JIT=--disable-jit
+endif
 
 ifneq (,$(filter ${USE_INOTIFY},auto yes y Y 1))
 	DEFINES+=-DINOTIFY_ENABLED
@@ -552,6 +560,7 @@ help: failtarget
 	@echo "External source options: "
 	@echo "   make LUA_ENABLE=no    Disable LUA build"
 	@echo "   make ZLIB_SYSTEM=yes  Use zlib sources from system"
+	@echo "   make PCRE2_SYSTEM=yes Use pcre2 sources from system"
 	@echo
 	@echo "Examples: Client with debugging enabled"
 	@echo "   make TARGET=agent DEBUG=1"
@@ -579,6 +588,9 @@ settings:
 	@echo "    ZLIB_SYSTEM:      ${ZLIB_SYSTEM}"
 	@echo "    ZLIB_INCLUDE:     ${ZLIB_INCLUDE}"
 	@echo "    ZLIB_LIB:         ${ZLIB_LIB}"
+	@echo "PCRE2 settings:"
+	@echo "    PCRE2_SYSTEM:     ${PCRE2_SYSTEM}"
+	@echo "    PCRE2_INCLUDE:    ${PCRE2_INCLUDE}"
 	@echo "Lua settings:"
 	@echo "    LUA_PLAT:         ${LUA_PLAT}"
 	@echo "    LUA_ENABLE:       ${LUA_ENABLE}"
@@ -589,6 +601,7 @@ settings:
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
 	@echo "    USE_SQLITE:       ${USE_SQLITE}"
+	@echo "    USE_PCRE2_JIT:    ${USE_PCRE2_JIT}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
 	@echo "    libs:             ${ML}"
@@ -664,7 +677,10 @@ $(error Do not use 'winagent' directly, use 'TARGET=winagent')
 endif
 .PHONY: winagent
 winagent:
-	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB}" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
+	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB} -I./${EXTERNAL_PCRE2}/install/include" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
+	#cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
+	#cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
+	#cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
 	cd win32/ && ./unix2dos.pl ossec.conf > default-ossec.conf
 	cd win32/ && ./unix2dos.pl help.txt > help_win.txt
 	cd win32/ && ./unix2dos.pl ../../etc/internal_options.conf > internal_options.conf
@@ -680,7 +696,7 @@ winagent:
 ####################
 
 .PHONY: external lua
-external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua libpcre2-8.a
 
 lua:
 ifeq (${LUA_ENABLE},yes)
@@ -736,6 +752,39 @@ libcJSON.a: ${cjson_o}
 
 
 
+#### pcre2 ##########
+
+ifeq (${PCRE2_SYSTEM},no)
+libpcre2-8.a: ${EXTERNAL_PCRE2}/install/lib/libpcre2-8.a
+	cp $< $@
+	${OSSEC_RANLIB} $@
+
+${EXTERNAL_PCRE2}/install/lib/libpcre2-8.a:
+ifeq (${TARGET}, winagent)
+	cd ${EXTERNAL_PCRE2} && \
+	CC= ./configure \
+		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/install \
+		${PCRE2_CONFIGURE_JIT} \
+		--disable-shared \
+		--enable-static \
+		--host=${MING_BASE:%-=%} && \
+	make install-libLTLIBRARIES install-nodist_includeHEADERS
+else
+	cd ${EXTERNAL_PCRE2} && \
+	./configure \
+		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/install \
+		${PCRE2_CONFIGURE_JIT} \
+		--disable-shared \
+		--enable-static && \
+	make install-libLTLIBRARIES install-nodist_includeHEADERS
+endif
+else
+libpcre2-8.a: ${PCRE2_LOCATION}/libpcre2-8.a
+	cp $< $@
+	${OSSEC_RANLIB} $@
+endif
+
+
 ####################
 #### OSSEC Libs ####
 ####################
@@ -763,9 +812,11 @@ os_regex_o := $(os_regex_c:.c=.o)
 os_regex/%.o: os_regex/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
 
-os_regex.a: ${os_regex_o}
-	${OSSEC_LINK} $@ $^
+os_regex.a: ${os_regex_o} libpcre2-8.a
+	(mkdir -p libpcre2_objs && cd libpcre2_objs && ${QUIET_LINK}${MING_BASE}ar -x ../libpcre2-8.a)
+	${OSSEC_LINK} $@ ${os_regex_o} $(addprefix libpcre2_objs/,$(shell ${MING_BASE}ar -t libpcre2-8.a))
 	${OSSEC_RANLIB} $@
+	rm -rf libpcre2_objs
 
 #### os_net ##########
 
@@ -954,12 +1005,12 @@ addagent/%.o: addagent/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -I./addagent ${ZLIB_INCLUDE} -DARGV0=\"manage_agents\" -c $^ -o $@
 
 
-manage_agents: ${addagent_o} ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+manage_agents: ${addagent_o} ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} ${JSON_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 #### Util ##########
 
-util_programs = syscheck_update clear_stats list_agents agent_control syscheck_control rootcheck_control verify-agent-conf ossec-regex
+util_programs = syscheck_update clear_stats list_agents agent_control syscheck_control rootcheck_control verify-agent-conf ossec-regex ossec-regex-convert
 
 .PHONY: utils
 utils: ${util_programs}
@@ -970,13 +1021,13 @@ util_o := $(util_c:.c=.o)
 util/%.o: util/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -I./util ${ZLIB_INCLUDE} -DARGV0=\"utils\" -c $^ -o $@
 
-syscheck_update: util/syscheck_update.o addagent/validate.o ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+syscheck_update: util/syscheck_update.o addagent/validate.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} ${JSON_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 clear_stats: util/clear_stats.o ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
-list_agents: util/list_agents.o ${ossec_libs} ${ZLIB_LIB}
+list_agents: util/list_agents.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 verify-agent-conf: util/verify-agent-conf.o ${ossec_libs} ${ZLIB_LIB}
@@ -985,14 +1036,17 @@ verify-agent-conf: util/verify-agent-conf.o ${ossec_libs} ${ZLIB_LIB}
 agent_control: util/agent_control.o addagent/validate.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} ${JSON_INCLUDE} $^ -lm ${OSSEC_LDFLAGS} -o $@
 
-syscheck_control: util/syscheck_control.o addagent/validate.o ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+syscheck_control: util/syscheck_control.o addagent/validate.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} ${JSON_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
-rootcheck_control: util/rootcheck_control.o addagent/validate.o ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+rootcheck_control: util/rootcheck_control.o addagent/validate.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} ${JSON_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 ossec-regex: util/ossec-regex.o ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+
+ossec-regex-convert: util/ossec-regex-convert.o ${ossec_libs} ${ZLIB_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 #### rootcheck #####
 
@@ -1040,7 +1094,7 @@ monitor_o := $(monitor_c:.c=.o)
 monitord/%.o: monitord/%.c ${ZLIB_LIB}
 	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-monitord\" -c $< -o $@
 
-ossec-monitord: ${monitor_o} ${ossec_libs} ${ZLIB_LIB}
+ossec-monitord: ${monitor_o} ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 
@@ -1064,11 +1118,11 @@ os_auth_o := $(os_auth_c:.c=.o)
 os_auth/%.o: os_auth/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS}  -I./os_auth -DARGV0=\"ossec-authd\" -c $^ -o $@
 
-agent-auth: addagent/validate.o os_auth/main-client.o os_auth/ssl.o os_auth/check_cert.o ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -I./os_auth $^ ${OSSEC_LDFLAGS} -o $@
+agent-auth: addagent/validate.o os_auth/main-client.o os_auth/ssl.o os_auth/check_cert.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${JSON_INCLUDE} -I./os_auth $^ ${OSSEC_LDFLAGS} -o $@
 
-ossec-authd: addagent/validate.o os_auth/main-server.o os_auth/ssl.o os_auth/check_cert.o ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} -I./os_auth $^ ${OSSEC_LDFLAGS} -o $@
+ossec-authd: addagent/validate.o os_auth/main-server.o os_auth/ssl.o os_auth/check_cert.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${JSON_INCLUDE} -I./os_auth $^ ${OSSEC_LDFLAGS} -o $@
 
 #### analysisd #####
 
@@ -1211,19 +1265,19 @@ tests/%.o: tests/%.c
 test_os_zlib: tests/test_os_zlib.o ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_xml: tests/test_os_xml.o ${os_xml_o}
+test_os_xml: tests/test_os_xml.o os_xml.a
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_regex: tests/test_os_regex.c ${os_regex_o}
+test_os_regex: tests/test_os_regex.c os_regex.a
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_os_crypto: tests/test_os_crypto.c ${crypto_o} ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o} ${ZLIB_LIB}
+test_os_crypto: tests/test_os_crypto.c os_crypto.a shared.a os_xml.a os_net.a os_regex.a ${ZLIB_LIB}  ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-#test_os_net: tests/test_os_net.c ${os_net_o} ${shared_o} ${os_regex_o} ${os_xml_o}
+#test_os_net: tests/test_os_net.c os_net.a shared.a os_regex.a os_xml.a
 #	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-test_shared: tests/test_shared.c ${shared_o} ${os_xml_o} ${os_net_o} ${os_regex_o}
+test_shared: tests/test_shared.c shared.a os_xml.a os_net.a os_regex.a ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 test_valgrind: build_tests
@@ -1282,7 +1336,7 @@ win32/ossec-agent-eventchannel.exe: win32/icon.o win32/win_agent.o win32/win_ser
 win32/ossec-rootcheck.exe: win32/icon.o win32/win_service_rk.o ${rootcheck_rk_o} ${ossec_libs}
 	${OSSEC_CCBIN} -DARGV0=\"ossec-rootcheck\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
-win32/manage_agents.exe: win32/win_service_rk.o ${addagent_o} ${ossec_libs} ${ZLIB_LIB}
+win32/manage_agents.exe: win32/win_service_rk.o ${addagent_o} ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} -DARGV0=\"manage-agents\" -DMA ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 win32/setup-windows.exe: win32/win_service_rk.o win32/setup-win.o win32/setup-shared.o ${ossec_libs}
@@ -1303,7 +1357,7 @@ win32/resource.o: win32/ui/win32ui.rc
 win32/os_win32ui.exe: win32/resource.o win32/win_service_rk.o ${win32_ui_o} addagent/b64.o ${ossec_libs}
 	${OSSEC_CCBIN} -DARGV0=\"ossec-win32ui\" ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -mwindows -o $@
 
-win32/agent-auth.exe: win32/win_service_rk.o addagent/validate.c ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB} win32/agent_auth.c os_regex/*.c os_net/*.c os_xml/*.c
+win32/agent-auth.exe: win32/win_service_rk.o addagent/validate.c win32/agent_auth.c ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} -DARGV0=\"agent-auth\" -DOSSECHIDS ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -lshlwapi -lwsock32 -lsecur32 -flto -o $@
 
 
@@ -1322,9 +1376,10 @@ clean-test:
 	find . -name "*.gcda" -exec rm {} \;
 
 clean-external:
-	rm -f ${cjson_o} libcJSON.a
+	rm -f ${cjson_o} libcJSON.a libpcre2-8.a
 	cd ${EXTERNAL_ZLIB} && ${MAKE} -f Makefile.in distclean
 	cd ${EXTERNAL_LUA} && ${MAKE} clean
+	#cd ${EXTERNAL_PCRE2} && ${MAKE} distclean
 
 
 clean-internals:
@@ -1364,4 +1419,9 @@ clean-windows:
 	rm -f ${win32_o} ${win32_ui_o} win32/win_service_rk.o
 	rm -f win32/icon.o win32/resource.o
 	rm -f ${WINDOWS_BINS}
+	#rm -f ${EXTERNAL_LUA}src/lua52.dll
+	#rm -f ${EXTERNAL_LUA}src/ossec-lua.exe
+	#rm -f ${EXTERNAL_LUA}src/ossec-luac.exe
+	#rm -f win32/ossec-lua.exe
+	#rm -f win32/ossec-luac.exe
 	rm -f win32/ossec-win32-agent.exe

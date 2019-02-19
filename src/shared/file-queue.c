@@ -84,8 +84,10 @@ static int Handle_Queue(file_queue *fileq, int flags)
     if (!(flags & CRALERT_READ_ALL)) {
         if (fseek(fileq->fp, 0, SEEK_END) < 0) {
             merror(FSEEK_ERROR, __local_name, fileq->file_name, errno, strerror(errno));
-            fclose(fileq->fp);
-            fileq->fp = NULL;
+            if (fileq->fp) {
+                fclose(fileq->fp);
+                fileq->fp = NULL;
+            }
             return (-1);
         }
     }

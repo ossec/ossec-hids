@@ -12,85 +12,6 @@
 #include <stdlib.h>
 
 #include "os_regex.h"
-#include "os_regex_internal.h"
-
-
-int _OS_Match(const char *pattern, const char *str, size_t str_len, size_t size)
-{
-    size_t i = 0, j;
-    const char *pt = pattern;
-
-    if (str_len < size) {
-        return (FALSE);
-    }
-
-    size = str_len - size;
-
-    /* Look to match the first pattern */
-    do {
-        /* Match */
-        if (charmap[(uchar)str[i]] == *pt) {
-            pt++;
-            j = i + 1;
-
-            while (*pt != '\0') {
-                if (str[j] == '\0') {
-                    return (FALSE);
-                }
-
-                else if (*pt != charmap[(uchar)str[j]]) {
-                    pt = pattern;
-                    goto nnext;
-                }
-                j++;
-                pt++;
-            }
-            return (TRUE);
-nnext:
-            continue;
-        }
-    } while (++i <= size);
-
-    return (FALSE);
-}
-
-int _os_strncmp(const char *pattern, const char *str, __attribute__((unused)) size_t str_len, size_t size)
-{
-    if (strncasecmp(pattern, str, size) == 0) {
-        return (TRUE);
-    }
-
-    return (FALSE);
-}
-
-int _os_strcmp(const char *pattern, const char *str, __attribute__((unused)) size_t str_len, __attribute__((unused)) size_t size)
-{
-    if (strcasecmp(pattern, str) == 0) {
-        return (TRUE);
-    }
-
-    return (FALSE);
-}
-
-int _os_strmatch(__attribute__((unused)) const char *pattern, __attribute__((unused)) const char *str,
-                 __attribute__((unused)) size_t str_len, __attribute__((unused)) size_t size)
-{
-    return (TRUE);
-}
-
-int _os_strcmp_last(const char *pattern, const char *str, size_t str_len, size_t size)
-{
-    /* Size of the string must be bigger */
-    if (str_len < size) {
-        return (FALSE);
-    }
-
-    if (strcasecmp(pattern, str + (str_len - size)) == 0) {
-        return (TRUE);
-    }
-
-    return (FALSE);
-}
 
 /* Compare an already compiled pattern with a not NULL string.
  * Returns 1 on success or 0 on error.
@@ -98,25 +19,68 @@ int _os_strcmp_last(const char *pattern, const char *str, size_t str_len, size_t
  */
 int OSMatch_Execute(const char *str, size_t str_len, OSMatch *reg)
 {
-    short int i = 0;
+    return reg->exec_function(str, str_len, reg);
+}
 
-    /* The string can't be NULL */
-    if (str == NULL) {
-        reg->error = OS_REGEX_STR_NULL;
-        return (0);
+int OSMatch_Execute_true(const char *subject, size_t len, OSMatch *match)
+{
+    (void)subject;
+    (void)len;
+    (void)match;
+    return (1);
+}
+
+int OSMatch_Execute_pcre2_match(const char *str, size_t str_len, OSMatch * reg)
+{
+    int rc = 0;
+
+#ifdef USE_PCRE2_JIT
+    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, reg->match_data, NULL);
+#else
+    rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, reg->match_data, NULL);
+#endif
+
+    return (rc >= 0);
+}
+
+int OSMatch_Execute_strcmp(const char *subject, size_t len, OSMatch *match)
+{
+    //^literal$
+    (void)len;
+    return !strcmp(match->pattern, subject);
+}
+
+int OSMatch_Execute_strncmp(const char *subject, size_t len, OSMatch *match)
+{
+    //^literal
+    (void)len;
+    return !strncmp(match->pattern, subject, match->pattern_len);
+}
+
+int OSMatch_Execute_strrcmp(const char *subject, size_t len, OSMatch *match)
+{
+    // literal$
+    if (len >= match->pattern_len) {
+        return !strcmp(match->pattern, &subject[len - match->pattern_len]);
     }
+    return (0);
+}
 
-    /* Loop over all sub patterns */
-    while (reg->patterns[i]) {
-        if (reg->match_fp[i](reg->patterns[i],
-                             str,
-                             str_len,
-                             reg->size[i]) == TRUE) {
-            return (1);
-        }
-        i++;
+int OSMatch_Execute_strcasecmp(const char *subject, size_t len, OSMatch *match)
+{
+    return (len == match->pattern_len && !strcasecmp(match->pattern, subject));
+}
+
+int OSMatch_Execute_strncasecmp(const char *subject, size_t len, OSMatch *match)
+{
+    (void)len;
+    return !strncasecmp(match->pattern, subject, match->pattern_len);
+}
+
+int OSMatch_Execute_strrcasecmp(const char *subject, size_t len, OSMatch *match) {
+    if (len >= match->pattern_len) {
+        return !strcasecmp(match->pattern, &subject[len - match->pattern_len]);
     }
-
     return (0);
 }
 

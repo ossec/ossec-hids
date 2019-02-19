@@ -10,11 +10,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "os_regex.h"
-#include "os_regex_internal.h"
 
+const char *OSRegex_Execute_pcre2_match(const char *str, OSRegex *reg);
+const char *OSRegex_Execute_strncmp(const char *subject, OSRegex *reg);
+const char *OSRegex_Execute_strrcmp(const char *subject, OSRegex *reg);
+const char *OSRegex_Execute_strcasecmp(const char *subject, OSRegex *reg);
+const char *OSRegex_Execute_strncasecmp(const char *subject, OSRegex *reg);
+const char *OSRegex_Execute_strrcasecmp(const char *subject, OSRegex *reg);
+const char *OSRegex_Execute_strcmp(const char *subject, OSRegex *reg);
+int OSRegex_CouldBeOptimized(const char *pattern2check);
 
 /* Compile a regular expression to be used later
  * Allowed flags are:
@@ -25,16 +31,13 @@
  */
 int OSRegex_Compile(const char *pattern, OSRegex *reg, int flags)
 {
-    size_t i = 0;
-    size_t count = 0;
-    int end_of_string = 0;
-    int parenthesis = 0;
-    unsigned prts_size = 0;
-    unsigned max_prts_size = 0;
-
-    char *pt;
-    char *new_str;
-    char *new_str_free = NULL;
+    char *pattern_pcre2 = NULL;
+    int flags_compile = 0;
+    int error = 0;
+    PCRE2_SIZE erroroffset = 0;
+    size_t pattern_len = 0UL;
+    char first_char, last_char;
+    uint32_t count, i;
 
     /* Check for references not initialized */
     if (reg == NULL) {
@@ -43,11 +46,12 @@ int OSRegex_Compile(const char *pattern, OSRegex *reg, int flags)
 
     /* Initialize OSRegex structure */
     reg->error = 0;
-    reg->patterns = NULL;
-    reg->flags = NULL;
-    reg->prts_closure = NULL;
-    reg->prts_str = NULL;
     reg->sub_strings = NULL;
+    reg->regex = NULL;
+    reg->match_data = NULL;
+    reg->pattern_len = 0UL;
+    reg->pattern = NULL;
+    reg->exec_function = NULL;
 
     /* The pattern can't be null */
     if (pattern == NULL) {
@@ -56,268 +60,106 @@ int OSRegex_Compile(const char *pattern, OSRegex *reg, int flags)
     }
 
     /* Maximum size of the pattern */
-    if (strlen(pattern) > OS_PATTERN_MAXSIZE) {
+    pattern_len = strlen(pattern);
+    if (pattern_len > OS_PATTERN_MAXSIZE) {
         reg->error = OS_REGEX_MAXSIZE;
         goto compile_error;
     }
 
-    /* Duping the pattern for our internal work */
-    new_str = strdup(pattern);
-    if (!new_str) {
-        reg->error = OS_REGEX_OUTOFMEMORY;
-        goto compile_error;
+    if (OSRegex_CouldBeOptimized(pattern)) {
+        first_char = pattern[0];
+        last_char = pattern[pattern_len - 1];
+
+        if (first_char == '^') {
+            if (last_char == '$') {
+                reg->pattern = strdup(&pattern[1]);
+                reg->pattern_len = pattern_len - 2;
+                reg->pattern[reg->pattern_len] = '\0';
+                if (flags & OS_CASE_SENSITIVE) {
+                    reg->exec_function = OSRegex_Execute_strcmp;
+                } else {
+                    reg->exec_function = OSRegex_Execute_strcasecmp;
+                }
+                return (1);
+            } else {
+                reg->pattern = strdup(&pattern[1]);
+                reg->pattern_len = pattern_len - 1;
+                if (flags & OS_CASE_SENSITIVE) {
+                    reg->exec_function = OSRegex_Execute_strncmp;
+                } else {
+                    reg->exec_function = OSRegex_Execute_strncasecmp;
+                }
+                return (1);
+            }
+        } else {
+            if (last_char == '$') {
+                reg->pattern = strdup(pattern);
+                reg->pattern_len = pattern_len - 1;
+                reg->pattern[reg->pattern_len] = '\0';
+                if (flags & OS_CASE_SENSITIVE) {
+                    reg->exec_function = OSRegex_Execute_strrcmp;
+                } else {
+                    reg->exec_function = OSRegex_Execute_strrcasecmp;
+                }
+                return (1);
+            }
+        }
     }
-    new_str_free = new_str;
-    pt = new_str;
 
-    /* Get the number of sub patterns */
-    do {
-        if (*pt == BACKSLASH) {
-            pt++;
-            /* Give the new values for each regex */
-            switch (*pt) {
-                case 'd':
-                    *pt = 1;
-                    break;
-                case 'w':
-                    *pt = 2;
-                    break;
-                case 's':
-                    *pt = 3;
-                    break;
-                case 'p':
-                    *pt = 4;
-                    break;
-                case '(':
-                    *pt = 5;
-                    break;
-                case ')':
-                    *pt = 6;
-                    break;
-                case '\\':
-                    *pt = 7;
-                    break;
-                case 'D':
-                    *pt = 8;
-                    break;
-                case 'W':
-                    *pt = 9;
-                    break;
-                case 'S':
-                    *pt = 10;
-                    break;
-                case '.':
-                    *pt = 11;
-                    break;
-                case 't':
-                    *pt = 12;
-                    break;
-                case '$':
-                    *pt = 13;
-                    break;
-                case '|':
-                    *pt = 14;
-                    break;
-                case '<':
-                    *pt = 15;
-                    break;
-                default:
-                    reg->error = OS_REGEX_BADREGEX;
-                    goto compile_error;
-            }
-            pt++;
+    reg->exec_function = OSRegex_Execute_pcre2_match;
 
-            continue;
-        } else if (*pt == '(') {
-            parenthesis++;
-        } else if (*pt == ')') {
-            /* Internally, open and closed are the same */
-            *pt = '(';
-            parenthesis--;
-            prts_size++;
-        }
-
-        /* We only allow one level of parentheses */
-        if (parenthesis != 0 && parenthesis != 1) {
-            reg->error = OS_REGEX_BADPARENTHESIS;
-            goto compile_error;
-        }
-
-        /* The pattern must be always lower case if
-         * case sensitive is set
-         */
-        if (!(flags & OS_CASE_SENSITIVE)) {
-            *pt = (char) charmap[(uchar) * pt];
-        }
-
-        if (*pt == OR) {
-            /* Each sub pattern must be closed on parenthesis */
-            if (parenthesis != 0) {
-                reg->error = OS_REGEX_BADPARENTHESIS;
-                goto compile_error;
-            }
-            count++;
-        }
-        pt++;
-    } while (*pt != '\0');
-
-    /* After the whole pattern is read, the parentheses must all be closed */
-    if (parenthesis != 0) {
-        reg->error = OS_REGEX_BADPARENTHESIS;
+    /* Ossec pattern conversion */
+    if (OSRegex_Convert(pattern, &pattern_pcre2, OS_CONVERT_REGEX) == 0) {
+        reg->error = OS_REGEX_BADREGEX;
         goto compile_error;
     }
 
-    /* Allocate the memory for the sub patterns */
-    count++;
-    reg->patterns = (char **) calloc(count + 1, sizeof(char *));
-    reg->flags = (int *) calloc(count + 1, sizeof(int));
+    flags_compile |= PCRE2_UTF;
+    flags_compile |= PCRE2_NO_UTF_CHECK;
+    flags_compile |= (flags & OS_CASE_SENSITIVE) ? 0 : PCRE2_CASELESS;
+    reg->regex = pcre2_compile((PCRE2_SPTR)pattern_pcre2, PCRE2_ZERO_TERMINATED, flags_compile,
+                               &error, &erroroffset, NULL);
+    if (reg->regex == NULL) {
+        reg->error = OS_REGEX_BADREGEX;
+        goto compile_error;
+    }
 
-    /* Memory allocation error check */
-    if (!reg->patterns || !reg->flags) {
+    reg->match_data = pcre2_match_data_create_from_pattern(reg->regex, NULL);
+    if (reg->match_data == NULL) {
         reg->error = OS_REGEX_OUTOFMEMORY;
         goto compile_error;
     }
 
-    /* For the substrings */
-    if ((prts_size > 0) && (flags & OS_RETURN_SUBSTRING)) {
-        reg->prts_closure = (const char ** *) calloc(count + 1, sizeof(const char **));
-        reg->prts_str = (const char ** *) calloc(count + 1, sizeof(const char **));
-        if (!reg->prts_closure || !reg->prts_str) {
+#ifdef USE_PCRE2_JIT
+    /* Just In Time compilation for faster execution */
+    if (pcre2_jit_compile(reg->regex, PCRE2_JIT_COMPLETE) != 0) {
+        reg->error = OS_REGEX_NO_JIT;
+        goto compile_error;
+    }
+#endif
+
+    if (flags & OS_RETURN_SUBSTRING) {
+        pcre2_pattern_info(reg->regex, PCRE2_INFO_CAPTURECOUNT, (void *)&count);
+        count++; // to store NULL pointer at the end
+        reg->sub_strings = calloc(count, sizeof(char *));
+        if (reg->sub_strings == NULL) {
             reg->error = OS_REGEX_OUTOFMEMORY;
             goto compile_error;
         }
-    }
-
-    /* Initialize each sub pattern */
-    for (i = 0; i <= count; i++) {
-        reg->patterns[i] = NULL;
-        reg->flags[i] = 0;
-
-        /* The parenthesis closure if set */
-        if (reg->prts_closure) {
-            reg->prts_closure[i] = NULL;
-            reg->prts_str[i] = NULL;
+        for (i = 0; i < count; i++) {
+            reg->sub_strings[i] = NULL;
         }
     }
-    i = 0;
 
-    /* Reassign pt to the beginning of the string */
-    pt = new_str;
+    free(pattern_pcre2);
 
-    /* Get the sub patterns */
-    do {
-        if ((*pt == OR) || (*pt == '\0')) {
-            if (*pt == '\0') {
-                end_of_string = 1;
-            }
-
-            *pt = '\0';
-
-            /* If string starts with ^, set the BEGIN SET flag */
-            if (*new_str == BEGINREGEX) {
-                new_str++;
-                reg->flags[i] |= BEGIN_SET;
-            }
-
-            /* If string ends with $, set the END_SET flag */
-            if (*(pt - 1) == ENDREGEX) {
-                *(pt - 1) = '\0';
-                reg->flags[i] |= END_SET;
-            }
-
-            reg->patterns[i] = strdup(new_str);
-
-            if (!reg->patterns[i]) {
-                reg->error = OS_REGEX_OUTOFMEMORY;
-                goto compile_error;
-
-            }
-
-            /* Set the parenthesis closures */
-            /* The parenthesis closure if set */
-            if (reg->prts_closure) {
-                unsigned tmp_int = 0;
-                char *tmp_str;
-
-                /* Search the whole pattern for parentheses */
-                prts_size = 0;
-
-                /* First loop we get the number of parenthesis.
-                 * Allocate the memory and loop again setting
-                 * the parenthesis closures.
-                 */
-                tmp_str = reg->patterns[i];
-                while (*tmp_str != '\0') {
-                    if (prts(*tmp_str)) {
-                        prts_size++;
-                    }
-                    tmp_str++;
-                }
-
-                /* Get the maximum number of parenthesis for
-                 * all sub strings in order to set up the maximum
-                 * number of substrings to be returned.
-                 */
-                if (max_prts_size < prts_size) {
-                    max_prts_size = prts_size;
-                }
-
-                /* Allocate the memory */
-                reg->prts_closure[i] = (const char **) calloc(prts_size + 1, sizeof(const char *));
-                reg->prts_str[i] = (const char **) calloc(prts_size + 1, sizeof(const char *));
-                if ((reg->prts_closure[i] == NULL) || (reg->prts_str[i] == NULL)) {
-                    reg->error = OS_REGEX_OUTOFMEMORY;
-                    goto compile_error;
-                }
-
-                /* Next loop to set the closures */
-                tmp_str = reg->patterns[i];
-                while (*tmp_str != '\0') {
-                    if (prts(*tmp_str)) {
-                        if (tmp_int >= prts_size) {
-                            reg->error = OS_REGEX_BADPARENTHESIS;
-                            goto compile_error;
-                        }
-
-                        /* Sett the pointer to the string */
-                        reg->prts_closure[i][tmp_int] = tmp_str;
-                        reg->prts_str[i][tmp_int] = NULL;
-
-                        tmp_int++;
-                    }
-
-                    tmp_str++;
-                }
-            }
-
-            if (end_of_string) {
-                break;
-            }
-
-            new_str = ++pt;
-            i++;
-            continue;
-        }
-        pt++;
-
-    } while (!end_of_string);
-
-    /* Allocate sub string for the maximum number of parenthesis */
-    reg->sub_strings = (char **) calloc(max_prts_size + 1, sizeof(char *));
-    if (reg->sub_strings == NULL) {
-        reg->error = OS_REGEX_OUTOFMEMORY;
-        goto compile_error;
-    }
-
-    /* Success return */
-    free(new_str_free);
     return (1);
 
 compile_error:
     /* Error handling */
 
-    if (new_str_free) {
-        free(new_str_free);
+    if (pattern_pcre2) {
+        free(pattern_pcre2);
     }
 
     OSRegex_FreePattern(reg);
@@ -325,3 +167,6 @@ compile_error:
     return (0);
 }
 
+int OSRegex_CouldBeOptimized(const char *pattern2check) {
+    return OS_Pcre2("^\\^?[A-Za-z0-9 !\"#%&',/:;<=>@_`~-]*\\$?$", pattern2check);
+}

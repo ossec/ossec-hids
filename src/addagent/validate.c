@@ -131,6 +131,7 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
 int OS_RemoveAgent(const char *u_id) {
     FILE *fp;
     int id_exist;
+    char *full_name;
 
     id_exist = IDExist(u_id);
 
@@ -191,6 +192,10 @@ int OS_RemoveAgent(const char *u_id) {
     fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
 #endif
     fclose(fp);
+
+    full_name = getFullnameById(u_id);
+    if (full_name)
+        delete_agentinfo(full_name);
 
     /* Remove counter for ID */
     OS_RemoveCounter(u_id);
@@ -433,7 +438,7 @@ char *IPExist(const char *u_ip)
     char line_read[FILE_SIZE + 1];
     line_read[FILE_SIZE] = '\0';
 
-    if (!(u_ip && strncmp(u_ip, "any", 3)))
+    if (!(u_ip && strncmp(u_ip, "any", 3)) || strchr(u_ip, '/'))
         return NULL;
 
     if (isChroot())
@@ -509,7 +514,7 @@ double OS_AgentAntiquity(const char *id)
 }
 
 /* Print available agents */
-int print_agents(int print_status, int active_only, int csv_output, int json_output)
+int print_agents(int print_status, int active_only, int csv_output, cJSON *json_output)
 {
     int total = 0;
     FILE *fp;
@@ -564,9 +569,18 @@ int print_agents(int print_status, int active_only, int csv_output, int json_out
 
                         if (csv_output) {
                             printf("%s,%s,%s,%s,\n", line_read, name, ip, print_agent_status(agt_status));
-			}else if (json_output) {
-			   printf(", { \"id\" : \"%s\", \"name\" : \"%s\", \"ip\": \"%s\", \"status\" : \"%s\" }",line_read, name, ip, print_agent_status(agt_status));
-			} else {
+                        } else if (json_output) {
+                            cJSON *json_agent = cJSON_CreateObject();
+                          
+                            if (!json_agent)
+                                return 0;
+                            
+                            cJSON_AddStringToObject(json_agent, "id", line_read);
+                            cJSON_AddStringToObject(json_agent, "name", name);
+                            cJSON_AddStringToObject(json_agent, "ip", ip);
+                            cJSON_AddStringToObject(json_agent, "status", print_agent_status(agt_status));
+                            cJSON_AddItemToArray(json_output, json_agent);
+                        } else {
                             printf(PRINT_AGENT_STATUS, line_read, name, ip, print_agent_status(agt_status));
                         }
                     } else {

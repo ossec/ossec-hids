@@ -38,6 +38,10 @@ typedef struct {
     OSRegex *prematch;
     OSMatch *program_name;
 
+    OSPcre2 *pcre2;
+    OSPcre2 *prematch_pcre2;
+    OSPcre2 *program_name_pcre2;
+
     void (*plugindecoder)(void *lf);
     void (**order)(void *lf, char *field);
 } OSDecoderInfo;

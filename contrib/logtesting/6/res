@@ -6,6 +6,10 @@
 
 **Phase 2: Completed decoding.
        decoder: 'vsftpd'
+       dstuser: 'xx'
+       status: 'OK UPLOAD'
+       srcip: '1.2.3.4'
+       url: '/a.php'
 
 **Phase 3: Completed filtering (rules).
        Rule id: '11404'

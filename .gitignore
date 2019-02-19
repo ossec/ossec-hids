@@ -41,6 +41,7 @@ src/ossec-maild
 src/ossec-makelists
 src/ossec-monitord
 src/ossec-regex
+src/ossec-regex-convert
 src/ossec-remoted
 src/ossec-reportd
 src/ossec-syscheckd

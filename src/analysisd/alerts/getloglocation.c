@@ -102,6 +102,29 @@ int OS_GetLogLocation(const Eventinfo *lf)
     /* For the events in JSON */
     if (Config.logall_json) {
         /* Create the json archives logfile name */
+
+        if (_ejflog) {
+            if (ftell(_ejflog) == 0) {
+                unlink(__ejlogfile);
+            }
+            fclose(_ejflog);
+            _ejflog = NULL;
+        }
+
+        snprintf(__ejlogfile, OS_FLSIZE, "%s/%d/", EVENTS, lf->year);
+        if (IsDir(__ejlogfile) == -1)
+            if (mkdir(__ejlogfile, 0770) == -1) {
+                ErrorExit(MKDIR_ERROR, ARGV0, __ejlogfile, errno, strerror(errno));
+        }
+
+        snprintf(__ejlogfile, OS_FLSIZE, "%s/%d/%s", EVENTS, lf->year, lf->mon);
+
+        if (IsDir(__ejlogfile) == -1)
+            if (mkdir(__ejlogfile, 0770) == -1) {
+                ErrorExit(MKDIR_ERROR, ARGV0, __ejlogfile, errno, strerror(errno));
+        }
+
+
         snprintf(__ejlogfile, OS_FLSIZE, "%s/%d/%s/ossec-%s-%02d.json",
                  EVENTS,
                  lf->year,
@@ -175,6 +198,21 @@ int OS_GetLogLocation(const Eventinfo *lf)
             fclose(_jflog);
             _jflog = NULL;
         }
+
+        snprintf(__jlogfile, OS_FLSIZE, "%s/%d/", ALERTS, lf->year);
+        if (IsDir(__jlogfile) == -1)
+            if (mkdir(__jlogfile, 0770) == -1) {
+                ErrorExit(MKDIR_ERROR, ARGV0, __jlogfile, errno, strerror(errno));
+            }
+
+        snprintf(__jlogfile, OS_FLSIZE, "%s/%d/%s", ALERTS, lf->year, lf->mon);
+
+        if (IsDir(__jlogfile) == -1)
+            if (mkdir(__jlogfile, 0770) == -1) {
+                ErrorExit(MKDIR_ERROR, ARGV0, __jlogfile, errno, strerror(errno));
+            }
+
+
 
         /* Create the json logfile name */
         snprintf(__jlogfile, OS_FLSIZE, "%s/%d/%s/ossec-%s-%02d.json",

@@ -6,6 +6,7 @@
 
 **Phase 2: Completed decoding.
        decoder: 'ftpd'
+       srcip: 'emaca.here.com'
 
 **Phase 3: Completed filtering (rules).
        Rule id: '11106'

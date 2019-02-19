@@ -497,16 +497,12 @@ int main_analysisd(int argc, char **argv)
     } else {
         if (Config.ar) {
             int wlc = 0;
-            OSMatch **wl;
+            char **wl;
 
             wl = Config.hostname_white_list;
             while (*wl) {
-                char **tmp_pts = (*wl)->patterns;
-                while (*tmp_pts) {
-                    verbose("%s: INFO: White listing Hostname: '%s'", ARGV0, *tmp_pts);
-                    wlc++;
-                    tmp_pts++;
-                }
+                verbose("%s: INFO: White listing Hostname: '%s'", ARGV0, *wl);
+                wlc++;
                 wl++;
             }
             verbose("%s: INFO: %d Hostname(s) in the white list for active response.",
@@ -991,7 +987,7 @@ void OS_ReadMSG_analysisd(int m_queue)
                             }
                         }
 
-                        if (do_ar) {
+                        if (do_ar && execdq > 0) {
                             OS_Exec(execdq, arq, lf, *rule_ar);
                         }
                         rule_ar++;
@@ -1103,6 +1099,16 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             return (NULL);
         }
     }
+    else if (rule->program_name_pcre2) {
+        if (!lf->program_name) {
+            return (NULL);
+        }
+
+        if (!OSPcre2_Execute(lf->program_name,
+                             rule->program_name_pcre2)) {
+            return (NULL);
+        }
+    }
 
     /* Check for the ID */
     if (rule->id) {
@@ -1116,6 +1122,16 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             return (NULL);
         }
     }
+    else if (rule->id_pcre2) {
+        if (!lf->id) {
+            return (NULL);
+        }
+
+        if (!OSPcre2_Execute(lf->id,
+                             rule->id_pcre2)) {
+            return (NULL);
+        }
+    }
 
     /* Check if any word to match exists */
     if (rule->match) {
@@ -1123,10 +1139,20 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             return (NULL);
         }
     }
+    else if (rule->match_pcre2) {
+        if (!OSPcre2_Execute(lf->log, rule->match_pcre2)) {
+            return (NULL);
+        }
+    }
 
     /* Check if exist any regex for this rule */
     if (rule->regex) {
         if (!OSRegex_Execute(lf->log, rule->regex)) {
+            return (NULL);
+        }
+    }
+    else if (rule->pcre2) {
+        if (!OSPcre2_Execute(lf->log, rule->pcre2)) {
             return (NULL);
         }
     }
@@ -1149,6 +1175,15 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
         }
 
         if (!OSMatch_Execute(lf->url, strlen(lf->url), rule->url)) {
+            return (NULL);
+        }
+    }
+    if (rule->url_pcre2) {
+        if (!lf->url) {
+            return (NULL);
+        }
+
+        if (!OSPcre2_Execute(lf->url, rule->url_pcre2)) {
             return (NULL);
         }
     }
@@ -1188,6 +1223,16 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 return (NULL);
             }
         }
+        else if (rule->srcport_pcre2) {
+            if (!lf->srcport) {
+                return (NULL);
+            }
+
+            if (!OSPcre2_Execute(lf->srcport,
+                                 rule->srcport_pcre2)) {
+                return (NULL);
+            }
+        }
         if (rule->dstport) {
             if (!lf->dstport) {
                 return (NULL);
@@ -1196,6 +1241,16 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             if (!OSMatch_Execute(lf->dstport,
                                  strlen(lf->dstport),
                                  rule->dstport)) {
+                return (NULL);
+            }
+        }
+        else if (rule->dstport_pcre2) {
+            if (!lf->dstport) {
+                return (NULL);
+            }
+
+            if (!OSPcre2_Execute(lf->dstport,
+                                 rule->dstport_pcre2)) {
                 return (NULL);
             }
         }
@@ -1229,6 +1284,22 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 return (NULL);
             }
         }
+        else if (rule->user_pcre2) {
+            if (lf->dstuser) {
+                if (!OSPcre2_Execute(lf->dstuser,
+                                     rule->user_pcre2)) {
+                    return (NULL);
+                }
+            } else if (lf->srcuser) {
+                if (!OSPcre2_Execute(lf->srcuser,
+                                     rule->user_pcre2)) {
+                    return (NULL);
+                }
+            } else {
+                /* no user set */
+                return (NULL);
+            }
+        }
 
         /* Adding checks for geoip. */
         if(rule->srcgeoip) {
@@ -1241,6 +1312,15 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 return(NULL);
             }
         }
+        else if(rule->srcgeoip_pcre2) {
+            if(lf->srcgeoip) {
+                if(!OSPcre2_Execute(lf->srcgeoip,
+                            rule->srcgeoip_pcre2))
+                    return(NULL);
+            } else {
+                return(NULL);
+            }
+        }
 
 
         if(rule->dstgeoip) {
@@ -1248,6 +1328,15 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 if(!OSMatch_Execute(lf->dstgeoip,
                             strlen(lf->dstgeoip),
                             rule->dstgeoip))
+                    return(NULL);
+            } else {
+                return(NULL);
+            }
+        }
+        else if(rule->dstgeoip_pcre2) {
+            if(lf->dstgeoip) {
+                if(!OSPcre2_Execute(lf->dstgeoip,
+                            rule->dstgeoip_pcre2))
                     return(NULL);
             } else {
                 return(NULL);
@@ -1288,6 +1377,16 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 return (NULL);
             }
         }
+        else if (rule->extra_data_pcre2) {
+            if (!lf->data) {
+                return (NULL);
+            }
+
+            if (!OSPcre2_Execute(lf->data,
+                                 rule->extra_data_pcre2)) {
+                return (NULL);
+            }
+        }
 
         /* Check hostname */
         if (rule->hostname) {
@@ -1301,6 +1400,16 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                 return (NULL);
             }
         }
+        else if (rule->hostname_pcre2) {
+            if (!lf->hostname) {
+                return (NULL);
+            }
+
+            if (!OSPcre2_Execute(lf->hostname,
+                                 rule->hostname_pcre2)) {
+                return (NULL);
+            }
+        }
 
         /* Check for status */
         if (rule->status) {
@@ -1311,6 +1420,16 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             if (!OSMatch_Execute(lf->status,
                                  strlen(lf->status),
                                  rule->status)) {
+                return (NULL);
+            }
+        }
+        else if (rule->status_pcre2) {
+            if (!lf->status) {
+                return (NULL);
+            }
+
+            if (!OSPcre2_Execute(lf->status,
+                                 rule->status_pcre2)) {
                 return (NULL);
             }
         }
@@ -1447,8 +1566,10 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
     /* If it is a context rule, search for it */
     if (rule->context == 1) {
         if (!(rule->context_opts & SAME_DODIFF)) {
-            if (!rule->event_search(lf, rule)) {
-                return (NULL);
+            if (rule->event_search) {
+                if (!rule->event_search(lf, rule)) {
+                    return (NULL);
+                }
             }
         }
     }
