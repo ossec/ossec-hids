@@ -250,7 +250,7 @@ r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Lsa -> EveryoneIncludesAno
 #
 #2.3.10.6 Configure 'Network access: Named Pipes that can be accessed anonymously'
 [CIS - Microsoft Windows Server 2012 R2 - 2.3.10.6: Configure 'Network access: Named Pipes that can be accessed anonymously'] [any] [https://workbench.cisecurity.org/benchmarks/288]
-r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionPipes -> r:\.;
+r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionPipes -> r:\S*;
 r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> !NullSessionPipes;
 #
 #
@@ -271,7 +271,7 @@ r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -
 #
 #2.3.10.10 Ensure 'Network access: Shares that can be accessed anonymously' is set to 'None'
 [CIS - Microsoft Windows Server 2012 R2 - 2.3.10.10: Ensure 'Network access: Shares that can be accessed anonymously' is set to 'None'] [any] [https://workbench.cisecurity.org/benchmarks/288]
-r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionShares -> r:\.+;
+r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionShares -> r:\S*;
 #
 #
 #2.3.10.11 Ensure 'Network access: Sharing and security model for local accounts' is set to 'Classic - local users authenticate as themselves'
