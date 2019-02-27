@@ -64,6 +64,7 @@ require 5.8.2; # Time::HiRes is standard from this version forth
 use MIME::Base64;
 use Digest::MD5 qw(md5_hex);
 use Getopt::Long;
+use Regexp::Common::net;
 
 use constant AUTH_KEY_FILE => "/var/ossec/etc/client.keys";
 use constant RIDS_PATH => "/var/ossec/queue/rids/";
@@ -100,7 +101,9 @@ elsif (@extracts) {
 elsif ($add) {
   if ($agentname && $ipaddress && 
       (
-          $ipaddress =~ m/(1?\d\d?|2[0-4]\d|25[0-5])(\.(1?\d\d?|2[0-4]\d|25[0-5])){3}/ 
+          $ipaddress =~ m/$RE{net}{IPv4}/
+              ||
+          $ipaddress =~ m/$RE{net}{IPv6}/
               ||
           $ipaddress eq 'any'
       ) &&
