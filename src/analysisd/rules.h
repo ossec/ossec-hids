@@ -66,6 +66,12 @@
 
 #define MAX_RULEINFODETAIL  32
 
+typedef struct _FieldInfo {
+    char *name;
+    OSRegex *regex;
+} FieldInfo;
+
+
 typedef struct _RuleInfoDetail {
     int type;
     char *data;
@@ -145,6 +151,8 @@ typedef struct _RuleInfo {
     OSMatch *hostname;
     OSMatch *program_name;
     OSMatch *extra_data;
+    FieldInfo *fields[8];
+
     OSPcre2 *srcgeoip_pcre2;
     OSPcre2 *dstgeoip_pcre2;
     OSPcre2 *srcport_pcre2;
