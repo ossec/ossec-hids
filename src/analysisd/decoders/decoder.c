@@ -199,6 +199,8 @@ void DecodeEvent(Eventinfo *lf)
                     return;
                 }
 
+                lf->decoder_info = nnode;
+
                 for (i = 0; nnode->regex->sub_strings[i]; i++) {
                     if (nnode->order[i])
                         nnode->order[i](lf, nnode->regex->sub_strings[i], i);
@@ -254,6 +256,8 @@ void DecodeEvent(Eventinfo *lf)
                     return;
                 }
 
+
+                lf->decoder_info = nnode;
 
                 for (i = 0; nnode->pcre2->sub_strings[i]; i++) {
                     if (nnode->order[i])

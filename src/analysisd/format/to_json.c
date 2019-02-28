@@ -24,6 +24,7 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     cJSON *rule;
     cJSON *file_diff;
     char *out;
+    int i;
 
     extern long int __crt_ftell;
 
@@ -173,6 +174,15 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         cJSON_AddStringToObject(root, "systemname", lf->systemname);
     }
 
+    //Dynamic fields
+    if(lf->decoder_info){
+        //ToDO: use constant instead of 8.
+        for(i=0;i<8;i++){
+            if (lf->decoder_info->fields[i] && lf->fields[i])
+                cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+        }
+    }
+
     W_ParseJSON(root, lf);
 
     out = cJSON_PrintUnformatted(root);
@@ -185,6 +195,7 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
 {
     cJSON *root;
     char *out;
+    int i;
 
     root = cJSON_CreateObject();
 
@@ -334,6 +345,15 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->location)
        W_JSON_ParseLocation(root,lf,0);
 
+
+    //Dynamic fields
+    if(lf->decoder_info){
+        //ToDO: use constant instead of 8.
+        for(i=0;i<8;i++){
+            if (lf->decoder_info->fields[i] && lf->fields[i])
+                cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+        }
+    }
 
 
     out = cJSON_PrintUnformatted(root);
