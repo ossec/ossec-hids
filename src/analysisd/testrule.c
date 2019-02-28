@@ -393,6 +393,8 @@ void OS_ReadMSG(char *ut_str)
     /* Daemon loop */
     while (1) {
         lf = (Eventinfo *)calloc(1, sizeof(Eventinfo));
+        os_calloc(Config.decoder_order_size, sizeof(char*), lf->fields);
+
 
         /* This shouldn't happen */
         if (lf == NULL) {
