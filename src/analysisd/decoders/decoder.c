@@ -12,6 +12,8 @@
 #include "os_xml/os_xml.h"
 #include "eventinfo.h"
 #include "decoder.h"
+#include "config.h"
+
 
 
 /* Use the osdecoders to decode the received event */
@@ -202,6 +204,10 @@ void DecodeEvent(Eventinfo *lf)
                 lf->decoder_info = nnode;
 
                 for (i = 0; nnode->regex->sub_strings[i]; i++) {
+                    if (i >= Config.decoder_order_size) {
+                        ErrorExit("%s: ERROR: Regex has too many groups.", ARGV0);
+                    }
+
                     if (nnode->order[i])
                         nnode->order[i](lf, nnode->regex->sub_strings[i], i);
                     else
@@ -260,6 +266,10 @@ void DecodeEvent(Eventinfo *lf)
                 lf->decoder_info = nnode;
 
                 for (i = 0; nnode->pcre2->sub_strings[i]; i++) {
+                    if (i >= Config.decoder_order_size) {
+                        ErrorExit("%s: ERROR: Regex has too many groups.", ARGV0);
+                    }
+
                     if (nnode->order[i])
                         nnode->order[i](lf, nnode->pcre2->sub_strings[i], i);
                     else

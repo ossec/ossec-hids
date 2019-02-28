@@ -151,7 +151,8 @@ typedef struct _RuleInfo {
     OSMatch *hostname;
     OSMatch *program_name;
     OSMatch *extra_data;
-    FieldInfo *fields[8];
+    FieldInfo **fields;
+
 
     OSPcre2 *srcgeoip_pcre2;
     OSPcre2 *dstgeoip_pcre2;

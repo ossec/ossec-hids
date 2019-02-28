@@ -39,7 +39,8 @@ typedef struct _Eventinfo {
     char *url;
     char *data;
     char *systemname;
-    char *fields[8];
+    char **fields;
+
 
 
     /* Pointer to the rule that generated it */

@@ -185,6 +185,9 @@ int main(int argc, char **argv)
     }
     nowChroot();
 
+    Config.decoder_order_size = (size_t)getDefine_Int("analysisd", "decoder_order_size", 8, MAX_DECODER_ORDER_SIZE);
+
+
     /*
      * Anonymous Section: Load rules, decoders, and lists
      *
