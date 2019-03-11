@@ -1,6 +1,6 @@
 #include <imsg.h>
 
-int osdns(struct imsgbuf *ibuf);
+int osdns(struct imsgbuf *ibuf, char *os_name);
 void osdns_accept(int fd, short ev, void *arg);
 
 /* Two types of messages */

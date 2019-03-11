@@ -179,7 +179,7 @@ int main(int argc, char **argv)
         case 0:
             close(imsg_fds[0]);
             imsg_init(&osdns_ibuf, imsg_fds[1]);
-            exit(osdns(&osdns_ibuf));
+            exit(osdns(&osdns_ibuf, ARGV0));
     }
 
     /* Setup imsg for the rest of maild */

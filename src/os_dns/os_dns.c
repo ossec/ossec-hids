@@ -22,8 +22,6 @@
 #include "os_net/os_net.h"
 #include "os_dns.h"
 
-
-
 void osdns_accept(int fd, short ev, void *arg) {
 
     /* sssssssh */
@@ -172,14 +170,14 @@ void osdns_accept(int fd, short ev, void *arg) {
  *
  * Focusing on TCP right now.
  */
-int osdns(struct imsgbuf *ibuf) {
+int osdns(struct imsgbuf *ibuf, char *os_name) {
 
 
 #if __OpenBSD__
     setproctitle("[dns]");
 #endif
 
-    merror("ossec-maild [dns]: INFO: Starting osdns");
+    merror("%s [dns]: INFO: Starting osdns", os_name);
 
     /* setuid() ossecm */
     /* This is static ossecm for now, I'll figure out the trick later */
