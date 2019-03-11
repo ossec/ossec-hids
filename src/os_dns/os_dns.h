@@ -15,3 +15,8 @@ struct dns_request {
     size_t hname_len;
 };
 
+struct os_dns_error {
+    int code;
+    char *msg;
+};
+

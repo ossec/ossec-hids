@@ -150,7 +150,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         
         merror("ossec-maild: DEBUG: pre-strlcpy");
        
-        struct dns_request dnsr; 
+        struct os_dns_request dnsr; 
         dnsr.hostname = mail->smtpserver;
         dnsr.hname_len = strnlen(dnsr.hostname, 256);
         merror("%s: DEBUG: hostname: XXX%sXXX", ARGV0, dnsr.hostname);
