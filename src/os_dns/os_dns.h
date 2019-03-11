@@ -10,9 +10,10 @@ enum imsg_type {
     DNS_FAIL
 };
 
-struct dns_request {
+struct os_dns_request {
     char *hostname;
     size_t hname_len;
+    char *caller;
 };
 
 struct os_dns_error {
