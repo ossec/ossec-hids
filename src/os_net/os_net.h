@@ -118,5 +118,8 @@ int satop(struct sockaddr *sa, char *dst, socklen_t size);
  */
 int OS_CloseSocket(int socket);
 
+/* Set a socket to be non-blocking */
+int setnonblock(int fd);
+
 #endif /* __OS_NET_H */
 

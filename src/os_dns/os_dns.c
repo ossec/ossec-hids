@@ -36,7 +36,7 @@ void osdns_accept(int fd, short ev, void *arg) {
 
 
     /* We have a request from ossec-maild */
-    struct dns_request dnsr;
+    struct os_dns_request dnsr;
     ssize_t n, datalen;
     struct imsg imsg;
     struct imsgbuf *ibuf = (struct imsgbuf *)arg;

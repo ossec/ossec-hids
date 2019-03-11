@@ -153,6 +153,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         struct os_dns_request dnsr; 
         dnsr.hostname = mail->smtpserver;
         dnsr.hname_len = strnlen(dnsr.hostname, 256);
+        dnsr.caller = ARGV0;
         merror("%s: DEBUG: hostname: XXX%sXXX", ARGV0, dnsr.hostname);
 
         merror("ossec-maild: DEBUG: imsg_compose() (sizeof(hostname): %lu)", sizeof(dnsr.hostname));

@@ -836,3 +836,17 @@ char *DecodeProtocol (int val) {
     return (buf);
 }
 
+/* Set a socket to be non-blocking */
+int setnonblock(int fd) {
+    int flags;
+
+    flags = fcntl(fd, F_GETFL);
+    if (flags < 0)
+        return flags;
+    flags |= O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) < 0)
+        return -1;
+
+        return 0;
+}
+

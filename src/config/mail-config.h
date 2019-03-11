@@ -10,6 +10,12 @@
 #ifndef _MCCONFIG__H
 #define _MCCONFIG__H
 
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/uio.h>
+#include <stdint.h>
+#include <imsg.h>
+
 #include "shared.h"
 
 /* Mail config structure */
@@ -38,6 +44,9 @@ typedef struct _MailConfig {
     /* Use GeoIP */
     int geoip;
 #endif
+
+    /* ibuf for imsg */
+    struct imsgbuf ibuf;
 
     OSMatch **gran_location;
     OSMatch **gran_group;

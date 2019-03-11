@@ -1,4 +1,4 @@
-
+#include <imsg.h>
 
 int osdns(struct imsgbuf *ibuf);
 void osdns_accept(int fd, short ev, void *arg);
