@@ -18,6 +18,6 @@ struct os_dns_request {
 
 struct os_dns_error {
     int code;
-    char *msg;
+    const char *msg;
 };
 
