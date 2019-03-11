@@ -125,6 +125,12 @@ endif # AIX
 endif # Linux
 endif # winagent
 
+## OpenBSD doesn't need the imsg stuff.
+ifneq (${uname_S},OpenBSD)
+        COMPAT_CFLAGS+=-I./external/compat
+        COMPAT_FILES+=./external/compat/imsg.c ./external/compat/imsg-buffer.c
+endif
+
 ifdef DEBUGAD
 	DEFINES+=+DDEBUGAD
 endif
@@ -895,10 +901,18 @@ os_crypto.a: ${crypto_o}
 	${OSSEC_LINK} $@ $^
 	${OSSEC_RANLIB} $@
 
+#### os_dns ########
+
+os_dns_c := $(wildcard os_dns/*.c)
+os_dns_o := $(os_dns_c:.c=.o)
+
+os_dns/os_dns.o: os_dns/os_dns.c
+	${OSSEC_CC} ${OSSEC_CFLAGS} -I/usr/local/include ${COMPAT_CFLAGS} -lutil -levent -c $^ -o $@
+
 
 #### os_mail #########
 
-os_maild_c := $(wildcard os_maild/*.c)
+os_maild_c := $(wildcard os_maild/*.c) $(wildcard os_dns/*.c)
 os_maild_o := $(os_maild_c:.c=.o)
 
 os_maild/%.o: os_maild/%.c
