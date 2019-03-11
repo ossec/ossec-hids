@@ -18,6 +18,9 @@
 #define AFTER_PREVREGEX 0x004   /* 4   */
 #define AFTER_ERROR     0x010
 
+struct _Eventinfo;
+
+
 /* Decoder structure */
 typedef struct {
     u_int8_t  get_next;
@@ -33,6 +36,9 @@ typedef struct {
     char *parent;
     char *name;
     char *ftscomment;
+    char **fields;
+
+
 
     OSRegex *regex;
     OSRegex *prematch;
@@ -43,7 +49,7 @@ typedef struct {
     OSPcre2 *program_name_pcre2;
 
     void (*plugindecoder)(void *lf);
-    void (**order)(void *lf, char *field);
+    void* (**order)(struct _Eventinfo *, char *, int);
 } OSDecoderInfo;
 
 /* List structure */
