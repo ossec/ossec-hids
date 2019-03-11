@@ -11,6 +11,10 @@
 #include "maild.h"
 #include "mail_list.h"
 
+#include "os_net/os_net.h"
+#include "os_dns/os_dns.h"
+//#include "os_dns.h"
+
 #ifndef ARGV0
 #define ARGV0 "ossec-maild"
 #endif
@@ -155,6 +159,33 @@ int main(int argc, char **argv)
         goDaemon();
     }
 
+    /* Prepare environment for os_dns */
+    struct imsgbuf osdns_ibuf;
+    int imsg_fds[2];
+    if ((socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, imsg_fds)) == -1) {
+        ErrorExit("%s: ERROR: Could not create socket pair.", ARGV0);
+    }
+    if (setnonblock(imsg_fds[0]) < 0) {
+        ErrorExit("%s: ERROR: Cannot set imsg_fds[0] to nonblock", ARGV0);
+    }
+    if (setnonblock(imsg_fds[1]) < 0) {
+        ErrorExit("%s: ERROR: Cannot set imsg_fds[1] to nonblock", ARGV0);
+    }
+
+    /* Fork off the os_dns process */
+    switch(fork()) {
+        case -1:
+            ErrorExit("%s: ERROR: Cannot fork() os_dns process", ARGV0);
+        case 0:
+            close(imsg_fds[0]);
+            imsg_init(&osdns_ibuf, imsg_fds[1]);
+            exit(osdns(&osdns_ibuf));
+    }
+
+    /* Setup imsg for the rest of maild */
+    close(imsg_fds[1]);
+    imsg_init(&mail.ibuf, imsg_fds[0]);
+
     /* Privilege separation */
     if (Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
@@ -265,6 +296,7 @@ static void OS_Run(MailConfig *mail)
                 sleep(30);
                 continue;
             } else if (pid == 0) {
+                merror("%s: DEBUG: Running OS_Sendmail()", ARGV0);
                 if (OS_Sendmail(mail, p) < 0) {
                     merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
                 }

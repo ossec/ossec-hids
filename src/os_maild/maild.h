@@ -77,5 +77,7 @@ extern unsigned int mail_timeout;
 extern unsigned int   _g_subject_level;
 extern char _g_subject[SUBJECT_SIZE + 2];
 
+void os_sendmail_cb(int fd, short ev, void *arg);
+
 #endif
 
