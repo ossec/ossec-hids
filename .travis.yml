@@ -11,7 +11,7 @@ addons:
       name: "ossec/ossec-hids"
       #description: "OSSEC is an Open Source Host Intrusion Detection System"
     notification_email: ddpbsd@gmail.com
-    build_command_prepend: "cd src"
+    build_command_prepend: "cd src && wget https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz && tar xzf pcre2-10.32.tar.gz -C src/external"
     build_command:   "make TARGET=server"
     branch_pattern: coverity_scan
 
