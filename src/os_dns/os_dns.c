@@ -81,7 +81,7 @@ void osdns_accept(int fd, short ev, void *arg) {
 
                 /* socket */
                 int sock;
-                sock = getaddrinfo(dnsr.hostname, dnsr.protocol, &hints, &result);
+                sock = getaddrinfo(dnsr.hostname, "smtp", &hints, &result);
                 if (sock != 0) {
                     merror("%s [dns]: ERROR: getaddrinfo() error: %s\n", dname, gai_strerror(sock));
 
