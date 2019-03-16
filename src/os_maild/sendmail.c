@@ -91,7 +91,7 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
             return;
         default:
             merror("%s: ERROR Wrong imsg type.", ARGV0);
-            return;
+            break;
     }
 
 
@@ -138,18 +138,12 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
             ErrorExit("%s: ERROR: event_init() failed.", ARGV0);
         }
 
-        merror("ossec-maild: DEBUG: mail->ibuf.fd: %d", mail->ibuf.fd);
-
         struct event ev_accept;
         event_set(&ev_accept, mail->ibuf.fd, EV_READ, os_sendmail_cb, &mail->ibuf);
         event_add(&ev_accept, NULL);
 
-        merror("ossec-maild: DEBUG: Preparing imsg stuff");
-        //struct imsg imsg;
         ssize_t n;
         
-        merror("ossec-maild: DEBUG: pre-strlcpy");
-       
         struct os_dns_request dnsr; 
         dnsr.hostname = mail->smtpserver;
         dnsr.hname_len = strnlen(dnsr.hostname, 256);
@@ -167,11 +161,10 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
             debug2("%s: INFO: (write) n == 0", ARGV0);
         }
 
-        merror("ossec-maild: DEBUG: starting event loop");
+        debug1("ossec-maild: DEBUG: starting event loop");
 
         event_dispatch();
     }
-    merror("%s: INFO: post event_dispatch()", ARGV0);
 
     if (os_sock <= 0) {
         ErrorExit("ossec-maild: ERROR: No socket.");
