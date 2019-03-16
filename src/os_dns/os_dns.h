@@ -14,6 +14,7 @@ struct os_dns_request {
     char *hostname;
     size_t hname_len;
     char *caller;
+    char *protocol;
 };
 
 struct os_dns_error {
