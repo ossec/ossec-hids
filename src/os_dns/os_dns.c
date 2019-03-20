@@ -69,7 +69,7 @@ void osdns_accept(int fd, short ev, void *arg) {
         switch(imsg.hdr.type) {
             case DNS_REQ:
                 memcpy(&dnsr, imsg.data, sizeof(dnsr));
-                int idata = 42;
+                int idata = 42; /* XXX Not sure why this is actually needed */
                 struct addrinfo hints, *result, *rp = NULL;
                 memset(&hints, 0, sizeof(hints));
                 hints.ai_family = AF_UNSPEC;
@@ -130,6 +130,66 @@ void osdns_accept(int fd, short ev, void *arg) {
                         }
                     }
                 }
+                break;
+            /*
+             * Until I find a better way to pass this stuff around,
+             * break out the agentd stuff from maild. It's not ideal, but
+             * it should work for now.
+             */
+            case AGENT_REQ:
+                memcpy(&dnsr, imsg.data, sizeof(dnsr));
+                memset(&hints, 0, sizeof(hints));
+                hints.ai_family = AF_UNSPEC;
+                hints.ai_socktype = SOCK_DGRAM;
+
+                int a_sock;
+                a_sock = getaddrinfo(dnsr.hostname, "1514", &hints, &result);
+                if (a_sock != 0) {
+                    merror("%s [dns]: ERROR: getaddrinfo() error: %s\n", dname, gai_strerror(a_sock));
+                    struct os_dns_error os_dns_err;
+                    os_dns_err.code = a_sock;
+                    os_dns_err.msg = gai_strerror(a_sock);
+                    imsg_compose(ibuf, DNS_FAIL, 0, 0, -1, &os_dns_err, sizeof(&os_dns_err));
+                    if ((n = msgbuf_write(&ibuf->w) == -1) && errno != EAGAIN) {
+                        merror("%s [dns]: ERROR: msgbuf_write() failed (DNS_FAIL): %s", dname, strerror(errno));
+                    }
+                    if (n == 0) {
+                        debug2("%s [dns]: DEBUG: DNS_FAIL n == 0", dname);
+                    }
+                    if (n == EAGAIN) {
+                        merror("%s [dns]: DEBUG: EAGAIN 1", dname);
+                    }
+                }
+                a_sock = -1;
+                for(rp = result; rp; rp = rp->ai_next) {
+                    a_sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+                    if (a_sock == -1) {
+                        merror("%s [dns]: ERROR: socket() error", dname);
+                    } else {
+                        if (connect(a_sock, rp->ai_addr, rp->ai_addrlen) == -1) {
+                            merror("%s [dns]: ERROR: connect() failed.", dname);
+                            //XXX return error to caller
+                        } else {
+                            if ((imsg_compose(ibuf, DNS_RESP, 0, 0, a_sock, &idata, sizeof(idata))) == -1) {
+                                merror("%s [dns]: ERROR: DNS_RESP imsg_compose() failed: %s", dname, strerror(errno));
+                                freeaddrinfo(result);
+                                return;
+                            } else {
+                                if ((n = msgbuf_write(&ibuf->w) == -1) && errno != EAGAIN) {
+                                    merror("%s [dns]: ERROR: DNS_RESP msgbuf_write() failed: %s", dname, strerror(errno));
+                                    freeaddrinfo(result);
+                                    return;
+                                }
+                                if (n == 0) {
+                                    debug2("%s [dns]: DEBUG: DNS_RESP n == 0", dname);
+                                }
+                                freeaddrinfo(result);
+                                return;
+                            }
+                        }
+                    }
+                }
+
                 break;
             default:
                 merror("%s [dns]: ERROR: Unknown imsg type", dname);
