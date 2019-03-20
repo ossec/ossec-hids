@@ -7,7 +7,8 @@ void osdns_accept(int fd, short ev, void *arg);
 enum imsg_type {
     DNS_REQ,
     DNS_RESP,
-    DNS_FAIL
+    DNS_FAIL,
+    AGENT_REQ
 };
 
 struct os_dns_request {
@@ -15,6 +16,7 @@ struct os_dns_request {
     size_t hname_len;
     char *caller;
     char *protocol;
+    char *port;
 };
 
 struct os_dns_error {
