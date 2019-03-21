@@ -48,6 +48,9 @@ int connect_server(int initial_id);
 /* Notify server */
 void run_notify(void);
 
+/* libevent callback */
+void os_agent_cb(int fd, short ev, void *arg);
+
 /*** Global variables ***/
 
 /* Global variables. Only modified during startup. */

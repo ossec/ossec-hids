@@ -11,6 +11,11 @@
 #include "agentd.h"
 #include "os_net/os_net.h"
 
+#ifndef WIN32
+#include <event.h>
+#include <imsg.h>
+#include "os_dns/os_dns.h"
+#endif //WIN32
 
 /* Attempt to connect to all configured servers */
 int connect_server(int initial_id)
@@ -47,6 +52,34 @@ int connect_server(int initial_id)
                 agt->rip[rc],
                 agt->port);
 
+#ifndef WIN32
+
+        /* Setup libevent for responses */
+        struct event_base *eb;
+        eb = event_init();
+        if (!eb) {
+            ErrorExit("%s: ERROR: event_init() failed.", ARGV0);
+        }
+        struct event ev_accept;
+        event_set(&ev_accept, agt->ibuf.fd, EV_READ, os_agent_cb, &agt->ibuf);
+        event_add(&ev_accept, NULL);
+
+        ssize_t n;
+
+        if ((imsg_compose(&agt->ibuf, AGENT_REQ, 0, 0, -1, &agt, sizeof(&agt))) == -1) {
+            ErrorExit("%s: ERROR: imsg_compose() error: %s", ARGV0, strerror(errno));
+        }
+        if ((n = msgbuf_write(&agt->ibuf.w)) == -1 && errno != EAGAIN) {
+            merror("%s: ERROR: msgbuf_write() error: %s", ARGV0, strerror(errno));
+        }
+        if (n == 0) {
+            debug2("%s: INFO: (write) n == 0", ARGV0);
+        }
+
+        event_dispatch();
+
+        if(agt->sock > 0) {
+#else
         agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
 
         if (agt->sock < 0) {
@@ -65,6 +98,7 @@ int connect_server(int initial_id)
                 sleep(attempts);
                 rc = 0;
             }
+#endif //WIN32
         } else {
 #ifdef HPUX
             /* Set socket non-blocking on HPUX */
@@ -82,7 +116,7 @@ int connect_server(int initial_id)
             return (1);
         }
     }
-
+ 
     return (0);
 }
 
@@ -184,6 +218,46 @@ void start_agent(int is_startup)
 
             connect_server(0);
         }
+    }
+
+    return;
+}
+
+/* Callback for the AGENT_REQ */
+void os_agent_cb(int fd, short ev, void *arg) {
+
+    ssize_t n;
+    struct imsg imsg;
+    struct imsgbuf *ibuf = (struct imsgbuf *)arg;
+
+    if ((n = imsg_read(ibuf) == -1 && errno != EAGAIN)) {
+        ErrorExit("%s: ERROR: imsg_read() failed: %s", ARGV0, strerror(errno));
+    }
+    if (n == 0) {
+        debug1("%s: WARN: n == 0", ARGV0);
+    }
+    if (n == EAGAIN) {
+        debug1("%s: DEBUG: n == EAGAIN", ARGV0);
+    }
+    if ((n = imsg_get(ibuf, &imsg)) == -1) {
+        merror("%s: ERROR: imsg_get() failed: %s", ARGV0, strerror(errno));
+        return;
+    }
+    if (n == 0) {
+        debug1("%s: WARN2: n == 0", ARGV0);
+    }
+
+    switch(imsg.hdr.type) {
+        case DNS_RESP:
+            agt->sock = imsg.fd;
+            merror("%s: DEBUG: agt->sock: %d", ARGV0, agt->sock);
+            break;
+        case DNS_FAIL:
+            merror("%s: ERROR: DNS failure for server", ARGV0);
+            break;
+        default:
+            merror("%s: ERROR Wrong imsg type.", ARGV0);
+            break;
     }
 
     return;

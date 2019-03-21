@@ -11,6 +11,9 @@
 #include "agentd.h"
 #include "os_net/os_net.h"
 
+#ifndef WIN32
+#include "os_dns/os_dns.h"
+#endif //WIN32
 
 /* Start the agent daemon */
 void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group)
@@ -30,6 +33,36 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
         nowDaemon();
         goDaemon();
     }
+
+#ifndef WIN32
+    /* Prepare for os_dns */
+    struct imsgbuf osdns_ibuf;
+    int imsg_fds[2];
+    if ((socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, imsg_fds)) == -1) {
+        ErrorExit("%s: ERROR: Could not create socket pair.", ARGV0);
+    }
+    if (setnonblock(imsg_fds[0]) < 0) {
+        ErrorExit("%s: ERROR: Could not set imsg_fds[0] to nonblock", ARGV0);
+    }
+    if (setnonblock(imsg_fds[1]) < 0) {
+        ErrorExit("%s: ERROR: Could not set imsg_fds[1] to nonblock", ARGV0);
+    }
+
+    /* Fork os_dns process */
+    switch(fork()) {
+        case -1:
+            ErrorExit("%s: ERROR: Cannot fork() os_dns process", ARGV0);
+        case 0:
+            close(imsg_fds[0]);
+            imsg_init(&osdns_ibuf, imsg_fds[1]);
+            exit(osdns(&osdns_ibuf, ARGV0));
+    }
+
+    /* Setup imsg for the rest of agentd */
+    close(imsg_fds[1]);
+    imsg_init(&agt->ibuf, imsg_fds[1]);
+
+#endif  //WIN32
 
     /* Set group ID */
     if (Privsep_SetGroup(gid) < 0) {
