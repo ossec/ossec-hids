@@ -18,7 +18,11 @@
 #endif //WIN32
 
 /* Attempt to connect to all configured servers */
+#ifdef WIN32
 int connect_server(int initial_id)
+#else
+int connect_server(int initial_id, struct imsgbuf ibuf)
+#endif
 {
     unsigned int attempts = 2;
     int rc = initial_id;
@@ -121,7 +125,11 @@ int connect_server(int initial_id)
 }
 
 /* Send synchronization message to the server and wait for the ack */
+#ifdef WIN32
 void start_agent(int is_startup)
+#else
+void start_agent(int is_startup, struct imsgbuf ibuf)
+#endif
 {
     ssize_t recv_b = 0;
     unsigned int attempts = 0, g_attempts = 1;
@@ -203,7 +211,11 @@ void start_agent(int is_startup)
             int curr_rip = agt->rip_id;
             merror("%s: INFO: Trying next server in the line: '%s'.", ARGV0,
                    agt->rip[agt->rip_id + 1] != NULL ? agt->rip[agt->rip_id + 1] : agt->rip[0]);
-            connect_server(agt->rip_id + 1);
+#ifndef WIN32
+            connect_server(agt->rip_id + 1, ibuf);
+#else
+	    connect_server(agt->rip_id + 1);
+#endif //WIN32
 
             if (agt->rip_id == curr_rip) {
                 sleep(g_attempts);
@@ -216,13 +228,18 @@ void start_agent(int is_startup)
             sleep(g_attempts);
             g_attempts += (attempts * 3);
 
+#ifndef WIN32
+            connect_server(0, ibuf);
+#else
             connect_server(0);
+#endif //WIN32
         }
     }
 
     return;
 }
 
+#ifndef WIN32
 /* Callback for the AGENT_REQ */
 void os_agent_cb(int fd, short ev, void *arg) {
 
@@ -262,4 +279,5 @@ void os_agent_cb(int fd, short ev, void *arg) {
 
     return;
 }
+#endif //WIN32
 

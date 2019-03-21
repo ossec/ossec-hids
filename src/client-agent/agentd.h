@@ -13,6 +13,10 @@
 #include "config/config.h"
 #include "config/client-config.h"
 
+#ifndef WIN32
+#include <imsg.h>
+#endif //WIN32
+
 /*** Function Prototypes ***/
 
 /* Client configuration */
@@ -22,7 +26,11 @@ int ClientConf(const char *cfgfile);
 void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group) __attribute__((noreturn));
 
 /* Event Forwarder */
+#ifdef WIN32
 void *EventForward(void);
+#else
+void *EventForward(struct imsgbuf ibuf);
+#endif //WIN32
 
 /* Receiver messages */
 void *receive_msg(void);
@@ -40,13 +48,25 @@ int send_msg(int agentid, const char *msg);
 char *getsharedfiles(void);
 
 /* Initialize handshake to server */
+#ifdef WIN32
 void start_agent(int is_startup);
+#else
+void start_agent(int is_startup, struct imsgbuf ibuf);
+#endif
 
 /* Connect to the server */
+#ifdef WIN32
 int connect_server(int initial_id);
+#else
+int connect_server(int initial_id, struct imsgbuf ibuf);
+#endif
 
 /* Notify server */
+#ifdef WIN32
 void run_notify(void);
+#else
+void run_notify(struct imsgbuf ibuf);
+#endif
 
 /* libevent callback */
 void os_agent_cb(int fd, short ev, void *arg);

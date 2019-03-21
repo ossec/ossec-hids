@@ -235,7 +235,11 @@ int osdns(struct imsgbuf *ibuf, char *os_name) {
 
     /* setuid() ossecm */
     /* This is static ossecm for now, I'll figure out the trick later */
+#ifdef CLIENT
+    char *login = "ossec";
+#else
     char *login = "ossecm";
+#endif //CLIENT
     struct passwd *pw;
 
 
