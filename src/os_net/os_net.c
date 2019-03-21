@@ -844,9 +844,10 @@ int setnonblock(int fd) {
     if (flags < 0)
         return flags;
     flags |= O_NONBLOCK;
-    if (fcntl(fd, F_SETFL, flags) < 0)
+    if (fcntl(fd, F_SETFL, flags) < 0) {
         return -1;
+    }
 
-        return 0;
+    return 0;
 }
 
