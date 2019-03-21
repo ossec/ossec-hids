@@ -11,6 +11,10 @@
 #define __CAGENTD_H
 
 #ifndef WIN32
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/uio.h>
+#include <stdint.h>
 #include <imsg.h>
 #endif //WIN32
 
