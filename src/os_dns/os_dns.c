@@ -22,6 +22,11 @@
 #include "os_net/os_net.h"
 #include "os_dns.h"
 
+#ifdef CLIENT
+#include "client-agent/agentd.h"
+#include "config/client-config.h"
+#endif //CLIENT
+
 char *dname = NULL;
 
 void osdns_accept(int fd, short ev, void *arg) {
@@ -38,6 +43,11 @@ void osdns_accept(int fd, short ev, void *arg) {
     ssize_t n, datalen;
     struct imsg imsg;
     struct imsgbuf *ibuf = (struct imsgbuf *)arg;
+
+#ifdef CLIENT
+    agent *agt;
+    unsigned int attempts = 2;
+#endif //CLIENT
 
 
     if (ev & EV_READ) {
@@ -136,33 +146,53 @@ void osdns_accept(int fd, short ev, void *arg) {
              * break out the agentd stuff from maild. It's not ideal, but
              * it should work for now.
              */
+#ifdef CLIENT
             case AGENT_REQ:
-                agent agent;
-                memcpy(&agent, imsg.data, sizeof(agent));
+                memcpy(&agt, imsg.data, sizeof(agt));
 
                 int a_sock, rc = 0;
-                a_sock = OS_ConnectUDP(agent->port, agent->rip[rc]);
+                a_sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
                 if (agt->sock < 0) {
                     agt->sock = -1;
-                    merror(CONNS_ERROR, ARGV0, agt->rip[rc]);
+                    merror(CONNS_ERROR, dname, agt->rip[rc]);
                     rc++;
 
+                    /* Fail */
                     if (agt->rip[rc] == NULL) {
                         attempts += 10;
                         /* Only log that if we have more than 1 server configured */
                         if (agt->rip[1]) {
-                            merror("%s: ERROR: Unable to connect to any server.", ARGV0);
+                            merror("%s: ERROR: Unable to connect to any server.", dname);
                         }
 
                         sleep(attempts);
                         rc = 0;
                     }
                 } else {
+                    /* Success */
                     /* Send the socket back to agentd */
+                    if ((imsg_compose(ibuf, DNS_RESP, 0, 0, agt->sock, &idata, sizeof(idata))) == -1) {
+                        merror("%s [dns]: ERROR: DNS_RESP imsg_compose() failed: %s", dname, strerror(errno));
+                        freeaddrinfo(result);
+                        return;
+                    } else {
+                        if ((n = msgbuf_write(&ibuf->w) == -1) && errno != EAGAIN) {
+                            merror("%s [dns]: ERROR: DNS_RESP msgbuf_write() failed: %s", dname, strerror(errno));
+                            freeaddrinfo(result);
+                            return;
+                        }
+                        if (n == 0) {
+                            debug1("%s [dns]: DEBUG: n == 0", dname);
+                            return;
+                        }
+                        freeaddrinfo(result);
+                        return;
+                    }
 
                 }
 
                 break;
+#endif //CLIENT
             default:
                 merror("%s [dns]: ERROR: Unknown imsg type", dname);
                 if ((imsg_compose(ibuf, DNS_FAIL, 0, 0, -1, &idata, sizeof(idata))) == -1) {
