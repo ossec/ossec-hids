@@ -27,7 +27,7 @@ typedef struct _agent {
     int max_time_reconnect_try;
     char *profile;
 
-#ifdef WIN32
+#ifndef WIN32
     struct imsgbuf ibuf;
 #endif //WIN32
 
