@@ -21,7 +21,7 @@
 #ifdef WIN32
 int connect_server(int initial_id)
 #else
-int connect_server(int initial_id, struct imsgbuf ibuf)
+int connect_server(int initial_id, struct imsgbuf *ibuf)
 #endif
 {
     unsigned int attempts = 2;
@@ -128,7 +128,7 @@ int connect_server(int initial_id, struct imsgbuf ibuf)
 #ifdef WIN32
 void start_agent(int is_startup)
 #else
-void start_agent(int is_startup, struct imsgbuf ibuf)
+void start_agent(int is_startup, struct imsgbuf *ibuf)
 #endif
 {
     ssize_t recv_b = 0;

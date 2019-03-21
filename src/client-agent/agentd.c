@@ -115,7 +115,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     }
 
     /* Try to connect to the server */
-    if (!connect_server(0, server_ibuf)) {
+    if (!connect_server(0, &server_ibuf)) {
         ErrorExit(UNABLE_CONN, ARGV0);
     }
 
@@ -136,7 +136,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     /* Try to connect to server */
     os_setwait();
 
-    start_agent(1, server_ibuf);
+    start_agent(1, &server_ibuf);
 
     os_delwait();
 
@@ -148,7 +148,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 #ifdef WIN32
     run_notify();
 #else
-    run_notify(server_ibuf);
+    run_notify(&server_ibuf);
 #endif //WIN32
 
     /* Maxfd must be higher socket +1 */
@@ -168,7 +168,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 #ifdef WIN32
         run_notify();
 #else
-        run_notify(server_ibuf);
+        run_notify(&server_ibuf);
 #endif //WIN32
 
         /* Wait with a timeout for any descriptor */
@@ -189,7 +189,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 #ifdef WIN32
             EventForward();
 #else
-            EventForward(server_ibuf);
+            EventForward(&server_ibuf);
 #endif
         }
     }

@@ -62,7 +62,7 @@ char *getsharedfiles()
 #ifdef WIN#2
 void run_notify()
 #else
-void run_notify(struct imsgbuf ibuf)
+void run_notify(struct imsgbuf *ibuf)
 #endif //WIN32
 {
     char keep_alive_random[1024];

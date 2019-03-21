@@ -29,7 +29,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 #ifdef WIN32
 void *EventForward(void);
 #else
-void *EventForward(struct imsgbuf ibuf);
+void *EventForward(struct imsgbuf *ibuf);
 #endif //WIN32
 
 /* Receiver messages */
@@ -51,21 +51,21 @@ char *getsharedfiles(void);
 #ifdef WIN32
 void start_agent(int is_startup);
 #else
-void start_agent(int is_startup, struct imsgbuf ibuf);
+void start_agent(int is_startup, struct imsgbuf *ibuf);
 #endif
 
 /* Connect to the server */
 #ifdef WIN32
 int connect_server(int initial_id);
 #else
-int connect_server(int initial_id, struct imsgbuf ibuf);
+int connect_server(int initial_id, struct imsgbuf *ibuf);
 #endif
 
 /* Notify server */
 #ifdef WIN32
 void run_notify(void);
 #else
-void run_notify(struct imsgbuf ibuf);
+void run_notify(struct imsgbuf *ibuf);
 #endif
 
 /* libevent callback */
