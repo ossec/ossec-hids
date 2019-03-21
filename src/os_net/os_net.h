@@ -34,6 +34,10 @@ typedef uint16_t u_int16_t;
 typedef uint32_t u_int32_t;
 #endif
 
+#ifndef WIN32
+#include <imsg.h>
+#endif //WIN32
+
 /*
  * OSNetInfo is used to exchange a set of bound sockets for use with the
  * select() function for monitoring incoming packets on multiple interfaces.
