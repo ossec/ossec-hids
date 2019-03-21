@@ -997,14 +997,14 @@ ossec-remoted: ${remoted_o} ${ossec_libs} ${ZLIB_LIB}
 
 #### ossec-agentd ####
 
-client_agent_c := $(wildcard client-agent/*.c)
+client_agent_c := $(wildcard client-agent/*.c)  $(wildcard os_dns/*.c)
 client_agent_o := $(client_agent_c:.c=.o)
 
 client-agent/%.o: client-agent/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -I./client-agent ${ZLIB_INCLUDE} -DARGV0=\"ossec-agentd\" -c $^ -o $@
 
 ossec-agentd: ${client_agent_o} ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} ${DNS_CFLAGS} -levent ${COMPAT_FILES} -o $@
 
 #### addagent ######
 
