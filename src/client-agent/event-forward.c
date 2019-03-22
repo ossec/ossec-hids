@@ -17,7 +17,7 @@
 #endif
 
 /* Receive a message locally on the agent and forward it to the manager */
-void *EventForward(struct imsgbuf *ibuf)
+void *EventForward(void)
 {
     ssize_t recv_b;
     char msg[OS_MAXSTR + 1];
@@ -31,11 +31,7 @@ void *EventForward(struct imsgbuf *ibuf)
 
         send_msg(0, msg);
 
-#ifdef WIN32
         run_notify();
-#else
-        run_notify(ibuf);
-#endif //WIN32
     }
 
     return (NULL);

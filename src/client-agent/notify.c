@@ -59,11 +59,7 @@ char *getsharedfiles()
 #ifndef WIN32
 
 /* Periodically send notification to server */
-#ifdef WIN#2
 void run_notify()
-#else
-void run_notify(struct imsgbuf *ibuf)
-#endif //WIN32
 {
     char keep_alive_random[1024];
     char tmp_msg[OS_SIZE_1024 + 1];
@@ -83,11 +79,7 @@ void run_notify(struct imsgbuf *ibuf)
         os_setwait();
 
         /* Send sync message */
-#ifndef WIN32
-        start_agent(0,ibuf);
-#else
         start_agent(0);
-#endif //WIN32
 
         verbose(SERVER_UP, ARGV0);
         os_delwait();

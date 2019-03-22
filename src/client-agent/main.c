@@ -16,6 +16,9 @@
 #define ARGV0 "ossec-agentd"
 #endif
 
+extern struct imsgbuf server_ibuf;
+
+
 /* Prototypes */
 static void help_agentd(void) __attribute((noreturn));
 

@@ -17,12 +17,9 @@
 #include "os_dns/os_dns.h"
 #endif //WIN32
 
+
 /* Attempt to connect to all configured servers */
-#ifdef WIN32
 int connect_server(int initial_id)
-#else
-int connect_server(int initial_id, struct imsgbuf *ibuf)
-#endif
 {
     unsigned int attempts = 2;
     int rc = initial_id;
@@ -59,22 +56,25 @@ int connect_server(int initial_id, struct imsgbuf *ibuf)
 #ifndef WIN32
 
         /* Setup libevent for responses */
+	extern struct imsgbuf server_ibuf;
         struct event_base *eb;
         eb = event_init();
         if (!eb) {
             ErrorExit("%s: ERROR: event_init() failed.", ARGV0);
         }
         struct event ev_accept;
-        event_set(&ev_accept, agt->ibuf.fd, EV_READ, os_agent_cb, &agt->ibuf);
+        //event_set(&ev_accept, agt->ibuf.fd, EV_READ, os_agent_cb, &agt->ibuf);
+        event_set(&ev_accept, server_ibuf.fd, EV_READ, os_agent_cb, &server_ibuf);
         event_add(&ev_accept, NULL);
 
         ssize_t n;
 
-        if ((imsg_compose(&agt->ibuf, AGENT_REQ, 0, 0, -1, &agt, sizeof(&agt))) == -1) {
+        //if ((imsg_compose(&agt->ibuf, AGENT_REQ, 0, 0, -1, &agt, sizeof(&agt))) == -1) {
+        if ((imsg_compose(&server_ibuf, AGENT_REQ, 0, 0, -1, &agt, sizeof(agt))) == -1) {
             ErrorExit("%s: ERROR: imsg_compose() error: %s", ARGV0, strerror(errno));
         }
-        if ((n = msgbuf_write(&agt->ibuf.w)) == -1 && errno != EAGAIN) {
-            merror("%s: ERROR: msgbuf_write() error: %s", ARGV0, strerror(errno));
+        if ((n = msgbuf_write(&server_ibuf.w)) == -1 && errno != EAGAIN) {
+            merror("%s: ERROR: msgbuf_write() error: %s (0x1)", ARGV0, strerror(errno));
         }
         if (n == 0) {
             debug2("%s: INFO: (write) n == 0", ARGV0);
@@ -125,11 +125,7 @@ int connect_server(int initial_id, struct imsgbuf *ibuf)
 }
 
 /* Send synchronization message to the server and wait for the ack */
-#ifdef WIN32
 void start_agent(int is_startup)
-#else
-void start_agent(int is_startup, struct imsgbuf *ibuf)
-#endif
 {
     ssize_t recv_b = 0;
     unsigned int attempts = 0, g_attempts = 1;
@@ -211,11 +207,7 @@ void start_agent(int is_startup, struct imsgbuf *ibuf)
             int curr_rip = agt->rip_id;
             merror("%s: INFO: Trying next server in the line: '%s'.", ARGV0,
                    agt->rip[agt->rip_id + 1] != NULL ? agt->rip[agt->rip_id + 1] : agt->rip[0]);
-#ifndef WIN32
-            connect_server(agt->rip_id + 1, ibuf);
-#else
 	    connect_server(agt->rip_id + 1);
-#endif //WIN32
 
             if (agt->rip_id == curr_rip) {
                 sleep(g_attempts);
@@ -228,11 +220,7 @@ void start_agent(int is_startup, struct imsgbuf *ibuf)
             sleep(g_attempts);
             g_attempts += (attempts * 3);
 
-#ifndef WIN32
-            connect_server(0, ibuf);
-#else
             connect_server(0);
-#endif //WIN32
         }
     }
 

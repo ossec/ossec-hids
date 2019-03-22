@@ -28,6 +28,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     /* Initial random numbers must happen before chroot */
     srandom_init();
 
+    merror("going daemon");
     /* Going Daemon */
     if (!run_foreground) {
         nowDaemon();
@@ -35,9 +36,13 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     }
 
 #ifndef WIN32
+    merror("starting imsg stuff");
     /* Prepare for os_dns */
-    struct imsgbuf osdns_ibuf, server_ibuf;
+    struct imsgbuf osdns_ibuf;
+    extern struct imsgbuf server_ibuf;
+    //struct imsgbuf osdns_ibuf;
     int imsg_fds[2];
+    merror("Creating socketpair()");
     if ((socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, imsg_fds)) == -1) {
         ErrorExit("%s: ERROR: Could not create socket pair.", ARGV0);
     }
@@ -54,6 +59,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
             ErrorExit("%s: ERROR: Cannot fork() os_dns process", ARGV0);
         case 0:
             close(imsg_fds[0]);
+	    merror("os_dns imsg_init()");
             imsg_init(&osdns_ibuf, imsg_fds[1]);
             exit(osdns(&osdns_ibuf, ARGV0));
     }
@@ -61,7 +67,8 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     /* Setup imsg for the rest of agentd */
     close(imsg_fds[1]);
     //imsg_init(&agt->ibuf, imsg_fds[1]);
-    imsg_init(&server_ibuf, imsg_fds[1]);
+    merror("agentd imsg_init()");
+    imsg_init(&server_ibuf, imsg_fds[0]);
 
 #endif  //WIN32
 
@@ -115,7 +122,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     }
 
     /* Try to connect to the server */
-    if (!connect_server(0, &server_ibuf)) {
+    if (!connect_server(0)) {
         ErrorExit(UNABLE_CONN, ARGV0);
     }
 
@@ -136,7 +143,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     /* Try to connect to server */
     os_setwait();
 
-    start_agent(1, &server_ibuf);
+    start_agent(1);
 
     os_delwait();
 
@@ -148,7 +155,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 #ifdef WIN32
     run_notify();
 #else
-    run_notify(&server_ibuf);
+    run_notify();
 #endif //WIN32
 
     /* Maxfd must be higher socket +1 */
@@ -168,7 +175,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 #ifdef WIN32
         run_notify();
 #else
-        run_notify(&server_ibuf);
+        run_notify();
 #endif //WIN32
 
         /* Wait with a timeout for any descriptor */
@@ -189,7 +196,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 #ifdef WIN32
             EventForward();
 #else
-            EventForward(&server_ibuf);
+            EventForward();
 #endif
         }
     }
