@@ -82,7 +82,8 @@ int connect_server(int initial_id)
 
         event_dispatch();
 
-        if(agt->sock > 0) {
+        if(agt->sock < 0) {
+		merror("%s [dns]: ERROR: socket error"); //XXX what do?
 #else
         agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
 
