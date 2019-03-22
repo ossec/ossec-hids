@@ -45,7 +45,7 @@ void osdns_accept(int fd, short ev, void *arg) {
     struct imsgbuf *ibuf = (struct imsgbuf *)arg;
 
 #ifdef CLIENT
-    agent *agt;
+    extern agent *agt;
     unsigned int attempts = 2;
 #endif //CLIENT
 
@@ -150,8 +150,8 @@ void osdns_accept(int fd, short ev, void *arg) {
             case AGENT_REQ:
                 memcpy(&agt, imsg.data, sizeof(agt));
 
-                int a_sock, rc = 0;
-                a_sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
+                int rc = 0;
+                agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
                 if (agt->sock < 0) {
                     agt->sock = -1;
                     merror(CONNS_ERROR, dname, agt->rip[rc]);
