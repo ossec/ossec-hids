@@ -10,11 +10,13 @@
 #ifndef _MCCONFIG__H
 #define _MCCONFIG__H
 
+#ifndef WIN32
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/uio.h>
 #include <stdint.h>
 #include <imsg.h>
+#endif //WIN32
 
 #include "shared.h"
 
@@ -45,8 +47,10 @@ typedef struct _MailConfig {
     int geoip;
 #endif
 
+#ifndef WIN32
     /* ibuf for imsg */
     struct imsgbuf ibuf;
+#endif //WIN32
 
     OSMatch **gran_location;
     OSMatch **gran_group;

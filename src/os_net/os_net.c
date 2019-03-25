@@ -836,6 +836,7 @@ char *DecodeProtocol (int val) {
     return (buf);
 }
 
+#ifndef WIN32
 /* Set a socket to be non-blocking */
 int setnonblock(int fd) {
     int flags;
@@ -850,4 +851,5 @@ int setnonblock(int fd) {
 
     return 0;
 }
+#endif //WIN32
 

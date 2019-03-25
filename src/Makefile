@@ -904,12 +904,13 @@ os_crypto.a: ${crypto_o}
 
 #### os_dns ########
 
+ifneq (${TARGET},winagent)
 os_dns_c := $(wildcard os_dns/*.c)
 os_dns_o := $(os_dns_c:.c=.o)
 
 os_dns/os_dns.o: os_dns/os_dns.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -I/usr/local/include ${COMPAT_CFLAGS} -c $^ -o $@
-
+endif
 
 #### os_mail #########
 
@@ -997,7 +998,11 @@ ossec-remoted: ${remoted_o} ${ossec_libs} ${ZLIB_LIB}
 
 #### ossec-agentd ####
 
+ifneq (${TARGET},winagent)
 client_agent_c := $(wildcard client-agent/*.c)  $(wildcard os_dns/*.c)
+else
+client_agent_c := $(wildcard client-agent/*.c)
+endif
 client_agent_o := $(client_agent_c:.c=.o)
 
 client-agent/%.o: client-agent/%.c
