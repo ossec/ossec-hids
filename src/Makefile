@@ -128,7 +128,7 @@ endif # winagent
 
 ## OpenBSD doesn't need the imsg stuff.
 ifneq (${uname_S},OpenBSD)
-        COMPAT_CFLAGS+=-I./external/compat
+        CFLAGS+=-I./external/compat
         COMPAT_FILES+=./external/compat/imsg.c ./external/compat/imsg-buffer.c
 endif
 
@@ -826,7 +826,7 @@ os_net_c := $(wildcard os_net/*.c)
 os_net_o := $(os_net_c:.c=.o)
 
 os_net/%.o: os_net/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} $(COMPAT_CFLAGS) -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -c $^ -o $@
 
 os_net.a: ${os_net_o}
 	${OSSEC_LINK} $@ $^
@@ -838,7 +838,7 @@ shared_c := $(wildcard shared/*.c)
 shared_o := $(shared_c:.c=.o)
 
 shared/%.o: shared/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} $(COMPAT_CFLAGS) -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -c $^ -o $@
 
 shared.a: ${shared_o}
 	${OSSEC_LINK} $@ $^
@@ -850,7 +850,7 @@ config_c := $(wildcard config/*.c)
 config_o := $(config_c:.c=.o)
 
 config/%.o: config/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} $(COMPAT_CFLAGS) -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -c $^ -o $@
 
 config.a: ${config_o}
 	${OSSEC_LINK} $@ $^
@@ -909,7 +909,7 @@ os_dns_c := $(wildcard os_dns/*.c)
 os_dns_o := $(os_dns_c:.c=.o)
 
 os_dns/os_dns.o: os_dns/os_dns.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -I/usr/local/include ${COMPAT_CFLAGS} -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -I/usr/local/include -c $^ -o $@
 endif
 
 #### os_mail #########
@@ -964,7 +964,7 @@ os_execd_c := $(wildcard os_execd/*.c)
 os_execd_o := $(os_execd_c:.c=.o)
 
 os_execd/%.o: os_execd/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} $(COMPAT_CFLAGS) -DARGV0=\"ossec-execd\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -DARGV0=\"ossec-execd\" -c $^ -o $@
 
 ossec-execd: ${os_execd_o} ${ossec_libs} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${JSON_INCLUDE} $^ -lm ${OSSEC_LDFLAGS} -o $@
@@ -1006,7 +1006,7 @@ endif
 client_agent_o := $(client_agent_c:.c=.o)
 
 client-agent/%.o: client-agent/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -I./client-agent $(COMPAT_CFLAGS) ${ZLIB_INCLUDE} -DARGV0=\"ossec-agentd\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -I./client-agent  ${ZLIB_INCLUDE} -DARGV0=\"ossec-agentd\" -c $^ -o $@
 
 ossec-agentd: ${client_agent_o} ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} ${DNS_CFLAGS} -levent ${COMPAT_FILES} -o $@
@@ -1131,7 +1131,7 @@ os_auth_c := ${wildcard os_auth/*.c}
 os_auth_o := $(os_auth_c:.c=.o)
 
 os_auth/%.o: os_auth/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} $(COMPAT_CFLAGS) -I./os_auth -DARGV0=\"ossec-authd\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -I./os_auth -DARGV0=\"ossec-authd\" -c $^ -o $@
 
 agent-auth: addagent/validate.o os_auth/main-client.o os_auth/ssl.o os_auth/check_cert.o ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${JSON_INCLUDE} -I./os_auth $^ ${OSSEC_LDFLAGS} -o $@
