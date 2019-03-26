@@ -232,18 +232,26 @@ void start_agent(int is_startup)
 /* Callback for the AGENT_REQ */
 void os_agent_cb(int fd, short ev, void *arg) {
 
+    /* Quiet a warning */
+    if (fd) { }
+
     ssize_t n;
     struct imsg imsg;
     struct imsgbuf *ibuf = (struct imsgbuf *)arg;
 
-    if ((n = imsg_read(ibuf) == -1 && errno != EAGAIN)) {
-        ErrorExit("%s: ERROR: imsg_read() failed: %s", ARGV0, strerror(errno));
-    }
-    if (n == 0) {
-        debug1("%s: WARN: n == 0", ARGV0);
-    }
-    if (n == EAGAIN) {
-        debug1("%s: DEBUG: n == EAGAIN", ARGV0);
+    if (ev && EV_READ) {
+        if ((n = imsg_read(ibuf) == -1 && errno != EAGAIN)) {
+            ErrorExit("%s: ERROR: imsg_read() failed: %s", ARGV0, strerror(errno));
+        }
+        if (n == 0) {
+            debug1("%s: WARN: n == 0", ARGV0);
+        }
+        if (n == EAGAIN) {
+            debug1("%s: DEBUG: n == EAGAIN", ARGV0);
+        }
+    } else {
+        merror("%s: ERROR: not EV_READ", ARGV0);
+        return;
     }
     if ((n = imsg_get(ibuf, &imsg)) == -1) {
         merror("%s: ERROR: imsg_get() failed: %s", ARGV0, strerror(errno));
