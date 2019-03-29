@@ -21,3 +21,15 @@ Reply from os_dns:
 Eventually I'll need to figure out if I want to use this
 for udp as well, and how to pass the protocol along.
 
+Todo:
+
+* Cleanup - everything is still too noisy
+
+* errors - I don't think I've handled the errors very well
+
+* kill - there's no way to kill both processes currently
+
+* signals - these need to be gone over
+
+* probably lots of other things
+
