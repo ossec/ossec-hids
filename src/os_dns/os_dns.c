@@ -236,9 +236,9 @@ int osdns(struct imsgbuf *ibuf, char *os_name) {
     /* setuid() ossecm */
     /* This is static ossecm for now, I'll figure out the trick later */
 #ifdef CLIENT
-    char *login = "ossec";
+    char *login = USER;
 #else
-    char *login = "ossecm";
+    char *login = MAILUSER;
 #endif //CLIENT
     struct passwd *pw;
 
@@ -251,6 +251,13 @@ int osdns(struct imsgbuf *ibuf, char *os_name) {
     }
     if (Privsep_SetUser(pw->pw_uid) < 0) {
         ErrorExit("%s [dns]: ERROR: Cannot setuid.", os_name);
+    }
+
+    char *y = NULL;
+    snprintf(y, 256, "%s-dns", dname);
+
+    if (CreatePID(y, getpid()) < 0) {
+        ErrorExit(PID_ERROR, y);
     }
 
     /* Setup libevent */
