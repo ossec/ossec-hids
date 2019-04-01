@@ -21,7 +21,9 @@
 /* Attempt to connect to all configured servers */
 int connect_server(int initial_id)
 {
+#ifdef WIN32
     unsigned int attempts = 2;
+#endif //WIN32
     int rc = initial_id;
 
     /* Checking if the initial is zero, meaning we have to
@@ -83,7 +85,7 @@ int connect_server(int initial_id)
         event_dispatch();
 
         if(agt->sock < 0) {
-		merror("%s [dns]: ERROR: socket error"); //XXX what do?
+		merror("%s [dns]: ERROR: socket error", ARGV0); //XXX what do?
 #else
         agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
 
@@ -239,7 +241,7 @@ void os_agent_cb(int fd, short ev, void *arg) {
     struct imsg imsg;
     struct imsgbuf *ibuf = (struct imsgbuf *)arg;
 
-    if (ev && EV_READ) {
+    if (ev & EV_READ) {
         if ((n = imsg_read(ibuf) == -1 && errno != EAGAIN)) {
             ErrorExit("%s: ERROR: imsg_read() failed: %s", ARGV0, strerror(errno));
         }
