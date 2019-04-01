@@ -253,11 +253,8 @@ int osdns(struct imsgbuf *ibuf, char *os_name) {
         ErrorExit("%s [dns]: ERROR: Cannot setuid.", os_name);
     }
 
-    char *y = NULL;
-    snprintf(y, 256, "%s-dns", dname);
-
-    if (CreatePID(y, getpid()) < 0) {
-        ErrorExit(PID_ERROR, y);
+    if (CreatePID(dname, getpid()) < 0) {
+        ErrorExit(PID_ERROR, dname);
     }
 
     /* Setup libevent */
