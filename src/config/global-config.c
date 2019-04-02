@@ -504,7 +504,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 
 #ifdef SQLITE_ENABLED
         /* MD5 DB */
-        else if(strcmp(node[i]->element, xml_md5_allowlist) == 0) {
+        else if((strcmp(node[i]->element, xml_md5_allowlist) == 0) || (strcmp(node[i]->element, xml_md5_whitelist) == 0)) {
             if(Config) {
                 os_strdup(node[i]->content, Config->md5_allowlist);
             }
