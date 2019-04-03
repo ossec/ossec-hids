@@ -472,7 +472,7 @@ int main_analysisd(int argc, char **argv)
         ErrorExit(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
     }
 
-    /* Whitelist */
+    /* allowlist */
     if (Config.allow_list == NULL) {
         if (Config.ar) {
             verbose("%s: INFO: No IP in the allow list for active response.", ARGV0);
@@ -504,7 +504,7 @@ int main_analysisd(int argc, char **argv)
 
             wl = Config.hostname_allow_list;
             while (*wl) {
-                verbose("%s: INFO: White listing Hostname: '%s'", ARGV0, *wl);
+                verbose("%s: INFO: Allow listing Hostname: '%s'", ARGV0, *wl);
                 wlc++;
                 wl++;
             }
