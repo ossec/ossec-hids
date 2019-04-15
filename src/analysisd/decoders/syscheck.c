@@ -679,19 +679,19 @@ int DecodeSyscheck(Eventinfo *lf)
     /* Checksum is at the beginning of the log */
     c_sum = lf->log;
 
-    /* Extract the MD5 hash and search for it in the whitelist
+    /* Extract the MD5 hash and search for it in the allowlist
      * Sample message:
      * 0:0:0:0:78f5c869675b1d09ddad870adad073f9:bd6c8d7a58b462aac86475e59af0e22954039c50
      */
 #ifdef SQLITE_ENABLED
-    if (Config.md5_whitelist)  {
+    if (Config.md5_allowlist)  {
         extern sqlite3 *conn;
         if ((p = extract_token(c_sum, ":", 4))) {
             if (!validate_md5(p)) { /* Never trust input from other origin */
                 merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
                 return(0);
             }
-            debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_whitelist);
+            debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_allowlist);
             sprintf(stmt, "select md5sum from files where md5sum = \"%s\"", p);
             error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
             if (error == SQLITE_OK) {
