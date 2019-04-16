@@ -65,7 +65,7 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
     }
     if (n == 0) {
         debug2("%s: DEBUG: n == 0", ARGV0);
-        return;
+        //return; //XXX
     }
     if (n == EAGAIN) {
         debug2("%s: DEBUG: n == EAGAIN", ARGV0);
