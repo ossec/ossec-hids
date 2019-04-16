@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it

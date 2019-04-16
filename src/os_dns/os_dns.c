@@ -1,3 +1,12 @@
+/* Copyright (C) 2019 Daniel Parriott <ddpbsd@gmail.com>
+ * All rights reserved.
+ *
+ * This program is a free software; you can redistribute it
+ * and/or modify it under the terms of the GNU General Public
+ * License (version 2) as published by the FSF - Free Software
+ * Foundation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
