@@ -275,7 +275,9 @@ static void OS_Run(MailConfig *mail)
         if ((mail_timeout == NEXTMAIL_TIMEOUT) && (p->tm_hour == thishour)) {
             /* Get more messages */
         }
-
+        else if ((mailtosend > mail->maxperhour) && (mailtosend != 0)) {
+            merror("%s: INFO: Max emails per hour reached.", ARGV0);
+        }
         /* Hour changed: send all suppressed mails */
         else if (((mailtosend < mail->maxperhour) && (mailtosend != 0)) ||
                  ((p->tm_hour != thishour) && (childcount < MAXCHILDPROCESS))) {

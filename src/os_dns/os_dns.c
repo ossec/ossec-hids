@@ -78,6 +78,22 @@ void osdns_accept(int fd, short ev, void *arg) {
 
         switch(imsg.hdr.type) {
             case DNS_REQ:
+                if (datalen != sizeof(&dnsr)) {
+                    //XXX error
+                    merror("%s [dns]: ERROR: DNS_REQ wrong length (%lu)", dname, datalen);
+                    struct os_dns_error os_dns_err;
+                    //os_dns_err.msg = "wrong len";
+                    imsg_compose(ibuf, DNS_FAIL, 0, 0, -1, &os_dns_err, sizeof(&os_dns_err));
+                    if ((n = msgbuf_write(&ibuf->w) == -1) && errno != EAGAIN) {
+                        merror("%s [dns]: ERROR: msgbuf_write() failed (DNS_FAIL size): %a", dname, strerror(errno));
+                    }
+                    if (n == 0) {
+                        debug2("%s [dns]: DEBUG: DNS_FAIL size n == 0", dname);
+                    }
+                    if (n == EAGAIN) {
+                        merror("%s [dns]: DEBUG EAGAIN size", dname);
+                    }
+                }
                 memcpy(&dnsr, imsg.data, sizeof(dnsr));
                 int idata = 42; /* XXX Not sure why this is actually needed */
                 struct addrinfo hints, *result, *rp = NULL;
@@ -97,7 +113,7 @@ void osdns_accept(int fd, short ev, void *arg) {
 
                     struct os_dns_error os_dns_err;
                     os_dns_err.code = sock;
-                    os_dns_err.msg = gai_strerror(sock);
+                    //os_dns_err.msg = gai_strerror(sock);
 
                     imsg_compose(ibuf, DNS_FAIL, 0, 0, -1, &os_dns_err, sizeof(&os_dns_err));
                     if ((n = msgbuf_write(&ibuf->w) == -1) && errno != EAGAIN) {
@@ -119,7 +135,6 @@ void osdns_accept(int fd, short ev, void *arg) {
                     } else {
                         if (connect(sock, rp->ai_addr, rp->ai_addrlen) == -1) {
                             merror("%s [dns]: ERROR: connect() failed.", dname);
-                            //XXX return error to caller
                         } else {
                             if ((imsg_compose(ibuf, DNS_RESP, 0, 0, sock, &idata, sizeof(idata))) == -1) {
                                 merror("%s [dns]: ERROR: DNS_RESP imsg_compose() failed: %s", dname, strerror(errno));
@@ -139,6 +154,22 @@ void osdns_accept(int fd, short ev, void *arg) {
                             }
                         }
                     }
+                }
+
+                struct os_dns_error os_dns_err;
+                os_dns_err.code = -1;
+                //os_dns_err.msg = "Cannot connect to smtp server";
+
+                imsg_compose(ibuf, DNS_FAIL, 0, 0, -1, &os_dns_err, sizeof(&os_dns_err));
+                if ((n = msgbuf_write(&ibuf->w) == -1) && errno != EAGAIN) {
+                    merror("%s [dns]: ERROR: msgbuf_write() failed (DNS_FAIL): %s", dname, strerror(errno));
+                    return;
+                }
+                if (n == 0) {
+                    debug2("%s [dns]: DEBUG: DNS_FAIL n == 0", dname);
+                }
+                if (n == EAGAIN) {
+                    merror("%s [dns]: DEBUG: EAGAIN 1", dname);
                 }
                 break;
             /*
