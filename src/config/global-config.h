@@ -67,10 +67,10 @@ typedef struct __Config {
     char **syscheck_ignore;
 
     /* List of ips to never block */
-    os_ip **white_list;
+    os_ip **allow_list;
 
     /* List of hostnames to never block */
-    char **hostname_white_list;
+    char **hostname_allow_list;
 
     /* List of rules */
     char **includes;
@@ -93,7 +93,7 @@ typedef struct __Config {
 #endif
 
     /* MD5 DB support */
-    char *md5_whitelist;
+    char *md5_allowlist;
 
 } _Config;
 

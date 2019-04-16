@@ -472,43 +472,43 @@ int main_analysisd(int argc, char **argv)
         ErrorExit(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
     }
 
-    /* Whitelist */
-    if (Config.white_list == NULL) {
+    /* allowlist */
+    if (Config.allow_list == NULL) {
         if (Config.ar) {
-            verbose("%s: INFO: No IP in the white list for active response.", ARGV0);
+            verbose("%s: INFO: No IP in the allow list for active response.", ARGV0);
         }
     } else {
         if (Config.ar) {
             os_ip **wl;
             int wlc = 0;
-            wl = Config.white_list;
+            wl = Config.allow_list;
             while (*wl) {
-                verbose("%s: INFO: White listing IP: '%s'", ARGV0, (*wl)->ip);
+                verbose("%s: INFO: Allow listing IP: '%s'", ARGV0, (*wl)->ip);
                 wl++;
                 wlc++;
             }
-            verbose("%s: INFO: %d IPs in the white list for active response.",
+            verbose("%s: INFO: %d IPs in the allow list for active response.",
                     ARGV0, wlc);
         }
     }
 
-    /* Hostname whitelist */
-    if (Config.hostname_white_list == NULL) {
+    /* Hostname allowlist */
+    if (Config.hostname_allow_list == NULL) {
         if (Config.ar)
-            verbose("%s: INFO: No Hostname in the white list for active response.",
+            verbose("%s: INFO: No Hostname in the allow list for active response.",
                     ARGV0);
     } else {
         if (Config.ar) {
             int wlc = 0;
             char **wl;
 
-            wl = Config.hostname_white_list;
+            wl = Config.hostname_allow_list;
             while (*wl) {
-                verbose("%s: INFO: White listing Hostname: '%s'", ARGV0, *wl);
+                verbose("%s: INFO: Allow listing Hostname: '%s'", ARGV0, *wl);
                 wlc++;
                 wl++;
             }
-            verbose("%s: INFO: %d Hostname(s) in the white list for active response.",
+            verbose("%s: INFO: %d Hostname(s) in the allow list for active response.",
                     ARGV0, wlc);
         }
     }
@@ -662,10 +662,10 @@ void OS_ReadMSG_analysisd(int m_queue)
     /* Open the sqlite db */
     extern sqlite3 *conn;
     int s_error = 0;
-    if (Config.md5_whitelist) {
-        debug2("Opening md5_whitelist: %s", Config.md5_whitelist);
-        if((s_error = sqlite3_open(Config.md5_whitelist, &conn))) {
-            merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5_whitelist);
+    if (Config.md5_allowlist) {
+        debug2("Opening md5_allowlist: %s", Config.md5_allowlist);
+        if((s_error = sqlite3_open(Config.md5_allowlist, &conn))) {
+            merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5_allowlist);
         }
 
     }

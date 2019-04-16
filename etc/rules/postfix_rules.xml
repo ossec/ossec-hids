@@ -57,7 +57,7 @@
   <rule id="3306" level="6">
     <if_sid>3301, 3302</if_sid>
     <match> blocked using </match>
-    <description>IP Address black-listed by anti-spam (blocked).</description>
+    <description>IP Address deny-listed by anti-spam (blocked).</description>
     <group>spam,</group>
   </rule>
   
@@ -144,7 +144,7 @@
     <if_matched_sid>3306</if_matched_sid>
     <same_source_ip />
     <description>Multiple attempts to send e-mail from </description>
-    <description>black-listed IP address (blocked).</description>
+    <description>deny-listed IP address (blocked).</description>
     <group>multiple_spam,</group>
   </rule>
 

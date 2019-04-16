@@ -23,6 +23,7 @@ OSSEC_USER_REM?=ossecr
 
 INSTALL_CMD?=install -m $(1) -o $(2) -g $(3)
 INSTALL_LOCALTIME?=yes
+INSTALL_RESOLVCONF?=yes
 
 USE_PRELUDE?=no
 USE_ZEROMQ?=no
@@ -428,6 +429,9 @@ endif
 	$(call INSTALL_CMD,0550,root,${OSSEC_GROUP}) -d ${PREFIX}/etc
 ifeq (${INSTALL_LOCALTIME},yes)
 	$(call INSTALL_CMD,0440,root,${OSSEC_GROUP}) /etc/localtime ${PREFIX}/etc
+endif
+ifeq (${INSTALL_RESOLVCONF},yes)
+	$(call INSTALL_CMD,0440,root,${OSSEC_GROUP}) /etc/resolv.conf ${PREFIX}/etc
 endif
 
 	$(call INSTALL_CMD,1550,root,${OSSEC_GROUP}) -d ${PREFIX}/tmp
