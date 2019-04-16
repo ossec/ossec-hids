@@ -65,10 +65,10 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
         ErrorExit("%s: ERROR: imsg_read() failed: %s", ARGV0, strerror(errno));
     }
     if (n == 0) {
-        merror("%s: WARN: n == 0", ARGV0);
+        debug2("%s: DEBUG: n == 0", ARGV0);
     }
     if (n == EAGAIN) {
-        merror("%s: DEBUG: n == EAGAIN", ARGV0);
+        debug2("%s: DEBUG: n == EAGAIN", ARGV0);
     }
 
     merror("%s: DEBUG: ibuf->fd: %d", ARGV0, ibuf->fd);
@@ -78,7 +78,7 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
         return;
     }
     if (n == 0) {
-        merror("%s: WARN2: n == 0", ARGV0);
+        debug2("%s: DEBUG: n == 0", ARGV0);
     }
 
     switch(imsg.hdr.type) {
@@ -103,7 +103,6 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
 
 int OS_Sendmail(MailConfig *mail, struct tm *p)
 {
-    merror("ossec-maild: DEBUG: Inside OS_Sendmail()");
     FILE *sendmail = NULL;
     os_sock = -1;
     unsigned int i = 0;
@@ -112,7 +111,6 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
 
     MailNode *mailmsg;
 
-    merror("ossec-maild: DEBUG: OS_PopLastMail()");
     /* If there is no sms message, attempt to get from the email list */
     mailmsg = OS_PopLastMail();
 
@@ -121,7 +119,6 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         return (OS_INVALID);
     }
 
-    merror("ossec-maild: DEBUG: Got the lastmail");
 
     if (mail->smtpserver[0] == '/') {
         sendmail = popen(mail->smtpserver, "w");
@@ -160,8 +157,6 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         if (n == 0) {
             debug2("%s: INFO: (write) n == 0", ARGV0);
         }
-
-        debug1("ossec-maild: DEBUG: starting event loop");
 
         event_dispatch();
     }
