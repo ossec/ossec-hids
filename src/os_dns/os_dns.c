@@ -61,6 +61,7 @@ void osdns_accept(int fd, short ev, void *arg) {
         }
         if (n == 0) {
             debug2("%s [dns]: DEBUG: n == 0", dname);
+            return;
         }
     } else {
         merror("Not EV_READ");
@@ -74,7 +75,7 @@ void osdns_accept(int fd, short ev, void *arg) {
         }
         if (n == 0) {
             debug2("%s [dns]: DEBUG: imsg_get() n == 0", dname);
-            break; /* No more messages */
+            return; /* No more messages */
         }
 
 
@@ -97,9 +98,11 @@ void osdns_accept(int fd, short ev, void *arg) {
                     }
                     if (n == 0) {
                         debug2("%s [dns]: DEBUG: DNS_FAIL size n == 0", dname);
+                        return;
                     }
                     if (n == EAGAIN) {
                         debug2("%s [dns]: DEBUG EAGAIN size", dname);
+                        return; //XXX
                     }
                 }
                 memcpy(&dnsr, imsg.data, sizeof(dnsr));
@@ -125,9 +128,11 @@ void osdns_accept(int fd, short ev, void *arg) {
                     }
                     if (n == 0) {
                         debug2("%s [dns]: DEBUG: DNS_FAIL n == 0", dname);
+                        return;
                     }
                     if (n == EAGAIN) {
                         debug2("%s [dns]: DEBUG: EAGAIN 1", dname);
+                        return; //XXX
                     }
                 }
 

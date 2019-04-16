@@ -54,7 +54,6 @@ int os_sock;
 void os_sendmail_cb(int fd, short ev, void *arg) {
     if (fd) { }
     if (ev) {}
-    merror("ossec-maild: DEBUG: os_sendmail_cb");
 
     /* Have to get the *arg stuff */
     ssize_t n;
@@ -66,12 +65,12 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
     }
     if (n == 0) {
         debug2("%s: DEBUG: n == 0", ARGV0);
+        return;
     }
     if (n == EAGAIN) {
         debug2("%s: DEBUG: n == EAGAIN", ARGV0);
+        return; //XXX
     }
-
-    merror("%s: DEBUG: ibuf->fd: %d", ARGV0, ibuf->fd);
 
     if ((n = imsg_get(ibuf, &imsg)) == -1) {
         merror("%s: ERROR: imsg_get() failed: %s", ARGV0, strerror(errno));
@@ -79,16 +78,16 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
     }
     if (n == 0) {
         debug2("%s: DEBUG: n == 0", ARGV0);
+        return;
     }
 
     switch(imsg.hdr.type) {
         case DNS_RESP:
             os_sock = imsg.fd;
-            merror("%s: DEBUG: os_sock: %d", ARGV0, os_sock);
             break;
         case DNS_FAIL:
             merror("%s: ERROR: DNS failure for smtpserver", ARGV0);
-            return;
+            break;;
         default:
             merror("%s: ERROR Wrong imsg type.", ARGV0);
             break;
