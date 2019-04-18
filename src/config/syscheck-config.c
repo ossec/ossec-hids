@@ -238,7 +238,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                     opts |= CHECK_OWNER;
                     opts |= CHECK_GROUP;
                     opts |= CHECK_SHA256SUM;
-                    opts |= CHECK_GENERIC;
+                    opts |= CHECK_MD5SUM;
 #else   //LIBSODIUM_ENABLED
                     opts |= CHECK_SHA1SUM;
                     opts |= CHECK_MD5SUM;
