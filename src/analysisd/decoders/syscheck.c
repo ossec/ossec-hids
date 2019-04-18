@@ -535,10 +535,14 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             } else {
 #ifdef LIBSODIUM_ENABLED
                 char *hash_type;
-                if(strncmp(newmd5, "GENERIC", 7) == 0) {
+                if (strncmp(newmd5, "GENERIC", 7) == 0) {
                     hash_type = "blake2b";
-                } else if(strncmp(newmd5, "SHA256", 6) == 0) {
+                } else if (strncmp(newmd5, "SHA256", 6) == 0) {
                     hash_type = "sha256";
+                } else if (strncmp(newmd5, "MD5", 3) == 0) {
+                    hash_type = "md5";
+                } else if (strncmp(newmd5, "SHA1", 4) == 0) {
+                    hash_type = "sha1";
                 } else {
                     hash_type = "unknown";
                 }
