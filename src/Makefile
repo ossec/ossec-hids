@@ -6,7 +6,7 @@ EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
 EXTERNAL_PCRE2=external/pcre2-10.32/
 ZLIB_SYSTEM?=yes
-PCRE2_SYSTEM?=yes
+PCRE2_SYSTEM?=no
 LUA_PLAT=posix
 LUA_ENABLE?=no
 MAXAGENTS?=2048
@@ -29,8 +29,7 @@ USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
-USE_PCRE2_JIT=no
-DEBUG=yes
+USE_PCRE2_JIT=yes
 
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
