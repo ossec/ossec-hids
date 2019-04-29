@@ -297,6 +297,9 @@ int main_analysisd(int argc, char **argv)
     }
     nowChroot();
 
+    Config.decoder_order_size = (size_t)getDefine_Int("analysisd", "decoder_order_size", 8, MAX_DECODER_ORDER_SIZE);
+
+
     /*
      * Anonymous Section: Load rules, decoders, and lists
      *
@@ -469,43 +472,43 @@ int main_analysisd(int argc, char **argv)
         ErrorExit(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
     }
 
-    /* Whitelist */
-    if (Config.white_list == NULL) {
+    /* allowlist */
+    if (Config.allow_list == NULL) {
         if (Config.ar) {
-            verbose("%s: INFO: No IP in the white list for active response.", ARGV0);
+            verbose("%s: INFO: No IP in the allow list for active response.", ARGV0);
         }
     } else {
         if (Config.ar) {
             os_ip **wl;
             int wlc = 0;
-            wl = Config.white_list;
+            wl = Config.allow_list;
             while (*wl) {
-                verbose("%s: INFO: White listing IP: '%s'", ARGV0, (*wl)->ip);
+                verbose("%s: INFO: Allow listing IP: '%s'", ARGV0, (*wl)->ip);
                 wl++;
                 wlc++;
             }
-            verbose("%s: INFO: %d IPs in the white list for active response.",
+            verbose("%s: INFO: %d IPs in the allow list for active response.",
                     ARGV0, wlc);
         }
     }
 
-    /* Hostname whitelist */
-    if (Config.hostname_white_list == NULL) {
+    /* Hostname allowlist */
+    if (Config.hostname_allow_list == NULL) {
         if (Config.ar)
-            verbose("%s: INFO: No Hostname in the white list for active response.",
+            verbose("%s: INFO: No Hostname in the allow list for active response.",
                     ARGV0);
     } else {
         if (Config.ar) {
             int wlc = 0;
             char **wl;
 
-            wl = Config.hostname_white_list;
+            wl = Config.hostname_allow_list;
             while (*wl) {
-                verbose("%s: INFO: White listing Hostname: '%s'", ARGV0, *wl);
+                verbose("%s: INFO: Allow listing Hostname: '%s'", ARGV0, *wl);
                 wlc++;
                 wl++;
             }
-            verbose("%s: INFO: %d Hostname(s) in the white list for active response.",
+            verbose("%s: INFO: %d Hostname(s) in the allow list for active response.",
                     ARGV0, wlc);
         }
     }
@@ -643,6 +646,7 @@ void OS_ReadMSG_analysisd(int m_queue)
         if (!lf) {
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
+        os_calloc(Config.decoder_order_size, sizeof(char*), lf->fields);
         lf->year = prev_year;
         strncpy(lf->mon, prev_month, 3);
         lf->day = today;
@@ -658,10 +662,10 @@ void OS_ReadMSG_analysisd(int m_queue)
     /* Open the sqlite db */
     extern sqlite3 *conn;
     int s_error = 0;
-    if (Config.md5_whitelist) {
-        debug2("Opening md5_whitelist: %s", Config.md5_whitelist);
-        if((s_error = sqlite3_open(Config.md5_whitelist, &conn))) {
-            merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5_whitelist);
+    if (Config.md5_allowlist) {
+        debug2("Opening md5_allowlist: %s", Config.md5_allowlist);
+        if((s_error = sqlite3_open(Config.md5_allowlist, &conn))) {
+            merror(INVALID_IGNORE_MD5DB, ARGV0, Config.md5_allowlist);
         }
 
     }
@@ -676,6 +680,7 @@ void OS_ReadMSG_analysisd(int m_queue)
     /* Daemon loop */
     while (1) {
         lf = (Eventinfo *)calloc(1, sizeof(Eventinfo));
+        os_calloc(Config.decoder_order_size, sizeof(char*), lf->fields);
 
         /* This shouldn't happen */
         if (lf == NULL) {
@@ -1028,7 +1033,6 @@ void OS_ReadMSG_analysisd(int m_queue)
                 OS_Store(lf);
             if (Config.logall_json)
                 jsonout_output_archive(lf);
-            
 
 CLMEM:
             /** Cleaning the memory **/
@@ -1068,6 +1072,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
      * status,
      */
     RuleInfo *rule = curr_node->ruleinfo;
+    int i;
 
     /* Can't be null */
     if (!rule) {
@@ -1187,6 +1192,25 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             return (NULL);
         }
     }
+
+    /* Check for dynamic fields */
+   
+    for (i = 0; i < Config.decoder_order_size && rule->fields[i]; i++) {
+        int j;
+        
+        for (j = 0; j < Config.decoder_order_size; j++)
+            if (lf->decoder_info->fields[j])
+                if (strcasecmp(lf->decoder_info->fields[j], rule->fields[i]->name) == 0)
+                    break;
+
+        if (j == Config.decoder_order_size)
+
+            return NULL;
+        
+        if (!OSRegex_Execute(lf->fields[j], rule->fields[i]->regex))
+            return NULL;
+    }
+
 
     /* Get TCP/IP packet information */
     if (rule->alert_opts & DO_PACKETINFO) {

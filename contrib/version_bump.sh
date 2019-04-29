@@ -33,7 +33,11 @@ sed -i -e "s/Agent v${OLDVERSION}/Agent v${NEWVERSION}/" src/win32/help.txt
 # misc
 sed -i -e "s/OSSEC v${OLDVERSION}/OSSEC v${NEWVERSION}/" INSTALL
 sed -i -e "s/OSSEC v${OLDVERSION}/OSSEC v${NEWVERSION}/" README.md
+sed -i -e "s/OSSEC v${OLDVERSION}/OSSEC v${NEWVERSION}/" CONFIG
+sed -i -e "s/OSSEC v${OLDVERSION}/OSSEC v${NEWVERSION}/" BUGS
 
 # update defs.h
-sed -i -e "s/v${OLDVERSION}/v${NEWVERSION}" src/headers/defs.h
+sed -i -e "s/v${OLDVERSION}/v${NEWVERSION}/" src/headers/defs.h
+
+# Update CONFIG
 

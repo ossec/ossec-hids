@@ -24,6 +24,7 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     cJSON *rule;
     cJSON *file_diff;
     char *out;
+    int i;
 
     extern long int __crt_ftell;
 
@@ -173,6 +174,35 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         cJSON_AddStringToObject(root, "systemname", lf->systemname);
     }
 
+    // DecoderInfo
+    if(lf->decoder_info){
+        cJSON *decoder;
+        // Dynamic fields
+        if (lf->decoder_info->fields) {
+            for (i = 0; i < Config.decoder_order_size; i++) {
+                if (lf->decoder_info->fields[i] && lf->fields[i]) {
+                    cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+                }
+            }
+        }
+
+        cJSON_AddItemToObject(root, "decoder", decoder = cJSON_CreateObject());
+
+        if (lf->decoder_info->fts)
+            cJSON_AddNumberToObject(decoder, "fts", lf->decoder_info->fts);
+        if (lf->decoder_info->accumulate)
+            cJSON_AddNumberToObject(decoder, "accumulate", lf->decoder_info->accumulate);
+
+        if (lf->decoder_info->parent)
+            cJSON_AddStringToObject(decoder, "parent", lf->decoder_info->parent);
+        if (lf->decoder_info->name)
+            cJSON_AddStringToObject(decoder, "name", lf->decoder_info->name);
+        if (lf->decoder_info->ftscomment)
+            cJSON_AddStringToObject(decoder, "ftscomment", lf->decoder_info->ftscomment);
+
+    }
+
+
     W_ParseJSON(root, lf);
 
     out = cJSON_PrintUnformatted(root);
@@ -185,6 +215,7 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
 {
     cJSON *root;
     char *out;
+    int i;
 
     root = cJSON_CreateObject();
 
@@ -303,6 +334,15 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
     // DecoderInfo
     if(lf->decoder_info){
         cJSON *decoder;
+        // Dynamic fields
+        if (lf->decoder_info->fields) {
+            for (i = 0; i < Config.decoder_order_size; i++) {
+                if (lf->decoder_info->fields[i] && lf->fields[i]) {
+                    cJSON_AddStringToObject(root, lf->decoder_info->fields[i], lf->fields[i]);
+                }
+            }
+        }
+
         cJSON_AddItemToObject(root, "decoder", decoder = cJSON_CreateObject());
 
         if (lf->decoder_info->fts) 
@@ -333,6 +373,7 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
 
     if (lf->location)
        W_JSON_ParseLocation(root,lf,0);
+
 
 
 

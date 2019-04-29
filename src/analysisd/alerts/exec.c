@@ -36,20 +36,20 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
         }
 
         /* Check if IP is to be ignored */
-        if (Config.white_list) {
-            if (OS_IPFoundList(ip, Config.white_list)) {
+        if (Config.allow_list) {
+            if (OS_IPFoundList(ip, Config.allow_list)) {
                 return;
             }
         }
 
         /* Check if it is a hostname */
-        if (Config.hostname_white_list) {
+        if (Config.hostname_allow_list) {
             size_t srcip_size;
             char **wl;
 
             srcip_size = strlen(ip);
 
-            wl = Config.hostname_white_list;
+            wl = Config.hostname_allow_list;
             while (*wl) {
                 if (strncmp(*wl, ip, srcip_size) == 0) {
                     return;

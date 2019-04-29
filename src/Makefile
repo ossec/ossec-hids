@@ -23,6 +23,7 @@ OSSEC_USER_REM?=ossecr
 
 INSTALL_CMD?=install -m $(1) -o $(2) -g $(3)
 INSTALL_LOCALTIME?=yes
+INSTALL_RESOLVCONF?=yes
 
 USE_PRELUDE?=no
 USE_ZEROMQ?=no
@@ -430,6 +431,9 @@ endif
 ifeq (${INSTALL_LOCALTIME},yes)
 	$(call INSTALL_CMD,0440,root,${OSSEC_GROUP}) /etc/localtime ${PREFIX}/etc
 endif
+ifeq (${INSTALL_RESOLVCONF},yes)
+	$(call INSTALL_CMD,0440,root,${OSSEC_GROUP}) /etc/resolv.conf ${PREFIX}/etc
+endif
 
 	$(call INSTALL_CMD,1550,root,${OSSEC_GROUP}) -d ${PREFIX}/tmp
 
@@ -695,7 +699,11 @@ winagent:
 ####################
 
 .PHONY: external lua
+ifeq (${PCRE2_SYSTEM},no)
 external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua libpcre2-8.a
+else
+external: libcJSON.a ${EXTERNAL_ZLIB}libz.a lua
+endif
 
 lua:
 ifeq (${LUA_ENABLE},yes)
@@ -777,10 +785,6 @@ else
 		--enable-static && \
 	make install-libLTLIBRARIES install-nodist_includeHEADERS
 endif
-else
-libpcre2-8.a: ${PCRE2_LOCATION}/libpcre2-8.a
-	cp $< $@
-	${OSSEC_RANLIB} $@
 endif
 
 
@@ -811,11 +815,17 @@ os_regex_o := $(os_regex_c:.c=.o)
 os_regex/%.o: os_regex/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
 
+ifeq (${PCRE2_SYSTEM},no)
 os_regex.a: ${os_regex_o} libpcre2-8.a
 	(mkdir -p libpcre2_objs && cd libpcre2_objs && ${QUIET_LINK}${MING_BASE}ar -x ../libpcre2-8.a)
 	${OSSEC_LINK} $@ ${os_regex_o} $(addprefix libpcre2_objs/,$(shell ${MING_BASE}ar -t libpcre2-8.a))
 	${OSSEC_RANLIB} $@
 	rm -rf libpcre2_objs
+else
+os_regex.a: ${os_regex_o}
+	${OSSEC_LINK} $@ $^
+	${OSSEC_RANLIB} $@
+endif
 
 #### os_net ##########
 
