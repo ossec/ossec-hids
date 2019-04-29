@@ -101,10 +101,12 @@ short skipFS(const char *dir_name)
         return(-1);
     }
 #else
-    verbose(
+#ifndef WIN32
+    debug2(
         "INFO: Attempted to check FS status for '%s', but we don't know how on this OS.",
         dir_name
     );
+#endif
 #endif
     return(0);
 }
