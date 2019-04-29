@@ -735,7 +735,7 @@ int DecodeSyscheck(Eventinfo *lf)
                     merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
                     return(0);
                 }
-                debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_whitelist);
+                debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_allowlist);
                 if((snprintf(stmt, OS_MAXSTR, "select md5sum from files where md5sum = \"%s\"", p)) < 0) {
                     merror("ERROR: snprintf failed for md5sum: %s", p);
                 }
