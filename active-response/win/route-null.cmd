@@ -38,11 +38,11 @@ EXIT /B 1
 :ADD
 %WINDIR%\system32\route.exe ADD %3/%prefixlength% %gateway%
 :: Log it
-ECHO %DAT%%TIM% %~dp0%0 %1 %2 %3 >> "%OSSECPATH%active-response\active-responses.log"
+ECHO %DAT%%TIM% "%~f0" %1 %2 %3 >> "%OSSECPATH%active-response\active-responses.log"
 GOTO EXIT
 
 :DEL
 %WINDIR%\system32\route.exe DELETE %3/%prefixlength%
-ECHO %DAT%%TIM% %~dp0%0 %1 %2 %3 >> "%OSSECPATH%active-response\active-responses.log"
+ECHO %DAT%%TIM% "%~f0" %1 %2 %3 >> "%OSSECPATH%active-response\active-responses.log"
 
 :EXIT /B 0:

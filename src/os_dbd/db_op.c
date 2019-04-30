@@ -69,7 +69,7 @@ static DBConfig *db_config_pt = NULL;
 
 
 /* Escapes a null terminated string before inserting into the database
- * We built a white list of allowed characters at insert_map. Everything
+ * We built a allow list of allowed characters at insert_map. Everything
  * not allowed will become a space.
  */
 void osdb_escapestr(char *str)

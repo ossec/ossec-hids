@@ -1,9 +1,9 @@
 
     Thanks for using the OSSEC HIDS.
     If you have any question, suggestion or if you find any bug,
-    contact us at contact@ossec.net or using our public maillist at
-    ossec-list@ossec.net
-    ( http://www.ossec.net/main/support/ ).
+    contact us at https://github.com/ossec/ossec-hids or using
+    our public maillist at  
+    https://groups.google.com/forum/#!forum/ossec-list
 
     More information can be found at http://www.ossec.net
 

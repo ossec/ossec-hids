@@ -234,9 +234,13 @@ int main(int argc, char **argv)
                 fp = fopen(full_path, "w");
                 if (fp) {
                     fclose(fp);
+                } else {
+                    ErrorExit("%s: ERROR: Cannot open %s: %s", ARGV0, full_path, strerror(errno));
                 }
                 if (entry->d_name[0] == '.') {
-                    unlink(full_path);
+                    if ((unlink(full_path)) != 0) {
+                        ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, full_path, strerror(errno));
+                    }
                 }
             }
 
@@ -261,8 +265,12 @@ int main(int argc, char **argv)
             fp = fopen(final_dir, "w");
             if (fp) {
                 fclose(fp);
+            } else {
+                ErrorExit("%s: ERROR: Cannot open %s: %s", ARGV0, final_dir, strerror(errno));
             }
-            unlink(final_dir);
+            if ((unlink(final_dir)) != 0) {
+                ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir, strerror(errno));
+            }
 
 
             /* Deleting cpt file */
@@ -271,8 +279,12 @@ int main(int argc, char **argv)
             fp = fopen(final_dir, "w");
             if (fp) {
                 fclose(fp);
+            } else {
+                ErrorExit("%s: ERROR: Cannot open %s: %s", ARGV0, final_dir, strerror(errno));
             }
-            unlink(final_dir);
+            if ((unlink(final_dir)) != 0) {
+                ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir, strerror(errno));
+            }
 
             if (json_output) {
                 cJSON_AddNumberToObject(json_root, "error", 0);

@@ -44,6 +44,7 @@
   - Nov 11 22:46:29 localhost vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty= ruser= rhost=1.2.3.4
   - Sep 28 15:28:58 server login: pam_unix(login:session): session opened for user carl by LOGIN(uid=0)
   - Sep 28 15:35:18 server sshd[123]: pam_unix(sshd:session): session opened for user carl by (uid=0)
+  - Mar 29 00:42:09 server saslauthd[1230]: pam_succeed_if(smtp:auth): error retrieving information about user demo
   -->
 <decoder name="pam">
   <program_name>(pam_unix)$</program_name>
@@ -51,7 +52,7 @@
 
 <decoder name="pam">
   <program_name></program_name>
-  <prematch>^pam_unix|^\(pam_unix\)</prematch>
+  <prematch>^pam_unix|^\(pam_unix\)|^pam_succeed_if</prematch>
 </decoder>
 
 <decoder name="pam-user">
@@ -3122,21 +3123,21 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 <decoder name="owncloud-failed1">
   <parent>owncloud</parent>
   <prematch>Login failed: user </prematch>
-  <regex offset="after_prematch">^'(\w+)' , wrong password, IP:(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">^'(\w+)' , wrong password, IP:(\S+)</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-failed2">
   <parent>owncloud</parent>
   <prematch>Login failed: </prematch>
-  <regex offset="after_prematch">^'(\w+)' \(Remote IP: '(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">^'(\w+)' \(Remote IP: '(\S+)</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-malicious">
   <parent>owncloud</parent>
   <prematch>Passed filename is not valid, might be malicious </prematch>
-  <regex offset="after_prematch">;ip:"(\d+.\d+.\d+.\d+)|;ip:\\"(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">;ip:"(\S+)|;ip:\\"(\S+)</regex>
   <order>srcip</order>
 </decoder>
 
