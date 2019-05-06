@@ -69,7 +69,7 @@ done
 ################################################################################
 # Create OSSEC /etc/init.d/ossec file
 #
-cat <<EOF >> /etc/init.d/ossec
+cat <<EOF > /etc/init.d/ossec
 #!/bin/bash
 #
 # ossec Starts ossec
