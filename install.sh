@@ -4,7 +4,7 @@
 # Last modification: Aug 30, 2012
 
 # Changelog 19/03/2006 - Rafael M. Capovilla <under@underlinux.com.br>
-# New function AddWhite to allow users to add more Ips in the white_list
+# New function AddWhite to allow users to add more Ips in the allow_list
 # Minor *echos* modifications to better look
 # Bug fix - When email address is blank
 # Bug fix - delete INSTALLDIR - Default is yes but if the user just press enter the script wasn't deleting it as it should
@@ -230,7 +230,7 @@ UseRootcheck()
         echo "    <system_audit>$INSTALLDIR/etc/shared/cis_rhel5_linux_rcl.txt</system_audit>" >> $NEWCONFIG
         echo "  </rootcheck>" >> $NEWCONFIG
 	# Patch for systems that use s-nail instead of GNU Mailutils (such as Arch Linux).
-	if strings /usr/bin/mail | grep "x-shsh bash" 1> /dev/null; then
+	if [ -r /usr/bin/mail ] && strings /usr/bin/mail | grep "x-shsh bash" 1> /dev/null; then
 	  sed -i 's/mail        !bash|/mail        !/' ./src/rootcheck/db/rootkit_trojans.txt
 	fi
     else
@@ -613,16 +613,16 @@ ConfigureServer()
             esac
             echo "" >> $NEWCONFIG
             echo "  <global>" >> $NEWCONFIG
-            echo "    <white_list>127.0.0.1</white_list>" >> $NEWCONFIG
-            echo "    <white_list>::1</white_list>" >> $NEWCONFIG
-            echo "    <white_list>^localhost.localdomain$</white_list>">>$NEWCONFIG
+            echo "    <allow_list>127.0.0.1</allow_list>" >> $NEWCONFIG
+            echo "    <allow_list>::1</allow_list>" >> $NEWCONFIG
+            echo "    <allow_list>localhost.localdomain</allow_list>">>$NEWCONFIG
             echo ""
-            echo "   - ${defaultwhitelist}"
+            echo "   - ${defaultallowlist}"
             for ip in ${NAMESERVERS} ${NAMESERVERS2};
             do
             if [ ! "X${ip}" = "X" ]; then
                 echo "      - ${ip}"
-                echo "    <white_list>${ip}</white_list>" >>$NEWCONFIG
+                echo "    <allow_list>${ip}</allow_list>" >>$NEWCONFIG
             fi
             done
             AddWhite
@@ -829,7 +829,7 @@ AddWhite()
         echo ""
         $ECHO "   - ${addwhite} ($yes/$no)? [$no]: "
 
-        # If white list is set, we don't need to ask it here.
+        # If allow list is set, we don't need to ask it here.
         if [ "X${USER_WHITE_LIST}" = "X" ]; then
             read ANSWER
         else
@@ -857,7 +857,7 @@ AddWhite()
                     if [ ! "X${ip}" = "X" ]; then
                         echo $ip | grep -Ei "^[0-9a-f.:/]{5,20}$" > /dev/null 2>&1
                         if [ $? = 0 ]; then
-                        echo "    <white_list>${ip}</white_list>" >>$NEWCONFIG
+                        echo "    <allow_list>${ip}</allow_list>" >>$NEWCONFIG
                         fi
                     fi
                 done

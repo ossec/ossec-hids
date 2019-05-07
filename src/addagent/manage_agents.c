@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 OSSEC Foundation
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -13,6 +13,7 @@
 
 #include "manage_agents.h"
 #include "os_crypto/md5/md5_op.h"
+#include "external/cJSON/cJSON.h"
 #include <stdlib.h>
 
 /* Global variables */
@@ -61,7 +62,7 @@ char *chomp(char *str)
     return (str);
 }
 
-int add_agent()
+int add_agent(int json_output)
 {
     int i = 1;
     FILE *fp;
@@ -77,7 +78,7 @@ int add_agent()
     char *_ip;
 
     char name[FILE_SIZE + 1];
-    char id[FILE_SIZE + 1];
+    char id[FILE_SIZE + 1] = { '\0' };
     char ip[FILE_SIZE + 1];
     os_ip c_ip;
     c_ip.ip = NULL;
@@ -92,17 +93,39 @@ int add_agent()
     }
 
 
+    char *id_exist = NULL;
+    int force_antiquity;
+
     /* Check if we can open the auth_file */
     fp = fopen(authfile, "a");
     if (!fp) {
-        ErrorExit(FOPEN_ERROR, ARGV0, authfile, errno, strerror(errno));
+        if (json_output) {
+            char buffer[1024];
+            cJSON *json_root = cJSON_CreateObject();
+            snprintf(buffer, 1023, "Could not open file '%s' due to [(%d)-(%s)]", AUTH_FILE, errno, strerror(errno));
+            cJSON_AddNumberToObject(json_root, "error", 71);
+            cJSON_AddStringToObject(json_root, "description", buffer);
+            printf("%s", cJSON_PrintUnformatted(json_root));
+            exit(1);
+        } else
+            ErrorExit(FOPEN_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
     }
     fclose(fp);
 
 
 #ifndef WIN32
     if (chmod(authfile, 0440) == -1) {
-        ErrorExit(CHMOD_ERROR, ARGV0, authfile, errno, strerror(errno));
+        if (json_output) {
+            char buffer[1024];
+            cJSON *json_root = cJSON_CreateObject();
+            snprintf(buffer, 1023, "Could not chmod object '%s' due to [(%d)-(%s)]", AUTH_FILE, errno, strerror(errno));
+            cJSON_AddNumberToObject(json_root, "error", 71);
+            cJSON_AddStringToObject(json_root, "description", buffer);
+            printf("%s", cJSON_PrintUnformatted(json_root));
+            exit(1);
+        } else
+            ErrorExit(CHMOD_ERROR, ARGV0, AUTH_FILE, errno, strerror(errno));
+
     }
 #endif
 
@@ -115,20 +138,31 @@ int add_agent()
     memset(str1, '\0', STR_SIZE + 1);
     memset(str2, '\0', STR_SIZE + 1);
 
-    printf(ADD_NEW);
+    if (!json_output)
+        printf(ADD_NEW);
 
     /* Get the name */
     memset(name, '\0', FILE_SIZE + 1);
 
     do {
-        printf(ADD_NAME);
-        fflush(stdout);
+        if (!json_output) {
+            printf(ADD_NAME);
+            fflush(stdout);
+        }
         /* Read the agent's name from user environment. If it is invalid
          * we should force user to provide a name from input device.
          */
         _name = getenv("OSSEC_AGENT_NAME");
         if (_name == NULL || NameExist(_name) || !OS_IsValidName(_name)) {
-            _name = read_from_user();
+            if (json_output) {
+                cJSON *json_root = cJSON_CreateObject();
+                cJSON_AddNumberToObject(json_root, "error", 76);
+                cJSON_AddStringToObject(json_root, "description", "Invalid name for agent");
+                printf("%s", cJSON_PrintUnformatted(json_root));
+                exit(1);
+            } else
+                _name = read_from_user();
+
         }
 
         if (strcmp(_name, QUIT) == 0) {
@@ -152,14 +186,25 @@ int add_agent()
     memset(ip, '\0', FILE_SIZE + 1);
 
     do {
-        printf(ADD_IP);
-        fflush(stdout);
+        if (!json_output) {
+            printf(ADD_IP);
+            fflush(stdout);
+        }
+
 
         /* Read IP address from user's environment. If that IP is invalid,
          * force user to provide IP from input device */
         _ip = getenv("OSSEC_AGENT_IP");
         if (_ip == NULL || !OS_IsValidIP(_ip, &c_ip)) {
-            _ip = read_from_user();
+            if (json_output) {
+                cJSON *json_root = cJSON_CreateObject();
+                cJSON_AddNumberToObject(json_root, "error", 77);
+                cJSON_AddStringToObject(json_root, "description", "Invalid IP for agent");
+                printf("%s", cJSON_PrintUnformatted(json_root));
+                exit(1);
+            } else
+                _ip = read_from_user();
+
         }
 
         /* Quit */
@@ -172,74 +217,107 @@ int add_agent()
         if (!OS_IsValidIP(ip, &c_ip)) {
             printf(IP_ERROR, ip);
             _ip = NULL;
+        } else if ((id_exist = IPExist(ip))) {
+            double antiquity = -1;
+
+            const char *env_remove_dup = getenv("OSSEC_REMOVE_DUPLICATED");
+
+            if (env_remove_dup) {
+                force_antiquity = strtol(env_remove_dup, NULL, 10);
+                antiquity = OS_AgentAntiquity(id_exist);
+            }
+
+            if (env_remove_dup && (antiquity >= force_antiquity || antiquity < 0)) {
+                /* TODO: Save backup */
+#ifdef REUSE_ID
+                strncpy(id, id_exist, FILE_SIZE);
+#endif
+                OS_RemoveAgent(id_exist);
+            } else {
+                /* TODO: Send alert */
+
+                if (json_output) {
+                    cJSON *json_root = cJSON_CreateObject();
+                    cJSON_AddNumberToObject(json_root, "error", 79);
+                    cJSON_AddStringToObject(json_root, "description", "Duplicated IP for agent");
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(1);
+                } else {
+                    printf(IP_DUP_ERROR, ip);
+                    _ip = NULL;
+                }
+            }
         }
 
     } while (!_ip);
 
-    do {
-        /* Default ID */
-        i = MAX_AGENTS + 32512;
-        snprintf(id, 8, "%03d", i);	//XXX
-        while (!IDExist(id)) {
-            i--;
+    if (!*id) {
+        do {
+            /* Default ID */
+            i = MAX_AGENTS + 32512;
             snprintf(id, 8, "%03d", i);	//XXX
+            while (!IDExist(id)) {
+                i--;
+                snprintf(id, 8, "%03d", i);
 
-            /* No key present, use id 0 */
-            if (i <= 0) {
-                i = 0;
-                break;
+                /* No key present, use id 0 */
+                if (i <= 0) {
+                    i = 0;
+                    break;
+                }
             }
-        }
-        snprintf(id, 8, "%03d", i + 1);
+            snprintf(id, 8, "%03d", i + 1);
 
-        /* Get ID */
-        printf(ADD_ID, id);
+    	    /* Get ID */
+    	    if (!json_output) {
+    	        printf(ADD_ID, id);
+    	        fflush(stdout);
+    	    }
+
+
+    	    /* Get Agent ID from environment. If 0, use default ID. If null,
+    	     * get from user input. If value from environment is invalid,
+    	     * we force user to specify an ID from the terminal. Otherwise,
+    	     * our program goes to infinite loop.
+    	     */
+    	    _id = getenv("OSSEC_AGENT_ID");
+    	    if (_id == NULL || IDExist(_id) || !OS_IsValidID(_id)) {
+    	        _id = read_from_user();
+    	    }
+
+    	    /* Quit */
+    	    if (strcmp(_id, QUIT) == 0) {
+    	        goto cleanup;
+    	    }
+
+    	    if (_id[0] != '\0' && strcmp(_id, "0")) {
+    	        strncpy(id, _id, FILE_SIZE - 1);
+    	    }
+
+    	    if (OS_IsValidID(id)) {
+    	        FormatID(id);
+    	    } else {
+    	        printf(INVALID_ID, id);
+    	    }
+
+    	    /* Search for ID KEY  -- no duplicates */
+    	    if (IDExist(id)) {
+    	        printf(ADD_ERROR_ID, id);
+    	    }
+
+    	} while (IDExist(id) || !OS_IsValidID(id));
+    }
+
+    if (!json_output) {
+        printf(AGENT_INFO, id, name, ip);
         fflush(stdout);
+    }
 
-        /* Get Agent ID from environment. If 0, use default ID. If null,
-         * get from user input. If value from environment is invalid,
-         * we force user to specify an ID from the terminal. Otherwise,
-         * our program goes to infinite loop.
-         */
-        _id = getenv("OSSEC_AGENT_ID");
-        if (_id == NULL || IDExist(_id) || !OS_IsValidID(_id)) {
-            _id = read_from_user();
-        }
-
-        /* If user specified 0 as Agent ID, he meant use default value.
-         * NOTE: a bad condition can cause infinite loop.
-         */
-        if (strcmp(_id, "0") == 0) {
-            strncpy(_id, id, FILE_SIZE - 1);
-        }
-
-        /* Quit */
-        if (strcmp(_id, QUIT) == 0) {
-            goto cleanup;
-        }
-
-        if (_id[0] != '\0') {
-            strncpy(id, _id, FILE_SIZE - 1);
-        }
-
-        if (OS_IsValidID(id)) {
-            FormatID(id);
-        } else {
-            printf(INVALID_ID, id);
-        }
-
-        /* Search for ID KEY  -- no duplicates */
-        if (IDExist(id)) {
-            printf(ADD_ERROR_ID, id);
-        }
-
-    } while (IDExist(id) || !OS_IsValidID(id));
-
-    printf(AGENT_INFO, id, name, ip);
-    fflush(stdout);
 
     do {
-        printf(ADD_CONFIRM);
+        if (!json_output)
+            printf(ADD_CONFIRM);
+
         /* Confirmation by an environment variable. The valid value is y/Y.
          * If the user provides anything other string, it is considered as
          * n/N; please note that the old code only accepts y/Y/n/N. So if
@@ -258,10 +336,31 @@ int add_agent()
 
             fp = fopen(authfile, "a");
             if (!fp) {
-                ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE, errno, strerror(errno));
+                if (json_output) {
+                    char buffer[1024];
+                    cJSON *json_root = cJSON_CreateObject();
+                    snprintf(buffer, 1023, "Could not open file '%s' due to [(%d)-(%s)]", KEYS_FILE, errno, strerror(errno));
+                    cJSON_AddNumberToObject(json_root, "error", 71);
+                    cJSON_AddStringToObject(json_root, "description", buffer);
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(1);
+                } else
+                    ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE, errno, strerror(errno));
             }
 #ifndef WIN32
-            chmod(authfile, 0440);
+            if ((chmod(authfile, 0440)) != 0) {
+                if(json_output) {
+                    char buffer[1024];
+                    snprintf(buffer, 1023, "%s: Could not chmod file %s due to [(%d)-(%s)]", ARGV0, authfile, errno, strerror(errno));
+                    cJSON *json_root = cJSON_CreateObject();
+                    cJSON_AddNumberToObject(json_root, "error", 76);
+                    cJSON_AddStringToObject(json_root, "description", buffer);
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(errno);
+                } else {
+                    ErrorExit("%s: Cannot chmod %s: %s", ARGV0, authfile, strerror(errno));
+                }
+            }
 #endif
 
             /* Random 1: Time took to write the agent information
@@ -282,10 +381,19 @@ int add_agent()
             OS_MD5_Str(str1, md1);
 
             fprintf(fp, "%s %s %s %s%s\n", id, name, c_ip.ip, md1, md2);
-
             fclose(fp);
 
-            printf(AGENT_ADD);
+            if (json_output) {
+                char buffer[1024];
+                cJSON *json_root = cJSON_CreateObject();
+                snprintf(buffer, 1023, "Agent added with ID %s", id);
+                cJSON_AddNumberToObject(json_root, "error", 0);
+                cJSON_AddStringToObject(json_root, "response", buffer);
+                printf("%s", cJSON_PrintUnformatted(json_root));
+            } else
+                printf(AGENT_ADD, id);
+
+
             restart_necessary = 1;
             break;
         } else { /* if(user_input[0] == 'n' || user_input[0] == 'N') */
@@ -300,7 +408,7 @@ int add_agent()
     return (0);
 }
 
-int remove_agent()
+int remove_agent(int json_output)
 {
     FILE *fp;
     char *user_input;
@@ -320,19 +428,21 @@ int remove_agent()
         
 
 
-    if (!print_agents(0, 0, 0)) {
+    if (!(json_output || print_agents(0, 0, 0, 0))) {
         printf(NO_AGENT);
         return (0);
     }
 
     do {
-        printf(REMOVE_ID);
-        fflush(stdout);
+        if (!json_output) {
+            printf(REMOVE_ID);
+            fflush(stdout);
+        }
 
         user_input = getenv("OSSEC_AGENT_ID");
         if (user_input == NULL) {
             user_input = read_from_user();
-        } else {
+        } else if (!json_output) {
             printf("%s\n", user_input);
         }
 
@@ -346,7 +456,17 @@ int remove_agent()
         id_exist = IDExist(user_input);
 
         if (!id_exist) {
-            printf(NO_ID, user_input);
+            if (json_output) {
+                char buffer[1024];
+                cJSON *json_root = cJSON_CreateObject();
+                snprintf(buffer, 1023, "Invalid ID '%s' given. ID is not present", user_input);
+                cJSON_AddNumberToObject(json_root, "error", 78);
+                cJSON_AddStringToObject(json_root, "description", buffer);
+                printf("%s", cJSON_PrintUnformatted(json_root));
+                exit(1);
+            } else
+                printf(NO_ID, user_input);
+
 
             /* Exit here if we are using environment variables
              * and our ID does not exist
@@ -358,13 +478,16 @@ int remove_agent()
     } while (!id_exist);
 
     do {
-        printf(REMOVE_CONFIRM);
-        fflush(stdout);
+        if (!json_output) {
+            printf(REMOVE_CONFIRM);
+            fflush(stdout);
+        }
+
 
         user_input = getenv("OSSEC_ACTION_CONFIRMED");
         if (user_input == NULL) {
             user_input = read_from_user();
-        } else {
+        } else if (!json_output) {
             printf("%s\n", user_input);
         }
 
@@ -373,7 +496,16 @@ int remove_agent()
             /* Get full agent name */
             char *full_name = getFullnameById(u_id);
             if (!full_name) {
-                printf(NO_ID, u_id);
+                if (json_output) {
+                    char buffer[1024];
+                    cJSON *json_root = cJSON_CreateObject();
+                    snprintf(buffer, 1023, "Invalid ID '%s' given. ID is not present", u_id);
+                    cJSON_AddNumberToObject(json_root, "error", 78);
+                    cJSON_AddStringToObject(json_root, "description", buffer);
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(1);
+                } else
+                    printf(NO_ID, u_id);
                 return (1);
             }
 
@@ -388,7 +520,11 @@ int remove_agent()
 
             /* Remove the agent, but keep the id */
             fsetpos(fp, &fp_pos);
+#ifdef REUSE_ID
+            fprintf(fp, "#%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+#else
             fprintf(fp, "%s #*#*#*#*#*#*#*#*#*#*#", u_id);
+#endif
 
             fclose(fp);
 
@@ -398,7 +534,14 @@ int remove_agent()
             free(full_name);
             full_name = NULL;
 
-            printf(REMOVE_DONE, u_id);
+            if (json_output) {
+                cJSON *json_root = cJSON_CreateObject();
+                cJSON_AddNumberToObject(json_root, "error", 0);
+                cJSON_AddStringToObject(json_root, "response", "Agent removed");
+                printf("%s", cJSON_PrintUnformatted(json_root));
+            } else
+                printf(REMOVE_DONE, u_id);
+
             restart_necessary = 1;
             break;
         } else { /* if(user_input[0] == 'n' || user_input[0] == 'N') */
@@ -412,7 +555,7 @@ int remove_agent()
 
 int list_agents(int cmdlist)
 {
-    if (!print_agents(0, 0, 0)) {
+    if (!print_agents(0, 0, 0, 0)) {
         printf(NO_AGENT);
     }
 

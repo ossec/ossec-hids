@@ -38,7 +38,7 @@ r:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -
 #
 #2.3.1.4 Ensure 'Accounts: Limit local account use of blank passwords to console logon only' is set to 'Enabled'
 [CIS - Microsoft Windows Server 2016 - 2.3.1.4 Ensure 'Accounts: Limit local account use of blank passwords to console logon only' is set to 'Enabled'] [any] [https://workbench.cisecurity.org/benchmarks/515]
-r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters -> MaximumPasswordAge -> 0;
+r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Lsa -> LimitBlankPasswordUse -> 0;
 #
 #
 #2.3.2.1 Ensure 'Audit: Force audit policy subcategory settings to override audit policy category settings' is set to 'Enabled'
@@ -241,7 +241,7 @@ r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -
 #
 #2.3.10.11 Ensure 'Network access: Shares that can be accessed anonymously' is set to 'None'
 [CIS - Microsoft Windows Server 2016 - 2.3.10.11 Ensure 'Network access: Shares that can be accessed anonymously' is set to 'None'] [any] [https://workbench.cisecurity.org/benchmarks/515]
-r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionShares -> r:\.+;
+r:HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters -> NullSessionShares -> r:\S*;
 #
 #
 #2.3.10.12 Ensure 'Network access: Sharing and security model for local accounts' is set to 'Classic - local users authenticate as themselves'

@@ -48,6 +48,9 @@
 #define CHDIR_ERROR   "%s(1133): ERROR: Unable to chdir to directory '%s' due to [(%d)-(%s)]."
 #define LINK_ERROR    "%s(1134): ERROR: Unable to link from '%s' to '%s' due to [(%d)-(%s)]."
 #define CHOWN_ERROR   "%s(1135): ERROR: Could not chown object '%s' due to [(%d)-(%s)]."
+/* auditd support */
+#define FTELL_ERROR     "%s(1139): ERROR: Could not get position from file '%s' due to [(%d)-(%s)]."
+
 
 /* COMMON ERRORS */
 #define CONN_ERROR      "%s(1201): ERROR: No remote connection configured."
@@ -130,6 +133,8 @@
 
 /* remoted */
 #define NO_REM_CONN     "%s(1750): ERROR: No remote connection configured. Exiting."
+#define NO_CLIENT_KEYS  "%s(1751): ERROR: File client.keys not found or empty."
+
 
 /* 1760 - 1769 -- reserved for maild */
 

@@ -36,22 +36,22 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
         }
 
         /* Check if IP is to be ignored */
-        if (Config.white_list) {
-            if (OS_IPFoundList(ip, Config.white_list)) {
+        if (Config.allow_list) {
+            if (OS_IPFoundList(ip, Config.allow_list)) {
                 return;
             }
         }
 
         /* Check if it is a hostname */
-        if (Config.hostname_white_list) {
+        if (Config.hostname_allow_list) {
             size_t srcip_size;
-            OSMatch **wl;
+            char **wl;
 
             srcip_size = strlen(ip);
 
-            wl = Config.hostname_white_list;
+            wl = Config.hostname_allow_list;
             while (*wl) {
-                if (OSMatch_Execute(ip, srcip_size, *wl)) {
+                if (strncmp(*wl, ip, srcip_size) == 0) {
                     return;
                 }
                 wl++;
@@ -90,6 +90,9 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
                  lf->generated_rule->sigid,
                  lf->location,
                  filename ? filename : "-");
+        if (execq < 1) {
+            merror("%s: Error communicating with execd (q < 1).", ARGV0);
+        }
 
         if (OS_SendUnix(execq, exec_msg, 0) < 0) {
             merror("%s: Error communicating with execd.", ARGV0);

@@ -10,7 +10,7 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 PLIST=${DIR}/bin/.process_list;
 
-###  Do not modify bellow here ###
+###  Do not modify below here ###
 
 # Getting additional processes
 ls -la ${PLIST} > /dev/null 2>&1
@@ -19,8 +19,7 @@ if [ $? = 0 ]; then
 fi
 
 NAME="OSSEC HIDS"
-VERSION="v3.0.0"
-AUTHOR="Trend Micro Inc."
+VERSION="v3.3.0"
 DAEMONS="ossec-monitord ossec-logcollector ossec-syscheckd ossec-analysisd ossec-maild ossec-execd ${DB_DAEMON} ${CSYSLOG_DAEMON} ${AGENTLESS_DAEMON}"
 
 ## Locking for the start/stop
@@ -180,7 +179,7 @@ start()
 {
     SDAEMONS="${DB_DAEMON} ${CSYSLOG_DAEMON} ${AGENTLESS_DAEMON} ossec-maild ossec-execd ossec-analysisd ossec-logcollector ossec-syscheckd ossec-monitord"
 
-    echo "Starting $NAME $VERSION (by $AUTHOR)..."
+    echo "Starting $NAME $VERSION..."
     echo | ${DIR}/bin/ossec-logtest > /dev/null 2>&1;
     if [ ! $? = 0 ]; then
         echo "ossec-analysisd: Configuration error. Exiting."

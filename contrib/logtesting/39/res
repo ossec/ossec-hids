@@ -6,6 +6,7 @@
 
 **Phase 2: Completed decoding.
        decoder: 'sshd'
+       srcip: '203.31.101.11'
 
 **Phase 3: Completed filtering (rules).
        Rule id: '2503'

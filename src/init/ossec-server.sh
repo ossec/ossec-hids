@@ -10,7 +10,7 @@ PWD=`pwd`
 DIR=`dirname $PWD`;
 PLIST=${DIR}/bin/.process_list;
 
-###  Do not modify bellow here ###
+###  Do not modify below here ###
 
 # Getting additional processes
 ls -la ${PLIST} > /dev/null 2>&1
@@ -19,8 +19,7 @@ if [ $? = 0 ]; then
 fi
 
 NAME="OSSEC HIDS"
-VERSION="v3.0.0"
-AUTHOR="Trend Micro Inc."
+VERSION="v3.3.0"
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf;
 
@@ -194,7 +193,7 @@ start()
 {
     SDAEMONS="${DB_DAEMON} ${CSYSLOG_DAEMON} ${AGENTLESS_DAEMON} ossec-maild ossec-execd ossec-analysisd ossec-logcollector ossec-remoted ossec-syscheckd ossec-monitord"
 
-    echo "Starting $NAME $VERSION (by $AUTHOR)..."
+    echo "Starting $NAME $VERSION..."
     echo | ${DIR}/bin/ossec-logtest > /dev/null 2>&1;
     if [ ! $? = 0 ]; then
         echo "OSSEC analysisd: Testing rules failed. Configuration error. Exiting."

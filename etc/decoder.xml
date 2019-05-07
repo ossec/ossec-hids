@@ -44,6 +44,7 @@
   - Nov 11 22:46:29 localhost vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty= ruser= rhost=1.2.3.4
   - Sep 28 15:28:58 server login: pam_unix(login:session): session opened for user carl by LOGIN(uid=0)
   - Sep 28 15:35:18 server sshd[123]: pam_unix(sshd:session): session opened for user carl by (uid=0)
+  - Mar 29 00:42:09 server saslauthd[1230]: pam_succeed_if(smtp:auth): error retrieving information about user demo
   -->
 <decoder name="pam">
   <program_name>(pam_unix)$</program_name>
@@ -51,7 +52,7 @@
 
 <decoder name="pam">
   <program_name></program_name>
-  <prematch>^pam_unix|^\(pam_unix\)</prematch>
+  <prematch>^pam_unix|^\(pam_unix\)|^pam_succeed_if</prematch>
 </decoder>
 
 <decoder name="pam-user">
@@ -601,7 +602,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="proftpd-ip">
   <parent>proftpd</parent>
-  <regex>^\S+ \(\S+[(\S+)]\)|^\S+ \(\S+[(\S+)]\)</regex>
+  <regex>^\S+ \(\S+[(\S+)]\)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -906,7 +907,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="courier-generic">
   <parent>courier</parent>
-  <regex>, ip=[(\S+)]$|, ip=[(\S+)]$</regex>
+  <regex>, ip=[(\S+)]$</regex>
   <order>srcip</order>
 </decoder>
 
@@ -3074,10 +3075,17 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
    - Aug 12 09:01:00 junction.example.com nsd[7405]: NSTATS 1439384460 1439314258 A=1 AAAA=1
    - Aug 12 09:01:00 junction.example.com nsd[7405]: XSTATS 1439384460 1439314258 RR=0 RNXD=0 RFwdR=0 RDupR=0 RFail=0 RFErr=0 RErr=0 RAXFR=0 RLame=0 ROpts=0 SSysQ=0 SAn
 s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFErr=0 SNaAns=0 SNXD=0 RUQ=0 RURQ=0 RUXFR=0 RUUpd=0
+   - Dec 16 12:51:17 pine nsd[90235]: xfrd: zone example.com received error code NOT IMPL from 192.168.17.9@153
 -->
 
 <decoder name="nsd">
   <program_name>^nsd</program_name>
+</decoder>
+
+<decoder name="nsd-from">
+  <parent>nsd</parent>
+  <regex> from (\S+)@| from (\S+)</regex>
+  <order>srcip</order>
 </decoder>
 
 <!-- ownCloud
@@ -3115,21 +3123,21 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 <decoder name="owncloud-failed1">
   <parent>owncloud</parent>
   <prematch>Login failed: user </prematch>
-  <regex offset="after_prematch">^'(\w+)' , wrong password, IP:(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">^'(\w+)' , wrong password, IP:(\S+)</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-failed2">
   <parent>owncloud</parent>
   <prematch>Login failed: </prematch>
-  <regex offset="after_prematch">^'(\w+)' \(Remote IP: '(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">^'(\w+)' \(Remote IP: '(\S+)</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-malicious">
   <parent>owncloud</parent>
   <prematch>Passed filename is not valid, might be malicious </prematch>
-  <regex offset="after_prematch">;ip:"(\d+.\d+.\d+.\d+)|;ip:\\"(\d+.\d+.\d+.\d+)</regex>
+  <regex offset="after_prematch">;ip:"(\S+)|;ip:\\"(\S+)</regex>
   <order>srcip</order>
 </decoder>
 
@@ -3283,5 +3291,81 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <order>srcip, action, url, extra_data</order>
 </decoder>
 
+<!-- Kaspersky Endpoint Security 10 for Linux -->
+<!-- Kesl example Logs -->
+<!-- Nov  5 00:11:21 hostname kesl: {"EventType": "AVBasesAreTotallyOutOfDate","EventId": "27336","TaskName": "Update","TaskId": "6","AVBasesDate": "2018-10-17 09:49:00"} -->
+<!-- Oct 25 13:11:21 hostname kesl: {"EventType": "AVBasesAreOutOfDate","EventId": "27311","TaskName": "Update","TaskId": "6","AVBasesDate": "2018-10-17 09:49:00"} -->
+<!-- Nov 10 13:19:27 hostname kesl: {"EventType": "UpdateError","EventId": "27381","TaskType": "Update","TaskName": "Update","TaskId": "6","RuntimeTaskId": "120"} -->
+<!-- Nov 10 13:22:09 hostname kesl: {"EventType": "ThreatDetected","EventId": "27384","DetectName": "EICAR-Test-File","DetectType": "Virware","DetectCertainty": "Sure","DetectSource": "Local","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "20","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "root","AccessUserId": "0","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 13:50:01 hostname kesl: {"EventType": "ObjectSavedToBackup","EventId": "27448","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "126","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "userlogin","AccessUserId": "1000","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 13:50:01 hostname kesl: {"EventType": "ObjectNotDisinfected","EventId": "27449","ObjectNotDisinfectedReason": "NonCurable","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "126","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "userlogin","AccessUserId": "1000","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 13:50:01 hostname kesl: {"EventType": "ObjectDeleted","EventId": "27450","FileName": "/home/userlogin/eicar.com","ObjectName": "File","TaskId": "1","RuntimeTaskId": "126","TaskName": "File_Monitoring","TaskType": "OAS","AccessUser": "userlogin","AccessUserId": "1000","FileOwner": "root","FileOwnerId": "0"} -->
+<!-- Nov 14 12:44:04 hostname kesl: {"EventType": "TaskStateChanged","EventId": "27438","TaskName": "Update","TaskType": "Update","TaskId": "6","TaskState": "Starting","PrevTaskState": "Stopped","TaskRequestInitiator": "User","RuntimeTaskId": "127"} -->
+<!-- Nov 14 12:44:04 hostname kesl: {"EventType": "TaskStateChanged","EventId": "27439","TaskName": "Update","TaskType": "Update","TaskId": "6","TaskState": "Started","PrevTaskState": "Starting","TaskRequestInitiator": "User","RuntimeTaskId": "127"} -->
+
+<decoder name="kesl">
+  <program_name>^kesl</program_name>
+</decoder>
+
+<decoder name="kesl-avbases-old">
+  <parent>kesl</parent>
+  <prematch>^\p\pEventType\p: \p\S+\p,\pEventId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pAVBasesDate\p: \p\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\p\p</prematch>
+  <regex offset="after_parent">^\p\pEventType\p: \p(\S+)\p,\pEventId\p: \p(\d+)\p,\pTaskName\p: \p(\S+)\p,\pTaskId\p: \p\d+\p,\pAVBasesDate\p: \p(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)\p\p</regex>
+  <order>status, id, action, extra_data</order> 
+</decoder>
+
+<decoder name="kesl-threat-detected">
+  <parent>kesl</parent>
+  <prematch>^\p\pEventType\p: \p\S+\p,\pEventID\p: \p\d+\p,\pDetectName\p: \p\S+\p,\pDetectType\p: \p\S+\p,\pDetectCertainty\p: \p\S+\p,\pDetectSource\p: \p\S+\p,\pFileName\p: \p\S+,\pObjectName\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pRuntimeTaskId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p\S+\p,\pAccessUser\p: \p\S+\p,\pAccessUserId\p: \p\d+\p,\pFileOwner\p: \p\S+\p,\pFileOwnerId\p: \p\d+\p\p</prematch>
+  <regex offset="after_parent">^\p\pEventType\p: \p(\S+)\p,\pEventID\p: \p(\d+)\p,\pDetectName\p: \p\S+\p,\pDetectType\p: \p\S+\p,\pDetectCertainty\p: \p(\S+)\p,\pDetectSource\p: \p\S+\p,\pFileName\p: \S+,\pObjectName\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pRuntimeTaskId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p(\S+)\p,\pAccessUser\p: \p\S+\p,\pAccessUserId\p: \p\d+\p,\pFileOwner\p: \p\S+\p,\pFileOwnerId\p: \p\d+\p\p</regex>
+  <order>status, id, extra_data, action</order>
+</decoder>
+
+<decoder name="kesl-taskstatechange">
+  <parent>kesl</parent>
+  <prematch>^\p\pEventType\p: \p\S+\p,\pEventId\p: \p\d+\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p\S+\p,\pTaskId\p: \p\d+\p,\pTaskState\p: \p\S+\p,\pPrevTaskState\p: \p\S+\p,\pTaskRequestInitiator\p: \p\S+\p,\pRuntimeTaskId\p: \p\d+\p\p</prematch>
+  <regex offset="after_parent">^\p\pEventType\p: \p(\S+)\p,\pEventId\p: \p(\d+)\p,\pTaskName\p: \p\S+\p,\pTaskType\p: \p(\S+)\p,\pTaskId\p: \p\d+\p,\pTaskState\p: \p(\S+)\p,\pPrevTaskState\p: \p\S+\p,\pTaskRequestInitiator\p: \p(\S+)\p,\pRuntimeTaskId\p: \p\d+\p\p</regex>
+  <order>action, id, extra_data, status, srcuser</order>
+</decoder>
+
+<!-- MHN - Json log decoder - Dionaea -->
+<!-- include /var/log/mhn/mhn-json.log to ossec.conf -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "timestamp": "2018-09-14T11:02:54.215411", "dionaea_action": "reject", "type": "dionaea.connections", "app": "dionaea", "src_ip": "16.10.10.10", "vendor_product": "Dionaea", "dest_port": 365, "signature": "Connection to Honeypot", "src_port": 45302, "dest_ip": "16.10.10.11", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "transport": "tcp", "severity": "high"} -->
+<decoder name="dionaea">
+  <prematch>dionaea.connections</prematch>
+  <regex>^{\pdirection\p: \p(\S+)\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p\S+\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d\.\d+\p, \pdionaea_action\p: \p(\S+)\p, \ptype\p: \pdionaea.connections\p, \papp\p: \pdionaea\p, \psrc_ip\p: "(\S+)", \pvendor_product\p: \pDionaea\p, \pdest_port\p: (\d+), \psignature\p: \p\.+\p, \psrc_port\p: (\d+), \pdest_ip\p: "(\S+)", \psensor\p: \S+, \ptransport\p: \p\S+\p, \pseverity\p: \p\S+\p}</regex>
+  <order>extra_data, protocol, action, srcip, dstport, srcport, dstip</order>
+</decoder>
+
+<!-- MHN - Json log decoder - Cowrie -->
+<!-- include /var/log/mhn/mhn-json.log to ossec.conf -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "ssh_username": "admin", "app": "cowrie", "transport": "tcp", "dest_port": 22, "src_port": 45302, "severity": "high", "timestamp": "2018-10-23T11:22:36.597864", "vendor_product": "Cowrie", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "src_ip": "16.10.10.10", "ssh_password": "password", "signature": "SSH login attempted on cowrie honeypot", "ssh_version": "'SSH-2.0-Sun_SSH_1.1.4'", "type": "cowrie.sessions", "dest_ip": "16.10.10.11"} -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "timestamp": "2018-10-23T07:45:56.937787", "vendor_product": "Cowrie", "type": "cowrie.sessions", "app": "cowrie", "src_ip": "16.10.10.10", "dest_port": 22, "signature": "SSH session on cowrie honeypot", "ssh_version": "'SSH-2.0-Sun_SSH_1.1.4'", "src_port": 45302, "dest_ip": "16.10.10.11", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "transport": "tcp", "severity": "high"} -->
+<!-- {"direction": "inbound", "protocol": "ip", "ids_type": "network", "timestamp": "2018-11-14T10:32:38.686578", "app": "cowrie", "transport": "tcp", "dest_port": 22, "src_port": 45302, "severity": "high", "vendor_product": "Cowrie", "sensor": "5e7031cf-b74d-22f9-57e0-254166752457", "src_ip": "16.10.10.10", "command": "whoami", "signature": "command attempted on cowrie honeypot", "ssh_version": "'SSH-2.0-OpenSSH_7.4p1 Debian-10+deb9u4'", "type": "cowrie.sessions", "dest_ip": "16.10.10.11"} -->
+
+<decoder name="cowrie">
+  <prematch>cowrie.sessions</prematch>
+</decoder>
+
+<decoder name="cowrie-attempt">
+  <parent>cowrie</parent>
+  <prematch>"SSH login attempted</prematch>
+  <regex>^{\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \pssh_username\p: \p(\S+)\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: "(\S+)", \pssh_password\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: "(\S+)"}</regex>
+  <order>protocol, extra_data, user, dstport, srcport, srcip, action, dstip</order>
+</decoder>
+
+<decoder name="cowrie-session">
+  <parent>cowrie</parent>
+  <prematch>"SSH session on cowrie honeypot</prematch>
+  <regex>^{\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \pvendor_product\p: \pCowrie\p, \ptype\p: \pcowrie.sessions\p, \papp\p: \pcowrie\p, \psrc_ip\p: "(\S+)", \pdest_port\p: (\d+), \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \psrc_port\p: (\d+), \pdest_ip\p: "(\S+)", \psensor\p: \S+, \ptransport\p: \p\S+\p, \pseverity\p: \p\S+\p}</regex>
+  <order>protocol, extra_data, srcip, dstport, action, srcport, dstip</order>
+</decoder>
+
+<decoder name="cowrie-command">
+  <parent>cowrie</parent>
+  <prematch>"command attempted on cowrie honeypot</prematch>
+  <regex>^{\pdirection\p: \p\S+\p, \pprotocol\p: \p(\S+)\p, \pids_type\p: \p(\S+)\p, \ptimestamp\p: \p\d\d\d\d-\d\d-\d\d\w\d\d:\d\d:\d\d.\d+\p, \papp\p: \pcowrie\p, \ptransport\p: \p\S+\p, \pdest_port\p: (\d+), \psrc_port\p: (\d+), \pseverity\p: \p\S+\p, \pvendor_product\p: \pCowrie\p, \psensor\p: \S+, \psrc_ip\p: "(\S+)", \pcommand\p: \p\S+\p, \psignature\p: \p(\.+)\p, \pssh_version\p: \.+, \ptype\p: \pcowrie.sessions\p, \pdest_ip\p: "(\S+)"}</regex>
+  <order>protocol, extra_data, dstport, srcport, srcip, action, dstip</order>
+</decoder>
 
 <!-- EOF -->

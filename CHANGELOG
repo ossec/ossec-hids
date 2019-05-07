@@ -1,4 +1,173 @@
-OSSEC changelog (3.0.0) <scott@atomicorp.com>
+OSSEC changelog (3.3.0) <scott@atomicorp.com>
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (http://www.atomicorp.com)
+
+Contributors on this release
+
+almirb (Almir Bolduan)
+aquerubin (Antonio Querubin)
+atomicturtle (Scott R. Shinn)
+Bob-Andrews (Bob Andrews)
+ddpbsd (Dan Parriott)
+jubois 
+MangyCoyote 
+mephesto1337 
+
+
+
+Release Notes
+
+	OSSECCON 2019, from the whole team here at OSSEC it was really fantastic meeting everyone at the show, and we look forward to seeing you all again at OSSECCON 2020!
+	PCRE2, Jubois made a major update to the IDS foundation in OSSEC 3.3.0 with PCRE2 (https://www.pcre.org/current/doc/html/pcre2.html) library. This is an extremely powerful update to the overall pattern analysis functionaility in OSSEC. In order to build this with the native distribution pcre2 packages (pcre2-devel, etc), you will need to use: export PCRE2_SYSTEM=yes. This adds several new xml tags:
+	    - pcre2 (to replace regex)
+	    - match_pcre2
+	    - program_name_pcre2
+	    - prematch_pcre2
+	    - srcgeoip_pcre2
+	    - dstgeoip_pcre2
+	    - srcport_pcre2
+	    - dstport_pcre2
+	    - user_pcre2
+	    - url_pcre2
+	    - id_pcre2
+	    - status_pcre2
+	    - hostname_pcre2
+	    - extra_data_pcre2
+
+	Dynamic Decoders, discussed in the "Beyond Security" talk at OSSECCON 2019, this allows for user-defined keys in decoders. These are exposed in JSON output for inclusion with other data analytics tools. This adds a new internal option: analysisd.decoder_order_size  to define the maximum number keys allowed in a single decoder. 
+
+
+Whats New
+	
+	(jubois) - PCRE2 regular expression support - PR#1652
+	(atomicturtle) - ossec-analysisd, Dynamic decoder support. Original: Vikman Fdez-Castro  - PR#1678
+	(ddpbsd) - ossec-execd, Switch "white lists" to "allow lists" - PR#1687 - NARRATE HERE
+
+New Rules / Decoders
+	(Bob-Andrews) - rootcheck, update  for NullSessionShares - PR#1669
+	(Bob-Andrews) - topleveldomainrules.xml, Shady TLD web traffic detection - PR#1671
+	(Bob-Andrews) - last_rootlogin_rules.xml, Sensitive login detection - PR#1671
+	(Bob-Andrews) - unbound_rules.xml, added rule for maybe critical TLD request - PR#1672
+	(Bob-Andrews) - rootcheck, Deleted repeating rules - PR#1674
+	(ddpbsd) - Update info links in Windows rules - PR#1675
+	(aquerubin) - Added decoder for pam_succeed_if - PR#1684
+
+
+General
+	(MangyCoyote) - ossec-analysisd, support Syslog ISO timestamp events with optional fraction of second - PR#1664
+	(ddpbsd) - Fix compilation with PCRE2_SYSTEM=yes - PR#1666
+	(aquerubin) - ossec-batch-manager.pl, update regexp for ipv6 addresses - PR#1667
+	(mephesto1337) - Fix part of issue#1663, compiling with PCRE2_SYSTEM=yes - PR#1677
+	(ddpbsd) - active-response, Fix for issue#1647, log disable-account.sh to the correct location - PR#1683
+	(aquerubin) - Copy resolv.conf on build event - PR#1685	
+	(almirb) - active-response, Corrected the way active-response logs are generated on windows - PR#1689
+	(atomicturtle) - ossec-execd, Expose filename variable in AR add/delete events - PR#1695
+	
+
+
+
+OSSEC changelog (3.2.0) <scott@atomicorp.com>
+
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (Atomicorp, Inc.)
+
+Contributors on this release
+
+atomicturtle
+Bob-Andrews
+ddpbsd
+knqyf263
+jubois
+mig5
+mwmahlberg
+nhatking16591
+pillarsdotnet
+
+
+Release Notes
+	The great JSON-in-ing has begun! New features in this release focus on extending JSON output support to control commands like agent_control, syscheck_control, and rootcheck_control. Additional extensions add support for archives.log in native json format, and improving the alert.json output. This release also also brings some much needed enhancements to ossec-authd to streamline the agent registration experience (thanks nhatking16591!), Bob-Andrews continues on major auditing improvements plus support for Solaris 11. 
+
+	We'd like to thank all the great contributors (named and anonymous!) who continue to improve ossec and support our community. We'd also like to welcome all our new contributors to OSSEC on this release. They have helped us on bug testing, documentation, new features, rules, compliance checks, code and more. There are no small contributions to a project like OSSEC, and we continue to thrive with your support. Special thanks to security researchers A.P. and S.S. for their audit of the ossec project, your work has greatly benefited the community. 
+
+	If you're interested in joining our team, or just interacting with us on slack email us at: invite@ossec.net
+	
+
+
+
+Whats New
+
+	(atomicturtle) - add ossec-configure to contrib - PR#1559
+	(atomicturtle) - add <log_format>audit</log_format> for native audit.log support - PR#1589
+	(nhatking16591) - authd, Allow reuse ID and improve search algorithm finding available ID key. Fixes issue#1587, PR#1594
+	(ddpbsd) - syscheck, add <no_recurse> option to keep FIM from going down directories. Addresses Issue#1595 - PR#1597
+	(atomicturtle) - archives.json, JSON support for archives.log with <logall_json>yes</logall_json> - PR#1596, PR#1601, PR#1608
+	(atomicturtle) - agent_control, -j for JSON output - PR#1625
+	(atomicturtle) - syscheck/rootchec_control, add -j for JSON output - PR#1626
+	(atomicturtle) - manage_agents, add -j for JSON output, -a to add new agent, -a -n add new agent with declared name - PR#1627
+	(atomicturtle) - internal_options.conf, remoted.pass_empty_keyfile will toggle if remoted exits on an empty client.keys file - PR#1628 
+	(atomicturtle) - manage_agents, add -d modifier to -a (add) to remove an agent pinned to an already declared IP - PR#1632
+	(atomicturtle) - manage_agents, add -F <sec> modifier to -a (add), this will delete an agent with the same IP if it has not been seen in -F <secs> - PR#1639
+	(atomicturtle) - manage_agents, add -m flag to show the max agent limit - PR#1650
+
+
+New Rules / Decoders
+	(Bob-Andrews) - rootcheck, add Solaris11 CIS checks - PR#1557
+	(Bob-Andrews) - rootcheck, add password requirement checks - PR#1558, PR#1562
+	(Bob-Andrews) - Kasperskey Endpoint Security rules/decoders - PR#1573
+	(Bob-Andrews) - Cowrie / Dionaea Modern Honeypot Network rules/decoders - PR#1574
+	(Bob-Andrews) - Dionaea/Cowrie decoder, Changed IPv4 to IPv4/IPv6 - PR#1578
+	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml, add powershell rules - PR#1579
+	(jubois) - proftpd decoder: decoder simplification - PR#1657
+	(ddpbsd) - nsd rules: nsd_rules.xml, detect zone transfer attempts - PR#1598
+	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml,  dangerous commands/background activity - PR#1646
+
+
+General
+	(mig5) - firewall-drop.sh, modify to support non-bash environments - PR#1572
+	(mwmahlberg) - ossec-agent.conf, remove double hyphen in comment. Fixes issue#1582 - PR#1583
+	(ddpbsd) - ossec-maild, allow permission changes to make it into email alerts. Fixes issue#1571 - PR#1593
+	(ddpbsd) - installation, addresses issue#1570, allow installation as unpriv user - PR#1599
+	(atomicturtle) - JSON output, basic json functions for agent_control - PR#1600, PR#1602
+	(ddpbsd) - ossec-authd, use IPExist to check for duplicate IP addresses - PR#1603
+	(ddpbsd) - general, default to not setting the compiler optimization level - PR#1604
+	(ddpbsd) - general, default to showing verbose compiler output - PR#1605
+	(atomicturtle) - agent_control, JSON output prep work - PR#1606
+	(atomicturtle) - JSON output, adding functions for rootcheck compliance output in JSON - PR#1607
+	(atomicturtle) - JSON output, minor optimization - PR#1609
+	(atomicturtle) - agent_control, minor fixes for JSON output - PR#1610
+	(ddpbsd) - zlib, shifting dependencies to the system zlib - PR#1612
+	(ddpbsd) - LUA, disable lua by default, shifting dependencies to the system lua - PR#1613
+	(ddpbsd) - security review, coverity fixes - PR#1616
+	(atomicturtle) - JSON output, minor update for JSON log dirs/files - PR#1617
+	(atomicturtle) - JSON output, fix lf location array from unknown syslog - PR#1618
+	(atomicturtle) - manage_agents, bugfix  when generating keys from a file - PR#1619
+	(atomicturtle) - ossec-analysisd, increase default memory size from 1024 to 8192 (dcid) - PR#1620
+	(ddpbsd) - security review, coverity fixes - PR#1621
+	(atomicturtle) - JSON output, adding more groups, and clean up formatting - PR#1622
+	(ddpbsd) - security review, coverity fixes for PR#1624 - PR#1629	
+	(ddpbsd) - manage_agents, add an error path for being unable to chmod authfile - PR#1629	
+	(pillarsdotnet) - active-response, directory traversal fix - PR#1630
+	(ddpbsd) - ossec-control, remove author tag from output - PR#1633
+	(atomicturtle) - agent management cleanup, rootcheck/syscheck data is removed on a delete event - PR#1634
+	(ddpbsd) - json output, add prototype for function/ fixing compile warnings - PR#1636
+	(ddpbsd) - json output, cleanup for unused variables - PR#1637
+	(ddpbsd) - ossec-maild, remove legacy sms output type - PR#1638
+	(ddpbsd) - agent_control, usage output update - PR#1640
+	(jubois) - dotests.sh, Improved dotests.sh output - PR#1641
+	(jubois) - Correct tests in contrib/logtesting - PR#1645
+	(atomicturtle) - ossec-analysisd, fix for analysisd segfault in overwrite rule condition - PR#1649
+	(atomicturtle) - ossec-csyslogd, fix for size returned from a tcp syslog event - PR#1653
+	(jubois) - fix compilation warnings - PR#1654
+	(knqyf263) - ossec-maild, fix for email being sent infinitely - PR#1658
+
+
+OSSEC changelog (3.1.0) <scott@atomicorp.com>
 
 Release Maintainers
 
@@ -6,6 +175,77 @@ Dan Parriott
 Scott R. Shinn (Atomicorp, Inc.)
 
 
+Release Notes
+
+	Special thanks on this release go out to:
+	 davestoddard for an amazingly well thought out, and well documented update to the networking code
+	 Bob-Andrews for the largest update to the auditing system in the project history
+         phamvoung for resolving some very subtle bugs and high profile issues with the authd daemon
+
+	We'd also like to thank all the other fantastic contributors to the project, whom are referenced in parenthesis in the changelog. We cannot thank you enough!
+	
+		
+	
+
+Whats New
+	(davestoddard) Modification to Correct IP Connectivity Issues on BSD Servers PR #1412
+
+New Rules / Decoders
+	(Bob-Andrews) - linux_usbdetect_rules.xml, ms1016_usbdetect_rules.xml, ms_firewall_rules.xml
+	(Bob-Andrews) - Added ms_ipsec_rules PR #1549
+	(Bob-Andrews) - Rootchecks for Debian 7+8, cis_debianlinux7-8_L1_rcl.txt, cis_debianlinux7-8_L2_rcl.txt, cis_win10_enterprise_L1_rcl.txt, cis_win10_enterprise_L2_rcl.txt PR #1531
+	(Bob-Andrews) - acsc_office2016_rcl.txt, Added rootcheck PR #1510
+	(Bob-Andrews) - added cis_win2016_memberL1_rcl.txt, cis_win2016_memberL2_rcl.txt PR #1496
+	(Bob-Andrews) - cis_win2012r2_memberL1_rcl.txt, Added Check Description/Alert PR #1495
+	(ddpbsd) - additional sshd decoders PR #1480
+	(ddpbsd) - basic support for Dnsmasq PR #1461
+
+General
+	(iasdeoupxe) - host-deny.sh: Move duplicate entry check into the add action PR #1554
+	(iasdeoupxe) - host-deny.sh: Use consistent indentation PR #1553
+	(iasdeoupxe) - host-deny.sh: Remove unnecessary echo for duplicated entry PR #1552
+	(Bob-Andrews) - Added new id ranges for linux usb detection rules, ms1016 usb detection rules and ms firewall rules from PR #1543
+	(Bob-Andrews) - Corrected IDs to a non user defined range PR #1547 (psad_rules.xml, sysmon_rules.xml, unbound_rules.xml)
+	(c0r3dump3d) - Correct and expand spanish translation PR #1541
+	(ddpbsd) - Adjust the tests for sysmon rules PR #1548
+	(MangyCoyote) - install.sh - case for s-nail patch can't be applied if `mail` is not installed PR #1539
+	(atomicturtle) - ossec-authd Fix for foreground flags PR #1538
+	(atomicturtle) - ossec-authd Add -f foreground flag support PR #1537
+	(featzor) - psad signature match level 6 PR #1517
+	(Bob-Andrews) - Corrected rootcheck CIS tests for cis_win2012r2_domainL2_rcl.txt, is_win2012r2_memberL2_rcl.txt, cis_win2016_domainL2_rcl.txt PR #1521
+	(franciosi) - Updated README.md, correts small typos PR #1519
+	(ddpbsd) - Fix the subject handling. Issue submitted by Michael Starks #1370 PR #1377
+	(foygl) - ossec-slack.sh, Fix and clean up output for Slack integration PR #1508
+	(ddpbsd) - From issue #1514, a duplicate `_gsid1 == 0` -> `_gsid0 == 0` PR #1515
+	(Bob-Andrews) - cis_win2016_domainL1_rcl.txt, Corrected Check - Registry Hive PR #1511
+	(ashley-dunn) - Fix "bellow" typos in ossec-[client|local|server].sh files PR #1512
+	(ddpbsd) - Fix the log location in the ossec-slack AR script. PR #1422
+	(phamvuong) - BUGFIX: remove default value for authpass PR #1464
+	(calve) - Bump version definition in defs.h PR #1504
+	(ddpbsd) - More coverity fixes PR #1497
+	(ddpbsd) - Modify status() to not return 1 when maild is not running PR #1501
+	(ddpbsd) - Coverity fixes PR #1490
+	(Bob-Andrews) - Moved file to ossec-hids/ src/rootcheck/db/ PR #1493
+	(ddpbsd) - Make sure there's room for the full alert id in json alerts PR #1487
+	(ddpbsd) - Fix an issue in the nodiff option which could ignore files it isn't supposed to PR #1486
+	(ddpbsd) - Hard coded user/group changed to appropriate variables PR #1484
+	(ddpbsd) - Add FreeBSD's php.ini location to rootcheck db PR #1483
+	(ddpbsd) - Replace hard coded directories with the appropriate variables PR #1482
+	(ddpbsd) - When trying to bind to a local address, present the error on failure. PR #1457
+	(ddpbsd) - version_bump.sh Quick script to make version bumping easier PR #1532
+	(phamvuong)  - Call select() before checking active socket PR #1529
+	(stephengroat) - use nicer looking travis build badge PR #1460
+	(stevhsu) - Correct lua version variable PR #1459
+
+
+
+
+OSSEC changelog (3.0.0) <scott@atomicorp.com>
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (Atomicorp, Inc.)
 
 Whats New
 	SQLite support for syscheck
@@ -147,7 +387,7 @@ PR #1093 - pf.sh, update support FreeBSD, OpenBSD, and Darwein
 PR #1097 - ossec-batch-manager.pl, support "any" IP address
 PR #1099 - AR, prevent duplication in hosts.deny
 PR #1100 - Windows agent, Open received files in binary mode cause of cr/lf and let hashes match. 
-PR #1102 - JSON ouput, Fix timestamp 
+PR #1102 - JSON output, Fix timestamp 
 PR #1116 - ossec-remoted, systemd support
 PR #1135 - ossec-dbd, UMYSQL_DATABASE_ENABLED does not exist in the tree except this one place.
 PR #1137 - Windows agent, administrators group might not be present on non-english installs

@@ -7,6 +7,8 @@
  * Foundation
  */
 
+#include <string.h>
+
 #include "config.h"
 #include "shared.h"
 #include "global-config.h"
@@ -63,10 +65,7 @@ int Read_Rules(XML_NODE node, void *configp, __attribute__((unused)) void *mailp
     Config = (_Config *)configp;
 
     /* Initialize OSRegex */
-    regex.patterns = NULL;
-    regex.prts_closure = NULL;
-    regex.prts_str = NULL;
-    regex.sub_strings = NULL;
+    memset(&regex, 0, sizeof(regex));
 
     while (node[i]) {
         if (!node[i]->element) {
