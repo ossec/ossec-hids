@@ -12,6 +12,8 @@
 #include "os_xml/os_xml.h"
 #include "eventinfo.h"
 #include "decoder.h"
+#include "config.h"
+
 
 
 /* Use the osdecoders to decode the received event */
@@ -43,11 +45,18 @@ void DecodeEvent(Eventinfo *lf)
 
         /* First check program name */
         if (lf->program_name) {
-            if (!OSMatch_Execute(lf->program_name, lf->p_name_size,
-                                 nnode->program_name)) {
-                continue;
+            if (nnode->program_name) {
+                if (!OSMatch_Execute(lf->program_name, lf->p_name_size,
+                                     nnode->program_name)) {
+                    continue;
+                }
+                pmatch = lf->log;
+            } else if (nnode->program_name_pcre2) {
+                if (!OSPcre2_Execute(lf->program_name, nnode->program_name_pcre2)) {
+                    continue;
+                }
+                pmatch = lf->log;
             }
-            pmatch = lf->log;
         }
 
         /* If prematch fails, go to the next osdecoder in the list */
@@ -55,10 +64,10 @@ void DecodeEvent(Eventinfo *lf)
             if (!(pmatch = OSRegex_Execute(lf->log, nnode->prematch))) {
                 continue;
             }
-
-            /* Next character */
-            if (*pmatch != '\0') {
-                pmatch++;
+        }
+        else if (nnode->prematch_pcre2) {
+            if (!(pmatch = OSPcre2_Execute(lf->log, nnode->prematch_pcre2))) {
+                continue;
             }
         }
 
@@ -98,10 +107,21 @@ void DecodeEvent(Eventinfo *lf)
                     }
 
                     if ((cmatch = OSRegex_Execute(llog2, nnode->prematch))) {
-                        if (*cmatch != '\0') {
-                            cmatch++;
-                        }
+                        lf->decoder_info = nnode;
 
+                        break;
+                    }
+                } else if (nnode->prematch_pcre2) {
+                    const char *llog2;
+
+                    /* If we have an offset set, use it */
+                    if (nnode->prematch_offset & AFTER_PARENT) {
+                        llog2 = pmatch;
+                    } else {
+                        llog2 = lf->log;
+                    }
+
+                    if ((cmatch = OSPcre2_Execute(llog2, nnode->prematch_pcre2))) {
                         lf->decoder_info = nnode;
 
                         break;
@@ -146,7 +166,7 @@ void DecodeEvent(Eventinfo *lf)
         /* Get the regex */
         while (child_node) {
             if (nnode->regex) {
-                int i = 0;
+                int i;
 
                 /* With regex we have multiple options
                  * regarding the offset:
@@ -181,23 +201,20 @@ void DecodeEvent(Eventinfo *lf)
                     return;
                 }
 
-                /* Fix next pointer */
-                if (*regex_prev != '\0') {
-                    regex_prev++;
-                }
+                lf->decoder_info = nnode;
 
-                while (nnode->regex->sub_strings[i]) {
-                    if (nnode->order[i]) {
-                        nnode->order[i](lf, nnode->regex->sub_strings[i]);
-                        nnode->regex->sub_strings[i] = NULL;
-                        i++;
-                        continue;
+                for (i = 0; nnode->regex->sub_strings[i]; i++) {
+                    if (i >= Config.decoder_order_size) {
+                        ErrorExit("%s: ERROR: Regex has too many groups.", ARGV0);
                     }
 
-                    /* We do not free any memory used above */
-                    os_free(nnode->regex->sub_strings[i]);
+                    if (nnode->order[i])
+                        nnode->order[i](lf, nnode->regex->sub_strings[i], i);
+                    else
+                        /* We do not free any memory used above */
+                        os_free(nnode->regex->sub_strings[i]);
+
                     nnode->regex->sub_strings[i] = NULL;
-                    i++;
                 }
 
                 /* If we have a next regex, try getting it */
@@ -209,6 +226,69 @@ void DecodeEvent(Eventinfo *lf)
 
                 break;
             }
+            else if (nnode->pcre2) {
+                int i;
+
+                /* With regex we have multiple options
+                 * regarding the offset:
+                 * after the prematch,
+                 * after the parent,
+                 * after some previous regex,
+                 * or any offset
+                 */
+                if (nnode->regex_offset) {
+                    if (nnode->regex_offset & AFTER_PARENT) {
+                        llog = pmatch;
+                    } else if (nnode->regex_offset & AFTER_PREMATCH) {
+                        llog = cmatch;
+                    } else if (nnode->regex_offset & AFTER_PREVREGEX) {
+                        if (!regex_prev) {
+                            llog = cmatch;
+                        } else {
+                            llog = regex_prev;
+                        }
+                    }
+                } else {
+                    llog = lf->log;
+                }
+
+                /* If Regex does not match, return */
+                if (!(regex_prev = OSPcre2_Execute(llog, nnode->pcre2))) {
+                    if (nnode->get_next) {
+                        child_node = child_node->next;
+                        nnode = child_node->osdecoder;
+                        continue;
+                    }
+                    return;
+                }
+
+
+                lf->decoder_info = nnode;
+
+                for (i = 0; nnode->pcre2->sub_strings[i]; i++) {
+                    if (i >= Config.decoder_order_size) {
+                        ErrorExit("%s: ERROR: Regex has too many groups.", ARGV0);
+                    }
+
+                    if (nnode->order[i])
+                        nnode->order[i](lf, nnode->pcre2->sub_strings[i], i);
+                    else
+                        /* We do not free any memory used above */
+                        os_free(nnode->pcre2->sub_strings[i]);
+
+                    nnode->pcre2->sub_strings[i] = NULL;
+                }
+
+                /* If we have a next regex, try getting it */
+                if (nnode->get_next) {
+                    child_node = child_node->next;
+                    nnode = child_node->osdecoder;
+                    continue;
+                }
+
+                break;
+            }
+
 
             /* If we don't have a regex, we may leave now */
             return;
@@ -227,7 +307,7 @@ void DecodeEvent(Eventinfo *lf)
 
 /*** Event decoders ****/
 
-void *DstUser_FP(Eventinfo *lf, char *field)
+void *DstUser_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -239,7 +319,7 @@ void *DstUser_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *SrcUser_FP(Eventinfo *lf, char *field)
+void *SrcUser_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -251,7 +331,7 @@ void *SrcUser_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *SrcIP_FP(Eventinfo *lf, char *field)
+void *SrcIP_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -277,7 +357,7 @@ void *SrcIP_FP(Eventinfo *lf, char *field)
 
 }
 
-void *DstIP_FP(Eventinfo *lf, char *field)
+void *DstIP_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -301,7 +381,7 @@ void *DstIP_FP(Eventinfo *lf, char *field)
 
 }
 
-void *SrcPort_FP(Eventinfo *lf, char *field)
+void *SrcPort_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -313,7 +393,7 @@ void *SrcPort_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *DstPort_FP(Eventinfo *lf, char *field)
+void *DstPort_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -325,7 +405,7 @@ void *DstPort_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Protocol_FP(Eventinfo *lf, char *field)
+void *Protocol_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -337,7 +417,7 @@ void *Protocol_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Action_FP(Eventinfo *lf, char *field)
+void *Action_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -349,7 +429,7 @@ void *Action_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *ID_FP(Eventinfo *lf, char *field)
+void *ID_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -361,7 +441,7 @@ void *ID_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Url_FP(Eventinfo *lf, char *field)
+void *Url_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -373,7 +453,7 @@ void *Url_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Data_FP(Eventinfo *lf, char *field)
+void *Data_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -385,7 +465,7 @@ void *Data_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *Status_FP(Eventinfo *lf, char *field)
+void *Status_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -397,7 +477,7 @@ void *Status_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *SystemName_FP(Eventinfo *lf, char *field)
+void *SystemName_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -409,7 +489,7 @@ void *SystemName_FP(Eventinfo *lf, char *field)
     return (NULL);
 }
 
-void *FileName_FP(Eventinfo *lf, char *field)
+void *FileName_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
 #ifdef TESTRULE
     if (!alert_only) {
@@ -422,7 +502,20 @@ void *FileName_FP(Eventinfo *lf, char *field)
 }
 
 
-void *None_FP(__attribute__((unused)) Eventinfo *lf, char *field)
+void *DynamicField_FP(Eventinfo *lf, char *field, int order)
+{
+#ifdef TESTRULE
+    if (!alert_only) {
+        print_out("       %s: '%s'", lf->decoder_info->fields[order], field);
+    }
+#endif
+
+    lf->fields[order] = field;
+
+    return (NULL);
+}
+
+void *None_FP(__attribute__((unused)) Eventinfo *lf, char *field, __attribute__((unused)) int order)
 {
     free(field);
     return (NULL);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 OSSEC Foundation
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -35,6 +35,7 @@ static void helpmsg()
     printf("\t-z          Used with -f, zeroes the auto-ignore counter.\n");
     printf("\t-d          Used with -f, ignores that file.\n");
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
+    printf("\t-j          Changes the output to JSON.\n");
     printf("\n");
     printf("\tExamples:\n");
     printf("\n");
@@ -56,9 +57,10 @@ int main(int argc, char **argv)
     int c = 0, info_agent = 0, update_syscheck = 0,
         list_agents = 0, zero_counter = 0,
         registry_only = 0;
-    int active_only = 0, csv_output = 0;
+    int active_only = 0, csv_output = 0, json_output = 0;
 
     char shost[512];
+    cJSON *json_root;
 
     /* Set the name */
     OS_SetName(ARGV0);
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
         helpmsg();
     }
 
-    while ((c = getopt(argc, argv, "VhzrDdlcsu:i:f:")) != -1) {
+    while ((c = getopt(argc, argv, "VhzrDdlcsju:i:f:")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -90,6 +92,9 @@ int main(int argc, char **argv)
                 break;
             case 's':
                 csv_output = 1;
+                break;
+            case 'j':
+                json_output = 1;
                 break;
             case 'c':
                 active_only++;
@@ -158,18 +163,38 @@ int main(int argc, char **argv)
         return (0);
     }
 
+    if (json_output)
+        json_root = cJSON_CreateObject();
+
     /* List available agents */
     if (list_agents) {
-        if (!csv_output) {
-            printf("\nOSSEC HIDS %s. List of available agents:",
-                   ARGV0);
+        cJSON *json_agents = NULL;
+
+        if (json_output) {
+            cJSON *first = cJSON_CreateObject();
+            json_agents = cJSON_CreateArray();
+            cJSON_AddNumberToObject(json_root, "error", 0);
+            cJSON_AddStringToObject(first, "id", "000");
+            cJSON_AddStringToObject(first, "name", shost);
+            cJSON_AddStringToObject(first, "ip", "127.0.0.1");
+            cJSON_AddStringToObject(first, "status", "Active");
+            cJSON_AddItemToArray(json_agents, first);
+        } else if (csv_output)
+            printf("000,%s (server),127.0.0.1,Active/Local,\n", shost);
+        else {
+            printf("\nOSSEC HIDS %s. List of available agents:", ARGV0);
             printf("\n   ID: 000, Name: %s (server), IP: 127.0.0.1, "
                    "Active/Local\n", shost);
-        } else {
-            printf("000,%s (server),127.0.0.1,Active/Local,\n", shost);
         }
-        print_agents(1, active_only, csv_output);
-        printf("\n");
+
+        print_agents(1, active_only, csv_output, json_agents);
+
+        if (json_output) {
+            cJSON_AddItemToObject(json_root, "response", json_agents);
+            printf("%s", cJSON_PrintUnformatted(json_root));
+        } else
+            printf("\n");
+
         exit(0);
     }
 
@@ -182,7 +207,15 @@ int main(int argc, char **argv)
 
             sys_dir = opendir(SYSCHECK_DIR);
             if (!sys_dir) {
-                ErrorExit("%s: Unable to open: '%s'", ARGV0, SYSCHECK_DIR);
+                if (json_output) {
+                    char buffer[1024];
+                    cJSON_AddNumberToObject(json_root, "error", 31);
+                    snprintf(buffer, 1023, "%s: Unable to open: '%s'", ARGV0, SYSCHECK_DIR);
+                    cJSON_AddStringToObject(json_root, "description", buffer);
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(1);
+                } else
+                    ErrorExit("%s: Unable to open: '%s'", ARGV0, SYSCHECK_DIR);
             }
 
             while ((entry = readdir(sys_dir)) != NULL) {
@@ -201,14 +234,25 @@ int main(int argc, char **argv)
                 fp = fopen(full_path, "w");
                 if (fp) {
                     fclose(fp);
+                } else {
+                    ErrorExit("%s: ERROR: Cannot open %s: %s", ARGV0, full_path, strerror(errno));
                 }
                 if (entry->d_name[0] == '.') {
-                    unlink(full_path);
+                    if ((unlink(full_path)) != 0) {
+                        ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, full_path, strerror(errno));
+                    }
                 }
             }
 
             closedir(sys_dir);
-            printf("\n** Integrity check database updated.\n\n");
+
+            if (json_output) {
+                cJSON_AddNumberToObject(json_root, "error", 0);
+                cJSON_AddStringToObject(json_root, "response", "Integrity check database updated");
+                printf("%s", cJSON_PrintUnformatted(json_root));
+            } else
+                printf("\n** Integrity check database updated.\n\n");
+
             exit(0);
         }
 
@@ -221,8 +265,12 @@ int main(int argc, char **argv)
             fp = fopen(final_dir, "w");
             if (fp) {
                 fclose(fp);
+            } else {
+                ErrorExit("%s: ERROR: Cannot open %s: %s", ARGV0, final_dir, strerror(errno));
             }
-            unlink(final_dir);
+            if ((unlink(final_dir)) != 0) {
+                ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir, strerror(errno));
+            }
 
 
             /* Deleting cpt file */
@@ -231,10 +279,20 @@ int main(int argc, char **argv)
             fp = fopen(final_dir, "w");
             if (fp) {
                 fclose(fp);
+            } else {
+                ErrorExit("%s: ERROR: Cannot open %s: %s", ARGV0, final_dir, strerror(errno));
             }
-            unlink(final_dir);
+            if ((unlink(final_dir)) != 0) {
+                ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir, strerror(errno));
+            }
 
-            printf("\n** Integrity check database updated.\n\n");
+            if (json_output) {
+                cJSON_AddNumberToObject(json_root, "error", 0);
+                cJSON_AddStringToObject(json_root, "response", "Integrity check database updated");
+                printf("%s", cJSON_PrintUnformatted(json_root));
+            } else
+                printf("\n** Integrity check database updated.\n\n");
+
             exit(0);
         }
 
@@ -247,15 +305,30 @@ int main(int argc, char **argv)
 
             i = OS_IsAllowedID(&keys, agent_id);
             if (i < 0) {
-                printf("\n** Invalid agent id '%s'.\n", agent_id);
-                helpmsg();
+                if (json_output) {
+                    char buffer[1024];
+                    cJSON_AddNumberToObject(json_root, "error", 33);
+                    snprintf(buffer, 1023, "Invalid agent id '%s'.", agent_id);
+                    cJSON_AddStringToObject(json_root, "description", buffer);
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(1);
+                } else {
+                    printf("\n** Invalid agent id '%s'.\n", agent_id);
+                    helpmsg();
+                }
             }
 
             /* Delete syscheck */
             delete_syscheck(keys.keyentries[i]->name,
                             keys.keyentries[i]->ip->ip, 0);
 
-            printf("\n** Integrity check database updated.\n\n");
+            if (json_output) {
+                cJSON_AddNumberToObject(json_root, "error", 0);
+                cJSON_AddStringToObject(json_root, "response", "Integrity check database updated");
+                printf("%s", cJSON_PrintUnformatted(json_root));
+            } else
+                printf("\n** Integrity check database updated.\n\n");
+
             exit(0);
         }
     }
@@ -265,33 +338,47 @@ int main(int argc, char **argv)
         int i;
         char final_ip[IPSIZE + 4];
         keystore keys;
+        cJSON *json_entries = NULL;
+
+        if (json_output)
+            json_entries = cJSON_CreateArray();
 
         if ((strcmp(agent_id, "000") == 0) ||
                 (strcmp(agent_id, "local") == 0)) {
-            printf("\nIntegrity checking changes for local system '%s - %s':\n",
-                   shost, "127.0.0.1");
-            if (fname) {
-                printf("Detailed information for entries matching: '%s'\n",
-                       fname);
+            if (!(csv_output || json_output)) {
+                printf("\nIntegrity checking changes for local system '%s - %s':\n",
+                       shost, "127.0.0.1");
+                if (fname) {
+                    printf("Detailed information for entries matching: '%s'\n",
+                           fname);
+                }
             }
 
-            print_syscheck(NULL,
-                           NULL, fname, 0, 0,
-                           csv_output, zero_counter);
+            print_syscheck(NULL, NULL, fname, 0, 0, csv_output, json_entries, zero_counter);
         } else if (strchr(agent_id, '@')) {
-            if (fname) {
+            if (fname && ! (csv_output || json_output)) {
                 printf("Detailed information for entries matching: '%s'\n",
                        fname);
             }
             print_syscheck(agent_id, NULL, fname, registry_only, 0,
-                           csv_output, zero_counter);
+                           csv_output, json_entries, zero_counter);
         } else {
+
             OS_ReadKeys(&keys);
 
             i = OS_IsAllowedID(&keys, agent_id);
             if (i < 0) {
-                printf("\n** Invalid agent id '%s'.\n", agent_id);
-                helpmsg();
+                if (json_output) {
+                    char buffer[1024];
+                    cJSON_AddNumberToObject(json_root, "error", 32);
+                    snprintf(buffer, 1023, "Invalid agent id '%s'.", agent_id);
+                    cJSON_AddStringToObject(json_root, "description", buffer);
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(1);
+                } else {
+                    printf("\n** Invalid agent id '%s'.\n", agent_id);
+                    helpmsg();
+                }
             }
 
             /* Getting full address/prefix length from ip. */
@@ -300,34 +387,47 @@ int main(int argc, char **argv)
                      keys.keyentries[i]->ip->ip,
                      keys.keyentries[i]->ip->prefixlength);
 
-            if (registry_only) {
-                printf("\nIntegrity changes for 'Windows Registry' of"
-                       " agent '%s (%s) - %s':\n",
-                       keys.keyentries[i]->name, keys.keyentries[i]->id,
-                       final_ip);
-            } else {
-                printf("\nIntegrity changes for agent "
-                       "'%s (%s) - %s':\n",
-                       keys.keyentries[i]->name, keys.keyentries[i]->id,
-                       final_ip);
+            if (!(csv_output || json_output)) {
+                if (registry_only) {
+                    printf("\nIntegrity changes for 'Windows Registry' of"
+                           " agent '%s (%s) - %s':\n",
+                           keys.keyentries[i]->name, keys.keyentries[i]->id,
+                           final_ip);
+                } else {
+                    printf("\nIntegrity changes for agent "
+                           "'%s (%s) - %s':\n",
+                           keys.keyentries[i]->name, keys.keyentries[i]->id,
+                           final_ip);
+                }
+
+                if (fname) {
+                    printf("Detailed information for entries matching: '%s'\n",
+                           fname);
+                }
             }
 
-            if (fname) {
-                printf("Detailed information for entries matching: '%s'\n",
-                       fname);
-            }
-            print_syscheck(keys.keyentries[i]->name,
-                           keys.keyentries[i]->ip->ip, fname,
-                           registry_only, 0, csv_output, zero_counter);
+            print_syscheck(keys.keyentries[i]->name, keys.keyentries[i]->ip->ip, fname,
+                           registry_only, 0, csv_output, json_entries, zero_counter);
+        }
 
+        if (json_output) {
+            cJSON_AddNumberToObject(json_root, "error", 0);
+            cJSON_AddItemToObject(json_root, "response", json_entries);
+            printf("%s", cJSON_PrintUnformatted(json_root));
         }
 
         exit(0);
     }
 
-    printf("\n** Invalid argument combination.\n");
-    helpmsg();
+    if (json_output) {
+        cJSON_AddNumberToObject(json_root, "error", 30);
+        cJSON_AddStringToObject(json_root, "description", "Invalid argument combination");
+        printf("%s", cJSON_PrintUnformatted(json_root));
+        exit(1);
+    } else {
+        printf("\n** Invalid argument combination.\n");
+        helpmsg();
+    }
 
     return (0);
 }
-

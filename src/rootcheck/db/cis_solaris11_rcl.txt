@@ -1,0 +1,475 @@
+# OSSEC Linux Audit - (C) 2017 OSSEC Project
+#
+# Released under the same license as OSSEC.
+# More details at the LICENSE file included with OSSEC or online
+# at: https://github.com/ossec/ossec-hids/blob/master/LICENSE
+#
+# [Application name] [any or all] [reference]
+# type:<entry name>;
+#
+# Type can be:
+#             - f (for file or directory)
+#             - p (process running)
+#             - d (any file inside the directory)
+#
+# Additional values:
+# For the registry , use "->" to look for a specific entry and another
+# "->" to look for the value.
+# For files, use "->" to look for a specific value in the file.
+#
+# Values can be preceeded by: =: (for equal) - default
+#                             r: (for ossec regexes)
+#                             >: (for strcmp greater)
+#                             <: (for strcmp  lower)
+# Multiple patterns can be specified by using " && " between them.
+# (All of them must match for it to return true).
+
+# CIS Checks for Solaris 11  
+# Based on Center for Internet Security Benchmark for Solaris 11 Benchmark v1.1.0 https://workbench.cisecurity.org/benchmarks/410  
+#
+$home_dirs=/usr2/home/*,/home/*,/home,/*/home/*,/*/home,/;
+#
+#
+#2.1 Disable Local-only Graphical Login Environment
+[CIS - Solaris 11 Configuration - 2.1 Disable Local-only Graphical Login Environment] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:gdm;
+p:cde;
+#
+#
+#2.2 Configure sendmail Service for Local-Only Mode
+[CIS - Solaris 11 Configuration - 2.2 Configure sendmail Service for Local-Only Mode] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:!/etc/mail/local.cf;
+#
+#
+#2.3 Disable RPC Encryption Key
+[CIS - Solaris 11 Configuration - 2.3 Disable RPC Encryption Key] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:keyserv;
+#
+#
+#2.4 Disable NIS Server Services
+[CIS - Solaris 11 Configuration - 2.4 Disable NIS Server Services] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:ypserv;
+p:ypbind;
+p:ypxfr;
+p:rpc.yppasswdd;
+p:rpc.ypupdated;
+f:/etc/init.d/nis;
+#
+#
+#2.5 Disable NIS Client Services
+[CIS - Solaris 11 Configuration - 2.5 Disable NIS Client Services] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:ypserv;
+p:ypbind;
+p:ypxfr;
+p:rpc.yppasswdd;
+p:rpc.ypupdated;
+f:/etc/init.d/nis;
+#
+#
+#2.6 Disable Kerberos TGT Expiration Warning
+[CIS - Solaris 11 Configuration - 2.6 Disable Kerberos TGT Expiration Warning] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:ktkt_warnd;
+#
+#
+#2.7 Disable Generic Security Services (GSS)
+[CIS - Solaris 11 Configuration - 2.7 Disable Generic Security Services (GSS)] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:gssd;
+#
+#
+#2.8 Disable Removable Volume Manager
+[CIS - Solaris 11 Configuration - 2.8 Disable Removable Volume Manager] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:smserverd;
+#
+#
+#2.9 Disable automount Service
+[CIS - Solaris 11 Configuration - 2.9 Disable automount Service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:automountd;
+#
+#
+#2.10 Disable Apache Service
+[CIS - Solaris 11 Configuration - 2.10 Disable Apache Service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:apache;
+p:httpd;
+#
+#
+#2.11 Disable Local-only RPC Port Mapping Service
+[CIS - Solaris 11 Configuration - 2.11 Disable Local-only RPC Port Mapping Service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:rpcbind;
+#
+#
+#2.12 Configure TCP Wrappers
+[CIS - Solaris 11 Configuration - 2.12 Configure TCP Wrappers] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:!/etc/hosts.allow;
+f:!/etc/hosts.deny;
+#
+#
+#2.13 Disable Telnet Service
+[CIS - Solaris 11 Configuration - 2.13 Disable Telnet Service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+p:telnetd;
+#
+#
+#3.1 Restrict Core Dumps to Protected Directory
+[CIS - Solaris 11 Configuration - 3.1 Restrict Core Dumps to Protected Directory] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/coreadm.conf -> !r:^COREADM_GLOB_PATTERN\p\.+;
+f:/etc/coreadm.conf -> !r:^COREADM_GLOB_CONTENT\pdefault;
+f:/etc/coreadm.conf -> !r:^COREADM_INIT_PATTERN\pcore;
+f:/etc/coreadm.conf -> !r:^COREADM_INIT_CONTENT\pdefault;
+f:/etc/coreadm.conf -> !r:^COREADM_GLOB_ENABLED\pyes|^COREADM_GLOB_ENABLED\pno;
+f:/etc/coreadm.conf -> !r:^COREADM_PROC_ENABLED\pno;
+f:/etc/coreadm.conf -> !r:^COREADM_GLOB_SETID_ENABLED\pyes|^COREADM_GLOB_SETID_ENABLED\pno;
+f:/etc/coreadm.conf -> !r:^COREADM_PROC_SETID_ENABLED\pno;
+f:/etc/coreadm.conf -> !r:^COREADM_GLOB_LOG_ENABLED\pyes;
+#
+#
+#3.2 Enable Stack Protection
+[CIS - Solaris 11 Configuration - 3.2 Enable Stack Protection] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:!/etc/system;
+f:/etc/system -> !r:^\s*\t*noexec_user_stack\p1;
+f:/etc/system -> !r:^# && r:\s*\t*noexec_user_stack\p0;
+f:/etc/system -> !r:^\s*\t*noexec_user_stack_log\p1;
+f:/etc/system -> !r:^# && r:\s*\t*noexec_user_stack_log\p0;
+#
+#
+#3.3 Enable Strong TCP Sequence Number Generation
+[CIS - Solaris 11 Configuration - 3.3 Enable Strong TCP Sequence Number Generation] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/inetinit -> !r:^TCP_STRONG_ISS\p2;
+f:/etc/default/inetinit -> !r:^# && r:TCP_STRONG_ISS\p1;
+#
+#
+#4.1 Create CIS Audit Class
+[CIS - Solaris 11 Configuration - 4.1 Create CIS Audit Class] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/security/audit_class -> !r:0x\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d:cis:\.+;
+#
+#
+#4.2 Enable Auditing of Incoming Network Connections
+[CIS - Solaris 11 Configuration - 4.2 Enable Auditing of Incoming Network Connections] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/security/audit_event -> !r:^\d+:AUE_ACCEPT:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_CONNECT:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SOCKACCEPT:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SOCKCONNECT:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_inetd_connect:\.+cis\.*;
+#
+#
+#4.3 Enable Auditing of File Metadata Modification Events
+[CIS - Solaris 11 Configuration - 4.3 Enable Auditing of File Metadata Modification Events] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/security/audit_event -> !r:^\d+:AUE_CHMOD:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_CHOWN:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_FCHOWN:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_FCHMOD:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_LCHOWN:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_ACLSET:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_FACLSET:\.+cis\.*;
+#
+#
+#4.4 Enable Auditing of Process and Privilege Events
+[CIS - Solaris 11 Configuration - 4.4 Enable Auditing of Process and Privilege Events] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/security/audit_event -> !r:^\d+:AUE_CHROOT:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETREUID:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETREGID:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_FCHROOT:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_PFEXEC:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETUID:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_NICE:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETGID:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_PRIOCNTLSYS:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETEGID:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETEUID:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETPRIV:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETSID:\.+cis\.*;
+f:/etc/security/audit_event -> !r:^\d+:AUE_SETPGID:\.+cis\.*;
+#
+#
+#4.5 Configure Solaris Auditing
+[CIS - Solaris 11 Configuration - 4.5 Configure Solaris Auditing] [any] [https://workbench.cisecurity.org/benchmarks/410]
+d:/var/spool/cron/crontabs -> !r:/usr/sbin/audit -n;
+#
+#
+#5.1 Default Service File Creation Mask
+[CIS - Solaris 11 Configuration - 5.1 Default Service File Creation Mask] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/profile -> !r:^umask\s*\d\d\d;
+#
+#
+#6.2 Disable "nobody" Access for RPC Encryption Key Storage Service
+[CIS - Solaris 11 Configuration - 6.2 Disable "nobody" Access for RPC Encryption Key Storage Service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f!:/etc/default/keyserv;
+f:/etc/default/keyserv -> !r:^ENABLE\.NOBODY\.KEYS\pNO;
+f:/etc/default/keyserv -> !r:^# && r:ENABLE\.NOBODY\.KEYS\pYES;
+#
+#
+#6.3 Disable X11 Forwarding for SSH
+[CIS - Solaris 11 Configuration - 6.3 Disable X11 Forwarding for SSH] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/ssh/sshd_config -> !r:^X11Forwarding\s*no;
+f:/etc/ssh/sshd_config -> !r:^# && r:X11Forwarding\s*yes;
+#
+#
+#6.4 Limit Consecutive Login Attempts for SSH
+[CIS - Solaris 11 Configuration - 6.4 Limit Consecutive Login Attempts for SSH] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/ssh/sshd_config -> !r:^MaxAuthTries\s*3;
+f:/etc/ssh/sshd_config -> !r:^# && r:MaxAuthTries\s*3\d+;
+#
+#
+#6.5 Disable Rhost-based Authentication for SSH
+[CIS - Solaris 11 Configuration - 6.5 Disable Rhost-based Authentication for SSH] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/ssh/sshd_config -> !r:^IgnoreRhosts\s*yes;
+f:/etc/ssh/sshd_config -> !r:^# && r:IgnoreRhosts\s*no;
+#
+#
+#6.6 Disable root login for SSH
+[CIS - Solaris 11 Configuration - 6.6 Disable root login for SSH] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/ssh/sshd_config -> !r:^PermitRootLogin\s*no;
+f:/etc/ssh/sshd_config -> !r:^# && r:PermitRootLogin\s*yes;
+#
+#
+#6.7 Blocking Authentication Using Empty/Null Passwords for SSH
+[CIS - Solaris 11 Configuration - 6.7 Blocking Authentication Using Empty/Null Passwords for SSH] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/ssh/sshd_config -> !r:^PermitEmptyPasswords\s*no;
+f:/etc/ssh/sshd_config -> !r:^# && r:PermitEmptyPasswords\s*yes;
+#
+#
+#6.8 Disable Host-based Authentication for Login-based Services
+[CIS - Solaris 11 Configuration - 6.8 Disable Host-based Authentication for Login-based Services] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/pam.conf -> !r:^rlogin\s*\t*auth sufficient\s*\t*pam_rhosts_auth.so.1;
+f:/etc/pam.conf -> !r:^rsh\s*\t*auth sufficient\s*\t*pam_rhosts_auth.so.1;
+#
+#
+#6.9 Restrict FTP Use
+[CIS - Solaris 11 Configuration - 6.9 Restrict FTP Use] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/ftpd/ftpusers -> !r:^root;
+f:/etc/ftpd/ftpusers -> !r:^daemon;
+f:/etc/ftpd/ftpusers -> !r:^bin;
+f:/etc/ftpd/ftpusers -> !r:^sys;
+f:/etc/ftpd/ftpusers -> !r:^adm;
+f:/etc/ftpd/ftpusers -> !r:^uucp;
+f:/etc/ftpd/ftpusers -> !r:^nuucp;
+f:/etc/ftpd/ftpusers -> !r:^smmsp;
+f:/etc/ftpd/ftpusers -> !r:^listen;
+f:/etc/ftpd/ftpusers -> !r:^gdm;
+f:/etc/ftpd/ftpusers -> !r:^lp;
+f:/etc/ftpd/ftpusers -> !r:^webservd;
+f:/etc/ftpd/ftpusers -> !r:^postgres;
+f:/etc/ftpd/ftpusers -> !r:^svctag;
+f:/etc/ftpd/ftpusers -> !r:^openldap;
+f:/etc/ftpd/ftpusers -> !r:^unknown;
+f:/etc/ftpd/ftpusers -> !r:^aiuser;
+f:/etc/ftpd/ftpusers -> !r:^nobody;
+f:/etc/ftpd/ftpusers -> !r:^nobody4;
+f:/etc/ftpd/ftpusers -> !r:^noaccess;
+#
+#
+#6.10 Set Delay between Failed Login Attempts to 4
+[CIS - Solaris 11 Configuration - 6.10 Set Delay between Failed Login Attempts to 4] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/login -> !r:^SLEEPTIME\p4;
+f:/etc/default/login -> !r:^# && r:SLEEPTIME\p4\d;
+#
+#
+#6.11 Remove Autologin Capabilities from the GNOME desktop
+[CIS - Solaris 11 Configuration - 6.11 Remove Autologin Capabilities from the GNOME desktop] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/pam.conf -> !r:^# && r:gdm-autologin;
+#
+#
+#6.12 Set Default Screen Lock for GNOME Users
+[CIS - Solaris 11 Configuration - 6.12 Set Default Screen Lock for GNOME Users] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/usr/share/X11/app-defaults/XScreensaver -> !r:^*timeout:\s*\t*0:10:00;
+f:/usr/share/X11/app-defaults/XScreensaver -> !r:^*locktimeout:\s*\t*0:00:00;
+f:/usr/share/X11/app-defaults/XScreensaver -> !r:^*lock:\s*\t*true;
+#
+#
+#6.13 Restrict at/cron to Authorized Users
+[CIS - Solaris 11 Configuration - 6.13 Restrict at/cron to Authorized Users] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/cron.d/cron.deny;
+f:/etc/cron.d/at.deny;
+f:!/etc/cron.d/cron.allow;
+f:/etc/cron.d/cron.allow -> !r:^root$;
+f:!/etc/cron.d/at.allow;
+f:/etc/cron.d/at.allow -> !r:^# && r:\w;
+#
+#
+#6.14 Restrict root Login to System Console
+[CIS - Solaris 11 Configuration - 6.14 Restrict root Login to System Console] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/login -> !r:^CONSOLE\p/dev/console;
+#
+#
+#6.15 Set Retry Limit for Account Lockout
+[CIS - Solaris 11 Configuration - 6.14 Restrict root Login to System Console] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/login -> !r:^RETRIES\p3;
+f:/etc/default/login -> !r:^# && r:RETRIES\p3\d;
+f:/etc/security/policy.conf -> !r:^LOCK_AFTER_RETRIES\pyes;
+f:/etc/security/policy.conf -> !r:^# && r:LOCK_AFTER_RETRIES\pno;
+#
+#
+#6.17 Secure the GRUB Menu (Intel)
+[CIS - Solaris 11 Configuration - 6.17 Secure the GRUB Menu (Intel)] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/rpool/boot/grub/menu.lst -> !r:^password\s*--md5;
+#
+#
+#7.1 Set Password Expiration Parameters on Active Accounts
+[CIS - Solaris 11 Configuration - 7.1 Set Password Expiration Parameters on Active Accounts] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/passwd -> !r:^maxweeks\p13;
+f:/etc/default/passwd -> !r:^# &&r:maxweeks\p13\d;
+f:/etc/default/passwd -> !r:^minweeks\p1;
+f:/etc/default/passwd -> !r:^# &&r:minweeks\p1\d;
+f:/etc/default/passwd -> !r:^warnweeks\p4;
+f:/etc/default/passwd -> !r:^# &&r:warnweeks\p4\d;
+#
+#
+#7.2 Set Strong Password Creation Policies
+[CIS - Solaris 11 Configuration - 7.2 Set Strong Password Creation Policies] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/passwd -> !r:^passlength\p8;
+f:/etc/default/passwd -> !r:^# && r:passlength\p8\d;
+f:/etc/default/passwd -> !r:^namecheck\pyes;
+f:/etc/default/passwd -> !r:^# && r:namecheck\pno;
+f:/etc/default/passwd -> !r:^history\p10;
+f:/etc/default/passwd -> !r:^# && r:history\p10\d;
+f:/etc/default/passwd -> !r:^mindiff\p3;
+f:/etc/default/passwd -> !r:^# && r:mindiff\p3\d;
+f:/etc/default/passwd -> !r:^minalpha\p2;
+f:/etc/default/passwd -> !r:^# && r:minalpha\p2\d;
+f:/etc/default/passwd -> !r:^minupper\p1;
+f:/etc/default/passwd -> !r:^# && r:minupper\p1\d;
+f:/etc/default/passwd -> !r:^minlower\p1;
+f:/etc/default/passwd -> !r:^# && r:minlower\p1\d;
+f:/etc/default/passwd -> !r:^minnonalpha\p1;
+f:/etc/default/passwd -> !r:^# && r:minnonalpha\p1\d;
+f:/etc/default/passwd -> !r:^maxrepeats\p0;
+f:/etc/default/passwd -> !r:^# && r:maxrepeats\p0\d;
+f:/etc/default/passwd -> !r:^whitespace\pyes;
+f:/etc/default/passwd -> !r:^# && r:whitespace\pno;
+f:/etc/default/passwd -> !r:^dictiondbdir\p/var/passwd;
+f:/etc/default/passwd -> !r:^dictionlist\p/usr/share/lib/dict/words;
+#
+#
+#7.3 Set Default umask for users
+[CIS - Solaris 11 Configuration - 7.3 Set Default umask for users] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/login -> !r:^umask\p027|^umask\p077;
+f:/etc/default/login -> !r:^# && r:umask\p026;
+f:/etc/default/login -> !r:^# && r:umask\p022;
+#
+#
+#7.4 Set Default File Creation Mask for FTP Users
+[CIS - Solaris 11 Configuration - 7.4 Set Default File Creation Mask for FTP Users] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/proftpd.conf -> !r:^umask\s*027;
+f:/etc/proftpd.conf -> !r:^# && r:umask\s*026;
+f:/etc/proftpd.conf -> !r:^# && r:umask\s*022;
+#
+#
+#7.5 Set "mesg n" as Default for All Users
+[CIS - Solaris 11 Configuration - 7.5 Set "mesg n" as Default for All Users] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/.login -> !r:^mesg\s*n;
+f:/etc/profile -> !r:^mesg\s*n;
+#
+#
+#8.1 Create Warnings for Standard Login Services
+[CIS - Solaris 11 Configuration - 8.1 Create Warnings for Standard Login Services] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/issue -> r:SunOS;
+f:/etc/issue -> r:Oracle;
+f:/etc/issue -> r:solaris;
+f:/etc/issue -> !r:Authorized users only. All activity may be monitored and reported;
+f:/etc/motd -> r:SunOS;
+f:/etc/motd -> r:Oracle;
+f:/etc/motd -> r:solaris;
+f:/etc/motd -> !r:Authorized users only. All activity may be monitored and reported;
+#
+#
+#8.2 Enable a Warning Banner for the SSH Service
+[CIS - Solaris 11 Configuration - 8.2 Enable a Warning Banner for the SSH Service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/ssh/sshd_config -> !r:^Banner\s*/etc/issue;
+#
+#
+#8.3 Enable a Warning Banner for the GNOME Service
+[CIS - Solaris 11 Configuration - 8.3 Enable a Warning Banner for the GNOME Service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/gdm/Init/Default -> !r:^/usr/bin/zenity\s\.;
+#
+#
+#8.4 Enable a Warning Banner for the FTP service
+[CIS - Solaris 11 Configuration - 8.4 Enable a Warning Banner for the FTP service] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/proftpd.conf -> !r:^DisplayConnect\s+/etc/issue;
+#
+#
+#8.5 Check that the Banner Setting for telnet is Null
+[CIS - Solaris 11 Configuration - 8.5 Check that the Banner Setting for telnet is Null] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/default/telnetd -> !r:^# && r:BANNER=\.;
+f:/etc/default/telnetd -> !r:BANNER=$;
+#
+#
+#9.3 Verify System Account Default Passwords
+[CIS - Solaris 11 Configuration - 9.3 Verify System Account Default Passwords] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/shadow -> r:daemon && !r::NL:|:NP:;
+f:/etc/shadow -> r:lp && !r::NL:|:NP:;
+f:/etc/shadow -> r:adm && !r::NL:|:NP:;
+f:/etc/shadow -> r:bin && !r::NL:|:NP:;
+f:/etc/shadow -> r:gdm && !r::\p*LK\p*:;
+f:/etc/shadow -> r:noaccess && !r::\p*LK\p*:;
+f:/etc/shadow -> r:nobody && !r::\p*LK\p*:;
+f:/etc/shadow -> r:nobody4 && !r::\p*LK\p*:;
+f:/etc/shadow -> r:openldap && !r::\p*LK\p*:;
+f:/etc/shadow -> r:unknown && !r::\p*LK\p*:;
+f:/etc/shadow -> r:webservd && !r::\p*LK\p*:;
+f:/etc/shadow -> r:mysql && !r::NL:|:NP:;
+f:/etc/shadow -> r:nuuc && !r::NL:|:NP:;
+f:/etc/shadow -> r:postgres && !r::NL:|:NP:;
+f:/etc/shadow -> r:smmsp && !r::NL:|:NP:;
+f:/etc/shadow -> r:sys && !r::NL:|:NP:;
+f:/etc/shadow -> r:uucp && !r::NL:|:NP:;
+f:/etc/shadow -> r:aiuser && !r::\p*LK\p*:;
+f:/etc/shadow -> r:dhcpserv && !r::\p*LK\p*:;
+f:/etc/shadow -> r:dladm && !r::\p*LK\p*:;
+f:/etc/shadow -> r:ftp && !r::\p*LK\p*:;
+f:/etc/shadow -> r:netadm && !r::\p*LK\p*:;
+f:/etc/shadow -> r:netcfg && !r::\p*LK\p*:;
+f:/etc/shadow -> r:pkg5srv && !r::\p*LK\p*:;
+f:/etc/shadow -> r:svctag && !r::\p*LK\p*:;
+f:/etc/shadow -> r:xvm && !r::\p*LK\p*:;
+f:/etc/shadow -> r:upnp && !r::NL:|:NP:;
+f:/etc/shadow -> r:zfssnap && !r::NL:|:NP:;
+#
+#
+#9.4 Ensure Password Fields are Not Empty
+[CIS - Solaris 11 Configuration - 9.4 Ensure Password Fields are Not Empty] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/shadow -> r:\.+::\.+\w+\.*$;
+#
+#
+#9.5 Verify No UID 0 Accounts Exist Other than root
+[CIS - Solaris 11 Configuration - 9.5 Verify No UID 0 Accounts Exist Other than root] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/passwd -> !r:^root && r::\.:0:\.*;
+#
+#
+#9.6 Ensure root PATH Integrity
+[CIS - Solaris 11 Configuration - Ensure root PATH Integrity] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/profile -> r:.;
+f:/etc/environment -> r:.;
+f:/.profile -> r:.;
+f:/.bash_profile -> r:.;
+f:/.bashrc -> r:.;
+f:/etc/profile -> r:::;
+f:/etc/environment -> r:::;
+f:/.profile -> r:::;
+f:/.bash_profile -> r:::;
+f:/.bashrc -> r:::;
+f:/etc/profile -> r::$;
+f:/etc/environment -> r::$;
+f:/.profile -> r::$;
+f:/.bash_profile -> r::$;
+f:/.bashrc -> r::$;
+#
+#
+#9.10 Check for Presence of User .rhosts Files
+[CIS - Solaris 11 Configuration - 9.10 Check for Presence of User .rhosts Files] [any] [https://workbench.cisecurity.org/benchmarks/410]
+d:$home_dirs -> ^.rhosts$;
+#
+#
+#9.12 Check That Users Are Assigned Home Directories
+[CIS - Solaris 11 Configuration - 9.12 Check That Users Are Assigned Home Directories] [any] [https://workbench.cisecurity.org/benchmarks/410]
+f:/etc/passwd -> \w+:\.*:\d*:\d*:\.*:\S+:\.*;
+#
+#
+#9.20 Check for Presence of User .netrc Files
+[CIS - Solaris 11 Configuration - 9.20 Check for Presence of User .netrc Files] [any] [https://workbench.cisecurity.org/benchmarks/410]
+d:$home_dirs -> ^.netrc$;
+#
+#
+#9.21 Check for Presence of User .forward Files
+[CIS - Solaris 11 Configuration - 9.21 Check for Presence of User .forward Files] [any] [https://workbench.cisecurity.org/benchmarks/410]
+d:$home_dirs -> ^.forward$;
+#
+#
+#

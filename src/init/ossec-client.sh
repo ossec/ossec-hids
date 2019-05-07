@@ -11,8 +11,7 @@ DIR=`dirname $PWD`;
 
 ###  Do not modify below here ###
 NAME="OSSEC HIDS"
-VERSION="v3.0.0"
-AUTHOR="Trend Micro Inc."
+VERSION="v3.3.0"
 DAEMONS="ossec-logcollector ossec-syscheckd ossec-agentd ossec-execd"
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf
@@ -120,7 +119,7 @@ start()
 {
     SDAEMONS="ossec-execd ossec-agentd ossec-logcollector ossec-syscheckd"
 
-    echo "Starting $NAME $VERSION (by $AUTHOR)..."
+    echo "Starting $NAME $VERSION..."
     lock;
     checkpid;
 

@@ -8,7 +8,7 @@
        decoder: 'sudo'
 
 **Phase 3: Completed filtering (rules).
-       Rule id: '5401'
+       Rule id: '5404'
        Level: '10'
        Description: 'Three failed attempts to run sudo'
 **Alert to be generated.

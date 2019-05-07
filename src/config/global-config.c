@@ -29,7 +29,7 @@ int Read_GlobalSK(XML_NODE node, void *configp, __attribute__((unused)) void *ma
         return (0);
     }
 
-    /* Get right white_size */
+    /* Get right allow_size */
     if (Config && Config->syscheck_ignore) {
         char **ww;
         ww = Config->syscheck_ignore;
@@ -87,14 +87,15 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 {
     int i = 0;
 
-    /* Whitelist size */
-    unsigned int white_size = 1;
-    unsigned int hostname_white_size = 1;
+    /* allowlist size */
+    unsigned int allow_size = 1;
+    unsigned int hostname_allow_size = 1;
     unsigned int mailto_size = 1;
 
     /* XML definitions */
     const char *xml_mailnotify = "email_notification";
     const char *xml_logall = "logall";
+    const char *xml_logall_json = "logall_json";
     const char *xml_integrity = "integrity_checking";
     const char *xml_rootcheckd = "rootkit_detection";
     const char *xml_hostinfo = "host_information";
@@ -110,6 +111,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_stats = "stats";
     const char *xml_memorysize = "memory_size";
     const char *xml_white_list = "white_list";
+    const char *xml_allow_list = "allow_list";
     const char *xml_compress_alerts = "compress_alerts";
     const char *xml_custom_alert_output = "custom_alert_output";
 
@@ -129,6 +131,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 #ifdef SQLITE_ENABLED
     /* MD5 DB */
     char *xml_md5_whitelist = "md5_whitelist";
+    char *xml_md5_allowlist = "md5_allowlist";
 #endif
 
     _Config *Config;
@@ -137,24 +140,24 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     Config = (_Config *)configp;
     Mail = (MailConfig *)mailp;
 
-    /* Get right white_size */
-    if (Config && Config->white_list) {
+    /* Get right allow_size */
+    if (Config && Config->allow_list) {
         os_ip **ww;
-        ww = Config->white_list;
+        ww = Config->allow_list;
 
         while (*ww != NULL) {
-            white_size++;
+            allow_size++;
             ww++;
         }
     }
 
-    /* Get right white_size */
-    if (Config && Config->hostname_white_list) {
-        OSMatch **ww;
-        ww = Config->hostname_white_list;
+    /* Get right allow_size */
+    if (Config && Config->hostname_allow_list) {
+        char **ww;
+        ww = Config->hostname_allow_list;
 
         while (*ww != NULL) {
-            hostname_white_size++;
+            hostname_allow_size++;
             ww++;
         }
     }
@@ -294,6 +297,21 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 return (OS_INVALID);
             }
         }
+        /* Log all JSON*/
+        else if (strcmp(node[i]->element, xml_logall_json) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                if (Config) {
+                    Config->logall_json = 1;
+                }
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                if (Config) {
+                    Config->logall_json = 0;
+                }
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                return (OS_INVALID);
+            }
+        }           
         /* Compress alerts */
         else if (strcmp(node[i]->element, xml_compress_alerts) == 0) {
             /* removed from here -- compatibility issues only */
@@ -346,8 +364,8 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 Config->memorysize = atoi(node[i]->content);
             }
         }
-        /* whitelist */
-        else if (strcmp(node[i]->element, xml_white_list) == 0) {
+        /* allowlist */
+        else if ((strcmp(node[i]->element, xml_white_list) == 0) || (strcmp(node[i]->element, xml_allow_list) == 0)) {
             /* Windows do not need it */
 #ifndef WIN32
 
@@ -356,19 +374,19 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 "([0-9]{0,2}|[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})$";
 
             if (Config && OS_PRegex(node[i]->content, ip_address_regex)) {
-                white_size++;
-                Config->white_list = (os_ip **)
-                                     realloc(Config->white_list, sizeof(os_ip *)*white_size);
-                if (!Config->white_list) {
+                allow_size++;
+                Config->allow_list = (os_ip **)
+                                     realloc(Config->allow_list, sizeof(os_ip *)*allow_size);
+                if (!Config->allow_list) {
                     merror(MEM_ERROR, __local_name, errno, strerror(errno));
                     return (OS_INVALID);
                 }
 
-                os_calloc(1, sizeof(os_ip), Config->white_list[white_size - 2]);
-                Config->white_list[white_size - 1] = NULL;
+                os_calloc(1, sizeof(os_ip), Config->allow_list[allow_size - 2]);
+                Config->allow_list[allow_size - 1] = NULL;
 
                 if (!OS_IsValidIP(node[i]->content,
-                                  Config->white_list[white_size - 2])) {
+                                  Config->allow_list[allow_size - 2])) {
                     merror(INVALID_IP, __local_name,
                            node[i]->content);
                     return (OS_INVALID);
@@ -376,29 +394,17 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
             }
             /* Add hostname */
             else if (Config) {
-                hostname_white_size++;
-                Config->hostname_white_list = (OSMatch **)
-                                              realloc(Config->hostname_white_list,
-                                                      sizeof(OSMatch *)*hostname_white_size);
+                hostname_allow_size++;
+                Config->hostname_allow_list = (char **)
+                                              realloc(Config->hostname_allow_list,
+                                                      sizeof(char *)*hostname_allow_size);
 
-                if (!Config->hostname_white_list) {
+                if (!Config->hostname_allow_list) {
                     merror(MEM_ERROR, __local_name, errno, strerror(errno));
                     return (OS_INVALID);
                 }
-                os_calloc(1,
-                          sizeof(OSMatch),
-                          Config->hostname_white_list[hostname_white_size - 2]);
-                Config->hostname_white_list[hostname_white_size - 1] = NULL;
-
-                if (!OSMatch_Compile(
-                            node[i]->content,
-                            Config->hostname_white_list[hostname_white_size - 2],
-                            0)) {
-                    merror(REGEX_COMPILE, __local_name, node[i]->content,
-                           Config->hostname_white_list
-                           [hostname_white_size - 2]->error);
-                    return (-1);
-                }
+                os_strdup(node[i]->content, Config->hostname_allow_list[hostname_allow_size - 2]);
+                Config->hostname_allow_list[hostname_allow_size - 1] = NULL;
             }
 #endif
 
@@ -498,9 +504,9 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
 
 #ifdef SQLITE_ENABLED
         /* MD5 DB */
-        else if(strcmp(node[i]->element, xml_md5_whitelist) == 0) {
+        else if((strcmp(node[i]->element, xml_md5_allowlist) == 0) || (strcmp(node[i]->element, xml_md5_whitelist) == 0)) {
             if(Config) {
-                os_strdup(node[i]->content, Config->md5_whitelist);
+                os_strdup(node[i]->content, Config->md5_allowlist);
             }
         }
 #endif

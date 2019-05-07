@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2012 Trend Micro Inc.
+/* Copyright (C) 2009-2019 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -39,10 +39,10 @@
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
-#define __version       "v3.0.0"
-#define __author        "Trend Micro Inc."
+#define __version       "v3.3.0"
+#define __author        "OSSEC Foundation"
 #define __contact       "contact@ossec.net"
-#define __site          "http://www.ossec.net"
+#define __site          "https://www.ossec.net"
 #define __license       "\
 This program is free software; you can redistribute it and/or modify\n\
 it under the terms of the GNU General Public License (version 2) as \n\
@@ -186,6 +186,7 @@ http://www.ossec.net/main/license/\n"
 #define ALERTSJSON_DAILY  "/logs/alerts/alerts.json"
 #define FWLOGS            "/logs/firewall"
 #define FWLOGS_DAILY      "/logs/firewall/firewall.log"
+#define EVENTSJSON_DAILY  "/logs/archives/archives.json"
 
 /* Stats directories */
 #define STATWQUEUE  "/stats/weekly-average"

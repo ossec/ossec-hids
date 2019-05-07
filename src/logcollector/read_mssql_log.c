@@ -99,7 +99,7 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
 
             /* If the saved message is empty, set it and continue */
             if (buffer[0] == '\0') {
-                strncpy(buffer, str, str_len + 2);
+                strncpy(buffer, str, OS_MAXSTR);
                 continue;
             }
 
@@ -108,7 +108,7 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
                 __send_mssql_msg(pos, drop_it, buffer);
 
                 /* Store current one at the buffer */
-                strncpy(buffer, str, str_len + 2);
+                strncpy(buffer, str, OS_MAXSTR);
             }
         }
 
@@ -134,7 +134,7 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
                  */
                 buffer[buffer_len] = ' ';
                 buffer[buffer_len + 1] = '\0';
-                strncat(buffer, str, str_len + 3);
+                strncat(buffer, str, OS_MAXSTR);
             }
         }
 

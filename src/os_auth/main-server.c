@@ -58,6 +58,7 @@ static void help_authd()
     print_out("                can be specified multiple times");
     print_out("                to increase the debug level.");
     print_out("    -t          Test configuration");
+    print_out("    -f          Run in foreground.");
     print_out("    -i          Use client's source IP address");
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
@@ -159,6 +160,7 @@ int main(int argc, char **argv)
     /* Count of pids we are wait()ing on */
     int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
     int use_pass = 1;
+    int run_foreground = 0;
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
     char *port = DEFAULT_PORT;
@@ -189,7 +191,7 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtig:D:m:p:c:v:x:k:n")) != -1) {
+    while ((c = getopt(argc, argv, "Vdhtfig:D:m:p:c:v:x:k:n")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -217,6 +219,9 @@ int main(int argc, char **argv)
                 break;
             case 't':
                 test_config = 1;
+                break;
+            case 'f':
+                run_foreground = 1;
                 break;
             case 'n':
                 use_pass = 0;
@@ -268,6 +273,11 @@ int main(int argc, char **argv)
     gid = Privsep_GetGroup(group);
     if (gid == (gid_t) - 1) {
         ErrorExit(USER_ERROR, ARGV0, "", group);
+    }
+
+    if (!run_foreground) {
+        nowDaemon();
+        goDaemon();
     }
     
     /* Create PID files */
@@ -397,6 +407,12 @@ int main(int argc, char **argv)
         memset(&_nc, 0, sizeof(_nc));
         _ncl = sizeof(_nc);
 
+        fdwork = fdsave;
+        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            ErrorExit("ERROR: Call to os_auth select() failed, errno %d - %s",
+                      errno, strerror (errno));
+        }
+
         /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
@@ -518,6 +534,19 @@ int main(int argc, char **argv)
                                 }
                             }
                             agentname = fname;
+
+                            /* Check for duplicate IP addresses */
+                            char *check_ip_address = NULL;
+                            check_ip_address = IPExist(srcip);
+                            if(check_ip_address) {
+                                merror("%s: ERROR: Invalid IP address %s (duplicated)", ARGV0, check_ip_address);
+                                snprintf(response, 2048, "ERROR: Invalid IP address: %s\n\n", check_ip_address);
+                                SSL_write(ssl, response, strlen(response));
+                                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
+                                SSL_write(ssl, response, strlen(response));
+                                sleep(1);
+                                exit(0);
+                            }
         
                             /* Add the new agent */
                             if (use_ip_address) {

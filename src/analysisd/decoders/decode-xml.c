@@ -14,6 +14,8 @@
 #include "eventinfo.h"
 #include "decoder.h"
 #include "plugin_decoders.h"
+#include "config.h"
+
 
 #ifdef TESTRULE
 #undef XML_LDECODER
@@ -167,6 +169,9 @@ int ReadDecodeXML(const char *file)
     const char *xml_program_name = "program_name";
     const char *xml_prematch = "prematch";
     const char *xml_regex = "regex";
+    const char *xml_program_name_pcre2 = "program_name_pcre2";
+    const char *xml_prematch_pcre2 = "prematch_pcre2";
+    const char *xml_pcre2 = "pcre2";
     const char *xml_order = "order";
     const char *xml_type = "type";
     const char *xml_fts = "fts";
@@ -222,6 +227,9 @@ int ReadDecodeXML(const char *file)
         char *regex;
         char *prematch;
         char *p_name;
+        char *pcre2;
+        char *prematch_pcre2;
+        char *p_name_pcre2;
 
         if (!node[i]->element ||
                 strcasecmp(node[i]->element, xml_decoder) != 0) {
@@ -276,6 +284,9 @@ int ReadDecodeXML(const char *file)
         pi->prematch = NULL;
         pi->program_name = NULL;
         pi->regex = NULL;
+        pi->prematch_pcre2 = NULL;
+        pi->program_name_pcre2 = NULL;
+        pi->pcre2 = NULL;
         pi->use_own_name = 0;
         pi->get_next = 0;
         pi->regex_offset = 0;
@@ -284,6 +295,9 @@ int ReadDecodeXML(const char *file)
         regex = NULL;
         prematch = NULL;
         p_name = NULL;
+        pcre2 = NULL;
+        prematch_pcre2 = NULL;
+        p_name_pcre2 = NULL;
 
         /* Check if strdup worked */
         if (!pi->name) {
@@ -343,6 +357,35 @@ int ReadDecodeXML(const char *file)
                                 elements[j]->content);
             }
 
+            /* Get the PCRE2 */
+            else if (strcasecmp(elements[j]->element, xml_pcre2) == 0) {
+                int r_offset;
+                r_offset = ReadDecodeAttrs(elements[j]->attributes,
+                                           elements[j]->values);
+
+                if (r_offset & AFTER_ERROR) {
+                    merror(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    return (0);
+                }
+
+                /* Only the first regex entry may have an offset */
+                if (pcre2 && r_offset) {
+                    merror(DUP_REGEX, ARGV0, pi->name);
+                    merror(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    return (0);
+                }
+
+                /* regex offset */
+                if (r_offset) {
+                    pi->regex_offset = r_offset;
+                }
+
+                /* Assign regex */
+                pcre2 =
+                    _loadmemory(pcre2,
+                                elements[j]->content);
+            }
+
             /* Get the pre match */
             else if (strcasecmp(elements[j]->element, xml_prematch) == 0) {
                 int r_offset;
@@ -369,10 +412,38 @@ int ReadDecodeXML(const char *file)
                     _loadmemory(prematch,
                                 elements[j]->content);
             }
+            else if (strcasecmp(elements[j]->element, xml_prematch_pcre2) == 0) {
+                int r_offset;
+
+                r_offset = ReadDecodeAttrs(
+                               elements[j]->attributes,
+                               elements[j]->values);
+
+                if (r_offset & AFTER_ERROR) {
+                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                }
+
+                /* Only the first prematch entry may have an offset */
+                if (prematch_pcre2 && r_offset) {
+                    merror(DUP_REGEX, ARGV0, pi->name);
+                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                }
+
+                if (r_offset) {
+                    pi->prematch_offset = r_offset;
+                }
+
+                prematch_pcre2 =
+                    _loadmemory(prematch_pcre2,
+                                elements[j]->content);
+            }
 
             /* Get program name */
             else if (strcasecmp(elements[j]->element, xml_program_name) == 0) {
                 p_name = _loadmemory(p_name, elements[j]->content);
+            }
+            else if (strcasecmp(elements[j]->element, xml_program_name_pcre2) == 0) {
+                p_name_pcre2 = _loadmemory(p_name_pcre2, elements[j]->content);
             }
 
             /* Get the FTS comment */
@@ -436,57 +507,66 @@ int ReadDecodeXML(const char *file)
                 char **norder, **s_norder;
                 int order_int = 0;
 
-                /* Maximum number is 8 for the order */
-                norder = OS_StrBreak(',', elements[j]->content, 8);
+                /* Maximum number for the order is limited by decoder_order_size */
+                norder = OS_StrBreak(',', elements[j]->content, MAX_DECODER_ORDER_SIZE);
                 s_norder = norder;
-                os_calloc(8, sizeof(void *), pi->order);
+                os_calloc(Config.decoder_order_size, sizeof(void *), pi->order);
+                os_calloc(Config.decoder_order_size, sizeof(char *), pi->fields);
 
-                /* Initialize the function pointers */
-                while (order_int < 8) {
-                    pi->order[order_int] = NULL;
-                    order_int++;
-                }
                 order_int = 0;
 
                 /* Check the values from the order */
                 while (*norder) {
-                    if (strstr(*norder, "dstuser") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) DstUser_FP;
-                    } else if (strstr(*norder, "srcuser") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) SrcUser_FP;
+                    if (order_int >= Config.decoder_order_size) {
+                        ErrorExit("%s: ERROR: Order has too many fields.", ARGV0);
                     }
-                    /* User is an alias to dstuser */
-                    else if (strstr(*norder, "user") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) DstUser_FP;
-                    } else if (strstr(*norder, "srcip") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) SrcIP_FP;
-                    } else if (strstr(*norder, "dstip") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) DstIP_FP;
-                    } else if (strstr(*norder, "srcport") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) SrcPort_FP;
-                    } else if (strstr(*norder, "dstport") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) DstPort_FP;
-                    } else if (strstr(*norder, "protocol") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) Protocol_FP;
-                    } else if (strstr(*norder, "action") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) Action_FP;
-                    } else if (strstr(*norder, "id") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) ID_FP;
-                    } else if (strstr(*norder, "url") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) Url_FP;
-                    } else if (strstr(*norder, "data") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) Data_FP;
-                    } else if (strstr(*norder, "extra_data") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) Data_FP;
-                    } else if (strstr(*norder, "status") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) Status_FP;
-                    } else if (strstr(*norder, "system_name") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) SystemName_FP;
-                    } else if (strstr(*norder, "filename") != NULL) {
-                        pi->order[order_int] = (void (*)(void *, char *)) FileName_FP;
-                    } else {
+
+                    char *word = &(*norder)[strspn(*norder, " ")];
+                    word[strcspn(word, " ")] = '\0';
+
+                    if (strlen(word) == 0) {
                         ErrorExit("decode-xml: Wrong field '%s' in the order"
                                   " of decoder '%s'", *norder, pi->name);
+                    }
+
+                    if (!strcmp(word, "dstuser")) {
+                        pi->order[order_int] = DstUser_FP;
+                    } else if (!strcmp(word, "srcuser")) {
+                        pi->order[order_int] = SrcUser_FP;
+                    }
+                    /* User is an alias to dstuser */
+                    else if (!strcmp(word, "user")) {
+                        pi->order[order_int] = DstUser_FP;
+                    } else if (!strcmp(word, "srcip")) {
+                        pi->order[order_int] = SrcIP_FP;
+                    } else if (!strcmp(word, "dstip")) {
+                        pi->order[order_int] = DstIP_FP;
+                    } else if (!strcmp(word, "srcport")) {
+                        pi->order[order_int] = SrcPort_FP;
+                    } else if (!strcmp(word, "dstport")) {
+                        pi->order[order_int] = DstPort_FP;
+                    } else if (!strcmp(word, "protocol")) {
+                        pi->order[order_int] = Protocol_FP;
+                    } else if (!strcmp(word, "action")) {
+                        pi->order[order_int] = Action_FP;
+                    } else if (!strcmp(word, "id")) {
+                        pi->order[order_int] = ID_FP;
+                    } else if (!strcmp(word, "url")) {
+                        pi->order[order_int] = Url_FP;
+                    } else if (!strcmp(word, "data")) {
+                        pi->order[order_int] = Data_FP;
+                    } else if (!strcmp(word, "extra_data")) {
+                        pi->order[order_int] = Data_FP;
+                    } else if (!strcmp(word, "status")) {
+                        pi->order[order_int] = Status_FP;
+                    } else if (!strcmp(word, "system_name")) {
+                        pi->order[order_int] = SystemName_FP;
+                    } else if (strstr(*norder, "filename") != NULL) {
+                        pi->order[order_int] = FileName_FP;
+                    } else {
+                        pi->order[order_int] = DynamicField_FP;
+                        pi->fields[order_int] = strdup(*norder);
+
                     }
 
                     free(*norder);
@@ -571,14 +651,14 @@ int ReadDecodeXML(const char *file)
 
 
         /* Prematch must be set */
-        if (!prematch && !pi->parent && !p_name) {
+        if (!(prematch || prematch_pcre2) && !pi->parent && !(p_name || p_name_pcre2)) {
             merror(DECODE_NOPRE, ARGV0, pi->name);
             merror(DEC_REGEX_ERROR, ARGV0, pi->name);
             return (0);
         }
 
         /* If pi->regex is not set, fts must not be set too */
-        if ((!regex && (pi->fts || pi->order)) || (regex && !pi->order)) {
+        if ((!(regex || pcre2) && (pi->fts || pi->order)) || ((regex || pcre2) && !pi->order)) {
             merror(DEC_REGEX_ERROR, ARGV0, pi->name);
             return (0);
         }
@@ -598,7 +678,7 @@ int ReadDecodeXML(const char *file)
             if (!pi->parent) {
                 pi->regex_offset = 0;
                 pi->regex_offset |= AFTER_PARENT;
-            } else if (!prematch) {
+            } else if (!(prematch || prematch_pcre2)) {
                 merror(INV_OFFSET, ARGV0, "after_prematch");
                 merror(DEC_REGEX_ERROR, ARGV0, pi->name);
                 return (0);
@@ -607,7 +687,7 @@ int ReadDecodeXML(const char *file)
 
         /* For the after_regex offset */
         if (pi->regex_offset & AFTER_PREVREGEX) {
-            if (!pi->parent || !regex) {
+            if (!pi->parent || !(regex || pcre2)) {
                 merror(INV_OFFSET, ARGV0, "after_regex");
                 merror(DEC_REGEX_ERROR, ARGV0, pi->name);
                 return (0);
@@ -639,6 +719,15 @@ int ReadDecodeXML(const char *file)
 
             free(prematch);
         }
+        else if (prematch_pcre2) {
+            os_calloc(1, sizeof(OSPcre2), pi->prematch_pcre2);
+            if (!OSPcre2_Compile(prematch_pcre2, pi->prematch_pcre2, PCRE2_CASELESS)) {
+                merror(REGEX_COMPILE, ARGV0, prematch_pcre2, pi->prematch_pcre2->error);
+                return (0);
+            }
+
+            free(prematch_pcre2);
+        }
 
         /* Compile the p_name */
         if (p_name) {
@@ -649,6 +738,15 @@ int ReadDecodeXML(const char *file)
             }
 
             free(p_name);
+        }
+        else if (p_name_pcre2) {
+            os_calloc(1, sizeof(OSPcre2), pi->program_name_pcre2);
+            if (!OSPcre2_Compile(p_name_pcre2, pi->program_name_pcre2, PCRE2_CASELESS)) {
+                merror(REGEX_COMPILE, ARGV0, p_name_pcre2, pi->program_name_pcre2->error);
+                return (0);
+            }
+
+            free(p_name_pcre2);
         }
 
         /* We may not have the pi->regex */
@@ -666,6 +764,15 @@ int ReadDecodeXML(const char *file)
             }
 
             free(regex);
+        }
+        else if (pcre2) {
+            os_calloc(1, sizeof(OSPcre2), pi->pcre2);
+            if (!OSPcre2_Compile(pcre2, pi->pcre2, PCRE2_CASELESS)) {
+                merror(REGEX_COMPILE, ARGV0, pcre2, pi->pcre2->error);
+                return (0);
+            }
+
+            free(pcre2);
         }
 
         /* Validate arguments */
@@ -724,7 +831,7 @@ char *_loadmemory(char *at, char *str)
 {
     if (at == NULL) {
         size_t strsize = 0;
-        if ((strsize = strlen(str)) < OS_SIZE_1024) {
+        if ((strsize = strlen(str)) < OS_SIZE_8192) {
             at = (char *) calloc(strsize + 1, sizeof(char));
             if (at == NULL) {
                 merror(MEM_ERROR, ARGV0, errno, strerror(errno));
@@ -742,7 +849,7 @@ char *_loadmemory(char *at, char *str)
         size_t strsize = strlen(str);
         size_t atsize = strlen(at);
         size_t finalsize = atsize + strsize + 1;
-        if (finalsize > OS_SIZE_1024) {
+        if (finalsize > OS_SIZE_8192) {
             merror(SIZE_ERROR, ARGV0, str);
             return (NULL);
         }

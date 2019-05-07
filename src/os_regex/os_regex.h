@@ -15,6 +15,9 @@
 /* size_t */
 #include <stddef.h>
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 /* OSRegex_Compile flags */
 #define OS_RETURN_SUBSTRING     0000200
 #define OS_CASE_SENSITIVE       0000400
@@ -31,26 +34,53 @@
 #define OS_REGEX_BADREGEX       6
 #define OS_REGEX_BADPARENTHESIS 7
 #define OS_REGEX_NO_MATCH       8
+#define OS_REGEX_NO_JIT         9
+
+#define OS_CONVERT_REGEX        1
+#define OS_CONVERT_MATCH        2
 
 /* OSRegex structure */
 typedef struct _OSRegex {
     int error;
-    int *flags;
-    char **patterns;
     char **sub_strings;
-    const char ** *prts_closure;
-    const char ** *prts_str;
+    pcre2_code *regex;
+    pcre2_match_data *match_data;
+    size_t pattern_len;
+    char *pattern;
+    const char *(*exec_function)(const char *, struct _OSRegex *);
 } OSRegex;
 
 /* OSmatch structure */
 typedef struct _OSMatch {
     int error;
-    size_t *size;
-    char **patterns;
-    int (**match_fp)(const char *str, const char *str2, size_t str_len, size_t size);
+    pcre2_code *regex;
+    pcre2_match_data *match_data;
+    size_t pattern_len;
+    char *pattern;
+    int (*exec_function)(const char *, size_t, struct _OSMatch *);
 } OSMatch;
 
+/* OSPcre2 structure */
+typedef struct _OSPcre2 {
+    int error;
+    char **sub_strings;
+    pcre2_code *regex;
+    pcre2_match_data *match_data;
+    size_t pattern_len;
+    char *pattern;
+    const char *(*exec_function)(const char *, struct _OSPcre2 *);
+} OSPcre2;
+
 /*** Prototypes ***/
+
+/* Convert an Ossec pattern, match or regex,
+ * to a PCRE2 pattern
+ * Allowed map are:
+ *      - OS_CONVERT_REGEX
+ *      - OS_CONVERT_MATCH
+ * Returns 1 on success or 0 on error.
+ */
+int OSRegex_Convert(const char *pattern, char **converted_pattern, uint32_t map);
 
 /* Compile a regular expression to be used later
  * Allowed flags are:
@@ -105,6 +135,33 @@ int OS_Match2(const char *pattern, const char *str)  __attribute__((nonnull(2)))
 int OS_WordMatch(const char *pattern, const char *str) __attribute__((nonnull));
 #define OS_Match OS_WordMatch
 
+/* Compile a PCRE2 expression to be used later
+ * Allowed flags are the same as option in pcre2_compile
+ * Returns 1 on success or 0 on error.
+ * The error code is set on reg->error.
+ */
+int OSPcre2_Compile(const char *pattern, OSPcre2 *reg, int flags);
+
+/* Compare an already compiled PCRE2 expression with
+ * a not NULL string.
+ * Returns end of str on success or NULL on error.
+ * The error code is set on reg->error.
+ */
+const char *OSPcre2_Execute(const char *str, OSPcre2 *reg);
+
+/* Release all the memory created by the compilation/execution phases */
+void OSPcre2_FreePattern(OSPcre2 *reg);
+
+/* Release all the memory created to store the sub strings */
+void OSPcre2_FreeSubStrings(OSPcre2 *reg);
+
+/* This function is a wrapper around the compile/execute
+ * functions. It should only be used when the pattern is
+ * only going to be used once.
+ * Returns 1 on success or 0 on failure.
+ */
+int OS_Pcre2(const char *pattern, const char *str);
+
 /* Split a string into multiples pieces, divided by a char "match".
  * Returns a NULL terminated array on success or NULL on error.
  */
@@ -132,4 +189,3 @@ extern const unsigned char hostname_map[256];
 #define isValidChar(x) (hostname_map[(unsigned char)x])
 
 #endif /* __OS_REGEX_H */
-

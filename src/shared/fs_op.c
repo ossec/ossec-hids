@@ -35,7 +35,7 @@ const struct file_system_type skip_file_systems[] = {
 
 short IsNFS(const char *dir_name)
 {
-#if !defined(WIN32) && (defined(Linux) || defined(FreeBSD))
+#if !defined(WIN32) && (defined(Linux) || defined(FreeBSD) || defined(OpenBSD))
     struct statfs stfs;
 
     /* ignore NFS (0x6969) or CIFS (0xFF534D42) mounts */
@@ -43,7 +43,11 @@ short IsNFS(const char *dir_name)
     {
         int i;
         for ( i=0; network_file_systems[i].name != NULL; i++ ) {
+#if __OpenBSD__
+            if(strcasecmp(network_file_systems[i].name, stfs.f_fstypename) == 0) {
+#else
             if(network_file_systems[i].f_type == stfs.f_type ) {
+#endif  // __OpenBSD
                 return network_file_systems[i].flag;
             }
         }
@@ -69,14 +73,18 @@ short IsNFS(const char *dir_name)
 
 short skipFS(const char *dir_name)
 {
-#if !defined(WIN32) && (defined(Linux) || defined(FreeBSD))
+#if !defined(WIN32) && (defined(Linux) || defined(FreeBSD) || defined(OpenBSD))
     struct statfs stfs;
 
     if ( ! statfs(dir_name, &stfs) )
     {
         int i;
         for ( i=0; skip_file_systems[i].name != NULL; i++ ) {
+#if __OpenBSD__
+            if(strcasecmp(skip_file_systems[i].name, stfs.f_fstypename) == 0) {
+#else
             if(skip_file_systems[i].f_type == stfs.f_type ) {
+#endif  // __OpenBSD__
                 debug1("%s: Skipping dir (FS %s): %s ", ARGV0, skip_file_systems[i].name, dir_name);
                 return skip_file_systems[i].flag;
             }
@@ -93,10 +101,12 @@ short skipFS(const char *dir_name)
         return(-1);
     }
 #else
-    verbose(
+#ifndef WIN32
+    debug2(
         "INFO: Attempted to check FS status for '%s', but we don't know how on this OS.",
         dir_name
     );
+#endif
 #endif
     return(0);
 }

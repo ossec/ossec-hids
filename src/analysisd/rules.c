@@ -55,7 +55,9 @@ int Rules_OP_ReadRules(const char *rulefile)
     const char *xml_rule = "rule";
 
     const char *xml_regex = "regex";
+    const char *xml_pcre2 = "pcre2";
     const char *xml_match = "match";
+    const char *xml_match_pcre2 = "match_pcre2";
     const char *xml_decoded = "decoded_as";
     const char *xml_category = "category";
     const char *xml_cve = "cve";
@@ -69,6 +71,8 @@ int Rules_OP_ReadRules(const char *rulefile)
     const char *xml_srcip = "srcip";
     const char *xml_srcgeoip = "srcgeoip";
     const char *xml_srcport = "srcport";
+    const char *xml_srcgeoip_pcre2 = "srcgeoip_pcre2";
+    const char *xml_srcport_pcre2 = "srcport_pcre2";
     const char *xml_dstip = "dstip";
     const char *xml_dstgeoip = "dstgeoip";
     const char *xml_dstport = "dstport";
@@ -79,8 +83,20 @@ int Rules_OP_ReadRules(const char *rulefile)
     const char *xml_hostname = "hostname";
     const char *xml_program_name = "program_name";
     const char *xml_status = "status";
+    const char *xml_dstgeoip_pcre2 = "dstgeoip_pcre2";
+    const char *xml_dstport_pcre2 = "dstport_pcre2";
+    const char *xml_user_pcre2 = "user_pcre2";
+    const char *xml_url_pcre2 = "url_pcre2";
+    const char *xml_id_pcre2 = "id_pcre2";
+    const char *xml_data_pcre2 = "extra_data_pcre2";
+    const char *xml_hostname_pcre2 = "hostname_pcre2";
+    const char *xml_program_name_pcre2 = "program_name_pcre2";
+    const char *xml_status_pcre2 = "status_pcre2";
     const char *xml_action = "action";
     const char *xml_compiled = "compiled_rule";
+    const char *xml_field = "field";
+    const char *xml_name = "name";
+
 
     const char *xml_list = "list";
     const char *xml_list_lookup = "lookup";
@@ -307,12 +323,16 @@ int Rules_OP_ReadRules(const char *rulefile)
             /* Rule elements block */
             {
                 int k = 0;
+                int ifield = 0;
                 int info_type = 0;
                 int count_info_detail = 0;
                 RuleInfoDetail *last_info_detail = NULL;
                 char *regex = NULL;
                 char *match = NULL;
+                char *pcre2 = NULL;
+                char *match_pcre2 = NULL;
                 char *url = NULL;
+                char *url_pcre2 = NULL;
                 char *if_matched_regex = NULL;
                 char *if_matched_group = NULL;
                 char *user = NULL;
@@ -326,6 +346,18 @@ int Rules_OP_ReadRules(const char *rulefile)
                 char *hostname = NULL;
                 char *extra_data = NULL;
                 char *program_name = NULL;
+
+                char *user_pcre2 = NULL;
+                char *id_pcre2 = NULL;
+                char *srcport_pcre2 = NULL;
+                char *dstport_pcre2 = NULL;
+                char *srcgeoip_pcre2 = NULL;
+                char *dstgeoip_pcre2 = NULL;
+
+                char *status_pcre2 = NULL;
+                char *hostname_pcre2 = NULL;
+                char *extra_data_pcre2 = NULL;
+                char *program_name_pcre2 = NULL;
 
                 XML_NODE rule_opt = NULL;
                 rule_opt =  OS_GetElementsbyNode(&xml, rule[j]);
@@ -345,9 +377,17 @@ int Rules_OP_ReadRules(const char *rulefile)
                         regex =
                             loadmemory(regex,
                                        rule_opt[k]->content);
+                    } else if (strcasecmp(rule_opt[k]->element, xml_pcre2) == 0) {
+                        pcre2 =
+                            loadmemory(pcre2,
+                                       rule_opt[k]->content);
                     } else if (strcasecmp(rule_opt[k]->element, xml_match) == 0) {
                         match =
                             loadmemory(match,
+                                       rule_opt[k]->content);
+                    } else if (strcasecmp(rule_opt[k]->element, xml_match_pcre2) == 0) {
+                        match_pcre2 =
+                            loadmemory(match_pcre2,
                                        rule_opt[k]->content);
                     } else if (strcasecmp(rule_opt[k]->element, xml_decoded) == 0) {
                         config_ruleinfo->decoded_as =
@@ -577,10 +617,104 @@ int Rules_OP_ReadRules(const char *rulefile)
                         program_name =
                             loadmemory(program_name,
                                        rule_opt[k]->content);
+                    } else if (strcasecmp(rule_opt[k]->element, xml_user_pcre2) == 0) {
+                        user_pcre2 =
+                            loadmemory(user_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
+                    } else if(strcasecmp(rule_opt[k]->element,xml_srcgeoip_pcre2)==0) {
+                        srcgeoip_pcre2 =
+                            loadmemory(srcgeoip_pcre2,
+                                    rule_opt[k]->content);
+
+                        if(!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                    } else if(strcasecmp(rule_opt[k]->element,xml_dstgeoip_pcre2)==0) {
+                        dstgeoip_pcre2 =
+                            loadmemory(dstgeoip_pcre2,
+                                    rule_opt[k]->content);
+
+                        if(!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                    } else if (strcasecmp(rule_opt[k]->element, xml_id_pcre2) == 0) {
+                        id_pcre2 =
+                            loadmemory(id_pcre2,
+                                       rule_opt[k]->content);
+                    } else if (strcasecmp(rule_opt[k]->element, xml_srcport_pcre2) == 0) {
+                        srcport_pcre2 =
+                            loadmemory(srcport_pcre2,
+                                       rule_opt[k]->content);
+                        if (!(config_ruleinfo->alert_opts & DO_PACKETINFO)) {
+                            config_ruleinfo->alert_opts |= DO_PACKETINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_dstport_pcre2) == 0) {
+                        dstport_pcre2 =
+                            loadmemory(dstport_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_PACKETINFO)) {
+                            config_ruleinfo->alert_opts |= DO_PACKETINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_status_pcre2) == 0) {
+                        status_pcre2 =
+                            loadmemory(status_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_hostname_pcre2) == 0) {
+                        hostname_pcre2 =
+                            loadmemory(hostname_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_data_pcre2) == 0) {
+                        extra_data_pcre2 =
+                            loadmemory(extra_data_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element,
+                                          xml_program_name_pcre2) == 0) {
+                        program_name_pcre2 =
+                            loadmemory(program_name_pcre2,
+                                       rule_opt[k]->content);
                     } else if (strcasecmp(rule_opt[k]->element, xml_action) == 0) {
                         config_ruleinfo->action =
                             loadmemory(config_ruleinfo->action,
                                        rule_opt[k]->content);
+                    } else if (strcasecmp(rule_opt[k]->element, xml_field) == 0) {
+                        if (rule_opt[k]->attributes[0]) {
+                            os_calloc(1, sizeof(FieldInfo), config_ruleinfo->fields[ifield]);
+
+                            if (strcasecmp(rule_opt[k]->attributes[0], xml_name) == 0) {
+                                config_ruleinfo->fields[ifield]->name = loadmemory(config_ruleinfo->fields[ifield]->name, rule_opt[k]->values[0]);
+                            } else {
+                                merror("%s: Bad attribute '%s' for field.", ARGV0, rule_opt[k]->attributes[0]);
+                                return -1;
+                            }
+                        } else {
+                            merror("%s: No such attribute '%s' for field.", ARGV0, xml_name);
+                            return (-1);
+                        }
+
+                        os_calloc(1, sizeof(OSRegex), config_ruleinfo->fields[ifield]->regex);
+
+                        if (!OSRegex_Compile(rule_opt[k]->content, config_ruleinfo->fields[ifield]->regex, 0)) {
+                            merror(REGEX_COMPILE, ARGV0, rule_opt[k]->content, config_ruleinfo->fields[ifield]->regex->error);
+                            return -1;
+                        }
+
+                        ifield++;
+
                     } else if (strcasecmp(rule_opt[k]->element, xml_list) == 0) {
                         debug1("-> %s == %s", rule_opt[k]->element, xml_list);
                         if (rule_opt[k]->attributes && rule_opt[k]->values && rule_opt[k]->content) {
@@ -692,6 +826,10 @@ int Rules_OP_ReadRules(const char *rulefile)
                     } else if (strcasecmp(rule_opt[k]->element, xml_url) == 0) {
                         url =
                             loadmemory(url,
+                                       rule_opt[k]->content);
+                    } else if (strcasecmp(rule_opt[k]->element, xml_url_pcre2) == 0) {
+                        url_pcre2 =
+                            loadmemory(url_pcre2,
                                        rule_opt[k]->content);
                     } else if (strcasecmp(rule_opt[k]->element, xml_compiled) == 0) {
                         int it_id = 0;
@@ -999,6 +1137,17 @@ int Rules_OP_ReadRules(const char *rulefile)
                     regex = NULL;
                 }
 
+                if (pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->pcre2);
+                    if (!OSPcre2_Compile(pcre2, config_ruleinfo->pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, pcre2,
+                               config_ruleinfo->pcre2->error);
+                        return (-1);
+                    }
+                    free(pcre2);
+                    pcre2 = NULL;
+                }
+
                 /* Add in match */
                 if (match) {
                     os_calloc(1, sizeof(OSMatch), config_ruleinfo->match);
@@ -1009,6 +1158,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     }
                     free(match);
                     match = NULL;
+                }
+                else if (match_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->match_pcre2);
+                    if (!OSPcre2_Compile(match_pcre2, config_ruleinfo->match_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, match_pcre2,
+                               config_ruleinfo->match_pcre2->error);
+                        return (-1);
+                    }
+                    free(match_pcre2);
+                    match_pcre2 = NULL;
                 }
 
                 /* Add in id */
@@ -1022,6 +1181,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     free(id);
                     id = NULL;
                 }
+                if (id_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->id_pcre2);
+                    if (!OSPcre2_Compile(id_pcre2, config_ruleinfo->id_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, id,
+                               config_ruleinfo->id_pcre2->error);
+                        return (-1);
+                    }
+                    free(id_pcre2);
+                    id_pcre2 = NULL;
+                }
 
                 /* Add srcport */
                 if (srcport) {
@@ -1033,6 +1202,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     }
                     free(srcport);
                     srcport = NULL;
+                }
+                if (srcport_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->srcport_pcre2);
+                    if (!OSPcre2_Compile(srcport_pcre2, config_ruleinfo->srcport_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, srcport_pcre2,
+                               config_ruleinfo->id->error);
+                        return (-1);
+                    }
+                    free(srcport_pcre2);
+                    srcport_pcre2 = NULL;
                 }
 
                 /* Add dstport */
@@ -1046,6 +1225,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     free(dstport);
                     dstport = NULL;
                 }
+                else if (dstport_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->dstport_pcre2);
+                    if (!OSPcre2_Compile(dstport_pcre2, config_ruleinfo->dstport_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, dstport_pcre2,
+                               config_ruleinfo->id->error);
+                        return (-1);
+                    }
+                    free(dstport_pcre2);
+                    dstport_pcre2 = NULL;
+                }
 
                 /* Add in status */
                 if (status) {
@@ -1058,6 +1247,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     free(status);
                     status = NULL;
                 }
+                else if (status_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->status_pcre2);
+                    if (!OSPcre2_Compile(status_pcre2, config_ruleinfo->status_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, status_pcre2,
+                               config_ruleinfo->status_pcre2->error);
+                        return (-1);
+                    }
+                    free(status_pcre2);
+                    status_pcre2 = NULL;
+                }
 
                 /* Add in hostname */
                 if (hostname) {
@@ -1069,6 +1268,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     }
                     free(hostname);
                     hostname = NULL;
+                }
+                else if (hostname_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->hostname_pcre2);
+                    if (!OSPcre2_Compile(hostname_pcre2, config_ruleinfo->hostname_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, hostname_pcre2,
+                               config_ruleinfo->hostname_pcre2->error);
+                        return (-1);
+                    }
+                    free(hostname_pcre2);
+                    hostname_pcre2 = NULL;
                 }
 
                 /* Add extra data */
@@ -1083,6 +1292,17 @@ int Rules_OP_ReadRules(const char *rulefile)
                     free(extra_data);
                     extra_data = NULL;
                 }
+                else if (extra_data_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->extra_data_pcre2);
+                    if (!OSPcre2_Compile(extra_data_pcre2,
+                                         config_ruleinfo->extra_data_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, extra_data_pcre2,
+                               config_ruleinfo->extra_data_pcre2->error);
+                        return (-1);
+                    }
+                    free(extra_data_pcre2);
+                    extra_data_pcre2 = NULL;
+                }
 
                 /* Add in program name */
                 if (program_name) {
@@ -1096,6 +1316,17 @@ int Rules_OP_ReadRules(const char *rulefile)
                     free(program_name);
                     program_name = NULL;
                 }
+                else if (program_name_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->program_name_pcre2);
+                    if (!OSPcre2_Compile(program_name_pcre2,
+                                         config_ruleinfo->program_name_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, program_name_pcre2,
+                               config_ruleinfo->program_name_pcre2->error);
+                        return (-1);
+                    }
+                    free(program_name_pcre2);
+                    program_name_pcre2 = NULL;
+                }
 
                 /* Add in user */
                 if (user) {
@@ -1108,6 +1339,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     free(user);
                     user = NULL;
                 }
+                else if (user_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->user_pcre2);
+                    if (!OSPcre2_Compile(user_pcre2, config_ruleinfo->user_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, user_pcre2,
+                               config_ruleinfo->user_pcre2->error);
+                        return (-1);
+                    }
+                    free(user_pcre2);
+                    user_pcre2 = NULL;
+                }
 
                 /* Adding in srcgeoip */
                 if(srcgeoip) {
@@ -1119,6 +1360,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     }
                     free(srcgeoip);
                     srcgeoip = NULL;
+                }
+                else if(srcgeoip_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->srcgeoip_pcre2);
+                    if(!OSPcre2_Compile(srcgeoip_pcre2, config_ruleinfo->srcgeoip_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, srcgeoip_pcre2,
+                                              config_ruleinfo->srcgeoip_pcre2->error);
+                        return(-1);
+                    }
+                    free(srcgeoip_pcre2);
+                    srcgeoip_pcre2 = NULL;
                 }
 
 
@@ -1133,6 +1384,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     free(dstgeoip);
                     dstgeoip = NULL;
                 }
+                else if(dstgeoip_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->dstgeoip_pcre2);
+                    if(!OSPcre2_Compile(dstgeoip_pcre2, config_ruleinfo->dstgeoip_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, dstgeoip_pcre2,
+                                              config_ruleinfo->dstgeoip_pcre2->error);
+                        return(-1);
+                    }
+                    free(dstgeoip_pcre2);
+                    dstgeoip_pcre2 = NULL;
+                }
 
 
                 /* Add in URL */
@@ -1145,6 +1406,16 @@ int Rules_OP_ReadRules(const char *rulefile)
                     }
                     free(url);
                     url = NULL;
+                }
+                else if (url_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->url_pcre2);
+                    if (!OSPcre2_Compile(url_pcre2, config_ruleinfo->url_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, url_pcre2,
+                               config_ruleinfo->url_pcre2->error);
+                        return (-1);
+                    }
+                    free(url_pcre2);
+                    url_pcre2 = NULL;
                 }
 
                 /* Add matched_group */
@@ -1435,6 +1706,8 @@ RuleInfo *zerorulemember(int id, int level,
     ruleinfo_pt->hostname = NULL;
     ruleinfo_pt->program_name = NULL;
     ruleinfo_pt->action = NULL;
+    os_calloc(Config.decoder_order_size, sizeof(FieldInfo*), ruleinfo_pt->fields);
+
 
     /* Zero last matched events */
     ruleinfo_pt->__frequency = 0;

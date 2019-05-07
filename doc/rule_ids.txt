@@ -61,9 +61,11 @@
 17100 - 17399 Policy
 
 18100 - 18499 Windows system
-
+18500 - 18650 Sysmon rules
+18651 - 18750 MS IPSec rules
 20100 - 20299 IDS
 20300 - 20499 IDS (Snort specific)
+20500 - 20509 Windows PowerShell
 
 30100 - 30999 Apache error log
 31100 - 31199 Web access log
@@ -87,7 +89,15 @@
 53300 - 53399 owncloud rules
 53400 - 53500 proxmox ve rules
 53501 - 53550 OpenSMTPd rules
-53551 - xxxxx dnsmasq
+53551 - 53599 dnsmasq
+53600 - 53625 linux usb detection rules
+53626 - 53630 ms usb detection rules
+53631 - 53699 ms firewall rules
+53700 - 53749 PSAD rules
+53750 - 53799 unbound rules
+53800 - 53825 Kaspersky Endpoint Security 10 for Linux rules
+53826 - 53829 MHN - Dionaea
+53830 - 53840 MHN - Cowrie
 56000 - 56200 FreeBSD rules
 
 100000 - 109999 User defined rules

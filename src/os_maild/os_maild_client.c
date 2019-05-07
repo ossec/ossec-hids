@@ -100,6 +100,16 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
             body_size -= log_size;
         }
     }
+    if (al_data->perm_chg) {
+       log_size = strlen(al_data->perm_chg) + 17 + 4;
+       if (body_size > log_size) {
+           strncat(logs, "Permission change: ", 20);
+           strncat(logs, al_data->perm_chg, body_size);
+           strncat(logs, "\r\n", 4);
+           body_size -= log_size;
+       }
+    }
+
 
     /* EXTRA DATA */
     if (al_data->srcip) {

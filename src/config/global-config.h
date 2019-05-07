@@ -15,6 +15,7 @@
 /* Configuration structure */
 typedef struct __Config {
     u_int8_t logall;
+    u_int8_t logall_json;
     u_int8_t stats;
     u_int8_t integrity;
     u_int8_t syscheck_auto_ignore;
@@ -24,6 +25,8 @@ typedef struct __Config {
     u_int8_t mailbylevel;
     u_int8_t logbylevel;
     u_int8_t logfw;
+    int decoder_order_size;
+
 
     /* Prelude support */
     u_int8_t prelude;
@@ -64,10 +67,10 @@ typedef struct __Config {
     char **syscheck_ignore;
 
     /* List of ips to never block */
-    os_ip **white_list;
+    os_ip **allow_list;
 
     /* List of hostnames to never block */
-    OSMatch **hostname_white_list;
+    char **hostname_allow_list;
 
     /* List of rules */
     char **includes;
@@ -90,7 +93,7 @@ typedef struct __Config {
 #endif
 
     /* MD5 DB support */
-    char *md5_whitelist;
+    char *md5_allowlist;
 
 } _Config;
 
