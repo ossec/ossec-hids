@@ -26,6 +26,7 @@ IP=$3
 PWD=`pwd`
 TOKEN='Cloudflare API Token'
 USER='cloudflareuser@email.com'
+MODE='block' # block or challenge
 
 # Logging the call
 echo "`date` $0 $1 $2 $3 $4 $5" >> /var/ossec/logs/active-responses.log
@@ -42,7 +43,7 @@ if [ "x${ACTION}" = "xadd" ]; then
    -H "X-Auth-Email: $USER" \
    -H "X-Auth-Key: $TOKEN" \
    -H "Content-Type: application/json" \
-   --data "{\"mode\":\"block\",\"configuration\":{\"target\":\"ip\",\"value\":\"$IP\"},\"notes\":\"Blocked via OSSEC Command\"}"
+   --data "{\"mode\":\"$MODE\",\"configuration\":{\"target\":\"ip\",\"value\":\"$IP\"},\"notes\":\"Blocked via OSSEC Command\"}"
    exit 0;
 
 
@@ -51,7 +52,7 @@ if [ "x${ACTION}" = "xadd" ]; then
 elif [ "x${ACTION}" = "xdelete" ]; then
 
    # get the rule ID
-   JSON=$(curl -sSX GET "https://api.cloudflare.com/client/v4/user/firewall/access_rules/rules?mode=block&configuration_target=ip&configuration_value=$IP" \
+   JSON=$(curl -sSX GET "https://api.cloudflare.com/client/v4/user/firewall/access_rules/rules?mode=$MODE&configuration_target=ip&configuration_value=$IP" \
    -H "X-Auth-Email: $USER" \
    -H "X-Auth-Key: $TOKEN" \
    -H "Content-Type: application/json")
