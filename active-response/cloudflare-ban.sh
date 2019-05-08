@@ -43,7 +43,7 @@ if [ "x${ACTION}" = "xadd" ]; then
    -H "X-Auth-Email: $USER" \
    -H "X-Auth-Key: $TOKEN" \
    -H "Content-Type: application/json" \
-   --data "{\"mode\":\"$MODE\",\"configuration\":{\"target\":\"ip\",\"value\":\"$IP\"},\"notes\":\"Blocked via OSSEC Command\"}"
+   --data "{\"mode\":\"$MODE\",\"configuration\":{\"target\":\"ip\",\"value\":\"$IP\"},\"notes\":\"Added via OSSEC Command\"}"
    exit 0;
 
 
