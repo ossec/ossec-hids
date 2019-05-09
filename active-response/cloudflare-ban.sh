@@ -16,7 +16,7 @@
 #  <active-response>
 #     <command>cloudflare-ban</command>
 #     <location>server</location>
-#     <rules_id>31151,31163</rules_id>
+#     <rules_id>31151,31152,31153,31154,31163</rules_id>
 #     <timeout>43200</timeout>
 #  </active-response>
 
