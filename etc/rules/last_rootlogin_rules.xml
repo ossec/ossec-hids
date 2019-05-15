@@ -6,7 +6,7 @@
 
   <rule id="25000" level="7">
     <if_sid>535</if_sid>
-    <match>root|reboot|admin|superuser|administrator|supervisor|toor</match>
+    <match_pcre2>root|reboot|admin|superuser|administrator|supervisor|toor</match_pcre2>
     <description>sensitive login detected</description>
   </rule>
 

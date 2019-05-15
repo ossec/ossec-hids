@@ -16,78 +16,78 @@ Dec 16 12:51:17 pine nsd[90235]: xfrd: zone example.com received error code NOT 
 
   <rule id="53201" level="1">
     <if_sid>53200</if_sid>
-    <match>unrecognized RR type</match>
+    <match_pcre2>unrecognized RR type</match_pcre2>
     <description>Syntax error in nsd configuration.</description>
   </rule>
 
   <rule id="53202" level="1">
     <decoded_as>nsd</decoded_as>
     <if_sid>53200</if_sid>
-    <match>server initialization failed|syntax error$</match>
+    <match_pcre2>server initialization failed|syntax error$</match_pcre2>
     <description>Syntax error in nsd configuration.</description>
   </rule>
 
   <rule id="53203" level="0">
     <if_sid>53200</if_sid>
-    <match>^NSTATS|^XSTATS</match>
+    <match_pcre2>^NSTATS|^XSTATS</match_pcre2>
     <description>nsd statistics</description>
   </rule>
 
   <rule id="53204" level="2">
     <decoded_as>nsd</decoded_as>
-    <match>Can't bind </match>
+    <match_pcre2>Can't bind </match_pcre2>
     <description>Cannot bind to a socket.</description>
   </rule>
 
   <rule id="53205" level="2">
     <decoded_as>nsd</decoded_as>
-    <match>nsd is already running</match>
+    <match_pcre2>nsd is already running</match_pcre2>
     <description>nsd is already running.</description>
   </rule>
 
   <rule id="53206" level="1">
     <decoded_as>nsd</decoded_as>
     <if_sid>53200</if_sid>
-    <match>received notify response error NOT IMPL</match>
+    <match_pcre2>received notify response error NOT IMPL</match_pcre2>
     <description>Notify is not implemented.</description>
   </rule>
 
   <rule id="53207" level="1">
     <decoded_as>nsd</decoded_as>
     <if_sid>53200</if_sid>
-    <regex>read with \d+ errors$</regex>
+    <pcre2>read with \d+ errors$</pcre2>
     <description>Zone file read with errors.</description>
   </rule>
 
   <rule id="53208" level="0">
     <decoded_as>nsd</decoded_as>
     <if_sid>53200</if_sid>
-    <match>received error code </match>
+    <match_pcre2>received error code </match_pcre2>
     <description>Error grouping.</description>
   </rule>
 
   <rule id="53209" level="1">
     <decoded_as>nsd</decoded_as>
     <if_sid>53208</if_sid>
-    <match>NOT IMPL </match>
+    <match_pcre2>NOT IMPL </match_pcre2>
     <description>Zone xfer not implemented.</description>
   </rule>
 
   <rule id="53210" level="1">
     <if_sid>53200</if_sid>
-    <match>tcp: Connection reset by peer$</match>
+    <match_pcre2>tcp: Connection reset by peer$</match_pcre2>
     <description>tcp connection reset.</description>
   </rule>
 
   <rule id="53211" level="1">
     <if_sid>53200</if_sid>
-    <match>received error code NOT IMPL</match>
+    <match_pcre2>received error code NOT IMPL</match_pcre2>
     <description>Attempted zone transfer not configured.</description>
   </rule>
 
   <rule id="53212" level="1">
     <if_sid>53208</if_sid>
-    <match>received error code SERVER NOT AUTHORITATIVE FOR ZONE</match>
+    <match_pcre2>received error code SERVER NOT AUTHORITATIVE FOR ZONE</match_pcre2>
     <description>Server not authoritative for zone transfer.</description>
   </rule>
 

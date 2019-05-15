@@ -6,7 +6,7 @@
 
   <rule id="53401" level="6">
     <if_sid>53400</if_sid>
-    <match>authentication failure; </match>
+    <match_pcre2>authentication failure; </match_pcre2>
     <description>Proxmox VE authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
@@ -20,7 +20,7 @@
 
   <rule id="53403" level="3">
     <if_sid>53400</if_sid>
-    <match> successful auth for user </match>
+    <match_pcre2> successful auth for user </match_pcre2>
     <description>Proxmox VE authentication succeeded.</description>
     <group>authentication_success,</group>
   </rule>

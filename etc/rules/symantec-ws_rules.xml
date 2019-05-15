@@ -29,21 +29,21 @@
 
   <rule id="7410" level="5">
     <if_sid>7400</if_sid>
-    <id>^3=2,2=1</id>
+    <id_pcre2>^3=2,2=1</id_pcre2>
     <description>Login failed accessing the web proxy.</description>
     <group>authentication_failed,</group>
   </rule>
   
   <rule id="7415" level="3">
     <if_sid>7400</if_sid>
-    <id>^3=1,2=1</id>
+    <id_pcre2>^3=1,2=1</id_pcre2>
     <description>Login success accessing the web proxy.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="7420" level="3">
     <if_sid>7415</if_sid>
-    <user>virtadmin</user>
+    <user_pcre2>virtadmin</user_pcre2>
     <description>Admin Login success to the web proxy.</description>
     <group>authentication_success,</group>
   </rule>
@@ -51,9 +51,9 @@
   <!-- Example alerting using the url (event id 2=27 is for web access
   <rule id="7425" level="3">
     <if_sid>7400</if_sid>
-    <id>^2=27</id>
+    <id_pcre2>^2=27</id_pcre2>
     <description>Web access message.</description>
-    <url>abc.exe</url>
+    <url_pcre2>abc\.exe</url_pcre2>
   </rule>
   
   -->
