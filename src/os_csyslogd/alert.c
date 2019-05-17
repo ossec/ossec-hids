@@ -7,17 +7,109 @@
  * Foundation
  */
 
+#include <stdbool.h>
+
 #include "csyslogd.h"
 #include "cJSON.h"
 #include "config/config.h"
 #include "os_net/os_net.h"
 
 
+/* Escape CEF messages according to the standards */
+char *cefescape(const char *msg, const bool header)
+{
+    static char *buffer = NULL;
+    const char *ptr;
+    char *buffptr;
+    size_t size;
+
+    /* Recycle the buffer */
+    if (buffer) {
+        os_free(buffer);
+        buffer = NULL;
+    }
+
+    /* Test if the string needs escaping in the first place */
+    if ((NULL == msg) ||                            /* Cleanup call or empty string */
+        ((header && (NULL == strchr(msg, '|'))) &&  /* | in the header must be escaped */
+        (!header && (NULL == strchr(msg, '='))) &&  /* = in the extension must be escaped */
+        (NULL == strchr(msg, '\\')) &&              /* \ must be escaped */
+        (NULL == strchr(msg, '\r')) &&              /* \r removed from header, escaped in extension */
+        (NULL == strchr(msg, '\n')))) {             /* \n removed from header, escaped in extension */
+        return buffer;
+    }
+
+    verbose("%s", msg);  //@REMOVE
+
+    /* Calculate the size of the escaped message */
+    ptr = msg;
+    size = 1;
+    while (*ptr) {
+        if (('\\' == *ptr) ||
+            (header && ('|' == *ptr)) ||  /* For headers we replace \r\n with spaces */
+            (!header && (
+                ('=' == *ptr)/* ||
+                ('\r' == *ptr) ||
+                ('\n' == *ptr)*/
+            )))
+        {
+            size += 2;
+        } else {
+            size += 1;
+        }
+        ptr++;
+    }
+
+    /* Allocate the new buffer and start escaping */
+    buffer = (char*) malloc(size);
+    buffer[size-1] = '\0';
+    ptr = msg;
+    buffptr = buffer;
+    while (*ptr) {
+        if ('\\' == *ptr) {
+            *buffptr = '\\';
+            *(buffptr + 1) = '\\';
+            buffptr += 2;
+        /*} else if ('\r' == *ptr) {
+            *buffptr = header ? ' ' : '\\';
+            buffptr++;
+            if (!header) {
+                *buffptr = 'r';
+                buffptr++;
+            }
+        } else if ('\n' == *ptr) {
+            *buffptr = header ? ' ' : '\\';
+            buffptr++;
+            if (!header) {
+                *buffptr = 'n';
+                buffptr++;
+            }*/
+        } else if (header && ('|' == *ptr)) {
+            *buffptr = '\\';
+            *(buffptr + 1) = '|';
+            buffptr += 2;
+        } else if (!header && ('=' == *ptr)) {
+            *buffptr = '\\';
+            *(buffptr + 1) = '=';
+            buffptr += 2;
+        } else {
+            *buffptr = *ptr;
+            buffptr++;
+        }
+        ptr++;
+    }
+
+    verbose("%s", buffer);  //@REMOVE
+
+    return buffer;
+}
+
 /* Send an alert via syslog
  * Returns 1 on success or 0 on error
  */
 int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
 {
+    char *logmsg = NULL;
     char *tstamp;
     char *hostname;
     char syslog_msg[OS_SIZE_2048];
@@ -91,6 +183,20 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         hostname = __shost;
     }
 
+    /* Walk the log lines */
+    if (NULL == al_data->log[1]) {
+        logmsg = al_data->log[0];
+    } else {
+        short int i = 0;
+        while (NULL != al_data->log[i]) {
+            logmsg = os_LoadString(logmsg, al_data->log[i]);
+            i++;
+            if (NULL != al_data->log[i]) {
+                logmsg = os_LoadString(logmsg, "\n");
+            }
+        }
+    }
+
     /* Insert data */
     if (syslog_config->format == DEFAULT_CSYSLOG) {
         /* Build syslog message */
@@ -152,7 +258,8 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
             field_add_string(syslog_msg, OS_SIZE_2048, " fhash=%s", al_data->new_sha1 );
             field_add_string(syslog_msg, OS_SIZE_2048, " fileHash=%s", al_data->new_sha1 );
         }
-        field_add_truncated(syslog_msg, OS_SIZE_2048, " msg=%s", al_data->log[0], 2 );
+        field_add_truncated(syslog_msg, OS_SIZE_2048, " msg=%s", cefescape(logmsg, false), 2);
+        cefescape(NULL,0);  /* Clean up the escaping buffer */
     } else if (syslog_config->format == JSON_CSYSLOG) {
         /* Build a JSON Object for logging */
         cJSON *root;
