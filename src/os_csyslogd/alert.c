@@ -145,9 +145,6 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         field_add_string(syslog_msg, OS_SIZE_2048, " cs4Label=SrcCity cs4=%s", al_data->srcgeoip );
         field_add_string(syslog_msg, OS_SIZE_2048, " cs5Label=DstCity cs5=%s", al_data->dstgeoip );
 #endif
-        field_add_string(syslog_msg, OS_SIZE_2048, " suser=%s", al_data->user );
-        field_add_string(syslog_msg, OS_SIZE_2048, " dst=%s", al_data->dstip );
-        field_add_truncated(syslog_msg, OS_SIZE_2048, " msg=%s", al_data->log[0], 2 );
         if (al_data->new_md5 && al_data->new_sha1) {
             field_add_string(syslog_msg, OS_SIZE_2048, " cs2Label=OldMD5 cs2=%s", al_data->old_md5);
             field_add_string(syslog_msg, OS_SIZE_2048, " cs3Label=NewMD5 cs3=%s", al_data->new_md5);
@@ -155,6 +152,7 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
             field_add_string(syslog_msg, OS_SIZE_2048, " fhash=%s", al_data->new_sha1 );
             field_add_string(syslog_msg, OS_SIZE_2048, " fileHash=%s", al_data->new_sha1 );
         }
+        field_add_truncated(syslog_msg, OS_SIZE_2048, " msg=%s", al_data->log[0], 2 );
     } else if (syslog_config->format == JSON_CSYSLOG) {
         /* Build a JSON Object for logging */
         cJSON *root;
