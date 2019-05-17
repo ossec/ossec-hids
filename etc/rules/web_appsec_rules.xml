@@ -27,7 +27,7 @@
     -->
   <rule id="31501" level="6">
     <if_sid>31100</if_sid>
-    <pcre2>(?=POST /)(?=Googlebot|MSNBot|BingBot)</pcre2>
+    <pcre2>POST /.*(?:Googlebot|MSNBot|BingBot)</pcre2>
     <url_pcre2>/wp-comments-post\.php</url_pcre2>
     <description>WordPress Comment Spam (coming from a fake search engine UA).</description>
    </rule>
