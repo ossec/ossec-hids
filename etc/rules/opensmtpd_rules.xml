@@ -20,14 +20,14 @@ y Error
   <rule id="53502" level="0">
     <decoded_as>smtpd</decoded_as>
     <if_sid>53500</if_sid>
-    <match_pcre2> New session</match_pcre2>
+    <pcre2> New session</pcre2>
     <description>New session created.</description>
   </rule>
 
   <rule id="53503" level="0">
     <decoded_as>smtpd</decoded_as>
     <if_sid>53500</if_sid>
-    <match_pcre2> Closing session</match_pcre2>
+    <pcre2> Closing session</pcre2>
     <description>Session closed.</description>
   </rule>
 
@@ -41,27 +41,27 @@ y Error
   <rule id="53505" level="0">
     <decoded_as>smtpd</decoded_as>
     <if_sid>53500</if_sid>
-    <match_pcre2>delivery: Ok</match_pcre2>
+    <pcre2>delivery: Ok</pcre2>
     <description>Email delivered.</description>
   </rule>
 
   <rule id="53506" level="2">
     <if_sid>53501</if_sid>
-    <match_pcre2>Command not supported$</match_pcre2>
+    <pcre2>Command not supported$</pcre2>
     <description>SMTP command not supported.</description>
   </rule>
 
   <rule id="53507" level="2">
     <decoded_as>smtpd</decoded_as>
     <if_sid>53500</if_sid>
-    <match_pcre2>IO error: No SSL error$</match_pcre2>
+    <pcre2>IO error: No SSL error$</pcre2>
     <description>OpenSMTPd: no SSL</description>
   </rule>
 
   <rule id="53508" level="5">
     <decoded_as>smtpd</decoded_as>
     <if_sid>53500</if_sid>
-    <match_pcre2>Server certificate verification failed</match_pcre2>
+    <pcre2>Server certificate verification failed</pcre2>
     <description>Server TLS certificate verification failed.</description>
   </rule>
 

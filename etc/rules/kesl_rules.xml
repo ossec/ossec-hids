@@ -15,7 +15,7 @@
 
   <rule id="53802" level="8">
     <if_sid>53801</if_sid>
-    <match_pcre2>UpdateError</match_pcre2>
+    <pcre2>UpdateError</pcre2>
     <description>An error occurred during an Update Task.</description>
   </rule>
 
@@ -41,7 +41,7 @@
   
   <rule id="53806" level="8">
     <if_sid>53801</if_sid>
-    <match_pcre2>AVBasesRollbackError</match_pcre2>
+    <pcre2>AVBasesRollbackError</pcre2>
     <description>An error occurred during AVBases Update Rollback Task</description>
   </rule>
 
@@ -55,7 +55,7 @@
 
   <rule id="53808" level="8">
     <if_sid>53801</if_sid>
-    <match_pcre2>RetranslationError</match_pcre2>
+    <pcre2>RetranslationError</pcre2>
     <description>An error occurred during an update distribution (Retranslate) Task</description>
   </rule>
 
@@ -97,25 +97,25 @@
   
   <rule id="53814" level="3">
     <if_sid>53801</if_sid>
-    <match_pcre2>ObjectSavedToBackup</match_pcre2>
+    <pcre2>ObjectSavedToBackup</pcre2>
     <description>Threat Object was saved to Backup (kesl Task: File_Monitoring)</description>
   </rule>
 
   <rule id="53815" level="3">
     <if_sid>53801</if_sid>
-    <match_pcre2>ObjectNotDisinfected</match_pcre2>
+    <pcre2>ObjectNotDisinfected</pcre2>
     <description>Threat Object could not be disinfected (kesl Task: File_Monitoring)</description>
   </rule>
 
   <rule id="53816" level="3">
     <if_sid>53801</if_sid>
-    <match_pcre2>ObjectDeleted</match_pcre2>
+    <pcre2>ObjectDeleted</pcre2>
     <description>Threat Object was deleted (kesl Task: File_Monitoring)</description>
   </rule>
 
   <rule id="53817" level="8">
     <if_sid>53801</if_sid>
-    <match_pcre2>ObjectProcessingError</match_pcre2>
+    <pcre2>ObjectProcessingError</pcre2>
     <description>An error occurred during kesl scan</description>
   </rule>
 

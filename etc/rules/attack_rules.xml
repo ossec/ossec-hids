@@ -40,19 +40,19 @@
   </rule>
 
   <rule id="40104" level="13">
-    <match_pcre2>\?{21}</match_pcre2>
+    <pcre2>\?{21}</pcre2>
     <description>Possible buffer overflow attempt.</description>
     <group>exploit_attempt,</group>
   </rule>
 
   <rule id="40105" level="12">
-    <match_pcre2>changed by \(\(null\)</match_pcre2>
+    <pcre2>changed by \(\(null\)</pcre2>
     <description>"Null" user changed some information.</description>
     <group>exploit_attempt,</group>
   </rule>
 
   <rule id="40106" level="12">
-    <match_pcre2>@{25}</match_pcre2>
+    <pcre2>@{25}</pcre2>
     <description>Buffer overflow attempt (probably on yppasswd).</description>
     <group>exploit_attempt,</group>
   </rule>
@@ -65,7 +65,7 @@
   </rule>
 
   <rule id="40109" level="12">
-    <match_pcre2>attempt to execute code on stack by</match_pcre2>
+    <pcre2>attempt to execute code on stack by</pcre2>
     <description>Stack overflow attempt or program exiting </description>
     <description>with SEGV (Solaris).</description>
     <info type="link">http://snap.nlc.dcccd.edu/reference/sysadmin/julian/ch18/389-392.html</info>

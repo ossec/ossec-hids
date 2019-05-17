@@ -22,7 +22,7 @@
 
     <rule id="13006" level="5">
       <if_sid>13001</if_sid>
-      <match_pcre2>authenticator failed</match_pcre2>
+      <pcre2>authenticator failed</pcre2>
       <description>Exim Auth failed</description>
       <group>invalid_login,authentication_failed,</group>
     </rule>
@@ -36,19 +36,19 @@
 
     <rule id="13008" level="0">
       <if_sid>13000</if_sid>
-      <match_pcre2>connection count =</match_pcre2>
+      <pcre2>connection count =</pcre2>
       <description>Exim connection</description>
     </rule>
 
     <rule id="13009" level="1">
       <if_sid>13000</if_sid>
-      <match_pcre2>lost$</match_pcre2>
+      <pcre2>lost$</pcre2>
       <description>Exim connection lost</description>
     </rule>
 
     <rule id="13010" level="5">
       <if_sid>13000</if_sid>
-      <match_pcre2>dropped: too many syntax or protocol errors</match_pcre2>
+      <pcre2>dropped: too many syntax or protocol errors</pcre2>
       <description>Exim syntax or protocol errors</description>
     </rule>
 

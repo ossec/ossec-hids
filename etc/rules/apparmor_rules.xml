@@ -15,7 +15,7 @@
 
   <rule id="52000" level="3">
     <decoded_as>iptables</decoded_as>
-    <match_pcre2> apparmor=</match_pcre2>
+    <pcre2> apparmor=</pcre2>
     <description>Apparmor grouping</description>
   </rule>
 
@@ -28,7 +28,7 @@
   <rule id="52002" level="3">
     <if_sid>52000</if_sid>
     <status_pcre2>DENIED</status_pcre2>
-    <match_pcre2> apparmor=</match_pcre2>
+    <pcre2> apparmor=</pcre2>
     <description>Apparmor DENIED</description>
   </rule>
 

@@ -16,31 +16,31 @@
 
   <rule id="53761" level="1">
     <if_sid>53760</if_sid>
-    <match_pcre2> notice: </match_pcre2>
+    <pcre2> notice: </pcre2>
     <description>Notice grouping.</description>
   </rule>
 
   <rule id="53762" level="1">
     <if_sid>53760</if_sid>
-    <match_pcre2> info: </match_pcre2>
+    <pcre2> info: </pcre2>
     <description>Info grouping.</description>
   </rule>
 
   <rule id="53770" level="2">
     <if_sid>53761</if_sid>
-    <match_pcre2>sendto failed: Can't assign requested address</match_pcre2>
+    <pcre2>sendto failed: Can't assign requested address</pcre2>
     <description>Can't assign requested address.</description>
   </rule>
 
   <rule id="53771" level="0">
     <if_sid>53762</if_sid>
-    <match_pcre2> A IN$</match_pcre2>
+    <pcre2> A IN$</pcre2>
     <description>DNS A request.</description>
   </rule>
 
   <rule id="53772" level="0">
     <if_sid>53762</if_sid>
-    <match_pcre2> AAAA IN$</match_pcre2>
+    <pcre2> AAAA IN$</pcre2>
     <description>DNS AAAA request.</description>
   </rule>
  

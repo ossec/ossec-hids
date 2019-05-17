@@ -113,7 +113,7 @@
 
   <rule id="4560" level="3">
     <if_sid>4500</if_sid>
-    <match_pcre2>SYN flood! </match_pcre2>
+    <pcre2>SYN flood! </pcre2>
     <description>netscreen detected a SYN flood.</description>
   </rule>
 

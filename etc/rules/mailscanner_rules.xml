@@ -43,7 +43,7 @@
   <rule id="3752" level="0">
       <if_sid>1002</if_sid>
       <program_name_pcre2>update\.bad\.phishing\.sites</program_name_pcre2>
-      <match_pcre2>^Phishing bad sites list updated</match_pcre2>
+      <pcre2>^Phishing bad sites list updated</pcre2>
       <description>ignore</description>
   </rule>
 

@@ -15,33 +15,33 @@
   
   <rule id="11301" level="3">
     <if_sid>11300</if_sid>
-    <match_pcre2>\[INFO\] New connection from</match_pcre2>
+    <pcre2>\[INFO\] New connection from</pcre2>
     <description>New FTP connection.</description>
     <group>connection_attempt,</group>
   </rule>
 
   <rule id="11302" level="5">
     <if_sid>11300</if_sid>
-    <match_pcre2>\[WARNING\] Authentication failed for user</match_pcre2>
+    <pcre2>\[WARNING\] Authentication failed for user</pcre2>
     <description>FTP Authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="11303" level="0">
     <if_sid>11300</if_sid>
-    <match_pcre2> \[INFO\] Logout| \[INFO\] Timeout</match_pcre2>
+    <pcre2> \[INFO\] Logout| \[INFO\] Timeout</pcre2>
     <description>FTP user logout/timeout</description>
   </rule>
   
   <rule id="11304" level="0">
     <if_sid>11300</if_sid>
-    <match_pcre2> \[NOTICE\] </match_pcre2>
+    <pcre2> \[NOTICE\] </pcre2>
     <description>FTP notice messages</description>
   </rule>
   
   <rule id="11305" level="5">
     <if_sid>11300</if_sid>
-    <match_pcre2>\[INFO\] Can't change directory to</match_pcre2>
+    <pcre2>\[INFO\] Can't change directory to</pcre2>
     <description>Attempt to access invalid directory</description>
   </rule>  
 
@@ -60,7 +60,7 @@
 
   <rule id="11309" level="3">
     <if_sid>11300</if_sid>
-    <match_pcre2> is now logged in</match_pcre2>
+    <pcre2> is now logged in</pcre2>
     <description>FTP Authentication success.</description>
     <group>authentication_success,</group>
   </rule>  

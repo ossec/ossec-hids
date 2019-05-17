@@ -22,21 +22,21 @@
   
   <rule id="12101" level="12">
     <if_sid>12100</if_sid>
-    <match_pcre2>dropping source port zero packet from</match_pcre2>
+    <pcre2>dropping source port zero packet from</pcre2>
     <description>Invalid DNS packet. Possibility of attack.</description>
     <group>invalid_access,</group>
   </rule>
 
   <rule id="12102" level="9">
     <if_sid>12100</if_sid>
-    <match_pcre2>denied AXFR from</match_pcre2>
+    <pcre2>denied AXFR from</pcre2>
     <description>Failed attempt to perform a zone transfer.</description>
     <group>access_denied,</group>
   </rule>
 
   <rule id="12103" level="4">
     <if_sid>12100</if_sid>
-    <match_pcre2>denied update from|unapproved update from</match_pcre2>
+    <pcre2>denied update from|unapproved update from</pcre2>
     <description>DNS update denied. </description>
     <description>Generally mis-configuration.</description>
     <info type="link">http://seclists.org/incidents/2000/May/217</info>
@@ -45,20 +45,20 @@
 
   <rule id="12104" level="4">
     <if_sid>12100</if_sid>
-    <match_pcre2>unable to rename log file</match_pcre2>
+    <pcre2>unable to rename log file</pcre2>
     <description>Log permission misconfiguration in Named.</description>
     <group>system_error,</group>
   </rule>
 
   <rule id="12105" level="4">
     <if_sid>12100</if_sid>
-    <match_pcre2>unexpected RCODE </match_pcre2>
+    <pcre2>unexpected RCODE </pcre2>
     <description>Unexpected error while resolving domain.</description>
   </rule>  
 
   <rule id="12106" level="4">
     <if_sid>12100</if_sid>
-    <match_pcre2>refused notify from non-master</match_pcre2>
+    <pcre2>refused notify from non-master</pcre2>
     <description>DNS configuration error.</description>
   </rule>
 
@@ -70,7 +70,7 @@
 
   <rule id="12108" level="5">
     <if_sid>12100</if_sid>
-    <match_pcre2>query \(cache\) denied|: query \(cache\)</match_pcre2>
+    <pcre2>query \(cache\) denied|: query \(cache\)</pcre2>
     <description>Query cache denied (probably config error).</description>
     <info type="link">http://www.reedmedia.net/misc/dns/errors.html</info>
     <group>connection_attempt,</group>
@@ -78,7 +78,7 @@
   
   <rule id="12109" level="12">
     <if_sid>12100</if_sid>
-    <match_pcre2>exiting \(due to fatal error\)</match_pcre2>
+    <pcre2>exiting \(due to fatal error\)</pcre2>
     <description>Named fatal error. DNS service going down.</description>
     <group>service_availability,</group>
   </rule>
@@ -104,26 +104,26 @@
 
   <rule id="12113" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>zone transfer deferred due to quota</match_pcre2>
+    <pcre2>zone transfer deferred due to quota</pcre2>
     <description>Zone transfer deferred.</description>
   </rule>
 
   <rule id="12114" level="1">
     <if_sid>12100</if_sid>
-    <match_pcre2>bad owner name \(check-names\)</match_pcre2>
+    <pcre2>bad owner name \(check-names\)</pcre2>
     <description>Hostname contains characters that check-names does not like.</description>
   </rule>
 
   <rule id="12115" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>loaded serial|transferred serial</match_pcre2>
+    <pcre2>loaded serial|transferred serial</pcre2>
     <description>Zone transfer.</description>
   </rule>
 
   <rule id="12116" level="1">
     <if_sid>12100</if_sid>
-    <match_pcre2>syntax error near|</match_pcre2>
-    <match_pcre2>reloading configuration failed: unexpected token</match_pcre2>
+    <pcre2>syntax error near|</pcre2>
+    <pcre2>reloading configuration failed: unexpected token</pcre2>
     <description>Syntax error in a named configuration file.</description>
   </rule>
 
@@ -136,19 +136,19 @@
 
   <rule id="12118" level="1">
     <if_sid>12100</if_sid>
-    <match_pcre2>already exists previous definition</match_pcre2>
+    <pcre2>already exists previous definition</pcre2>
     <description>Zone has been duplicated.</description>
   </rule>
 
   <rule id="12119" level="3">
     <if_sid>12100</if_sid>
-    <match_pcre2>starting BIND</match_pcre2>
+    <pcre2>starting BIND</pcre2>
     <description>BIND has been started</description>
   </rule>
 
   <rule id="12120" level="1">
     <if_sid>12100</if_sid>
-    <match_pcre2>has no address records</match_pcre2>
+    <pcre2>has no address records</pcre2>
     <description>Missing A or AAAA record</description>
   </rule>
 
@@ -166,13 +166,13 @@
 
   <rule id="12123" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>already exists previous definition</match_pcre2>
+    <pcre2>already exists previous definition</pcre2>
     <description>Zone has been duplicated</description>
   </rule>
 
   <rule id="12125" level="3">
     <if_sid>12100</if_sid>
-    <match_pcre2>reloading configuration failed: unexpected end of input</match_pcre2>
+    <pcre2>reloading configuration failed: unexpected end of input</pcre2>
     <description>BIND Configuration error.</description>
   </rule>
 
@@ -190,32 +190,32 @@
 
   <rule id="12128" level="1">
     <if_sid>12100</if_sid>
-    <match_pcre2>^transfer of|</match_pcre2>
-    <match_pcre2>AXFR started$</match_pcre2>
+    <pcre2>^transfer of|</pcre2>
+    <pcre2>AXFR started$</pcre2>
     <description>Zone transfer.</description>
   </rule>
 
   <rule id="12129" level="4">
     <if_sid>12128</if_sid>
-    <match_pcre2>failed to connect: connection refused</match_pcre2>
+    <pcre2>failed to connect: connection refused</pcre2>
     <description>Zone transfer failed, unable to connect to master.</description>
   </rule>
 
   <rule id="12130" level="2">
     <if_sid>12100</if_sid>
-    <match_pcre2>IPv6 interfaces failed</match_pcre2>
+    <pcre2>IPv6 interfaces failed</pcre2>
     <description>Could not listen on IPv6 interface.</description>
   </rule>
 
   <rule id="12131" level="2">
     <if_sid>12100</if_sid>
-    <match_pcre2>failed; interface ignored</match_pcre2>
+    <pcre2>failed; interface ignored</pcre2>
     <description>Could not bind to an interface.</description>
   </rule>
 
   <rule id="12132" level="0">
     <if_sid>12128</if_sid>
-    <match_pcre2>failed while receiving responses: not authoritative</match_pcre2>
+    <pcre2>failed while receiving responses: not authoritative</pcre2>
     <description>Master is not authoritative for zone.</description>
   </rule>
 
@@ -227,31 +227,31 @@
 
   <rule id="12134" level="4">
     <if_sid>12100</if_sid>
-    <match_pcre2>loading configuration: permission denied</match_pcre2>
+    <pcre2>loading configuration: permission denied</pcre2>
     <description>Could not open configuration file, permission denied.</description>
   </rule>
 
   <rule id="12135" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>IN SOA -E</match_pcre2>
+    <pcre2>IN SOA -E</pcre2>
     <description>Domain in SOA -E.</description>
   </rule>
 
   <rule id="12136" level="4">
     <if_sid>12128</if_sid>
-    <match_pcre2>failed to connect: host unreachable</match_pcre2>
+    <pcre2>failed to connect: host unreachable</pcre2>
     <description>Master appears to be down.</description>
   </rule>
 
   <rule id="12137" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>IN AXFR -</match_pcre2>
+    <pcre2>IN AXFR -</pcre2>
     <description>Domain is queried for a zone transferred.</description>
   </rule>
 
   <rule id="12138" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2> IN A \+</match_pcre2>
+    <pcre2> IN A \+</pcre2>
     <description>Domain A record found.</description>
   </rule>
 
@@ -263,31 +263,31 @@
 
   <rule id="12140" level="2">
     <if_sid>12100</if_sid>
-    <match_pcre2>refresh: failure trying master</match_pcre2>
+    <pcre2>refresh: failure trying master</pcre2>
     <description>Cannot refresh a domain from the master server.</description>
   </rule>
 
   <rule id="12141" level="1">
     <if_sid>12100</if_sid>
-    <match_pcre2>SOA record not at top of zone</match_pcre2>
+    <pcre2>SOA record not at top of zone</pcre2>
     <description>Origin of zone and owner name of SOA do not match.</description>
   </rule>
 
   <rule id="12142" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>command channel listening on</match_pcre2>
+    <pcre2>command channel listening on</pcre2>
     <description>named command channel is listening.</description>
   </rule>
 
   <rule id="12143" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>automatic empty zone</match_pcre2>
+    <pcre2>automatic empty zone</pcre2>
     <description>named has created an automatic empty zone.</description>
   </rule>
 
   <rule id="12144" level="9">
     <if_sid>12100</if_sid>
-    <match_pcre2>reloading configuration failed: out of memory</match_pcre2>
+    <pcre2>reloading configuration failed: out of memory</pcre2>
     <description>Server does not have enough memory to reload the configuration.</description>
   </rule>
 
@@ -299,7 +299,7 @@
 
   <rule id="12146" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>error sending response: host unreachable$</match_pcre2>
+    <pcre2>error sending response: host unreachable$</pcre2>
     <description>Cannot send a DNS response.</description>
   </rule>
 
@@ -311,7 +311,7 @@
 
   <rule id="12148" level="0">
     <if_sid>12100</if_sid>
-    <match_pcre2>: parsing failed$</match_pcre2>
+    <pcre2>: parsing failed$</pcre2>
     <description>Parsing of a configuration file has failed.</description>
   </rule>
   

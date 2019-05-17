@@ -6,7 +6,7 @@
 
   <rule id="53301" level="6">
     <if_sid>53300</if_sid>
-    <match_pcre2>Login failed: </match_pcre2>
+    <pcre2>Login failed: </pcre2>
     <description>ownCloud authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
@@ -20,7 +20,7 @@
 
   <rule id="53303" level="6">
     <if_sid>53300</if_sid>
-    <match_pcre2>Passed filename is not valid, might be malicious </match_pcre2>
+    <pcre2>Passed filename is not valid, might be malicious </pcre2>
     <description>ownCloud possible malicious request.</description>
     <group>web,appsec,attack,</group>
   </rule>

@@ -27,9 +27,8 @@
     -->
   <rule id="31501" level="6">
     <if_sid>31100</if_sid>
-    <match_pcre2>POST /</match_pcre2>
+    <pcre2>(?=POST /)(?=Googlebot|MSNBot|BingBot)</pcre2>
     <url_pcre2>/wp-comments-post\.php</url_pcre2>
-    <pcre2>Googlebot|MSNBot|BingBot</pcre2>
     <description>WordPress Comment Spam (coming from a fake search engine UA).</description>
    </rule>
 
@@ -88,7 +87,7 @@
   <!-- BAD/Annoying user agents -->
   <rule id="31508" level="6">
     <if_sid>31100</if_sid>
-    <match_pcre2> "ZmEu"| "libwww-perl/|"the beast"|"Morfeus|"ZmEu|"Nikto|"w3af\.sourceforge\.net|MJ12bot/v| Jorgee"|"Proxy Gear Pro|"DataCha0s</match_pcre2>
+    <pcre2> "ZmEu"| "libwww-perl/|"the beast"|"Morfeus|"ZmEu|"Nikto|"w3af\.sourceforge\.net|MJ12bot/v| Jorgee"|"Proxy Gear Pro|"DataCha0s</pcre2>
     <description>Blacklisted user agent (known malicious user agent).</description>
   </rule>
 
@@ -112,7 +111,7 @@
     -->
   <rule id="31511" level="0">
     <if_sid>31100</if_sid>
-    <match_pcre2>" "Wget/</match_pcre2>
+    <pcre2>" "Wget/</pcre2>
     <description>Blacklisted user agent (wget).</description>
   </rule>
 
@@ -162,7 +161,7 @@
   <!-- Checking POST requests - Too many in a small type = likely a bot -->
   <rule id="31530" level="3">
     <if_sid>31100</if_sid>
-    <match_pcre2>\] "POST </match_pcre2>
+    <pcre2>\] "POST </pcre2>
     <options>no_log</options>
     <description>POST request received.</description>
    </rule>

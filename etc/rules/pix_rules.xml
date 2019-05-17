@@ -167,7 +167,7 @@
   <rule id="4338" level="8">
     <if_sid>4310</if_sid>
     <id_pcre2>^1-105005|^1-105009|^1-105043</id_pcre2>
-    <match_pcre2>Failed|Lost Failover</match_pcre2>
+    <pcre2>Failed|Lost Failover</pcre2>
     <description>Firewall failover pair communication problem.</description>
     <group>service_availability,</group>
   </rule>

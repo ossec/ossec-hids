@@ -67,14 +67,14 @@
   
   <rule id="19110" level="3">
     <if_sid>19106</if_sid>
-    <match_pcre2>logged in$</match_pcre2>
+    <pcre2>logged in$</pcre2>
     <description>VMWare ESX authentication success.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="19111" level="5">
     <if_sid>19106</if_sid>
-    <match_pcre2>Failed login attempt for</match_pcre2>
+    <pcre2>Failed login attempt for</pcre2>
     <description>VMWare ESX authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>
@@ -82,7 +82,7 @@
   <rule id="19112" level="3">
     <if_sid>19101</if_sid>
     <program_name_pcre2>vmware-hostd|vmware-authd</program_name_pcre2>
-    <match_pcre2>Accepted password for|login from</match_pcre2>
+    <pcre2>Accepted password for|login from</pcre2>
     <description>VMWare ESX user login.</description>
     <group>authentication_success,</group>
   </rule>
@@ -90,7 +90,7 @@
   <rule id="19113" level="3">
     <if_sid>19101</if_sid>
     <program_name_pcre2>vmware-hostd|vmware-authd</program_name_pcre2>
-    <match_pcre2>Rejected password for</match_pcre2>
+    <pcre2>Rejected password for</pcre2>
     <description>VMWare ESX user authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>
@@ -99,27 +99,27 @@
   <!-- Guest OS messages. -->
   <rule id="19120" level="8">
     <if_sid>19106</if_sid>
-    <match_pcre2>-> VM_STATE_OFF</match_pcre2>
+    <pcre2>-> VM_STATE_OFF</pcre2>
     <description>Virtual machine state changed to OFF.</description>
     <group>service_availability,</group>
   </rule>
 
   <rule id="19121" level="3">
     <if_sid>19106</if_sid>
-    <match_pcre2>-> VM_STATE_POWERING_ON</match_pcre2>
+    <pcre2>-> VM_STATE_POWERING_ON</pcre2>
     <description>Virtual machine being turned ON.</description>
   </rule>
 
   <rule id="19122" level="3">
     <if_sid>19106</if_sid>
-    <match_pcre2>-> VM_STATE_ON</match_pcre2>
+    <pcre2>-> VM_STATE_ON</pcre2>
     <description>Virtual machine state changed to ON.</description>
     <options>alert_by_email</options>
   </rule>
 
   <rule id="19123" level="5">
     <if_sid>19106</if_sid>
-    <match_pcre2>-> VM_STATE_RECONFIGURING</match_pcre2>
+    <pcre2>-> VM_STATE_RECONFIGURING</pcre2>
     <description>Virtual machine being reconfigured.</description>
     <group>config_changed,</group>
     <options>alert_by_email</options>
