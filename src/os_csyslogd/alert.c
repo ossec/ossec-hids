@@ -236,29 +236,32 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         /* "9/19/2016 - Sivakumar Nellurandi - parsing additions" */
         field_add_truncated(syslog_msg, OS_SIZE_2048, " %s", al_data->log[0], 2);
     } else if (syslog_config->format == CEF_CSYSLOG) {
+        /* Start with headers */
         snprintf(syslog_msg, OS_SIZE_2048,
-                 "<%u>%s CEF:0|%s|%s|%s|%u|%s|%u|dvc=%s cs1=%s cs1Label=Location",
+                 "<%u>%s CEF:0|%s|%s|%s|%u|%s|%u|",
                  syslog_config->priority,
                  tstamp,
                  __author,
                  __ossec_name,
                  __version,
                  al_data->rule,
-                 al_data->comment,
-                 (al_data->level > 10) ? 10 : al_data->level,
-                 hostname, al_data->location);
-        field_add_string(syslog_msg, OS_SIZE_2048, " classification=%s", al_data->group);
+                 cefescape(al_data->comment, true),
+                 (al_data->level > 10) ? 10 : al_data->level);
+        /* Add extensions */
+        field_add_string(syslog_msg, OS_SIZE_2048, "dvc=%s", cefescape(hostname, false));
+        field_add_string(syslog_msg, OS_SIZE_2048, " cs1Label=Location cs1=%s", cefescape(al_data->location, false));
+        field_add_string(syslog_msg, OS_SIZE_2048, " classification=%s", cefescape(al_data->group, false));
         field_add_string(syslog_msg, OS_SIZE_2048, " src=%s", al_data->srcip);
         field_add_int(syslog_msg, OS_SIZE_2048, " dpt=%d", al_data->dstport);
         field_add_int(syslog_msg, OS_SIZE_2048, " spt=%d", al_data->srcport);
-        field_add_string(syslog_msg, OS_SIZE_2048, " fname=%s", al_data->filename);
+        field_add_string(syslog_msg, OS_SIZE_2048, " fname=%s", cefescape(al_data->filename, false));
         field_add_string(syslog_msg, OS_SIZE_2048, " dhost=%s", al_data->dstip);
         field_add_string(syslog_msg, OS_SIZE_2048, " shost=%s", al_data->srcip);
-        field_add_string(syslog_msg, OS_SIZE_2048, " suser=%s", al_data->user);
-        field_add_string(syslog_msg, OS_SIZE_2048, " dst=%s", al_data->dstip);
+        field_add_string(syslog_msg, OS_SIZE_2048, " suser=%s", cefescape(al_data->user, false));
+        field_add_string(syslog_msg, OS_SIZE_2048, " dst=%s", cefescape(al_data->dstip, false));
 #ifdef LIBGEOIP_ENABLED
-        field_add_string(syslog_msg, OS_SIZE_2048, " cs4Label=SrcCity cs4=%s", al_data->srcgeoip);
-        field_add_string(syslog_msg, OS_SIZE_2048, " cs5Label=DstCity cs5=%s", al_data->dstgeoip);
+        field_add_string(syslog_msg, OS_SIZE_2048, " cs4Label=SrcCity cs4=%s", cefescape(al_data->srcgeoip, false));
+        field_add_string(syslog_msg, OS_SIZE_2048, " cs5Label=DstCity cs5=%s", cefescape(al_data->dstgeoip, false));
 #endif
         if (al_data->new_md5 && al_data->new_sha1) {
             field_add_string(syslog_msg, OS_SIZE_2048, " cs2Label=OldMD5 cs2=%s", al_data->old_md5);
