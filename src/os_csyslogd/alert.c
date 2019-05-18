@@ -48,9 +48,9 @@ char *cefescape(const char *msg, const bool header)
         if (('\\' == *ptr) ||
             (header && ('|' == *ptr)) ||  /* For headers we replace \r\n with spaces */
             (!header && (
-                ('=' == *ptr)/* ||
+                ('=' == *ptr) ||
                 ('\r' == *ptr) ||
-                ('\n' == *ptr)*/
+                ('\n' == *ptr)
             )))
         {
             size += 2;
@@ -70,7 +70,7 @@ char *cefescape(const char *msg, const bool header)
             *buffptr = '\\';
             *(buffptr + 1) = '\\';
             buffptr += 2;
-        /*} else if ('\r' == *ptr) {
+        } else if ('\r' == *ptr) {
             *buffptr = header ? ' ' : '\\';
             buffptr++;
             if (!header) {
@@ -83,7 +83,7 @@ char *cefescape(const char *msg, const bool header)
             if (!header) {
                 *buffptr = 'n';
                 buffptr++;
-            }*/
+            }
         } else if (header && ('|' == *ptr)) {
             *buffptr = '\\';
             *(buffptr + 1) = '|';
@@ -193,6 +193,11 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
             i++;
             if (NULL != al_data->log[i]) {
                 logmsg = os_LoadString(logmsg, "\n");
+            }
+            /* Save on memory and processing since it's going to get truncated anyway */
+            if (OS_SIZE_2048 <= strlen(logmsg))
+            {
+                break;
             }
         }
     }
