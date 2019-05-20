@@ -39,10 +39,8 @@ char *cefescape(const char *msg, const bool header)
         return buffer;
     }
 
-    verbose("%s", msg);  //@REMOVE
-
     /* Calculate the size of the escaped message
-     * 
+     *
      * In the header we replace \r and \n with a
      * space, so there's no change in size.
      */
@@ -102,8 +100,6 @@ char *cefescape(const char *msg, const bool header)
         }
         ptr++;
     }
-
-    verbose("%s", buffer);  //@REMOVE
 
     return buffer;
 }
@@ -188,20 +184,21 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
     }
 
     /* Walk the log lines */
-    if (NULL == al_data->log[1]) {
-        logmsg = al_data->log[0];
-    } else {
-        short int i = 0;
-        while (NULL != al_data->log[i]) {
-            logmsg = os_LoadString(logmsg, al_data->log[i]);
-            i++;
-            if (NULL != al_data->log[i]) {
-                logmsg = os_LoadString(logmsg, "\n");
-            }
-            /* Save on memory and processing since it's going to get truncated anyway */
-            if (OS_SIZE_2048 <= strlen(logmsg))
-            {
-                break;
+    if (al_data->log && al_data->log[0]) {
+        if (NULL == al_data->log[1]) {
+            logmsg = al_data->log[0];
+        } else {
+            short int i = 0;
+            while (NULL != al_data->log[i]) {
+                logmsg = os_LoadString(logmsg, al_data->log[i]);
+                i++;
+                if (NULL != al_data->log[i]) {
+                    logmsg = os_LoadString(logmsg, "\n");
+                }
+                /* Save on memory and processing since it's going to get truncated anyway */
+                if (OS_SIZE_2048 <= strlen(logmsg)) {
+                    break;
+                }
             }
         }
     }
@@ -234,7 +231,7 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         field_add_string(syslog_msg, OS_SIZE_2048, " Group ownership: was %s;", al_data->group_chg);
         field_add_string(syslog_msg, OS_SIZE_2048, " Permissions changed: from %s;", al_data->perm_chg);
         /* "9/19/2016 - Sivakumar Nellurandi - parsing additions" */
-        field_add_truncated(syslog_msg, OS_SIZE_2048, " %s", al_data->log[0], 2);
+        field_add_truncated(syslog_msg, OS_SIZE_2048, " %s", logmsg, 2);
     } else if (syslog_config->format == CEF_CSYSLOG) {
         /* Start with headers */
         snprintf(syslog_msg, OS_SIZE_2048,
@@ -292,8 +289,8 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         }
 
         /* Raw log message generating event */
-        if (al_data->log && al_data->log[0]) {
-            cJSON_AddStringToObject(root, "message",  al_data->log[0]);
+        if (logmsg) {
+            cJSON_AddStringToObject(root, "message",  logmsg);
         }
 
         /* Add data if it exists */
@@ -387,7 +384,7 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         field_add_string(syslog_msg, OS_SIZE_2048, " sha1_old=\"%s\",", al_data->old_sha1);
         field_add_string(syslog_msg, OS_SIZE_2048, " sha1_new=\"%s\",", al_data->new_sha1);
         /* Message */
-        field_add_truncated(syslog_msg, OS_SIZE_2048, " message=\"%s\"", al_data->log[0], 2);
+        field_add_truncated(syslog_msg, OS_SIZE_2048, " message=\"%s\"", logmsg, 2);
     }
 
     OS_SendUDPbySize(syslog_config->socket, strlen(syslog_msg), syslog_msg);
