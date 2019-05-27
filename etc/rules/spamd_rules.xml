@@ -10,19 +10,19 @@
 
 <group name="syslog,spamd,">
   <rule id="3500" level="0" noalert="1">
-    <match>^spamd</match>
+    <pcre2>^spamd</pcre2>
     <description>Grouping for the spamd rules</description>
   </rule>
   
   <rule id="3501" level="0">
     <if_sid>3500</if_sid>
-    <match>: result:</match>
+    <pcre2>: result:</pcre2>
     <description>SPAMD result message (not very usefull here).</description>
   </rule>
 
   <rule id="3502" level="0">
     <if_sid>3500</if_sid>
-    <match> checking message | processing message </match>
+    <pcre2> checking message | processing message </pcre2>
     <description>Spamd debug event (reading message).</description>
   </rule>
 </group> <!-- SYSLOG,SPAMD -->

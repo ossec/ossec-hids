@@ -23,62 +23,62 @@
   
   <rule id="11201" level="3">
     <if_sid>11200</if_sid>
-    <match>FTP session opened.$</match>
+    <pcre2>FTP session opened\.$</pcre2>
     <description>FTP session opened.</description>
     <group>connection_attempt,</group>
   </rule>
 
   <rule id="11202" level="0">
     <if_sid>11200</if_sid>
-    <match>FTP session closed.$</match>
+    <pcre2>FTP session closed\.$</pcre2>
     <description>FTP session closed.</description>
   </rule>
 
   <rule id="11203" level="5">
     <if_sid>11200</if_sid>
-    <match> no such user </match>
+    <pcre2> no such user </pcre2>
     <description>Attempt to login using a non-existent user.</description>
     <group>invalid_login,</group>
   </rule>
 
   <rule id="11204" level="5">
     <if_sid>11200</if_sid>
-    <match>Incorrect password.$|Login failed</match>
+    <pcre2>Incorrect password\.$|Login failed</pcre2>
     <description>Login failed accessing the FTP server</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="11205" level="3">
     <if_sid>11200</if_sid>
-    <match>Login successful</match>
+    <pcre2>Login successful</pcre2>
     <description>FTP Authentication success.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="11206" level="5">
     <if_sid>11200</if_sid>
-    <regex>Connection from \S+ [\S+] denied</regex>
+    <pcre2>Connection from \S+ \[\S+\] denied</pcre2>
     <description>Connection denied by ProFTPD configuration.</description>
     <group>access_denied,</group>
   </rule>
   
   <rule id="11207" level="5">
     <if_sid>11200</if_sid>
-    <match>refused connect from</match>
+    <pcre2>refused connect from</pcre2>
     <description>Connection refused by TCP Wrappers.</description>
     <group>access_denied,</group>
   </rule>
 
   <rule id="11208" level="4">
     <if_sid>11200</if_sid>
-    <match>unable to find open port in PassivePorts range</match>
+    <pcre2>unable to find open port in PassivePorts range</pcre2>
     <description>Small PassivePorts range in config file. </description>
     <description>Server misconfiguration.</description>
   </rule>
 
   <rule id="11209" level="14">
     <if_sid>11200</if_sid>
-    <match>Refused PORT </match> 
+    <pcre2>Refused PORT </pcre2>
     <description>Attempt to bypass firewall that can't adequately</description>
     <description> keep state of FTP traffic.</description>
     <info type="link">http://www.kb.cert.org/vuls/id/328867</info>
@@ -87,84 +87,84 @@
 
   <rule id="11210" level="10">
     <if_sid>11200</if_sid>
-    <match>Maximum login attempts </match>
+    <pcre2>Maximum login attempts </pcre2>
     <description>Multiple failed login attempts.</description>
     <group>authentication_failures,</group>
   </rule>
 
   <rule id="11211" level="4">
     <if_sid>11200</if_sid>
-    <match>host name/name mismatch|host name/address mismatch</match>
+    <pcre2>host name/name mismatch|host name/address mismatch</pcre2>
     <description>Mismatch in server's hostname.</description>
   </rule>
 
   <rule id="11212" level="5">
     <if_sid>11200</if_sid>
-    <match>warning: can't verify hostname: </match>
+    <pcre2>warning: can't verify hostname: </pcre2>
     <description>Reverse lookup error (bad ISP config).</description>
   </rule>
 
   <rule id="11213" level="3">
     <if_sid>11200</if_sid>
-    <match>connect from </match>
+    <pcre2>connect from </pcre2>
     <description>Remote host connected to FTP server.</description>
     <group>connection_attempt,</group>
   </rule>
 
   <rule id="11214" level="3">
     <if_sid>11200</if_sid>
-    <match>FTP no transfer timeout, disconnected</match>
+    <pcre2>FTP no transfer timeout, disconnected</pcre2>
     <description>Remote host disconnected due to inactivity.</description>
   </rule>
 
   <rule id="11215" level="3">
     <if_sid>11200</if_sid>
-    <match>FTP login timed out, disconnected</match>
+    <pcre2>FTP login timed out, disconnected</pcre2>
     <description>Remote host disconnected due to login time out.</description>
   </rule>
 
   <rule id="11216" level="3">
     <if_sid>11200</if_sid>
-    <match>FTP session idle timeout, disconnected</match>
+    <pcre2>FTP session idle timeout, disconnected</pcre2>
     <description>Remote host disconnected due to time out.</description>
   </rule>
 
   <rule id="11217" level="3">
     <if_sid>11200</if_sid>
-    <match>Data transfer stall timeout:</match>
+    <pcre2>Data transfer stall timeout:</pcre2>
     <description>Data transfer stalled.</description>
   </rule>
 
   <rule id="11218" level="12">
     <if_sid>11200</if_sid>
-    <match>ProFTPD terminating (signal 11)</match>
+    <pcre2>ProFTPD terminating \(signal 11\)</pcre2>
     <description>FTP process crashed.</description>
     <group>service_availability,</group>
   </rule>
 
   <rule id="11219" level="12">
     <if_sid>11200</if_sid>
-    <match>Reallocating sreaddir buffer</match>
+    <pcre2>Reallocating sreaddir buffer</pcre2>
     <description>FTP server Buffer overflow attempt.</description>
   </rule>
 
   <rule id="11220" level="4">
     <if_sid>11200</if_sid>
-    <match>listen() failed in</match>
+    <pcre2>listen\(\) failed in</pcre2>
     <description>Unable to bind to adress.</description>
   </rule>
   
   <rule id="11221" level="0">
     <if_sid>11200</if_sid>
-    <match>error setting IPV6_V6ONLY: Protocol not available|</match>
-    <match> - mod_delay/|PAM(setcred): System error|</match>
-    <match>PAM(close_session): System error|cap_set_proc failed|reverting to normal operation|error retrieving information about user</match>
+    <pcre2>error setting IPV6_V6ONLY: Protocol not available|</pcre2>
+    <pcre2> - mod_delay/|PAM\(setcred\): System error|</pcre2>
+    <pcre2>PAM\(close_session\): System error|cap_set_proc failed|reverting to normal operation|error retrieving information about user</pcre2>
     <description>IPv6 error and mod-delay info (ignored).</description>
   </rule>
 
   <rule id="11222" level="4">
     <if_sid>11200</if_sid>
-    <match>unable to open incoming connection</match>
+    <pcre2>unable to open incoming connection</pcre2>
     <description>Couldn't open the incoming connection. </description>
     <description>Check log message for reason.</description>
   </rule>

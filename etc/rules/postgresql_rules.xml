@@ -23,64 +23,64 @@
 
   <rule id="50501" level="0">
     <if_sid>50500</if_sid>
-    <status>^LOG</status>
+    <status_pcre2>^LOG</status_pcre2>
     <description>PostgreSQL log message.</description>
   </rule>
   
   <rule id="50502" level="0">
     <if_sid>50500</if_sid>
-    <status>^NOTICE|INFO</status>
+    <status_pcre2>^NOTICE|INFO</status_pcre2>
     <description>PostgreSQL informational message.</description>
   </rule>
   
   <rule id="50503" level="4">
     <if_sid>50500</if_sid>
-    <status>^ERROR</status>
+    <status_pcre2>^ERROR</status_pcre2>
     <description>PostgreSQL error message.</description>
   </rule>
    
   <rule id="50504" level="5">
     <if_sid>50500</if_sid>
-    <status>^FATAL</status>
+    <status_pcre2>^FATAL</status_pcre2>
     <description>PostgreSQL error message.</description>
   </rule>
   
   <rule id="50505" level="0">
     <if_sid>50500</if_sid>
-    <status>^DEBUG</status>
+    <status_pcre2>^DEBUG</status_pcre2>
     <description>PostgreSQL debug message.</description>
   </rule>
   
   <rule id="50510" level="0">
     <if_sid>50501</if_sid>
-    <match> duration: | statement: </match>
+    <pcre2> duration: | statement: </pcre2>
     <description>Database query.</description>
   </rule>
   
   <rule id="50511" level="3">
     <if_sid>50501</if_sid>
-    <match>connection authorized</match>
+    <pcre2>connection authorized</pcre2>
     <description>Database authentication success.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="50512" level="9">
     <if_sid>50504</if_sid>
-    <match>authentication failed</match>
+    <pcre2>authentication failed</pcre2>
     <description>Database authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>
   
   <rule id="50520" level="12">
     <if_sid>50504</if_sid>
-    <match>terminating connection due</match>
+    <pcre2>terminating connection due</pcre2>
     <description>Database shutdown message.</description>
     <group>service_availability,</group>
   </rule>
   
   <rule id="50521" level="12">
     <if_sid>50501</if_sid>
-    <match>aborting any active transactions|shutting down</match>
+    <pcre2>aborting any active transactions|shutting down</pcre2>
     <description>Database shutdown message.</description>
     <group>service_availability,</group>
   </rule>

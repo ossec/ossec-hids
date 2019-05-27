@@ -21,95 +21,95 @@
   <rule id="7500" level="0">
     <if_sid>18101,18102,18103</if_sid>
     <category>windows</category>
-    <extra_data>^McLogEvent</extra_data>
+    <extra_data_pcre2>^McLogEvent</extra_data_pcre2>
     <description>Grouping of McAfee Windows AV rules.</description>
   </rule>
 
   <rule id="7501" level="2">
     <if_sid>7500</if_sid>
-    <id>$MCAFEE_INFO</id>
+    <id_pcre2>$MCAFEE_INFO</id_pcre2>
     <description>McAfee Windows AV informational event.</description>
   </rule>
 
   <rule id="7502" level="3">
     <if_sid>7500</if_sid>
-    <id>$MCAFEE_WARN</id>
+    <id_pcre2>$MCAFEE_WARN</id_pcre2>
     <description>McAfee Windows AV warning event.</description>
   </rule>
 
   <rule id="7503" level="4">
     <if_sid>7500</if_sid>
-    <id>$MCAFEE_ERROR</id>
+    <id_pcre2>$MCAFEE_ERROR</id_pcre2>
     <description>McAfee Windows AV error event.</description>
   </rule>
 
   <rule id="7504" level="12">
     <if_sid>7500</if_sid>
-    <regex>$MCAFEE_VIRUS</regex>
+    <pcre2>$MCAFEE_VIRUS</pcre2>
     <group>virus</group>
     <description>McAfee Windows AV - Virus detected and not removed.</description>
   </rule>
 
   <rule id="7505" level="7">
     <if_sid>7504</if_sid>
-    <match>$MCAFEE_VIRUS_OK</match>
+    <pcre2>$MCAFEE_VIRUS_OK</pcre2>
     <group>virus</group>
     <description>McAfee Windows AV - Virus detected and properly removed.</description>
   </rule>
 
   <rule id="7506" level="7">
     <if_sid>7504</if_sid>
-    <match>Will be deleted</match>
+    <pcre2>Will be deleted</pcre2>
     <group>virus</group>
     <description>McAfee Windows AV - Virus detected and file will be deleted.</description>
   </rule>
 
   <rule id="7507" level="3">
     <if_sid>7500</if_sid>
-    <match>scan started|scan stopped</match>
+    <pcre2>scan started|scan stopped</pcre2>
     <description>McAfee Windows AV - Scan started or stopped.</description>
   </rule>
 
   <rule id="7508" level="3">
     <if_sid>7501</if_sid>
-    <id>^257</id>
-    <match>completed.  No detections</match>
+    <id_pcre2>^257</id_pcre2>
+    <pcre2>completed\.  No detections</pcre2>
     <description>McAfee Windows AV - Scan completed with no viruses found.</description>
   </rule>
 
   <rule id="7509" level="5">
     <if_sid>7500</if_sid>
-    <match>scan was cancelled |has taken too long</match>
+    <pcre2>scan was cancelled |has taken too long</pcre2>
     <description>McAfee Windows AV - Virus scan cancelled.</description>
   </rule>
 
   <rule id="7510" level="5">
     <if_sid>7500</if_sid>
-    <match>scan was canceled because</match>
+    <pcre2>scan was canceled because</pcre2>
     <description>McAfee Windows AV - Virus scan cancelled due to shutdown.</description>
   </rule>
 
   <rule id="7511" level="3">
     <if_sid>7500</if_sid>
-    <match>update was successful</match>
+    <pcre2>update was successful</pcre2>
     <description>McAfee Windows AV - Virus program or DAT update succeeded.</description>
   </rule>
 
   <rule id="07512" level="7">
     <if_sid>7500</if_sid>
-    <match>update failed</match>
+    <pcre2>update failed</pcre2>
     <description>McAfee Windows AV - Virus program or DAT update failed.</description>
   </rule>
 
   <rule id="7513" level="7">
     <if_sid>7500</if_sid>
-    <match>update was cancelled</match>
+    <pcre2>update was cancelled</pcre2>
     <description>McAfee Windows AV - Virus program or DAT update cancelled.</description>
   </rule>
 
   <rule id="7514" level="5">
     <if_sid>7505</if_sid>
-    <match>contains the EICAR test file</match>
+    <pcre2>contains the EICAR test file</pcre2>
     <options>alert_by_email</options>
     <description>McAfee Windows AV - EICAR test file detected.</description>
   </rule>

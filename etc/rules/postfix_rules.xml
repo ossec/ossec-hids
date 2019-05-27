@@ -16,7 +16,7 @@
   
   <rule id="3301" level="6">
     <if_sid>3300</if_sid>
-    <id>^554$</id>
+    <id_pcre2>^554$</id_pcre2>
     <description>Attempt to use mail server as relay </description>
     <description>(client host rejected).</description>
     <group>spam,</group>
@@ -24,7 +24,7 @@
 
   <rule id="3302" level="6">
     <if_sid>3300</if_sid>
-    <id>^550$</id>
+    <id_pcre2>^550$</id_pcre2>
     <description>Rejected by access list </description>
     <description>(Requested action not taken).</description>
     <group>spam,</group>
@@ -32,7 +32,7 @@
 
   <rule id="3303" level="5">
     <if_sid>3300</if_sid>
-    <id>^450$</id>
+    <id_pcre2>^450$</id_pcre2>
     <description>Sender domain is not found </description>
     <description>(450: Requested mail action not taken).</description>
     <group>spam,</group>
@@ -40,7 +40,7 @@
 
   <rule id="3304" level="5">
     <if_sid>3300</if_sid>
-    <id>^503$</id>
+    <id_pcre2>^503$</id_pcre2>
     <description>Improper use of SMTP command pipelining </description>
     <description>(503: Bad sequence of commands).</description>
     <group>spam,</group>
@@ -48,7 +48,7 @@
   
   <rule id="3305" level="5">
     <if_sid>3300</if_sid>
-    <id>^504$</id>
+    <id_pcre2>^504$</id_pcre2>
     <description>Recipient address must contain FQDN </description>
     <description>(504: Command parameter not implemented).</description>
     <group>spam,</group>
@@ -56,7 +56,7 @@
   
   <rule id="3306" level="6">
     <if_sid>3301, 3302</if_sid>
-    <match> blocked using </match>
+    <pcre2> blocked using </pcre2>
     <description>IP Address deny-listed by anti-spam (blocked).</description>
     <group>spam,</group>
   </rule>
@@ -68,35 +68,35 @@
 
   <rule id="3330" level="10" ignore="240">
     <if_sid>3320</if_sid>
-    <match>defer service failure|Resource temporarily unavailable|</match>
-    <match>^fatal: the Postfix mail system is not running</match>
+    <pcre2>defer service failure|Resource temporarily unavailable|</pcre2>
+    <pcre2>^fatal: the Postfix mail system is not running</pcre2>
     <description>Postfix process error.</description>
     <group>service_availability,</group>
   </rule>
 
   <rule id="3332" level="5">
     <if_sid>3320</if_sid>
-    <match> authentication failed</match>
+    <pcre2> authentication failed</pcre2>
     <description>Postfix SASL authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="3331" level="10" ignore="120">
     <if_sid>3300</if_sid>
-    <id>^452</id>
+    <id_pcre2>^452</id_pcre2>
     <description>Postfix insufficient disk space error.</description>
     <group>service_availability,</group>
   </rule>
 
   <rule id="3334" level="3">
     <if_sid>3320</if_sid>
-    <match>^daemon started </match>
+    <pcre2>^daemon started </pcre2>
     <description>Postfix started.</description>
   </rule>
 
   <rule id="3333" level="7">
     <if_sid>3320</if_sid>
-    <match>^terminating on signal</match>
+    <pcre2>^terminating on signal</pcre2>
     <description>Postfix stopped.</description>
     <group>service_availability,</group>
   </rule>
@@ -156,7 +156,7 @@
   </rule>
 
   <rule id="3390" level="0">
-    <match>^clamsmtpd: </match>
+    <pcre2>^clamsmtpd: </pcre2>
     <description>Grouping of the clamsmtpd rules.</description>
   </rule>
 </group> <!-- SYSLOG,POSTFIX -->

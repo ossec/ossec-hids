@@ -30,7 +30,7 @@
                   
   <rule id="7202" level="9">
     <if_sid>7200</if_sid>
-    <match>flip flop </match>
+    <pcre2>flip flop </pcre2>
     <description>Arpwatch "flip flop" message. </description>
     <description>IP address/MAC relation changing too often.</description>
     <group>ip_spoof,</group>
@@ -38,45 +38,45 @@
 
   <rule id="7203" level="3">
     <if_sid>7200</if_sid>
-    <match>reaper: pid </match>
+    <pcre2>reaper: pid </pcre2>
     <description>Arpwatch exiting.</description>
     <group>service_availability,</group>
   </rule>
  
   <rule id="7204" level="9">
     <if_sid>7200</if_sid>
-    <match>changed ethernet address </match>
+    <pcre2>changed ethernet address </pcre2>
     <description>Changed network interface for ip address.</description>
     <group>ip_spoof,</group>
   </rule> 
  
   <rule id="7205" level="0">
     <if_sid>7200</if_sid>
-    <match>bad interface eth0|exiting|Running as </match>
+    <pcre2>bad interface eth0|exiting|Running as </pcre2>
     <description>Arpwatch startup/exiting messages.</description>
   </rule> 
 
   <rule id="7206" level="0">
     <if_sid>7200</if_sid>
-    <match>sent bad addr len</match>
+    <pcre2>sent bad addr len</pcre2>
     <description>Arpwatch detected bad address len (ignored).</description>
   </rule> 
 
   <rule id="7207" level="1">
     <if_sid>7200</if_sid>
-    <match>/dev/bpf0: Permission denied</match>
+    <pcre2>/dev/bpf0: Permission denied</pcre2>
     <description>arpwatch probably run with wrong permissions</description>
   </rule>
 
   <rule id="7208" level="1">
     <if_sid>7200</if_sid>
-    <match>reused old ethernet address</match>
+    <pcre2>reused old ethernet address</pcre2>
     <description>An IP has reverted to an old ethernet address.</description>
   </rule>
 
   <rule id="7209" level="7">
     <if_sid>7200</if_sid>
-    <match>ethernet mismatch</match>
+    <pcre2>ethernet mismatch</pcre2>
     <description>Possible arpspoofing attempt.</description>
     <group>ip_spoof,</group>
   </rule>

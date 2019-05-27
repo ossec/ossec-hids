@@ -58,98 +58,98 @@ ID,Date,Time,Description,IP Address,Host Name,MAC Address
   
   <rule id="6301" level="2">
 	<if_sid>6300</if_sid>
-	<id>^00</id>
+	<id_pcre2>^00</id_pcre2>
     <description>The log was started.</description>
     <group>service_start,</group>
   </rule>
   
   <rule id="6302" level="3">
 	<if_sid>6300</if_sid>
-	<id>^01</id>
+	<id_pcre2>^01</id_pcre2>
     <description>The log was stopped.</description>
     <group>service_availability,</group>
   </rule>
   
   <rule id="6303" level="10">
 	<if_sid>6300</if_sid>
-	<id>^02</id>
+	<id_pcre2>^02</id_pcre2>
     <description>The log was temporarily paused due to low disk space.</description>
     <group>system_error,</group>
   </rule>
 
   <rule id="6304" level="0">
 	<if_sid>6300</if_sid>
-	<id>^10</id>
+	<id_pcre2>^10</id_pcre2>
     <description>A new IP address was leased to a client.</description>
     <group>dhcp_lease_action,</group>
   </rule>
  
   <rule id="6305" level="0">
 	<if_sid>6300</if_sid>
-	<id>^11</id>
+	<id_pcre2>^11</id_pcre2>
     <description>A lease was renewed by a client.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6306" level="0">
 	<if_sid>6300</if_sid>
-	<id>^12</id>
+	<id_pcre2>^12</id_pcre2>
     <description>A lease was released by a client.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6307" level="0">
 	<if_sid>6300</if_sid>
-	<id>^13</id>
+	<id_pcre2>^13</id_pcre2>
     <description>An IP address was found to be in use on the network.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6308" level="12">
 	<if_sid>6300</if_sid>
-	<id>^14</id>
+	<id_pcre2>^14</id_pcre2>
     <description>A lease request could not be satisfied because the scope's address pool was exhausted.</description>
     <group>service_availability,dhcp_lease_action,</group>
   </rule>
 
   <rule id="6309" level="7">
 	<if_sid>6300</if_sid>
-	<id>^15</id>
+	<id_pcre2>^15</id_pcre2>
     <description>A lease was denied.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6310" level="0">
 	<if_sid>6300</if_sid>
-	<id>^16</id>
+	<id_pcre2>^16</id_pcre2>
     <description>A lease was deleted.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6311" level="0">
 	<if_sid>6300</if_sid>
-	<id>^17</id>
+	<id_pcre2>^17</id_pcre2>
     <description>A lease was expired and DNS records for an expired leases have not been deleted.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6322" level="0">
 	<if_sid>6300</if_sid>
-	<id>^18</id>
+	<id_pcre2>^18</id_pcre2>
     <description>A lease was expired and DNS records were deleted.</description>
     <group>dhcp_lease_action,dhcp_dns_maintenance</group>
   </rule>
   
   <rule id="6312" level="0">
 	<if_sid>6300</if_sid>
-	<id>^20</id>
+	<id_pcre2>^20</id_pcre2>
     <description>A BOOTP address was leased to a client.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6313" level="0">
 	<if_sid>6300</if_sid>
-	<id>^21</id>
+	<id_pcre2>^21</id_pcre2>
     <description>A dynamic BOOTP address was leased to a client.</description>
     <group>dhcp_lease_action,</group>
   </rule>
@@ -157,56 +157,56 @@ ID,Date,Time,Description,IP Address,Host Name,MAC Address
   
   <rule id="6314" level="10">
 	<if_sid>6300</if_sid>
-	<id>^22</id>
+	<id_pcre2>^22</id_pcre2>
     <description>A BOOTP request could not be satisfied because the scope's  address pool for BOOTP was exhausted.</description>
     <group>dhcp_lease_action,</group>
   </rule>
   
   <rule id="6315" level="0">
 	<if_sid>6300</if_sid>
-	<id>^23</id>
+	<id_pcre2>^23</id_pcre2>
     <description>A BOOTP IP address was deleted after checking to see it was not in use.</description>
     <group>dhcp_lease_action,</group>
   </rule>
 
   <rule id="6316" level="3">
 	<if_sid>6300</if_sid>
-	<id>^24</id>
+	<id_pcre2>^24</id_pcre2>
     <description>IP address cleanup operation has began.</description>
     <group>dhcp_maintenance,</group>
   </rule>
 
   <rule id="6317" level="2">
 	<if_sid>6300</if_sid>
-	<id>^25</id>
+	<id_pcre2>^25</id_pcre2>
     <description>IP address cleanup statistics.</description>
     <group>dhcp_maintenance,</group>
   </rule>
   
   <rule id="6318" level="0">
 	<if_sid>6300</if_sid>
-	<id>^30</id>
+	<id_pcre2>^30</id_pcre2>
     <description>DNS update request to the named DNS server.</description>
     <group>dhcp_dns_maintenance,</group>
   </rule>
   
   <rule id="6319" level="7">
 	<if_sid>6300</if_sid>
-	<id>^31</id>
+	<id_pcre2>^31</id_pcre2>
     <description>DNS update failed.</description>
     <group>dhcp_dns_maintenance,</group>
   </rule>
   
   <rule id="6320" level="0">
 	<if_sid>6300</if_sid>
-	<id>^32</id>
+	<id_pcre2>^32</id_pcre2>
     <description>DNS update successful.</description>
     <group>dhcp_dns_maintenance,</group>
   </rule>  
   
   <rule id="6323" level="12">
 	<if_sid>6300</if_sid>
-	<id>^33</id>
+	<id_pcre2>^33</id_pcre2>
     <description>Packet dropped due to NAP policy.</description>
     <group>dhcp_lease_action,</group>
 
@@ -214,7 +214,7 @@ ID,Date,Time,Description,IP Address,Host Name,MAC Address
   
   <rule id="6321" level="12">
 	<if_sid>6300</if_sid>
-	<id>^5</id>
+	<id_pcre2>^5</id_pcre2>
     <description>Codes above 50 are used for Rogue Server Detection information.</description>
     <group>dhcp_rogue_server,</group>
   </rule>  
@@ -264,35 +264,35 @@ Server 2008 IPv6 Event ID  Meaning
   
   <rule id="6351" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11000</id>
+	<id_pcre2>^11000</id_pcre2>
     <description>Solicit.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6352" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11001|^11002</id>
+	<id_pcre2>^11001|^11002</id_pcre2>
     <description>Advertise.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6354" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11003</id>
+	<id_pcre2>^11003</id_pcre2>
     <description>Confirm.</description>
     <group>dhcp_ipv6,</group>
   </rule>
 
   <rule id="6355" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11004</id>
+	<id_pcre2>^11004</id_pcre2>
     <description>Renew.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6356" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11005</id>
+	<id_pcre2>^11005</id_pcre2>
     <description>Rebind.</description>
     <group>dhcp_ipv6,</group>
   </rule>
@@ -300,49 +300,49 @@ Server 2008 IPv6 Event ID  Meaning
   
   <rule id="6357" level="7">
 	<if_sid>6350</if_sid>
-	<id>^11006</id>
+	<id_pcre2>^11006</id_pcre2>
     <description>DHCP Decline.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6358" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11007</id>
+	<id_pcre2>^11007</id_pcre2>
     <description>Release.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6359" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11008</id>
+	<id_pcre2>^11008</id_pcre2>
     <description>Information Request.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6360" level="12">
 	<if_sid>6350</if_sid>
-	<id>^11009</id>
+	<id_pcre2>^11009</id_pcre2>
     <description>Scope Full.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6361" level="3">
 	<if_sid>6350</if_sid>
-	<id>^11010</id>
+	<id_pcre2>^11010</id_pcre2>
     <description>Started.</description>
     <group>service_start,</group>
   </rule>
   
   <rule id="6362" level="7">
 	<if_sid>6350</if_sid>
-	<id>^11011</id>
+	<id_pcre2>^11011</id_pcre2>
     <description>Stopped.</description>
     <group>service_availability,</group>
   </rule>
   
   <rule id="6363" level="10">
 	<if_sid>6350</if_sid>
-	<id>^11012</id>
+	<id_pcre2>^11012</id_pcre2>
     <description>Audit log paused.</description>
     <group>service_availability,</group>
   </rule>
@@ -350,56 +350,56 @@ Server 2008 IPv6 Event ID  Meaning
   
   <rule id="6364" level="7">
 	<if_sid>6350</if_sid>
-	<id>^11013</id>
+	<id_pcre2>^11013</id_pcre2>
     <description>DHCP Log File.</description>
     <group>system_error,</group>
   </rule>
   
   <rule id="6365" level="7">
 	<if_sid>6350</if_sid>
-	<id>^11014</id>
+	<id_pcre2>^11014</id_pcre2>
     <description>Bad Address.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6366" level="4">
 	<if_sid>6350</if_sid>
-	<id>^11015</id>
+	<id_pcre2>^11015</id_pcre2>
     <description>Address is already in use.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6367" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11016</id>
+	<id_pcre2>^11016</id_pcre2>
     <description>Client deleted.</description>
     <group>dhcp_ipv6,</group>
   </rule>
 
   <rule id="6368" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11017</id>
+	<id_pcre2>^11017</id_pcre2>
     <description>DNS record not deleted.</description>
     <group>dhcp_ipv6,</group>
   </rule> 
   
   <rule id="6369" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11018</id>
+	<id_pcre2>^11018</id_pcre2>
     <description>Expired.</description>
     <group>dhcp_ipv6,</group>
   </rule>
 
   <rule id="6370" level="0">
 	<if_sid>6350</if_sid>
-	<id>^11019</id>
+	<id_pcre2>^11019</id_pcre2>
     <description>Expired and Deleted count.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6371" level="2">
 	<if_sid>6350</if_sid>
-	<id>^11020</id>
+	<id_pcre2>^11020</id_pcre2>
     <description>Database cleanup begin.</description>
     <group>dhcp_ipv6,</group>
 
@@ -407,28 +407,28 @@ Server 2008 IPv6 Event ID  Meaning
   
   <rule id="6372" level="2">
 	<if_sid>6350</if_sid>
-	<id>^11021</id>
+	<id_pcre2>^11021</id_pcre2>
     <description>Database cleanup end.</description>
     <group>dhcp_ipv6,</group>
   </rule>
 
   <rule id="6373" level="12">
 	<if_sid>6350</if_sid>
-	<id>^11023</id>
+	<id_pcre2>^11023</id_pcre2>
     <description>Service not authorized in AD.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6374" level="3">
 	<if_sid>6350</if_sid>
-	<id>^11024</id>
+	<id_pcre2>^11024</id_pcre2>
     <description>Service authorized in AD.</description>
     <group>dhcp_ipv6,</group>
   </rule>
   
   <rule id="6376" level="12">
 	<if_sid>6350</if_sid>
-	<id>^11025</id>
+	<id_pcre2>^11025</id_pcre2>
     <description>Service has not determined if it is authorized in AD.</description>
     <group>dhcp_ipv6,</group>
   </rule>  

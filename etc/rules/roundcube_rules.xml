@@ -20,14 +20,14 @@
 
   <rule id="9401" level="6">
     <if_sid>9400</if_sid>
-    <match>failed (LOGIN)| Login failed | Authentication failed| Failed login </match>
+    <pcre2>failed \(LOGIN\)| Login failed | Authentication failed| Failed login </pcre2>
     <description>Roundcube authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="9402" level="3">
     <if_sid>9400</if_sid>
-    <match>Successful login</match>
+    <pcre2>Successful login</pcre2>
     <description>Roundcube authentication succeeded.</description>
     <group>authentication_success,</group>
   </rule>

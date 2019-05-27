@@ -27,27 +27,27 @@
 
   <rule id="7610" level="5">
     <if_sid>7600</if_sid>
-    <id>^0|$|^1$|^2$|^33|^10$|^11$|^12$</id>
+    <id_pcre2>^0|$|^1$|^2$|^33|^10$|^11$|^12$</id_pcre2>
     <group>virus</group>
     <description>Virus detected and cleaned/quarantined/removed</description>
   </rule>
   
   <rule id="7611" level="9">
     <if_sid>7600</if_sid>
-    <id>^5$|^6$|^7$|^8$|^14$|^15$|^16$</id>
+    <id_pcre2>^5$|^6$|^7$|^8$|^14$|^15$|^16$</id_pcre2>
     <group>virus</group>
     <description>Virus detected and unable to clean up.</description>
   </rule>
 
   <rule id="7612" level="3">
     <if_sid>7600</if_sid>
-    <id>^4$|^13$</id>
+    <id_pcre2>^4$|^13$</id_pcre2>
     <description>Virus scan completed with no errors detected.</description>
   </rule>
 
   <rule id="7613" level="5">
     <if_sid>7600</if_sid>
-    <id>^25$</id>
+    <id_pcre2>^25$</id_pcre2>
     <description>Virus scan passed by found potential security risk.</description>
   </rule>
 </group> <!-- symantec -->

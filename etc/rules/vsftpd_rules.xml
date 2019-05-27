@@ -16,28 +16,28 @@
   
   <rule id="11401" level="3">
     <if_sid>11400</if_sid>
-    <match>CONNECT: Client</match>
+    <pcre2>CONNECT: Client</pcre2>
     <group>connection_attempt</group>
     <description>FTP session opened.</description>
   </rule>
 
   <rule id="11402" level="3">
     <if_sid>11400</if_sid>
-    <match>OK LOGIN: </match>
+    <pcre2>OK LOGIN: </pcre2>
     <description>FTP Authentication success.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="11403" level="5">
     <if_sid>11400</if_sid>
-    <match>FAIL LOGIN: </match>
+    <pcre2>FAIL LOGIN: </pcre2>
     <description>Login failed accessing the FTP server.</description>
     <group>authentication_failed,</group>
   </rule>
   
   <rule id="11404" level="0">
     <if_sid>11400</if_sid>
-    <match>OK UPLOAD: </match>
+    <pcre2>OK UPLOAD: </pcre2>
     <description>FTP server file upload.</description>
   </rule>
   
