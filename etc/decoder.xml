@@ -3123,21 +3123,21 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 <decoder name="owncloud-failed1">
   <parent>owncloud</parent>
   <prematch>Login failed: user </prematch>
-  <regex offset="after_prematch">^'(\w+)' , wrong password, IP:(\S+)</regex>
+  <regex offset="after_prematch">^'(\w+)' , wrong password, IP:(\S+)"</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-failed2">
   <parent>owncloud</parent>
   <prematch>Login failed: </prematch>
-  <regex offset="after_prematch">^'(\w+)' \(Remote IP: '(\S+)</regex>
+  <regex offset="after_prematch">^'(\w+)' \(Remote IP: '(\S+)'</regex>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-malicious">
   <parent>owncloud</parent>
   <prematch>Passed filename is not valid, might be malicious </prematch>
-  <regex offset="after_prematch">;ip:"(\S+)|;ip:\\"(\S+)</regex>
+  <regex offset="after_prematch">;ip:"(\S+)"|;ip:\\"(\S+)\\"</regex>
   <order>srcip</order>
 </decoder>
 
