@@ -1,24 +1,24 @@
 <group name="local,firewalld,">
   <rule id="40900" level="0">
-    <program_name>^firewalld</program_name>
+    <program_name_pcre2>^firewalld</program_name_pcre2>
     <description>firewalld grouping</description>
   </rule>
 
   <rule id="40901" level="1">
     <if_sid>40900</if_sid>
-    <match> ERROR: </match>
+    <pcre2> ERROR: </pcre2>
     <description>firewalld error</description>
   </rule>
 
   <rule id="40902" level="3">
     <if_sid>40901</if_sid>
-    <match> No chain/target/match by that name.$</match>
+    <pcre2> No chain/target/match by that name\.$</pcre2>
     <description>Incorrect chain/target/match.</description>
   </rule>
 
   <rule id="40903" level="2">
     <if_sid>40901</if_sid>
-    <match> ZONE_ALREADY_SET$</match>
+    <pcre2> ZONE_ALREADY_SET$</pcre2>
     <description>firewalld: zone already set.</description>
   </rule>
 </group>

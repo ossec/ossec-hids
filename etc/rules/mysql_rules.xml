@@ -23,53 +23,53 @@
 
   <rule id="50105" level="3">
     <if_sid>50100</if_sid>
-    <regex>^MySQL log: \d+ \S+ \d+ Connect</regex>
+    <pcre2>^MySQL log: \d+ \S+ \d+ Connect</pcre2>
     <description>Database authentication success.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="50106" level="9">
     <if_sid>50105</if_sid>
-    <match>Access denied for user</match>
+    <pcre2>Access denied for user</pcre2>
     <description>Database authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>
   
   <rule id="50107" level="0">
     <if_sid>50100</if_sid>
-    <regex>^MySQL log: \d+ \S+ \d+ Query</regex>
+    <pcre2>^MySQL log: \d+ \S+ \d+ Query</pcre2>
     <description>Database query.</description>
   </rule>
   
   <rule id="50108" level="3">
     <if_sid>50100</if_sid>
-    <regex>^MySQL log: \d+ \S+ \d+ Quit</regex>
+    <pcre2>^MySQL log: \d+ \S+ \d+ Quit</pcre2>
     <description>User disconnected from database.</description>
   </rule>
 
   <rule id="50120" level="12">
     <if_sid>50100</if_sid>
-    <match>mysqld ended|Shutdown complete</match>
+    <pcre2>mysqld ended|Shutdown complete</pcre2>
     <description>Database shutdown message.</description>
     <group>service_availability,</group>
   </rule>
 
   <rule id="50121" level="3">
     <if_sid>50100</if_sid>
-    <match>mysqld started|mysqld restarted</match>
+    <pcre2>mysqld started|mysqld restarted</pcre2>
     <description>Database startup message.</description>
     <group>service_availability,</group>
   </rule>
   
   <rule id="50125" level="5">
     <if_sid>50100</if_sid>
-    <regex>^MySQL log: \d+ \S+ \d+ [ERROR]</regex>
+    <pcre2>^MySQL log: \d+ \S+ \d+ \[ERROR\]</pcre2>
     <description>Database error.</description>
   </rule> 
   
   <rule id="50126" level="12">
     <if_sid>50125</if_sid>
-    <match>Fatal error:</match>
+    <pcre2>Fatal error:</pcre2>
     <description>Database fatal error.</description>
     <group>service_availability,</group>
   </rule>

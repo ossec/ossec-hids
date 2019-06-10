@@ -3103,20 +3103,23 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <parent>owncloud</parent>
   <prematch_pcre2>Login failed: user </prematch_pcre2>
   <pcre2 offset="after_prematch">^'([A-Za-z0-9@_-]+)' , wrong password, IP:(\S+)</pcre2>
+
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-failed2">
   <parent>owncloud</parent>
   <prematch_pcre2>Login failed: </prematch_pcre2>
-  <pcre2 offset="after_prematch">^'([A-Za-z0-9@_-]+)' \(Remote IP: '(\S+)</pcre2>
+  <pcre2 offset="after_prematch">^'([A-Za-z0-9@_-]+)' \(Remote IP: '(\S+)'</pcre2>
   <order>user, srcip</order>
 </decoder>
 
 <decoder name="owncloud-malicious">
   <parent>owncloud</parent>
+
   <prematch_pcre2>Passed filename is not valid, might be malicious </prematch_pcre2>
-  <pcre2 offset="after_prematch">;ip:"(\S+)|;ip:\\"(\S+)</pcre2>
+  <pcre2 offset="after_prematch">;ip:"(\S+)"|;ip:\\"(\S+)\\"</pcre2>
+
   <order>srcip</order>
 </decoder>
 

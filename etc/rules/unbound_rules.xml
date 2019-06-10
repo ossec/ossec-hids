@@ -16,37 +16,37 @@
 
   <rule id="53761" level="1">
     <if_sid>53760</if_sid>
-    <match> notice: </match>
+    <pcre2> notice: </pcre2>
     <description>Notice grouping.</description>
   </rule>
 
   <rule id="53762" level="1">
     <if_sid>53760</if_sid>
-    <match> info: </match>
+    <pcre2> info: </pcre2>
     <description>Info grouping.</description>
   </rule>
 
   <rule id="53770" level="2">
     <if_sid>53761</if_sid>
-    <match>sendto failed: Can't assign requested address</match>
+    <pcre2>sendto failed: Can't assign requested address</pcre2>
     <description>Can't assign requested address.</description>
   </rule>
 
   <rule id="53771" level="0">
     <if_sid>53762</if_sid>
-    <match> A IN$</match>
+    <pcre2> A IN$</pcre2>
     <description>DNS A request.</description>
   </rule>
 
   <rule id="53772" level="0">
     <if_sid>53762</if_sid>
-    <match> AAAA IN$</match>
+    <pcre2> AAAA IN$</pcre2>
     <description>DNS AAAA request.</description>
   </rule>
  
   <rule id="53773" level="7">
     <if_sid>53771,53772</if_sid>
-    <url>.top.|.to.|.gq.|.cf.|.men.|.loan.|.ml.|.work.|.click.|.tk.|.country.|.pw.|.party.|.trade.|.review.|.club.|.bid.|.country.|.stream.|.download.|.xin.|.gdn.|.racing.|.jetzt.|.win.|.vip.|.ren.|.kim.|.mom.|.date.|.wang.|.accountants.|.science.|.work.|.ninja.|.xyz.|.faith.|.zip.|.racing.|.cricket.|.space.|.realtor.|.christmas.|.gdn.|.pro.</url>
+    <url_pcre2>\.top\.|\.to\.|\.gq\.|\.cf\.|\.men\.|\.loan\.|\.ml\.|\.work\.|\.click\.|\.tk\.|\.country\.|\.pw\.|\.party\.|\.trade\.|\.review\.|\.club\.|\.bid\.|\.country\.|\.stream\.|\.download\.|\.xin\.|\.gdn\.|\.racing\.|\.jetzt\.|\.win\.|\.vip\.|\.ren\.|\.kim\.|\.mom\.|\.date\.|\.wang\.|\.accountants\.|\.science\.|\.work\.|\.ninja\.|\.xyz\.|\.faith\.|\.zip\.|\.racing\.|\.cricket\.|\.space\.|\.realtor\.|\.christmas\.|\.gdn\.|\.pro\.</url_pcre2>
     <description>Maybe critical URL requested</description>
   </rule>
 
