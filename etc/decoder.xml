@@ -3109,8 +3109,9 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 
 <decoder name="owncloud-failed2">
   <parent>owncloud</parent>
+
   <prematch_pcre2>Login failed: </prematch_pcre2>
-  <pcre2 offset="after_prematch">^'([A-Za-z0-9@_-]+)' \(Remote IP: '(\S+)'</pcre2>
+  <pcre2 offset="after_prematch">^'([A-Za-z0-9@_-]+)' \(Remote IP: '(\S+)'|^'([A-Za-z0-9@_-]+)' \(Remote IP: '(\S+)\)</pcre2>
   <order>user, srcip</order>
 </decoder>
 
