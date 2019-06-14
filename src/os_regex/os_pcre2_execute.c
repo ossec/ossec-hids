@@ -49,7 +49,7 @@ const char *OSPcre2_Execute_pcre2_match(const char *str, OSPcre2 *reg)
         PCRE2_SIZE sub_string_start = ov[2 * i];
         PCRE2_SIZE sub_string_end = ov[2 * i + 1];
         PCRE2_SIZE sub_string_len = sub_string_end - sub_string_start;
-        if (sub_string_end > sub_string_start) {
+        if (sub_string_start != -1) {
             reg->sub_strings[nbs] = (char *)calloc(sub_string_len + 1, sizeof(char));
             strncpy(reg->sub_strings[nbs], &str[sub_string_start], sub_string_len);
             nbs++;

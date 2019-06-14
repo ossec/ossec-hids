@@ -22,39 +22,39 @@
   
   <rule id="9301" level="0">
     <if_sid>9300</if_sid>
-    <match>^[info]</match>
+    <pcre2>^\[info\]</pcre2>
     <description>Horde IMP informational message.</description>
   </rule>
 
   <rule id="9302" level="3">
     <if_sid>9300</if_sid>
-    <match>^[notice]</match>
+    <pcre2>^\[notice\]</pcre2>
     <description>Horde IMP notice message.</description>
   </rule>
 
   <rule id="9303" level="5">
     <if_sid>9300</if_sid>
-    <match>^[error]</match>
+    <pcre2>^\[error\]</pcre2>
     <description>Horde IMP error message.</description>
   </rule>
  
   <rule id="9304" level="9" ignore="60">
     <if_sid>9300</if_sid>
-    <match>^[emergency]</match>
+    <pcre2>^\[emergency\]</pcre2>
     <description>Horde IMP emergency message.</description>
     <group>service_availability,</group>
   </rule> 
  
   <rule id="9305" level="3">
     <if_sid>9302</if_sid>
-    <match>Login success for </match>
+    <pcre2>Login success for </pcre2>
     <description>Horde IMP successful login.</description>
     <group>authentication_success,</group>
   </rule> 
  
   <rule id="9306" level="5">
     <if_sid>9303</if_sid>
-    <match>FAILED LOGIN </match>
+    <pcre2>FAILED LOGIN </pcre2>
     <description>Horde IMP Failed login.</description>
     <group>authentication_failed,</group>
   </rule> 

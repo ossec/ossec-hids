@@ -36,7 +36,7 @@
   <!--  
   <rule id="100020" level="0">
     <if_sid>5711</if_sid>
-    <user>XYZABC</user>
+    <user_pcre2>XYZABC</user_pcre2>
     <description>Example of rule that will ignore sshd </description>
     <description>failed logins for user XYZABC.</description>
   </rule>

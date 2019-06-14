@@ -6,7 +6,6 @@
  * License (version 2) as published by the FSF - Free Software
  * Foundation
  */
-
 #include "shared.h"
 #include "mail-config.h"
 #include "config.h"

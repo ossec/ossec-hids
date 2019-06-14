@@ -26,14 +26,14 @@
   <rule id="3801" level="4">
     <if_sid>3800</if_sid>
     <action>RCPT</action>
-    <id>^550</id>
+    <id_pcre2>^550</id_pcre2>
     <description>E-mail rcpt is not valid (invalid account).</description>
     <group>spam,</group>
   </rule>
   
   <rule id="3802" level="4">
     <if_sid>3800</if_sid>
-    <id>^5</id>
+    <id_pcre2>^5</id_pcre2>
     <description>E-mail 500 error code.</description>
     <group>spam,</group>
   </rule>

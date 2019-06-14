@@ -11,11 +11,19 @@
 #include "agentd.h"
 #include "os_net/os_net.h"
 
+#ifndef WIN32
+#include <event.h>
+#include <imsg.h>
+#include "os_dns/os_dns.h"
+#endif //WIN32
+
 
 /* Attempt to connect to all configured servers */
 int connect_server(int initial_id)
 {
+#ifdef WIN32
     unsigned int attempts = 2;
+#endif //WIN32
     int rc = initial_id;
 
     /* Checking if the initial is zero, meaning we have to
@@ -47,6 +55,38 @@ int connect_server(int initial_id)
                 agt->rip[rc],
                 agt->port);
 
+#ifndef WIN32
+
+        /* Setup libevent for responses */
+	extern struct imsgbuf server_ibuf;
+        struct event_base *eb;
+        eb = event_init();
+        if (!eb) {
+            ErrorExit("%s: ERROR: event_init() failed.", ARGV0);
+        }
+        struct event ev_accept;
+        //event_set(&ev_accept, agt->ibuf.fd, EV_READ, os_agent_cb, &agt->ibuf);
+        event_set(&ev_accept, server_ibuf.fd, EV_READ, os_agent_cb, &server_ibuf);
+        event_add(&ev_accept, NULL);
+
+        ssize_t n;
+
+        //if ((imsg_compose(&agt->ibuf, AGENT_REQ, 0, 0, -1, &agt, sizeof(&agt))) == -1) {
+        if ((imsg_compose(&server_ibuf, AGENT_REQ, 0, 0, -1, &agt, sizeof(agt))) == -1) {
+            ErrorExit("%s: ERROR: imsg_compose() error: %s", ARGV0, strerror(errno));
+        }
+        if ((n = msgbuf_write(&server_ibuf.w)) == -1 && errno != EAGAIN) {
+            merror("%s: ERROR: msgbuf_write() error: %s (0x1)", ARGV0, strerror(errno));
+        }
+        if (n == 0) {
+            debug2("%s: INFO: (write) n == 0", ARGV0);
+        }
+
+        event_dispatch();
+
+        if(agt->sock < 0) {
+		merror("%s [dns]: ERROR: socket error", ARGV0); //XXX what do?
+#else
         agt->sock = OS_ConnectUDP(agt->port, agt->rip[rc]);
 
         if (agt->sock < 0) {
@@ -65,6 +105,7 @@ int connect_server(int initial_id)
                 sleep(attempts);
                 rc = 0;
             }
+#endif //WIN32
         } else {
 #ifdef HPUX
             /* Set socket non-blocking on HPUX */
@@ -82,7 +123,7 @@ int connect_server(int initial_id)
             return (1);
         }
     }
-
+ 
     return (0);
 }
 
@@ -169,7 +210,7 @@ void start_agent(int is_startup)
             int curr_rip = agt->rip_id;
             merror("%s: INFO: Trying next server in the line: '%s'.", ARGV0,
                    agt->rip[agt->rip_id + 1] != NULL ? agt->rip[agt->rip_id + 1] : agt->rip[0]);
-            connect_server(agt->rip_id + 1);
+	    connect_server(agt->rip_id + 1);
 
             if (agt->rip_id == curr_rip) {
                 sleep(g_attempts);
@@ -188,4 +229,54 @@ void start_agent(int is_startup)
 
     return;
 }
+
+#ifndef WIN32
+/* Callback for the AGENT_REQ */
+void os_agent_cb(int fd, short ev, void *arg) {
+
+    /* Quiet a warning */
+    if (fd) { }
+
+    ssize_t n;
+    struct imsg imsg;
+    struct imsgbuf *ibuf = (struct imsgbuf *)arg;
+
+    if (ev & EV_READ) {
+        if ((n = imsg_read(ibuf) == -1 && errno != EAGAIN)) {
+            ErrorExit("%s: ERROR: imsg_read() failed: %s", ARGV0, strerror(errno));
+        }
+        if (n == 0) {
+            debug1("%s: WARN: n == 0", ARGV0);
+        }
+        if (n == EAGAIN) {
+            debug1("%s: DEBUG: n == EAGAIN", ARGV0);
+        }
+    } else {
+        merror("%s: ERROR: not EV_READ", ARGV0);
+        return;
+    }
+    if ((n = imsg_get(ibuf, &imsg)) == -1) {
+        merror("%s: ERROR: imsg_get() failed: %s", ARGV0, strerror(errno));
+        return;
+    }
+    if (n == 0) {
+        debug1("%s: WARN2: n == 0", ARGV0);
+    }
+
+    switch(imsg.hdr.type) {
+        case DNS_RESP:
+            agt->sock = imsg.fd;
+            merror("%s: DEBUG: agt->sock: %d", ARGV0, agt->sock);
+            break;
+        case DNS_FAIL:
+            merror("%s: ERROR: DNS failure for server", ARGV0);
+            break;
+        default:
+            merror("%s: ERROR Wrong imsg type.", ARGV0);
+            break;
+    }
+
+    return;
+}
+#endif //WIN32
 

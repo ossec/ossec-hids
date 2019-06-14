@@ -6,7 +6,7 @@
 
   <rule id="53301" level="6">
     <if_sid>53300</if_sid>
-    <match>Login failed: </match>
+    <pcre2>Login failed: </pcre2>
     <description>ownCloud authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
@@ -20,38 +20,38 @@
 
   <rule id="53303" level="6">
     <if_sid>53300</if_sid>
-    <match>Passed filename is not valid, might be malicious </match>
+    <pcre2>Passed filename is not valid, might be malicious </pcre2>
     <description>ownCloud possible malicious request.</description>
     <group>web,appsec,attack,</group>
   </rule>
 
   <rule id="53304" level="8">
     <if_sid>53300</if_sid>
-    <status>^4$</status>
+    <status_pcre2>^4$</status_pcre2>
     <description>ownCloud FATAL message.</description>
   </rule>
 
  <rule id="53305" level="4">
     <if_sid>53300</if_sid>
-    <status>^3$</status>
+    <status_pcre2>^3$</status_pcre2>
     <description>ownCloud ERROR message.</description>
   </rule>
 
   <rule id="53306" level="3">
     <if_sid>53300</if_sid>
-    <status>^2$</status>
+    <status_pcre2>^2$</status_pcre2>
     <description>ownCloud WARN message.</description>
   </rule>
 
   <rule id="53307" level="0">
     <if_sid>53300</if_sid>
-    <status>^1$</status>
+    <status_pcre2>^1$</status_pcre2>
     <description>ownCloud INFO message.</description>
   </rule>
 
   <rule id="53308" level="0">
     <if_sid>53300</if_sid>
-    <status>^0$</status>
+    <status_pcre2>^0$</status_pcre2>
     <description>ownCloud DEBUG message.</description>
   </rule>
 

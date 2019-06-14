@@ -40,26 +40,26 @@
   
   <rule id="14120" level="3">
     <if_sid>14110</if_sid>
-    <match>ISAKMP-SA established </match>
+    <pcre2>ISAKMP-SA established </pcre2>
     <group>authentication_success</group>
     <description>VPN established.</description>
   </rule>
   
   <rule id="14121" level="0">
     <if_sid>14111</if_sid>
-    <match>such policy does not already exist</match>
+    <pcre2>such policy does not already exist</pcre2>
     <description>Roadwarrior configuration (ignored error).</description>
   </rule>
   
   <rule id="14122" level="0">
     <if_sid>14112</if_sid>
-    <match>ignore INITIAL-CONTACT notification</match>
+    <pcre2>ignore INITIAL-CONTACT notification</pcre2>
     <description>Roadwarrior configuration (ignored warning).</description>
   </rule>
   
   <rule id="14123" level="0">
     <if_sid>14111</if_sid>
-    <match>ERROR: invalid attribute|ERROR: rejected</match>
+    <pcre2>ERROR: invalid attribute|ERROR: rejected</pcre2>
     <description>Invalid configuration settings (ignored error).</description>
   </rule>
   

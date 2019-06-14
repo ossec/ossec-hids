@@ -23,39 +23,39 @@
   
   <rule id="6201" level="0">
     <if_sid>6200</if_sid>
-    <match>^NOTICE</match>
+    <pcre2>^NOTICE</pcre2>
     <description>Asterisk notice messages grouped.</description>
   </rule>
 
   <rule id="6202" level="3">
     <if_sid>6200</if_sid>
-    <match>^WARN</match>
+    <pcre2>^WARN</pcre2>
     <description>Asterisk warning message.</description>
   </rule>
   
   <rule id="6203" level="3">
     <if_sid>6200</if_sid>
-    <match>^ERROR</match>
+    <pcre2>^ERROR</pcre2>
     <description>Asterisk error message.</description>
   </rule>
 
   <rule id="6210" level="5">
     <if_sid>6201</if_sid>
-    <match>Wrong password</match>
+    <pcre2>Wrong password</pcre2>
     <description>Login session failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="6211" level="5">
     <if_sid>6201</if_sid>
-    <match>Username/auth name mismatch</match>
+    <pcre2>Username/auth name mismatch</pcre2>
     <description>Login session failed (invalid user).</description>
     <group>invalid_login,</group>
   </rule>
 
   <rule id="6212" level="5">
     <if_sid>6201</if_sid>
-    <match>No matching peer found</match>
+    <pcre2>No matching peer found</pcre2>
     <description>Login session failed (invalid extension).</description>
     <group>invalid_login,</group>
   </rule>
@@ -82,7 +82,7 @@
   <!--http://sysbrain.wordpress.com/2010/05/24/asterisk-ossec-part-ii/-->
   <rule id="6253" level="5">
     <if_sid>6201</if_sid>
-    <match>No registration for peer</match>
+    <pcre2>No registration for peer</pcre2>
     <description>Login session failed (invalid iax user).</description>
     <group>invalid_login,</group>
   </rule>
@@ -97,7 +97,7 @@
   <!--From Javi Benito jabi.benito@gmail.com-->
   <rule id="6255" level="5">
     <if_sid>6202</if_sid>
-    <match>Don't know how to respond via</match>
+    <pcre2>Don't know how to respond via</pcre2>
     <description>Possible Registration Hijacking.</description>
     <group>invalid_login,</group>
   </rule>
@@ -105,7 +105,7 @@
   <!--From Javi Benito jabi.benito@gmail.com-->
   <rule id="6256" level="5">
     <if_sid>6201</if_sid>
-    <match>failed MD5 authentication</match>
+    <pcre2>failed MD5 authentication</pcre2>
     <description>IAX peer Wrong Password.</description>
     <group>invalid_login,</group>
   </rule>
@@ -119,7 +119,7 @@
 
   <rule id="6258" level="5">
     <if_sid>6201</if_sid>
-    <match>No matching peer found|extension not found in context</match>
+    <pcre2>No matching peer found|extension not found in context</pcre2>
     <description>Login session failed (invalid extension).</description>
     <group>invalid_login,</group>
   </rule>
