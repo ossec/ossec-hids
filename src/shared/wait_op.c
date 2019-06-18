@@ -42,9 +42,13 @@ void os_delwait()
     __wait_lock = 0;
 
     if (isChroot()) {
-        unlink(WAIT_FILE);
+        if ((unlink(WAIT_FILE)) < 0) {
+            merror("Cannot unlink %s: %s", WAIT_FILE, strerror(errno));
+        }
     } else {
-        unlink(WAIT_FILE_PATH);
+        if ((unlink(WAIT_FILE_PATH)) < 0) {
+            merror("Cannot unlink %s: %s", WAIT_FILE_PATH, strerror(errno));
+        }
     }
     return;
 }
