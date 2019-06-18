@@ -407,9 +407,15 @@ char *seechanges_addfile(const char *filename)
     };
 
 cleanup:
-    unlink(old_tmp);
-    unlink(new_tmp);
-    unlink(diff_tmp);
+    if ((unlink(old_tmp)) < 0) {
+        merror("%s: ERROR: Unable to unlink %s (old_tmp): %s", ARGV0, old_tmp, strerror(errno));
+    }
+    if ((unlink(new_tmp)) < 0) {
+        merror("%s: ERROR: Unable to unlink %s (new_tmp): %s", ARGV0, new_tmp, strerror(errno));
+    }
+    if ((unlink(diff_tmp)) < 0) {
+        merror("%s: ERROR: Unable to unlink %s (diff_tmp): %s", ARGV0, diff_tmp, strerror(errno));
+    }
 
     if (status == -1)
         return (NULL);
