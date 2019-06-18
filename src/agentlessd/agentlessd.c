@@ -208,7 +208,9 @@ static int check_diff_file(const char *host, const char *script)
 
     /* If they match, keep the old file and remove the new */
     if (strcmp(md5sum_new, md5sum_old) == 0) {
-        unlink(new_location);
+        if ((unlink(new_location)) < 0) {
+            merror("%s: ERROR: Cannot unlink %s: %s", ARGV0, new_location, strerror(errno));
+        }
         return (0);
     }
 
