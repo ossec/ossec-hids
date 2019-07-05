@@ -7,20 +7,20 @@ notifications:
     secure: Cz1InEL5G+z2huuzilXe7BqfxlEjN4io5ylJa5jgPvGMlB5sIQZTQQ7PDrzcK0iwn+5xgDkXKwbNPV2k+NHNTtNFiuBrcnJbyeA8PjghtAw4hg/Vpl5+5ovySZT9pGSV7ySsA8nGD73hlcQFgWnYDhsugQ6UZyRXAN8vLLCLjPg=
 
 env:
-- DB=mysql OSSEC_TYPE=server GEOIP=yes
-- DB=mysql OSSEC_TYPE=server GEOIP=no
-- DB=pgsql OSSEC_TYPE=server GEOIP=yes
-- DB=pgsql OSSEC_TYPE=server GEOIP=no
-- DB=none OSSEC_TYPE=server GEOIP=yes
-- DB=none OSSEC_TYPE=server GEOIP=no
-- DB=none OSSEC_TYPE=server PRELUDE=yes ZEROMQ=yes
-- DB=none OSSEC_TYPE=server ZLIB_SYSTEM=yes LUA_ENABLE=no
-- DB=none OSSEC_TYPE=local GEOIP=no
-- DB=none OSSEC_TYPE=hybrid GEOIP=no
-- DB=none OSSEC_TYPE=agent GEOIP=no
-- DB=none OSSEC_TYPE=winagent GEOIP=no
-- OSSEC_TYPE=test
-- OSSEC_TYPE=server RULES=test
+- DB=mysql OSSEC_TYPE=server GEOIP=yes PCRE2_SYSTEM=no
+- DB=mysql OSSEC_TYPE=server GEOIP=no PCRE2_SYSTEM=no
+- DB=pgsql OSSEC_TYPE=server GEOIP=yes PCRE2_SYSTEM=no
+- DB=pgsql OSSEC_TYPE=server GEOIP=no PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=server GEOIP=yes PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=server GEOIP=no PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=server PRELUDE=yes ZEROMQ=yes PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=server ZLIB_SYSTEM=yes LUA_ENABLE=no PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=local GEOIP=no PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=hybrid GEOIP=no PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=agent GEOIP=no PCRE2_SYSTEM=no
+- DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
+- OSSEC_TYPE=test PCRE2_SYSTEM=no
+- OSSEC_TYPE=server RULES=test PCRE2_SYSTEM=no
 
 
 compiler:
