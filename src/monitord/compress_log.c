@@ -71,7 +71,9 @@ void OS_CompressLog(const char *logfile)
     gzclose(zlog);
 
     /* Remove uncompressed file */
-    unlink(logfile);
+    if ((unlink(logfile)) < 0) {
+        merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, logfile, strerror(errno));
+    }
 
     return;
 }

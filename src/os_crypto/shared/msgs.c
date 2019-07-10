@@ -134,7 +134,9 @@ void OS_RemoveCounter(const char *id)
 {
     char rids_file[OS_FLSIZE + 1];
     snprintf(rids_file, OS_FLSIZE, "%s/%s", RIDS_DIR, id);
-    unlink(rids_file);
+    if ((unlink(rids_file)) < 0) {
+        merror("%s: ERROR: Cannot unlink %s: %s", __local_name, rids_file, strerror(errno));
+    }
 }
 
 /* Store sender counter */
