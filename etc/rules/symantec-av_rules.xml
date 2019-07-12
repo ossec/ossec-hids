@@ -28,20 +28,20 @@
 
   <rule id="7301" level="0">
     <category>windows</category>
-    <extra_data>^Symantec AntiVirus</extra_data>
+    <extra_data_pcre2>^Symantec AntiVirus</extra_data_pcre2>
     <description>Grouping of Symantec AV rules from eventlog.</description>
   </rule>
 
   <rule id="7310" level="9">
     <if_sid>7300, 7301</if_sid>
-    <id>^5$|^17$</id>
+    <id_pcre2>^5$|^17$</id_pcre2>
     <group>virus</group>
     <description>Virus detected.</description>
   </rule>
   
   <rule id="7320" level="3">
     <if_sid>7300, 7301</if_sid>
-    <id>^2$|^3$|^4$|^13$</id>
+    <id_pcre2>^2$|^3$|^4$|^13$</id_pcre2>
     <description>Virus scan updated,started or stopped.</description>
   </rule>
 

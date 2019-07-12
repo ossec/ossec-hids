@@ -1,3 +1,74 @@
+OSSEC changelog (3.3.0) <scott@atomicorp.com>
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (http://www.atomicorp.com)
+
+Contributors on this release
+
+almirb (Almir Bolduan)
+aquerubin (Antonio Querubin)
+atomicturtle (Scott R. Shinn)
+Bob-Andrews (Bob Andrews)
+ddpbsd (Dan Parriott)
+jubois 
+MangyCoyote 
+mephesto1337 
+
+
+
+Release Notes
+
+	OSSECCON 2019, from the whole team here at OSSEC it was really fantastic meeting everyone at the show, and we look forward to seeing you all again at OSSECCON 2020!
+	PCRE2, Jubois made a major update to the IDS foundation in OSSEC 3.3.0 with PCRE2 (https://www.pcre.org/current/doc/html/pcre2.html) library. This is an extremely powerful update to the overall pattern analysis functionaility in OSSEC. In order to build this with the native distribution pcre2 packages (pcre2-devel, etc), you will need to use: export PCRE2_SYSTEM=yes. This adds several new xml tags:
+	    - pcre2 (to replace regex)
+	    - match_pcre2
+	    - program_name_pcre2
+	    - prematch_pcre2
+	    - srcgeoip_pcre2
+	    - dstgeoip_pcre2
+	    - srcport_pcre2
+	    - dstport_pcre2
+	    - user_pcre2
+	    - url_pcre2
+	    - id_pcre2
+	    - status_pcre2
+	    - hostname_pcre2
+	    - extra_data_pcre2
+
+	Dynamic Decoders, discussed in the "Beyond Security" talk at OSSECCON 2019, this allows for user-defined keys in decoders. These are exposed in JSON output for inclusion with other data analytics tools. This adds a new internal option: analysisd.decoder_order_size  to define the maximum number keys allowed in a single decoder. 
+
+
+Whats New
+	
+	(jubois) - PCRE2 regular expression support - PR#1652
+	(atomicturtle) - ossec-analysisd, Dynamic decoder support. Original: Vikman Fdez-Castro  - PR#1678
+	(ddpbsd) - ossec-execd, Switch "white lists" to "allow lists" - PR#1687 - NARRATE HERE
+
+New Rules / Decoders
+	(Bob-Andrews) - rootcheck, update  for NullSessionShares - PR#1669
+	(Bob-Andrews) - topleveldomainrules.xml, Shady TLD web traffic detection - PR#1671
+	(Bob-Andrews) - last_rootlogin_rules.xml, Sensitive login detection - PR#1671
+	(Bob-Andrews) - unbound_rules.xml, added rule for maybe critical TLD request - PR#1672
+	(Bob-Andrews) - rootcheck, Deleted repeating rules - PR#1674
+	(ddpbsd) - Update info links in Windows rules - PR#1675
+	(aquerubin) - Added decoder for pam_succeed_if - PR#1684
+
+
+General
+	(MangyCoyote) - ossec-analysisd, support Syslog ISO timestamp events with optional fraction of second - PR#1664
+	(ddpbsd) - Fix compilation with PCRE2_SYSTEM=yes - PR#1666
+	(aquerubin) - ossec-batch-manager.pl, update regexp for ipv6 addresses - PR#1667
+	(mephesto1337) - Fix part of issue#1663, compiling with PCRE2_SYSTEM=yes - PR#1677
+	(ddpbsd) - active-response, Fix for issue#1647, log disable-account.sh to the correct location - PR#1683
+	(aquerubin) - Copy resolv.conf on build event - PR#1685	
+	(almirb) - active-response, Corrected the way active-response logs are generated on windows - PR#1689
+	(atomicturtle) - ossec-execd, Expose filename variable in AR add/delete events - PR#1695
+	
+
+
+
 OSSEC changelog (3.2.0) <scott@atomicorp.com>
 
 

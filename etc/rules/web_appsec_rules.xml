@@ -27,9 +27,8 @@
     -->
   <rule id="31501" level="6">
     <if_sid>31100</if_sid>
-    <match>POST /</match>
-    <url>/wp-comments-post.php</url>
-    <regex>Googlebot|MSNBot|BingBot</regex>
+    <pcre2>POST /.*(?:Googlebot|MSNBot|BingBot)</pcre2>
+    <url_pcre2>/wp-comments-post\.php</url_pcre2>
     <description>WordPress Comment Spam (coming from a fake search engine UA).</description>
    </rule>
 
@@ -37,8 +36,8 @@
     -->
   <rule id="31502" level="6">
     <if_sid>31100</if_sid>
-    <url>thumb.php|timthumb.php</url>
-    <regex> "GET \S+thumb.php?src=\S+.php</regex>
+    <url_pcre2>thumb\.php|timthumb\.php</url_pcre2>
+    <pcre2> "GET \S+thumb\.php\?src=\S+\.php</pcre2>
     <description>TimThumb vulnerability exploit attempt.</description>
    </rule>
 
@@ -46,8 +45,8 @@
     -->
   <rule id="31503" level="6">
     <if_sid>31100</if_sid>
-    <url>login.php</url>
-    <regex> "POST /\S+.php/login.php?cPath=</regex>
+    <url_pcre2>login\.php</url_pcre2>
+    <pcre2> "POST /\S+\.php/login\.php\?cPath=</pcre2>
     <description>osCommerce login.php bypass attempt.</description>
    </rule>
 
@@ -55,8 +54,8 @@
     -->
   <rule id="31504" level="6">
     <if_sid>31100</if_sid>
-    <url>login.php</url>
-    <regex>/admin/\w+.php/login.php</regex>
+    <url_pcre2>login\.php</url_pcre2>
+    <pcre2>/admin/[A-Za-z0-9@_-]+\.php/login\.php</pcre2>
     <description>osCommerce file manager login.php bypass attempt.</description>
    </rule>
 
@@ -64,8 +63,8 @@
     -->
   <rule id="31505" level="6">
     <if_sid>31100</if_sid>
-    <url>/cache/external</url>
-    <regex> "GET /\S+/cache/external\S+.php</regex>
+    <url_pcre2>/cache/external</url_pcre2>
+    <pcre2> "GET /\S+/cache/external\S+\.php</pcre2>
     <description>TimThumb backdoor access attempt.</description>
    </rule>
 
@@ -73,30 +72,30 @@
     -->
   <rule id="31506" level="6">
     <if_sid>31100</if_sid>
-    <url>cart.php</url>
-    <regex> "GET /\S+cart.php?\S+templatefile=../</regex>
+    <url_pcre2>cart\.php</url_pcre2>
+    <pcre2> "GET /\S+cart\.php\?\S+templatefile=\.\./</pcre2>
     <description>Cart.php directory transversal attempt.</description>
    </rule>
 
   <!-- MSSQL IIS inject rules -->
   <rule id="31507" level="6">
     <if_sid>31100</if_sid>
-    <url>DECLARE%20@S%20CHAR|%20AS%20CHAR</url>
+    <url_pcre2>DECLARE%20@S%20CHAR|%20AS%20CHAR</url_pcre2>
     <description>MSSQL Injection attempt (ur.php, urchin.js).</description>
   </rule>
 
   <!-- BAD/Annoying user agents -->
   <rule id="31508" level="6">
     <if_sid>31100</if_sid>
-    <match> "ZmEu"| "libwww-perl/|"the beast"|"Morfeus|"ZmEu|"Nikto|"w3af.sourceforge.net|MJ12bot/v| Jorgee"|"Proxy Gear Pro|"DataCha0s</match>
+    <pcre2> "ZmEu"| "libwww-perl/|"the beast"|"Morfeus|"ZmEu|"Nikto|"w3af\.sourceforge\.net|MJ12bot/v| Jorgee"|"Proxy Gear Pro|"DataCha0s</pcre2>
     <description>Blacklisted user agent (known malicious user agent).</description>
   </rule>
 
   <!-- WordPress wp-login.php brute force -->
   <rule id="31509" level="3">
     <if_sid>31108</if_sid>
-    <url>wp-login.php|/administrator</url>
-    <regex>] "POST \S+wp-login.php| "POST /administrator</regex>
+    <url_pcre2>wp-login\.php|/administrator</url_pcre2>
+    <pcre2>\] "POST \S+wp-login\.php| "POST /administrator</pcre2>
     <description>CMS (WordPress or Joomla) login attempt.</description>
   </rule>
 
@@ -112,7 +111,7 @@
     -->
   <rule id="31511" level="0">
     <if_sid>31100</if_sid>
-    <match>" "Wget/</match>
+    <pcre2>" "Wget/</pcre2>
     <description>Blacklisted user agent (wget).</description>
   </rule>
 
@@ -120,8 +119,8 @@
     -->
   <rule id="31512" level="6">
     <if_sid>31100</if_sid>
-    <url>uploadify.php</url>
-    <regex> "GET /\S+/uploadify.php?src=http://\S+.php</regex>
+    <url_pcre2>uploadify\.php</url_pcre2>
+    <pcre2> "GET /\S+/uploadify\.php\?src=http://\S+\.php</pcre2>
     <description>Uploadify vulnerability exploit attempt.</description>
    </rule>
 
@@ -129,8 +128,8 @@
     -->
   <rule id="31513" level="6">
     <if_sid>31100</if_sid>
-    <url>delete.php</url>
-    <regex> "GET \S+/delete.php?board_skin_path=http://\S+.php</regex>
+    <url_pcre2>delete\.php</url_pcre2>
+    <pcre2> "GET \S+/delete\.php\?board_skin_path=http://\S+\.php</pcre2>
     <description>BBS delete.php exploit attempt.</description>
    </rule>
 
@@ -138,8 +137,8 @@
     -->
   <rule id="31514" level="6">
     <if_sid>31100</if_sid>
-    <url>shell.php</url>
-    <regex> "GET \S+/shell.php?cmd=</regex>
+    <url_pcre2>shell\.php</url_pcre2>
+    <pcre2> "GET \S+/shell\.php\?cmd=</pcre2>
     <description>Simple shell.php command execution.</description>
    </rule>
 
@@ -147,7 +146,7 @@
     -->
   <rule id="31515" level="6">
     <if_sid>31100</if_sid>
-    <url>phpMyAdmin/scripts/setup.php</url>
+    <url_pcre2>phpMyAdmin/scripts/setup\.php</url_pcre2>
     <description>PHPMyAdmin scans (looking for setup.php).</description>
    </rule>
 
@@ -155,21 +154,21 @@
     -->
   <rule id="31516" level="6">
     <if_sid>31100</if_sid>
-    <url>.swp$|.bak$|/.htaccess|/server-status|/.ssh|/.history|/wallet.dat</url>
+    <url_pcre2>\.swp$|\.bak$|/\.htaccess|/server-status|/\.ssh|/\.history|/wallet\.dat</url_pcre2>
     <description>Suspicious URL access.</description>
    </rule>
 
   <!-- Checking POST requests - Too many in a small type = likely a bot -->
   <rule id="31530" level="3">
     <if_sid>31100</if_sid>
-    <match>] "POST </match>
+    <pcre2>\] "POST </pcre2>
     <options>no_log</options>
     <description>POST request received.</description>
    </rule>
 
    <rule id="31531" level="0">
     <if_sid>31530</if_sid>
-    <url>/wp-admin/|/administrator/|/admin/</url>
+    <url_pcre2>/wp-admin/|/administrator/|/admin/</url_pcre2>
     <description>Ignoring often post requests inside /wp-admin and /admin.</description>
    </rule>
 
@@ -182,8 +181,8 @@
   <!-- Anomaly rules - Used on common web attacks -->
   <rule id="31550" level="6">
     <if_sid>31100</if_sid>
-    <url>%00</url>
-    <regex> "GET /\S+.php?\S+%00</regex>
+    <url_pcre2>%00</url_pcre2>
+    <pcre2> "GET /\S+\.php\?\S+%00</pcre2>
     <description>Anomaly URL query (attempting to pass null termination).</description>
    </rule>
 

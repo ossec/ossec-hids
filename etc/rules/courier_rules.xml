@@ -23,27 +23,27 @@
   
   <rule id="3901" level="3">
     <if_sid>3900</if_sid>
-    <match>^Connection, </match>
+    <pcre2>^Connection, </pcre2>
     <description>New courier (imap/pop3) connection.</description>
     <group>connection_attempt,</group>
   </rule>
 
   <rule id="3902" level="5">
     <if_sid>3900</if_sid>
-    <match>^LOGIN FAILED,| FAILED:</match>
+    <pcre2>^LOGIN FAILED,| FAILED:</pcre2>
     <description>Courier (imap/pop3) authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="3903" level="0">
     <if_sid>3900</if_sid>
-    <match>^LOGOUT,|^DISCONNECTED</match>
+    <pcre2>^LOGOUT,|^DISCONNECTED</pcre2>
     <description>Courier logout/timeout.</description>
   </rule>
 
   <rule id="3904" level="3">
     <if_sid>3900</if_sid> 
-    <match>^LOGIN,</match>
+    <pcre2>^LOGIN,</pcre2>
     <description>Courier (imap/pop3) authentication success.</description>
     <group>authentication_success,</group>
   </rule>  

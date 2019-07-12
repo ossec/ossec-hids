@@ -12,70 +12,70 @@ Aug 10 09:45:28 junction dhcpd[2042]: DHCPACK on 192.168.17.154 to b4:b5:2f:15:4
 
   <rule id="53001" level="1">
     <if_sid>53000</if_sid>
-    <match>^DHCPREQUEST|^DHCPOFFER |^DHCPDISCOVER|^DHCPACK</match>
+    <pcre2>^DHCPREQUEST|^DHCPOFFER |^DHCPDISCOVER|^DHCPACK</pcre2>
     <description>Normal dhcp.</description>
   </rule>
 
   <rule id="53003" level="5">
     <if_sid>53000</if_sid>
-    <match>answers a ping after sending a release|Possible release spoof</match>
+    <pcre2>answers a ping after sending a release|Possible release spoof</pcre2>
     <description>A host issued a release but is responding to pings.</description>
   </rule>
 
   <rule id="53004" level="1">
     <if_sid>53000</if_sid>
-    <match>expecting left brace.$|</match>
-    <match>fixed-address parameter not allowed here.$|</match>
-    <match>parameters not allowed after first declaration.$|</match>
-    <match>Configuration file errors encountered</match>
+    <pcre2>expecting left brace\.$|</pcre2>
+    <pcre2>fixed-address parameter not allowed here\.$|</pcre2>
+    <pcre2>parameters not allowed after first declaration\.$|</pcre2>
+    <pcre2>Configuration file errors encountered</pcre2>
     <description>Configuration errors.</description>
   </rule>
 
   <rule id="53005" level="3">
     <if_sid>53000</if_sid>
-    <match>exiting.$</match>
+    <pcre2>exiting\.$</pcre2>
     <description>dhcpd is exiting.</description>
   </rule>
 
   <rule id="53006" level="1">
     <if_sid>53000</if_sid>
-    <match>Can't listen on </match>
+    <pcre2>Can't listen on </pcre2>
     <description>dhcpd cannot listen to an interface.</description>
   </rule>
 
   <rule id="53007" level="1">
     <if_sid>53006</if_sid>
-    <match>has no subnet declaration for</match>
+    <pcre2>has no subnet declaration for</pcre2>
     <description>dhcpd is not configured to listen to an interface.</description>
   </rule>
 
   <rule id="53008" level="1">
     <if_sid>53000</if_sid>
-    <match>Listening on </match>
+    <pcre2>Listening on </pcre2>
     <description>dhcpd has been started.</description>
   </rule>
 
   <rule id="53009" level="0">
     <if_sid>53000</if_sid>
-    <match>^Address range </match>
+    <pcre2>^Address range </pcre2>
     <description>Message with address range.</description>
   </rule>
 
   <rule id="53010" level="2">
     <if_sid>53009</if_sid>
-    <match> not on net </match>
+    <pcre2> not on net </pcre2>
     <description>Defined address range is not on the configured network.</description>
   </rule>
 
   <rule id="53011" level="7">
     <if_sid>53000</if_sid>
-    <match>^no free leases</match>
+    <pcre2>^no free leases</pcre2>
     <description>DHCP server has run out of leases.</description>
   </rule>
 
   <rule id="53013" level="2">
     <if_sid>53000</if_sid>
-    <match>^already acking lease </match>
+    <pcre2>^already acking lease </pcre2>
     <description>Multiple acks.</description>
   </rule>
 

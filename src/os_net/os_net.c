@@ -229,7 +229,13 @@ int OS_BindUnixDomain(const char *path, mode_t mode, int max_msg_size)
     socklen_t optlen = sizeof(len);
 
     /* Make sure the path isn't there */
-    unlink(path);
+    int urc = -1;
+    if (( urc = unlink(path)) < 0) {
+        /* XXX I think we're blindly unlinking path, so if it doesn't exist, don't log an error */
+        if (urc != ENOENT) {
+            merror("ERROR: Cannot unlink file %s: %s", path, strerror(errno));
+        }
+    }
 
     memset(&n_us, 0, sizeof(n_us));
     n_us.sun_family = AF_UNIX;
@@ -835,4 +841,21 @@ char *DecodeProtocol (int val) {
 
     return (buf);
 }
+
+#ifndef WIN32
+/* Set a socket to be non-blocking */
+int setnonblock(int fd) {
+    int flags;
+
+    flags = fcntl(fd, F_GETFL);
+    if (flags < 0)
+        return flags;
+    flags |= O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+#endif //WIN32
 

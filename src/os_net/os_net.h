@@ -34,6 +34,10 @@ typedef uint16_t u_int16_t;
 typedef uint32_t u_int32_t;
 #endif
 
+#ifndef WIN32
+#include <imsg.h>
+#endif //WIN32
+
 /*
  * OSNetInfo is used to exchange a set of bound sockets for use with the
  * select() function for monitoring incoming packets on multiple interfaces.
@@ -117,6 +121,9 @@ int satop(struct sockaddr *sa, char *dst, socklen_t size);
  * Returns 0 on success, else -1 or SOCKET_ERROR
  */
 int OS_CloseSocket(int socket);
+
+/* Set a socket to be non-blocking */
+int setnonblock(int fd);
 
 #endif /* __OS_NET_H */
 

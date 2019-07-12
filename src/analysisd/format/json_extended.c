@@ -19,7 +19,7 @@ void W_ParseJSON(cJSON* root, const Eventinfo* lf)
         W_JSON_ParseAgentIP(root, lf);
     }
     // Parse timestamp
-    if(lf->year && lf->mon && lf->day && lf->hour) {
+    if(lf->year && (strnlen(lf->mon, 3) > 0) && lf->day && (strnlen(lf->hour, 2) > 0)) {
         W_JSON_ParseTimestamp(root, lf);
     }
     // Parse Location

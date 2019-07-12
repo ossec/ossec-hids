@@ -12,9 +12,12 @@
 #include "os_net/os_net.h"
 #include "sec.h"
 
+#ifndef WIN32
+#include <imsg.h>
+#endif
 
 /* Receive a message locally on the agent and forward it to the manager */
-void *EventForward()
+void *EventForward(void)
 {
     ssize_t recv_b;
     char msg[OS_MAXSTR + 1];

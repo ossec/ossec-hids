@@ -28,21 +28,21 @@
 
   <rule id="14201" level="3">
     <if_sid>14200</if_sid>
-    <id>^IKE/52$</id>
+    <id_pcre2>^IKE/52$</id_pcre2>
     <description>VPN authentication successful.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="14202" level="5">
     <if_sid>14200</if_sid>
-    <id>^AUTH/5$|^AUTH/9$|^IKE/167$|^PPP/9$|^SSH/33$|^PSH/23$</id>
+    <id_pcre2>^AUTH/5$|^AUTH/9$|^IKE/167$|^PPP/9$|^SSH/33$|^PSH/23$</id_pcre2>
     <description>VPN authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
   
   <rule id="14203" level="4">
     <if_sid>14200</if_sid>
-    <id>^HTTP/47$|^SSH/16$</id>
+    <id_pcre2>^HTTP/47$|^SSH/16$</id_pcre2>
     <options>alert_by_email</options>
     <description>VPN Admin authentication successful.</description>
     <group>authentication_success,</group>

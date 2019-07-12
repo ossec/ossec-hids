@@ -24,21 +24,21 @@
   
   <rule id="3601" level="5">
     <if_sid>3600</if_sid>
-    <match>Login failed user=|AUTHENTICATE LOGIN failure</match>
+    <pcre2>Login failed user=|AUTHENTICATE LOGIN failure</pcre2>
     <description>Imapd user login failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="3602" level="3">
     <if_sid>3600</if_sid>
-    <match>Authenticated user=</match>
+    <pcre2>Authenticated user=</pcre2>
     <description>Imapd user login.</description>
     <group>authentication_success,</group>
   </rule>
   
   <rule id="3603" level="0">
     <if_sid>3600</if_sid>
-    <match>Logout user=</match>
+    <pcre2>Logout user=</pcre2>
     <description>Imapd user logout.</description>
   </rule>
   

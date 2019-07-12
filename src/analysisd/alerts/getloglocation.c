@@ -61,7 +61,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
     /* For the events */
     if (_eflog) {
         if (ftell(_eflog) == 0) {
-            unlink(__elogfile);
+            if ((unlink(__elogfile)) < 0) {
+                merror("%s: ERROR: Cannot unlink %s: %s", ARGV0, __elogfile, strerror(errno));
+            }
         }
         fclose(_eflog);
         _eflog = NULL;
@@ -94,7 +96,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
     }
 
     /* Create a symlink */
-    unlink(EVENTS_DAILY);
+    if ((unlink(EVENTS_DAILY)) < 0) {
+        merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, EVENTS_DAILY, strerror(errno));
+    }
 
     if (link(__elogfile, EVENTS_DAILY) == -1) {
         ErrorExit(LINK_ERROR, ARGV0, __elogfile, EVENTS_DAILY, errno, strerror(errno));
@@ -105,7 +109,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
 
         if (_ejflog) {
             if (ftell(_ejflog) == 0) {
-                unlink(__ejlogfile);
+                if ((unlink(__ejlogfile)) < 0) {
+                    merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, __ejlogfile, strerror(errno));
+                }
             }
             fclose(_ejflog);
             _ejflog = NULL;
@@ -139,7 +145,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
         }
 
         /* Create a symlink */
-        unlink(EVENTSJSON_DAILY);
+        if ((unlink(EVENTSJSON_DAILY)) < 0) {
+            merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, EVENTSJSON_DAILY, strerror(errno));
+        }
 
         if (link(__ejlogfile, EVENTSJSON_DAILY) == -1) {
             ErrorExit(LINK_ERROR, ARGV0, __ejlogfile, EVENTSJSON_DAILY, errno, strerror(errno));
@@ -149,7 +157,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
     /* For the alerts logs */
     if (_aflog) {
         if (ftell(_aflog) == 0) {
-            unlink(__alogfile);
+            if ((unlink(__alogfile)) < 0) {
+                merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, __alogfile, strerror(errno));
+            }
         }
         fclose(_aflog);
         _aflog = NULL;
@@ -183,7 +193,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
     }
 
     /* Create a symlink */
-    unlink(ALERTS_DAILY);
+    if ((unlink(ALERTS_DAILY)) < 0) {
+        merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, ALERTS_DAILY, strerror(errno));
+    }
 
     if (link(__alogfile, ALERTS_DAILY) == -1) {
         ErrorExit(LINK_ERROR, ARGV0, __alogfile, ALERTS_DAILY, errno, strerror(errno));
@@ -193,7 +205,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
 
         if (_jflog) {
             if (ftell(_jflog) == 0) {
-                unlink(__jlogfile);
+                if ((unlink(__jlogfile)) < 0) {
+                    merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, __jlogfile, strerror(errno));
+                }
             }
             fclose(_jflog);
             _jflog = NULL;
@@ -229,7 +243,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
         }
 
         /* Create a symlink */
-        unlink(ALERTSJSON_DAILY);
+        if ((unlink(ALERTSJSON_DAILY)) < 0) {
+            merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, ALERTSJSON_DAILY, strerror(errno));
+        }
 
         if (link(__jlogfile, ALERTSJSON_DAILY) == -1) {
             ErrorExit(LINK_ERROR, ARGV0, __jlogfile, ALERTSJSON_DAILY, errno, strerror(errno));
@@ -240,7 +256,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
     /* For the firewall events */
     if (_fflog) {
         if (ftell(_fflog) == 0) {
-            unlink(__flogfile);
+            if ((unlink(__flogfile)) < 0) {
+                merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, __flogfile, strerror(errno));
+            }
         }
         fclose(_fflog);
         _fflog = NULL;
@@ -274,7 +292,9 @@ int OS_GetLogLocation(const Eventinfo *lf)
     }
 
     /* Create a symlink */
-    unlink(FWLOGS_DAILY);
+    if ((unlink(FWLOGS_DAILY)) < 0) {
+        merror("%s: ERROR: Cannot unlink file %s: %s", ARGV0, FWLOGS_DAILY, strerror(errno));
+    }
 
     if (link(__flogfile, FWLOGS_DAILY) == -1) {
         ErrorExit(LINK_ERROR, ARGV0, __flogfile, FWLOGS_DAILY, errno, strerror(errno));
