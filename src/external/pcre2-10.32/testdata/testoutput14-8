@@ -1,0 +1,61 @@
+# These test special (mostly error) UTF features of DFA matching. They are a 
+# selection of the more comprehensive tests that are run for non-DFA matching.
+# The output is different for the different widths.
+
+#subject dfa
+
+/X/utf
+    XX\x{d800}
+Failed: error -16: UTF-8 error: code points 0xd800-0xdfff are not defined at offset 2
+    XX\x{d800}\=offset=3
+Error -36 (bad UTF-8 offset)
+    XX\x{d800}\=no_utf_check
+ 0: X
+    XX\x{da00}
+Failed: error -16: UTF-8 error: code points 0xd800-0xdfff are not defined at offset 2
+    XX\x{da00}\=no_utf_check
+ 0: X
+    XX\x{dc00}
+Failed: error -16: UTF-8 error: code points 0xd800-0xdfff are not defined at offset 2
+    XX\x{dc00}\=no_utf_check
+ 0: X
+    XX\x{de00}
+Failed: error -16: UTF-8 error: code points 0xd800-0xdfff are not defined at offset 2
+    XX\x{de00}\=no_utf_check
+ 0: X
+    XX\x{dfff}
+Failed: error -16: UTF-8 error: code points 0xd800-0xdfff are not defined at offset 2
+    XX\x{dfff}\=no_utf_check
+ 0: X
+    XX\x{110000}
+Failed: error -15: UTF-8 error: code points greater than 0x10ffff are not defined at offset 2
+    XX\x{d800}\x{1234}
+Failed: error -16: UTF-8 error: code points 0xd800-0xdfff are not defined at offset 2
+          
+/badutf/utf
+    X\xdf
+Failed: error -3: UTF-8 error: 1 byte missing at end at offset 1
+    XX\xef
+Failed: error -4: UTF-8 error: 2 bytes missing at end at offset 2
+    XXX\xef\x80
+Failed: error -3: UTF-8 error: 1 byte missing at end at offset 3
+    X\xf7
+Failed: error -5: UTF-8 error: 3 bytes missing at end at offset 1
+    XX\xf7\x80
+Failed: error -4: UTF-8 error: 2 bytes missing at end at offset 2
+    XXX\xf7\x80\x80
+Failed: error -3: UTF-8 error: 1 byte missing at end at offset 3
+
+/shortutf/utf
+    XX\xdf\=ph
+Failed: error -3: UTF-8 error: 1 byte missing at end at offset 2
+    XX\xef\=ph
+Failed: error -4: UTF-8 error: 2 bytes missing at end at offset 2
+    XX\xef\x80\=ph
+Failed: error -3: UTF-8 error: 1 byte missing at end at offset 2
+    \xf7\=ph
+Failed: error -5: UTF-8 error: 3 bytes missing at end at offset 0
+    \xf7\x80\=ph
+Failed: error -4: UTF-8 error: 2 bytes missing at end at offset 0
+
+# End of testinput14

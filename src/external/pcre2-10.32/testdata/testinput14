@@ -1,0 +1,37 @@
+# These test special (mostly error) UTF features of DFA matching. They are a 
+# selection of the more comprehensive tests that are run for non-DFA matching.
+# The output is different for the different widths.
+
+#subject dfa
+
+/X/utf
+    XX\x{d800}
+    XX\x{d800}\=offset=3
+    XX\x{d800}\=no_utf_check
+    XX\x{da00}
+    XX\x{da00}\=no_utf_check
+    XX\x{dc00}
+    XX\x{dc00}\=no_utf_check
+    XX\x{de00}
+    XX\x{de00}\=no_utf_check
+    XX\x{dfff}
+    XX\x{dfff}\=no_utf_check
+    XX\x{110000}
+    XX\x{d800}\x{1234}
+          
+/badutf/utf
+    X\xdf
+    XX\xef
+    XXX\xef\x80
+    X\xf7
+    XX\xf7\x80
+    XXX\xf7\x80\x80
+
+/shortutf/utf
+    XX\xdf\=ph
+    XX\xef\=ph
+    XX\xef\x80\=ph
+    \xf7\=ph
+    \xf7\x80\=ph
+
+# End of testinput14
