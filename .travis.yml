@@ -24,8 +24,6 @@ matrix:
 before_script:
 - sudo apt-get update -qq
 - sudo apt-get install -y libevent-dev
-- ( wget https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz
-  && tar xzf pcre2-10.32.tar.gz -C src/external )
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev libtool autoconf
