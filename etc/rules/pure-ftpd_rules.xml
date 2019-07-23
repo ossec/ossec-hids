@@ -47,6 +47,7 @@
 
   <rule id="11306" level="10" frequency="6" timeframe="120">
     <if_matched_sid>11302</if_matched_sid>
+    <same_source_ip />
     <description>FTP brute force (multiple failed logins).</description>
     <group>authentication_failures,</group>
   </rule>
