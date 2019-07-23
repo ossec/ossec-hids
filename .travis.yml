@@ -25,7 +25,7 @@ matrix:
 before_script:
 - sudo apt-get update -qq
 - sudo apt-get install -y libevent-dev automake autoconf m4 perl libtool
-- cd src/external/pcre2-10.38 && autoreconf -f -i
+- cd src/external/pcre2-10.32 && autoreconf -f -i
 - if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev libtool autoconf
