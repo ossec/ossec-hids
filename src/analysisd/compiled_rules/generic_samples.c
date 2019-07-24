@@ -145,7 +145,7 @@ void *is_valid_crawler(Eventinfo *lf)
     // reverse DNS lookup, and then a forward DNS lookup to verify that
     //
     // 1. The host is in the googlebot.com domain
-    // 2. The forward and revers lookups match.
+    // 2. The forward and reverse lookups match.
     //
     // https://support.google.com/webmasters/answer/80553
 
