@@ -6,7 +6,7 @@ EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
 EXTERNAL_PCRE2=external/pcre2-10.32/
 ZLIB_SYSTEM?=yes
-PCRE2_SYSTEM?=no
+PCRE2_SYSTEM?=yes
 LUA_PLAT=posix
 LUA_ENABLE?=no
 MAXAGENTS?=2048
@@ -109,6 +109,7 @@ ifeq (${uname_S},OpenBSD)
 		LUA_PLAT=posix
 		CFLAGS+=-I/usr/local/include
 		OSSEC_LDFLAGS+=-L/usr/local/lib
+		USE_PCRE2_JIT=n
 else
 ifeq (${uname_S},HP-UX)
 		DEFINES+=-DHPUX

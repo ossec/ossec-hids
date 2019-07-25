@@ -1461,8 +1461,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>pix</parent>
   <type>firewall</type>
   <prematch_pcre2 offset="after_parent">^6-106015</prematch_pcre2>
-  <pcre2 offset="after_parent">^(\S+): ([A-Za-z0-9@_-]+) ([A-Za-z0-9@_-]+) \S+ \S+ (\S+) from </pcre2>
-  <pcre2>(\S+)/(\S+) to (\S+)/(\S+)</pcre2>
+  <pcre2 offset="after_parent">^(\S+): ([A-Za-z0-9@_-]+) ([A-Za-z0-9@_-]+) \(no connection\) from (\S+)/</pcre2>
+  <pcre2>(\d+) to (\S+)/(\d+)</pcre2>
   <order>id, action, protocol, srcip, srcport, dstip, dstport</order>
 </decoder>
 
