@@ -566,7 +566,9 @@ int ReadDecodeXML(const char *file)
                     } else {
                         pi->order[order_int] = DynamicField_FP;
                         pi->fields[order_int] = strdup(*norder);
-
+                        if (pi->fields[order_int][0] == ' ') {
+                            pi->fields[order_int]++;
+                        }
                     }
 
                     free(*norder);
