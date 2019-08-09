@@ -518,6 +518,13 @@ void Zero_Eventinfo(Eventinfo *lf)
     lf->data = NULL;
     lf->systemname = NULL;
 
+    if (lf->fields) {
+        int i;
+        for (i = 0; i < Config.decoder_order_size; i++) {
+            free(lf->fields[i]);
+        }
+    }
+
     lf->time = 0;
     lf->matched = 0;
 
@@ -616,6 +623,14 @@ void Free_Eventinfo(Eventinfo *lf)
     }
     if (lf->systemname) {
         free(lf->systemname);
+    }
+
+    if (lf->fields) {
+        int i;
+        for (i = 0; i < Config.decoder_order_size; i++) {
+            free(lf->fields[i]);
+        }
+        free(lf->fields);
     }
 
     if (lf->filename) {
