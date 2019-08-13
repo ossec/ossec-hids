@@ -22,7 +22,7 @@
               
   <rule id="5701" level="8">
     <if_sid>5700</if_sid>
-    <pcre2>Bad protocol version identification</pcre2>
+    <pcre2>Bad protocol version identification|error: Protocol major versions differ</pcre2>
     <description>Possible attack on the ssh server </description>
     <description>(or version gathering).</description>
   </rule>
