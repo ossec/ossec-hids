@@ -298,7 +298,7 @@
     <description>ntpd peer connection refused.</description>
   </rule>
 
-  <rule id="51559" level="3">
+  <rule id="51560" level="3">
     <decoded_as>ntpd</decoded_as>
     <match>recvmsg</match>
     <description>ntpd peer connection refused.</description>
