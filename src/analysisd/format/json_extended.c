@@ -286,10 +286,10 @@ void W_JSON_ParseLocation(cJSON* root, const Eventinfo* lf, int archives)
             str_cut(string, 0, index);
             str_cut(string, 0, 1);
 
-            cJSON_AddStringToObject(root, "location_desc", string);
+            cJSON_AddStringToObject(root, "logfile", string);
         }
     } else {
-        cJSON_AddStringToObject(root, "location_desc", lf->location);
+        cJSON_AddStringToObject(root, "logfile", lf->location);
     }
 }
 
