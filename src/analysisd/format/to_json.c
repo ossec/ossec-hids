@@ -186,7 +186,7 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
             }
         }
 
-        cJSON_AddItemToObject(root, "decoder", decoder = cJSON_CreateObject());
+        cJSON_AddItemToObject(root, "decoder_desc", decoder = cJSON_CreateObject());
 
         if (lf->decoder_info->fts)
             cJSON_AddNumberToObject(decoder, "fts", lf->decoder_info->fts);
