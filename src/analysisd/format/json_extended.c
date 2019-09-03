@@ -234,10 +234,10 @@ void W_JSON_ParseHostname(cJSON* root, char* hostname)
             index = (int)(search - string);
             str_cut(string, index, -1);
             str_cut(string, 0, 1);
-            cJSON_AddStringToObject(root, "hostname", string);
+            cJSON_AddStringToObject(root, "agent_name", string);
         }
     } else {
-        cJSON_AddStringToObject(root, "hostname", hostname);
+        cJSON_AddStringToObject(root, "agent_name", hostname);
     }
 }
 // Parse timestamp
@@ -286,16 +286,10 @@ void W_JSON_ParseLocation(cJSON* root, const Eventinfo* lf, int archives)
             str_cut(string, 0, index);
             str_cut(string, 0, 1);
 
-            if(archives == 1)
-                cJSON_AddStringToObject(root, "location_desc", string);
-            else
-                cJSON_AddStringToObject(root, "location", string);
+            cJSON_AddStringToObject(root, "logfile", string);
         }
     } else {
-        if(archives == 1)
-            cJSON_AddStringToObject(root, "location_desc", lf->location);
-        else
-            cJSON_AddStringToObject(root, "location", lf->location);
+        cJSON_AddStringToObject(root, "logfile", lf->location);
     }
 }
 
