@@ -277,6 +277,7 @@ static void OS_Run(MailConfig *mail)
         }
         else if ((mailtosend > mail->maxperhour) && (mailtosend != 0)) {
             merror("%s: INFO: Max emails per hour reached.", ARGV0);
+            goto snd_check_hour;
         }
         /* Hour changed: send all suppressed mails */
         else if (((mailtosend < mail->maxperhour) && (mailtosend != 0)) ||
