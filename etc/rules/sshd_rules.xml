@@ -22,15 +22,14 @@
               
   <rule id="5701" level="8">
     <if_sid>5700</if_sid>
-    <match>Bad protocol version identification</match>
+    <pcre2>Bad protocol version identification|error: Protocol major versions differ</pcre2>
     <description>Possible attack on the ssh server </description>
     <description>(or version gathering).</description>
   </rule>
 
   <rule id="5702" level="5">
     <if_sid>5700</if_sid>
-    <match>^reverse mapping</match>
-    <regex>failed - POSSIBLE BREAK</regex>
+    <pcre2>^reverse mapping.*failed - POSSIBLE BREAK</pcre2>
     <description>Reverse lookup error (bad ISP or attack).</description>
   </rule>
 
@@ -42,7 +41,7 @@
 
   <rule id="5704" level="4">
     <if_sid>5700</if_sid>
-    <match>fatal: Timeout before authentication for</match>
+    <pcre2>fatal: Timeout before authentication for</pcre2>
     <description>Timeout while logging in (sshd).</description>
   </rule>
 
@@ -54,39 +53,39 @@
 
   <rule id="5706" level="6">
     <if_sid>5700</if_sid>
-    <match>Did not receive identification string from</match>
+    <pcre2>Did not receive identification string from</pcre2>
     <description>SSH insecure connection attempt (scan).</description>
     <group>recon,</group>
   </rule>
 
   <rule id="5707" level="14">
     <if_sid>5700</if_sid>
-    <match>fatal: buffer_get_string: bad string</match>
+    <pcre2>fatal: buffer_get_string: bad string</pcre2>
     <description>OpenSSH challenge-response exploit.</description>
     <group>exploit_attempt,</group>
   </rule>
 
   <rule id="5709" level="0">
     <if_sid>5700</if_sid>
-    <match>error: Could not get shadow information for NOUSER|</match>
-    <match>fatal: Read from socket failed: |error: ssh_msg_send: write|</match>
-    <match>^syslogin_perform_logout: |^pam_succeed_if(sshd:auth): error retrieving information about user|can't verify hostname: getaddrinfo</match>
+    <pcre2>error: Could not get shadow information for NOUSER|</pcre2>
+    <pcre2>fatal: Read from socket failed: |error: ssh_msg_send: write|</pcre2>
+    <pcre2>^syslogin_perform_logout: |^pam_succeed_if\(sshd:auth\): error retrieving information about user|can't verify hostname: getaddrinfo</pcre2>
     <description>Useless SSHD message without an user/ip and context.</description>
   </rule>
   
   <rule id="5710" level="5">
     <if_sid>5700</if_sid>
-    <match>illegal user|invalid user</match>
+    <pcre2>illegal user|invalid user</pcre2>
     <description>Attempt to login using a non-existent user</description>
     <group>invalid_login,authentication_failed,</group>
   </rule>
 
   <rule id="5711" level="0">
     <if_sid>5700</if_sid>
-    <match>authentication failure; logname= uid=0 euid=0 tty=ssh|</match>
-    <match>input_userauth_request: invalid user|</match>
-    <match>PAM: User not known to the underlying authentication module for illegal user|</match>
-    <match>error retrieving information about user</match>
+    <pcre2>authentication failure; logname= uid=0 euid=0 tty=ssh|</pcre2>
+    <pcre2>input_userauth_request: invalid user|</pcre2>
+    <pcre2>PAM: User not known to the underlying authentication module for illegal user|</pcre2>
+    <pcre2>error retrieving information about user</pcre2>
     <description>Useless/Duplicated SSHD message without a user/ip.</description>
   </rule>
 
@@ -100,13 +99,13 @@
 
   <rule id="5713" level="6">
     <if_sid>5700</if_sid>
-    <match>Corrupted check bytes on</match>
+    <pcre2>Corrupted check bytes on</pcre2>
     <description>Corrupted bytes on SSHD.</description>  
   </rule>
   
   <rule id="5714" level="14" timeframe="120" frequency="1">
     <if_matched_sid>5713</if_matched_sid>
-    <match>Local: crc32 compensation attack</match>
+    <pcre2>Local: crc32 compensation attack</pcre2>
     <description>SSH CRC-32 Compensation attack</description>
     <info type="cve">2001-0144</info>
     <info type="link">http://www.securityfocus.com/bid/2347/info/</info>
@@ -115,27 +114,27 @@
 
   <rule id="5715" level="3">
     <if_sid>5700</if_sid>
-    <match>^Accepted|authenticated.$</match>
+    <pcre2>^Accepted|authenticated\.$</pcre2>
     <description>SSHD authentication success.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="5716" level="5">
     <if_sid>5700</if_sid>
-    <match>^Failed|^error: PAM: Authentication</match>
+    <pcre2>^Failed|^error: PAM: Authentication</pcre2>
     <description>SSHD authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>  
 
   <rule id="5717" level="4">
     <if_sid>5700</if_sid>
-    <match>error: Bad prime description in line</match>
+    <pcre2>error: Bad prime description in line</pcre2>
     <description>SSHD configuration error (moduli).</description>
   </rule>
 
   <rule id="5718" level="5">
     <if_sid>5700</if_sid>
-    <match>not allowed because</match>
+    <pcre2>not allowed because</pcre2>
     <description>Attempt to login using a denied user.</description>
     <group>invalid_login,</group>
   </rule>
@@ -155,51 +154,51 @@
 
   <rule id="5721" level="0">
     <if_sid>5700</if_sid>
-    <match>Received disconnect from</match>
+    <pcre2>Received disconnect from</pcre2>
     <description>System disconnected from sshd.</description>
   </rule>
 
   <rule id="5722" level="0">
     <if_sid>5700</if_sid>
-    <match>Connection closed</match>
+    <pcre2>Connection closed</pcre2>
     <description>ssh connection closed.</description>
   </rule>
 
   <rule id="5723" level="0">
     <if_sid>5700</if_sid>
-    <match>error: buffer_get_bignum2_ret: negative numbers not supported</match>
+    <pcre2>error: buffer_get_bignum2_ret: negative numbers not supported</pcre2>
     <info>This maybe a bad key in authorized_keys.</info>
     <description>SSHD key error.</description>
   </rule>
 
   <rule id="5724" level="0">
     <if_sid>5700</if_sid>
-    <match>fatal: buffer_get_bignum2: buffer error</match>
+    <pcre2>fatal: buffer_get_bignum2: buffer error</pcre2>
     <info>This error may relate to ssh key handling.</info>
     <description>SSHD key error.</description>
   </rule>
 
   <rule id="5725" level="0">
     <if_sid>5700</if_sid>
-    <match>fatal: Write failed: Host is down</match>
+    <pcre2>fatal: Write failed: Host is down</pcre2>
     <description>Host ungracefully disconnected.</description>
   </rule>
 
   <rule id="5726" level="5">
     <if_sid>5700</if_sid>
-    <match>error: PAM: Module is unknown for</match>
+    <pcre2>error: PAM: Module is unknown for</pcre2>
     <description>Unknown PAM module, PAM misconfiguration.</description>
   </rule>
 
   <rule id="5727" level="0">
     <if_sid>5700</if_sid>
-    <match>failed: Address already in use.</match>
+    <pcre2>failed: Address already in use\.</pcre2>
     <description>Attempt to start sshd when something already bound to the port.</description>
   </rule>
 
   <rule id="5728" level="4">
     <if_sid>5700</if_sid>
-    <match>Authentication service cannot retrieve user credentials</match>
+    <pcre2>Authentication service cannot retrieve user credentials</pcre2>
     <info>May be related to PAM module errors.</info>
     <description>Authentication services were not able to retrieve user credentials.</description>
     <group>authentication_failed</group>
@@ -207,121 +206,121 @@
 
   <rule id="5729" level="0">
     <if_sid>5700</if_sid>
-    <match>debug1: attempt</match>
+    <pcre2>debug1: attempt</pcre2>
     <description>Debug message.</description>
   </rule>
 
   <rule id="5730" level="4">
     <if_sid>5700</if_sid>
-    <regex>error: connect to \S+ port \d+ failed: Connection refused</regex>
+    <pcre2>error: connect to \S+ port \d+ failed: Connection refused</pcre2>
     <description>SSHD is not accepting connections.</description>
   </rule>
 
   <rule id="5731" level="6">
     <if_sid>5700</if_sid>
-    <match>AKASSH_Version_Mapper1.</match>
+    <pcre2>AKASSH_Version_Mapper1\.</pcre2>
     <description>SSH Scanning.</description>
     <group>recon,</group>
   </rule>
 
   <rule id="5732" level="0">
     <if_sid>5700</if_sid>
-    <match>error: connect_to </match>
+    <pcre2>error: connect_to </pcre2>
     <description>Possible port forwarding failure.</description>
   </rule>
 
   <rule id="5733" level="0">
     <if_sid>5700</if_sid>
-    <match>Invalid credentials</match>
+    <pcre2>Invalid credentials</pcre2>
     <description>User entered incorrect password.</description>
     <group>authentication_failures,</group>
   </rule>
 
   <rule id="5734" level="0">
     <if_sid>5700</if_sid>
-    <match>Could not load host key</match>
+    <pcre2>Could not load host key</pcre2>
     <description>sshd could not load one or more host keys.</description>
     <info>This may be related to an upgrade to OpenSSH.</info>
   </rule>
 
   <rule id="5735" level="0">
     <if_sid>5700</if_sid>
-    <match>Write failed: Broken pipe</match>
+    <pcre2>Write failed: Broken pipe</pcre2>
     <description>Failed write due to one host disappearing.</description>
   </rule>
 
   <rule id="5736" level="0">
     <if_sid>5700</if_sid>
-    <match>^error: setsockopt SO_KEEPALIVE: Connection reset by peer$|</match>
-    <match>^error: accept: Software caused connection abort$</match>
+    <pcre2>^error: setsockopt SO_KEEPALIVE: Connection reset by peer$|</pcre2>
+    <pcre2>^error: accept: Software caused connection abort$</pcre2>
     <description>Connection reset or aborted.</description>
   </rule>
 
   <rule id="5737" level="5">
     <if_sid>5700</if_sid>
-    <match>^fatal: Cannot bind any address.$</match>
+    <pcre2>^fatal: Cannot bind any address\.$</pcre2>
     <description>sshd cannot bind to configured address.</description>
   </rule>
 
   <rule id="5738" level="5">
     <if_sid>5700</if_sid>
-    <match>set_loginuid failed opening loginuid$</match>
+    <pcre2>set_loginuid failed opening loginuid$</pcre2>
     <description>pam_loginuid could not open loginuid.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="5739" level="4">
     <if_sid>5700</if_sid>
-    <match>^error: Could not stat AuthorizedKeysCommand</match>
+    <pcre2>^error: Could not stat AuthorizedKeysCommand</pcre2>
     <description>SSHD configuration error (AuthorizedKeysCommand)</description>
   </rule>
 
   <rule id="5740" level="4">
     <if_sid>5700</if_sid>
-    <match>Connection reset by peer$</match>
+    <pcre2>Connection reset by peer$</pcre2>
     <description>ssh connection reset by peer</description>
   </rule>
 
   <rule id="5741" level="4">
     <if_sid>5700</if_sid>
-    <match>Connection refused$</match>
+    <pcre2>Connection refused$</pcre2>
     <description>ssh connection refused</description>
   </rule>
 
   <rule id="5742" level="4">
     <if_sid>5700</if_sid>
-    <match>Connection timed out$</match>
+    <pcre2>Connection timed out$</pcre2>
     <description>ssh connection timed out</description>
   </rule>
 
   <rule id="5743" level="4">
     <if_sid>5700</if_sid>
-    <match>No route to host$</match>
+    <pcre2>No route to host$</pcre2>
     <description>ssh no route to host</description>
   </rule>
 
   <rule id="5744" level="4">
     <if_sid>5700</if_sid>
-    <match>failure direct-tcpip$</match>
+    <pcre2>failure direct-tcpip$</pcre2>
     <description>ssh port forwarding issue</description>
   </rule>
 
   <rule id="5745" level="4">
     <if_sid>5700</if_sid>
-    <match>Transport endpoint is not connected$</match>
+    <pcre2>Transport endpoint is not connected$</pcre2>
     <description>ssh transport endpoint is not connected</description>
   </rule>
 
   <rule id="5746" level="4">
     <if_sid>5700</if_sid>
-    <match>get_remote_port failed$</match>
+    <pcre2>get_remote_port failed$</pcre2>
     <description>ssh get_remote_port failed</description>
   </rule>
   
   <!-- http://www.gossamer-threads.com/lists/openssh/users/47438 -->
   <rule id="5747" level="6">
     <if_sid>5700</if_sid>
-    <match>bad client public DH value</match>
+    <pcre2>bad client public DH value</pcre2>
     <description>ssh bad client public DH value</description>
   </rule>
 
@@ -332,70 +331,70 @@
   -->
   <rule id="5748" level="6">
     <if_sid>5700</if_sid>
-    <match>Corrupted MAC on input.</match>
+    <pcre2>Corrupted MAC on input\.</pcre2>
     <description>ssh corrupted MAC on input</description>
   </rule>
 
   <rule id="5749" level="4">
     <if_sid>5700</if_sid>
-    <match>^Bad packet length</match>
+    <pcre2>^Bad packet length</pcre2>
     <description>ssh bad packet length</description>
   </rule>
 
   <rule id="5750" level="0">
     <decoded_as>sshd</decoded_as>
     <if_sid>5700</if_sid>
-    <match>Unable to negotiate with |Unable to negotiate a key</match>
+    <pcre2>Unable to negotiate with |Unable to negotiate a key</pcre2>
     <description>sshd could not negotiate with client.</description>
   </rule>
 
   <rule id="5751" level="1">
     <decoded_as>sshd</decoded_as>
     <if_sid>5700</if_sid>
-    <match>no hostkey alg [preauth]</match>
+    <pcre2>no hostkey alg \[preauth\]</pcre2>
     <description>No hostkey alg.</description>
   </rule>
 
   <rule id="5752" level="2">
     <if_sid>5750</if_sid>
-    <match>no matching key exchange method found.|Unable to negotiate a key exchange method</match>
+    <pcre2>no matching key exchange method found\.|Unable to negotiate a key exchange method</pcre2>
     <description>Client did not offer an acceptable key exchange method.</description>
   </rule>
 
   <rule id="5753" level="2">
     <if_sid>5750</if_sid>
-    <match>no matching cipher found.</match>
+    <pcre2>no matching cipher found\.</pcre2>
     <description>sshd could not negotiate with client, no matching cipher.</description>
   </rule>
 
   <rule id="5754" level="1">
     <if_sid>5700</if_sid>
-    <match>Failed to create session: </match>
+    <pcre2>Failed to create session: </pcre2>
     <description>sshd failed to create a session.</description>
   </rule>
 
   <rule id="5755" level="2">
     <if_sid>5700</if_sid>
-    <match>bad ownership or modes for file</match>
+    <pcre2>bad ownership or modes for file</pcre2>
     <description>Authentication refused due to owner/permissions of authorized_keys.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="5756" level="0">
     <if_sid>5700</if_sid>
-    <match> failed, subsystem not found$</match>
+    <pcre2> failed, subsystem not found$</pcre2>
     <description>sshd subsystem request failed.</description>
   </rule>
 
   <rule id="5757" level="0">
     <decoded_as>sshd</decoded_as>
-    <match>but this does not map back to the address - POSSIBLE BREAK-IN ATTEMPT!$</match>
+    <pcre2>but this does not map back to the address - POSSIBLE BREAK-IN ATTEMPT!$</pcre2>
     <description>Bad DNS mapping.</description>
   </rule>
 
   <rule id="5758" level="8">
     <decoded_as>sshd</decoded_as>
-    <match>^error: maximum authentication attempts exceeded </match>
+    <pcre2>^error: maximum authentication attempts exceeded </pcre2>
     <description>Maximum authentication attempts exceeded.</description>
     <group>authentication_failed,</group>
   </rule>

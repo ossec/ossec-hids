@@ -54,35 +54,35 @@
      - Configuration Erase sequence accepted -->
   <rule id="4505" level="11">
     <if_sid>4503</if_sid>
-    <id>^00027</id>
+    <id_pcre2>^00027</id_pcre2>
     <description>Netscreen Erase sequence started.</description>
     <group>service_availability,</group>
   </rule>
 
   <rule id="4506" level="8">
     <if_sid>4501</if_sid>
-    <id>^00002</id>
+    <id_pcre2>^00002</id_pcre2>
     <description>Successfull admin login to the Netscreen firewall</description>
     <group>authentication_success,</group>
   </rule>
   
   <rule id="4507" level="8">
     <if_sid>4502</if_sid>
-    <id>^00515</id>
+    <id_pcre2>^00515</id_pcre2>
     <description>Successfull admin login to the Netscreen firewall</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="4508" level="8">
     <if_sid>4501</if_sid>
-    <id>^00018</id>
+    <id_pcre2>^00018</id_pcre2>
     <description>Firewall policy changed.</description>
     <group>config_changed,</group>
   </rule>
 
   <rule id="4509" level="8">
     <if_sid>4504</if_sid>
-    <id>^00767</id>
+    <id_pcre2>^00767</id_pcre2>
     <description>Firewall configuration changed.</description>
     <group>config_changed,</group>
   </rule>
@@ -113,7 +113,7 @@
 
   <rule id="4560" level="3">
     <if_sid>4500</if_sid>
-    <match>SYN flood! </match>
+    <pcre2>SYN flood! </pcre2>
     <description>netscreen detected a SYN flood.</description>
   </rule>
 

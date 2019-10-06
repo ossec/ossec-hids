@@ -111,7 +111,9 @@ int main(int argc, char **argv)
             /* Remove file */
             full_path[OS_MAXSTR] = '\0';
             snprintf(full_path, OS_MAXSTR, "%s/%s", daily_dir, entry->d_name);
-            unlink(full_path);
+            if ((unlink(full_path)) != 0) {
+                ErrorExit("%s: ERROR: Cannot delete file %s: %s", ARGV0, full_path, strerror(errno));
+            }
         }
 
         closedir(daily);
@@ -146,7 +148,9 @@ int main(int argc, char **argv)
                 full_path[OS_MAXSTR] = '\0';
                 snprintf(full_path, OS_MAXSTR, "%s/%s", dir_path,
                          entry->d_name);
-                unlink(full_path);
+                if ((unlink(full_path)) != 0) {
+                    ErrorExit("%s: ERROR: Cannot delete file %s: %s", ARGV0, full_path, strerror(errno));
+                }
             }
 
             i++;

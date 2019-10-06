@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2019 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -76,6 +76,8 @@ extern unsigned int mail_timeout;
 /* Global var for highest level on mail subjects */
 extern unsigned int   _g_subject_level;
 extern char _g_subject[SUBJECT_SIZE + 2];
+
+void os_sendmail_cb(int fd, short ev, void *arg);
 
 #endif
 

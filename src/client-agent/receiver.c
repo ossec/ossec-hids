@@ -151,13 +151,18 @@ void *receive_msg()
 
                 else if (OS_MD5_File(file, currently_md5, OS_TEXT) < 0) {
                     /* Remove file */
-                    unlink(file);
+                    if ((unlink(file)) < 0) {
+                         merror("%s: ERROR: Cannot unlink %s: %s", ARGV0, file, strerror(errno));
+                    }
+                            
                     file[0] = '\0';
                 } else {
                     if (strcmp(currently_md5, file_sum) != 0) {
                         debug1("%s: ERROR: Failed md5 for: %s -- deleting.",
                                ARGV0, file);
-                        unlink(file);
+                        if ((unlink(file)) < 0) {
+                            merror("%s: ERROR: Cannot unlink %s: %s", ARGV0, file, strerror(errno));
+                        }
                     } else {
                         char *final_file;
 
@@ -169,7 +174,9 @@ void *receive_msg()
                             }
                         } else {
                             /* Remove file */
-                            unlink(file);
+                            if ((unlink(file)) < 0) {
+                                merror("%s: ERROR: Cannot link %s: %s", ARGV0, file, strerror(errno));
+                            }
                         }
                     }
 

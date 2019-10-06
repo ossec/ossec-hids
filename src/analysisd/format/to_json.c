@@ -186,7 +186,7 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
             }
         }
 
-        cJSON_AddItemToObject(root, "decoder", decoder = cJSON_CreateObject());
+        cJSON_AddItemToObject(root, "decoder_desc", decoder = cJSON_CreateObject());
 
         if (lf->decoder_info->fts)
             cJSON_AddNumberToObject(decoder, "fts", lf->decoder_info->fts);
@@ -271,19 +271,19 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
    if (lf->filename) {
        cJSON_AddStringToObject(root, "filename", lf->filename);
 
-       if (lf->md5_before && lf->md5_after && strcmp(lf->md5_before, lf->md5_after) != 0) {
+       if (lf->md5_before && lf->md5_after && (strcmp(lf->md5_before, lf->md5_after) != 0)) {
            cJSON_AddStringToObject(root, "md5_before", lf->md5_before);
            cJSON_AddStringToObject(root, "md5_after", lf->md5_after);
        }
-       if (lf->sha1_before && lf->sha1_after && !strcmp(lf->sha1_before, lf->sha1_after) != 0) {
+       if (lf->sha1_before && lf->sha1_after && !(strcmp(lf->sha1_before, lf->sha1_after) != 0)) {
            cJSON_AddStringToObject(root, "sha1_before", lf->sha1_before);
            cJSON_AddStringToObject(root, "sha1_after", lf->sha1_after);
        }
-       if (lf->owner_before && lf->owner_after && !strcmp(lf->owner_before, lf->owner_after) != 0) {
+       if (lf->owner_before && lf->owner_after && !(strcmp(lf->owner_before, lf->owner_after) != 0)) {
            cJSON_AddStringToObject(root, "owner_before", lf->owner_before);
            cJSON_AddStringToObject(root, "owner_after", lf->owner_after);
        }
-       if (lf->gowner_before && lf->gowner_after && !strcmp(lf->gowner_before, lf->gowner_after) != 0) {
+       if (lf->gowner_before && lf->gowner_after && !(strcmp(lf->gowner_before, lf->gowner_after) != 0)) {
            cJSON_AddStringToObject(root, "gowner_before", lf->gowner_before);
            cJSON_AddStringToObject(root, "gowner_after", lf->gowner_after);
        }

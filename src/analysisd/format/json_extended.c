@@ -19,7 +19,7 @@ void W_ParseJSON(cJSON* root, const Eventinfo* lf)
         W_JSON_ParseAgentIP(root, lf);
     }
     // Parse timestamp
-    if(lf->year && lf->mon && lf->day && lf->hour) {
+    if(lf->year && (strnlen(lf->mon, 3) > 0) && lf->day && (strnlen(lf->hour, 2) > 0)) {
         W_JSON_ParseTimestamp(root, lf);
     }
     // Parse Location
@@ -127,11 +127,11 @@ void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
     regfree(&r);
     for(i = 0; i < MAX_MATCHES; i++)
          free(results[i]);
-} 
+}
 
 
- 
-// STRTOK every "-" delimiter to get differents groups to our json array. 
+
+// STRTOK every "-" delimiter to get differents groups to our json array.
 void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
 {
     cJSON* groups;
@@ -219,7 +219,7 @@ int add_groupCIS(cJSON* rule, char* group, int firstCIS)
     return 0;
 }
 
- 
+
 // If hostname being with "(" means that alerts came from an agent, so we will remove the brakets
 // ** TODO ** Regex instead str_cut
 void W_JSON_ParseHostname(cJSON* root, char* hostname)
@@ -234,10 +234,10 @@ void W_JSON_ParseHostname(cJSON* root, char* hostname)
             index = (int)(search - string);
             str_cut(string, index, -1);
             str_cut(string, 0, 1);
-            cJSON_AddStringToObject(root, "hostname", string);
+            cJSON_AddStringToObject(root, "agent_name", string);
         }
     } else {
-        cJSON_AddStringToObject(root, "hostname", hostname);
+        cJSON_AddStringToObject(root, "agent_name", hostname);
     }
 }
 // Parse timestamp
@@ -249,7 +249,7 @@ void W_JSON_ParseTimestamp(cJSON* root, const Eventinfo* lf)
     free(dateTimestamp);
 }
 
- 
+
 // The IP of an agent usually comes in "hostname" field, we will extract it.
 // ** TODO ** Regex instead str_cut
 void W_JSON_ParseAgentIP(cJSON* root, const Eventinfo* lf)
@@ -269,7 +269,7 @@ void W_JSON_ParseAgentIP(cJSON* root, const Eventinfo* lf)
             str_cut(string, index, -1);
             cJSON_AddStringToObject(root, "agentip", string);
         }
-	 
+
     }
 }
  // The file location usually comes with more information about the alert (like hostname or ip) we will extract just the "/var/folder/file.log".
@@ -286,16 +286,10 @@ void W_JSON_ParseLocation(cJSON* root, const Eventinfo* lf, int archives)
             str_cut(string, 0, index);
             str_cut(string, 0, 1);
 
-            if(archives == 1)
-                cJSON_AddStringToObject(root, "location_desc", string);
-            else
-                cJSON_AddStringToObject(root, "location", string);
+            cJSON_AddStringToObject(root, "logfile", string);
         }
     } else {
-        if(archives == 1)
-            cJSON_AddStringToObject(root, "location_desc", lf->location);
-        else
-            cJSON_AddStringToObject(root, "location", lf->location);
+        cJSON_AddStringToObject(root, "logfile", lf->location);
     }
 }
 
@@ -340,7 +334,7 @@ int match_regex(regex_t* r, const char* to_match, char* results[MAX_MATCHES])
                 sprintf(results[totalResults], "%.*s", (finish - start), to_match + start);
                 totalResults = totalResults + 1;
             }
-            
+
         }
         p += m[0].rm_eo;
     }

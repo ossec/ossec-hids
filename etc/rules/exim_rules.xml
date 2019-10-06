@@ -10,19 +10,19 @@
 <group name="exim,">
     <rule id="13000" level="0">
       <decoded_as>windows-date-format</decoded_as>
-      <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d SMTP </regex>
+      <pcre2>^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} SMTP </pcre2>
       <description>Exim SMTP Messages Grouped.</description>
     </rule>
 
     <rule id="13001" level="0">
       <decoded_as>windows-date-format</decoded_as>
-      <regex>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d dovecot</regex>
+      <pcre2>^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} dovecot</pcre2>
       <description>dovecot messages grouped.</description>
     </rule>
 
     <rule id="13006" level="5">
       <if_sid>13001</if_sid>
-      <match>authenticator failed</match>
+      <pcre2>authenticator failed</pcre2>
       <description>Exim Auth failed</description>
       <group>invalid_login,authentication_failed,</group>
     </rule>
@@ -36,19 +36,19 @@
 
     <rule id="13008" level="0">
       <if_sid>13000</if_sid>
-      <match>connection count =</match>
+      <pcre2>connection count =</pcre2>
       <description>Exim connection</description>
     </rule>
 
     <rule id="13009" level="1">
       <if_sid>13000</if_sid>
-      <match>lost$</match>
+      <pcre2>lost$</pcre2>
       <description>Exim connection lost</description>
     </rule>
 
     <rule id="13010" level="5">
       <if_sid>13000</if_sid>
-      <match>dropped: too many syntax or protocol errors</match>
+      <pcre2>dropped: too many syntax or protocol errors</pcre2>
       <description>Exim syntax or protocol errors</description>
     </rule>
 

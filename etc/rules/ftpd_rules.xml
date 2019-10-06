@@ -14,86 +14,86 @@
   
   <rule id="11101" level="5">
     <if_sid>11100</if_sid>
-    <match>FTP LOGIN REFUSED</match>
+    <pcre2>FTP LOGIN REFUSED</pcre2>
     <description>FTP connection refused.</description>
     <group>authentication_failed,access_denied,</group>
   </rule>
 
   <rule id="11102" level="0">
     <if_sid>11100</if_sid>
-    <match> created </match>
+    <pcre2> created </pcre2>
     <description>File created via FTP</description>
   </rule>
 
   <rule id="11103" level="0">
     <if_sid>11100</if_sid>
-    <match> deleted </match>
+    <pcre2> deleted </pcre2>
     <description>File deleted via FTP</description>
   </rule>
 
   <rule id="11104" level="0">
     <if_sid>11100</if_sid>
-    <match>FTPD: IMPORT file</match>
+    <pcre2>FTPD: IMPORT file</pcre2>
     <description>User uploaded a file to server.</description>
   </rule>
             
   <rule id="11105" level="0">
     <if_sid>11100</if_sid>
-    <match>FTPD: EXPORT file</match>
+    <pcre2>FTPD: EXPORT file</pcre2>
     <description>User downloaded a file to server.</description>
   </rule>
 
   <rule id="11106" level="3">
     <if_sid>11100</if_sid>
-    <match>FTP LOGIN FROM|connection from|connect from</match>
+    <pcre2>FTP LOGIN FROM|connection from|connect from</pcre2>
     <group>connection_attempt</group>
     <description>Remote host connected to FTP server.</description>
   </rule>
 
   <rule id="11107" level="5">
     <if_sid>11100</if_sid>
-    <match>refused connect from</match>
+    <pcre2>refused connect from</pcre2>
     <group>access_denied,</group>
     <description>Connection blocked by Tcp Wrappers.</description>
   </rule>
 
   <rule id="11108" level="5">
     <if_sid>11100</if_sid>
-    <match>warning: can't verify hostname: |gethostbyaddr: </match>
+    <pcre2>warning: can't verify hostname: |gethostbyaddr: </pcre2>
     <description>Reverse lookup error (bad ISP config).</description>
     <group>client_misconfig,</group>
   </rule>
 
   <rule id="11109" level="10">
     <if_sid>11100</if_sid>
-    <match>repeated login failures</match>
+    <pcre2>repeated login failures</pcre2>
     <description>Multiple FTP failed login attempts.</description>
     <group>authentication_failures,</group>
   </rule>
 
   <rule id="11110" level="3">
     <if_sid>11100</if_sid>
-    <match>timed out after</match>
+    <pcre2>timed out after</pcre2>
     <description>User disconnected due to time out.</description>
   </rule>
 
   <rule id="11111" level="9">
     <if_sid>11100</if_sid>
-    <match>PAM_ERROR_MSG: Account is disabled</match>
+    <pcre2>PAM_ERROR_MSG: Account is disabled</pcre2>
     <description>Attempt to login with disabled account.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="11112" level="5">
     <if_sid>11100</if_sid>
-    <match>^Failed authentication from</match>
+    <pcre2>^Failed authentication from</pcre2>
     <description>FTP authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="11113" level="5">
     <if_sid>11100</if_sid>
-    <regex>^login \S+ from \S+ failed</regex>
+    <pcre2>^login \S+ from \S+ failed</pcre2>
     <description>FTP authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>

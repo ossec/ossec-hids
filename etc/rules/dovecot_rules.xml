@@ -14,47 +14,47 @@
 
 <rule id="9701" level="3">
   <if_sid>9700</if_sid>
-  <match>login: Login: </match>
+  <pcre2>login: Login: </pcre2>
   <description>Dovecot Authentication Success.</description>
   <group>authentication_success,</group>
 </rule>
 
 <rule id="9702" level="5">
   <if_sid>9700</if_sid>
-  <match>Password mismatch$</match>
+  <pcre2>Password mismatch$</pcre2>
   <description>Dovecot Authentication Failed.</description>
   <group>authentication_failed,</group>
 </rule>
 
 <rule id="9703" level="3">
   <if_sid>9700</if_sid>
-  <match>starting up</match>
+  <pcre2>starting up</pcre2>
   <description>Dovecot is Starting Up.</description>
 </rule>
 
 <rule id="9704" level="2">
   <if_sid>9700</if_sid>
-  <match>^Fatal: </match>
+  <pcre2>^Fatal: </pcre2>
   <options>alert_by_email</options>
   <description>Dovecot Fatal Failure.</description>
 </rule>
 
 <rule id="9705" level="5">
   <if_sid>9700</if_sid>
-  <match>user not found|User not known|unknown user|auth failed</match>
+  <pcre2>user not found|User not known|unknown user|auth failed</pcre2>
   <description>Dovecot Invalid User Login Attempt.</description>
   <group>invalid_login,authentication_failed,</group>
 </rule>
 
 <rule id="9706" level="3">
   <if_sid>9700</if_sid>
-  <match>: Disconnected: </match>
+  <pcre2>: Disconnected: </pcre2>
   <description>Dovecot Session Disconnected.</description>
 </rule>
 
 <rule id="9707" level="5">
   <if_sid>9700</if_sid>
-  <match>: Aborted login</match>
+  <pcre2>: Aborted login</pcre2>
   <description>Dovecot Aborted Login.</description>
   <group>invalid_login,</group>
 </rule>
@@ -82,7 +82,7 @@
 
 <rule id="9771" level="5">
   <if_sid>9770</if_sid>
-  <match>user not found|User not known|unknown user|auth failed</match>
+  <pcre2>user not found|User not known|unknown user|auth failed</pcre2>
   <description>Dovecot Invalid User Login Attempt.</description>
   <group>invalid_login,authentication_failed,</group>
 </rule>

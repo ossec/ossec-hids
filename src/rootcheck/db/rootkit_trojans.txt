@@ -30,7 +30,7 @@ passwd      !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[b-s,uvxz]!
 mingetty    !bash|Dimensioni|pacchetto!
 chfn        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[a-s,uvxz]!
 chsh        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[a-s,uvxz]!
-mail        !bash|file\.h|proc\.h|/dev/[^nu]!
+mail        !file\.h|proc\.h|/dev/[^nu]!
 su          !/dev/[d-s,abuvxz]|/dev/[A-D]|/dev/[F-Z]|/dev/[0-9]|satori|vejeta|conf\.inv!
 sudo        !satori|vejeta|conf\.inv!
 crond       !/dev/[^nt]|bash!

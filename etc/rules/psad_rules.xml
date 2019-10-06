@@ -1,35 +1,35 @@
 <group name="syslog,psad,">
   <rule id="53700" level="0">
-    <program_name>psad</program_name>
+    <program_name_pcre2>psad</program_name_pcre2>
     <decoded_as>psad</decoded_as>
     <description>PSAD group</description>
   </rule>
   <!-- PSAD Log Types -->
   <rule id="53701" level="0">
     <if_sid>53700</if_sid>
-    <match>scan detected</match>
+    <pcre2>scan detected</pcre2>
     <description>PSAD group scan detected</description>
   </rule>
   <rule id="53702" level="0">
     <if_sid>53700</if_sid>
-    <match>added iptables</match>
+    <pcre2>added iptables</pcre2>
     <description>PSAD group added iptables</description>
   </rule>
   <!-- PSAD Rule Chains -->
   <rule id="53711" level="10">
     <if_sid>53701</if_sid>
-    <match>DL: 4|DL: 5</match>
+    <pcre2>DL: 4|DL: 5</pcre2>
     <description>PSAD portscan</description>
   </rule>
   <rule id="53712" level="10">
     <if_sid>53702</if_sid>
-    <match>auto-block against</match>
+    <pcre2>auto-block against</pcre2>
     <description>PSAD auto-block</description>
   </rule>
 <!-- WARNING: PSAD Danger Level 3 can be positives -->
   <rule id="53713" level="3">
     <if_sid>53701</if_sid>
-    <match>DL: 3</match>
+    <pcre2>DL: 3</pcre2>
     <description>PSAD level 3 warning</description>
   </rule>
   <rule id="53714" level="10" frequency="4" timeframe="600">
@@ -45,7 +45,7 @@
   <!-- PSAD Signature Match -->
  <rule id="53716" level="6">
     <if_sid>53700</if_sid>
-    <match>signature match: </match>
+    <pcre2>signature match: </pcre2>
     <description>PSAD signature match</description>
   </rule>
 </group>

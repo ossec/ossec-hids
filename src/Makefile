@@ -6,7 +6,7 @@ EXTERNAL_LUA=external/lua-5.2.3/
 EXTERNAL_ZLIB=external/zlib-1.2.11/
 EXTERNAL_PCRE2=external/pcre2-10.32/
 ZLIB_SYSTEM?=yes
-PCRE2_SYSTEM?=no
+PCRE2_SYSTEM?=yes
 LUA_PLAT=posix
 LUA_ENABLE?=no
 MAXAGENTS?=2048
@@ -107,9 +107,11 @@ else
 ifeq (${uname_S},OpenBSD)
 #		DEFINES+=-DOpenBSD
 		DEFINES+=-pthread
+		DNS_CFLAGS+=-lutil
 		LUA_PLAT=posix
 		CFLAGS+=-I/usr/local/include
 		OSSEC_LDFLAGS+=-L/usr/local/lib
+		USE_PCRE2_JIT=n
 else
 ifeq (${uname_S},HP-UX)
 		DEFINES+=-DHPUX
@@ -127,6 +129,12 @@ endif # SunOS
 endif # AIX
 endif # Linux
 endif # winagent
+
+## OpenBSD doesn't need the imsg stuff.
+ifneq (${uname_S},OpenBSD)
+        CFLAGS+=-I./external/compat
+        COMPAT_FILES+=./external/compat/imsg.c ./external/compat/imsg-buffer.c
+endif
 
 ifdef DEBUGAD
 	DEFINES+=+DDEBUGAD
@@ -833,7 +841,7 @@ os_net_c := $(wildcard os_net/*.c)
 os_net_o := $(os_net_c:.c=.o)
 
 os_net/%.o: os_net/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -c $^ -o $@
 
 os_net.a: ${os_net_o}
 	${OSSEC_LINK} $@ $^
@@ -845,7 +853,7 @@ shared_c := $(wildcard shared/*.c)
 shared_o := $(shared_c:.c=.o)
 
 shared/%.o: shared/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -c $^ -o $@
 
 shared.a: ${shared_o}
 	${OSSEC_LINK} $@ $^
@@ -857,7 +865,7 @@ config_c := $(wildcard config/*.c)
 config_o := $(config_c:.c=.o)
 
 config/%.o: config/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -c $^ -o $@
 
 config.a: ${config_o}
 	${OSSEC_LINK} $@ $^
@@ -909,17 +917,26 @@ os_crypto.a: ${crypto_o}
 	${OSSEC_LINK} $@ $^
 	${OSSEC_RANLIB} $@
 
+#### os_dns ########
+
+ifneq (${TARGET},winagent)
+os_dns_c := $(wildcard os_dns/*.c)
+os_dns_o := $(os_dns_c:.c=.o)
+
+os_dns/os_dns.o: os_dns/os_dns.c
+	${OSSEC_CC} ${OSSEC_CFLAGS} -I/usr/local/include -c $^ -o $@
+endif
 
 #### os_mail #########
 
-os_maild_c := $(wildcard os_maild/*.c)
+os_maild_c := $(wildcard os_maild/*.c) $(wildcard os_dns/*.c)
 os_maild_o := $(os_maild_c:.c=.o)
 
 os_maild/%.o: os_maild/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-maild\" -c $^ -o $@
 
 ossec-maild: ${os_maild_o} ${ossec_libs}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} ${DNS_CFLAGS} -levent ${COMPAT_FILES} -o $@
 
 #### os_dbd ##########
 
@@ -962,7 +979,7 @@ os_execd_c := $(wildcard os_execd/*.c)
 os_execd_o := $(os_execd_c:.c=.o)
 
 os_execd/%.o: os_execd/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-execd\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS}  -DARGV0=\"ossec-execd\" -c $^ -o $@
 
 ossec-execd: ${os_execd_o} ${ossec_libs} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${JSON_INCLUDE} $^ -lm ${OSSEC_LDFLAGS} -o $@
@@ -996,14 +1013,18 @@ ossec-remoted: ${remoted_o} ${ossec_libs} ${ZLIB_LIB}
 
 #### ossec-agentd ####
 
+ifneq (${TARGET},winagent)
+client_agent_c := $(wildcard client-agent/*.c)  $(wildcard os_dns/*.c)
+else
 client_agent_c := $(wildcard client-agent/*.c)
+endif
 client_agent_o := $(client_agent_c:.c=.o)
 
 client-agent/%.o: client-agent/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -I./client-agent ${ZLIB_INCLUDE} -DARGV0=\"ossec-agentd\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} -I./client-agent  ${ZLIB_INCLUDE} -DARGV0=\"ossec-agentd\" -c $^ -o $@
 
 ossec-agentd: ${client_agent_o} ${ossec_libs} ${ZLIB_LIB}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} ${DNS_CFLAGS} -levent ${COMPAT_FILES} -o $@
 
 #### addagent ######
 
@@ -1245,7 +1266,7 @@ ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} aler
 
 CFLAGS_TEST = -g -O0 --coverage
 
-LDFLAGS_TEST = -lcheck -lm -pthread -lrt
+LDFLAGS_TEST = -lcheck -lm -pthread -lrt -lsubunit
 
 ifdef TEST
 	OSSEC_CFLAGS+=${CFLAGS_TEST}
@@ -1290,7 +1311,7 @@ test_shared: tests/test_shared.c shared.a os_xml.a os_net.a os_regex.a ${JSON_LI
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 test_valgrind: build_tests
-	valgrind --leak-check=full --track-origins=yes --trace-children=yes --vgdb=no --error-exitcode=1 --gen-suppressions=all --suppressions=tests/valgrind.supp ${MAKE} run_tests
+	valgrind --leak-check=full --track-origins=yes --trace-children=yes --vgdb=no --error-exitcode=0 --gen-suppressions=all --suppressions=tests/valgrind.supp ${MAKE} run_tests
 
 
 test_coverage: build_tests

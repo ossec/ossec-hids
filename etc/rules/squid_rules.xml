@@ -38,66 +38,66 @@
      
   <rule id="35002" level="4">
     <if_sid>35000</if_sid>
-    <id>^4|^5|^6</id>
+    <id_pcre2>^4|^5|^6</id_pcre2>
     <description>Squid generic error codes.</description>
   </rule>
     
   <rule id="35003" level="5">
     <if_sid>35002</if_sid>
-    <id>^400</id>
+    <id_pcre2>^400</id_pcre2>
     <description>Bad request/Invalid syntax.</description>
   </rule>
 
   <rule id="35004" level="5">
     <if_sid>35002</if_sid>
-    <id>^401</id>
+    <id_pcre2>^401</id_pcre2>
     <description>Unauthorized: Failed attempt to access </description>
     <description>authorization-required file or directory.</description>
   </rule>
 
   <rule id="35005" level="5">
     <if_sid>35002</if_sid>
-    <id>^403</id>
+    <id_pcre2>^403</id_pcre2>
     <description>Forbidden: Attempt to access forbidden file </description>
     <description>or directory.</description>
   </rule>
 
   <rule id="35006" level="5">
     <if_sid>35002</if_sid>
-    <id>^404</id>
+    <id_pcre2>^404</id_pcre2>
     <description>Not Found: Attempt to access non-existent </description>
     <description>file or directory.</description>
   </rule>
 
   <rule id="35007" level="5">
     <if_sid>35002</if_sid>
-    <id>^407</id>
+    <id_pcre2>^407</id_pcre2>
     <description>Proxy Authentication Required: User is not </description>
     <description>authorized to use proxy.</description>
   </rule>
 
   <rule id="35008" level="5">
     <if_sid>35002</if_sid>
-    <id>^4</id>
+    <id_pcre2>^4</id_pcre2>
     <description>Squid 400 error code (request failed).</description>
   </rule>
 
   <rule id="35009" level="5">
     <if_sid>35002</if_sid>
-    <id>^5|^6</id>
+    <id_pcre2>^5|^6</id_pcre2>
     <description>Squid 500/600 error code (server error).</description>
   </rule>
   
   <rule id="35010" level="4">
     <if_sid>35009</if_sid>
-    <id>^503</id>
+    <id_pcre2>^503</id_pcre2>
     <description>Squid 503 error code (server unavailable).</description>
   </rule>
   
   <!-- Special rules for 403/404 errors -->
   <rule id="35021" level="6">
     <if_sid>35006</if_sid>
-    <url>blst.php|xxx3.php|ngr7.php|ngr2.php|/nul.php$|/mul.php$|/444.php</url>
+    <url_pcre2>blst\.php|xxx3\.php|ngr7\.php|ngr2\.php|/nul\.php$|/mul\.php$|/444\.php</url_pcre2>
     <description>Attempt to access a Beagle worm (or variant) </description>
     <description>file.</description>
     <info type="link">http://www.symantec.com/avcenter/venc/data/w32.beagle.dp.html</info>
@@ -108,7 +108,7 @@
   <!-- Other worms -->
   <rule id="35022" level="6">
     <if_sid>35006</if_sid>
-    <url>/jk/exp.wmf$|/PopupSh.ocx$</url>
+    <url_pcre2>/jk/exp\.wmf$|/PopupSh\.ocx$</url_pcre2>
     <description>Attempt to access a worm/trojan related site.</description>
     <group>automatic_attack,</group>
   </rule>
@@ -120,22 +120,22 @@
     -->
   <rule id="35023" level="0">
     <if_sid>35004, 35005, 35006, 35009</if_sid>
-    <url>.jpg|.gif|favicon.ico$|.png$|.swf|.txt$|.zip|.css|.xml|.js|.bmp$|</url>
-    <url>windowsupdate/redir/wuredir.cab|</url>
-    <url>^http://codecs.microsoft.com/isapi/ocget.dll|</url>
-    <url>^http://activex.microsoft.com/objects/ocget.dll|</url>
-    <url>^http://webmessenger.msn.com/session/null|</url>
-    <url>^http://sqm.msn.com/sqm/wmp/sqmserver.dll|</url>
-    <url>^http://config.messenger.msn.com/Config/MsgrConfig.asmx|</url>
-    <url>kaspersky-labs.com/|</url>
-    <url>^http://liveupdate.symantecliveupdate.com/|</url>
-    <url>_vti_bin/owssvr.dll|MSOffice/cltreq.asp|</url>
-    <url>google.com/mt?|</url>
-    <url>google.com/kh?|</url>
-    <url>^http://kh.google.com/flatfile</url>
+    <url_pcre2>\.jpg|\.gif|favicon\.ico$|\.png$|\.swf|\.txt$|\.zip|\.css|\.xml|\.js|\.bmp$|</url_pcre2>
+    <url_pcre2>windowsupdate/redir/wuredir\.cab|</url_pcre2>
+    <url_pcre2>^http://codecs\.microsoft\.com/isapi/ocget\.dll|</url_pcre2>
+    <url_pcre2>^http://activex\.microsoft\.com/objects/ocget\.dll|</url_pcre2>
+    <url_pcre2>^http://webmessenger\.msn\.com/session/null|</url_pcre2>
+    <url_pcre2>^http://sqm\.msn\.com/sqm/wmp/sqmserver\.dll|</url_pcre2>
+    <url_pcre2>^http://config\.messenger\.msn\.com/Config/MsgrConfig\.asmx|</url_pcre2>
+    <url_pcre2>kaspersky-labs\.com/|</url_pcre2>
+    <url_pcre2>^http://liveupdate\.symantecliveupdate\.com/|</url_pcre2>
+    <url_pcre2>_vti_bin/owssvr\.dll|MSOffice/cltreq\.asp|</url_pcre2>
+    <url_pcre2>google\.com/mt\?|</url_pcre2>
+    <url_pcre2>google\.com/kh\?|</url_pcre2>
+    <url_pcre2>^http://kh\.google\.com/flatfile</url_pcre2>
 
     <!-- Add more extensions to be ignored in here.
-    <url>|.html$|.htm</url>
+    <url_pcre2>|\.html$|\.htm</url_pcre2>
       -->
 
     <description>Ignored files on a 40x error.</description>

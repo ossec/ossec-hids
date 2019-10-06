@@ -1,3 +1,76 @@
+OSSEC changelog (3.4.0) <scott@atomicorp.com>
+
+Release Maintainers
+
+Dan Parriott
+Scott R. Shinn (http://www.atomicorp.com)
+
+Contributors on this release
+
+(ddpbsd) Dan Parriot
+(bchavet)
+(binrush)
+(mikeroyal)
+(iasdeoupxe)
+(aquerubin)
+(Varstahl) 
+(atomicturtle)
+(jubois)
+(almirb)
+
+Release notes:
+libevent handler https://github.com/ossec/ossec-hids/pull/1698 for dialog.
+pcre2 rules
+
+
+Whats New
+(ddpbsd) Fix for agentd/maild when ipv6 is disabled and/or hostnames are used instead of IPs #1698
+Debian buster
+Fedora 30
+Redhat 8
+
+
+New Rules / Decoders
+
+
+(aquerubin) Updated IPv4-dependent regexp in ownCloud decoders. #1697
+(jubois) Fix 1708 (Incorrect regex match) #1710
+(jubois) PCRE2 rulefiles conversion #1711
+(jubois) PCRE2 decoders conversion #1712
+(aquerubin) Fix owncloud decoder #1724
+(iasdeoupxe) Additional ownCloud decoder fix #1725
+(iasdeoupxe) Second ownCloud decoder fix #1726
+(ddpbsd) Adjust pix decoder and a firewall rule #1749
+(binrush) Fixed missing same_source_ip in rule 11306 #1751 pureftpd
+(ddpbsd) Addition to sshd rule, new ntpd rule #1757, 
+(ddpbsd) Fix rule IDs #1760 -  openbsd_rules
+
+
+General
+(ddpbsd) syscheck, Try to silence the "Attempted to check FS status for" message. #1701
+(ddpbsd) Add some basic error handling to syscheck_control #1702
+(ddpbsd) More unlink and fopen error handling in src/util #1703 
+(almirb) Added Cloudflare active-response script. #1709
+(Varstahl) cyslogd, csyslogd CEF – Remove duplicate parameters and fix discarded hashes #1713
+(atomicturtle) - Updating links, using https, conference links #1714
+(Varstahl) cyslogd, Fix: csyslogd – CEF escaping / multi-line syslog 
+(ddpbsd) core, Check return values for unlink(2) calls #1733 
+(mikeroyal) snap build support #1737
+(ddpbsd) Set PCRE2_SYSTEM to no by default. #1738
+(ddpbsd) logtest Remove leading space from field names #1741
+(bchavet) Verify Googlebot #1752 , this is a code function in generic_samples.c
+(ddpbsd) analysisd Free the lf->fields memory. #1758, fixes issue #1727
+(ddpbsd) Update some travis-ci bits #1759 - travis fixes
+
+
+
+
+
+
+
+
+
+
 OSSEC changelog (3.3.0) <scott@atomicorp.com>
 
 Release Maintainers

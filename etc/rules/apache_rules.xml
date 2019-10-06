@@ -25,25 +25,25 @@
 
   <rule id="30101" level="0">
     <if_sid>30100</if_sid>
-    <match>^[error] </match>
+    <pcre2>^\[error\] </pcre2>
     <description>Apache error messages grouped.</description>
   </rule>
 
   <rule id="30102" level="0">
     <if_sid>30100</if_sid>
-    <match>^[warn] </match>
+    <pcre2>^\[warn\] </pcre2>
     <description>Apache warn messages grouped.</description>
   </rule>
 
   <rule id="30103" level="0">
     <if_sid>30100</if_sid>
-    <match>^[notice] </match>
+    <pcre2>^\[notice\] </pcre2>
     <description>Apache notice messages grouped.</description>
   </rule>
 
   <rule id="30104" level="12">
     <if_sid>30103</if_sid>
-    <match>exit signal Segmentation Fault</match>
+    <pcre2>exit signal Segmentation Fault</pcre2>
     <description>Apache segmentation fault.</description>
     <info type="link">http://www.securityfocus.com/infocus/1633</info>
     <group>service_availability,</group>
@@ -51,21 +51,21 @@
 
   <rule id="30105" level="5">
     <if_sid>30101</if_sid>
-    <match>denied by server configuration</match>
+    <pcre2>denied by server configuration</pcre2>
     <description>Attempt to access forbidden file or directory.</description>
     <group>access_denied,</group>
   </rule>
 
   <rule id="30106" level="5">
     <if_sid>30101</if_sid>
-    <match>Directory index forbidden by rule</match>
+    <pcre2>Directory index forbidden by rule</pcre2>
     <description>Attempt to access forbidden directory index.</description>
     <group>access_denied,</group>
   </rule>
 
   <rule id="30107" level="6">
     <if_sid>30101</if_sid>
-    <match>Client sent malformed Host header</match>
+    <pcre2>Client sent malformed Host header</pcre2>
     <description>Code Red attack.</description>
     <info type="link">http://www.cert.org/advisories/CA-2001-19.html</info>
     <info type="text">CERT: Advisory CA-2001-19 "Code Red" Worm Exploiting Buffer Overflow In IIS Indexing Service DLL</info>
@@ -74,30 +74,30 @@
 
   <rule id="30108" level="5">
     <if_sid>30102</if_sid>
-    <match>authentication failed</match>
+    <pcre2>authentication failed</pcre2>
     <description>User authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="30109" level="9">
     <if_sid>30101</if_sid>
-    <regex>user \S+ not found|user \S+ in realm \.* not found</regex>
+    <pcre2>user \S+ not found|user \S+ in realm .* not found</pcre2>
     <description>Attempt to login using a non-existent user.</description>
     <group>invalid_login,</group>
   </rule>
 
   <rule id="30110" level="5">
     <if_sid>30101</if_sid>
-    <match>authentication failure</match>
+    <pcre2>authentication failure</pcre2>
     <description>User authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="30112" level="0">
     <if_sid>30101</if_sid>
-    <match>File does not exist: |</match>
-    <match>failed to open stream: No such file or directory|</match>
-    <match>Failed opening </match>
+    <pcre2>File does not exist: |</pcre2>
+    <pcre2>failed to open stream: No such file or directory|</pcre2>
+    <pcre2>Failed opening </pcre2>
     <description>Attempt to access an non-existent file (those are reported on the access.log).</description>
     <group>unknown_resource,</group>
   </rule>
@@ -107,7 +107,7 @@
   -->
   <rule id="30115" level="5">
     <if_sid>30101</if_sid>
-    <match>Invalid URI in request</match>
+    <pcre2>Invalid URI in request</pcre2>
     <description>Invalid URI (bad client request).</description>
     <group>invalid_request,</group>
   </rule>
@@ -122,7 +122,7 @@
 
   <rule id="30117" level="10">
     <if_sid>30101</if_sid>
-    <match>File name too long|request failed: URI too long</match>
+    <pcre2>File name too long|request failed: URI too long</pcre2>
     <description>Invalid URI, file name too long.</description>
     <group>invalid_request,</group>
   </rule>
@@ -130,7 +130,7 @@
   <!-- Mod security rules by <ossec ( at ) sioban.net -->
   <rule id="30118" level="6">
     <if_sid>30101</if_sid>
-    <match>mod_security: Access denied|ModSecurity: Access denied</match>
+    <pcre2>mod_security: Access denied|ModSecurity: Access denied</pcre2>
     <description>Access attempt blocked by Mod Security.</description>
     <group>access_denied,</group>
   </rule>
@@ -144,19 +144,19 @@
 
   <rule id="30120" level="12">
     <if_sid>30101</if_sid>
-    <match>Resource temporarily unavailable:</match>
+    <pcre2>Resource temporarily unavailable:</pcre2>
     <description>Apache without resources to run.</description>
     <group>service_availability,</group>
   </rule>
 
   <rule id="30200" level="6" noalert="1">
-    <match>^mod_security-message: </match>
+    <pcre2>^mod_security-message: </pcre2>
     <description>Modsecurity alert.</description>
   </rule>
 
   <rule id="30201" level="6">
     <if_sid>30200</if_sid>
-    <match>^mod_security-message: Access denied </match>
+    <pcre2>^mod_security-message: Access denied </pcre2>
     <description>Modsecurity access denied.</description>
     <group>access_denied,</group>
   </rule>
@@ -170,25 +170,25 @@
   <!-- Apache 2.4 Rules -->
   <rule id="30301" level="0">
     <if_sid>30100</if_sid>
-    <regex> [\S*:error] </regex>
+    <pcre2> \[\S*:error\] </pcre2>
     <description>Apache error messages grouped.</description>
   </rule>
 
   <rule id="30302" level="0">
     <if_sid>30100</if_sid>
-    <regex> [\S+:warn] </regex>
+    <pcre2> \[\S+:warn\] </pcre2>
     <description>Apache warn messages grouped.</description>
   </rule>
 
   <rule id="30303" level="0">
     <if_sid>30100</if_sid>
-    <regex> [\S+:notice] </regex>
+    <pcre2> \[\S+:notice\] </pcre2>
     <description>Apache notice messages grouped.</description>
   </rule>
 
   <rule id="30304" level="12">
     <if_sid>30303</if_sid>
-    <match>exit signal Segmentation Fault</match>
+    <pcre2>exit signal Segmentation Fault</pcre2>
     <description>Apache segmentation fault.</description>
     <info type="link">http://www.securityfocus.com/infocus/1633</info>
     <group>service_availability,</group>
@@ -196,21 +196,21 @@
 
   <rule id="30305" level="5">
     <if_sid>30301</if_sid>
-    <id>AH01630</id>
+    <id_pcre2>AH01630</id_pcre2>
     <description>Attempt to access forbidden file or directory.</description>
     <group>access_denied,</group>
   </rule>
 
   <rule id="30306" level="5">
     <if_sid>30301</if_sid>
-    <id>AH01276</id>
+    <id_pcre2>AH01276</id_pcre2>
     <description>Attempt to access forbidden directory index.</description>
     <group>access_denied,</group>
   </rule>
 
   <rule id="30307" level="6">
     <if_sid>30301</if_sid>
-    <id>AH00550</id>
+    <id_pcre2>AH00550</id_pcre2>
     <description>Client sent malformed Host header. Possible Code Red attack.</description>
     <info type="link">http://www.cert.org/advisories/CA-2001-19.html</info>
     <info type="text">CERT: Advisory CA-2001-19 "Code Red" Worm Exploiting Buffer Overflow In IIS Indexing Service DLL</info>
@@ -219,14 +219,14 @@
 
   <rule id="30308" level="5">
     <if_sid>30301</if_sid>
-    <id>AH01617|AH01807|AH01694|AH01695|AH02009|AH02010</id>
+    <id_pcre2>AH01617|AH01807|AH01694|AH01695|AH02009|AH02010</id_pcre2>
     <description>User authentication failed.</description>
     <group>authentication_failed,</group>
   </rule>
 
   <rule id="30309" level="5">
     <if_sid>30301</if_sid>
-    <id>AH01618|AH01808|AH01790</id>
+    <id_pcre2>AH01618|AH01808|AH01790</id_pcre2>
     <description>Attempt to login using a non-existent user.</description>
     <group>invalid_login,</group>
   </rule>
@@ -240,16 +240,16 @@
 
   <rule id="30312" level="0">
     <if_sid>30301</if_sid>
-    <match>File does not exist: |</match>
-    <match>failed to open stream: No such file or directory|</match>
-    <match>Failed opening </match>
+    <pcre2>File does not exist: |</pcre2>
+    <pcre2>failed to open stream: No such file or directory|</pcre2>
+    <pcre2>Failed opening </pcre2>
     <description>Attempt to access an non-existent file (those are reported on the access.log).</description>
     <group>unknown_resource,</group>
   </rule>
 
   <rule id="30315" level="5">
     <if_sid>30301</if_sid>
-    <id>AH00126</id>
+    <id_pcre2>AH00126</id_pcre2>
     <description>Invalid URI (bad client request).</description>
     <group>invalid_request,</group>
   </rule>
@@ -264,59 +264,59 @@
 
   <rule id="30317" level="10">
     <if_sid>30301</if_sid>
-    <id>AH00565</id>
+    <id_pcre2>AH00565</id_pcre2>
     <description>Invalid URI, file name too long.</description>
     <group>invalid_request,</group>
   </rule>
 
   <rule id="30318" level="5">
     <if_sid>30301</if_sid>
-    <match>PHP Notice:</match>
+    <pcre2>PHP Notice:</pcre2>
     <description>PHP Notice in Apache log</description>
   </rule>
 
   <rule id="30319" level="10">
     <if_sid>30301</if_sid>
-    <id>AH00036</id>
-    <match>File name too long: </match>
+    <id_pcre2>AH00036</id_pcre2>
+    <pcre2>File name too long: </pcre2>
     <description>File name too long.</description>
   </rule>
 
   <rule id="30320" level="2">
     <if_sid>30301</if_sid>
-    <match>Permission denied: | client denied by server configuration: </match>
+    <pcre2>Permission denied: | client denied by server configuration: </pcre2>
     <description>Permission denied.</description>
   </rule>
 
   <rule id="30321" level="2">
     <if_sid>30301</if_sid>
-    <id>AH02811</id>
-    <match>script not found </match>
+    <id_pcre2>AH02811</id_pcre2>
+    <pcre2>script not found </pcre2>
     <description>A script cannot be accessed.</description>
   </rule>
 
   <!-- Apache 2.4 ModSecurity Rules -->
   <rule id="30401" level="0">
     <if_sid>30301</if_sid>
-    <match>ModSecurity: Warning</match>
+    <pcre2>ModSecurity: Warning</pcre2>
     <description>ModSecurity Warning messages grouped</description>
   </rule>
 
   <rule id="30402" level="0">
     <if_sid>30301</if_sid>
-    <match>ModSecurity: Access denied</match>
+    <pcre2>ModSecurity: Access denied</pcre2>
     <description>ModSecurity Access denied messages grouped</description>
   </rule>
 
   <rule id="30403" level="0">
     <if_sid>30301</if_sid>
-    <match>ModSecurity: Audit log:</match>
+    <pcre2>ModSecurity: Audit log:</pcre2>
     <description>ModSecurity Audit log messages grouped</description>
   </rule>
 
   <rule id="30411" level="7">
     <if_sid>30402</if_sid>
-    <match>with code 403</match>
+    <pcre2>with code 403</pcre2>
     <description>ModSecurity rejected a query</description>
   </rule>
 </group> <!-- ERROR_LOG,APACHE -->

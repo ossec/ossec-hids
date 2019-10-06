@@ -1,4 +1,4 @@
-OSSEC v3.3.0 Copyright (C) 2019 Trend Micro Inc.
+OSSEC v3.4.0 Copyright (C) 2019 Trend Micro Inc.
 
 # Information about OSSEC 
 
@@ -6,7 +6,7 @@ OSSEC is a full platform to monitor and control your systems. It mixes together
 all the aspects of HIDS (host-based intrusion detection), log monitoring and 
 SIM/SIEM together in a simple, powerful and open source solution.
 
-Visit our website for the latest information.  [ossec.github.io](http://ossec.github.io)
+Visit our website for the latest information.  [www.ossec.net](https://www.ossec.net)
 
 
 
@@ -14,8 +14,8 @@ Visit our website for the latest information.  [ossec.github.io](http://ossec.gi
 
 The current stable releases are available on the ossec website. 
 
-* Releases can be downloaded from: [Downloads](http://ossec.github.io/downloads.html)
-* Release documentation is available at: [docs](http://ossec.github.io/docs/)
+* Releases can be downloaded from: [Downloads](https://www.ossec.net/downloads/)
+* Release documentation is available at: [docs](https://www.ossec.net/docs/)
 
 ## Development ##
 
@@ -37,5 +37,6 @@ The development version is hosted on GitHub and just a simple git clone away.
   (Jean-loup Gailly and Mark Adler)
 * This product include software developed by the cJSON project 
   (Dave Gamble)
+* [Atomicorp](https://www.atomicorp.com) hosting the annual OSSEC conference. Presentations for the 2019 conference can be found at https://www.atomicorp.com/ossec-con2019/
 
 

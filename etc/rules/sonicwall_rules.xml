@@ -23,56 +23,56 @@
 
   <rule id="4801" level="8">
     <if_sid>4800</if_sid>
-    <status>^1</status>
+    <status_pcre2>^1</status_pcre2>
     <description>SonicWall critical message.</description>
   </rule>
   
   <rule id="4802" level="8">
     <if_sid>4800</if_sid>
-    <status>^2</status>
+    <status_pcre2>^2</status_pcre2>
     <description>SonicWall critical message.</description>
   </rule>
   
  <rule id="4803" level="4">
     <if_sid>4800</if_sid>
-    <status>^3</status>
+    <status_pcre2>^3</status_pcre2>
     <description>SonicWall error message.</description>
   </rule>
 
   <rule id="4804" level="3">
     <if_sid>4800</if_sid>
-    <status>^4</status>
+    <status_pcre2>^4</status_pcre2>
     <description>SonicWall warning message.</description>
   </rule>
 
   <rule id="4805" level="0">
     <if_sid>4800</if_sid>
-    <status>^5</status>
+    <status_pcre2>^5</status_pcre2>
     <description>SonicWall notice message.</description>
   </rule>
   
   <rule id="4806" level="0">
     <if_sid>4800</if_sid>
-    <status>^6</status>
+    <status_pcre2>^6</status_pcre2>
     <description>SonicWall informational message.</description>
   </rule>
   
   <rule id="4807" level="0">
     <if_sid>4800</if_sid>
-    <status>^7</status>
+    <status_pcre2>^7</status_pcre2>
     <description>SonicWall debug message.</description>
   </rule>
   
   <rule id="4810" level="3">
     <if_sid>4806</if_sid>
-    <id>^236$</id>
+    <id_pcre2>^236$</id_pcre2>
     <description>Firewall administrator login.</description>
     <group>authentication_success,</group>
   </rule>
 
   <rule id="4811" level="9">
     <if_sid>4801</if_sid>
-    <id>^30$|^32$</id>
+    <id_pcre2>^30$|^32$</id_pcre2>
     <description>Firewall authentication failure.</description>
     <group>authentication_failed,</group>
   </rule>

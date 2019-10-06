@@ -20,117 +20,116 @@
 
   <rule id="51501" level="1">
     <if_sid>51500</if_sid>
-    <match>ichiic0: abort failed, status 0x40</match> 
+    <pcre2>ichiic0: abort failed, status 0x40</pcre2>
     <description>A timeout occurred waiting for a transfer.</description>
   </rule>
 
   <rule id="51502" level="0">
     <if_sid>51500</if_sid>
-    <match>Check Condition (error 0x70) on opcode 0x0</match>
+    <pcre2>Check Condition \(error 0x70\) on opcode 0x0</pcre2>
     <description>Check media in optical drive.</description>
   </rule>
 
   <rule id="51503" level="1"> 
     <if_sid>51500</if_sid>
-    <match>BBB bulk-in clear stall failed</match> 
+    <pcre2>BBB bulk-in clear stall failed</pcre2>
     <description>A disk has timed out.</description>
   </rule>
 
   <rule id="51504" level="1">
     <if_sid>51500</if_sid>
-    <match>arp info overwritten for</match>
+    <pcre2>arp info overwritten for</pcre2>
     <description>arp info has been overwritten for a host</description>
   </rule>
 
   <rule id="51505" level="5">
     <if_sid>51500</if_sid>
-    <match>was not properly unmounted</match>
+    <pcre2>was not properly unmounted</pcre2>
     <description>A filesystem was not properly unmounted, likely system crash</description>
   </rule>
 
   <rule id="51506" level="1">
     <if_sid>51500</if_sid>
-    <match>UKC> quit</match>
+    <pcre2>UKC> quit</pcre2>
     <description>UKC was used, possibly modifying a kernel at boot time.</description>
   </rule>
 
   <rule id="51507" level="1">
     <if_sid>51500</if_sid>
-    <match>Michael MIC failure</match>
+    <pcre2>Michael MIC failure</pcre2>
     <description>Michael MIC failure: Checksum failure in the tkip protocol.</description>
   </rule>
 
   <rule id="51508" level="2">
     <if_sid>51500</if_sid>
-    <match>soft error (corrected)</match>
+    <pcre2>soft error \(corrected\)</pcre2>
     <description>A soft error has been corrected on a hard drive, </description>
     <description>this is a possible early sign of failure.</description>
   </rule>
 
   <rule id="51509" level="1">
     <if_sid>51500</if_sid>
-    <regex>acpithinkpad\d:</regex>
-    <match>unknown event</match>
+    <pcre2>acpithinkpad\d: unknown event</pcre2>
     <description>Unknown acpithinkpad event</description>
   </rule>
 
   <rule id="51510" level="5">
     <if_sid>51500</if_sid>
-    <match>Critical temperature, shutting down</match>
+    <pcre2>Critical temperature, shutting down</pcre2>
     <description>System shutdown due to temperature</description>
   </rule>
 
   <rule id="51511" level="1">
     <if_sid>51500</if_sid>
-    <match>_AL0[0] _PR0 failed</match>
+    <pcre2>_AL0\[0\] _PR0 failed</pcre2>
     <description>Unknown ACPI event (bug 6299 in OpenBSD bug tracking system).</description>
   </rule>
 
   <rule id="51512" level="1">
     <if_sid>51500</if_sid>
-    <match>ehci_freex: xfer=0xffff8000003ef800 not busy, 0x4f4e5155</match>
+    <pcre2>ehci_freex: xfer=0xffff8000003ef800 not busy, 0x4f4e5155</pcre2>
     <description>USB diagnostic message.</description>
   </rule>
 
   <rule id="51513" level="1">
     <if_sid>51500</if_sid>
-    <match>ichiic0: abort failed, status 0x0</match>
+    <pcre2>ichiic0: abort failed, status 0x0</pcre2>
     <description>Possible APM or ACPI event.</description>
   </rule>
 
   <rule id="51514" level="3">
     <if_sid>51500</if_sid>
-    <match>Filesystem is not clean - run fsck</match>
+    <pcre2>Filesystem is not clean - run fsck</pcre2>
     <description>Unclean filesystem, run fsck.</description>
   </rule>
   
   <rule id="51515" level="0">
     <if_sid>51500</if_sid>
-    <match>atascsi_passthru_done, timeout</match>
+    <pcre2>atascsi_passthru_done, timeout</pcre2>
     <description>Timeout in atascsi_passthru_done.</description>
   </rule>
 
   <rule id="51516" level="0">
     <if_sid>51500</if_sid>
-    <regex>RTC BIOS diagnostic error 80\pclock_battery\p</regex>
+    <pcre2>RTC BIOS diagnostic error 80\<clock_battery\></pcre2>
     <description>Clock battery error 80</description>
   </rule>
 
   <rule id="51518" level="3">
     <if_sid>51500</if_sid>
-    <match>i/o error on block</match>
+    <pcre2>i/o error on block</pcre2>
     <description>I/O error on a storage device</description>
   </rule>
 
   <rule id="51519" level="1">
     <if_sid>51500</if_sid>
-    <match>kbc: cmd word write error</match>
+    <pcre2>kbc: cmd word write error</pcre2>
     <description>kbc error.</description>
   </rule>
 
   <rule id="51520" level="1">
     <if_sid>51500</if_sid>
-    <match>BBB reset failed, IOERROR</match>
+    <pcre2>BBB reset failed, IOERROR</pcre2>
     <description>USB reset failed, IOERROR.</description>
   </rule>
 
@@ -142,97 +141,97 @@
 
   <rule id="51522" level="2">
     <if_sid>51521</if_sid>
-    <match>group deleted</match>
+    <pcre2>group deleted</pcre2>
     <description>Group deleted.</description>
     <group>groupdel,</group>
   </rule>
 
   <rule id="51523" level="0">
-    <program_name>savecore</program_name>
-    <match>no core dump</match>
+    <program_name_pcre2>savecore</program_name_pcre2>
+    <pcre2>no core dump</pcre2>
     <description>No core dumps.</description>
   </rule>
 
   <rule id="51524" level="4">
-    <program_name>reboot</program_name>
-    <match>rebooted by</match>
+    <program_name_pcre2>reboot</program_name_pcre2>
+    <pcre2>rebooted by</pcre2>
     <description>System was rebooted.</description>
   </rule>
 
   <rule id="51525" level="0">
-    <program_name>^ftp-proxy</program_name>
-    <match>proxy cannot connect to server</match>
+    <program_name_pcre2>^ftp-proxy</program_name_pcre2>
+    <pcre2>proxy cannot connect to server</pcre2>
     <description>ftp-proxy cannot connect to a server.</description>
   </rule>
 
   <rule id="51526" level="0">
     <decoded_as>bsd_kernel</decoded_as>
-    <match>uncorrectable data error reading fsbn</match>
+    <pcre2>uncorrectable data error reading fsbn</pcre2>
     <description>Hard drive is dying.</description>
   </rule>
 
   <rule id="51527" level="0">
     <decoded_as>bsd_kernel</decoded_as>
-    <match>^carp</match>
+    <pcre2>^carp</pcre2>
     <action>state transition</action>
-    <status>MASTER -> BACKUP</status>
+    <status_pcre2>MASTER -> BACKUP</status_pcre2>
     <description>CARP master to backup.</description>
   </rule>
 
   <rule id="51528" level="0">
     <decoded_as>bsd_kernel</decoded_as>
-    <match>duplicate IP6 address</match>
+    <pcre2>duplicate IP6 address</pcre2>
     <description>Duplicate IPv6 address.</description>
   </rule>
 
   <rule id="51529" level="0">
     <decoded_as>bsd_kernel</decoded_as>
-    <match>failed loadfirmware of file</match>
+    <pcre2>failed loadfirmware of file</pcre2>
     <description>Could not load a firmware.</description>
   </rule>
 
   <rule id="51530" level="0">
-    <program_name>^hotplugd</program_name>
-    <match>Permission denied$</match>
+    <program_name_pcre2>^hotplugd</program_name_pcre2>
+    <pcre2>Permission denied$</pcre2>
     <description>hotplugd could not open a file.</description>
   </rule>
 
   <rule id="51531" level="3">
     <decoded_as>open-userdel</decoded_as>
-    <match>user removed: name=</match>
+    <pcre2>user removed: name=</pcre2>
     <description>User account deleted.</description>
     <group>account_changed,</group>
   </rule>
 
   <rule id="51532" level="0">
     <decoded_as>ntpd</decoded_as>
-    <match>bad peer from </match>
+    <pcre2>bad peer from </pcre2>
     <description>Bad ntp peer.</description>
   </rule>
 
   <rule id="51533" level="1">
-    <program_name>^dhclient$</program_name>
+    <program_name_pcre2>^dhclient$</program_name_pcre2>
     <if_sid>1002</if_sid>
-    <match>receive_packet failed on </match>
+    <pcre2>receive_packet failed on </pcre2>
     <description>dhclient receive_packet failed.</description>
   </rule>
 
   <rule id="51534" level="1">
     <if_sid>51533</if_sid>
-    <match>Input/output error$</match>
+    <pcre2>Input/output error$</pcre2>
     <description>dhclient receive_packet failed due to I/O error.</description>
   </rule>
 
   <rule id="51535" level="1">
-    <program_name>^dhclient$</program_name>
+    <program_name_pcre2>^dhclient$</program_name_pcre2>
     <if_sid>1002</if_sid>
-    <match>SIOCDIFADDR failed </match>
+    <pcre2>SIOCDIFADDR failed </pcre2>
     <description>SIOCDIFADDR failed</description>
   </rule>
 
   <rule id="51536" level="1">
     <if_sid>51535</if_sid>
-    <match> Device not configured$</match>
+    <pcre2> Device not configured$</pcre2>
     <description>dhclient: device not configured.</description>
   </rule>
 
@@ -247,50 +246,62 @@
 
   <rule id="51551" level="1">
     <if_sid>51550</if_sid>
-    <match>cannot stat</match>
+    <pcre2>cannot stat</pcre2>
     <description>doas cannot stat a file.</description>
   </rule>
 
   <rule id="51552" level="2">
     <if_sid>51551</if_sid>
-    <match>: Permission denied$</match>
+    <pcre2>: Permission denied$</pcre2>
     <description>doas cannot stat a file due to permissions.</description>
   </rule>
 
   <rule id="51553" level="5">
     <if_sid>51550</if_sid>
-    <match>path not secure$</match>
+    <pcre2>path not secure$</pcre2>
     <description>A critical path for doas does not have secure permissions.</description>
   </rule>
 
   <rule id="51554" level="5">
     <if_sid>51550</if_sid>
-    <match>failed command for </match>
+    <pcre2>failed command for </pcre2>
     <description>Failed doas command.</description>
   </rule>
 
   <rule id="51555" level="1">
     <if_sid>51550</if_sid>
-    <match>ran command</match>
+    <pcre2>ran command</pcre2>
     <description>A command was run using doas.</description>
   </rule>
 
   <rule id="51556" level="2">
     <if_sid>51555</if_sid>
-    <match> as root </match>
+    <pcre2> as root </pcre2>
     <description>A doas command was run as root.</description>
   </rule>
 
   <rule id="51557" level="5">
     <if_sid>51550</if_sid>
-    <match>failed auth for</match>
+    <pcre2>failed auth for</pcre2>
     <description>doas authentication failed.</description>
   </rule>
 
   <rule id="51558" level="4">
-    <program_name>sendsyslog</program_name>
-    <match>^dropped </match>
+    <program_name_pcre2>sendsyslog</program_name_pcre2>
+    <pcre2>^dropped </pcre2>
     <description>sendsyslog dropped log messages.</description>
+  </rule>
+
+  <rule id="51559" level="1">
+    <decoded_as>ntpd</decoded_as>
+    <match>Connection refused$</match>
+    <description>ntpd peer connection refused.</description>
+  </rule>
+
+  <rule id="51560" level="3">
+    <decoded_as>ntpd</decoded_as>
+    <match>recvmsg</match>
+    <description>ntpd peer connection refused.</description>
   </rule>
 
 </group> <!-- SYSLOG,LOCAL -->

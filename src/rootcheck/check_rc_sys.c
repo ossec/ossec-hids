@@ -429,21 +429,27 @@ void check_rc_sys(const char *basedir)
 
     if (_wx) {
         if (ftell(_wx) == 0) {
-            unlink("rootcheck-rw-rw-rw-.txt");
+            if ((unlink("rootcheck-rw-rw-rw-.txt")) < 0) {
+                merror("%s: ERROR: Cannot unlink %s: %s", ARGV0, "rootcheck-rw-rw-rw-.txt", strerror(errno));
+            }
         }
         fclose(_wx);
     }
 
     if (_ww) {
         if (ftell(_ww) == 0) {
-            unlink("rootcheck-rwxrwxrwx.txt");
+            if ((unlink("rootcheck-rwxrwxrwx.txt")) < 0) {
+                merror("%s: ERROR: Cannot unlink %s: %s", ARGV0, "rootcheck-rwxrwxrwx.txt", strerror(errno));
+            }
         }
         fclose(_ww);
     }
 
     if (_suid) {
         if (ftell(_suid) == 0) {
-            unlink("rootcheck-suid-files.txt");
+            if ((unlink("rootcheck-suid-files.txt")) < 0) {
+                merror("%s: ERROR: Cannot unlink %s: %s", ARGV0, "rootcheck-suid-files.txt", strerror(errno));
+            }
         }
         fclose(_suid);
     }

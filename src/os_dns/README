@@ -1,0 +1,35 @@
+Attempt to write a forkable daemon to do dns lookups for
+chrooted processes (maild/agentd).
+
+
+I hope to provide a re-usable support "daemon" that the 
+other daemons can use for name lookups. maild would 
+fork a copy of os_dns and query it via imsg for the IP
+address of the mail server.
+
+os_dns would not be chrooted, but will run with lowered 
+privs. unveil and pledge could also be used on OpenBSD
+to limit its usefulness to attackers.
+
+Request to os_dns:
+* hostname
+
+Reply from os_dns:
+* The socket with a connection started
+
+
+Eventually I'll need to figure out if I want to use this
+for udp as well, and how to pass the protocol along.
+
+Todo:
+
+* Cleanup - everything is still too noisy
+
+* errors - I don't think I've handled the errors very well
+
+* kill - there's no way to kill both processes currently
+
+* signals - these need to be gone over
+
+* probably lots of other things
+
