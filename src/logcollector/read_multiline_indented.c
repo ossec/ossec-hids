@@ -51,7 +51,7 @@ void *read_multiline_indented(int pos, int *rc, int drop_it) {
         if ((str_len <= 1) || (str[0] == '\r')) {
             /* Send existing data if any in buffer */
             if (buffer[0] != '\0') {
-              if (SendMSG(logr_queue, buffer, logff[pos].file, POSTGRESQL_MQ) < 0) {
+              if (SendMSG(logr_queue, buffer, logff[pos].file, LOCALFILE_MQ) < 0) {
                   merror(QUEUE_SEND, ARGV0);
                   if ((logr_queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
                       ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
@@ -89,7 +89,7 @@ void *read_multiline_indented(int pos, int *rc, int drop_it) {
         } else if ((str[0] != ' ') || (str[0] != '\t')) {
             /* Flush previous messages */
             if (buffer[0] != '\0') {
-              if (SendMSG(logr_queue, buffer, logff[pos].file, POSTGRESQL_MQ) < 0) {
+              if (SendMSG(logr_queue, buffer, logff[pos].file, LOCALFILE_MQ) < 0) {
                   merror(QUEUE_SEND, ARGV0);
                   if ((logr_queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
                       ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
@@ -108,7 +108,7 @@ void *read_multiline_indented(int pos, int *rc, int drop_it) {
 
     /* Send whatever is stored */
     if (buffer[0] != '\0') {
-      if (SendMSG(logr_queue, buffer, logff[pos].file, POSTGRESQL_MQ) < 0) {
+      if (SendMSG(logr_queue, buffer, logff[pos].file, LOCALFILE_MQ) < 0) {
           merror(QUEUE_SEND, ARGV0);
           if ((logr_queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
               ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
