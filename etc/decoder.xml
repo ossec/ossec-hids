@@ -1954,7 +1954,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <!-- lighttpd.
   - Examples:
-  - 2019-10-28 01:39:17: (connections-glue.c.200) SSL: 1 error:1417D18C:SSL routines:tls_process_client_hello:version too low
+  - 2019-10-29 05:24:27: (mod_fastcgi.c.2543) FastCGI-stderr: PHP Fatal error:  Uncaught ErrorException: Unknown: [CLOSED] IMAP connection broken (server response) (errflg=1) in Unknown:0
   - 
   -->
 <decoder name="lighttpd">
