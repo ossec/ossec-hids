@@ -1952,6 +1952,14 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip, action, id</order>
 </decoder>
 
+<!-- lighttpd.
+  - Examples:
+  - 2019-10-28 01:39:17: (connections-glue.c.200) SSL: 1 error:1417D18C:SSL routines:tls_process_client_hello:version too low
+  - 
+  -->
+<decoder name="lighttpd">
+  <prematch_pcre2>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d: \(</prematch_pcre2>
+</decoder>
 
 
 <!-- Racoon VPN.
