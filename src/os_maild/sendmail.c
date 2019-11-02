@@ -158,11 +158,10 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         }
 
         event_dispatch();
-    }
 
-    if (os_sock <= 0) {
-        ErrorExit("ossec-maild: ERROR: No socket.");
-    }
+        if (os_sock <= 0) {
+            ErrorExit("ossec-maild: ERROR: No socket.");
+        }
 
         /* Receive the banner */
         msg = OS_RecvTCP(os_sock, OS_SIZE_1024);
@@ -305,6 +304,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         }
         MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", DATAMSG, msg);
         free(msg);
+    }
 
     /* Building "From" and "To" in the e-mail header */
     memset(snd_msg, '\0', 128);
