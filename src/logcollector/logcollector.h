@@ -53,6 +53,9 @@ void *read_postgresql_log(int pos, int *rc, int drop_it);
 /* read multi line logs */
 void *read_multiline(int pos, int *rc, int drop_it);
 
+/* read indented multi line logs */
+void *read_multiline_indented(int pos, int *rc, int drop_it);
+
 /* Read DJB multilog format */
 /* Initializes multilog */
 int init_djbmultilog(int pos);
@@ -80,4 +83,3 @@ extern int open_file_attempts;
 extern logreader *logff;
 
 #endif /* __LOGREADER_H */
-
