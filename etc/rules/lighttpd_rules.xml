@@ -1,5 +1,7 @@
+<group name="local,lighttpd">
   <rule id="110000" level="10">
         <decoded_as>lighttpd</decoded_as>
         <regex>fastcgi</regex>
         <description>FastCGI error message.</description>
   </rule>
+</group>
