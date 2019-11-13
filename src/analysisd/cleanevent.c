@@ -155,6 +155,17 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             (pieces[17] == ':') &&
             (pieces[20] == ' ') && (lf->log += 21)
         )
+        ||
+        (
+            /* ex: 2019:11:06-00:08:03 */
+            (loglen > 20) &&
+            (isdigit(pieces[0])) &&
+            (pieces[4] == ':') &&
+            (pieces[7] == ':') &&
+            (pieces[10] == '-') &&
+            (pieces[13] == ':') &&
+            (pieces[16] == ':') && (lf->log += 20)
+        )
     ) {
         /* Check for an extra space in here */
         if (*lf->log == ' ') {
