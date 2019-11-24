@@ -21,68 +21,70 @@
 #include "eventinfo.h"
 #include "alerts/alerts.h"
 #include "decoder.h"
-#include "GeoIP.h"
-#include "GeoIPCity.h"
+#include <maxminddb.h>
 
 
 char *GetGeoInfobyIP(char *ip_addr)
 {
-    GeoIPRecord *geoiprecord;
-    char *geodata = NULL;
-    char geobuffer[256 +1];
-
-    if(!geoipdb)
-    {
-        return(NULL);
-    }
-
     if(!ip_addr)
     {
         return(NULL);
     }
-
-    geoiprecord = GeoIP_record_by_name(geoipdb, (const char *)ip_addr);
-    if(geoiprecord == NULL)
-    {
-        return(NULL);
-    }
-    
-    if(geoiprecord->country_code == NULL)
-    {
-        GeoIPRecord_delete(geoiprecord);
+    if(!Config.geoipdb_file) {
         return(NULL);
     }
 
-    if(strlen(geoiprecord->country_code) < 2)
-    {
-        GeoIPRecord_delete(geoiprecord);
+    int gai_error, mmdb_error;
+    MMDB_lookup_result_s geo_result = MMDB_lookup_string(&geoipdb, ip_addr, &gai_error, &mmdb_error);
+    if(gai_error != 0) {
+        merror("%s: ERROR: error from getaddrinfo for %s: %s", __local_name, ip_addr, gai_strerror(gai_error));
         return(NULL);
     }
-   
 
-    if(geoiprecord->region != NULL && geoiprecord->region[0] != '\0')
-    {
-        const char *regionname = NULL;
-        regionname = GeoIP_region_name_by_code(geoiprecord->country_code, geoiprecord->region);
-        if(regionname != NULL)
-        {
-            snprintf(geobuffer, 255, "%s / %s", geoiprecord->country_code, regionname);
-            geobuffer[255] = '\0';
-            geodata = strdup(geobuffer);
+    if(mmdb_error != MMDB_SUCCESS) {
+        merror("%s: ERROR: Error from geoip: %s", __local_name, MMDB_strerror(mmdb_error));
+        return(NULL);
+    }
+
+    MMDB_entry_data_list_s *entry_data_list = NULL;
+
+    if(geo_result.found_entry) {
+        int entry_status = MMDB_get_entry_data_list(&geo_result.entry, &entry_data_list);
+        if(entry_status != MMDB_SUCCESS) {
+            merror("%s: ERROR: Error during geoip lookup: %s", __local_name, MMDB_strerror(entry_status));
+            return(NULL);
         }
-        else
-        {
-            geodata = strdup(geoiprecord->country_code);
+
+        if(entry_data_list != NULL) {
+            /* XXX what do? */
+            /* I need country code, region */
+            static char country_code[3];
+            MMDB_entry_data_s entry_data;
+            int cc = MMDB_get_value(&geo_result.entry, &entry_data, "country", "iso_code", NULL);
+            if(cc != MMDB_SUCCESS) {
+                MMDB_free_entry_data_list(entry_data_list);
+                return(NULL);
+            }
+            if(!entry_data.has_data || entry_data.type != MMDB_DATA_TYPE_UTF8_STRING) {
+                MMDB_free_entry_data_list(entry_data_list);
+                return(NULL);
+            }
+            snprintf(country_code, 3, "%.2s", entry_data.utf8_string);
+            if(strnlen(country_code, 3) != 2) {
+                debug1("country_code is wrong?");
+            }
+
+            MMDB_free_entry_data_list(entry_data_list);
+            return(country_code);
         }
-    }
-    else
-    {
-        geodata = strdup(geoiprecord->country_code);
+    } else {
+        debug1("%s: DEBUG: No entry for %s", __local_name, ip_addr);
+        MMDB_free_entry_data_list(entry_data_list);
+        return(NULL);
     }
 
-    GeoIPRecord_delete(geoiprecord);
-    return(geodata);
- 
+    /* Should not get here */
+    return(NULL);
 }
 
 #endif
