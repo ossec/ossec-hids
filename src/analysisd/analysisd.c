@@ -240,7 +240,7 @@ int main_analysisd(int argc, char **argv)
         if (status != MMDB_SUCCESS) {
             merror("%s: ERROR: Cannot open geoipdb: %s", __local_name, MMDB_strerror(status));
             if (status == MMDB_IO_ERROR) {
-                merror("%s: ERROR: IO error: %s", __local_name, strerror(errno));
+                merror("%s: ERROR: geoip IO error: %s", __local_name, strerror(errno));
             }
         }
     }
