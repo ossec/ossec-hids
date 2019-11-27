@@ -574,7 +574,7 @@ void Free_Eventinfo(Eventinfo *lf)
     }
 
     if(lf->srcgeoip) {
-        free(lf->srcgeoip);
+        //free(lf->srcgeoip);
         lf->srcgeoip = NULL;
     }
 
@@ -583,7 +583,7 @@ void Free_Eventinfo(Eventinfo *lf)
     }
 
     if(lf->dstgeoip) {
-        free(lf->dstgeoip);
+        //free(lf->dstgeoip);
         lf->dstgeoip = NULL;
     }
 
