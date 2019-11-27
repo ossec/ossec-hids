@@ -31,11 +31,11 @@ char *GetGeoInfobyIP(char *ip_addr)
 
     if(!ip_addr)
     {
-        debug1("%s: DEBUG: (geo) ip_addr is NULL");
+        debug1("%s: DEBUG: (geo) ip_addr is NULL", __local_name);
         return(NULL);
     }
     if(!Config.geoipdb_file) {
-        debug1("%s: DEBUG: (geo) Config.geoipdb_file (geoipdb) is null");
+        debug1("%s: DEBUG: (geo) Config.geoipdb_file (geoipdb) is null", __local_name);
         return(NULL);
     }
 
