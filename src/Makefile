@@ -29,6 +29,8 @@ USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
+USE_SQLITE?=no
+USE_LIBSODIUM?=no
 USE_PCRE2_JIT=yes
 
 ifneq (${TARGET},winagent)
@@ -143,6 +145,8 @@ OSSEC_CFLAGS=${CFLAGS}
 
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
+else
+	OSSEC_CFLAGS+=-O2
 endif #DEBUG
 
 ifneq (,$(filter ${CLEANFULL},yes y Y 1))
@@ -238,6 +242,11 @@ ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	DEFINES+=-DLIBGEOIP_ENABLED
 	OSSEC_LDFLAGS+=-lGeoIP
 endif # USE_GEOIP
+
+ifneq (,$(filter ${USE_LIBSODIUM},auto yes y Y 1))
+	DEFINES+=-DLIBSODIUM_ENABLED
+	OSSEC_LDFLAGS+=-lsodium
+endif # USE_LIBSODIUM
 
 ifneq (,$(filter ${USE_SQLITE},auto yes y Y 1))
 	DEFINES+=-DSQLITE_ENABLED
@@ -601,6 +610,7 @@ settings:
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"
+	@echo "    USE_LIBSODIUM:    ${USE_LIBSODIUM}"
 	@echo "    USE_SQLITE:       ${USE_SQLITE}"
 	@echo "    USE_PCRE2_JIT:    ${USE_PCRE2_JIT}"
 	@echo "Mysql settings:"
@@ -1103,7 +1113,7 @@ syscheck_o := $(syscheck_c:.c=.o)
 syscheckd/%.o: syscheckd/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-syscheckd\" -c $^ -o $@
 
-ossec-syscheckd: ${syscheck_o} rootcheck.a ${ossec_libs} ${ZLIB_LIB}
+ossec-syscheckd: ${syscheck_o} rootcheck.a os_crypto.a ${ossec_libs} ${ZLIB_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${ZLIB_INCLUDE} $^ ${OSSEC_LDFLAGS} -o $@
 
 #### Monitor #######

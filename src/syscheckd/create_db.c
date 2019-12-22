@@ -17,6 +17,9 @@
 #include <sddl.h>
 #endif
 
+/* Make this big enough for most things. Might adjust later */
+#define ALERT_MSG_LEN 2048
+
 /* Prototypes */
 static int read_file(const char *dir_name, int opts, OSMatch *restriction)  __attribute__((nonnull(1)));
 
@@ -63,16 +66,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 #endif
     {
         if(errno == ENOTDIR){
-		/*Deletion message sending*/
-		char alert_msg[PATH_MAX+4];
-		alert_msg[PATH_MAX + 3] = '\0';
-		snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-		send_syscheck_msg(alert_msg);
-		return (0);
-	}else{
-		merror("%s: Error accessing '%s'.", ARGV0, file_name);
-		return (-1);
-	}
+    		/*Deletion message sending*/
+	    	char alert_msg[PATH_MAX+4];
+		    alert_msg[PATH_MAX + 3] = '\0';
+		    snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+		    send_syscheck_msg(alert_msg);
+		    return (0);
+	    }else{
+		    merror("%s: Error accessing '%s'.", ARGV0, file_name);
+		    return (-1);
+	    }
     }
 
     if (S_ISDIR(statbuf.st_mode)) {
@@ -101,9 +104,9 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
     /* No S_ISLNK on Windows */
 #ifdef WIN32
     if (S_ISREG(statbuf.st_mode))
-#else
+#else   //WIN32
     if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode))
-#endif
+#endif  //WIN32
     {
         os_md5 mf_sum;
         os_sha1 sf_sum;
@@ -117,20 +120,75 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         strncpy(sf_sum3, "xxx", 4);
 
         /* Generate checksums */
+#ifdef LIBSODIUM_ENABLED
+        /* Prep file_sums */
+        struct hash_output *file_sums;
+        file_sums = malloc(sizeof(struct hash_output));
+        if(file_sums == NULL) {
+            merror("file_sums malloc failed: %s", strerror(errno));
+        }
+        strncpy(file_sums->md5output, "MD5=", 5);
+        strncpy(file_sums->sha256output, "SHA256=", 8);
+        strncpy(file_sums->sha1output, "SHA1=", 5);
+        strncpy(file_sums->genericoutput, "GENERIC=", 9);
+
+        /* set the checks */
+        if(opts & CHECK_MD5SUM) {
+            file_sums->check_md5 = 1;
+        }
+        if(opts & CHECK_SHA1SUM) {
+            file_sums->check_sha1 = 1;
+        }
+        if(opts & CHECK_SHA256SUM) {
+            file_sums->check_sha256 = 1;
+        }
+        if(opts & CHECK_GENERIC) {
+            file_sums->check_generic = 1;
+        }
+
+        if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM) || (opts & CHECK_GENERIC)) {
+#else
         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
+#endif  //LIBSODIUM_ENABLED
             /* If it is a link, check if dest is valid */
 #ifndef WIN32
+
+            /* XXX This is all weird */
             if (S_ISLNK(statbuf.st_mode)) {
+
+                /* Get the file the link points to */
+                /* XXX not working?
+                char new_file_name[255];
+                ssize_t rlret = readlink(file_name, new_file_name, 254);
+                if(rlret < 0) {
+                    merror("Cannot find the file: %s", strerror(errno));
+                } else {
+                    new_file_name[sizeof(new_file_name) - 1] = '\0';
+                }
+                */
+
                 struct stat statbuf_lnk;
+                //if (stat(new_file_name, &statbuf_lnk) == 0) {
                 if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
+#ifdef LIBSODIUM_ENABLED
+                        if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                            merror("ossec-syscheckd: ERROR: OS_Hash_File() failed (0x00)");
+                        }
+
+#else   //LIBSODIUM_ENABLED
                         if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
+#endif  //LIBSODIUM_ENABLED
                     }
                 }
+#ifdef LIBSODIUM_ENABLED
+            } else if(OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) 
+#else   //LIBSODIUM_ENABLED
             } else if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
+#endif  //LIBSODIUM_ENABLED
 #else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
 #endif
@@ -152,8 +210,8 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 
         buf = (char *) OSHash_Get(syscheck.fp, file_name);
         if (!buf) {
-            char alert_msg[916 + 1];    /* to accommodate a long */
-            alert_msg[916] = '\0';
+            char alert_msg[ALERT_MSG_LEN];
+            alert_msg[ALERT_MSG_LEN - 1] = '\0';
 
 #ifndef WIN32
             if (opts & CHECK_SEECHANGES) {
@@ -165,36 +223,106 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
 #endif
 
-            snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
-                     opts & CHECK_SIZE ? '+' : '-',
-                     opts & CHECK_PERM ? '+' : '-',
-                     opts & CHECK_OWNER ? '+' : '-',
-                     opts & CHECK_GROUP ? '+' : '-',
-                     opts & CHECK_MD5SUM ? '+' : '-',
+#ifdef LIBSODIUM_ENABLED
+            char new_hashes[512], new_hashes_tmp[512];
+            int hashc = 0;
+            if(opts & CHECK_SHA256SUM) {
+                snprintf(new_hashes, 511, "%s", file_sums->sha256output);
+                hashc++;
+            }
+            if((opts & CHECK_SHA1SUM) && hashc < 2) {
+                if(hashc > 0) {
+                    snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->sha1output);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                    hashc++;
+                } else if(hashc == 0) {
+                    snprintf(new_hashes, 511, "%s", file_sums->sha1output);
+                    hashc++;
+                }
+            }
+            if((opts & CHECK_MD5SUM) && hashc < 2) {
+                if(hashc > 0) {
+                    snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->md5output);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                    hashc++;
+                } else if(hashc == 0) {
+                    snprintf(new_hashes, 511, "%s", file_sums->md5output);
+                    hashc++;
+                }
+            }
+            if((opts & CHECK_GENERIC) && hashc < 2) {
+                if(hashc > 0) {
+                    snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->genericoutput);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                    hashc++;
+                } else if(hashc == 0) {
+                    snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
+                    hashc++;
+                }
+            }
+            if(hashc < 2) {
+                if(hashc == 0) {
+                    strncpy(new_hashes, "xxx:xxx", 8);
+                } else if (hashc == 1) {
+                    snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
+                    strncpy(new_hashes, new_hashes_tmp, 511);
+                }
+            }
+
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s",
+                     (opts & CHECK_SIZE) ? '+' : '-',
+                     (opts & CHECK_PERM) ? '+' : '-',
+                     (opts & CHECK_OWNER) ? '+' : '-',
+                     (opts & CHECK_GROUP) ? '+' : '-',
+                     (opts & CHECK_MD5SUM) ? '+' : '-',
                      sha1s,
-                     opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
-                     opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
-                     opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
-                     opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
-                     opts & CHECK_MD5SUM ? mf_sum : "xxx",
-                     opts & CHECK_SHA1SUM ? sf_sum : "xxx");
+                     (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
+                     (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
+                     (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
+                     (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
+                     new_hashes);
+#else  // LIBSODIUM_ENABLED XXX - is this the source of my xxxes?
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
+                     (opts & CHECK_SIZE) ? '+' : '-',
+                     (opts & CHECK_PERM) ? '+' : '-',
+                     (opts & CHECK_OWNER) ? '+' : '-',
+                     (opts & CHECK_GROUP) ? '+' : '-',
+                     (opts & CHECK_MD5SUM) ? '+' : '-',
+                     sha1s,
+                     (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
+                     (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
+                     (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
+                     (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
+                     (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
+                     (opts & CHECK_SHA1SUM) ? sf_sum : "xxx");
+#endif	// LIBSODIUM_ENABLED
 
             if (OSHash_Add(syscheck.fp, file_name, strdup(alert_msg)) <= 0) {
                 merror("%s: ERROR: Unable to add file to db: %s", ARGV0, file_name);
             }
 
             /* Send the new checksum to the analysis server */
-            alert_msg[916] = '\0';
+            alert_msg[ALERT_MSG_LEN - 1] = '\0';
 
 #ifndef WIN32
-            snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
-                     opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
-                     opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
-                     opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
-                     opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
-                     opts & CHECK_MD5SUM ? mf_sum : "xxx",
-                     opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+#ifdef LIBSODIUM_ENABLED
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%d:%d:%s %s",
+                     (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
+                     (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
+                     (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
+                     (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
+                     new_hashes,
                      file_name);
+#else   // LIBSODIUM_ENABLED
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%d:%d:%s:%s %s",
+                     (opts & CHECK_SIZE) ? (long)statbuf.st_size : 0,
+                     (opts & CHECK_PERM) ? (int)statbuf.st_mode : 0,
+                     (opts & CHECK_OWNER) ? (int)statbuf.st_uid : 0,
+                     (opts & CHECK_GROUP) ? (int)statbuf.st_gid : 0,
+                     (opts & CHECK_MD5SUM) ? mf_sum : "xxx",
+                     (opts & CHECK_SHA1SUM) ? sf_sum : "xxx",
+                     file_name);
+#endif  // LIBSODIUM_ENABLED
 #else
 
             HANDLE hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -230,7 +358,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             LocalFree(szSID);
             CloseHandle(hFile);
     
-            snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s %s",
+            snprintf(alert_msg, (ALERT_MSG_LEN - 1), "%ld:%d:%s:%d:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      (opts & CHECK_OWNER) ? st_uid : "0",
@@ -239,7 +367,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
                      file_name);
             free(st_uid);
-#endif
+#endif  // WIN32
             send_syscheck_msg(alert_msg);
         } else {
             char alert_msg[OS_MAXSTR + 1];
@@ -251,7 +379,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             alert_msg[OS_MAXSTR] = '\0';
 
             /* If it returns < 0, we have already alerted */
-            if (c_read_file(file_name, buf, c_sum) < 0) {
+            if (c_read_file(file_name, buf, c_sum, opts) < 0) {
                 return (0);
             }
 

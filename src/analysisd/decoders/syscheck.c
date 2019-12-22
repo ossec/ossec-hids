@@ -27,8 +27,13 @@ typedef struct __sdb {
     char perm[OS_FLSIZE + 1];
     char owner[OS_FLSIZE + 1];
     char gowner[OS_FLSIZE + 1];
+#ifdef LIBSODIUM_ENABLED
+    char md5[(OS_FLSIZE * 2) + 1];
+    char sha1[(OS_FLSIZE * 2) + 1];
+#else   //LIBSODIUM_ENABLED
     char md5[OS_FLSIZE + 1];
     char sha1[OS_FLSIZE + 1];
+#endif
 
     char agent_cp[MAX_AGENTS + 1][1];
     char *agent_ips[MAX_AGENTS + 1];
@@ -536,9 +541,26 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0) {
                 sdb.md5[0] = '\0';
             } else {
+#ifdef LIBSODIUM_ENABLED
+                char *hash_type;
+                if (strncmp(newmd5, "GENERIC", 7) == 0) {
+                    hash_type = "blake2b";
+                } else if (strncmp(newmd5, "SHA256", 6) == 0) {
+                    hash_type = "sha256";
+                } else if (strncmp(newmd5, "MD5", 3) == 0) {
+                    hash_type = "md5";
+                } else if (strncmp(newmd5, "SHA1", 4) == 0) {
+                    hash_type = "sha1";
+                } else {
+                    hash_type = "unknown";
+                }
+                snprintf(sdb.md5, OS_FLSIZE * 2, "Old %s was: '%s'\n"
+                        "New %s is: '%s'\n", hash_type, oldmd5, hash_type, newmd5);
+#else   //LIBSODIUM_ENABLED
                 snprintf(sdb.md5, OS_FLSIZE, "Old md5sum was: '%s'\n"
-                         "New md5sum is : '%s'\n",
+                         "New md5sum is: '%s'\n",
                          oldmd5, newmd5);
+#endif  //LIBSODIUM_ENABLED
                 os_strdup(oldmd5, lf->md5_before);
                 os_strdup(newmd5, lf->md5_after);
             }
@@ -547,9 +569,22 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0) {
                 sdb.sha1[0] = '\0';
             } else {
+#ifdef LIBSODIUM_ENABLED
+                char *hash_type;
+                if(strncmp(newsha1, "GENERIC", 7) == 0) {
+                    hash_type = "blake2b";
+                } else if(strncmp(newsha1, "SHA256", 6) == 0) {
+                    hash_type = "sha256";
+                } else {
+                    hash_type = "unknown";
+                }
+                snprintf(sdb.sha1, OS_FLSIZE * 2, "Old %s was: '%s'\n"
+                         "New %s is : '%s'\n", hash_type, oldsha1, hash_type, newsha1);
+#else   //LIBSODIUM_ENABLED
                 snprintf(sdb.sha1, OS_FLSIZE, "Old sha1sum was: '%s'\n"
                          "New sha1sum is : '%s'\n",
                          oldsha1, newsha1);
+#endif  //LIBSODIUM_ENABLED
                 os_strdup(oldsha1, lf->sha1_before);
                 os_strdup(newsha1, lf->sha1_after);
             }
@@ -695,25 +730,30 @@ int DecodeSyscheck(Eventinfo *lf)
     if (Config.md5_allowlist)  {
         extern sqlite3 *conn;
         if ((p = extract_token(c_sum, ":", 4))) {
-            if (!validate_md5(p)) { /* Never trust input from other origin */
-                merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
-                return(0);
-            }
-            debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_allowlist);
-            sprintf(stmt, "select md5sum from files where md5sum = \"%s\"", p);
-            error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
-            if (error == SQLITE_OK) {
-                while (sqlite3_step(res) == SQLITE_ROW) {
-                    rec_count++;
-                }
-                if (rec_count) {    
-                    sqlite3_finalize(res);
-                    //sqlite3_close(conn);
-                    merror(MD5_NOT_CHECKED, ARGV0, p);
+            if((strncmp(p, "xxx", 3)) != 0) {
+                if (!validate_md5(p)) { /* Never trust input from other origin */
+                    merror("%s: Not a valid MD5 hash: '%s'", ARGV0, p);
                     return(0);
                 }
+                debug1("%s: Checking MD5 '%s' in %s", ARGV0, p, Config.md5_allowlist);
+                if((snprintf(stmt, OS_MAXSTR, "select md5sum from files where md5sum = \"%s\"", p)) < 0) {
+                    merror("ERROR: snprintf failed for md5sum: %s", p);
+                }
+                stmt[OS_MAXSTR] = '\0';
+                error = sqlite3_prepare_v2(conn, stmt, 1000, &res, &tail);
+                if (error == SQLITE_OK) {
+                    while (sqlite3_step(res) == SQLITE_ROW) {
+                        rec_count++;
+                    }
+                    if (rec_count) {
+                        sqlite3_finalize(res);
+                        //sqlite3_close(conn);
+                        merror(MD5_NOT_CHECKED, ARGV0, p);
+                        return(0);
+                    }
+                }
+                sqlite3_finalize(res);
             }
-            sqlite3_finalize(res);
         }
     }
 #endif

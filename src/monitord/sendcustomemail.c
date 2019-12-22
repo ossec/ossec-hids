@@ -50,7 +50,7 @@ int OS_SendCustomEmail2(char **to, char *subject, char *smtpserver, char *from, 
 {
     FILE *sendmail = NULL;
     int socket = -1, i = 0;
-    char *msg;
+    char *msg = NULL;
     char snd_msg[128];
     char buffer[2049];
 

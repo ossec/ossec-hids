@@ -9,7 +9,7 @@
 #include "shared.h"
 
 
-void randombytes(void *ptr, size_t length)
+void OS_randombytes(void *ptr, size_t length)
 {
     char failed = 0;
 
@@ -37,7 +37,7 @@ void randombytes(void *ptr, size_t length)
 #endif
 
     if (failed) {
-        ErrorExit("%s: ERROR: randombytes failed for all possible methods for accessing random data", __local_name);
+        ErrorExit("%s: ERROR: OS_randombytes failed for all possible methods for accessing random data", __local_name);
     }
 }
 
@@ -48,7 +48,7 @@ void srandom_init(void)
     srandomdev();
 #else
     unsigned int seed;
-    randombytes(&seed, sizeof seed);
+    OS_randombytes(&seed, sizeof seed);
     srandom(seed);
 #endif /* !__OpenBSD__ */
 #endif /* !WIN32 */

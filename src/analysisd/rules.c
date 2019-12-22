@@ -199,6 +199,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                 merror("rules_op: Invalid root element \"%s\"."
                        "Only \"group\" is allowed", node[i]->element);
                 OS_ClearXML(&xml);
+                free(node);
                 return (-1);
             }
             if ((!node[i]->attributes) || (!node[i]->values) ||
@@ -208,11 +209,13 @@ int Rules_OP_ReadRules(const char *rulefile)
                 merror("rules_op: Invalid root element '%s'."
                        "Only the group name is allowed", node[i]->element);
                 OS_ClearXML(&xml);
+                free(node);
                 return (-1);
             }
         } else {
             merror(XML_READ_ERROR, ARGV0);
             OS_ClearXML(&xml);
+            free(node);
             return (-1);
         }
         i++;

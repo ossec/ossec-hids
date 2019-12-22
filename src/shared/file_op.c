@@ -375,7 +375,6 @@ char *GetRandomNoise()
         return(NULL);
     }
 
-    buf[2048] = '\0';
     frr = fread(buf, 1, 2048, fp);
     if(frr == 0) {
         merror("ERROR: GetRandomNoise() fread() returned 0.");

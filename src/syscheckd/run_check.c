@@ -18,6 +18,10 @@
 #include <sddl.h>
 #endif
 
+#ifdef LIBSODIUM_ENABLED
+#include <sodium.h>
+#endif
+
 #include "shared.h"
 #include "syscheck.h"
 #include "os_crypto/md5/md5_op.h"
@@ -316,13 +320,47 @@ void start_daemon()
 }
 
 /* Read file information and return a pointer to the checksum */
-int c_read_file(const char *file_name, const char *oldsum, char *newsum)
+int c_read_file(const char *file_name, const char *oldsum, char *newsum, int sysopts)
 {
     int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0;
     int return_error = 0;
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
+
+#ifdef LIBSODIUM_ENABLED
+
+    struct hash_output *file_sums;
+    file_sums = malloc(sizeof(struct hash_output));
+    if(file_sums == NULL) {
+        merror("run_check file_sums malloc failed: %s", strerror(errno));
+    }
+
+    /* Clean sums */
+    strncpy(file_sums->md5output, "MD5=", 5);
+    strncpy(file_sums->sha256output, "SHA256=", 8);
+    strncpy(file_sums->sha1output, "SHA1=", 5);
+    strncpy(file_sums->genericoutput, "GENERIC=", 9);
+    /* set the checks */
+    if(sysopts & CHECK_MD5SUM) {
+        file_sums->check_md5 = 1;
+    }
+    if(sysopts & CHECK_SHA1SUM) {
+        file_sums->check_sha1 = 1;
+    }
+    if(sysopts & CHECK_SHA256SUM) {
+        file_sums->check_sha256 = 1;
+    }
+
+    if(sysopts & CHECK_GENERIC) {
+        file_sums->check_generic = 1;
+    }
+
+    if(file_sums->check_md5 != 1 && file_sums->check_sha1 != 1 && file_sums->check_sha256 != 1 && file_sums->check_generic != 1) {
+        merror("XXX DOES NOT COMPUTER!"); // TODO replace with real message or something respectable
+    }
+
+#endif // LIBSODIUM_ENABLED
 
     /* Clean sums */
     strncpy(mf_sum, "xxx", 4);
@@ -341,12 +379,13 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         alert_msg[PATH_MAX + 3] = '\0';
         snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
         send_syscheck_msg(alert_msg);
-
+#ifdef LIBSODIUM_ENABLED
+        free(file_sums);
+#endif
         return (-1);
     }
 
     /* Get the old sum values */
-
     /* size */
     if (oldsum[0] == '+') {
         size = 1;
@@ -386,10 +425,16 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     {
         if (sha1sum || md5sum) {
             /* Generate checksums of the file */
+#ifdef LIBSODIUM_ENABLED
+            if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                merror("syscheckd: ERROR: OS_Hash_File() failed. (0x01)");
+            }
+#else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                 strncpy(sf_sum, "xxx", 4);
                 strncpy(mf_sum, "xxx", 4);
             }
+#endif
         }
     }
 #ifndef WIN32
@@ -400,10 +445,16 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             if (S_ISREG(statbuf_lnk.st_mode)) {
                 if (sha1sum || md5sum) {
                     /* Generate checksums of the file */
+#ifdef LIBSODIUM_ENABLED
+                    if (OS_Hash_File(file_name, syscheck.prefilter_cmd, file_sums, OS_BINARY) < 0) {
+                        merror("syscheckd: ERROR: OS_Hash_File() failed. (0x02)");
+                    }
+#else
                     if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
                         strncpy(sf_sum, "xxx", 4);
                         strncpy(mf_sum, "xxx", 4);
                     }
+#endif
                 }
             }
         }
@@ -412,6 +463,57 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 
     newsum[0] = '\0';
     newsum[255] = '\0';
+
+#ifdef LIBSODIUM_ENABLED
+    char new_hashes[512], new_hashes_tmp[512];
+    int hashc = 0;
+    if(file_sums->check_sha256 > 0) {
+        snprintf(new_hashes, 511, "%s", file_sums->sha256output);
+        hashc++;
+    }
+    if(file_sums->check_generic > 0) {
+        if(hashc > 0) {
+            snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->genericoutput);
+            strncpy(new_hashes, new_hashes_tmp, 511);
+            hashc++;
+        } else if(hashc == 0) {
+            snprintf(new_hashes, 511, "%s", file_sums->genericoutput);
+            hashc++;
+        }
+    }
+    if(file_sums->check_sha1 > 0 && hashc < 2) {
+        if(hashc > 0) {
+            snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->sha1output);
+            strncpy(new_hashes, new_hashes_tmp, 511);
+            hashc++;
+        } else if(hashc == 0) {                                                                                                                 snprintf(new_hashes, 511, "%s", file_sums->sha1output);
+            hashc++;
+        }
+    }
+    if(file_sums->check_md5 > 0 && hashc < 2) {
+        if(hashc > 0) {
+            snprintf(new_hashes_tmp, 511, "%s:%s", new_hashes, file_sums->md5output);
+            strncpy(new_hashes, new_hashes_tmp, 511);
+            hashc++;
+        } else if(hashc == 0) {
+            snprintf(new_hashes, 511, "%s", file_sums->md5output);                                                                              hashc++;
+        }
+    }
+    if(hashc < 2) {
+        if(hashc == 0) {
+            strncpy(new_hashes, "xxx:xxx", 8);
+        } else if (hashc == 1) {                                                                                                                snprintf(new_hashes_tmp, 511, "%s:xxx", new_hashes);
+            strncpy(new_hashes, new_hashes_tmp, 511);
+        }
+    }
+
+    snprintf(newsum, 255, "%ld:%d:%d:%d:%s",
+             size == 0 ? 0 : (long)statbuf.st_size,
+             perm == 0 ? 0 : (int)statbuf.st_mode,
+             owner == 0 ? 0 : (int)statbuf.st_uid,
+             group == 0 ? 0 : (int)statbuf.st_gid,
+             new_hashes);
+#else //LIBSODIUM_ENABLED
 #ifndef WIN32
     snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
@@ -420,7 +522,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              group == 0 ? 0 : (int)statbuf.st_gid,
              md5sum   == 0 ? "xxx" : mf_sum,
              sha1sum  == 0 ? "xxx" : sf_sum);
-#else
+#else //WIN32
     HANDLE hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD dwErrorCode = GetLastError();
@@ -463,7 +565,13 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              sha1sum  == 0 ? "xxx" : sf_sum);
 
     free(st_uid);
-#endif
+#endif //WIN32
+#endif //LIBSODIUM_ENABLED
 
+/*
+#ifdef LIBSODIUM_ENABLED
+    free(file_sums);
+#endif
+*/
     return (0);
 }

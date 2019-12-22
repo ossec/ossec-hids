@@ -27,7 +27,6 @@
 #define CHECK_GENERIC       0001000
 #define CHECK_NORECURSE     0002000
 
-
 #include <stdio.h>
 
 #include "os_regex/os_regex.h"
@@ -53,6 +52,10 @@ typedef struct _config {
     int queue;                      /* file descriptor of socket to write to queue */
 
     int *opts;                      /* attributes set in the <directories> tag element */
+
+    char *algorithms;               /* Algorithms to use for FIM */
+    char *hash1_alg;
+    char *hash2_alg;
 
     char *remote_db;
     char *db;

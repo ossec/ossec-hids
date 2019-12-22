@@ -539,6 +539,7 @@ void os_ReportdStart(report_filter *r_filter)
                                            al_data);
                 }
             }
+            //free(mgroup);
         }
 
         /* Add to the location top filter */
