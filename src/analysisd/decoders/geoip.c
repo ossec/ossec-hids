@@ -26,18 +26,23 @@
 
 char *GetGeoInfobyIP(char *ip_addr)
 {
+
+    //debug1("%s: DEBUG: Entered GetGeoInfobyIP", __local_name);
+
     if(!ip_addr)
     {
+        debug1("%s: DEBUG: (geo) ip_addr is NULL", __local_name);
         return(NULL);
     }
     if(!Config.geoipdb_file) {
+        debug1("%s: DEBUG: (geo) Config.geoipdb_file (geoipdb) is null", __local_name);
         return(NULL);
     }
 
     int gai_error, mmdb_error;
     MMDB_lookup_result_s geo_result = MMDB_lookup_string(&geoipdb, ip_addr, &gai_error, &mmdb_error);
     if(gai_error != 0) {
-        merror("%s: ERROR: error from getaddrinfo for %s: %s", __local_name, ip_addr, gai_strerror(gai_error));
+        merror("%s: ERROR: error from (geo) getaddrinfo for %s: %s", __local_name, ip_addr, gai_strerror(gai_error));
         return(NULL);
     }
 
@@ -69,7 +74,7 @@ char *GetGeoInfobyIP(char *ip_addr)
             }
             snprintf(country_code, 3, "%.2s", entry_data.utf8_string);
             if(strnlen(country_code, 3) != 2) {
-                debug1("country_code is wrong?");
+                debug1("%s: DEBUG: (geo) country_code is wrong?", __local_name);
             }
 
             MMDB_free_entry_data_list(entry_data_list);
