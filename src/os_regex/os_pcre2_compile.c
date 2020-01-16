@@ -51,6 +51,7 @@ int OSPcre2_Compile(const char *pattern, OSPcre2 *reg, int flags)
         goto compile_error;
     }
 
+
     /* Maximum size of the pattern */
     pattern_len = strlen(pattern);
 #if 0
@@ -59,6 +60,12 @@ int OSPcre2_Compile(const char *pattern, OSPcre2 *reg, int flags)
         goto compile_error;
     }
 #endif
+
+    /* The pattern can't be empty */
+    if (pattern_len == 0) {
+        reg->error = OS_REGEX_PATTERN_EMPTY;
+        goto compile_error;
+    }
 
     if (OSPcre2_CouldBeOptimized(pattern)) {
         first_char = pattern[0];
