@@ -45,7 +45,12 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
     /* Is this from an agent? */
     if ( *msg == '(' )
     {   /* look past '->' for the first ':' */
-        pieces = strchr(strstr(msg, "->"), ':');
+        pieces = strstr(msg, "->");
+        if(!pieces) {
+            merror(FORMAT_ERROR, ARGV0);
+            return(-1);
+        }
+        pieces = strchr(pieces, ':');
         if(!pieces)
         {
             merror(FORMAT_ERROR, ARGV0);
