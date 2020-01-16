@@ -51,7 +51,6 @@
 </decoder>
 
 <decoder name="pam">
-  <program_name_pcre2></program_name_pcre2>
   <prematch_pcre2>^pam_unix|^\(pam_unix\)|^pam_succeed_if</prematch_pcre2>
 </decoder>
 

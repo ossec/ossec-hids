@@ -51,7 +51,6 @@ int OSPcre2_Compile(const char *pattern, OSPcre2 *reg, int flags)
         goto compile_error;
     }
 
-
     /* Maximum size of the pattern */
     pattern_len = strlen(pattern);
 #if 0
