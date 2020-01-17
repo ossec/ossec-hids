@@ -56,7 +56,7 @@ static FILE *RK_File(const char *agent, int *agent_id)
     int i = 0;
     char rk_buf[OS_SIZE_1024 + 1];
 
-    while (rk_agent_ips[i] != NULL) {
+    while (i < MAX_AGENTS && rk_agent_ips[i] != NULL) {
         if (strcmp(rk_agent_ips[i], agent) == 0) {
             /* Pointing to the beginning of the file */
             fseek(rk_agent_fps[i], 0, SEEK_SET);
@@ -65,6 +65,12 @@ static FILE *RK_File(const char *agent, int *agent_id)
         }
 
         i++;
+    }
+
+    /* If here, our agent wasn't found */
+    if (i == MAX_AGENTS) {
+        merror("%s: Unable to open rootcheck file. Increase MAX_AGENTS.", ARGV0);
+        return (NULL);
     }
 
     /* If here, our agent wasn't found */
