@@ -340,8 +340,8 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
                     (pieces[3] == ' ')) {
                 pieces += 4;
 
-                /* Going after the ] */
-                pieces = strchr(pieces, ']');
+                /* Going after the "] " */
+                pieces = strstr(pieces, "] ");
                 if (pieces) {
                     pieces += 2;
                     lf->log = pieces;
