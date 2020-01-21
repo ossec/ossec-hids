@@ -35,6 +35,7 @@
 #define OS_REGEX_BADPARENTHESIS 7
 #define OS_REGEX_NO_MATCH       8
 #define OS_REGEX_NO_JIT         9
+#define OS_REGEX_PATTERN_EMPTY  10
 
 #define OS_CONVERT_REGEX        1
 #define OS_CONVERT_MATCH        2
