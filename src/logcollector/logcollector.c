@@ -152,6 +152,15 @@ void LogCollectorStart()
                        ARGV0);
             }
         }
+        else if (strcmp(logff[i].logformat, "journald") == 0) {
+#ifdef HAVE_SYSTEMD
+            verbose(READING_JOURNAL, ARGV0, logff[i].file);
+            sd_read_journal(logff[i].file);
+#endif
+            logff[i].file = NULL;
+            logff[i].command = NULL;
+            logff[i].fp = NULL;
+        }
 
         else {
             logff[i].command = NULL;

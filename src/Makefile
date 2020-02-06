@@ -65,8 +65,10 @@ OSSEC_LDFLAGS=${LDFLAGS} -lm
 ifneq (${TARGET},winagent)
 ifeq (${uname_S},Linux)
 		DEFINES+=-DINOTIFY_ENABLED
-#		DEFINES+=-DUSE_MAGIC
 		OSSEC_LDFLAGS+=-lpthread
+		DEFINES+=-DHAVE_SYSTEMD
+		OSSEC_LDFLAGS+=-lsystemd
+#		DEFINES+=-DUSE_MAGIC
 #		OSSEC_LDFLAGS+=-lmagic
 else
 ifeq (${uname_S},AIX)
