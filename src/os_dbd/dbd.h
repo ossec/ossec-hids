@@ -37,5 +37,8 @@ void OS_DBD(DBConfig *db_config) __attribute__((nonnull)) __attribute__((noretur
 /* Set config pointer for osbd_op */
 void osdb_setconfig(DBConfig *db_config);
 
+/* Version and db support info */
+void dbd_print_version();
+
 #endif /* _DBD_H */
 
