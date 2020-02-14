@@ -11,7 +11,7 @@ DIR=`dirname $PWD`;
 
 ###  Do not modify below here ###
 NAME="OSSEC HIDS"
-VERSION="v3.5.0"
+VERSION="v3.6.0"
 DAEMONS="ossec-logcollector ossec-syscheckd ossec-agentd ossec-execd"
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf
