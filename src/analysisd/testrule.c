@@ -30,6 +30,9 @@
 
 /** Internal Functions **/
 void OS_ReadMSG(char *ut_str);
+#ifdef LIBGEOIP_ENABLED
+    MMDB_s geoipdb;
+#endif
 
 /* Analysisd function */
 RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node);
@@ -82,9 +85,11 @@ int main(int argc, char **argv)
     active_responses = NULL;
     memset(prev_month, '\0', 4);
 
+/*
 #ifdef LIBGEOIP_ENABLED
     geoipdb = NULL;
 #endif
+*/
 
     while ((c = getopt(argc, argv, "VatvdhU:D:c:q")) != -1) {
         switch (c) {
@@ -145,10 +150,12 @@ int main(int argc, char **argv)
 
     /* Opening GeoIP DB */
     if(Config.geoipdb_file) {
-        geoipdb = GeoIP_open(Config.geoipdb_file, GEOIP_INDEX_CACHE);
-        if (geoipdb == NULL)
-        {
-            merror("%s: Unable to open GeoIP database from: %s (disabling GeoIP).", ARGV0, Config.geoipdb_file);
+        int status = MMDB_open(Config.geoipdb_file, MMDB_MODE_MMAP, &geoipdb);
+        if(status != MMDB_SUCCESS) {
+            merror("%s: ERROR: Cannot open geoipdb: %s", __local_name, MMDB_strerror(status));
+            if(status == MMDB_IO_ERROR) {
+                merror("%s: ERROR: IO error: %s", __local_name, strerror(errno));
+            }
         }
     }
 #endif
