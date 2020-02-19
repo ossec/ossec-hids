@@ -57,6 +57,9 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         if(lf->generated_rule->sigid) {
             cJSON_AddNumberToObject(rule, "sidid", lf->generated_rule->sigid);
         }
+        if (lf->generated_rule->group) {
+            cJSON_AddStringToObject(rule, "group", lf->generated_rule->group);
+        }
         if(lf->generated_rule->cve) {
             cJSON_AddStringToObject(rule, "cve", lf->generated_rule->cve);
         }
