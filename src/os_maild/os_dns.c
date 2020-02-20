@@ -36,8 +36,6 @@ char *smtp_host = NULL;
 
 void osdns_accept(int fd, short ev, void *arg) {
 
-    merror("[os_dns]: DEBUG: osdns_accept()");
-
     /* sssssssh */
     if (fd) { }
 
@@ -78,7 +76,6 @@ void osdns_accept(int fd, short ev, void *arg) {
              * osdns() sends back a socket to the connection to the smtp_server
              */
             case DNS_REQ:
-                merror("[os_dns]: DEBUG: DNS_REQ");
                 /*
                 if (datalen != sizeof(dnsr)) {
                     merror("%s [dns]: ERROR: DNS_REQ wrong length (%lu)", dname, datalen);
@@ -106,13 +103,9 @@ void osdns_accept(int fd, short ev, void *arg) {
                 hints.ai_family = AF_UNSPEC;
                 hints.ai_socktype = SOCK_STREAM;
 
-                merror("[os_dns]: DEBUG: About to socket!");
-                merror("[os_dns]: DEBUG: smtp_host: %s", smtp_host);
-
                 /* socket */
                 int sock;
                 sock = getaddrinfo(smtp_host, "smtp", &hints, &result);
-                merror("[os_dns]: DEBUG: Socketed %d\n", sock);
                 if (sock != 0) {
                     merror("%s [dns]: ERROR: getaddrinfo() error: %s\n", dname, gai_strerror(sock));
 
@@ -135,7 +128,6 @@ void osdns_accept(int fd, short ev, void *arg) {
                 sock = -1;
                 for(rp = result; rp; rp = rp->ai_next) {
                     sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-                    merror("%s: DEBUG: sock: %d", dname, sock);
                     if (sock == -1) {
                         merror("%s [dns]: ERROR: socket() error", dname);
                     } else {
@@ -220,7 +212,6 @@ int maild_osdns(struct imsgbuf *ibuf, char *os_name, MailConfig mail) {
     debug1("%s [dns]: INFO: Starting osdns", os_name);
 
     smtp_host = mail.smtpserver;
-    merror("[os_dns]: DEBUG: smtp_host: %s", smtp_host);
 
     /* setuid() ossecm */
     /* This is static ossecm for now, I'll figure out the trick later */

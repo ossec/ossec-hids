@@ -52,8 +52,10 @@
 int os_sock;
 
 void os_sendmail_cb(int fd, short ev, void *arg) {
+
     if (fd) { }
     if (ev) {}
+
 
     /* Have to get the *arg stuff */
     ssize_t n;
@@ -64,11 +66,11 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
         ErrorExit("%s: ERROR: imsg_read() failed: %s", ARGV0, strerror(errno));
     }
     if (n == 0) {
-        debug2("%s: DEBUG: n == 0", ARGV0);
+        //debug2("%s: DEBUG: n == 0", ARGV0);
         //return; //XXX
     }
     if (n == EAGAIN) {
-        debug2("%s: DEBUG: n == EAGAIN", ARGV0);
+        merror("%s: DEBUG: n == EAGAIN (os_sendmail_cb())", ARGV0);
         return; //XXX
     }
 
@@ -77,7 +79,7 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
         return;
     }
     if (n == 0) {
-        debug2("%s: DEBUG: n == 0", ARGV0);
+        //debug2("%s: DEBUG: n == 0", ARGV0);
         return;
     }
 
@@ -102,6 +104,7 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
 
 int OS_Sendmail(MailConfig *mail, struct tm *p)
 {
+    setproctitle("[OS_Sendmail]");
     FILE *sendmail = NULL;
     os_sock = -1;
     unsigned int i = 0;
@@ -139,14 +142,10 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         event_add(&ev_accept, NULL);
 
         ssize_t n;
-        
-        struct os_dns_request dnsr; 
-        dnsr.hostname = mail->smtpserver;
-        dnsr.hname_len = strnlen(dnsr.hostname, 256);
-        dnsr.caller = ARGV0;
-        dnsr.protocol = "smtp";
 
-        if ((imsg_compose(&mail->ibuf, DNS_REQ, 0, 0, -1, &dnsr, sizeof(&dnsr))) == -1) {
+        int idata = 42;        
+
+        if ((imsg_compose(&mail->ibuf, DNS_REQ, 0, 0, -1, &idata, sizeof(idata))) == -1) {
             merror("%s: ERROR: imsg_compose() error: %s", ARGV0, strerror(errno));
         }
 
@@ -154,13 +153,15 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
             merror("%s: ERROR: msgbuf_write() error: %s", ARGV0, strerror(errno));
         }
         if (n == 0) {
-            debug2("%s: INFO: (write) n == 0", ARGV0);
+            //debug2("%s: INFO: (write) n == 0", ARGV0);
         }
 
         event_dispatch();
 
         if (os_sock <= 0) {
-            ErrorExit("ossec-maild: ERROR: No socket.");
+            //ErrorExit("ossec-maild: ERROR: No socket.");
+            merror("ossec-maild: ERROR: No socket.");
+            return (OS_INVALID);
         }
 
         /* Receive the banner */

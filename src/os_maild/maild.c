@@ -12,8 +12,7 @@
 #include "mail_list.h"
 
 #include "os_net/os_net.h"
-#include "os_dns/os_dns.h"
-//#include "os_dns.h"
+#include "os_dns.h"
 
 #ifndef ARGV0
 #define ARGV0 "ossec-maild"
@@ -23,6 +22,8 @@
 unsigned int mail_timeout;
 unsigned int   _g_subject_level;
 char _g_subject[SUBJECT_SIZE + 2];
+
+static int errcnt = 0;
 
 /* Prototypes */
 static void OS_Run(MailConfig *mail) __attribute__((nonnull)) __attribute__((noreturn));
@@ -159,6 +160,10 @@ int main(int argc, char **argv)
         goDaemon();
     }
 
+#if __OpenBSD__
+    setproctitle("[main]");     
+#endif
+
     /* Prepare environment for os_dns */
     struct imsgbuf osdns_ibuf;
     int imsg_fds[2];
@@ -173,13 +178,14 @@ int main(int argc, char **argv)
     }
 
     /* Fork off the os_dns process */
-    switch(fork()) {
+    pid_t dnspid = fork();
+    switch(dnspid) {
         case -1:
             ErrorExit("%s: ERROR: Cannot fork() os_dns process", ARGV0);
         case 0:
             close(imsg_fds[0]);
             imsg_init(&osdns_ibuf, imsg_fds[1]);
-            exit(osdns(&osdns_ibuf, ARGV0));
+            exit(maild_osdns(&osdns_ibuf, ARGV0, mail));
     }
 
     /* Setup imsg for the rest of maild */
@@ -299,9 +305,14 @@ static void OS_Run(MailConfig *mail)
                 sleep(30);
                 continue;
             } else if (pid == 0) {
-                merror("%s: DEBUG: Running OS_Sendmail()", ARGV0);
                 if (OS_Sendmail(mail, p) < 0) {
                     merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
+                    errcnt++;
+                    if (errcnt > 5) {
+                        ErrorExit("%s: ERROR: Too many failures. Exiting.", ARGV0);
+                    }
+                } else {
+                    errcnt = 0;
                 }
 
                 exit(0);
