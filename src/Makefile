@@ -920,7 +920,7 @@ endif
 
 #### os_mail #########
 
-os_maild_c := $(wildcard os_maild/*.c) $(wildcard os_dns/*.c)
+os_maild_c := $(wildcard os_maild/*.c)
 os_maild_o := $(os_maild_c:.c=.o)
 
 os_maild/%.o: os_maild/%.c
