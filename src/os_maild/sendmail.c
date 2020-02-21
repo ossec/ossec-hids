@@ -104,7 +104,11 @@ void os_sendmail_cb(int fd, short ev, void *arg) {
 
 int OS_Sendmail(MailConfig *mail, struct tm *p)
 {
+
+#if __OpenBSD__
     setproctitle("[OS_Sendmail]");
+#endif
+
     FILE *sendmail = NULL;
     os_sock = -1;
     unsigned int i = 0;
