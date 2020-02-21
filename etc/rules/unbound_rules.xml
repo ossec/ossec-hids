@@ -50,4 +50,16 @@
     <description>Maybe critical URL requested</description>
   </rule>
 
+  <rule id="53774" level="0">
+    <if_sid>53760</if_sid>
+    <match>info: validation failure</match>
+    <description>DNSSEC validation failure</description>
+  </rule>
+
+  <rule id="53775" level="1">
+    <if_sid>53774</if_sid>
+    <match>no keys have a DS with algorithm</match>
+    <description>Algorithm mismatch.</description>
+  </rule>
+
 </group>
