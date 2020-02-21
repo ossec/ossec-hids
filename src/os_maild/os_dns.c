@@ -91,13 +91,13 @@ void osdns_accept(int fd, short ev, void *arg) {
                     }
                     if (n == EAGAIN) {
                         debug2("%s [dns]: DEBUG EAGAIN size", dname);
-                        return; //XXX
+                        return;
                     }
                 }
                 */
 
                 sleep(1);
-                int idata = 42; /* XXX Not sure why this is actually needed */
+                int idata = 42;
                 struct addrinfo hints, *result, *rp = NULL;
                 memset(&hints, 0, sizeof(hints));
                 hints.ai_family = AF_UNSPEC;
@@ -194,12 +194,10 @@ void osdns_accept(int fd, short ev, void *arg) {
     return;
 }
 
-/* osdns() is simple, it received the ibuf and
+/* maild_osdns() is simple, it received the ibuf and
  * sets up the event loop for the parent to query.
  * osdns_accept() will pass a socket back to the 
  * parent with the connection established.
- *
- * Focusing on TCP right now.
  */
 int maild_osdns(struct imsgbuf *ibuf, char *os_name, MailConfig mail) {
 
