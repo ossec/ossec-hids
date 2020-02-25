@@ -1,10 +1,10 @@
-OSSEC v3.4.0
+OSSEC v3.6.0
 Copyright (C) 2019 Trend Micro Inc.
 
 
 = Information about OSSEC =
 
-Visit http://www.ossec.net
+Visit https://www.ossec.net
 
 
 = Recommended Installation =
@@ -15,6 +15,18 @@ or in the customized way (by hand or by changing the default values
 in the install.sh script). I REALLY recommend EVERYONE to use the
 FAST WAY! Only developers or experienced people should use the
 other methods.
+
+Before running the script, make sure your system has the necessary
+libraries and tools installed:
+- libssl
+- libevent
+- libpcre2
+- libz
+- make, gcc
+
+On a Ubuntu/Debian system, these can be installed with:
+
+apt install libz-dev libssl-dev libpcre2-dev libevent-dev build-essential
 
 Fast way steps:
 

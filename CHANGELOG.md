@@ -1,3 +1,93 @@
+**OSSEC changelog (3.6.0) <scott@atomicorp.com>**
+
+**Release Maintainers**
+
+Dan Parriott
+
+Scott R. Shinn (http://www.atomicorp.com)
+
+
+**Contributors on this release**
+
+@ddpbsd Dan Parriot - Maintainer
+
+@NicolasCARPi - Nocolas Carpi - Community
+
+@cpu - Daniel McCarney - Community
+
+@jknockaert - Jasper Knockaert - Community
+
+@mwidman - Mike Widman - Community
+
+@drsjb80 - Steve Beaty - Community
+ 
+
+ 
+**General** 
+
+@ddpbsd - ossec-dbd, Add help output to dbd, https://github.com/ossec/ossec-hids/pull/1833
+
+@NicolasCARPi - INSTALL, updating depenency list, 
+https://github.com/ossec/ossec-hids/pull/1832
+
+@cpu - PCRE2, refuse to compile empty PCRE2 patterns, fix for Issue #1811,  https://github.com/ossec/ossec-hids/pull/1826
+
+@cpu, analysisd, resolves CVE-2020-8442 Issue #1820, https://github.com/ossec/ossec-hids/pull/1825 
+
+@cpu, analysisd, resolves CVE-2020-8443 Issue #1816, https://github.com/ossec/ossec-hids/pull/1824
+
+@cpu, analysisd, resolves CVE-2020-8448 Issue #1815, https://github.com/ossec/ossec-hids/pull/1823
+
+@cpu, Makefile, fix for DEBUGAD, https://github.com/ossec/ossec-hids/pull/1822
+
+@jknockaert - dropbear rules, limit brute force rule to dropbear, https://github.com/ossec/ossec-hids/pull/1803
+
+@mwidman, analysisd, Added non-standard Sophos UTM syslog timestamp format to pre-decoding. , https://github.com/ossec/ossec-hids/pull/1794
+
+@drsjb80 - configs, Added authentication log file location for debian-based systems , https://github.com/ossec/ossec-hids/pull/1784
+
+@ddpbsd - maild, Fix using a program to send mail, https://github.com/ossec/ossec-hids/pull/1783
+
+
+
+**OSSEC changelog (3.5.0) <scott@atomicorp.com>**
+
+**Release Maintainers**
+
+Dan Parriott
+Scott R. Shinn (http://www.atomicorp.com)
+
+**Contributors on this release**
+
+(@atomicturtle) Scott Shinn - Maintainer
+(@ddpbsd) Dan Parriot - Maintainer
+(@drsjb80) Steve Beaty - Community
+(@sempervictus) Boris Lukashev - Community
+
+**Release notes**
+
+This would have been a minor 3.4.1 update if it wasnt for Boris Lukashev of https://www.sempervictus.com
+contributing a much needed update to multi-line log analysis. Previous usage of multi-line in OSSEC in
+the past was limited in processing events that did not use indentiation, a fairly common modern practice
+for readability. This update adds a new type: multi-line_indented to handle this condition (Example: postgresql). 
+
+Maintenance fixes in this release also address issue #1781, which affected maild when calling an external program, and add support for Fedora 31
+
+
+Whats New:
+
+(@atomicturtle) - Fedora 31 Support
+(@sempervictus) - Implement multi-line collection for indented logs #1780
+(@drsjb80) -  Added authentication log file location for debian-based systems #1784
+
+
+General
+
+(@ddpbsd) - Fix for Issue #1781, corrects issues with program sending mail
+
+
+
+
 OSSEC changelog (3.4.0) <scott@atomicorp.com>
 
 Release Maintainers

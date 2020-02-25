@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     while ((c = getopt(argc, argv, "Vdhtfu:g:D:c:")) != -1) {
         switch (c) {
             case 'V':
-                print_version();
+                dbd_print_version();
                 break;
             case 'h':
                 help_dbd();

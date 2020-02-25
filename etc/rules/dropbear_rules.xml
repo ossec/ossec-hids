@@ -47,6 +47,7 @@
   <rule id="51004" level="10" frequency="6" timeframe="120" ignore="60">
     <if_matched_group>authentication_failed</if_matched_group>
     <same_source_ip />
+    <decoded_as>dropbear</decoded_as>
     <description>dropbear brute force attempt.</description>
     <group>authentication_failures,</group>
   </rule>

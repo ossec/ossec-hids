@@ -135,7 +135,7 @@ ifneq (${uname_S},OpenBSD)
 endif
 
 ifdef DEBUGAD
-	DEFINES+=+DDEBUGAD
+	DEFINES+=-DDEBUGAD
 endif
 
 OSSEC_CFLAGS=${CFLAGS}
