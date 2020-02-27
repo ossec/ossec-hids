@@ -38,13 +38,13 @@ echo "`date` $0 $1 $2 $3 $4 $5" >> ${LOGFILE}
 
 # Check for an action
 if [ "x${ACTION}" = "x" ]; then
-        echo "$0: <action> <ip>" >&2
+        echo "$0: <action> <user> <ip>" >&2
         exit 1;
 fi
 
 # Check for an IP
 if [ "x${IP}" = "x" ]; then
-        echo "$0: <action> <ip>" >&2
+        echo "$0: <action> <user> <ip>" >&2
         exit 1;
 fi
 
@@ -79,5 +79,5 @@ if [ "${P_RESP}" != "${P_CHGTKN}" ]; then
         exit 1;
 fi
 
-echo "Action ${ACTION} on IP ${IP} succeed"
+echo "Action ${ACTION} on IP ${IP} succeed" >&2
 echo "`date` Action ${ACTION} on IP ${IP} succeed" >> ${LOGFILE}
