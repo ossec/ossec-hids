@@ -79,5 +79,5 @@ if [ "${P_RESP}" != "${P_CHGTKN}" ]; then
         exit 1;
 fi
 
-echo "Action ${ACTION} on IP ${IP} succeed" >&2
+echo "Action ${ACTION} on IP ${IP} succeed" >&1
 echo "`date` Action ${ACTION} on IP ${IP} succeed" >> ${LOGFILE}
