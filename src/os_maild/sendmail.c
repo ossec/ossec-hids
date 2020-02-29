@@ -142,12 +142,16 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         }
 
         struct event ev_accept;
+        struct timeval event_tv;
+        event_tv.tv_sec = 10;
+        event_tv.tv_usec = 0;
         event_set(&ev_accept, mail->ibuf.fd, EV_READ, os_sendmail_cb, &mail->ibuf);
-        event_add(&ev_accept, NULL);
+        if ((event_add(&ev_accept, &event_tv)) == -1) {
+            merror("%s [OS_Sendmail]: ERROR: event_add error: %s", ARGV0, strerror(errno));
+        }
 
         ssize_t n;
-
-        int idata = 42;        
+        int idata = 42;
 
         if ((imsg_compose(&mail->ibuf, DNS_REQ, 0, 0, -1, &idata, sizeof(idata))) == -1) {
             merror("%s: ERROR: imsg_compose() error: %s", ARGV0, strerror(errno));
