@@ -1,8 +1,6 @@
-Index: ossec-hids-2.8.2/etc/ossec-agent.conf
-===================================================================
---- ossec-hids-2.8.2.orig/etc/ossec-agent.conf	2015-06-10 15:38:32.000000000 +0000
-+++ ossec-hids-2.8.2/etc/ossec-agent.conf	2015-07-12 18:54:10.859134760 +0000
-@@ -25,40 +25,46 @@
+--- a/etc/ossec-agent.conf.orig	2020-01-19 03:45:09.184090231 +0900
++++ b/etc/ossec-agent.conf	2020-01-19 03:44:15.844760722 +0900
+@@ -29,16 +29,12 @@
    <rootcheck>
      <rootkit_files>/var/ossec/etc/shared/rootkit_files.txt</rootkit_files>
      <rootkit_trojans>/var/ossec/etc/shared/rootkit_trojans.txt</rootkit_trojans>
@@ -12,14 +10,16 @@ Index: ossec-hids-2.8.2/etc/ossec-agent.conf
    <localfile>
      <log_format>syslog</log_format>
 -    <location>/var/log/messages</location>
+-  </localfile>
+-
+-  <localfile>
+-    <log_format>syslog</log_format>
+-    <location>/var/log/authlog</location>
 +    <location>/var/log/syslog</location>
    </localfile>
  
    <localfile>
-     <log_format>syslog</log_format>
--    <location>/var/log/authlog</location>
-+    <location>/var/log/auth.log</location>
-   </localfile>
+@@ -48,26 +44,31 @@
  
    <localfile>
      <log_format>syslog</log_format>

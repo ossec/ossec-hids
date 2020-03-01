@@ -14,7 +14,7 @@ Index: ossec-hids-agent-2.8.2/Makefile
 +CEXTRA="-DCLIENT"
 +all:
 +	echo "CEXTRA=$(CEXTRA)" >> src/Config.OS
-+	(cd src; make all)
++	(cd src; make TARGET=agent PCRE2_SYSTEM=yes)
 +
 +clean:
 +	rm bin/* || /bin/true
@@ -39,13 +39,13 @@ Index: ossec-hids-agent-2.8.2/Makefile
 +	cp -pr etc/local_internal_options.conf $(DIR)/etc/ > /dev/null 2>&1 || /bin/true
 +	cp -pr etc/client.keys $(DIR)/etc/ > /dev/null 2>&1 ||/bin/true
 +	cp -pr src/agentlessd/scripts/* $(DIR)/agentless/
-+	cp -pr src/client-agent/ossec-agentd ${DIR}/bin/
-+	cp -pr src/os_auth/agent-auth ${DIR}/bin/
-+	cp -pr src/logcollector/ossec-logcollector ${DIR}/bin/
-+	cp -pr src/syscheckd/ossec-syscheckd ${DIR}/bin/
-+	cp -pr src/os_execd/ossec-execd ${DIR}/bin/
++	cp -pr src/ossec-agentd ${DIR}/bin/
++	cp -pr src/agent-auth ${DIR}/bin/
++	cp -pr src/ossec-logcollector ${DIR}/bin/
++	cp -pr src/ossec-syscheckd ${DIR}/bin/
++	cp -pr src/ossec-execd ${DIR}/bin/
 +	cp -pr src/init/ossec-client.sh ${DIR}/bin/ossec-control
-+	cp -pr src/addagent/manage_agents ${DIR}/bin/
++	cp -pr src/manage_agents ${DIR}/bin/
 +	cp -pr contrib/util.sh ${DIR}/bin/
 +	sh src/init/fw-check.sh execute > /dev/null
 +	cp -pr active-response/*.sh ${DIR}/active-response/bin/
@@ -54,6 +54,6 @@ Index: ossec-hids-agent-2.8.2/Makefile
 +	chmod -x $(DIR)/etc/ossec.conf
 +	cp -p src/init/ossec-hids-debian.init $(DIR)/etc/init.d/ossec
 +	echo "DIRECTORY=\"/var/ossec\"" > $(OSSEC_INIT)
-+	echo "VERSION=\"v2.8.2\"" >> $(OSSEC_INIT)
++	echo "VERSION=\"v3.5.0\"" >> $(OSSEC_INIT)
 +	echo "DATE=\"`date`\"" >> $(OSSEC_INIT)
 +	echo "TYPE=\"agent\"" >> $(OSSEC_INIT)
