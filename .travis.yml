@@ -29,6 +29,10 @@ compiler:
 - clang
 
 
+arch:
+- amd64
+- arm64
+
 matrix:
   fast_finish: true
   exclude:
