@@ -20,25 +20,25 @@
 # CONFIGURATION VARIABLES
 #
 
-ossec_version='2.8.2'
+ossec_version='3.5.0'
 source_file="ossec-hids-${ossec_version}.tar.gz"
 #packages=(ossec-hids ossec-hids-agent) # only options available
-packages=(ossec-hids ossec-hids-agent)
+packages=(ossec-hids-agent)
 
-# codenames=(sid jessie wheezy precise trusty utopic) 
-codenames=(sid jessie wheezy precise trusty utopic) 
+# codenames=(sid jessie wheezy precise trusty utopic)
+codenames=(xenial)
 
 # For Debian use: sid, jessie or wheezy (hardcoded in update_changelog function)
 # For Ubuntu use: lucid, precise, trusty or utopic
-codenames_ubuntu=(precise trusty utopic)
+codenames_ubuntu=(precise trusty xenial)
 codenames_debian=(sid jessie wheezy)
 
 # architectures=(amd64 i386) only options available
-architectures=(amd64 i386)
+architectures=(arm64)
 
 # GPG key
-signing_key='XXXX'
-signing_pass='XXXX'
+signing_key='7A1B7C76'
+signing_pass=`cat /root/.gnupg/passphrase`
 
 # Debian files
 debian_files_path="/home/ubuntu/debian_files"
@@ -200,11 +200,22 @@ update_chroots()
   do
     for arch in ${architectures[@]}
     do
-      echo "Updating chroot environment: ${codename}-${arch}" | write_log
-      if sudo DIST=$codename ARCH=$arch pbuilder update ; then
-        echo "Successfully updated chroot environment: ${codename}-${arch}" | write_log
+      if [ -f /var/cache/pbuilder/$codename-$arrch-base.tgz ]; then
+        echo "Updating chroot environment: ${codename}-${arch}" | write_log
+        if sudo DIST=$codename ARCH=$arch pbuilder update --configfile $scriptpath/pbuilderrc ; then
+          echo "Successfully updated chroot environment: ${codename}-${arch}" | write_log
+        else
+          echo "Error: Problem detected updating chroot environment: ${codename}-${arch}" | write_log
+          exit 1
+        fi
       else
-        echo "Error: Problem detected updating chroot environment: ${codename}-${arch}" | write_log
+        echo "Creating chroot environment: ${codename}-${arch}" | write_log
+        if sudo DIST=$codename ARCH=$arch pbuilder create --configfile $scriptpath/pbuilderrc; then
+          echo "Successfully created chroot environment: ${codename}-${arch}" | write_log
+        else
+          echo "Error: Problem detected creating chroot environment: ${codename}-${arch}" | write_log
+          exit 1
+        fi
       fi
     done
   done
@@ -217,6 +228,7 @@ update_chroots()
 #
 download_source()
 {
+  cd ${scriptpath}
 
   # Checking that Debian files exist for this version
   for package in ${packages[*]}
@@ -311,7 +323,7 @@ do
 
       # Building the package
       cd ${source_path}
-      if sudo /usr/bin/pdebuild --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} -- --basetgz \
+      if sudo DIST=$codename ARCH=$arch /usr/bin/pdebuild --configfile $scriptpath/pbuilderrc --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} -- --basetgz \
       ${base_tgz} --distribution ${codename} --architecture ${arch} --aptcache ${cache_dir} --override-config ; then
         echo " + Successfully built Debian package ${package} ${codename}-${arch}" | write_log
       else
@@ -346,7 +358,8 @@ do
         send \"${signing_pass}\r\"
         expect -re \".*Enter passphrase:.*\"
         send \"${signing_pass}\r\"
-        expect -re \".*Successfully signed dsc and changes files.*\"
+        expect -re \".*Successfully signed dsc and changes files.*\" exit 0
+        exit 1
       "
       if [ $? -eq 0 ] ; then
         echo " + Successfully signed Debian package ${changes_file} ${codename}-${arch}" | write_log
@@ -469,14 +482,17 @@ case $key in
   -u|--update)
     update_chroots
     shift
+    exit 0
     ;;
   -d|--download)
     download_source
     shift
+    exit 0
     ;;
   -b|--build)
     build_packages
     shift
+    exit 0
     ;;
   -s|--sync)
     sync_repository
