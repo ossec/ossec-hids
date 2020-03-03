@@ -36,11 +36,12 @@ arch:
 matrix:
   fast_finish: true
   exclude:
+    - arch: arm64
+      env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
     - compiler: clang
-      env: DB=none OSSEC_TYPE=winagent GEOIP=no
+      env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
     - compiler: clang
-      env: OSSEC_TYPE=server RULES=test
-
+      env: OSSEC_TYPE=server RULES=test PCRE2_SYSTEM=no
 
 
 before_script:
@@ -53,7 +54,7 @@ before_script:
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev libtool autoconf libczmq-dev ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
 - if [[ "${OSSEC_TYPE}" == "server" ]]; then ( sudo apt-get install libsqlite3-dev sqlite3 ); fi
-- if [[ "${OSSEC_TYPE}" == "test" ]]; then ( sudo apt-get update && sudo apt-get install check valgrind ); fi
+- if [[ "${OSSEC_TYPE}" == "test" ]]; then if [ `uname -m` = "aarch64" ]; then (sudo apt-get install check libc6-dbg && wget -q http://ports.ubuntu.com/pool/main/v/valgrind/valgrind_3.15.0-1ubuntu3.1_arm64.deb && sudo dpkg -i valgrind_3.15.0-1ubuntu3.1_arm64.deb ) ; else ( sudo apt-get install check valgrind ); fi; fi
 
 
 script:
