@@ -156,6 +156,8 @@ void LogCollectorStart()
 #ifdef HAVE_SYSTEMD
             verbose(READING_JOURNAL, ARGV0, logff[i].file);
             sd_read_journal(logff[i].file);
+#else
+            merror("%s: WARN: journald not available on this version of OSSEC", ARGV0);
 #endif
             logff[i].file = NULL;
             logff[i].command = NULL;
