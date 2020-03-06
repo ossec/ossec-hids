@@ -200,11 +200,22 @@ update_chroots()
   do
     for arch in ${architectures[@]}
     do
-      echo "Updating chroot environment: ${codename}-${arch}" | write_log
-      if sudo DIST=$codename ARCH=$arch pbuilder update ; then
-        echo "Successfully updated chroot environment: ${codename}-${arch}" | write_log
+      if [ -f /var/cache/pbuilder/$codename-$arrch-base.tgz ]; then
+        echo "Updating chroot environment: ${codename}-${arch}" | write_log
+        if sudo DIST=$codename ARCH=$arch pbuilder update --configfile $scriptpath/pbuilderrc ; then
+          echo "Successfully updated chroot environment: ${codename}-${arch}" | write_log
+        else
+          echo "Error: Problem detected updating chroot environment: ${codename}-${arch}" | write_log
+          exit 1
+        fi
       else
-        echo "Error: Problem detected updating chroot environment: ${codename}-${arch}" | write_log
+        echo "Creating chroot environment: ${codename}-${arch}" | write_log
+        if sudo DIST=$codename ARCH=$arch pbuilder create --configfile $scriptpath/pbuilderrc; then
+          echo "Successfully created chroot environment: ${codename}-${arch}" | write_log
+        else
+          echo "Error: Problem detected creating chroot environment: ${codename}-${arch}" | write_log
+          exit 1
+        fi
       fi
     done
   done
@@ -217,6 +228,7 @@ update_chroots()
 #
 download_source()
 {
+  cd ${scriptpath}
 
   # Checking that Debian files exist for this version
   for package in ${packages[*]}
@@ -311,7 +323,7 @@ do
 
       # Building the package
       cd ${source_path}
-      if sudo /usr/bin/pdebuild --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} -- --basetgz \
+      if sudo DIST=$codename ARCH=$arch /usr/bin/pdebuild --configfile $scriptpath/pbuilderrc --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} -- --basetgz \
       ${base_tgz} --distribution ${codename} --architecture ${arch} --aptcache ${cache_dir} --override-config ; then
         echo " + Successfully built Debian package ${package} ${codename}-${arch}" | write_log
       else
@@ -469,14 +481,17 @@ case $key in
   -u|--update)
     update_chroots
     shift
+    exit 0
     ;;
   -d|--download)
     download_source
     shift
+    exit 0
     ;;
   -b|--build)
     build_packages
     shift
+    exit 0
     ;;
   -s|--sync)
     sync_repository
