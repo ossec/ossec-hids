@@ -347,36 +347,8 @@ do
         echo " + Package ${results_dir}/${deb_file} ${codename}-${arch} contains ${files} files" | write_log
       fi
 
-      # Signing Debian package
-      if [ ! -f "${results_dir}/${changes_file}" ] || [ ! -f "${results_dir}/${dsc_file}" ] ; then
-        echo "Error: Could not find dsc and changes file in ${results_dir}" | write_log
-        exit 1
-      fi
-      sudo /usr/bin/expect -c "
-        spawn sudo debsign --re-sign -k${signing_key} ${results_dir}/${changes_file}
-        expect -re \".*Enter passphrase:.*\"
-        send \"${signing_pass}\r\"
-        expect -re \".*Enter passphrase:.*\"
-        send \"${signing_pass}\r\"
-        expect -re \".*Successfully signed dsc and changes files.*\"
-      "
-      if [ $? -eq 0 ] ; then
-        echo " + Successfully signed Debian package ${changes_file} ${codename}-${arch}" | write_log
-      else
-        echo "Error: Could not sign Debian package ${changes_file} ${codename}-${arch}" | write_log
-        exit 1
-      fi
-
-      # Verifying signed changes and dsc files
-      if sudo gpg --verify "${results_dir}/${dsc_file}" && sudo gpg --verify "${results_dir}/${changes_file}" ; then
-        echo " + Successfully verified GPG signature for files ${dsc_file} and ${changes_file}" | write_log
-      else
-        echo "Error: Could not verify GPG signature for ${dsc_file} and ${changes_file}" | write_log
-        exit 1
-      fi
-
-      echo "Successfully built and signed Debian package ${package} ${codename}-${arch}" | write_log
-
+      echo "Successfully built Debian package ${package} ${codename}-${arch}" | write_log
+      ls /var/cache/pbuilder/*/result/*/*.deb
     done
   done
 done
