@@ -240,7 +240,7 @@ download_source()
   done
 
   # Downloading file
-  if wget -O $scriptpath/${source_file} -U ossec https://github.com/ossec/ossec-hids/archive/${ossec_version}.tar.gz ; then
+  if wget -q -O $scriptpath/${source_file} -U ossec https://github.com/ossec/ossec-hids/archive/${ossec_version}.tar.gz ; then
     echo "Successfully downloaded source file ${source_file} from ossec.net" | write_log
   else
     echo "Error: File ${source_file} was could not be downloaded" | write_log
