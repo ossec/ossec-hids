@@ -20,21 +20,21 @@
 # CONFIGURATION VARIABLES
 #
 
-ossec_version='2.8.2'
+ossec_version='3.6.0'
 source_file="ossec-hids-${ossec_version}.tar.gz"
 #packages=(ossec-hids ossec-hids-agent) # only options available
-packages=(ossec-hids ossec-hids-agent)
+packages=(ossec-hids-agent)
 
-# codenames=(sid jessie wheezy precise trusty utopic) 
-codenames=(sid jessie wheezy precise trusty utopic) 
+# codenames=(sid jessie wheezy precise trusty utopic)
+codenames=(xenial)
 
 # For Debian use: sid, jessie or wheezy (hardcoded in update_changelog function)
-# For Ubuntu use: lucid, precise, trusty or utopic
-codenames_ubuntu=(precise trusty utopic)
+# For Ubuntu use: xenial, bionic, or focal
+codenames_ubuntu=(xenial bionic focal)
 codenames_debian=(sid jessie wheezy)
 
 # architectures=(amd64 i386) only options available
-architectures=(amd64 i386)
+architectures=(amd64 arm64)
 
 # GPG key
 signing_key='XXXX'
