@@ -2,16 +2,17 @@
 #include "logcollector.h"
 #include <systemd/sd-journal.h>
 
-void prime_sd_journal(sd_journal **jrn) {
+int prime_sd_journal(sd_journal **jrn) {
   int ret;
-  ret = sd_journal_open(&jrn, SD_JOURNAL_LOCAL_ONLY);
-  ret = sd_journal_get_fd(jrn);
-  ret = sd_journal_seek_tail(jrn);
+  ret = sd_journal_open(jrn, SD_JOURNAL_LOCAL_ONLY);
+  ret = sd_journal_get_fd(*(jrn));
+  ret = sd_journal_seek_tail(*(jrn));
   // prime sd_journal_next before the reader loop
-  ret = sd_journal_previous(jrn);
+  ret = sd_journal_previous(*(jrn));
+  return ret;
 }
 
-void sd_read_journal(char *journal) {
+void *sd_read_journal(__attribute__((unused)) char *journal) {
   sd_journal *jrn;
   int ret;
   const char *data;
@@ -23,7 +24,7 @@ void sd_read_journal(char *journal) {
   char tmbuf[64], final_msg[OS_MAXSTR];
 
   prime_sd_journal(&jrn);
-  ret = sd_journal_next(j);
+  ret = sd_journal_next(jrn);
   // Anything negative is an error
   while (ret >= 0) {
     // No messages, wait for data
@@ -60,5 +61,5 @@ void sd_read_journal(char *journal) {
   }
   // Clean up after ourselves and bail
   sd_journal_close(jrn);
-  return;
+  return NULL;
 }

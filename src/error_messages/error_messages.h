@@ -174,6 +174,7 @@
 #define PARSE_ERROR     "%s(1906): ERROR: Error parsing file: '%s'."
 #define READING_FILE    "%s(1950): INFO: Analyzing file: '%s'."
 #define READING_EVTLOG  "%s(1951): INFO: Analyzing event log: '%s'."
+#define READING_JOURNAL "%s(1951): INFO: Analyzing journald log: '%s'."
 #define VAR_LOG_MON     "%s(1952): INFO: Monitoring variable log file: '%s'."
 #define INV_MULTILOG    "%s(1953): ERROR: Invalid DJB multilog file: '%s'."
 
