@@ -5,10 +5,25 @@
 int prime_sd_journal(sd_journal **jrn) {
   int ret;
   ret = sd_journal_open(jrn, SD_JOURNAL_LOCAL_ONLY);
+  if (ret < 0) {
+    merror("%s: ERROR: Unable to open journal", ARGV0);
+    return ret;
+  }
   ret = sd_journal_get_fd(*(jrn));
+  if (ret < 0) {
+    merror("%s: ERROR: Unable to get journal fd", ARGV0);
+    return ret;
+  }
   ret = sd_journal_seek_tail(*(jrn));
+  if (ret < 0) {
+    merror("%s: ERROR: Unable to seek journal tail", ARGV0);
+    return ret;
+  }
   // prime sd_journal_next before the reader loop
   ret = sd_journal_previous(*(jrn));
+  if (ret < 0) {
+    merror("%s: ERROR: Unable to seek journal previous", ARGV0);
+  }
   return ret;
 }
 
@@ -23,7 +38,11 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
   struct tm *nowtm;
   char tmbuf[64], final_msg[OS_MAXSTR];
 
-  prime_sd_journal(&jrn);
+  ret = prime_sd_journal(&jrn);
+  if (ret < 0) {
+    merror("%s: ERROR: Unable to prime journal", ARGV0);
+    return NULL;
+  }
   ret = sd_journal_next(jrn);
   // Anything negative is an error
   while (ret >= 0) {
