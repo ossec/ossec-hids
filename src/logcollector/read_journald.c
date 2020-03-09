@@ -15,7 +15,7 @@ int prime_sd_journal(sd_journal **jrn) {
 void *sd_read_journal(__attribute__((unused)) char *unit) {
   sd_journal *jrn;
   int ret;
-  const char *data;
+  const char *jmsg, *jsrc;
   size_t len;
   struct timeval tv;
   uint64_t curr_timestamp;
@@ -34,13 +34,19 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
       }
     } else {
       // Check if data is coming from the unit starting with our passed selector
-      ret = sd_journal_get_data(jrn,"_SYSTEMD_UNIT",(const void **)&data,&len);
-      if (strstr((char *)(data+14), unit) == (char *)(data+14) ) {
+      ret = sd_journal_get_data(
+        jrn,
+        "SYSLOG_IDENTIFIER",
+        (const void **)&jsrc,
+        &len
+      );
+      // Strip off "SYSLOG_IDENTIFIER=" prefix for unit comparison
+      if (strstr((char *)(jsrc + 18), unit) == (char *)(jsrc + 18) ) {
         // Read data
-        ret = sd_journal_get_data(jrn,"MESSAGE",(const void **)&data,&len);
+        ret = sd_journal_get_data(jrn, "MESSAGE", (const void **)&jmsg, &len);
         // Read timestamp and format it
         ret = sd_journal_get_realtime_usec(jrn, &curr_timestamp);
-        tv.tv_sec = curr_timestamp / 1000000;
+        tv.tv_sec  = curr_timestamp / 1000000;
         tv.tv_usec = curr_timestamp % 1000000;
         nowtime = tv.tv_sec;
         nowtm = localtime(&nowtime);
@@ -49,11 +55,13 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
         snprintf(
           final_msg,
           sizeof(final_msg),
-          "%s.%06ld %.*s\n",
+          "%s.%06ld %s %.*s\n",
           tmbuf,
           tv.tv_usec,
+          (char *)(jsrc + 18)
           (int) len,
-          data
+          // Strip off the "MESSSAGE=" prefix
+          (char *)(jmsg + 8)
         );
         if (SendMSG(logr_queue, final_msg, "journald", LOCALFILE_MQ) < 0) {
             merror(QUEUE_SEND, ARGV0);
