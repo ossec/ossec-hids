@@ -1,3 +1,4 @@
+#ifdef HAVE_SYSTEMD
 #include "shared.h"
 #include "logcollector.h"
 #include <systemd/sd-journal.h>
@@ -101,3 +102,5 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
   sd_journal_close(jrn);
   return NULL;
 }
+
+#endif //HAVE_SYSTEMD
