@@ -12,7 +12,7 @@ int prime_sd_journal(sd_journal **jrn) {
   return ret;
 }
 
-void *sd_read_journal(__attribute__((unused)) char *journal) {
+void *sd_read_journal(__attribute__((unused)) char *unit) {
   sd_journal *jrn;
   int ret;
   const char *data;
@@ -33,27 +33,31 @@ void *sd_read_journal(__attribute__((unused)) char *journal) {
         sleep(1);
       }
     } else {
-      // Read data
-      ret = sd_journal_get_data(jrn, "MESSAGE", (const void **)&data, &len);
-      // Read timestamp and format it
-      ret = sd_journal_get_realtime_usec(jrn, &curr_timestamp);
-      tv.tv_sec = curr_timestamp / 1000000;
-      tv.tv_usec = curr_timestamp % 1000000;
-      nowtime = tv.tv_sec;
-      nowtm = localtime(&nowtime);
-      strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-      // Build and send message
-      snprintf(
-        final_msg,
-        sizeof(final_msg),
-        "%s.%06ld %.*s\n",
-        tmbuf,
-        tv.tv_usec,
-        (int) len,
-        data
-      );
-      if (SendMSG(logr_queue, final_msg, "WinEvtLog", LOCALFILE_MQ) < 0) {
-          merror(QUEUE_SEND, ARGV0);
+      // Check if data is coming from the unit starting with our passed selector
+      ret = sd_journal_get_data(jrn,"_SYSTEMD_UNIT",(const void **)&data,&len);
+      if (strstr((char *)(data+14), unit) == (char *)(data+14) ) {
+        // Read data
+        ret = sd_journal_get_data(jrn,"MESSAGE",(const void **)&data,&len);
+        // Read timestamp and format it
+        ret = sd_journal_get_realtime_usec(jrn, &curr_timestamp);
+        tv.tv_sec = curr_timestamp / 1000000;
+        tv.tv_usec = curr_timestamp % 1000000;
+        nowtime = tv.tv_sec;
+        nowtm = localtime(&nowtime);
+        strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
+        // Build and send message
+        snprintf(
+          final_msg,
+          sizeof(final_msg),
+          "%s.%06ld %.*s\n",
+          tmbuf,
+          tv.tv_usec,
+          (int) len,
+          data
+        );
+        if (SendMSG(logr_queue, final_msg, "journald", LOCALFILE_MQ) < 0) {
+            merror(QUEUE_SEND, ARGV0);
+        }
       }
     }
     // Prime next iteration condition & journal position
