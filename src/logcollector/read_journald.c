@@ -15,7 +15,7 @@ int prime_sd_journal(sd_journal **jrn) {
 void *sd_read_journal(__attribute__((unused)) char *unit) {
   sd_journal *jrn;
   int ret;
-  const char *jmsg, *jsrc;
+  const char *jmsg, *jsrc, *jhst;
   size_t len;
   struct timeval tv;
   uint64_t curr_timestamp;
@@ -40,8 +40,10 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
         (const void **)&jsrc,
         &len
       );
-      // Strip off "SYSLOG_IDENTIFIER=" prefix for unit comparison
+      // Strip off "SYSLOG_IDENTIFIER=" prefix for unit comparison inline
       if (strstr((char *)(jsrc + 18), unit) == (char *)(jsrc + 18) ) {
+        // Read hostname
+        ret = sd_journal_get_data(jrn, "_HOSTNAME", (const void **)&jhst, &len);
         // Read data
         ret = sd_journal_get_data(jrn, "MESSAGE", (const void **)&jmsg, &len);
         // Read timestamp and format it
@@ -55,19 +57,24 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
         snprintf(
           final_msg,
           sizeof(final_msg),
-          "%s.%06ld %s %.*s\n",
+          "%s.%06ld %s %s %.*s\n",
           tmbuf,
           tv.tv_usec,
-          (char *)(jsrc + 18)
+          // Strip the "_HOSTNAME", "SYSLOG_IDENTIFIER=" and "MESSAGE=" prefixes
+          (char *)(jhst + 10),
+          (char *)(jsrc + 18),
           (int) len,
-          // Strip off the "MESSSAGE=" prefix
           (char *)(jmsg + 8)
         );
         if (SendMSG(logr_queue, final_msg, "journald", LOCALFILE_MQ) < 0) {
             merror(QUEUE_SEND, ARGV0);
         }
+      // Clean journal output buffers
+      strcpy(jhst,"");
+      strcpy(jmsg,"");
       }
     }
+    strcpy(jsrc,"");
     // Prime next iteration condition & journal position
     ret = sd_journal_next(jrn);
   }
