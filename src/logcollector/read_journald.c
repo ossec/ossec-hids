@@ -31,7 +31,7 @@ int prime_sd_journal(sd_journal **jrn) {
 void *sd_read_journal(__attribute__((unused)) char *unit) {
   sd_journal *jrn;
   int ret;
-  const char *jmsg, *jsrc, *jhst;
+  const char *jmsg = NULL, *jsrc = NULL, *jhst = NULL;
   size_t len;
   struct timeval tv;
   uint64_t curr_timestamp;
@@ -89,12 +89,15 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
         if (SendMSG(logr_queue, final_msg, "journald", LOCALFILE_MQ) < 0) {
             merror(QUEUE_SEND, ARGV0);
         }
-      // Clean journal output buffers
-      strcpy(jhst,"");
-      strcpy(jmsg,"");
+        // These pointers are only valid until next one
+        // So it's safe to just to NULL them
+        jhst = NULL;
+        jmsg = NULL;
       }
     }
-    strcpy(jsrc,"");
+    // This pointer is only valid until next one
+    // So it's safe to just to NULL them
+    jsrc = NULL;
     // Prime next iteration condition & journal position
     ret = sd_journal_next(jrn);
   }
