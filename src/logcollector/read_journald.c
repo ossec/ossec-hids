@@ -37,7 +37,7 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
   uint64_t curr_timestamp;
   time_t nowtime;
   struct tm *nowtm;
-  char tmbuf[64], final_msg[OS_MAXSTR];
+  char tmbuf[64], final_msg[OS_MAXSTR], sunitid[128];
 
   ret = prime_sd_journal(&jrn);
   if (ret < 0) {
@@ -61,7 +61,12 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
         &len
       );
       // Strip off "SYSLOG_IDENTIFIER=" prefix for unit comparison inline
-      if (strstr((char *)(jsrc + 18), unit) == (char *)(jsrc + 18) ) {
+      memset(sunitid, 0x00, 128);
+      strncpy(sunitid, (jsrc + 18), 128);
+      // If incoming systemd unit is unit or unit is 'all' which means log everything
+      // or unit starts which char '/' which means unit is directory and
+      // user have malconfigured journald
+      if (!strncmp(sunitid, unit, 128) || !strncmp(unit, "all", 3) || unit[0] == '/') {
         // Read hostname
         ret = sd_journal_get_data(jrn, "_HOSTNAME", (const void **)&jhst, &len);
         // Read data
@@ -82,7 +87,7 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
           tv.tv_usec,
           // Strip the "_HOSTNAME", "SYSLOG_IDENTIFIER=" and "MESSAGE=" prefixes
           (char *)(jhst + 10),
-          (char *)(jsrc + 18),
+          sunitid,
           (int) len,
           (char *)(jmsg + 8)
         );
