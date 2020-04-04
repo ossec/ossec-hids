@@ -28,14 +28,12 @@ typedef struct _MailConfig {
     int groupping;
     int subject_full;
     int priority;
-    int use_tls;
     char **to;
     char *reply_to;
     char *from;
     char *idsname;
     char *smtpserver;
     char *heloserver;
-    char *ca_file;
 
     /* Granular e-mail options */
     unsigned int *gran_level;
