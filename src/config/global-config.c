@@ -123,6 +123,9 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_heloserver = "helo_server";
     const char *xml_mailmaxperhour = "email_maxperhour";
 
+    const char *xml_use_tls = "use_tls";
+    const char *xml_ca_file = "smtp_ca_file";
+
 #ifdef LIBGEOIP_ENABLED
     const char *xml_geoip_db_path = "geoip_db_path";
     const char *xml_geoip6_db_path = "geoip6_db_path";
@@ -486,7 +489,18 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                     return (OS_INVALID);
                 }
             }
+        } else if (strcmp(node[i]->element, xml_use_tls) == 0) {
+            if (Mail) {
+                if (strncmp(node[i]->content, "yes", 3)) {
+                    Mail->use_tls = 1;
+                }
+            }
+        } else if (strcmp(node[i]->element, xml_ca_file) == 0) {
+            if (Mail) {
+                os_strdup(node[i]->content, Mail->ca_file);
+            }
         }
+
 #ifdef LIBGEOIP_ENABLED
         /* GeoIP v4 DB location */
         else if (strcmp(node[i]->element, xml_geoip_db_path) == 0) {

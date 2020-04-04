@@ -30,6 +30,7 @@ USE_ZEROMQ?=no
 USE_GEOIP?=no
 USE_INOTIFY=no
 USE_PCRE2_JIT=yes
+USE_LIBTLS?=no
 
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
@@ -244,6 +245,11 @@ ifneq (,$(filter ${USE_SQLITE},auto yes y Y 1))
 	DEFINES+=-DSQLITE_ENABLED
 	ANALYSISD_FLAGS="-lsqlite3"
 endif # USE_SQLITE
+
+ifneq (,$(filter ${USE_LIBTLS},auto yes y Y 1))
+	DEFINES+=-DTLS_ENABLED
+	MAILD_CFLAGS+=-ltls
+endif # USE_LIBTLS
 
 MI :=
 PI :=
@@ -924,10 +930,10 @@ os_maild_c := $(wildcard os_maild/*.c)
 os_maild_o := $(os_maild_c:.c=.o)
 
 os_maild/%.o: os_maild/%.c
-	${OSSEC_CC} ${OSSEC_CFLAGS} -DARGV0=\"ossec-maild\" -c $^ -o $@
+	${OSSEC_CC} ${OSSEC_CFLAGS} ${MAILD_FLAGS} -DARGV0=\"ossec-maild\" -c $^ -o $@
 
 ossec-maild: ${os_maild_o} ${ossec_libs}
-	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} ${DNS_CFLAGS} -levent ${COMPAT_FILES} -o $@
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} ${MAILD_FLAGS} $^ ${OSSEC_LDFLAGS} ${DNS_CFLAGS} -levent ${COMPAT_FILES} -o $@
 
 #### os_dbd ##########
 
