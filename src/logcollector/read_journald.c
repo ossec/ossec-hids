@@ -77,14 +77,19 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
         tv.tv_usec = curr_timestamp % 1000000;
         nowtime = tv.tv_sec;
         nowtm = localtime(&nowtime);
-        strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
+        // We have to mimic syslog-ng for time and date for OSSEC-HIDS
+        // time and date parser.
+        // Syslog-ng It produces broken ISO8601 strings like
+        // 2020-04-01T12:00:00+03:00
+        // Journald reader triest to mimics it.
+        strftime(tmbuf, sizeof tmbuf, "%Y-%m-%dT%T%z", nowtm);
+        tmbuf[strlen(tmbuf) - 2] = '\0';
         // Build and send message
         snprintf(
           final_msg,
           sizeof(final_msg),
-          "%s.%06ld %s %s %.*s\n",
+          "%s:00 %s %s: %.*s\n",
           tmbuf,
-          tv.tv_usec,
           // Strip the "_HOSTNAME", "SYSLOG_IDENTIFIER=" and "MESSAGE=" prefixes
           (char *)(jhst + 10),
           sunitid,
