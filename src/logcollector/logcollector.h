@@ -78,7 +78,7 @@ void win_format_event_string(char *string);
 
 #ifdef HAVE_SYSTEMD
 /* Read systemd entries */
-void *sd_read_journal(char *unit);
+void *sd_read_journal(int pos, int *rc, int drop_it);
 #endif
 
 /*** Global variables ***/

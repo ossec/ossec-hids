@@ -45,6 +45,7 @@ typedef struct _logreader {
 
     void *(*read)(int i, int *rc, int drop_it);
 
+    void *ptr;
     FILE *fp;
 } logreader;
 

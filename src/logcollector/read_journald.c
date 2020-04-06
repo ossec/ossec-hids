@@ -3,33 +3,36 @@
 #include "logcollector.h"
 #include <systemd/sd-journal.h>
 
-int prime_sd_journal(sd_journal **jrn) {
+void *prime_sd_journal(int pos) {
   int ret;
-  ret = sd_journal_open(jrn, SD_JOURNAL_LOCAL_ONLY);
+  sd_journal *jrn;
+  ret = sd_journal_open(&jrn, SD_JOURNAL_LOCAL_ONLY);
   if (ret < 0) {
     merror("%s: ERROR: Unable to open journal", ARGV0);
-    return ret;
+    return NULL;
   }
-  ret = sd_journal_get_fd(*(jrn));
+  // For future use
+  logff[pos].fd = sd_journal_get_fd(jrn);
   if (ret < 0) {
     merror("%s: ERROR: Unable to get journal fd", ARGV0);
-    return ret;
+    return NULL;
   }
-  ret = sd_journal_seek_tail(*(jrn));
+  ret = sd_journal_seek_tail(jrn);
   if (ret < 0) {
     merror("%s: ERROR: Unable to seek journal tail", ARGV0);
-    return ret;
+    return NULL;
   }
   // prime sd_journal_next before the reader loop
-  ret = sd_journal_previous(*(jrn));
+  ret = sd_journal_previous(jrn);
   if (ret < 0) {
     merror("%s: ERROR: Unable to seek journal previous", ARGV0);
   }
-  return ret;
+  return (void *)jrn;
 }
 
-void *sd_read_journal(__attribute__((unused)) char *unit) {
-  sd_journal *jrn;
+void *sd_read_journal(int pos, int *rc, int drop_it) {
+  sd_journal *jrn = (sd_journal *) logff[pos].ptr;
+  char *unit = logff[pos].file;
   int ret;
   const char *jmsg = NULL, *jsrc = NULL, *jhst = NULL;
   size_t len;
@@ -38,21 +41,34 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
   time_t nowtime;
   struct tm *nowtm;
   char tmbuf[64], final_msg[OS_MAXSTR], sunitid[128];
+  *rc = 0;
 
-  ret = prime_sd_journal(&jrn);
-  if (ret < 0) {
-    merror("%s: ERROR: Unable to prime journal", ARGV0);
-    return NULL;
+  if (jrn == NULL) {
+     jrn = logff[pos].ptr = prime_sd_journal(pos);
+     if (jrn == NULL) {
+        merror("%s: ERROR: Unable to prime journal", ARGV0);
+        return NULL;
+     }
   }
-  ret = sd_journal_next(jrn);
+
+  if (unit == NULL) {
+      unit = logff[pos].file = "all";
+  }
+
   // Anything negative is an error
-  while (ret >= 0) {
-    // No messages, wait for data
-    if (ret == 0) {
-      while ((sd_journal_wait(jrn, (uint64_t)-1)) == SD_JOURNAL_NOP) {
-        sleep(1);
+  while (ret > 0) {
+      ret = sd_journal_next(jrn);
+      // below 0 Means problem or journal file vanished. Open it again next time and
+      // try again
+      // 0 means there is no new messages
+      if (ret < 0) {
+         sd_journal_close(jrn);
+         logff[pos].ptr = NULL;
+         *rc = -1;
+         continue;
+      } else if (!ret) {
+         continue;
       }
-    } else {
       // Check if data is coming from the unit starting with our passed selector
       ret = sd_journal_get_data(
         jrn,
@@ -103,7 +119,6 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
         // So it's safe to just to NULL them
         jhst = NULL;
         jmsg = NULL;
-      }
     }
     // This pointer is only valid until next one
     // So it's safe to just to NULL them
@@ -111,8 +126,6 @@ void *sd_read_journal(__attribute__((unused)) char *unit) {
     // Prime next iteration condition & journal position
     ret = sd_journal_next(jrn);
   }
-  // Clean up after ourselves and bail
-  sd_journal_close(jrn);
   return NULL;
 }
 
