@@ -157,6 +157,10 @@ ifneq (${ZLIB_SYSTEM},no)
 	DEFINES+=-DZLIB_SYSTEM
 endif
 
+ifeq (${TARGET}, winagent)
+	PCRE2_SYSTEM=no
+endif
+
 ifeq (${PCRE2_SYSTEM},no)
 	PCRE2_INCLUDE=-I./${EXTERNAL_PCRE2}/install/include/
 	DEFINES+=${PCRE2_INCLUDE}
