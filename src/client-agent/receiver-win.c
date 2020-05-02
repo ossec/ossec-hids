@@ -19,6 +19,7 @@
 /* Receive events from the server */
 void *receiver_thread(__attribute__((unused)) void *none)
 {
+    extern agent *agt;
     int recv_b;
 
     char file[OS_SIZE_1024 + 1];

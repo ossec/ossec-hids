@@ -336,6 +336,8 @@ int k_bulkload(const char *cmdbulk)
     char delims[] = ",";
     char *token = NULL;
 
+    extern int willchroot;
+
     /* Check if we can open the input file */
     printf("Opening: [%s]\n", cmdbulk);
     infp = fopen(cmdbulk, "r");

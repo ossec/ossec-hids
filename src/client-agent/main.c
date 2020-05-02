@@ -16,7 +16,8 @@
 #define ARGV0 "ossec-agentd"
 #endif
 
-extern struct imsgbuf server_ibuf;
+//extern struct imsgbuf server_ibuf;
+struct imsgbuf server_ibuf;
 
 
 /* Prototypes */
@@ -111,6 +112,8 @@ int main(int argc, char **argv)
     }
 
     debug1(STARTED_MSG, ARGV0);
+
+    extern agent *agt;
 
     agt = (agent *)calloc(1, sizeof(agent));
     if (!agt) {

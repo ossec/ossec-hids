@@ -24,6 +24,9 @@ int connect_server(int initial_id)
 #ifdef WIN32
     unsigned int attempts = 2;
 #endif //WIN32
+
+    extern agent *agt;
+
     int rc = initial_id;
 
     /* Checking if the initial is zero, meaning we have to
@@ -139,6 +142,8 @@ void start_agent(int is_startup)
     char cleartext[OS_MAXSTR + 1];
     char fmsg[OS_MAXSTR + 1];
 
+    extern agent *agt;
+
     memset(msg, '\0', OS_MAXSTR + 2);
     memset(buffer, '\0', OS_MAXSTR + 1);
     memset(cleartext, '\0', OS_MAXSTR + 1);
@@ -240,6 +245,8 @@ void os_agent_cb(int fd, short ev, void *arg) {
     ssize_t n;
     struct imsg imsg;
     struct imsgbuf *ibuf = (struct imsgbuf *)arg;
+
+    extern agent *agt;
 
     if (ev & EV_READ) {
         if ((n = imsg_read(ibuf) == -1 && errno != EAGAIN)) {

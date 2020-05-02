@@ -81,9 +81,9 @@ void os_agent_cb(int fd, short ev, void *arg);
 extern time_t available_server;
 extern int run_foreground;
 extern keystore keys;
-extern agent *agt;
+//extern agent *agt;
 #ifndef WIN32
-struct imsgbuf server_ibuf;
+//struct imsgbuf server_ibuf;
 #endif //WIN32
 
 #endif /* __AGENTD_H */

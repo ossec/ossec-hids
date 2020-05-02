@@ -15,6 +15,9 @@
 /* Send a message to the server */
 int send_msg(int agentid, const char *msg)
 {
+
+    extern agent *agt;
+
     size_t msg_size;
     char crypt_msg[OS_MAXSTR + 1];
 
