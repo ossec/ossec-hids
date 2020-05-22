@@ -2022,17 +2022,16 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="windows1">
   <type>windows</type>
   <parent>windows</parent>
-  <pcre2> Account Name:[ ]+?([A-Za-z0-9@_-]+?.+)[ ]+?Account</pcre2>
+  <pcre2> Account Name:[ ]+?([A-Za-z0-9@_-]+?)[ ]+?Account</pcre2>
   <order>user</order>
 </decoder>
 
 <decoder name="windows1">
   <type>windows</type>
   <parent>windows</parent>
-  <pcre2>Account Domain:[ ][ ]+?([A-Za-z0-9@_-].+)[ ][ ]+?Logon ID:</pcre2>
+  <pcre2>Account Domain:[ ]+?([A-Za-z0-9@_-]+?)[ ]+?Logon ID:</pcre2>
   <order>extra_data</order>
 </decoder>
-
 
 <!-- Windows decoder -NTsyslog format
   - Will extract extra_data (as win source),action (as win category), id,
