@@ -624,7 +624,9 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                         return (0);
                     }
                 } else {
-                    merror(SK_INV_ATTR, __local_name, node[i]->attributes[0]);
+                    if (node[i]->attributes[0] != NULL) {
+                        merror(SK_INV_ATTR, __local_name, node[i]->attributes[0]);
+                    }
                     return (OS_INVALID);
                 }
             }
@@ -755,10 +757,14 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                                mt_pt->error);
                         return (0);
                     }
-                    debug1("Found nodiff regex node %s OK?", node[i]->content);
+                    if (node[i]->content != NULL) {
+                        debug1("Found nodiff regex node %s OK?", node[i]->content);
+                    }
                     debug1("Found nodiff regex size %d", nodiff_size);
                 } else {
-                    merror(SK_INV_ATTR, __local_name, node[i]->attributes[0]);
+                    if (node[i]->attributes[0] != NULL) {
+                        merror(SK_INV_ATTR, __local_name, node[i]->attributes[0]);
+                    }
                     return (OS_INVALID);
                 }
             }

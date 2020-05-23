@@ -233,7 +233,11 @@ int ReadDecodeXML(const char *file)
 
         if (!node[i]->element ||
                 strcasecmp(node[i]->element, xml_decoder) != 0) {
-            merror(XML_INVELEM, ARGV0, node[i]->element);
+            if (node[i]->element != NULL) {
+                merror(XML_INVELEM, ARGV0, node[i]->element);
+            } else {
+                merror(XML_INVELEM, ARGV0, "unknown");
+            }
             return (0);
         }
 
