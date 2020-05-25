@@ -15,10 +15,6 @@
 #include "alerts/alerts.h"
 #include "decoder.h"
 
-#ifdef SQLITE_ENABLED
-#include "syscheck-sqlite.h"
-#endif
-
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
     char comment[OS_MAXSTR + 1];
