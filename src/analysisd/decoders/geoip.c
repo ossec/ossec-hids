@@ -30,6 +30,7 @@ char *GetGeoInfobyIP(char *ip_addr)
     GeoIPRecord *geoiprecord;
     char *geodata = NULL;
     char geobuffer[256 +1];
+    extern GeoIP *geoipdb;
 
     if(!geoipdb)
     {

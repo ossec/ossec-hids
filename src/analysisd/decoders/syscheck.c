@@ -15,6 +15,10 @@
 #include "alerts/alerts.h"
 #include "decoder.h"
 
+#ifdef SQLITE_ENABLED
+#include <sqlite3.h>
+#endif
+
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
     char comment[OS_MAXSTR + 1];
