@@ -43,6 +43,7 @@
 
 #ifdef SQLITE_ENABLED
 #include "syscheck-sqlite.h"
+sqlite3 *conn;
 #endif
 
 /** Prototypes **/
