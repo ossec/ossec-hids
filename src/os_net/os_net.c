@@ -727,7 +727,7 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
     char ipport[NI_MAXSERV];		/* printed port */
     static char buf[256];		/* message buffer */
 
-#if defined(__linux__) || defined (WIN32)
+#if defined(__linux__) || defined (WIN32) || defined (SOLARIS)
     /* most Linux systems do not have sa_len in the sockaddr struct */
     socklen_t slen = 0;
     switch(sa->sa_family) {
