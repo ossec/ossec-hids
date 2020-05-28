@@ -62,9 +62,6 @@ void Monitord()
 
         /* Day changed, deal with log files */
         if (today != p->tm_mday) {
-            /* Generate reports */
-            generate_reports(today, thismonth, thisyear);
-
             manage_files(today, thismonth, thisyear);
 
             today = p->tm_mday;

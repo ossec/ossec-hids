@@ -10,17 +10,7 @@
 #ifndef _REPORTSCONFIG_H
 #define _REPORTSCONFIG_H
 
-#include "report_op.h"
-
-/* Structure for the report */
-typedef struct _report_config {
-    char *title;
-    char *args;
-    char *relations;
-    char *type;
-    char **emailto;
-    report_filter r_filter;
-} report_config;
+//#include "report_op.h"
 
 typedef struct _monitor_config {
     unsigned short int day_wait;
@@ -35,7 +25,6 @@ typedef struct _monitor_config {
     char *emailidsname;
 
     char **agents;
-    report_config **reports;
 } monitor_config;
 
 #endif /* _REPORTSCONFIG_H */

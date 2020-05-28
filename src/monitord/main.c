@@ -127,48 +127,6 @@ int main(int argc, char **argv)
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }
 
-    /* If we have any reports configured, read smtp/emailfrom */
-    if (mond.reports) {
-        OS_XML xml;
-        char *tmpsmtp;
-
-        const char *(xml_smtp[]) = {"ossec_config", "global", "smtp_server", NULL};
-        const char *(xml_from[]) = {"ossec_config", "global", "email_from", NULL};
-        const char *(xml_idsname[]) = {"ossec_config", "global", "email_idsname", NULL};
-
-        if (OS_ReadXML(cfg, &xml) < 0) {
-            ErrorExit(CONFIG_ERROR, ARGV0, cfg);
-        }
-
-        tmpsmtp = OS_GetOneContentforElement(&xml, xml_smtp);
-        mond.emailfrom = OS_GetOneContentforElement(&xml, xml_from);
-        mond.emailidsname = OS_GetOneContentforElement(&xml, xml_idsname);
-
-        if (tmpsmtp && mond.emailfrom) {
-            mond.smtpserver = OS_GetHost(tmpsmtp, 5);
-            if (!mond.smtpserver) {
-                merror(INVALID_SMTP, ARGV0, tmpsmtp);
-                if (mond.emailfrom) {
-                    free(mond.emailfrom);
-                }
-                mond.emailfrom = NULL;
-                merror("%s: Invalid SMTP server.  Disabling email reports.", ARGV0);
-            }
-        } else {
-            if (tmpsmtp) {
-                free(tmpsmtp);
-            }
-            if (mond.emailfrom) {
-                free(mond.emailfrom);
-            }
-
-            mond.emailfrom = NULL;
-            merror("%s: SMTP server or 'email from' missing. Disabling email reports.", ARGV0);
-        }
-
-        OS_ClearXML(&xml);
-    }
-
     /* Exit here if test config is set */
     if (test_config) {
         exit(0);
