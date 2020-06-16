@@ -33,6 +33,10 @@
 #endif
 #include <unistd.h>
 
+#ifdef SOLARIS
+#include <limits.h>
+#endif
+
 #include "imsg.h"
 
 int	ibuf_realloc(struct ibuf *, size_t);
