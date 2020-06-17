@@ -51,13 +51,13 @@ logfile=$scriptpath/ossec_packages.log
 #
 # Function to write to LOG_FILE
 #
-write_log() 
+write_log()
 {
   if [ ! -e "$logfile" ] ; then
     touch "$logfile"
   fi
   while read text
-  do 
+  do
       local logtime=`date "+%Y-%m-%d %H:%M:%S"`
       echo $logtime": $text" | tee -a $logfile;
   done
@@ -79,13 +79,13 @@ contains_element() {
 # Show help function
 #
 show_help()
-{ 
+{
   echo "
   This tool can be used to generate OSSEC packages for Ubuntu and Debian.
 
   CONFIGURATION: The script is currently configured with the following variables:
-    * Packages: ${packages[*]}. 
-    * Distributions: ${codenames[*]}. 
+    * Packages: ${packages[*]}.
+    * Distributions: ${codenames[*]}.
     * Architectures: ${architectures[*]}.
     * OSSEC version: ${ossec_version}.
     * Source file: ${source_file}.
@@ -161,7 +161,7 @@ update_changelog()
   if contains_element $codename ${codenames_ubuntu[*]} ; then
     local debdist=$codename
   fi
-  
+
   # Modifying file
   local changelogtime=$(date -R)
   local last_date_changed=0
@@ -200,22 +200,11 @@ update_chroots()
   do
     for arch in ${architectures[@]}
     do
-      if [ -f /var/cache/pbuilder/$codename-$arrch-base.tgz ]; then
-        echo "Updating chroot environment: ${codename}-${arch}" | write_log
-        if sudo DIST=$codename ARCH=$arch pbuilder update --configfile $scriptpath/pbuilderrc ; then
-          echo "Successfully updated chroot environment: ${codename}-${arch}" | write_log
-        else
-          echo "Error: Problem detected updating chroot environment: ${codename}-${arch}" | write_log
-          exit 1
-        fi
+      echo "Updating chroot environment: ${codename}-${arch}" | write_log
+      if sudo DIST=$codename ARCH=$arch pbuilder update --configfile $scriptpath/pbuilderrc ; then
+        echo "Successfully updated chroot environment: ${codename}-${arch}" | write_log
       else
-        echo "Creating chroot environment: ${codename}-${arch}" | write_log
-        if sudo DIST=$codename ARCH=$arch pbuilder create --configfile $scriptpath/pbuilderrc; then
-          echo "Successfully created chroot environment: ${codename}-${arch}" | write_log
-        else
-          echo "Error: Problem detected creating chroot environment: ${codename}-${arch}" | write_log
-          exit 1
-        fi
+        echo "Error: Problem detected updating chroot environment: ${codename}-${arch}" | write_log
       fi
     done
   done
@@ -284,7 +273,7 @@ build_packages()
 {
 
 for package in ${packages[@]}
-do 
+do
   for codename in ${codenames[@]}
   do
     for arch in ${architectures[@]}
@@ -298,7 +287,7 @@ do
         echo "Error: Couldn't find changelog file for ${package}-${ossec_version}" | write_log
         exit 1
       fi
-      
+
       # Updating changelog file with new codename, date and debdist.
       if update_changelog ${changelog_file} ${codename} ; then
         echo " + Changelog file ${changelog_file} updated for $package ${codename}-${arch}" | write_log
@@ -308,10 +297,11 @@ do
       fi
 
       # Setting up global variable package_version, used for deb_file and changes_file
-      read_package_version ${changelog_file}      
+      read_package_version ${changelog_file}
       local deb_file="${package}_${ossec_version}-${package_version}${codename}_${arch}.deb"
       local changes_file="${package}_${ossec_version}-${package_version}${codename}_${arch}.changes"
       local dsc_file="${package}_${ossec_version}-${package_version}${codename}.dsc"
+      local result_dir="/var/cache/pbuilder/${codename}-${arch}/result"
       local results_dir="/var/cache/pbuilder/${codename}-${arch}/result/${package}"
       local base_tgz="/var/cache/pbuilder/${codename}-${arch}-base.tgz"
       local cache_dir="/var/cache/pbuilder/${codename}-${arch}/aptcache"
@@ -323,8 +313,8 @@ do
 
       # Building the package
       cd ${source_path}
-      if sudo DIST=$codename ARCH=$arch /usr/bin/pdebuild --configfile $scriptpath/pbuilderrc --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} -- --basetgz \
-      ${base_tgz} --distribution ${codename} --architecture ${arch} --aptcache ${cache_dir} --override-config ; then
+      if sudo DIST=$codename ARCH=$arch /usr/bin/pdebuild --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} --configfile $scriptpath/pbuilderrc -- --basetgz \
+      ${base_tgz} --distribution ${codename} --architecture ${arch} --aptcache ${cache_dir} --override-config; then
         echo " + Successfully built Debian package ${package} ${codename}-${arch}" | write_log
       else
         echo "Error: Could not build package $package ${codename}-${arch}" | write_log
@@ -332,28 +322,28 @@ do
       fi
 
       # Checking that resulting debian package exists
-      if [ ! -f ${results_dir}/${deb_file} ] ; then
-        echo "Error: Could not find ${results_dir}/${deb_file}" | write_log
+      if [ ! -f ${result_dir}/${deb_file} ] ; then
+        echo "Error: Could not find ${result_dir}/${deb_file}" | write_log
         exit 1
       fi
-      
+
       # Checking that package has at least 50 files to confirm it has been built correctly
-      local files=$(sudo /usr/bin/dpkg --contents ${results_dir}/${deb_file} | wc -l)
+      local files=$(sudo /usr/bin/dpkg --contents ${result_dir}/${deb_file} | wc -l)
       if [ "${files}" -lt "50" ]; then
         echo "Error: Package ${package} ${codename}-${arch} contains only ${files} files" | write_log
         echo "Error: Check that the Debian package has been built correctly" | write_log
         exit 1
       else
-        echo " + Package ${results_dir}/${deb_file} ${codename}-${arch} contains ${files} files" | write_log
+        echo " + Package ${result_dir}/${deb_file} ${codename}-${arch} contains ${files} files" | write_log
       fi
 
       # Signing Debian package
-      if [ ! -f "${results_dir}/${changes_file}" ] || [ ! -f "${results_dir}/${dsc_file}" ] ; then
-        echo "Error: Could not find dsc and changes file in ${results_dir}" | write_log
+      if [ ! -f "${result_dir}/${changes_file}" ] || [ ! -f "${result_dir}/${dsc_file}" ] ; then
+        echo "Error: Could not find dsc and changes file in ${result_dir}" | write_log
         exit 1
       fi
       sudo /usr/bin/expect -c "
-        spawn sudo debsign --re-sign -k${signing_key} ${results_dir}/${changes_file}
+        spawn sudo debsign --re-sign -k${signing_key} ${result_dir}/${changes_file}
         expect -re \".*Enter passphrase:.*\"
         send \"${signing_pass}\r\"
         expect -re \".*Enter passphrase:.*\"
@@ -369,7 +359,7 @@ do
       fi
 
       # Verifying signed changes and dsc files
-      if sudo gpg --verify "${results_dir}/${dsc_file}" && sudo gpg --verify "${results_dir}/${changes_file}" ; then
+      if sudo gpg --verify "${result_dir}/${dsc_file}" && sudo gpg --verify "${result_dir}/${changes_file}" ; then
         echo " + Successfully verified GPG signature for files ${dsc_file} and ${changes_file}" | write_log
       else
         echo "Error: Could not verify GPG signature for ${dsc_file} and ${changes_file}" | write_log
@@ -405,21 +395,21 @@ do
       read_package_version ${changelog_file}
       local deb_file="${package}_${ossec_version}-${package_version}${codename}_${arch}.deb"
       local changes_file="${package}_${ossec_version}-${package_version}${codename}_${arch}.changes"
-      local results_dir="/var/cache/pbuilder/${codename}-${arch}/result/${package}"
-      if [ ! -f ${results_dir}/${deb_file} ] || [ ! -f ${results_dir}/${changes_file} ] ; then
+      local result_dir="/var/cache/pbuilder/${codename}-${arch}/result"
+      if [ ! -f ${result_dir}/${deb_file} ] || [ ! -f ${result_dir}/${changes_file} ] ; then
         echo "Error: Couldn't find ${deb_file} or ${changes_file}" | write_log
         exit 1
       fi
 
       # Uploading package to repository
-      cd ${results_dir}
+      cd ${result_dir}
       echo "Uploading package ${changes_file} for ${codename} to OSSEC repository" | write_log
       if sudo /usr/bin/dupload --nomail -f --to ossec-repository ${changes_file} ; then
         echo " + Successfully uploaded package ${changes_file} for ${codename} to OSSEC repository" | write_log
       else
         echo "Error: Could not upload package ${changes_file} for ${codename} to the repository" | write_log
         exit 1
-      fi 
+      fi
 
       # Checking if it is an Ubuntu package
       if contains_element $codename ${codenames_ubuntu[*]} ; then
@@ -430,7 +420,7 @@ do
 
       # Moving package to the right directory at the OSSEC apt repository server
       echo " + Adding package /opt/incoming/${deb_file} to server repository for ${codename} distribution" | write_log
-      if [ $is_ubuntu -eq 1 ]; then 
+      if [ $is_ubuntu -eq 1 ]; then
         remove_package="cd /var/www/repos/apt/ubuntu; reprepro -A ${arch} remove ${codename} ${package}"
         include_package="cd /var/www/repos/apt/ubuntu; reprepro includedeb ${codename} /opt/incoming/${deb_file}"
       else
@@ -445,7 +435,7 @@ do
         expect -re \".*enter passphrase:.*\" { send \"${signing_pass}\r\" }
         expect -re \".*deleting.*\"
       "
-      
+
       /usr/bin/expect -c "
         spawn sudo ssh root@ossec-repository \"${include_package}\"
         expect -re \"Skipping inclusion.*\" { exit 1 }
@@ -482,7 +472,6 @@ case $key in
   -u|--update)
     update_chroots
     shift
-    exit 0
     ;;
   -d|--download)
     download_source
@@ -497,6 +486,14 @@ case $key in
   -s|--sync)
     sync_repository
     shift
+    ;;
+  -a)
+    download_source
+    DIST=xenial ARCH=arm64 pbuilder create --configfile /home/ubuntu/ossec-hids/contrib/debian-packages/pbuilderrc
+    update_chroots
+    build_packages
+    shift
+    exit 0
     ;;
   *)
     echo "Unknown command line argument."

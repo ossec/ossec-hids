@@ -43,6 +43,12 @@ matrix:
     - compiler: clang
       env: OSSEC_TYPE=server RULES=test PCRE2_SYSTEM=no
 
+jobs:
+  include:
+    - arch: arm64
+      compiler: gcc
+      env: DB=none OSSEC_TYPE=agent GEOIP=no PCRE2_SYSTEM=yes ARCH=arm64
+      env: OSSEC_TYPE=server RULES=test
 
 before_script:
 - sudo apt-get update -qq
@@ -64,6 +70,7 @@ script:
   && if [[ "${PRELUDE}" = "yes" ]]; then COMMAND="${COMMAND} USE_PRELUDE=1"; fi
   && if [[ "${ZEROMQ}" = "yes" ]]; then COMMAND="${COMMAND} USE_ZEROMQ=1"; fi
   && if [[ "${OSSEC_TYPE}" = "test" ]]; then COMMAND="${COMMAND} USE_PCRE2_JIT=0"; fi
+  && if [[ "${ARCH}" = "arm64" ]]; then ./build.sh; fi
   && ( cd src/
      && make --warn-undefined-variables ${COMMAND} settings
      && make --warn-undefined-variables ${COMMAND} external -j
