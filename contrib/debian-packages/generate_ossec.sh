@@ -20,17 +20,17 @@
 # CONFIGURATION VARIABLES
 #
 
-ossec_version='3.5.0'
+ossec_version='3.6.0'
 source_file="ossec-hids-${ossec_version}.tar.gz"
 #packages=(ossec-hids ossec-hids-agent) # only options available
 packages=(ossec-hids-agent)
 
 # codenames=(sid jessie wheezy precise trusty utopic)
-codenames=(xenial)
+codenames=(bionic)
 
 # For Debian use: sid, jessie or wheezy (hardcoded in update_changelog function)
 # For Ubuntu use: lucid, precise, trusty or utopic
-codenames_ubuntu=(precise trusty xenial)
+codenames_ubuntu=(precise trusty xenial bionic focal)
 codenames_debian=(sid jessie wheezy)
 
 # architectures=(amd64 i386) only options available
