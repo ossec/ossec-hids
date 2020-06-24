@@ -136,7 +136,6 @@ void osdns_accept(int fd, short ev, void *arg) {
                     }
                 }
 
-                sock = -1;
                 for(rp = result; rp; rp = rp->ai_next) {
                     sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
                     if (sock == -1) {
