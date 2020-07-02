@@ -20,25 +20,21 @@
 # CONFIGURATION VARIABLES
 #
 
-ossec_version='3.5.0'
+ossec_version='3.6.0'
 source_file="ossec-hids-${ossec_version}.tar.gz"
 #packages=(ossec-hids ossec-hids-agent) # only options available
 packages=(ossec-hids-agent)
 
 # codenames=(sid jessie wheezy precise trusty utopic)
-codenames=(xenial)
+codenames=(bionic)
 
 # For Debian use: sid, jessie or wheezy (hardcoded in update_changelog function)
 # For Ubuntu use: lucid, precise, trusty or utopic
-codenames_ubuntu=(precise trusty xenial)
+codenames_ubuntu=(precise trusty xenial bionic focal)
 codenames_debian=(sid jessie wheezy)
 
 # architectures=(amd64 i386) only options available
 architectures=(arm64)
-
-# GPG key
-signing_key='7A1B7C76'
-signing_pass=`cat /root/.gnupg/passphrase`
 
 # Debian files
 debian_files_path="/home/ubuntu/debian_files"
@@ -347,36 +343,7 @@ do
         echo " + Package ${results_dir}/${deb_file} ${codename}-${arch} contains ${files} files" | write_log
       fi
 
-      # Signing Debian package
-      if [ ! -f "${results_dir}/${changes_file}" ] || [ ! -f "${results_dir}/${dsc_file}" ] ; then
-        echo "Error: Could not find dsc and changes file in ${results_dir}" | write_log
-        exit 1
-      fi
-      sudo /usr/bin/expect -c "
-        spawn sudo debsign --re-sign -k${signing_key} ${results_dir}/${changes_file}
-        expect -re \".*Enter passphrase:.*\"
-        send \"${signing_pass}\r\"
-        expect -re \".*Enter passphrase:.*\"
-        send \"${signing_pass}\r\"
-        expect -re \".*Successfully signed dsc and changes files.*\" exit 0
-        exit 1
-      "
-      if [ $? -eq 0 ] ; then
-        echo " + Successfully signed Debian package ${changes_file} ${codename}-${arch}" | write_log
-      else
-        echo "Error: Could not sign Debian package ${changes_file} ${codename}-${arch}" | write_log
-        exit 1
-      fi
-
-      # Verifying signed changes and dsc files
-      if sudo gpg --verify "${results_dir}/${dsc_file}" && sudo gpg --verify "${results_dir}/${changes_file}" ; then
-        echo " + Successfully verified GPG signature for files ${dsc_file} and ${changes_file}" | write_log
-      else
-        echo "Error: Could not verify GPG signature for ${dsc_file} and ${changes_file}" | write_log
-        exit 1
-      fi
-
-      echo "Successfully built and signed Debian package ${package} ${codename}-${arch}" | write_log
+      echo "Successfully built Debian package ${package} ${codename}-${arch}" | write_log
 
     done
   done
@@ -438,23 +405,6 @@ do
         include_package="cd /var/www/repos/apt/debian; reprepro includedeb ${codename} /opt/incoming/${deb_file}"
       fi
 
-      /usr/bin/expect -c "
-        spawn sudo ssh root@ossec-repository \"${remove_package}\"
-        expect -re \"Not removed as not found.*\" { exit 1 }
-        expect -re \".*enter passphrase:.*\" { send \"${signing_pass}\r\" }
-        expect -re \".*enter passphrase:.*\" { send \"${signing_pass}\r\" }
-        expect -re \".*deleting.*\"
-      "
-      
-      /usr/bin/expect -c "
-        spawn sudo ssh root@ossec-repository \"${include_package}\"
-        expect -re \"Skipping inclusion.*\" { exit 1 }
-        expect -re \".*enter passphrase:.*\"
-        send \"${signing_pass}\r\"
-        expect -re \".*enter passphrase:.*\"
-        send \"${signing_pass}\r\"
-        expect -re \".*Exporting.*\"
-      "
       echo "Successfully added package ${deb_file} to server repository for ${codename} distribution" | write_log
     done
   done

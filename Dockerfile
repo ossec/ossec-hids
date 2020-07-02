@@ -1,5 +1,6 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
     && apt-get --yes install \
         sudo \
@@ -18,12 +19,8 @@ RUN apt-get update \
 COPY ./debian_files /home/ubuntu/debian_files
 COPY . /home/ubuntu/ossec-hids
 # `docker build` cannot handle `pbuilder create` because it uses `mount` which needs privilege
-# RUN cd /home/ubuntu/ossec-hids/contrib/debian-packages \
-#     && ./generate_ossec_xenial_arm64.sh -d
-# RUN DIST=xenial ARCH=arm64 pbuilder create --configfile /home/ubuntu/ossec-hids/contrib/debian-packages/pbuilderrc
-# RUN cd /home/ubuntu/ossec-hids/contrib/debian-packages \
-#     && ./generate_ossec_xenial_arm64.sh -u
-# RUN cd /home/ubuntu/ossec-hids/contrib/debian-packages \
-#     && ./generate_ossec_xenial_arm64.sh -b
+# RUN /home/ubuntu/ossec-hids/contrib/debian-packages/generate_ossec.sh -d
+# RUN /home/ubuntu/ossec-hids/contrib/debian-packages/generate_ossec.sh -u
+# RUN /home/ubuntu/ossec-hids/contrib/debian-packages/generate_ossec.sh -b
 
 CMD ["/bin/sh"]

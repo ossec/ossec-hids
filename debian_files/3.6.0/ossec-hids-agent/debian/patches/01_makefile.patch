@@ -54,6 +54,6 @@ Index: ossec-hids-agent-2.8.2/Makefile
 +	chmod -x $(DIR)/etc/ossec.conf
 +	cp -p src/init/ossec-hids-debian.init $(DIR)/etc/init.d/ossec
 +	echo "DIRECTORY=\"/var/ossec\"" > $(OSSEC_INIT)
-+	echo "VERSION=\"v3.5.0\"" >> $(OSSEC_INIT)
++	echo "VERSION=\"v3.6.0\"" >> $(OSSEC_INIT)
 +	echo "DATE=\"`date`\"" >> $(OSSEC_INIT)
 +	echo "TYPE=\"agent\"" >> $(OSSEC_INIT)
