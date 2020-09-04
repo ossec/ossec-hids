@@ -19,14 +19,13 @@ other methods.
 Before running the script, make sure your system has the necessary
 libraries and tools installed:
 - libssl
-- libevent
 - libpcre2
 - libz
 - make, gcc
 
 On a Ubuntu/Debian system, these can be installed with:
 
-apt install libz-dev libssl-dev libpcre2-dev libevent-dev build-essential
+apt install libz-dev libssl-dev libpcre2-dev build-essential
 
 Fast way steps:
 
