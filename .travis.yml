@@ -31,12 +31,12 @@ compiler:
 
 arch:
 - amd64
-- arm64
+- arm64-graviton2
 
 matrix:
   fast_finish: true
   exclude:
-    - arch: arm64
+    - arch: arm64-graviton2
       env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
     - compiler: clang
       env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
@@ -45,7 +45,7 @@ matrix:
 
 jobs:
   include:
-    - arch: arm64
+    - arch: arm64-graviton2
       compiler: gcc
       env: DB=none OSSEC_TYPE=agent GEOIP=no PCRE2_SYSTEM=yes ARCH=arm64
       env: OSSEC_TYPE=server RULES=test
