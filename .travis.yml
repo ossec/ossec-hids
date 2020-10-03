@@ -42,6 +42,8 @@ matrix:
       env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
     - compiler: clang
       env: OSSEC_TYPE=server RULES=test PCRE2_SYSTEM=no
+    - arch: aarch64
+      env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
 
 jobs:
   include:
@@ -64,7 +66,7 @@ before_script:
 
 
 script:
-- travis_wait 30 COMMAND="V=1 TARGET=${OSSEC_TYPE}"
+- COMMAND="V=1 TARGET=${OSSEC_TYPE}"
   && if ! [[ "${DB}" = "none" ]]; then COMMAND="${COMMAND} DATABASE=${DB}"; fi
   && if [[ "${GEOIP}" = "yes" ]]; then COMMAND="${COMMAND} USE_GEOIP=1"; fi
   && if [[ "${PRELUDE}" = "yes" ]]; then COMMAND="${COMMAND} USE_PRELUDE=1"; fi
