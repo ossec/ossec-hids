@@ -3,7 +3,7 @@ dist: bionic
 
 notifications:
   irc:
-    - "chat.freenode.net#ossec-dev"
+    - "chat.freenode.net#ossec"
   slack:
     secure: Cz1InEL5G+z2huuzilXe7BqfxlEjN4io5ylJa5jgPvGMlB5sIQZTQQ7PDrzcK0iwn+5xgDkXKwbNPV2k+NHNTtNFiuBrcnJbyeA8PjghtAw4hg/Vpl5+5ovySZT9pGSV7ySsA8nGD73hlcQFgWnYDhsugQ6UZyRXAN8vLLCLjPg=
 
@@ -19,7 +19,6 @@ env:
 - DB=none OSSEC_TYPE=local GEOIP=no PCRE2_SYSTEM=no
 - DB=none OSSEC_TYPE=hybrid GEOIP=no PCRE2_SYSTEM=no
 - DB=none OSSEC_TYPE=agent GEOIP=no PCRE2_SYSTEM=no
-- DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
 - OSSEC_TYPE=test PCRE2_SYSTEM=no
 - OSSEC_TYPE=server RULES=test PCRE2_SYSTEM=no
 
@@ -42,8 +41,6 @@ matrix:
       env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
     - compiler: clang
       env: OSSEC_TYPE=server RULES=test PCRE2_SYSTEM=no
-    - arch: aarch64
-      env: DB=none OSSEC_TYPE=winagent GEOIP=no PCRE2_SYSTEM=no
 
 jobs:
   include:
