@@ -155,14 +155,21 @@ int ReadConfig(int modules, const char *cfgfile, void *d1, void *d2)
 
     int xml_ret = OS_ReadXML(cfgfile, &xml);
     if (xml_ret < 0) {
-	char *tmpcfg;
-	tmpcfg = strdup(cfgfile);
+        char *tmpcfg;
+        tmpcfg = strdup(cfgfile);
         const char *cfg_base = basename(tmpcfg);
+        if (!cfg_base) {
+            /* XXX */
+            merror("ERROR: basename() failed: %s", strerror(errno));
+            free(tmpcfg);
+            return (OS_INVALID);
+        }
 	    if((strncmp(cfg_base, "agent.conf", 10)) == 0 && xml_ret == -2) {
 		    debug2("WARN: Cannot open %s: %s", cfgfile, xml.err);
 	    } else {
 		    merror(XML_ERROR, __local_name, cfgfile, xml.err, xml.err_line);
 	    }
+        free(tmpcfg);
         return (OS_INVALID);
     }
 
