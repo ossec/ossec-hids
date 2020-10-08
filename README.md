@@ -29,12 +29,12 @@ The development version is hosted on GitHub and just a simple git clone away.
 
 *File Integrity Monitoring*
 
-[![FIM](https://github.com/ossec/ossec-hids/blob/master/doc/images/fim-test.gif)
+![FIM](https://github.com/ossec/ossec-hids/blob/master/doc/images/fim-test.gif)
 
 
 *Attack Detection*
 
-[![SSH Brute Force](https://raw.githubusercontent.com/ossec/ossec-hids/master/doc/images/ssh-attack.gif)
+![SSH Brute Force](https://raw.githubusercontent.com/ossec/ossec-hids/master/doc/images/ssh-attack.gif)
 
 
 ## Credits and Thanks ##
