@@ -25,6 +25,18 @@ The development version is hosted on GitHub and just a simple git clone away.
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/1847/badge.svg)](https://scan.coverity.com/projects/1847)
 
 
+## Screenshots ##
+
+*File Integrity Monitoring*
+
+![FIM](https://github.com/ossec/ossec-hids/blob/master/doc/images/fim-test.gif)
+
+
+*Attack Detection*
+
+![SSH Brute Force](https://raw.githubusercontent.com/ossec/ossec-hids/master/doc/images/ssh-attack.gif)
+
+
 ## Credits and Thanks ##
 
 * OSSEC comes with a modified version of zlib and a small part 
