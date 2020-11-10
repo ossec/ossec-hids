@@ -1,4 +1,4 @@
-ossec-hids-agent (3.5.0-1) unstable; urgency=medium
+ossec-hids-agent (3.6.0-1) unstable; urgency=medium
 
   * support arm64 package
 

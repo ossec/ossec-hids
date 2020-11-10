@@ -161,10 +161,19 @@ int OSRegex_ConvertRegex(const char *pattern, char **converted_pattern_ptr)
 
         if (converted_pattern_offset + replacement_size >= converted_pattern_size) {
             converted_pattern_size += OS_PATTERN_MAXSIZE;
-            converted_pattern = (char *)realloc(converted_pattern, converted_pattern_size);
+            char *tmp_converted_pattern = NULL;
+            tmp_converted_pattern = (char *)realloc(converted_pattern, converted_pattern_size);
+            if (tmp_converted_pattern == NULL) {
+                free(converted_pattern);
+                return(0);
+            } else {
+                converted_pattern = tmp_converted_pattern;
+            }
+            /*
             if (!converted_pattern) {
                 return (0);
             }
+            */
         }
 
         converted_pattern_offset += sprintf(&converted_pattern[converted_pattern_offset], "%.*s",
@@ -241,7 +250,14 @@ int OSRegex_ConvertMatch(const char *pattern, char **converted_pattern_ptr)
 
         if (converted_pattern_offset + replacement_size >= converted_pattern_size) {
             converted_pattern_size += OS_PATTERN_MAXSIZE;
-            converted_pattern = (char *)realloc(converted_pattern, converted_pattern_size);
+            char *tmp_converted_pattern = NULL;
+            tmp_converted_pattern = (char *)realloc(converted_pattern, converted_pattern_size);
+            if (tmp_converted_pattern == NULL) {
+                free(converted_pattern);
+                return(0);
+            } else {
+                converted_pattern = tmp_converted_pattern;
+            }
             if (!converted_pattern) {
                 return (0);
             }

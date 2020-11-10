@@ -53,9 +53,11 @@ int ExecdConfig(const char *cfgfile)
         int j = 0;
         repeated_a = OS_StrBreak(',', repeated_t, 5);
         if (!repeated_a) {
-            merror(XML_VALUEERR, ARGV0,
-                   "repeated_offenders",
-                   disable_entry);
+            if (disable_entry != NULL && ARGV0 != NULL) {
+                merror(XML_VALUEERR, ARGV0,
+                       "repeated_offenders",
+                       disable_entry);
+            }
             return (-1);
         }
 

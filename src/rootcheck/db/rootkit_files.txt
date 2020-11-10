@@ -405,3 +405,6 @@ var/.x/psotnic              ! Suspicious file ::rootkits/Suspicious.php
 */ecmf                      ! Suspicious file ::rootkits/Suspicious.php
 */mirkforce                 ! Suspicious file ::rootkits/Suspicious.php
 */mfclean                   ! Suspicious file ::rootkits/Suspicious.php
+
+/reptile/reptile_cmd        ! Suspicious file ::reptile
+/lib/udev/reptile           ! Suspicious file ::reptile

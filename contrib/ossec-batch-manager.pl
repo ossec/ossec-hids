@@ -64,7 +64,7 @@ require 5.8.2; # Time::HiRes is standard from this version forth
 use MIME::Base64;
 use Digest::MD5 qw(md5_hex);
 use Getopt::Long;
-use Regexp::Common::net;
+use Regexp::Common qw(net);
 
 use constant AUTH_KEY_FILE => "/var/ossec/etc/client.keys";
 use constant RIDS_PATH => "/var/ossec/queue/rids/";
