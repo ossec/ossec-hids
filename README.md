@@ -36,6 +36,11 @@ The development version is hosted on GitHub and just a simple git clone away.
 
 ![SSH Brute Force](./doc/images/ssh-attack.gif)
 
+## Help / Support ##
+
+Join us on slack, ossec.slack.com: Invites to slack@ossec.net
+
+Join us on Discord: https://discord.gg/BXzM75Xzq7
 
 ## Credits and Thanks ##
 
