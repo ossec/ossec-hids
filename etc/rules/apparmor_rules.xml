@@ -14,6 +14,7 @@
 <group name="local,syslog,apparmor">
 
   <rule id="52000" level="3">
+    <if_sid>1002</if_sid>
     <decoded_as>iptables</decoded_as>
     <pcre2> apparmor=</pcre2>
     <description>Apparmor grouping</description>
