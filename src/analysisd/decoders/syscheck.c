@@ -600,11 +600,53 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
     if (Config.syscheck_alert_new == 1)  {
         sdb.syscheck_dec->id = sdb.idn;
 
+        char *newfilec_sum = NULL;
+        char *newfilemd5 = NULL;
+        char *newfilesha1 = NULL;
+
+        os_strdup(c_sum, newfilec_sum);
+
+        char *token = strtok(newfilec_sum, ":");
+
+        int tok_count = 1;
+
+        while (token != NULL)
+        {
+            if(tok_count == 5)
+            {
+                newfilemd5 = token;
+            }
+            if(tok_count == 6)
+            {
+                newfilesha1 = token;
+            }
+
+            token = strtok(NULL, ":");
+            tok_count++;
+        }
+
+        /* SHA-1 message */
+        snprintf(sdb.sha1, OS_FLSIZE,
+                 "New sha1sum is : '%s'\n",
+                 newfilesha1);
+        os_strdup(newfilesha1, lf->sha1_after);
+
+        /* MD5 message */
+        snprintf(sdb.md5, OS_FLSIZE,
+                 "New md5sum is : '%s'\n",
+                 newfilemd5);
+        os_strdup(newfilemd5, lf->md5_after);
+
         /* New file message */
         snprintf(sdb.comment, OS_MAXSTR,
                  "New file '%.756s' "
-                 "added to the file system.", f_name);
-
+                 "added to the file system.\n"
+                 "%s"
+                 "%s",
+                 f_name,
+                 sdb.sha1,
+                 sdb.md5
+                );
 
         /* Create a new log message */
         free(lf->full_log);
