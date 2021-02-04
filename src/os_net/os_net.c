@@ -601,6 +601,7 @@ int OS_SendUnix(int socket, const char *msg, int size)
         if (errno == ENOBUFS) {
             return (OS_SOCKBUSY);
         }
+        debug1("DEBUG: OS_SendUnix errno: %d: %s", errno, strerror(errno));
 
         return (OS_SOCKTERR);
     }
