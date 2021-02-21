@@ -17,6 +17,7 @@ static void print_banner(void);
 static void manage_shutdown(int sig) __attribute__((noreturn));
 #endif
 
+int willchroot;
 
 #if defined(__MINGW32__)
 static int setenv(const char *name, const char *val, __attribute__((unused)) int overwrite)

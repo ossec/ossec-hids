@@ -83,6 +83,7 @@ int main(int argc, char **argv)
     memset(prev_month, '\0', 4);
 
 #ifdef LIBGEOIP_ENABLED
+    extern GeoIP *geoipdb;
     geoipdb = NULL;
 #endif
 

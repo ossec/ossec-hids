@@ -109,6 +109,8 @@ int main(int argc, char **argv)
 
     debug1(STARTED_MSG, ARGV0);
 
+    extern agent *agt;
+
     agt = (agent *)calloc(1, sizeof(agent));
     if (!agt) {
         ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));

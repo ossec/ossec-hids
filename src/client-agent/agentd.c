@@ -20,6 +20,8 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     fd_set fdset;
     struct timeval fdtimeout;
 
+    extern agent *agt;
+
     available_server = 0;
 
     /* Initial random numbers must happen before chroot */

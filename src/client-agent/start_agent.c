@@ -16,6 +16,9 @@
 int connect_server(int initial_id)
 {
     unsigned int attempts = 2;
+
+    extern agent *agt;
+
     int rc = initial_id;
 
     /* Checking if the initial is zero, meaning we have to
@@ -97,6 +100,8 @@ void start_agent(int is_startup)
     char buffer[OS_MAXSTR + 1];
     char cleartext[OS_MAXSTR + 1];
     char fmsg[OS_MAXSTR + 1];
+
+    extern agent *agt;
 
     memset(msg, '\0', OS_MAXSTR + 2);
     memset(buffer, '\0', OS_MAXSTR + 1);

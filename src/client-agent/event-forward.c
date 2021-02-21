@@ -16,6 +16,9 @@
 /* Receive a message locally on the agent and forward it to the manager */
 void *EventForward()
 {
+
+    extern agent *agt;
+
     ssize_t recv_b;
     char msg[OS_MAXSTR + 1];
 

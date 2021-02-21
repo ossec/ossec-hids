@@ -29,6 +29,8 @@ void *receive_msg()
     char cleartext[OS_MAXSTR + 1];
     char *tmp_msg;
 
+    extern agent *agt;
+
     memset(cleartext, '\0', OS_MAXSTR + 1);
     memset(buffer, '\0', OS_MAXSTR + 1);
 

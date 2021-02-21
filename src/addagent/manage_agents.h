@@ -147,4 +147,4 @@ extern fpos_t fp_pos;
 #define GMF_UNKN_ERROR  ARGV0 ": Could not run GetModuleFileName which returned (%ld).\n"
 
 
-int willchroot;
+//int willchroot;

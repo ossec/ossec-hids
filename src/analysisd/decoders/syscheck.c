@@ -16,7 +16,7 @@
 #include "decoder.h"
 
 #ifdef SQLITE_ENABLED
-#include "syscheck-sqlite.h"
+#include <sqlite3.h>
 #endif
 
 typedef struct __sdb {
