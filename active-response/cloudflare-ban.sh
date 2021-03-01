@@ -57,7 +57,7 @@ elif [ "x${ACTION}" = "xdelete" ]; then
    -H "X-Auth-Key: $TOKEN" \
    -H "Content-Type: application/json")
    
-   ID=$(echo $JSON | jq -r '.result[].id')
+   ID=$(echo $JSON | grep -Pom 1 '"id": "\K[^"]*' | head -1)
     
    curl -sSX DELETE "https://api.cloudflare.com/client/v4/user/firewall/access_rules/rules/$ID" \
    -H "X-Auth-Email: $USER" \
