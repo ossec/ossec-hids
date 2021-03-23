@@ -42,7 +42,7 @@ else
         USERADD="/usr/sbin/useradd"
         OSMYSHELL="/bin/false"
     elif [ "$UNAME" = "AIX" ]; then
-        GROUPADD="/usr/sbin/mkgroup"
+        [ -f "/usr/bin/mkgroup" ] && GROUPADD="/usr/bin/mkgroup" || GROUPADD="/usr/sbin/mkgroup"
         USERADD="/usr/sbin/useradd"
         OSMYSHELL="/bin/false"
     elif [ "$UNAME" = "OpenBSD" ]; then
@@ -98,11 +98,17 @@ else
 	                ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
 	            fi
             fi
-        elif [ ! `grep "^${U}" /etc/passwd > /dev/null 2>&1` ]; then
+        elif ! `grep "^${U}" /etc/passwd > /dev/null 2>&1`; then
 	        if [ "$UNAME" = "OpenBSD" ] || [ "$UNAME" = "SunOS" ]; then
                     ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
                 elif [ -e "/etc/alpine-release" ]; then
                     ${USERADD} -G ${GROUP} -s ${OSMYSHELL} -h ${DIR} -S ${U}
+	        elif [ "$UNAME" = "AIX" ]; then
+                    if `grep "shells=.*${OSMYSHELL}" /etc/security/login.cfg > /dev/null 2>&1`; then
+                        ${USERADD} -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}" "${U}"
+                    else
+                        ${USERADD} -d "${DIR}" -g "${GROUP}" "${U}"
+                    fi
 	        else
 	            ${USERADD} "${U}" -d "${DIR}" -s ${OSMYSHELL} -g "${GROUP}"
 	        fi

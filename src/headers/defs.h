@@ -39,7 +39,7 @@
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
-#define __version       "v3.6.0"
+#define __ossec_version "v3.6.0"
 #define __author        "OSSEC Foundation"
 #define __contact       "contact@ossec.net"
 #define __site          "https://www.ossec.net"

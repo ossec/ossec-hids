@@ -6,7 +6,7 @@
 void dbd_print_version()
 {
     printf(" ");
-    printf("%s %s - %s", __ossec_name, __version, __author);
+    printf("%s %s - %s", __ossec_name, __ossec_version, __author);
     printf(" ");
     printf("%s", __license);
 
