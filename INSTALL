@@ -22,10 +22,11 @@ libraries and tools installed:
 - libpcre2
 - libz
 - make, gcc
+- libsystemd-dev
 
 On a Ubuntu/Debian system, these can be installed with:
 
-apt install libz-dev libssl-dev libpcre2-dev build-essential
+apt install libz-dev libssl-dev libpcre2-dev build-essential libsystemd-dev
 
 Fast way steps:
 
