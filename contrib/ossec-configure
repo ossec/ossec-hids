@@ -141,7 +141,7 @@ echo "  3.4- Active response allows you to execute a specific
        you can block an IP address or disable access for
        a specific user.  
        More information at:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html
        
 "
 check_input "   - Do you want to enable active response? (y/n) [y]:" "y|n" "y"

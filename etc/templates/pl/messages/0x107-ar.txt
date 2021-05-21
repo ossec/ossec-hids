@@ -4,5 +4,5 @@
        możesz zablokować adres IP lub dostęp dla wybranego
        użytkownika.  
        Więcej informacji na:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html
        

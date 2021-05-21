@@ -4,5 +4,5 @@
        events. Bijvoorbeeld, u kunt een IP adres blokkeren
        of de toegang ontzeggen voor een bepaalde gebruiker.
        Meer informatie vindt u op:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html
        

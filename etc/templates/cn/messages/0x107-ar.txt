@@ -3,4 +3,4 @@
        已定义的命令.
        例如,你可以阻止某个IP地址的访问或禁止某个用户的访问权限.
        更多的信息,您可以访问:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html

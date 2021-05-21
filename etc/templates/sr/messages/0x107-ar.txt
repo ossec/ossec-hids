@@ -3,5 +3,5 @@
        možeš da blokiraš IP adresu ili onemogućiš pristup
        određenom korisniku.
        Više obaveštenja na:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html
        
