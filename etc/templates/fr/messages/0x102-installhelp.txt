@@ -24,6 +24,6 @@
   - choisissez 'local' si vous n'avez qu'une machine à surveiller.
   
   - Plus d'information sur :
-    http://www.ossec.net/en/manual.html#starting
+    http://www.ossec.net/docs/docs/manual/non-technical-overview.html
 
   

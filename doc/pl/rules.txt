@@ -82,4 +82,4 @@ Inne mogą być dodane pomiędzy nimi lub za.
 
 == Konfiguracja reguł ==
 
-http://www.ossec.net/en/manual.html#rules
+http://www.ossec.net/docs/docs/manual/rules-decoders/index.html
