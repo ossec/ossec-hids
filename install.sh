@@ -115,6 +115,10 @@ Install()
     fi
 
     ${MAKEBIN} PREFIX=${INSTALLDIR} TARGET=${INSTYPE} install
+    if [ $? != 0 ]; then
+        cd ../
+        catError "0x5-build"
+    fi
 
     cd ../
 

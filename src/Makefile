@@ -21,7 +21,6 @@ OSSEC_USER?=ossec
 OSSEC_USER_MAIL?=ossecm
 OSSEC_USER_REM?=ossecr
 
-INSTALL_CMD?=install -m $(1) -o $(2) -g $(3)
 INSTALL_LOCALTIME?=yes
 INSTALL_RESOLVCONF?=yes
 
@@ -77,6 +76,8 @@ else
 ifeq (${uname_S},AIX)
 		DEFINES+=-DAIX
 		DEFINES+=-DHIGHFIRST
+		CFLAGS+=-I./external/compat/aix
+		OSSEC_LDFLAGS+=-lpthread
 		PATH:=${PATH}:/usr/vac/bin
 else
 ifeq (${uname_S},SunOS)
@@ -138,6 +139,12 @@ endif # winagent
 ifneq (${uname_S},OpenBSD)
         CFLAGS+=-I./external/compat
         COMPAT_FILES+=./external/compat/imsg.c ./external/compat/imsg-buffer.c
+endif
+
+ifeq (${uname_S},AIX)
+        INSTALL_CMD?=./install-shim-aix.ksh -m $(1) -o $(2) -g $(3)
+else
+        INSTALL_CMD?=install -m $(1) -o $(2) -g $(3)
 endif
 
 ifdef DEBUGAD
@@ -211,7 +218,7 @@ endif #winagent
 
 OSSEC_CC      =${QUIET_CC}${MING_BASE}${CC}
 OSSEC_CCBIN   =${QUIET_CCBIN}${MING_BASE}${CC}
-OSSEC_LINK    =${QUIET_LINK}${MING_BASE}ar -crs
+OSSEC_LINK    =${QUIET_LINK}${MING_BASE}ar ${AR_FLAGS} -crs
 OSSEC_RANLIB  =${QUIET_RANLIB}${MING_BASE}ranlib
 OSSEC_WINDRES =${QUIET_CCBIN}${MING_BASE}windres
 
