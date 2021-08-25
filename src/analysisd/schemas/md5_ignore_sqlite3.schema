@@ -1,6 +1,0 @@
-CREATE TABLE files (
-    md5sum VARCHAR(32),
-    file VARCHAR(256),
-    time DATETIME
-);
-CREATE UNIQUE INDEX files_idx ON files(md5sum);
