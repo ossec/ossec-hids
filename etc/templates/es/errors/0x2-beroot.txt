@@ -1,4 +1,0 @@
- 
- Error 0x2.
- Usted debe ser root para ejecutar el programa.
-

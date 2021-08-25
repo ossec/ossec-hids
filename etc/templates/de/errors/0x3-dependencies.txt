@@ -1,5 +1,0 @@
- 
- Fehler 0x3.
- Sie benötigen einen Compiler (zB gcc or cc) um mit der Installation
- fortzufahren.
- 

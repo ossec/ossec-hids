@@ -1,4 +1,0 @@
- 
- Error 0x3.
- Usted necesita un compilador (semejante a gcc ó cc) para continuar con la instalación. 
- 

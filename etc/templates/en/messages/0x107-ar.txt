@@ -1,8 +1,0 @@
-
-  3.4- Active response allows you to execute a specific 
-       command based on the events received. For example,
-       you can block an IP address or disable access for
-       a specific user.  
-       More information at:
-       http://www.ossec.net/docs/docs/manual/ar/index.html
-       

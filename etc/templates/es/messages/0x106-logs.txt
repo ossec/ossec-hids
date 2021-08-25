@@ -1,9 +1,0 @@
-
- - Si desea monitorizar algún otro registro, solo
-   tendrá que editar el archivo ossec.conf y agregar una
-   nueva entrada de tipo localfile.
-   Cualquier otra pregunta de configuración podrá ser 
-   respondida visitandonos en linea en http://www.ossec.net .
-   
-   --- Presione ENTER para continuar ---
-                            

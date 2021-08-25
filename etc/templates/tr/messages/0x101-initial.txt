@@ -1,4 +1,0 @@
-
- OSSEC HIDS kurulum sürecini başlatmak üzeresiniz.
- Sisteminizde önceden kurulmuş bir C derleyicisi bulunmalıdır.
-

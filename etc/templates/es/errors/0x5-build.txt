@@ -1,5 +1,0 @@
-
- Error 0x5.
- Error durante la construcción. No se ha podido finalizar la instalación.
-
- 

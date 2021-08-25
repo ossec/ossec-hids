@@ -1,4 +1,0 @@
-
- Ön elindította az OSSEC HIDS telepítési folyamatát.
- Egy C fordító programnak, már előzőleg telepítve kell lennie a rendszerén.
-
