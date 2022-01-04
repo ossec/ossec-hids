@@ -31,7 +31,7 @@
 /** Internal Functions **/
 void OS_ReadMSG(char *ut_str);
 #ifdef LIBGEOIP_ENABLED
-    MMDB_s geoipdb;
+    extern MMDB_s geoipdb;
 #endif
 
 /* Analysisd function */
