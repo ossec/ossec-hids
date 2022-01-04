@@ -275,6 +275,9 @@ void W_JSON_ParseAgentIP(cJSON* root, const Eventinfo* lf)
  // The file location usually comes with more information about the alert (like hostname or ip) we will extract just the "/var/folder/file.log".
 void W_JSON_ParseLocation(cJSON* root, const Eventinfo* lf, int archives)
 {
+    if (archives != 0) {
+        debug1("ossec-analysisd: DEBUG: archives != 0");
+    }
     if(lf->location[0] == '(') {
         char* search;
         char string[MAX_STRING];

@@ -240,8 +240,12 @@ int Rules_OP_ReadRules(const char *rulefile)
             /* Check if the rule element is correct */
             if ((!rule[j]->element) ||
                     (strcasecmp(rule[j]->element, xml_rule) != 0)) {
-                merror("%s: Invalid configuration. '%s' is not "
+                if (rule[j]->element != NULL) {
+                    merror("%s: Invalid configuration. '%s' is not "
                        "a valid element.", ARGV0, rule[j]->element);
+                } else {
+                    merror("%s: Invalid configuration. Unknown invalid element.", ARGV0);
+                }
                 OS_ClearXML(&xml);
                 return (-1);
             }

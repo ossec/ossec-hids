@@ -42,7 +42,12 @@
 #endif
 
 #ifdef SQLITE_ENABLED
-#include "syscheck-sqlite.h"
+#include <sqlite3.h>
+sqlite3 *conn;
+#endif
+
+#ifdef LIBGEOIP_ENABLED
+GeoIP *geoipdb;
 #endif
 
 #ifdef LIBGEOIP_ENABLED

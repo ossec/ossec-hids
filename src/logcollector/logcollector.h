@@ -76,6 +76,11 @@ void win_start_event_channel(char *evt_log, char future, char *query);
 void win_format_event_string(char *string);
 #endif
 
+#ifdef HAVE_SYSTEMD
+/* Read systemd entries */
+void *sd_read_journal(int pos, int *rc, int drop_it);
+#endif
+
 /*** Global variables ***/
 extern int loop_timeout;
 extern int logr_queue;

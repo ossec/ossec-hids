@@ -4,4 +4,4 @@
        Például, önnek így lehetősége van blokkolni egy IP címet
        vagy egy adott felhasználó hozzáférését.
        További információk:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html

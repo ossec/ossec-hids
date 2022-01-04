@@ -87,6 +87,7 @@ int main(int argc, char **argv)
 
 /*
 #ifdef LIBGEOIP_ENABLED
+    extern GeoIP *geoipdb;
     geoipdb = NULL;
 #endif
 */

@@ -68,6 +68,8 @@ void run_notify()
     os_md5 md5sum;
     time_t curr_time;
 
+    extern agent *agt;
+
     keep_alive_random[0] = '\0';
     curr_time = time(0);
 

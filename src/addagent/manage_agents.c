@@ -85,6 +85,8 @@ int add_agent(int json_output)
 
     char authfile[257];
 
+    extern int willchroot;
+
     if(willchroot > 0) {
         snprintf(authfile, 256, "%s", AUTH_FILE);	//XXX
     } else {

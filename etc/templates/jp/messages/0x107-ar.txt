@@ -4,5 +4,5 @@
        例えば，ある IP アドレスを遮断することや特定のユーザ
        に対してアクセスを無効にすることができます．
        詳細な情報は以下にあります:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html
 

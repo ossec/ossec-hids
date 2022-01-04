@@ -25,6 +25,6 @@
   - Wybierz 'lokalna' jeśli masz tylko jeden system do monitorowania.
   
   - Więcej informacji na: 
-    http://www.ossec.net/en/manual.html#starting
+    http://www.ossec.net/docs/docs/manual/non-technical-overview.html
 
   

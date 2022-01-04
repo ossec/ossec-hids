@@ -14,7 +14,7 @@
 #include <errno.h>
 #include "shared.h"
 #include "os_net.h"
-agent *agt;
+agent *os_net_agt;
 
 /* Prototypes */
 static OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip);
@@ -346,11 +346,11 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
         return(OS_INVALID);
     }
 
-    if (agt) {
-        if (agt->lip) {
+    if (os_net_agt) {
+        if (os_net_agt->lip) {
             memset(&hints, 0, sizeof(struct addrinfo));
             hints.ai_flags = AI_NUMERICHOST;
-            s = getaddrinfo(agt->lip, NULL, &hints, &result);
+            s = getaddrinfo(os_net_agt->lip, NULL, &hints, &result);
             if (s != 0) {
                 verbose("getaddrinfo: %s", gai_strerror(s));
             }
@@ -363,8 +363,8 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
     memset(&hints, 0, sizeof(struct addrinfo));
     /* Allow IPv4 or IPv6 if local_ip isn't specified */
     hints.ai_family = AF_UNSPEC;
-    if (agt) {
-        if (agt->lip) {
+    if (os_net_agt) {
+        if (os_net_agt->lip) {
             hints.ai_family = local_ai->ai_family;
         }
     }
@@ -398,13 +398,13 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
             continue;
         }
 
-        if (agt) {
-            if (agt->lip) {
+        if (os_net_agt) {
+            if (os_net_agt->lip) {
                 if (bind(ossock, local_ai->ai_addr, local_ai->ai_addrlen)) {
                     verbose("Unable to bind to local address %s.  Ignoring. (%s)",
-                            agt->lip, strerror(errno));
+                            os_net_agt->lip, strerror(errno));
                 }
-                else verbose("Connecting from local address %s", agt->lip);
+                else verbose("Connecting from local address %s", os_net_agt->lip);
             }
         }
 
@@ -728,7 +728,7 @@ char *OS_DecodeSockaddr (struct sockaddr *sa) {
     char ipport[NI_MAXSERV];		/* printed port */
     static char buf[256];		/* message buffer */
 
-#if defined(__linux__) || defined (WIN32)
+#if defined(__linux__) || defined (WIN32) || defined (SOLARIS)
     /* most Linux systems do not have sa_len in the sockaddr struct */
     socklen_t slen = 0;
     switch(sa->sa_family) {

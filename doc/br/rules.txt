@@ -62,5 +62,5 @@ razões de resposta ativa ou para corelação.
      
 == Configuração das regras ==
 
-http://www.ossec.net/en/manual.html#rules
+http://www.ossec.net/docs/docs/manual/rules-decoders/index.html
 

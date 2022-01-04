@@ -26,7 +26,6 @@
 
 char *GetGeoInfobyIP(char *ip_addr)
 {
-
     //debug1("%s: DEBUG: Entered GetGeoInfobyIP", __local_name);
 
     if(!ip_addr)

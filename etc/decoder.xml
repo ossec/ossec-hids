@@ -1007,8 +1007,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="named-query">
   <parent>named</parent>
-  <prematch_pcre2>: query </prematch_pcre2>
-  <pcre2>client (\S+)#\d+[ ]*?\S*: </pcre2>
+  <prematch_pcre2>: query:? </prematch_pcre2>
+  <pcre2>client @\S+ (\S+)#\d+[ ]*?\S*: </pcre2>
   <order>srcip,url</order>
 </decoder>
 
@@ -1953,6 +1953,14 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip, action, id</order>
 </decoder>
 
+<!-- lighttpd.
+  - Examples:
+  - 2019-10-29 05:24:27: (mod_fastcgi.c.2543) FastCGI-stderr: PHP Fatal error:  Uncaught ErrorException: Unknown: [CLOSED] IMAP connection broken (server response) (errflg=1) in Unknown:0
+  - 
+  -->
+<decoder name="lighttpd">
+  <prematch_pcre2>^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d: \(</prematch_pcre2>
+</decoder>
 
 
 <!-- Racoon VPN.
