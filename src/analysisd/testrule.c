@@ -85,13 +85,6 @@ int main(int argc, char **argv)
     active_responses = NULL;
     memset(prev_month, '\0', 4);
 
-/*
-#ifdef LIBGEOIP_ENABLED
-    extern GeoIP *geoipdb;
-    geoipdb = NULL;
-#endif
-*/
-
     while ((c = getopt(argc, argv, "VatvdhU:D:c:q")) != -1) {
         switch (c) {
             case 'V':

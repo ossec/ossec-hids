@@ -47,10 +47,6 @@ sqlite3 *conn;
 #endif
 
 #ifdef LIBGEOIP_ENABLED
-GeoIP *geoipdb;
-#endif
-
-#ifdef LIBGEOIP_ENABLED
 #include <maxminddb.h>
 #endif
 
