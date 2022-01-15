@@ -1,3 +1,47 @@
+**OSSEC changelog (3.7.0) <scott@atomicorp.com>**
+
+**Release Maintainers**
+
+Dan Parriott
+
+Scott R. Shinn (http://www.atomicorp.com)
+
+**Contributors on this release**
+
+@atomicturtle
+
+@ddpbsd
+
+@ChristianBeer
+
+@lyellread
+
+@nfsec
+
+@tonoitp
+
+@swindmill
+
+@g3rhard
+
+@giannidaprile
+
+@seren
+
+@nurse
+
+@Skactor
+
+@sempervictus
+
+@Midi12
+
+@icy
+
+**General**
+
+
+
 **OSSEC changelog (3.6.0) <scott@atomicorp.com>**
 
 **Release Maintainers**
