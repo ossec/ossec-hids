@@ -8,37 +8,56 @@ Scott R. Shinn (http://www.atomicorp.com)
 
 **Contributors on this release**
 
-@atomicturtle
+- @atomicturtle
+- @ddpbsd
+- @ChristianBeer
+- @lyellread
+- @nfsec
+- @tonoitp
+- @swindmill
+- @g3rhard
+- @giannidaprile
+- @seren
+- @nurse
+- @Skactor
+- @sempervictus
+- @Midi12
+- @icy
 
-@ddpbsd
 
-@ChristianBeer
+**Release Notes**
 
-@lyellread
+Support for Journald
 
-@nfsec
-
-@tonoitp
-
-@swindmill
-
-@g3rhard
-
-@giannidaprile
-
-@seren
-
-@nurse
-
-@Skactor
-
-@sempervictus
-
-@Midi12
-
-@icy
 
 **General**
+
+- @ddpbsd [PR 1840](https://github.com/ossec/ossec-hids/pull/1840) Add unbound DNS rules
+- @ddpbsd [PR 1941](https://github.com/ossec/ossec-hids/pull/1841) Silence build time warning for archive json output.
+- @ddpbsd [PR 1842](https://github.com/ossec/ossec-hids/pull/1842) maild rework with maxminddb.  This retires usage of the EOL GEOIP library.
+- @midi12 [PR 1845](https://github.com/ossec/ossec-hids/pull/1846) Add active response for Amazon AWS WAF
+- @sempervictus [PR 1852](https://github.com/ossec/ossec-hids/pull/1852) Add support for journald log format
+- @ddpbsd [PR 1865](https://github.com/ossec/ossec-hids/pull/1865) Build fix for pcre2 with winagent
+- @ddpbsd [PR 1878](https://github.com/ossec/ossec-hids/pull/1878) Build fixes for solaris
+- @nurse [PR 1887](https://github.com/ossec/ossec-hids/pull/1887) Support Ubuntu Bionic arm64
+- @skactor [PR 1899](https://github.com/ossec/ossec-hids/pull/1899) Update rootkit detection for reptile rootkits
+- @seren [PR 1913](https://github.com/ossec/ossec-hids/pull/1913) Fix regexp import in ossec-batch-manager.pl 
+- @giannidaprile [PR 1919](https://github.com/ossec/ossec-hids/pull/1919) Fix NetBSD builds that don't support JIT regular expressions 
+- @ddpbsd [PR 1936](https://github.com/ossec/ossec-hids/pull/1936) Fix for change in named query log format
+- @g3rhard [PR 1938](https://github.com/ossec/ossec-hids/pull/1938) fix for apparmor rules
+- @swindmill [PR 1940](https://github.com/ossec/ossec-hids/pull/1940) closes issue [314](https://github.com/ossec/ossec-hids/issues/314) Add checksum to default alert "New file added to the file system" 
+- @atomicturtle [PR 1951](https://github.com/ossec/ossec-hids/pull/1951)closes issue [1949](https://github.com/ossec/ossec-hids/issues/1949) invalid link in README
+- @atomicturtle [PR 1952](https://github.com/ossec/ossec-hids/pull/1952) closes issue [1528](https://github.com/ossec/ossec-hids/issues/1528) Rootcheck docker OverlayFS directories problem
+- @tonoitp [PR 1967](https://github.com/ossec/ossec-hids/pull/1967) update to agentless monitoring ssh_asa-fwsmconfig_diff
+- @ddpbsd [PR 1972](https://github.com/ossec/ossec-hids/pull/1972) Closes issue [1969](https://github.com/ossec/ossec-hids/pull/1972) missing systemd libraries in the INSTALL docs
+- @lyellread [PR 1974](https://github.com/ossec/ossec-hids/pull/1974)Updating broken documentation links
+- @atomicturtle [PR 1979] Closes issues [1970](https://github.com/ossec/ossec-hids/issues/1970) debian packaging postinst should not remove ossec users on upgrade
+- @nfsec [PR 2017](https://github.com/ossec/ossec-hids/pull/2017) Add rootkit signatures for Jynx and Beurk
+- @ChristianBeer [PR 2029](https://github.com/ossec/ossec-hids/pull/2029) Add active response script for nftables
+
+
+
+
 
 
 
