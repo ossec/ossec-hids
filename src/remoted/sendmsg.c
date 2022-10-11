@@ -98,15 +98,15 @@ int send_msg(unsigned int agentid, const char *msg)
         return (-1);
     }
 
-    msg_size = CreateSecMSG(&keys, msg, crypt_msg, agentid);
-    if (msg_size == 0) {
-        merror(SEC_ERROR, ARGV0);
-        return (-1);
-    }
-
     /* Lock before using */
     if (pthread_mutex_lock(&sendmsg_mutex) != 0) {
         merror(MUTEX_ERROR, ARGV0);
+        return (-1);
+    }
+
+    msg_size = CreateSecMSG(&keys, msg, crypt_msg, agentid);
+    if (msg_size == 0) {
+        merror(SEC_ERROR, ARGV0);
         return (-1);
     }
 
