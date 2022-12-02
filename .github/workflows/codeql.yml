@@ -1,0 +1,64 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ 'master' ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ 'master' ]
+  schedule:
+    - cron: '2 14 * * 2'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp', 'python' ]
+        include:
+          - os: ubuntu-18.04
+            DB: none
+            OSSEC_TYPE: agent
+            GEOIP: no
+            PCRE2_SYSTEM: no
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+
+    - run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y libevent-dev libsystemd-dev
+        wget https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz && tar xzf pcre2-10.32.tar.gz -C src/external
+        if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
+        if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
+        if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev libtool autoconf libczmq-dev ); fi
+        if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi
+        if [[ "${OSSEC_TYPE}" == "server" ]]; then ( sudo apt-get install libsqlite3-dev sqlite3 ); fi
+        if [[ "${OSSEC_TYPE}" == "test" ]]; then if [ `uname -m` = "aarch64"]; then (sudo apt-get install check libc6-dbg && wget -q http://ports.ubuntu.com/pool/main/v/valgrind/valgrind_3.15.0-1ubuntu9.1_arm64.deb && sudo dpkg -i valgrind_3.15.0-1ubuntu9.1_arm64.deb ) ; else ( sudo apt-get install check valgrind ); fi; fi
+        COMMAND="V=1 TARGET=${OSSEC_TYPE}" && if ! [[ "${DB}" = "none" ]]; then COMMAND="${COMMAND} DATABASE=${DB}"; fi && if [[ "${GEOIP}" = "yes" ]]; then COMMAND="${COMMAND} USE_GEOIP=1"; fi && if [[ "${PRELUDE}" = "yes" ]]; then COMMAND="${COMMAND} USE_PRELUDE=1"; fi && if [[ "${ZEROMQ}" = "yes" ]]; then COMMAND="${COMMAND} USE_ZEROMQ=1"; fi && if [[ "${OSSEC_TYPE}" = "test" ]]; then COMMAND="${COMMAND} USE_PCRE2_JIT=0"; fi && if [[ "${ARCH}" = "arm64" ]]; then ./build.sh; fi && ( cd src/ && make --warn-undefined-variables ${COMMAND} settings && make --warn-undefined-variables ${COMMAND} external -j && make --warn-undefined-variables ${COMMAND} -j ) && if ! [[ "${OSSEC_TYPE}" = "test" || "${OSSEC_TYPE}" = "winagent" ]]; then ( cd src/ && sudo make --warn-undefined-variables ${COMMAND} install ) fi
+        if [[ "${OSSEC_TYPE}" == "test" ]]; then ( cd src/ && make --warn-undefined-variables test_valgrind ) fi
+        if [[ "${RULES}" == "test" ]]; then ( cd src/ && sudo make V=1 TARGET=server test-rules ) fi        
+      env:
+        DB: '${{ matrix.DB }}'
+        OSSEC_TYPE: '${{ matrix.OSSEC_TYPE }}'
+        GEOIP: '${{ matrix.GEOIP }}'
+        PCRE2_SYSTEM: '${{ matrix.PCRE2_SYSTEM }}'
+        RULES: '${{ matrix.RULES }}'
+        
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
