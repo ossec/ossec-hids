@@ -61,6 +61,13 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
     *pieces = '\0';
     pieces++;
 
+    /* Proposed fix for CVE-2020-8664 */
+    if (w_ref_parent_folder(msg) == 1) 
+    {
+        merror(FORMAT_ERROR, ARGV0);
+        return(-1);
+    }
+
     os_strdup(msg, lf->location);
 
     /* Get the log length */
