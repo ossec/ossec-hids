@@ -63,6 +63,9 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
 
     os_strdup(msg, lf->location);
 
+    /*CVE-2020-8445 fix*/
+    remove_control_characters(pieces);
+
     /* Get the log length */
     loglen = strlen(pieces) + 1;
 
@@ -467,7 +470,7 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
                      (done_message == 0)) {
                 pieces += 8;
                 done_message = 1;
-
+                
                 lf->log = pieces;
 
                 /* Get the closing brackets */
