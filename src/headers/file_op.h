@@ -13,8 +13,8 @@
 #define __FILE_H
 
 #include <time.h>
-
-#define OS_PIDFILE  "/var/run"
+#include <stdbool.h>
+#define OS_PIDFILE "/var/run"
 
 /* Set the program name - must be done before *anything* else */
 void OS_SetName(const char *name) __attribute__((nonnull));
@@ -59,5 +59,9 @@ int checkVista();
 int isVista;
 #endif
 
-int w_ref_parent_folder(const char * path);
+int w_ref_parent_folder(const char *path);
+
+void remove_control_characters(char *str);
+
+bool is_control_character(char c);
 #endif /* __FILE_H */
