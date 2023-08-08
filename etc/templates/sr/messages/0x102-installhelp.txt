@@ -23,6 +23,6 @@
   - Izaberi 'lokalnu' ako pratiš samo jedan sistem.
   
   - Više obaveštenja na:
-    http://www.ossec.net/en/manual.html#starting  
+    http://www.ossec.net/docs/docs/manual/non-technical-overview.html  
 
   

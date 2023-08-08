@@ -12,7 +12,7 @@
 
 #include <errno.h>
 #include <string.h>
-
+#include <stdbool.h>
 #include "shared.h"
 
 #ifndef WIN32
@@ -1581,4 +1581,24 @@ int w_ref_parent_folder(const char * path) {
     }
 
     return 0;
+}
+
+bool is_control_character(char c) {
+    return (c >= 0 && c <= 31) || c == 127 || c == '\n';
+}
+
+void remove_control_characters(char *str) {
+    int len = strlen(str);
+    int i, j;
+
+    for (i = 0, j = 0; i < len; i++) {
+        if (!is_control_character(str[i])) {
+            str[j] = str[i];
+            j++;
+        } else {
+            DEBUG_MSG("%s:DEBUG: control character removed: %d",ARGV0, str[i]);
+        }
+    }
+
+    str[j] = '\0'; // Null-terminate the string after removing control characters
 }

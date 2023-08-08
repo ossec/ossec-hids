@@ -4,5 +4,5 @@
        Usted podra bloquear una dirección IP ó deshabilitar el acceso
        de un usuario específico.
        Más información en:
-       http://www.ossec.net/en/manual.html#active-response
+       http://www.ossec.net/docs/docs/manual/ar/index.html
 

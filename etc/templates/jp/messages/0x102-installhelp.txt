@@ -23,6 +23,6 @@
   - 単一システムを監視するためならば 'local' を選択してください．
   
   - 詳細な情報は以下のサイトから得られます：
-    http://www.ossec.net/en/manual.html#starting
+    http://www.ossec.net/docs/docs/manual/non-technical-overview.html
 
   

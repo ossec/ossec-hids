@@ -885,7 +885,7 @@ AddPFTable()
     echo ""
     echo "   - ${pfmessage}:"
     echo "     ${moreinfo}"
-    echo "     http://www.ossec.net/en/manual.html#active-response-tools"
+    echo "     http://www.ossec.net/docs/docs/manual/ar/index.html-tools"
 
     echo ""
     echo ""
@@ -1202,7 +1202,7 @@ main()
         echo "   $INSTALLDIR/bin/manage_agents"
         echo ""
         echo "   ${moreinfo}"
-        echo "   http://www.ossec.net/en/manual.html#ma"
+        echo "   http://www.ossec.net/docs/docs/programs/manage_agents.html"
         echo ""
 
     elif [ "X$INSTYPE" = "Xagent" ]; then
@@ -1210,7 +1210,7 @@ main()
         echo "   $INSTALLDIR/bin/manage_agents"
         echo ""
         echo "   ${moreinfo}"
-        echo "   http://www.ossec.net/en/manual.html#ma"
+        echo "   http://www.ossec.net/docs/docs/programs/manage_agents.html"
         echo ""
     fi
 

@@ -61,7 +61,17 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
     *pieces = '\0';
     pieces++;
 
+    /* Proposed fix for CVE-2020-8664 */
+    if (w_ref_parent_folder(msg) == 1) 
+    {
+        merror(FORMAT_ERROR, ARGV0);
+        return(-1);
+    }
+
     os_strdup(msg, lf->location);
+
+    /*CVE-2020-8445 fix*/
+    remove_control_characters(pieces);
 
     /* Get the log length */
     loglen = strlen(pieces) + 1;
@@ -467,7 +477,7 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
                      (done_message == 0)) {
                 pieces += 8;
                 done_message = 1;
-
+                
                 lf->log = pieces;
 
                 /* Get the closing brackets */

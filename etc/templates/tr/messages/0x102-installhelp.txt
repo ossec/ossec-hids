@@ -25,6 +25,6 @@
   - Eğer inceleme yapacağınız tek sisteminiz varsa 'yerel' kullanın.
   
   - Daha fazla bilgi: 
-    http://www.ossec.net/en/manual.html#starting
+    http://www.ossec.net/docs/docs/manual/non-technical-overview.html
 
   

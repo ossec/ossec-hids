@@ -25,6 +25,6 @@
     -Elija 'local' si tiene que monitorizar un solo sistema .
 
   - Para más información dirijase a:
-    http://www.ossec.net/en/manual.html#starting
+    http://www.ossec.net/docs/docs/manual/non-technical-overview.html
 
   

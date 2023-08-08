@@ -7,7 +7,7 @@
 set -e
 
 case "$1" in
-    purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
 	if getent passwd | grep -q "^ossec"
 	then
 		deluser ossec

@@ -171,6 +171,9 @@ expect {
             }
         }
     }
+    "ERROR*Invalid input detected at" {
+        send_user "No enable requires\n"
+    }
     timeout {
         send_user "ERROR: Timeout while running enable on host: $hostname .\n"
         exit 1;
