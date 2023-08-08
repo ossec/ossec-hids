@@ -37,7 +37,7 @@
 #define DNS_MAX_LABELS    127
 #define DNS_MAX_LABEL_LEN 63
 
-typedef struct label_t {
+typedef struct label {
     char text[DNS_MAX_LABEL_LEN + 1];
     size_t len;
 }
