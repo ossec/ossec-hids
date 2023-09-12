@@ -145,6 +145,7 @@ int main(int argc, char **argv)
         mond.emailidsname = OS_GetOneContentforElement(&xml, xml_idsname);
 
         if (tmpsmtp && mond.emailfrom) {
+#ifndef SENDMAIL_CURL
             mond.smtpserver = OS_GetHost(tmpsmtp, 5);
             if (!mond.smtpserver) {
                 merror(INVALID_SMTP, ARGV0, tmpsmtp);
@@ -154,6 +155,7 @@ int main(int argc, char **argv)
                 mond.emailfrom = NULL;
                 merror("%s: Invalid SMTP server.  Disabling email reports.", ARGV0);
             }
+#endif
         } else {
             if (tmpsmtp) {
                 free(tmpsmtp);
