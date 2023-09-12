@@ -915,6 +915,17 @@ START_TEST(test_stringoverflow4)
 }
 END_TEST
 
+START_TEST(test_skip_xml_header)
+{
+    char xml_file_name[512];
+    create_xml_file("<?xml version=\"12\" ?>\n<root attr1=\"1\" attr2=\"2\"></root>", xml_file_name, 512);
+    OS_XML xml;
+    ck_assert_int_eq(OS_ReadXML(xml_file_name, &xml), 0);
+
+    OS_ClearXML(&xml);
+}
+END_TEST
+
 Suite *test_suite(void)
 {
     Suite *s = suite_create("os_xml");
@@ -965,6 +976,7 @@ Suite *test_suite(void)
     tcase_add_test(tc_core, test_stringoverflow2);
     tcase_add_test(tc_core, test_stringoverflow3);
     tcase_add_test(tc_core, test_stringoverflow4);
+    tcase_add_test(tc_core , test_skip_xml_header);
     suite_add_tcase(s, tc_core);
 
     return (s);
