@@ -12,6 +12,7 @@
 #include "os_regex/os_regex.h"
 #include "os_net/os_net.h"
 #include "execd.h"
+#include "external/cJSON/cJSON.h"
 
 int repeated_offenders_timeout[] = {0, 0, 0, 0, 0, 0, 0};
 
@@ -320,21 +321,45 @@ static void ExecdStart(int q)
             merror(QUEUE_ERROR, ARGV0, EXECQUEUEPATH, strerror(errno));
             continue;
         }
+        
+        cJSON *json_root = NULL;
+        json_root = cJSON_Parse(buffer);
+        cJSON *json_Name = NULL;
+        cJSON *json_Username = NULL;
+        cJSON *json_SrcIP = NULL;
+        char temp_string[OS_MAXSTR + 1];
 
-        /* Current time */
-        curr_time = time(0);
+        if(json_root) {
+            json_Name = cJSON_GetObjectItem(json_root, "name");
+            json_Username = cJSON_GetObjectItem(json_root, "username");
+            json_SrcIP = cJSON_GetObjectItem(json_root, "srcip");
+            
+            if (json_Name && json_Name->type == cJSON_String) {
+                name = json_Name->valuestring;
+            } else {
+                merror(EXEC_INV_NAME, ARGV0);
+                return;
+            }
 
-        /* Get application name */
-        name = buffer;
+            strcat(strcat(strcat(temp_string, " "), json_Username->valuestring), json_SrcIP->valuestring);
+            tmp_msg = temp_string;
+            
+        } else {
+            /* Current time */
+            curr_time = time(0);
 
-        /* Zero the name */
-        tmp_msg = strchr(buffer, ' ');
-        if (!tmp_msg) {
-            merror(EXECD_INV_MSG, ARGV0, buffer);
-            continue;
+            /* Get application name */
+            name = buffer;
+
+            /* Zero the name */
+            tmp_msg = strchr(buffer, ' ');
+            if (!tmp_msg) {
+                merror(EXECD_INV_MSG, ARGV0, buffer);
+                continue;
+            }
+            *tmp_msg = '\0';
+            tmp_msg++;
         }
-        *tmp_msg = '\0';
-        tmp_msg++;
 
         /* Get the command to execute (valid name) */
         command = GetCommandbyName(name, &timeout_value);
@@ -385,7 +410,7 @@ static void ExecdStart(int q)
             i++;
         }
 
-        /* Check if this command was already executed */
+        /* Check if this command was already The name:executed */
         timeout_node = OSList_GetFirstNode(timeout_list);
         added_before = 0;
 

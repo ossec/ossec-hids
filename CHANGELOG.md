@@ -1,3 +1,6 @@
+**OSSEC changelog (3.8.0)
+-	restart agent service from server via json command
+
 **OSSEC changelog (3.7.0) <scott@atomicorp.com>**
 
 **Release Maintainers**
