@@ -93,6 +93,8 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     int *loc_id;
     char sql_query[OS_SIZE_8192 + 1];
     char *fulllog = NULL;
+    char srcip[46 + 2 + 1] = "NULL"; /* strlen(ipaddr) + "'" x 2 + "\0" */
+    char dstip[46 + 2 + 1] = "NULL"; /* strlen(ipaddr) + "'" x 2 + "\0" */
 
     /* Clear the memory before insert */
     sql_query[0] = '\0';
@@ -157,20 +159,25 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
         fulllog[7456] = '\0';
     }
 
+    if (al_data->srcip) {
+      snprintf(srcip, sizeof(srcip), "'%s'", al_data->srcip);
+    }
+    if (al_data->dstip) {
+      snprintf(dstip, sizeof(dstip), "'%s'", al_data->dstip);
+    }
+
     /* Generate final SQL */
     switch (db_config->db_type) {
       case MYSQLDB:
         snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,user,full_log,tld) "
-                 "VALUES ('%u', '%u','%u','%u', '%u', '%s', '%u', '%s', '%u', '%s', '%s', '%s','%.2s')",
+                 "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s','%.2s')",
                  db_config->server_id, al_data->rule,
                  al_data->level,
                  (unsigned int)time(0), *loc_id,
-                 al_data->srcip,
-                 (unsigned short)s_port,
-                 al_data->dstip,
-                 (unsigned short)d_port,
+                 srcip, (unsigned short)s_port,
+                 dstip, (unsigned short)d_port,
                  al_data->alertid,
                  al_data->user, fulllog, al_data->srcgeoip);
 	break;
@@ -179,14 +186,12 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
         snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,\"user\",full_log) "
-                 "VALUES ('%u', '%u','%u','%u', '%u', '%s', '%u', '%s', '%u', '%s', '%s', '%s')",
+                 "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s')",
                  db_config->server_id, al_data->rule,
                  al_data->level,
                  (unsigned int)time(0), *loc_id,
-                 al_data->srcip != NULL ? al_data->srcip : "NULL",
-                 (unsigned short)s_port,
-                 al_data->dstip != NULL ? al_data->dstip : "NULL",
-                 (unsigned short)d_port,
+                 srcip, (unsigned short)s_port,
+                 dstip, (unsigned short)d_port,
                  al_data->alertid,
                  al_data->user != NULL ? al_data->user : "NULL",
                  fulllog);
