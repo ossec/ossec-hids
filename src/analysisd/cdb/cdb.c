@@ -39,7 +39,7 @@ void cdb_init(struct cdb *c, int fd)
     if (fstat(fd, &st) == 0)
         if ((size_t) st.st_size <= 0xffffffff) {
             x = (char *) mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-            if (x + 1) {
+            if (x != MAP_FAILED) {
                 c->size = st.st_size;
                 c->map = x;
             }
