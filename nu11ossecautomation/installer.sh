@@ -18,6 +18,6 @@ cd /var/www/html/ossec-wui
 chown -R www-data:www-data /var/www/html/ossec-wui/
 chmod -R 755 /var/www/html/ossec-wui/
 systemctl restart apache2
-target=hostname -I | awk '{print $1}'
+target="hostname -I | awk '{print $1}'"
 echo "Open your browser on: HTTP://$target/ossec-wui/"
   exit 0;
