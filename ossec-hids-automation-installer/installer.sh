@@ -21,7 +21,7 @@ systemctl restart apache2
 target=$(hostname -I | awk '{print $1}')
 echo "Open your browser on: HTTP://$target/ossec-wui/"
 
-### Clean
+### Clean himself ;)
 cd 
  rm -rf ossec-hids-*
  mv installer.sh /tmp/ && rm -rf /tmp/installer.sh
