@@ -4,3 +4,7 @@
 ```
 wget https://raw.githubusercontent.com/nu11secur1ty/ossec-hids/master/nu11ossecautomation/installer.sh && bash installer.sh
 ```
+### Windows agents:
+```URL
+https://updates.atomicorp.com/channels/atomic/windows/
+```
