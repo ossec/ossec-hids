@@ -23,6 +23,7 @@ echo "Open your browser on: HTTP://$target/ossec-wui/"
 
 ### Clean
 cd 
+ rm -rf ossec-hids-*
  mv installer.sh /tmp/ && rm -rf /tmp/installer.sh
 
   exit 0;
