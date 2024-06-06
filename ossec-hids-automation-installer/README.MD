@@ -4,7 +4,7 @@
 ### WARNING: It was tested only on Ubuntu 20.04!
 
 ```
-wget https://raw.githubusercontent.com/nu11secur1ty/ossec-hids/master/ossec-hids-automation-installer/installer.sh && bash installer.sh
+wget https://raw.githubusercontent.com/nu11secur1ty/ossec-hids/master/ossec-hids-automation-installer/ossec-hids-automation-installer.sh && bash installer.sh
 ```
 ### Windows agents:
 ```URL
