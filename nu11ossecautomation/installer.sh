@@ -10,14 +10,14 @@ tar -xvzf 3.6.0.tar.gz
 cd ossec-hids-3.7.0/
 bash install.sh
 ### UI
+ rm -rf /var/www/html/*
 cd /tmp/
 git clone https://github.com/ossec/ossec-wui.git
-mv /tmp/ossec-wui /var/www/html
-  rm -rf /var/www/html/*
+mv /tmp/ossec-wui /var/www/html/
 cd /var/www/html/ossec-wui
 chown -R www-data:www-data /var/www/html/ossec-wui/
 chmod -R 755 /var/www/html/ossec-wui/
 systemctl restart apache2
-target=ip -4 addr | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+target=hostname -I | awk '{print $1}'
 echo "Open your browser on: HTTP://$target/ossec-wui/"
   exit 0;
