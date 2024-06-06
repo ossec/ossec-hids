@@ -26,6 +26,6 @@ echo "Open your browser on: HTTP://$target/ossec-wui/"
 ### Clean himself ;)
 cd 
  rm -rf 3.7.0.*
- mv ossec-hids-automation-installer.sh /tmp/ && rm -rf /tmp/ossec-hids-automation-installer.sh
+ mv ossec-hids-automation-installer.3.7.0.sh /tmp/ && rm -rf /tmp/ossec-hids-automation-installer.3.7.0.sh
 
   exit 0;
