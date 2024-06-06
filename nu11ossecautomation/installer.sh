@@ -6,7 +6,7 @@ systemctl start apache2
 a2enmod rewrite
 systemctl restart apache2
 wget https://github.com/ossec/ossec-hids/archive/3.7.0.tar.gz
-tar -xvzf 3.6.0.tar.gz
+tar -xvzf 3.7.0.tar.gz
 cd ossec-hids-3.7.0/
 bash install.sh
 ### UI
