@@ -22,9 +22,7 @@ target=$(hostname -I | awk '{print $1}')
 echo "Open your browser on: HTTP://$target/ossec-wui/"
 
 ### Clean
-cp installer.sh ./installer.sh.trash
-./installer.sh.trash
-[ ! -f installer.sh.trash ] && echo "Its gone!" && exit 1
-echo "FAILED"
+cd 
+ mv installer.sh /tmp/ && rm -rf /tmp/installer.sh
 
   exit 0;
