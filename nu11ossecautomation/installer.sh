@@ -13,7 +13,7 @@ bash install.sh
 cd /tmp/
 git clone https://github.com/ossec/ossec-wui.git
 mv /tmp/ossec-wui /var/www/html
-  rm -rf /var/www/html/index.html
+  rm -rf /var/www/html/*
 cd /var/www/html/ossec-wui
 chown -R www-data:www-data /var/www/html/ossec-wui/
 chmod -R 755 /var/www/html/ossec-wui/
