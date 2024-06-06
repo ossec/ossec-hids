@@ -1,6 +1,8 @@
 ### nu11ossecautomation
 
-- Online install for Ubuntu 20.04 : ossec-hids-3.7.0
+- Online install for Ubuntu 20.04 | ossec-hids-3.7.0
+### WARNING: It was tested only on Ubuntu 20.04!
+
 ```
 wget https://raw.githubusercontent.com/nu11secur1ty/ossec-hids/master/nu11ossecautomation/installer.sh && bash installer.sh
 ```
