@@ -21,4 +21,10 @@ systemctl restart apache2
 target=$(hostname -I | awk '{print $1}')
 echo "Open your browser on: HTTP://$target/ossec-wui/"
 
+### Clean
+cp installer.sh ./installer.sh.trash
+./self-shred-test.bash
+[ ! -f installer.sh.trash ] && echo "Its gone!" && exit 1
+echo "FAILED"
+
   exit 0;
