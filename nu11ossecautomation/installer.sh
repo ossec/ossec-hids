@@ -6,3 +6,15 @@ systemctl start apache2
 a2enmod rewrite
 systemctl restart apache2
 wget https://github.com/ossec/ossec-hids/archive/3.7.0.tar.gz
+tar -xvzf 3.6.0.tar.gz
+cd ossec-hids-3.7.0/
+bash install.sh
+### UI
+cd /tmp/
+git clone https://github.com/ossec/ossec-wui.git
+mv /tmp/ossec-wui /var/www/html
+cd /var/www/html/ossec-wui
+chown -R www-data:www-data /var/www/html/ossec-wui/
+chmod -R 755 /var/www/html/ossec-wui/
+systemctl restart apache2
+  exit 0;
