@@ -181,6 +181,39 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             (pieces[13] == ':') &&
             (pieces[16] == ':') && (lf->log += 20)
         )
+        ||
+        (
+            /* ex: <78>1 2024-12-05T11:34:16.945687-07:00 */
+            (loglen > 38) &&
+            (pieces[10] == '-') &&
+            (pieces[13] == '-') &&
+            (pieces[16] == 'T') &&
+            (pieces[19] == ':') &&
+            (pieces[22] == ':') &&
+            (   /* ex: <78>1 2007-06-14T15:48:55-04:00 */
+                (
+                    (pieces[28] == ':') &&
+                    (pieces[31] == ' ') && (lf->log += 32)
+                )
+                ||
+                /* ex: <78>1 2007-06-14T15:48:55.3-04:00 or <78>1 2009-05-22T09:36:46,214994-07:00 */
+                (
+                    (
+                        (pieces[25] == '.') || (pieces[25] == ',')
+                    )
+                    &&
+                    (
+                        ( (pieces[30] == ':') && (lf->log += 33) ) ||
+                        ( (pieces[31] == ':') && (lf->log += 34) ) ||
+                        ( (pieces[32] == ':') && (lf->log += 35) ) ||
+                        ( (pieces[33] == ':') && (lf->log += 36) ) ||
+                        ( (pieces[34] == ':') && (lf->log += 37) ) || 
+                        ( (pieces[35] == ':') && (lf->log += 38) )
+                    )
+                )
+            )
+            
+        )
     ) {
         /* Check for an extra space in here */
         if (*lf->log == ' ') {
@@ -233,6 +266,7 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             /* Valid names:
              * p_name:
              * p_name[pid]:
+             * p_name pid -
              * p_name[pid]: [ID xx facility.severity]
              * auth|security:info p_name:
              */
@@ -271,6 +305,30 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
 
                     if (*pieces == '\0') {
                         *pieces = '[';
+                    }
+                    pieces = NULL;
+                    lf->program_name = NULL;
+                }
+            }
+            /* Check for the third format: p_name pid */
+            else if ((*pieces == ' ') && ((isdigit((int)pieces[1]) || pieces[1] == '-'))) {
+                *pieces = '\0';
+                pieces++;
+                while (isdigit((int)*pieces)) {
+                    pieces++;
+                }
+
+                if ((*pieces == ' ') || (*pieces == '-')) {
+                    pieces ++;
+                } else {
+                    /* Fix for some weird log formats */
+                    pieces--;
+                    while (isdigit((int)*pieces)) {
+                        pieces--;
+                    }
+
+                    if (*pieces == '\0') {
+                        *pieces = ' ';
                     }
                     pieces = NULL;
                     lf->program_name = NULL;
