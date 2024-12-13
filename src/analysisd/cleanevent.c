@@ -104,9 +104,11 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
     if (pieces[0] == '<') {
         /* Increment past the < */
         pieces++;
-        /*move past the 1-3 digits */
+        /*move past the 1-3 digits
+        Increment lf->log along the way */
         while (isdigit((int)*pieces)) {
             pieces++;
+            lf->log++;
         }
         if (
             (pieces[0] == '>') && 
@@ -117,12 +119,13 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             pieces += 2;
             pieces[0] = '\0';
             pieces++;
-            lf->log += 6;
+            lf->log += 3;
         } else {
             /* Walk back to the beginning as not Syslog protocol 23 */
             pieces--;
             while (isdigit((int)*pieces)) {
                 pieces--;
+                lf->log--;
             }
 
         }
