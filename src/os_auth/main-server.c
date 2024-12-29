@@ -155,7 +155,7 @@ int main(int argc, char **argv)
     char *port = DEFAULT_PORT;
     char *ciphers = DEFAULT_CIPHERS;
     const char *dir  = DEFAULTDIR;
-    const char *user = MAILUSER;
+    const char *user = USER;
     const char *group = GROUPGLOBAL;
     const char *server_cert = NULL;
     const char *server_key = NULL;
@@ -307,6 +307,18 @@ int main(int argc, char **argv)
         exit(1);
     }
     fclose(fp);
+
+    /* Set ownership to ossec user and group */
+    if (chown(KEYSFILE_PATH, uid, gid) < 0) {
+        merror("%s: ERROR: Unable to set ownership of %s to %d:%d (%s)", ARGV0, KEYSFILE_PATH, uid, gid, strerror(errno));
+        exit(1);
+    }
+
+    /* Set permissions to read/write for owner, read for group */
+    if (chmod(KEYSFILE_PATH, 0640) < 0) {
+        merror("%s: ERROR: Unable to set permissions of %s to 0640 (%s)", ARGV0, KEYSFILE_PATH, strerror(errno));
+        exit(1);
+    }
     
     if (use_pass) {
 
@@ -556,8 +568,6 @@ int main(int argc, char **argv)
                                 finalkey = OS_AddNewAgent(agentname, NULL, NULL);
                             }
                             if (!finalkey) {
-                                    merror("%s: ERROR: Unable to add agent: %s (internal error - debug check paths and files)", ARGV0, agentname);
-
                                 merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
                                 snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
                                 SSL_write(ssl, response, strlen(response));
