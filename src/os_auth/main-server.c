@@ -22,18 +22,6 @@
  *
  */
 
-#ifndef LIBOPENSSL_ENABLED
-
-#include <stdlib.h>
-#include <stdio.h>
-int main()
-{
-    printf("ERROR: Not compiled. Missing OpenSSL support.\n");
-    exit(0);
-}
-
-#else
-
 #include <sys/wait.h>
 #include "auth.h"
 #include "os_crypto/md5/md5_op.h"
@@ -161,11 +149,13 @@ int main(int argc, char **argv)
     int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
     int use_pass = 1;
     int run_foreground = 0;
+    gid_t uid;
     gid_t gid;
     int client_sock = 0, sock = 0, portnum, ret = 0;
     char *port = DEFAULT_PORT;
     char *ciphers = DEFAULT_CIPHERS;
     const char *dir  = DEFAULTDIR;
+    const char *user = MAILUSER;
     const char *group = GROUPGLOBAL;
     const char *server_cert = NULL;
     const char *server_key = NULL;
@@ -191,7 +181,7 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
-    while ((c = getopt(argc, argv, "Vdhtfig:D:m:p:c:v:x:k:n")) != -1) {
+    while ((c = getopt(argc, argv, "Vdhtfiu:g:D:m:p:c:v:x:k:n")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -204,6 +194,12 @@ int main(int argc, char **argv)
                 break;
             case 'i':
                 use_ip_address = 1;
+                break;
+            case 'u':
+                if (!optarg) {
+                    ErrorExit("%s: -u needs an argument", ARGV0);
+                }
+                user = optarg;
                 break;
             case 'g':
                 if (!optarg) {
@@ -266,23 +262,8 @@ int main(int argc, char **argv)
         }
     }
 
-    /* Start daemon -- NB: need to double fork and setsid */
-    debug1(STARTED_MSG, ARGV0);
-
-    /* Check if the user/group given are valid */
-    gid = Privsep_GetGroup(group);
-    if (gid == (gid_t) - 1) {
-        ErrorExit(USER_ERROR, ARGV0, "", group);
-    }
-
-    if (!run_foreground) {
-        nowDaemon();
-        goDaemon();
-    }
-    
-    /* Create PID files */
-    if (CreatePID(ARGV0, getpid()) < 0) {
-	ErrorExit(PID_ERROR, ARGV0);
+    if (chdir(dir) == -1) {
+        ErrorExit(CHDIR_ERROR, ARGV0, dir, errno, strerror(errno));
     }
 
     /* Exit here if test config is set */
@@ -290,32 +271,43 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    /* Privilege separation */
-    if (Privsep_SetGroup(gid) < 0) {
-        ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
+
+    /* Check if the user/group given are valid */
+    uid = Privsep_GetUser(user);
+    gid = Privsep_GetGroup(group);
+    if (uid == (uid_t) - 1 || gid == (gid_t) - 1) {
+        ErrorExit(USER_ERROR, ARGV0, user, group);
     }
 
-    /* chroot -- TODO: this isn't a chroot. Should also close
-     * unneeded open file descriptors (like stdin/stdout)
-     */
-    if (chdir(dir) == -1) {
-        ErrorExit(CHDIR_ERROR, ARGV0, dir, errno, strerror(errno));
+
+    if (!run_foreground) {
+        nowDaemon();
+        goDaemon();
     }
+    
+
 
     /* Signal manipulation */
     StartSIG(ARGV0);
 
-
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
-        ErrorExit(PID_ERROR, ARGV0);
+  	    ErrorExit(PID_ERROR, ARGV0);
     }
 
     atexit(cleanup);
 
-    /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
+
+    /* load keys */
+    fp = fopen(KEYSFILE_PATH, "a");
+    if (!fp) {
+        merror("%s: ERROR: Unable to open %s (key file)", ARGV0, KEYSFILE_PATH);
+        exit(1);
+    }
+    fclose(fp);
+    
     if (use_pass) {
 
         /* Checking if there is a custom password file */
@@ -345,16 +337,12 @@ int main(int argc, char **argv)
         verbose("Accepting connections. No password required (not recommended)");
     }
 
-    /* Getting SSL cert. */
 
-    fp = fopen(KEYSFILE_PATH, "a");
-    if (!fp) {
-        merror("%s: ERROR: Unable to open %s (key file)", ARGV0, KEYSFILE_PATH);
-        exit(1);
-    }
-    fclose(fp);
+    /* Setup random */
+    srandom_init();
 
     /* Start SSL */
+    /* Getting SSL cert. */
     ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {
         merror("%s: ERROR: SSL error. Exiting.", ARGV0);
@@ -368,22 +356,35 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    /* Privilege separation */
+    if (Privsep_SetGroup(gid) < 0) {
+        ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
+    }
+
+    /* Chroot to the specified directory */
+    if (Privsep_Chroot(dir) < 0) {
+        ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
+    }
+
+    if (Privsep_SetUser(uid) < 0) {
+        ErrorExit(SETUID_ERROR, ARGV0, user, errno, strerror(errno));
+    }
+
+
+    /* Log that we are now in the chrooted environment */
+    nowChroot();
+
+    /* Change working directory to / within the chroot */
+    if (chdir("/") < 0) {
+        ErrorExit(CHDIR_ERROR, ARGV0, "/", errno, strerror(errno));
+    }
+
+
     /* initialize select() save area */
     fdsave = netinfo->fdset;
     fdmax  = netinfo->fdmax;            /* value preset to max fd + 1 */
 
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
-
-    /* Setup random */
-    srandom_init();
-
-    /* Chroot */
-/*
-    if (Privsep_Chroot(dir) < 0)
-        ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
-
-    nowChroot();
-*/
 
     while (1) {
         /* No need to completely pin the cpu, 100ms should be fast enough */
@@ -555,6 +556,8 @@ int main(int argc, char **argv)
                                 finalkey = OS_AddNewAgent(agentname, NULL, NULL);
                             }
                             if (!finalkey) {
+                                    merror("%s: ERROR: Unable to add agent: %s (internal error - debug check paths and files)", ARGV0, agentname);
+
                                 merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
                                 snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
                                 SSL_write(ssl, response, strlen(response));
@@ -598,4 +601,3 @@ int main(int argc, char **argv)
 static void cleanup() {
 	DeletePID(ARGV0);
 }
-#endif /* LIBOPENSSL_ENABLED */
