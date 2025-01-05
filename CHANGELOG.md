@@ -4,14 +4,38 @@
 
 Dan Parriott
 
-Scott R. Shinn (http://www.atomicorp.com)
+Scott R. Shinn (https://www.atomicorp.com)
 
 **Contributors on this release**
 
+- @1stmile-sysEngineer
+- @atomicturtle
+- @ddpbsd
+- @g3rhard
+- @pwntester
+- @ngarratt
+- @staskysel
+- @XALM1337X 
+
 **Release Notes**
+
+Update to authd to enforce chrooting, and privilege separation. The authd daemon will by default run as the ossec user. Adds support for AIX 7.x on power architecture (8/9/10). 
 
 
 **General**
+
+- @ddpbsd - [PR 1874](https://github.com/ossec/ossec-hids/pull/1874) - pcre2 fix for windows1 decoders
+- @g3rhard - [PR 1939](https://github.com/ossec/ossec-hids/pull/1939) - fix for AppArmor rules (added 5100 rule as parent)
+- @ngarratt - [PR 1958](https://github.com/ossec/ossec-hids/pull/1958) - Support for AIX 7
+- @ddpbsd - [PR 2062](https://github.com/ossec/ossec-hids/pull/2062) - Fix for issue #2020, False positive "Trojaned version of file '/bin/diff' detected" on Archlinux
+- @staskysel - [PR 2064](https://github.com/ossec/ossec-hids/pull/2064) - Fix overwriting an agent counter with sender counter during updating keys
+- @pwntester - [PR 2070](https://github.com/ossec/ossec-hids/pull/2070) - Add CodeQL wofkflow
+- @1stmile-sysEngineer, @ddpbsd - [PR 2084](https://github.com/ossec/ossec-hids/pull/2084) Update for 1stmile rootkit detection
+- @XALM1337X - [PR 2092](https://github.com/ossec/ossec-hids/pull/2092) Fix for CVE-2020-8446
+- @XALM1337X - [PR 2094](https://github.com/ossec/ossec-hids/pull/2094) Fix for CVE-2020-8445
+- @atomicturtle - [PR 2143](https://github.com/ossec/ossec-hids/pull/2143) Enforce chroot and privilege separation for the authd daemon
+
+
 
 
 **OSSEC changelog (3.7.0) <scott@atomicorp.com>**
