@@ -99,6 +99,41 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             pieces++;
         }
     }
+    
+    /* Check for and remove syslog protocol 23 priority and versions */
+    if (pieces[0] == '<') {
+        /* Increment past the < */
+        pieces++;
+        /*move past the 1-3 digits
+        Increment lf->log along the way */
+        while (isdigit((int)*pieces)) {
+            pieces++;
+            lf->log++;
+        }
+        if (
+            (pieces[0] == '>') && 
+            (
+                (pieces[1] == '1') || (pieces[1] == '2')
+            ) &&
+            (pieces[2] == ' ')) {
+            pieces += 2;
+            pieces[0] = '\0';
+            pieces++;
+            lf->log += 3;
+        } else {
+            /* Walk back to the beginning as not Syslog protocol 23 */
+            pieces--;
+            while (isdigit((int)*pieces)) {
+                pieces--;
+                lf->log--;
+            }
+
+        }
+    }
+    
+
+
+
 
     /* Check for the syslog date format
      * ( ex: Dec 29 10:00:01
@@ -233,6 +268,7 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
             /* Valid names:
              * p_name:
              * p_name[pid]:
+             * p_name pid -
              * p_name[pid]: [ID xx facility.severity]
              * auth|security:info p_name:
              */
@@ -271,6 +307,30 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
 
                     if (*pieces == '\0') {
                         *pieces = '[';
+                    }
+                    pieces = NULL;
+                    lf->program_name = NULL;
+                }
+            }
+            /* Check for the third format: p_name pid */
+            else if ((*pieces == ' ') && (isdigit((int)pieces[1]))) {
+                *pieces = '\0';
+                pieces++;
+                while (isdigit((int)*pieces)) {
+                    pieces++;
+                }
+
+                if (*pieces == ' ') {
+                    pieces ++;
+                } else {
+                    /* Fix for some weird log formats */
+                    pieces--;
+                    while (isdigit((int)*pieces)) {
+                        pieces--;
+                    }
+
+                    if (*pieces == '\0') {
+                        *pieces = ' ';
                     }
                     pieces = NULL;
                     lf->program_name = NULL;
