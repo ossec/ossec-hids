@@ -109,7 +109,7 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
     }
 
     char authentication_file[2048 + 1];
-    snprintf(authentication_file, 2048, "%s%s", DEFAULTDIR, AUTH_FILE);
+    snprintf(authentication_file, 2048, "%s", AUTH_FILE);
 
     fp = fopen(authentication_file, "a");
     if (!fp) {
