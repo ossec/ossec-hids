@@ -104,6 +104,7 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
     if (pieces[0] == '<') {
         /* Increment past the < */
         pieces++;
+        lf->log++;
         /*move past the 1-3 digits
         Increment lf->log along the way */
         while (isdigit((int)*pieces)) {
