@@ -54,7 +54,7 @@ before_script:
 - sudo apt-get install -y libevent-dev libsystemd-dev
 - ( wget https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz
   && tar xzf pcre2-10.32.tar.gz -C src/external )
-- if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install geoip-bin geoip-database libgeoip-dev libgeoip1 ); fi
+- if [[ "${GEOIP}" == "yes"  ]]; then ( sudo apt-get install libmaxminddb-dev libmaxminddb0 ); fi
 - if [[ "${PRELUDE}" == "yes" ]]; then ( sudo apt-get install libprelude-dev ); fi
 - if [[ "${ZEROMQ}" == "yes" ]]; then ( sudo apt-get install libzmq3-dev libtool autoconf libczmq-dev ); fi
 - if [[ "${OSSEC_TYPE}" == "winagent" ]]; then ( sudo apt-get install aptitude && sudo aptitude -y install mingw-w64 nsis ); fi

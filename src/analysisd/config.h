@@ -14,7 +14,7 @@
 #include "config/global-config.h"
 
 #ifdef LIBGEOIP_ENABLED
-#include "GeoIP.h"
+#include <maxminddb.h>
 #endif
 
 
@@ -23,7 +23,7 @@ extern _Config Config;       /* Global Config structure */
 
 /*
 #ifdef LIBGEOIP_ENABLED
-GeoIP *geoipdb;
+MMDB_s geoipdb;
 #endif
 */
 

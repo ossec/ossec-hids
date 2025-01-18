@@ -33,6 +33,9 @@ extern OSDecoderInfo *NULL_Decoder;
 #define OSSEC_SERVER    "ossec-server"
 #define MAX_DECODER_ORDER_SIZE  20
 
+#ifdef USE_GEOIP
+int goipdb_success;
+#endif
 
 #endif /* _LOGAUDIT__H */
 
