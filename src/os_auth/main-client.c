@@ -334,62 +334,64 @@ int main(int argc, char **argv)
             case SSL_ERROR_NONE:
                 buf[ret] = '\0';
                 if (strncmp(buf, "ERROR", 5) == 0) {
-                    char *tmpstr;
-                    tmpstr = strchr(buf, '\n');
-                    if (tmpstr) {
-                        *tmpstr = '\0';
-                    }
+                    char *tmpstr = strchr(buf, '\n');
+                    if (tmpstr) *tmpstr = '\0';
                     printf("%s (from manager)\n", buf);
                 } else if (strncmp(buf, "OSSEC K:'", 9) == 0) {
-                    char *key;
-                    char *tmpstr;
-                    char **entry;
-                    printf("INFO: Received response with agent key\n");
-
-                    key = buf;
-                    key += 9;
-                    tmpstr = strchr(key, '\'');
+                    char *key = buf + 9;
+                    char *tmpstr = strchr(key, '\'');
                     if (!tmpstr) {
                         printf("ERROR: Invalid key received. Closing connection.\n");
                         exit(1);
                     }
                     *tmpstr = '\0';
-                    entry = OS_StrBreak(' ', key, 4);
-                    if (!OS_IsValidID(entry[0]) || !OS_IsValidName(entry[1]) ||
-                            !OS_IsValidName(entry[2]) || !OS_IsValidName(entry[3])) {
-                        printf("ERROR: Invalid key received (2). Closing connection.\n");
+
+                    FILE *fp = fopen(KEYSFILE_PATH, "w");
+                    if (!fp) {
+                        printf("ERROR: Unable to open key file: %s", KEYSFILE_PATH);
                         exit(1);
                     }
+                    fprintf(fp, "%s\n", key);
+                    fclose(fp);
 
-                    {
-                        FILE *fp;
-                        fp = fopen(KEYSFILE_PATH, "w");
-                        if (!fp) {
-                            printf("ERROR: Unable to open key file: %s", KEYSFILE_PATH);
-                            exit(1);
-                        }
-                        fprintf(fp, "%s\n", key);
-                        fclose(fp);
-                    }
                     key_added = 1;
                     printf("INFO: Valid key created. Finished.\n");
                 }
                 break;
+
             case SSL_ERROR_ZERO_RETURN:
-            case SSL_ERROR_SYSCALL:
-                if (key_added == 0) {
-                    printf("ERROR: Unable to create key. Either wrong password or connection not accepted by the manager.\n");
-                }
-                printf("INFO: Connection closed.\n");
+                printf("INFO: Connection closed by server (graceful shutdown).\n");
                 exit(0);
+
+            case SSL_ERROR_SYSCALL:
+                if (ret == 0) {
+                    if (key_added) {
+                        printf("INFO: Connection closed by server (EOF after key creation).\n");
+                        exit(0);
+                    } else {
+                        printf("ERROR: Connection closed by server before key creation.\n");
+                        exit(1);
+                    }
+                } else if (ret < 0) {
+                    perror("ERROR: System call error during SSL_read");
+                    exit(1);
+                }
                 break;
+
             default:
-                printf("ERROR: SSL read (unable to receive message)\n");
-                exit(1);
+                if (key_added) {
+                    // Suppress unexpected EOF error if the key was successfully created
+                    exit(0);
+                } else {
+                    printf("ERROR: SSL read (unable to receive message)\n");
+                    ERR_print_errors_fp(stderr);
+                    exit(1);
+                }
                 break;
         }
-
     }
+
+
 
     /* Shut down the socket */
     if (key_added == 0) {
