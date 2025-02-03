@@ -19,6 +19,7 @@
 #include "os_xml_internal.h"
 
 /* Prototypes */
+static int _skip_xml_header(FILE *fp) __attribute__((nonnull));
 static int _oscomment(FILE *fp) __attribute__((nonnull));
 static int _writecontent(const char *str, size_t size, unsigned int parent, OS_XML *_lxml) __attribute__((nonnull));
 static int _writememory(const char *str, XML_TYPE type, size_t size,
@@ -118,6 +119,12 @@ int OS_ReadXML(const char *file, OS_XML *_lxml)
     /* Zero the line */
     _line = 1;
 
+    if(_skip_xml_header(fp) < 0)
+    {
+        xml_error(_lxml,"XML ERR: Xml Bad Header .");
+        return(-1);
+    }
+
     if ((r = _ReadElem(fp, 0, _lxml)) < 0) { /* First position */
         if (r != LEOF) {
             fclose(fp);
@@ -135,6 +142,50 @@ int OS_ReadXML(const char *file, OS_XML *_lxml)
 
     fclose(fp);
     return (0);
+}
+
+static int _skip_xml_header(FILE *fp)
+{
+    int c , c1 , c2 , c3 , pre = -1;
+    c = fgetc(fp);
+    c1= fgetc(fp);
+
+    if(c == _R_CONFS  && c1 == _R_HEADER)
+    {
+        while (isspace(c1 = fgetc(fp)))
+        {
+            continue;
+        }
+        c2 = fgetc(fp);
+        c3 = fgetc(fp);
+        if(c1 == 'x' && c2 == 'm' && c3 == 'l')
+        {
+              while((c=_xml_fgetc(fp)) != EOF)
+              {
+                  if(c == _R_CONFE && pre == '?')
+                  {
+                      return 1;
+                  }
+
+                  if(!isspace(c))
+                  {
+                      pre = c;
+                  }
+              }
+              return -1;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        ungetc(c1 , fp);
+        ungetc(c , fp);
+    }
+
+    return 0;
 }
 
 static int _oscomment(FILE *fp)
