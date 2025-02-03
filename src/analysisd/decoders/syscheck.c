@@ -287,7 +287,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         /* Get name */
         saved_name = strchr(sdb.buf, ' ');
         if (saved_name == NULL) {
-            merror("%s: Invalid integrity message in the database.", ARGV0);
+            merror("%s: Invalid integrity message in the database. (agentid: %d, sdb.buf: %s", ARGV0, agent_id, sdb.buf);
             fgetpos(fp, &sdb.init_pos); /* Get next location */
             continue;
         }
