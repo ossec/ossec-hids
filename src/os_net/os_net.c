@@ -64,32 +64,6 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     /* init hints for getaddrinfo() */
     memset(&hints, 0, sizeof(struct addrinfo));
 
-   /*
-    * If you cannot bind both IPv4 and IPv6, the problem is likely due to the
-    * AF_INET6 family with the AI_V4MAPPED flag. Alter your Makefile to use the
-    * NOV4MAP define and it should work like a breeze. All of the *BSDs fall
-    * into this category even though AI_V4MAPPED exists in netdb.h (true for
-    * all modern OS's). This should work with all Linux versions too, but the
-    * original code for AF_INET6 was left for Linux because it works.
-    *
-    * d. stoddard - 4/19/2018
-    */
-
-#if defined(__linux__) && !defined(NOV4MAP)
-#if defined (AI_V4MAPPED)
-    hints.ai_family = AF_INET6;		/* Allow IPv4 and IPv6 */
-    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
-#else
-    /* handle as normal IPv4 and IPv6 multi request */
-    hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
-#endif /* AI_V4MAPPED */
-#else
-    /* FreeBSD, OpenBSD, NetBSD, and others */
-    hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
-#endif
-
     hints.ai_protocol = _proto;
     if (_proto == IPPROTO_UDP) {
         hints.ai_socktype = SOCK_DGRAM;
