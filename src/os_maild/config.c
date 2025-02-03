@@ -37,6 +37,11 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     Mail->gran_format = NULL;
     Mail->groupping = 1;
     Mail->strict_checking = 0;
+    Mail->authsmtp = -1;
+    Mail->smtp_user = NULL;
+    Mail->smtp_pass = NULL;
+    Mail->securesmtp = 0;
+
 #ifdef LIBGEOIP_ENABLED
     Mail->geoip = 0;
 #endif
