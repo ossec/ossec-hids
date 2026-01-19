@@ -32,8 +32,7 @@ int OS_SHA256_File(const char *fname, os_sha256 output, int mode)
     os_SHA256_Final(md, &c);
 
     for (n = 0; n < 32; n++) {
-        snprintf(output, 3, "%02x", md[n]);
-        output += 2;
+        snprintf(output + (n * 2), 3, "%02x", md[n]);
     }
 
     fclose(fp);
