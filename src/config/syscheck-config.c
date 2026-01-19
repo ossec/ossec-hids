@@ -856,7 +856,7 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_GROUP,
         CHECK_MD5SUM,
         CHECK_SHA1SUM,
-        CHECK_SHA256SUM,
+    CHECK_SHA256SUM,
         CHECK_REALTIME,
         CHECK_SEECHANGES,
         CHECK_NORECURSE,
