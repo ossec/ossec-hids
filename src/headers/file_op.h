@@ -56,7 +56,7 @@ int mkstemp_ex(char *tmp_path) __attribute__((nonnull));
 /* Checks for Windows Vista */
 #ifdef WIN32
 int checkVista();
-int isVista;
+extern int isVista;
 #endif
 
 int w_ref_parent_folder(const char *path);
