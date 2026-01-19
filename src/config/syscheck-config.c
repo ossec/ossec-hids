@@ -185,7 +185,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
 
     while (*dir) {
         int j = 0;
-        int opts = 0;
+        int opts = CHECK_SHA256SUM;
         char *tmp_dir;
 
         char **attrs = NULL;
@@ -246,8 +246,9 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                 if (strcmp(*values, "yes") == 0) {
                     opts |= CHECK_MD5SUM;
                     opts |= CHECK_SHA1SUM;
+                    opts |= CHECK_SHA256SUM;
                 } else if (strcmp(*values, "no") == 0) {
-		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM );
+		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_SHA256SUM );
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
                     ret = 0;
