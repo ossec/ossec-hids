@@ -9,9 +9,18 @@
 
 #include <process.h>
 
+
 #include "os_win32ui.h"
-#include <process.h>
 #include "../os_win.h"
+/* Agent status */
+char ui_server_info[2048 + 1];
+
+/* Configuration */
+ossec_config config_inst;
+
+/* Status bar */
+HWND hStatus;
+
 
 
 /* Dialog -- About OSSEC */

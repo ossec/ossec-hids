@@ -23,6 +23,7 @@
 
 /* Vista product information */
 #ifdef WIN32
+int isVista = 0;
 #ifndef PRODUCT_UNLICENSED
 #define PRODUCT_UNLICENSED 0xABCDABCD
 #endif
