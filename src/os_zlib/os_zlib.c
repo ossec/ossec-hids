@@ -12,7 +12,7 @@
 #ifdef ZLIB_SYSTEM
 #include <zlib.h>
 #else
-#include "../external/zlib-1.2.11/zlib.h"
+#include "../external/zlib-1.3.1/zlib.h"
 #endif
 
 unsigned long int os_zlib_compress(const char *src, char *dst,
