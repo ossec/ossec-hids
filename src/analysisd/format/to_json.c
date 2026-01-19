@@ -283,7 +283,7 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
            cJSON_AddStringToObject(root, "sha1_before", lf->sha1_before);
            cJSON_AddStringToObject(root, "sha1_after", lf->sha1_after);
        }
-        if (lf->sha256_before && lf->sha256_after && !(strcmp(lf->sha256_before, lf->sha256_after) != 0)) {
+        if (lf->sha256_before && lf->sha256_after && (strcmp(lf->sha256_before, lf->sha256_after) != 0)) {
             cJSON_AddStringToObject(root, "sha256_before", lf->sha256_before);
             cJSON_AddStringToObject(root, "sha256_after", lf->sha256_after);
         }
