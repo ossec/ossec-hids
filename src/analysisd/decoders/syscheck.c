@@ -658,10 +658,12 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         }
 
         /* SHA-256 message */
-        snprintf(sdb.sha256, OS_FLSIZE,
-                 "New sha256sum is : '%s'\n",
-                 newfilesha256);
-        os_strdup(newfilesha256, lf->sha256_after);
+        if (newfilesha256) {
+            snprintf(sdb.sha256, OS_FLSIZE,
+                     "New sha256sum is : '%s'\n",
+                     newfilesha256);
+            os_strdup(newfilesha256, lf->sha256_after);
+        }
 
         /* SHA-1 message */
         snprintf(sdb.sha1, OS_FLSIZE,
