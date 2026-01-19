@@ -119,6 +119,7 @@ START_TEST(test_sha256file)
     ck_assert_int_eq(OS_SHA256_File(file_name, buffer, OS_TEXT), 0);
 
     ck_assert_str_eq(buffer, string_sha256);
+    unlink(file_name);
 }
 END_TEST
 

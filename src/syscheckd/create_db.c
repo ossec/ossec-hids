@@ -161,7 +161,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 }
             }
 #endif
-            
+
             if (opts & CHECK_SEECHANGES) {
                 sha1s = 's';
             }
