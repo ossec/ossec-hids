@@ -23,8 +23,8 @@ src/external/zlib-1.2.8/ztest*
 src/agent-auth
 src/agent_control
 src/clear_stats
-src/external/lua-5.2.3/src/ossec-lua
-src/external/lua-5.2.3/src/ossec-luac
+src/external/lua-5.4.7/src/ossec-lua
+src/external/lua-5.4.7/src/ossec-luac
 src/isbigendian
 src/list_agents
 src/manage_agents
