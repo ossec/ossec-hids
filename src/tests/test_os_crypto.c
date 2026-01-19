@@ -105,7 +105,7 @@ END_TEST
 START_TEST(test_sha256file)
 {
     const char *string = "teststring";
-    const char *string_sha256 = "d5579c46dfcc7f18207013e65b44e4cb4e2c2298f4ac457ba8f82743f31e930b";
+    const char *string_sha256 = "3c8727e019a42b444667a587b6001251becadabbb36bfed8087a92c18882d111";
 
     /* create tmp file */
     char file_name[256];

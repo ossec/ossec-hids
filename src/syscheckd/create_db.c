@@ -270,10 +270,10 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             send_syscheck_msg(alert_msg);
         } else {
             char alert_msg[OS_MAXSTR + 1];
-            char c_sum[256 + 2];
+            char c_sum[OS_MAXSTR + 1];
 
             c_sum[0] = '\0';
-            c_sum[256] = '\0';
+            c_sum[OS_MAXSTR] = '\0';
             alert_msg[0] = '\0';
             alert_msg[OS_MAXSTR] = '\0';
 

@@ -445,7 +445,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     /* 20+5+10+10+32+40+64 = ~181. 256 is enough. */
 
 #ifndef WIN32
-    snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s:%s",
+    snprintf(newsum, OS_MAXSTR, "%ld:%d:%d:%d:%s:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
              perm == 0 ? 0 : (int)statbuf.st_mode,
              owner == 0 ? 0 : (int)statbuf.st_uid,
@@ -487,7 +487,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     LocalFree(szSID);
     CloseHandle(hFile);
 
-    snprintf(newsum, 255, "%ld:%d:%s:%d:%s:%s:%s",
+    snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
              perm == 0 ? 0 : (int)statbuf.st_mode,
              owner == 0 ? "0" : st_uid,
