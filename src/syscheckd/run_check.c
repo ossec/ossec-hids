@@ -436,13 +436,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #endif
 
     newsum[0] = '\0';
-    newsum[916] = '\0'; /* Increased buffer size assumption in caller, wait, caller passed char*newsum */
-    /* Checks caller size.. char c_sum[256 + 2] in read_file ?? */
-    /* Let's verify buffer size in create_db.c! */
-    /* create_db.c line 246: char c_sum[256 + 2]; */
-    /* SHA-256 adds 65 chars. 256 might be too small if we add SHA256. */
-    /* Size string can be ~20. Perm ~5. uid/gid ~10 each. md5 32. sha1 40. sha256 64. */
-    /* 20+5+10+10+32+40+64 = ~181. 256 is enough. */
+    /* Caller is expected to provide a buffer of at least 
+     * 256 + 2 bytes for `newsum` 
+     * (see create_db.c: char c_sum[OS_MAXSTR + 1];). The
+     * snprintf() below is limited to
+     * OS_MAXSTR bytes, which is safely within that size even 
+     * when including all checksum
+     * fields (size, perm, uid, gid, md5, sha1, 
+     * sha256).
+     */
 
 #ifndef WIN32
     snprintf(newsum, OS_MAXSTR, "%ld:%d:%d:%d:%s:%s:%s",
