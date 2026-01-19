@@ -159,6 +159,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_check_all = "check_all";
     const char *xml_check_sum = "check_sum";
     const char *xml_check_sha1sum = "check_sha1sum";
+    const char *xml_check_sha256sum = "check_sha256sum";
     const char *xml_check_md5sum = "check_md5sum";
     const char *xml_check_size = "check_size";
     const char *xml_check_owner = "check_owner";
@@ -226,12 +227,13 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                 if (strcmp(*values, "yes") == 0) {
                     opts |= CHECK_MD5SUM;
                     opts |= CHECK_SHA1SUM;
+                    opts |= CHECK_SHA256SUM;
                     opts |= CHECK_PERM;
                     opts |= CHECK_SIZE;
                     opts |= CHECK_OWNER;
                     opts |= CHECK_GROUP;
                 } else if (strcmp(*values, "no") == 0) {
-		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_PERM
+		    opts &= ~ ( CHECK_MD5SUM | CHECK_SHA1SUM | CHECK_SHA256SUM | CHECK_PERM
 		       | CHECK_SIZE | CHECK_OWNER | CHECK_GROUP );
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
@@ -270,6 +272,18 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                     opts |= CHECK_SHA1SUM;
                 } else if (strcmp(*values, "no") == 0) {
 		    opts &= ~ CHECK_SHA1SUM;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
+            }
+            /* Check sha256sum */
+            else if (strcmp(*attrs, xml_check_sha256sum) == 0) {
+                if (strcmp(*values, "yes") == 0) {
+                    opts |= CHECK_SHA256SUM;
+                } else if (strcmp(*values, "no") == 0) {
+                    opts &= ~ CHECK_SHA256SUM;
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
                     ret = 0;
@@ -839,20 +853,22 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_SIZE,
         CHECK_OWNER,
         CHECK_GROUP,
-	CHECK_MD5SUM,
+        CHECK_MD5SUM,
         CHECK_SHA1SUM,
+        CHECK_SHA256SUM,
         CHECK_REALTIME,
         CHECK_SEECHANGES,
         CHECK_NORECURSE,
-	0
-	};
+        0
+        };
     char *check_strings[] = {
         "perm",
         "size",
         "owner",
         "group",
-	"md5sum",
+        "md5sum",
         "sha1sum",
+        "sha256sum",
         "realtime",
         "report_changes",
         "no_recurse",

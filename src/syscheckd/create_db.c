@@ -11,6 +11,7 @@
 #include "syscheck.h"
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
+#include "os_crypto/sha256/sha256_op.h"
 #include "os_crypto/md5_sha1/md5_sha1_op.h"
 #ifdef WIN32
 #include <aclapi.h>
@@ -107,17 +108,19 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
     {
         os_md5 mf_sum;
         os_sha1 sf_sum;
+        os_sha256 sha256_sum;
         os_sha1 sf_sum2;
         os_sha1 sf_sum3;
 
         /* Clean sums */
         strncpy(mf_sum,  "xxx", 4);
         strncpy(sf_sum,  "xxx", 4);
+        strncpy(sha256_sum,  "xxx", 4);
         strncpy(sf_sum2, "xxx", 4);
         strncpy(sf_sum3, "xxx", 4);
 
         /* Generate checksums */
-        if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
+        if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM) || (opts & CHECK_SHA256SUM)) {
             /* If it is a link, check if dest is valid */
 #ifndef WIN32
             if (S_ISLNK(statbuf.st_mode)) {
@@ -128,17 +131,37 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
+                        if (opts & CHECK_SHA256SUM) {
+                            if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                                strncpy(sha256_sum, "xxx", 4);
+                            }
+                        }
                     }
                 }
-            } else if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
+            } else {
+                 if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                    strncpy(mf_sum, "xxx", 4);
+                    strncpy(sf_sum, "xxx", 4);
+                 }
+                 if (opts & CHECK_SHA256SUM) {
+                    if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                        strncpy(sha256_sum, "xxx", 4);
+                    }
+                 }
+            }
 #else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
-#endif
             {
                 strncpy(mf_sum, "xxx", 4);
                 strncpy(sf_sum, "xxx", 4);
             }
-
+            if (opts & CHECK_SHA256SUM) {
+                if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                    strncpy(sha256_sum, "xxx", 4);
+                }
+            }
+#endif
+            
             if (opts & CHECK_SEECHANGES) {
                 sha1s = 's';
             }
@@ -165,19 +188,21 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
 #endif
 
-            snprintf(alert_msg, 916, "%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s",
+            snprintf(alert_msg, 916, "%c%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s:%s",
                      opts & CHECK_SIZE ? '+' : '-',
                      opts & CHECK_PERM ? '+' : '-',
                      opts & CHECK_OWNER ? '+' : '-',
                      opts & CHECK_GROUP ? '+' : '-',
                      opts & CHECK_MD5SUM ? '+' : '-',
                      sha1s,
+                     opts & CHECK_SHA256SUM ? '+' : '-',
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
                      opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
-                     opts & CHECK_SHA1SUM ? sf_sum : "xxx");
+                     opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                     opts & CHECK_SHA256SUM ? sha256_sum : "xxx");
 
             if (OSHash_Add(syscheck.fp, file_name, strdup(alert_msg)) <= 0) {
                 merror("%s: ERROR: Unable to add file to db: %s", ARGV0, file_name);
@@ -187,13 +212,14 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             alert_msg[916] = '\0';
 
 #ifndef WIN32
-            snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s %s",
+            snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
                      opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                     opts & CHECK_SHA256SUM ? sha256_sum : "xxx",
                      file_name);
 #else
 
@@ -230,13 +256,14 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             LocalFree(szSID);
             CloseHandle(hFile);
     
-            snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s %s",
+            snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      (opts & CHECK_OWNER) ? st_uid : "0",
                      opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                     opts & CHECK_SHA256SUM ? sha256_sum : "xxx",
                      file_name);
             free(st_uid);
 #endif

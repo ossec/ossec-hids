@@ -29,6 +29,7 @@ typedef struct __sdb {
     char gowner[OS_FLSIZE + 1];
     char md5[OS_FLSIZE + 1];
     char sha1[OS_FLSIZE + 1];
+    char sha256[OS_FLSIZE + 1];
 
     char agent_cp[MAX_AGENTS + 1][1];
     char *agent_ips[MAX_AGENTS + 1];
@@ -109,6 +110,7 @@ void SyscheckInit()
     memset(sdb.gowner, '\0', OS_FLSIZE + 1);
     memset(sdb.md5, '\0', OS_FLSIZE + 1);
     memset(sdb.sha1, '\0', OS_FLSIZE + 1);
+    memset(sdb.sha256, '\0', OS_FLSIZE + 1);
 
     /* Create decoder */
     os_calloc(1, sizeof(OSDecoderInfo), sdb.syscheck_dec);
@@ -414,6 +416,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             char *oldgid = NULL, *newgid = NULL;
             char *oldmd5 = NULL, *newmd5 = NULL;
             char *oldsha1 = NULL, *newsha1 = NULL;
+            char *oldsha256 = NULL, *newsha256 = NULL;
 
             oldsize = saved_sum;
             newsize = c_sum;
@@ -467,6 +470,17 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                                 *newsha1 = '\0';
                                 oldsha1++;
                                 newsha1++;
+
+                                /* Get SHA-256 */
+                                oldsha256 = strchr(oldsha1, ':');
+                                newsha256 = strchr(newsha1, ':');
+
+                                if (oldsha256 && newsha256) {
+                                    *oldsha256 = '\0';
+                                    *newsha256 = '\0';
+                                    oldsha256++;
+                                    newsha256++;
+                                }
                             }
                         }
                     }
@@ -495,11 +509,11 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             if (oldperm == newperm) {
                 sdb.perm[0] = '\0';
             } else if (oldperm > 0 && newperm > 0) {
-		char opstr[10];
-		char npstr[10];
+        char opstr[10];
+        char npstr[10];
 
-		strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr) - 1);
-		strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr) - 1);
+        strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr) - 1);
+        strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr) - 1);
 
                 snprintf(sdb.perm, OS_FLSIZE, "Permissions changed from "
                          "'%9.9s' to '%9.9s'\n", opstr, npstr);
@@ -554,9 +568,21 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                 os_strdup(newsha1, lf->sha1_after);
             }
 
+            /* SHA-256 message */
+            if (!newsha256 || !oldsha256 || strcmp(newsha256, oldsha256) == 0) {
+                sdb.sha256[0] = '\0';
+            } else {
+                snprintf(sdb.sha256, OS_FLSIZE, "Old sha256sum was: '%s'\n"
+                         "New sha256sum is : '%s'\n",
+                         oldsha256, newsha256);
+                os_strdup(oldsha256, lf->sha256_before);
+                os_strdup(newsha256, lf->sha256_after);
+            }
+
             /* Provide information about the file */
             snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changed for: "
                      "'%.756s'\n"
+                     "%s"
                      "%s"
                      "%s"
                      "%s"
@@ -571,6 +597,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                      sdb.gowner,
                      sdb.md5,
                      sdb.sha1,
+                     sdb.sha256,
                      lf->data == NULL ? "" : "What changed:\n",
                      lf->data == NULL ? "" : lf->data
                     );
@@ -603,6 +630,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         char *newfilec_sum = NULL;
         char *newfilemd5 = NULL;
         char *newfilesha1 = NULL;
+        char *newfilesha256 = NULL;
 
         os_strdup(c_sum, newfilec_sum);
 
@@ -620,10 +648,20 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             {
                 newfilesha1 = token;
             }
+            if(tok_count == 7)
+            {
+                newfilesha256 = token;
+            }
 
             token = strtok(NULL, ":");
             tok_count++;
         }
+
+        /* SHA-256 message */
+        snprintf(sdb.sha256, OS_FLSIZE,
+                 "New sha256sum is : '%s'\n",
+                 newfilesha256);
+        os_strdup(newfilesha256, lf->sha256_after);
 
         /* SHA-1 message */
         snprintf(sdb.sha1, OS_FLSIZE,
@@ -642,10 +680,12 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                  "New file '%.756s' "
                  "added to the file system.\n"
                  "%s"
+                 "%s"
                  "%s",
                  f_name,
                  sdb.sha1,
-                 sdb.md5
+                 sdb.md5,
+                 sdb.sha256
                 );
 
         /* Create a new log message */
