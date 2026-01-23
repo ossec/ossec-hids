@@ -289,7 +289,9 @@ void LogCollectorStart()
         for (i = 0; i <= max_file; i++) {
             if (!logff[i].fp) {
                 /* Run the command */
-                if ((logff[i].command || !strncmp(logff[i].logformat, "journald", 7)) && (f_check % 2)) {
+                if (logff[i].read &&
+                    (logff[i].command || (logff[i].logformat && !strncmp(logff[i].logformat, "journald", 7))) &&
+                    (f_check % 2)) {
                     curr_time = time(0);
                     if ((curr_time - logff[i].size) >= logff[i].ign) {
                         logff[i].size = curr_time;
