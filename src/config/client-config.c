@@ -11,6 +11,7 @@
 #include "client-config.h"
 #include "os_net/os_net.h"
 #include "config.h"
+#include "headers/sec.h"
 
 
 int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
@@ -26,6 +27,7 @@ int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     const char *xml_notify_time = "notify_time";
     const char *xml_max_time_reconnect_try = "time-reconnect";
     const char *xml_profile_name = "config-profile";
+    const char *xml_crypto_method = "crypto_method";
 
     agent *logr;
 
@@ -33,6 +35,7 @@ int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 
     logr->notify_time = 0;
     logr->max_time_reconnect_try = 0;
+    logr->crypto_method = W_METH_AES;
 
     while (node[i]) {
         if (!node[i]->element) {
@@ -129,6 +132,15 @@ int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
         } else if (strcmp(node[i]->element, xml_profile_name) == 0) {
             /* Profile name can be anything hence no validation */
             os_strdup(node[i]->content, logr->profile);
+        } else if (strcmp(node[i]->element, xml_crypto_method) == 0) {
+            if (strcmp(node[i]->content, "aes") == 0) {
+                logr->crypto_method = W_METH_AES;
+            } else if (strcmp(node[i]->content, "blowfish") == 0) {
+                logr->crypto_method = W_METH_BLOWFISH;
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                return (OS_INVALID);
+            }
         } else {
             merror(XML_INVELEM, __local_name, node[i]->element);
             return (OS_INVALID);

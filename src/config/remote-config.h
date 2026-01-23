@@ -13,6 +13,10 @@
 #define SYSLOG_CONN 1
 #define SECURE_CONN 2
 
+#define W_ACCEPT_BF  0
+#define W_ACCEPT_AES 1
+#define W_ACCEPT_ANY 2
+
 #include "shared.h"
 #include "os_net/os_net.h"
 
@@ -31,6 +35,7 @@ typedef struct _remoted {
     int sock;
     OSNetInfo *netinfo;
     socklen_t peer_size;
+    int crypto_accept;
 } remoted;
 
 #endif /* __CLOGREMOTE_H */

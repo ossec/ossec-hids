@@ -10,6 +10,7 @@
 #include "shared.h"
 #include "agentd.h"
 #include "os_net/os_net.h"
+#include "headers/sec.h"
 
 
 /* Start the agent daemon */
@@ -65,6 +66,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     verbose(ENC_READ, ARGV0);
 
     OS_ReadKeys(&keys);
+    os_set_agent_crypto_method(&keys, agt->crypto_method);
     OS_StartCounter(&keys);
 
     os_write_agent_info(keys.keyentries[0]->name, NULL, keys.keyentries[0]->id,

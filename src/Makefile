@@ -908,7 +908,13 @@ crypto_md5_sha1_o := $(crypto_md5_sha1_c:.c=.o)
 os_crypto/md5_sha1/%.o: os_crypto/md5_sha1/%.c
 	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
 
-crypto_shared_c := $(wildcard os_crypto/shared/*.c)
+crypto_aes_c := os_crypto/aes/aes_op.c
+crypto_aes_o := $(crypto_aes_c:.c=.o)
+
+os_crypto/aes/%.o: os_crypto/aes/%.c
+	${OSSEC_CC} ${OSSEC_CFLAGS} -c $^ -o $@
+
+crypto_shared_c := $(filter-out os_crypto/shared/test_crypto_method.c, $(wildcard os_crypto/shared/*.c))
 crypto_shared_o := $(crypto_shared_c:.c=.o)
 
 os_crypto/shared/%.o: os_crypto/shared/%.c ${ZLIB_LIB}
@@ -919,7 +925,8 @@ crypto_o := ${crypto_blowfish_o} \
 					 ${crypto_md5_o} \
 					 ${crypto_sha1_o} \
 					 ${crypto_shared_o} \
-					 ${crypto_md5_sha1_o}
+					 ${crypto_md5_sha1_o} \
+					 ${crypto_aes_o}
 
 os_crypto.a: ${crypto_o}
 	${OSSEC_LINK} $@ $^

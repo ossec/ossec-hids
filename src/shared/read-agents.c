@@ -1167,6 +1167,20 @@ static int _get_agent_os(const char *agent_name, const char *agent_ip, agent_inf
         }
 
         os_strdup(buf, agt_info->os);
+        
+        while (fgets(buf, 1024, fp)) {
+             char *tmp;
+             if ((tmp = strstr(buf, "crypto_method:")) != NULL) {
+                 tmp += 14;
+                 /* Remove newline */
+                 char *nl = strchr(tmp, '\n');
+                 if (nl) *nl = '\0';
+                 /* Validate value before storing */
+                 if (strcmp(tmp, "aes") == 0 || strcmp(tmp, "blowfish") == 0) {
+                     os_strdup(tmp, agt_info->crypto_method);
+                 }
+             }
+        }
         fclose(fp);
 
         return (1);
@@ -1203,6 +1217,7 @@ agent_info *get_agent_info(const char *agent_name, const char *agent_ip)
     agt_info->syscheck_endtime = NULL;
     agt_info->os = NULL;
     agt_info->version = NULL;
+    agt_info->crypto_method = NULL;
     agt_info->last_keepalive = NULL;
 
     /* Get information about the OS */

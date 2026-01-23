@@ -73,6 +73,9 @@ static void __chash(keystore *keys, const char *id, const char *name, char *ip, 
     keys->keyentries[keys->keysize]->keyid = keys->keysize;
     keys->keyentries[keys->keysize]->global = 0;
     keys->keyentries[keys->keysize]->fp = NULL;
+    keys->keyentries[keys->keysize]->inode = 0;
+    keys->keyentries[keys->keysize]->crypto_method = W_METH_AES;
+    pthread_mutex_init(&keys->keyentries[keys->keysize]->mutex, NULL);
 
     /** Generate final symmetric key **/
 

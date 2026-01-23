@@ -101,6 +101,60 @@ void HandleSecure()
                     continue;
                 }
 
+                /* Enforce Encryption Policy */
+                if (logr.crypto_accept == W_ACCEPT_BF) {
+                     if (strncmp(buffer, "#AES:", 5) == 0) {
+                         /* Rate limit rejection logging to prevent log flooding */
+                         static time_t last_aes_reject = 0;
+                         static unsigned int aes_reject_count = 0;
+                         time_t now = time(NULL);
+                         
+                         aes_reject_count++;
+                         if (now - last_aes_reject >= 60) {
+                             if (aes_reject_count > 1) {
+                                 merror("Rejected %u AES messages in last minute (Policy: Blowfish only)",
+                                        aes_reject_count);
+                             } else {
+                                 merror("Rejected AES message from %s (Policy: Blowfish only)",
+                                        inet_ntop(peer_info.ss_family,
+                                            (peer_info.ss_family == AF_INET) ?
+                                            (void *)&((struct sockaddr_in *)&peer_info)->sin_addr :
+                                            (void *)&((struct sockaddr_in6 *)&peer_info)->sin6_addr,
+                                            srcip, IPSIZE));
+                             }
+                             last_aes_reject = now;
+                             aes_reject_count = 0;
+                         }
+                         continue;
+                     }
+                } else if (logr.crypto_accept == W_ACCEPT_AES) {
+                     if (strncmp(buffer, "#AES:", 5) != 0) {
+                         /* Rate limit rejection logging to prevent log flooding */
+                         static time_t last_bf_reject = 0;
+                         static unsigned int bf_reject_count = 0;
+                         time_t now = time(NULL);
+                         
+                         bf_reject_count++;
+                         if (now - last_bf_reject >= 60) {
+                             if (bf_reject_count > 1) {
+                                 merror("Rejected %u Blowfish messages in last minute (Policy: AES only)",
+                                        bf_reject_count);
+                             } else {
+                                 merror("Rejected Blowfish message from %s (Policy: AES only)",
+                                        inet_ntop(peer_info.ss_family,
+                                            (peer_info.ss_family == AF_INET) ?
+                                            (void *)&((struct sockaddr_in *)&peer_info)->sin_addr :
+                                            (void *)&((struct sockaddr_in6 *)&peer_info)->sin6_addr,
+                                            srcip, IPSIZE));
+                             }
+                             last_bf_reject = now;
+                             bf_reject_count = 0;
+                         }
+                         continue;
+                     }
+                }
+
+
                /*
                 * send_msg() needs a socket, but we don't know which
                 * socket is active until we receive our first packet.
@@ -167,8 +221,9 @@ void HandleSecure()
                 }
 
                 /* Decrypt the message */
+                size_t final_size = 0;
                 tmp_msg = ReadSecMSG(&keys, tmp_msg, cleartext_msg,
-                                     agentid, recv_b - 1);
+                                     agentid, recv_b - 1, &final_size, srcip);
                 if (tmp_msg == NULL) {
                     /* If duplicated, a warning was already generated */
                     continue;

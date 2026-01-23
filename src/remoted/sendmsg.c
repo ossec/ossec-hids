@@ -104,7 +104,7 @@ int send_msg(unsigned int agentid, const char *msg)
         return (-1);
     }
 
-    msg_size = CreateSecMSG(&keys, msg, crypt_msg, agentid);
+    msg_size = CreateSecMSG(&keys, msg, strlen(msg), crypt_msg, agentid);
     if (msg_size == 0) {
         merror(SEC_ERROR, ARGV0);
         return (-1);

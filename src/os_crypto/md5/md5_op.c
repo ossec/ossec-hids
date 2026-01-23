@@ -72,3 +72,22 @@ int OS_MD5_Str(const char *str, os_md5 output)
 
     return (0);
 }
+
+int OS_MD5_Bytes(const char *str, size_t length, os_md5 output)
+{
+    unsigned char digest[16];
+    int n;
+    MD5_CTX ctx;
+
+    MD5Init(&ctx);
+    MD5Update(&ctx, (const unsigned char *)str, (unsigned)length);
+    MD5Final(digest, &ctx);
+
+    output[32] = '\0';
+    for (n = 0; n < 16; n++) {
+        snprintf(output, 3, "%02x", digest[n]);
+        output += 2;
+    }
+
+    return (0);
+}

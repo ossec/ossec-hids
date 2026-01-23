@@ -117,7 +117,13 @@ void save_controlmsg(unsigned int agentid, char *r_msg)
         /* Write to the file */
         fp = fopen(_keep_alive[agentid], "w");
         if (fp) {
-            fprintf(fp, "%s\n", uname);
+            /* Safely determine crypto method */
+            const char *crypto_str = "blowfish";
+            if (keys.keyentries[agentid] && 
+                keys.keyentries[agentid]->crypto_method == W_METH_AES) {
+                crypto_str = "aes";
+            }
+            fprintf(fp, "%s\ncrypto_method:%s\n", uname, crypto_str);
             fclose(fp);
         } else {
             merror("ossec-remoted: ERROR: Could not open %s: %s", _keep_alive[agentid], strerror(errno));

@@ -34,8 +34,12 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     const char *xml_remote_ipv6 = "ipv6";
     const char *xml_remote_connection = "connection";
     const char *xml_remote_lip = "local_ip";
+    const char *xml_crypto_accept = "crypto_accept";
 
     logr = (remoted *)d1;
+
+    /* Default to Blowfish only */
+    logr->crypto_accept = W_ACCEPT_BF;
 
     /* Getting allowed-ips */
     if (logr->allowips) {
@@ -147,6 +151,18 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
             if (OS_IsValidIP(logr->lip[pl], NULL) != 1) {
                 merror(INVALID_IP, __local_name, node[i]->content);
                 return (OS_INVALID);
+            }
+        } else if (strcasecmp(node[i]->element, xml_crypto_accept) == 0) {
+            if (strcasecmp(node[i]->content, "blowfish") == 0) {
+                logr->crypto_accept = W_ACCEPT_BF;
+            } else if (strcasecmp(node[i]->content, "aes") == 0) {
+                logr->crypto_accept = W_ACCEPT_AES;
+            } else if (strcasecmp(node[i]->content, "both") == 0 ||
+                       strcasecmp(node[i]->content, "any") == 0) {
+                logr->crypto_accept = W_ACCEPT_ANY;
+            } else {
+                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                 return (OS_INVALID);
             }
         } else if (strcmp(node[i]->element, xml_allowips) == 0) {
             allow_size++;

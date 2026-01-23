@@ -11,6 +11,12 @@
 #define __SEC_H
 
 #include <time.h>
+#include <pthread.h>
+
+typedef enum _crypt_method {
+    W_METH_BLOWFISH,
+    W_METH_AES
+} crypt_method;
 
 /* Unique key for each agent */
 typedef struct _keyentry {
@@ -26,6 +32,10 @@ typedef struct _keyentry {
     os_ip *ip;
     struct sockaddr_storage peer_info;
     FILE *fp;
+    
+    ino_t inode;
+    pthread_mutex_t mutex;
+    crypt_method crypto_method;
 } keyentry;
 
 /* Key storage */
@@ -90,11 +100,13 @@ int OS_IsAllowedDynamicID(keystore *keys, const char *id, const char *srcip) __a
 /** Function prototypes -- send/recv messages **/
 
 /* Decrypt and decompress a remote message */
-char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext,
-                 int id, unsigned int buffer_size) __attribute((nonnull));
+char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *ip) __attribute((nonnull));
 
 /* Create an OSSEC message (encrypt and compress) */
-size_t CreateSecMSG(const keystore *keys, const char *msg, char *msg_encrypted, unsigned int id) __attribute((nonnull));
+size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, char *msg_encrypted, unsigned int id) __attribute((nonnull));
+
+/* Set the agent crypto method readed from the ossec.conf file */
+void os_set_agent_crypto_method(keystore * keys,const int method);
 
 
 /** Remote IDs directories and internal definitions */

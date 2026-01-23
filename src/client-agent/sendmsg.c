@@ -21,7 +21,7 @@ int send_msg(int agentid, const char *msg)
     size_t msg_size;
     char crypt_msg[OS_MAXSTR + 1];
 
-    msg_size = CreateSecMSG(&keys, msg, crypt_msg, agentid);
+    msg_size = CreateSecMSG(&keys, msg, strlen(msg), crypt_msg, agentid);
     if (msg_size == 0) {
         merror(SEC_ERROR, ARGV0);
         return (-1);
