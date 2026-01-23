@@ -589,7 +589,10 @@ void OS_ReadMSG(char *ut_str)
                     exit_code--;
 
                     if (!currently_rule) {
-                        merror("%s: currently_rule not set!", ARGV0);
+                        merror("%s: No rule matched for decoder '%s'. "
+                               "Verify that rules exist for this decoder and check if rules have "
+                               "required dependencies (if_sid, if_matched_sid, if_matched_group, etc.).",
+                               ARGV0, lf->decoder_info->name);
                         exit(-1);
                     }
                     snprintf(holder, 1023, "%d", currently_rule->sigid);
