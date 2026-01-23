@@ -34,7 +34,7 @@ USE_SYSTEMD?=yes
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
 else
-	USE_OPENSSL?=no
+	USE_OPENSSL?=auto
 endif
 
 ONEWAY?=no
@@ -200,6 +200,7 @@ ifeq (${TARGET}, winagent)
 CC=gcc
 ZLIB_SYSTEM=no
 PCRE2_SYSTEM=no
+USE_OPENSSL=yes
 ifneq (,$(shell which amd64-mingw32msvc-gcc))
 	MING_BASE:=amd64-mingw32msvc-
 else

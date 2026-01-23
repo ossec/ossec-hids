@@ -26,7 +26,7 @@ static ino_t File_Inode(const char *file) {
 /* Prototypes */
 static void StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local) __attribute((nonnull));
 static void StoreCounter(const keystore *keys, int id, unsigned int global, unsigned int local) __attribute((nonnull));
-static void ReloadCounter(const keystore *keys, unsigned int id, const char * cid) __attribute((nonnull));
+static void ReloadCounter(keystore *keys, unsigned int id, const char * cid) __attribute((nonnull));
 static char *CheckSum(char *msg, size_t length) __attribute((nonnull));
 
 /* Sending counts */
@@ -146,8 +146,6 @@ void OS_StartCounter(keystore *keys)
             }
         }
 
-        /* Initialize mutex */
-        pthread_mutex_init(&keys->keyentries[i]->mutex, NULL);
         keys->keyentries[i]->inode = File_Inode(rids_file);
     }
 
@@ -200,7 +198,7 @@ static void StoreCounter(const keystore *keys, int id, unsigned int global, unsi
 }
 
 /* Reload the global and local count of events */
-static void ReloadCounter(const keystore *keys, unsigned int id, const char * cid)
+static void ReloadCounter(keystore *keys, unsigned int id, const char * cid)
 {
     ino_t new_inode;
     char rids_file[OS_FLSIZE + 1];
@@ -287,10 +285,12 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
     unsigned int msg_global = 0;
     unsigned int msg_local = 0;
     char *f_msg;
+    unsigned int consumed_bytes = 0;
 
 
     if(strncmp(buffer, "#AES", 4)==0){
         buffer+=4;
+        consumed_bytes += 4;
         #ifndef CLIENT
             keys->keyentries[id]->crypto_method = W_METH_AES;
         #endif
@@ -304,6 +304,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
 
     if (*buffer == ':') {
         buffer++;
+        consumed_bytes++;
     } else {
         merror(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
         return (NULL);
@@ -313,14 +314,14 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
     switch(keys->keyentries[id]->crypto_method){
         case W_METH_BLOWFISH:
             if (!OS_BF_Str(buffer, cleartext, keys->keyentries[id]->key,
-                        buffer_size, OS_DECRYPT)) {
+                        buffer_size - consumed_bytes, OS_DECRYPT)) {
                 merror(ENCKEY_ERROR, __local_name, keys->keyentries[id]->ip->ip);
                 return (NULL);
             }
             break;
         case W_METH_AES:
             if (!OS_AES_Str(buffer, cleartext, keys->keyentries[id]->key,
-                buffer_size-4, OS_DECRYPT)) {
+                buffer_size - consumed_bytes, OS_DECRYPT)) {
                 merror(ENCKEY_ERROR, __local_name, keys->keyentries[id]->ip->ip);
                 return (NULL);
             }

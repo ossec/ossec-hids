@@ -23,11 +23,16 @@ typedef unsigned char uchar;
 
 
 #include <openssl/rand.h>
+#include <openssl/sha.h>
 
 int OS_AES_Str(const char *input, char *output, const char *charkey,
               long size, short int action)
 {
     unsigned char iv[16];
+    unsigned char derived_key[32];
+    
+    /* Derive a proper 32-byte key from the string using SHA-256 */
+    SHA256((const unsigned char *)charkey, strlen(charkey), derived_key);
 
     if(action == OS_ENCRYPT)
     {
@@ -40,7 +45,7 @@ int OS_AES_Str(const char *input, char *output, const char *charkey,
         memcpy(output, iv, 16);
 
         /* Encrypt content after the IV */
-        return 16 + encrypt_AES((const uchar *)input, (int)size, (uchar *)charkey, iv, (uchar *)output + 16);
+        return 16 + encrypt_AES((const uchar *)input, (int)size, derived_key, iv, (uchar *)output + 16);
     }
     else
     {
@@ -49,7 +54,7 @@ int OS_AES_Str(const char *input, char *output, const char *charkey,
         memcpy(iv, input, 16);
 
         /* Decrypt content after the IV */
-        return decrypt_AES((const uchar *)input + 16, (int)size - 16, (uchar *)charkey, iv, (uchar *)output);
+        return decrypt_AES((const uchar *)input + 16, (int)size - 16, derived_key, iv, (uchar *)output);
     }
 }
 

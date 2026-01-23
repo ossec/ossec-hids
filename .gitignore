@@ -84,3 +84,6 @@ src/win32/help_win.txt
 src/win32/internal_options.conf
 src/win32/restart-ossec.cmd
 src/win32/route-null.cmd
+
+# Local testsuite (not tracked)
+testsuite/

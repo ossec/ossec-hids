@@ -38,8 +38,8 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 
     logr = (remoted *)d1;
 
-    /* Default to Blowfish only */
-    logr->crypto_accept = W_ACCEPT_BF;
+    /* Default to accept both AES and Blowfish for backward compatibility */
+    logr->crypto_accept = W_ACCEPT_ANY;
 
     /* Getting allowed-ips */
     if (logr->allowips) {
