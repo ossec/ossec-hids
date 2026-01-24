@@ -15,6 +15,7 @@
 #include "../os_crypto/blowfish/bf_op.h"
 #include "../os_crypto/md5/md5_op.h"
 #include "../os_crypto/sha1/sha1_op.h"
+#include "../os_crypto/sha256/sha256_op.h"
 #include "../os_crypto/md5_sha1/md5_sha1_op.h"
 
 Suite *test_suite(void);
@@ -101,6 +102,34 @@ START_TEST(test_sha1file_fail)
 }
 END_TEST
 
+START_TEST(test_sha256file)
+{
+    const char *string = "teststring";
+    const char *string_sha256 = "3c8727e019a42b444667a587b6001251becadabbb36bfed8087a92c18882d111";
+
+    /* create tmp file */
+    char file_name[256];
+    strncpy(file_name, "/tmp/tmp_file-XXXXXX", 256);
+    int fd = mkstemp(file_name);
+
+    write(fd, string, strlen(string));
+    close(fd);
+
+    os_sha256 buffer;
+    ck_assert_int_eq(OS_SHA256_File(file_name, buffer, OS_TEXT), 0);
+
+    ck_assert_str_eq(buffer, string_sha256);
+    unlink(file_name);
+}
+END_TEST
+
+START_TEST(test_sha256file_fail)
+{
+    os_sha256 buffer;
+    ck_assert_int_eq(OS_SHA256_File("not_existing_file", buffer, OS_TEXT), -1);
+}
+END_TEST
+
 START_TEST(test_md5sha1file)
 {
     const char *string = "teststring";
@@ -174,6 +203,10 @@ Suite *test_suite(void)
     tcase_add_test(tc_sha1, test_sha1file);
     tcase_add_test(tc_sha1, test_sha1file_fail);
 
+    TCase *tc_sha256 = tcase_create("sha256");
+    tcase_add_test(tc_sha256, test_sha256file);
+    tcase_add_test(tc_sha256, test_sha256file_fail);
+
     TCase *tc_md5sha1 = tcase_create("md5_sha1");
     tcase_add_test(tc_md5sha1, test_md5sha1file);
     tcase_add_test(tc_md5sha1, test_md5sha1cmdfile);
@@ -183,6 +216,7 @@ Suite *test_suite(void)
     suite_add_tcase(s, tc_blowfish);
     suite_add_tcase(s, tc_md5);
     suite_add_tcase(s, tc_sha1);
+    suite_add_tcase(s, tc_sha256);
     suite_add_tcase(s, tc_md5sha1);
 
     return (s);
