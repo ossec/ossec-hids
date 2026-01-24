@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 static void print_banner(void);
 #ifndef WIN32
 static void manage_shutdown(int sig) __attribute__((noreturn));
@@ -34,7 +34,7 @@ static int setenv(const char *name, const char *val, __attribute__((unused)) int
 }
 #endif
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     print_header();
     print_out("  %s: -[Vhlj] [-a <ip> -n <name>] [-d sec] [-e id] [-r id] [-i id] [-f file]", ARGV0);
@@ -52,7 +52,7 @@ static void helpmsg()
     print_out("    -f <file>   Bulk generate client keys from file (Manager only)");
     print_out("                <file> contains lines in IP,NAME format");
     print_out("                <file> should also exist within /var/ossec due to manage_agents chrooting");
-    exit(1);
+    exit(status);
 }
 
 static void print_banner()
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                helpmsg();
+                helpmsg(0);
                 break;
             case 'e':
 #ifdef CLIENT
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
                 setenv("OSSEC_REMOVE_DUPLICATED", optarg, 1);
                 break;
             default:
-                helpmsg();
+                helpmsg(1);
                 break;
         }
     }

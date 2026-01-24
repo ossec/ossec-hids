@@ -15,10 +15,10 @@
 #define ARGV0 "clear_stats"
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     printf("\nOSSEC HIDS %s: Clear the events stats (averages).\n", ARGV0);
     printf("Available options:\n");
@@ -26,7 +26,7 @@ static void helpmsg()
     printf("\t-a       Clear all the stats (averages).\n");
     printf("\t-d       Clear the daily averages.\n");
     printf("\t-w       Clear the weekly averages.\n\n");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
     /* user arguments */
     if (argc != 2) {
-        helpmsg();
+        helpmsg(1);
     }
 
     /* Get the group name */
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
     /* User options */
     if (strcmp(argv[1], "-h") == 0) {
-        helpmsg();
+        helpmsg(0);
     } else if (strcmp(argv[1], "-a") == 0) {
         clear_daily = 1;
         clear_weekly = 1;
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
         clear_weekly = 1;
     } else {
         printf("\n** Invalid option '%s'.\n", argv[1]);
-        helpmsg();
+        helpmsg(1);
     }
 
     /* Clear daily files */

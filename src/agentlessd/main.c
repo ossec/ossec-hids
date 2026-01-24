@@ -12,11 +12,11 @@
 #include "config/config.h"
 
 /* Prototypes */
-static void help_agentlessd(void) __attribute__((noreturn));
+static void help_agentlessd(int status) __attribute__((noreturn));
 
 
 /* Print help statement */
-static void help_agentlessd()
+static void help_agentlessd(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtf] [-u user] [-g group] [-c config] [-D dir]", ARGV0);
@@ -32,7 +32,7 @@ static void help_agentlessd()
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_agentlessd();
+                help_agentlessd(0);
                 break;
             case 'd':
                 nowDebug();
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
                 test_config = 1;
                 break;
             default:
-                help_agentlessd();
+                help_agentlessd(1);
                 break;
         }
     }

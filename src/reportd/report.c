@@ -10,11 +10,11 @@
 #include "shared.h"
 
 /* Prototypes */
-static void help_reportd(void) __attribute__((noreturn));
+static void help_reportd(int status) __attribute__((noreturn));
 
 
 /* Print help statement */
-static void help_reportd()
+static void help_reportd(int status)
 {
     print_header();
     print_out("  Generate reports (via stdin)");
@@ -39,7 +39,7 @@ static void help_reportd()
     print_out("     -f level 10 (to filter on level >= 10)");
     print_out("     -f group authentication -r user srcip (to show srcip for all users)");
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_reportd();
+                help_reportd(0);
                 break;
             case 'd':
                 nowDebug();
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
                 r_filter.show_alerts = 1;
                 break;
             default:
-                help_reportd();
+                help_reportd(1);
                 break;
         }
 

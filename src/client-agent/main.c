@@ -17,11 +17,11 @@
 #endif
 
 /* Prototypes */
-static void help_agentd(void) __attribute((noreturn));
+static void help_agentd(int status) __attribute((noreturn));
 
 
 /* Print help statement */
-static void help_agentd()
+static void help_agentd(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtf] [-u user] [-g group] [-c config] [-D dir]", ARGV0);
@@ -37,7 +37,7 @@ static void help_agentd()
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_agentd();
+                help_agentd(0);
                 break;
             case 'd':
                 nowDebug();
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
                 cfg = optarg;
                 break;
             default:
-                help_agentd();
+                help_agentd(1);
                 break;
         }
     }

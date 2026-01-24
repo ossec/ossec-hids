@@ -15,9 +15,9 @@
 #define ARGV0 "agent_control"
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     printf("\nOSSEC HIDS %s: Control remote agents.\n", ARGV0);
     printf("Available options:\n");
@@ -35,7 +35,7 @@ static void helpmsg()
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
     printf("\t-j          Changes the output to JSON .\n");
     printf("\t-u <id>     Used with -r and -b Specifies the agent to use.\n");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
     /* User arguments */
     if (argc < 2) {
-        helpmsg();
+        helpmsg(1);
     }
 
     while ((c = getopt(argc, argv, "VehdlLcsjarmu:i:b:f:R:")) != -1) {
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                helpmsg();
+                helpmsg(0);
                 break;
             case 'd':
                 nowDebug();
@@ -106,43 +106,43 @@ int main(int argc, char **argv)
                 break;
             case 's':
                 csv_output = 1;
-		json_output = 0;
+                json_output = 0;
                 break;
-	    case 'j':
+        case 'j':
                 json_output = 1;
-		csv_output = 0;
+        csv_output = 0;
                 break;
             case 'c':
                 active_only++;
                 break;
             case 'i':
                 info_agent++;
-            	//FALLTHRU
+                //FALLTHRU
             case 'u':
                 if (!optarg) {
                     merror("%s: -u needs an argument", ARGV0);
-                    helpmsg();
+                    helpmsg(1);
                 }
                 agent_id = optarg;
                 break;
             case 'b':
                 if (!optarg) {
                     merror("%s: -b needs an argument", ARGV0);
-                    helpmsg();
+                    helpmsg(1);
                 }
                 ip_address = optarg;
                 break;
             case 'f':
                 if (!optarg) {
                     merror("%s: -e needs an argument", ARGV0);
-                    helpmsg();
+                    helpmsg(1);
                 }
                 ar = optarg;
                 break;
             case 'R':
                 if (!optarg) {
                     merror("%s: -R needs an argument", ARGV0);
-                    helpmsg();
+                    helpmsg(1);
                 }
                 agent_id = optarg;
                 restart_agent = 1;
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
                 restart_all_agents = 1;
                 break;
             default:
-                helpmsg();
+                helpmsg(1);
                 break;
         }
 
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
                     exit(0);
                 }else{
                   printf("\n** Invalid agent id '%s'.\n", agent_id);
-                  helpmsg();
+                  helpmsg(1);
                 }
             }
         } else {
@@ -605,7 +605,7 @@ int main(int argc, char **argv)
     }
 
     printf("\n** Invalid argument combination.\n");
-    helpmsg();
+    helpmsg(1);
 
     return (0);
 }

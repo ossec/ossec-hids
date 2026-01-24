@@ -18,7 +18,7 @@ int repeated_offenders_timeout[] = {0, 0, 0, 0, 0, 0, 0};
 #ifndef WIN32
 
 /* Prototypes */
-static void help_execd(void) __attribute__((noreturn));
+static void help_execd(int status) __attribute__((noreturn));
 static void execd_shutdown(int sig) __attribute__((noreturn));
 static void ExecdStart(int q) __attribute__((noreturn));
 
@@ -29,7 +29,7 @@ static OSHash *repeated_hash;
 
 
 /* Print help statement */
-static void help_execd()
+static void help_execd(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtf] [-g group] [-c config]", ARGV0);
@@ -43,7 +43,7 @@ static void help_execd()
     print_out("    -g <group>  Group to run as (default: %s)", GROUPGLOBAL);
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 /* Shut down execd properly */
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_execd();
+                help_execd(0);
                 break;
             case 'd':
                 nowDebug();
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
                 test_config = 1;
                 break;
             default:
-                help_execd();
+                help_execd(1);
                 break;
         }
     }

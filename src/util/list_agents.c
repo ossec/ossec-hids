@@ -14,10 +14,10 @@
 #define ARGV0 "list_agents"
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     printf("\nOSSEC HIDS %s: List available agents.\n", ARGV0);
     printf("Available options:\n");
@@ -25,7 +25,7 @@ static void helpmsg()
     printf("\t-a    List all agents.\n");
     printf("\t-c    List the connected (active) agents.\n");
     printf("\t-n    List the not connected (active) agents.\n");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
     /* User arguments */
     if (argc < 2) {
-        helpmsg();
+        helpmsg(1);
     }
 
     /* Get the group name */
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
     /* User options */
     if (strcmp(argv[1], "-h") == 0) {
-        helpmsg();
+        helpmsg(0);
     } else if (strcmp(argv[1], "-a") == 0) {
         flag = GA_ALL;
         msg = "is available.";
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         msg = "is not active.";
     } else {
         printf("\n** Invalid option '%s'.\n", argv[1]);
-        helpmsg();
+        helpmsg(1);
     }
 
     agent_list = get_agents(flag);

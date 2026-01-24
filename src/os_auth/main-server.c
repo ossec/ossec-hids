@@ -30,13 +30,13 @@
 #define POOL_SIZE 512
 
 /* Prototypes */
-static void help_authd(void) __attribute((noreturn));
+static void help_authd(int status) __attribute((noreturn));
 static int ssl_error(const SSL *ssl, int ret);
 static void clean_exit(SSL_CTX *ctx, int sock) __attribute__((noreturn));
 
 
 /* Print help statement */
-static void help_authd()
+static void help_authd(int status)
 {
     print_header();
     print_out("  %s: -[Vhdti] [-g group] [-D dir] [-p port] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
@@ -57,7 +57,7 @@ static void help_authd()
     print_out("    -x <path>   Full path to server certificate");
     print_out("    -k <path>   Full path to server key");
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 /* Generates a random and temporary shared pass to be used by the agents. */
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_authd();
+                help_authd(0);
                 break;
             case 'd':
                 nowDebug();
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
                 server_key = optarg;
                 break;
             default:
-                help_authd();
+                help_authd(1);
                 break;
         }
     }

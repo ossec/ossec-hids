@@ -31,7 +31,7 @@ char total_ports_tcp[65535 + 1];
 
 
 /* Print help statement */
-void help_rootcheck()
+void help_rootcheck(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtsr] [-c config] [-D dir]", ARGV0);
@@ -46,7 +46,7 @@ void help_rootcheck()
     print_out("    -c <config> Configuration file to use");
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -120,7 +120,7 @@ int rootcheck_init(int test_config)
                 print_version();
                 break;
             case 'h':
-                help_rootcheck();
+                help_rootcheck(0);
                 break;
             case 'd':
                 nowDebug();
@@ -147,7 +147,7 @@ int rootcheck_init(int test_config)
                 rootcheck.readall = 1;
                 break;
             default:
-                help_rootcheck();
+                help_rootcheck(1);
                 break;
         }
     }

@@ -14,10 +14,10 @@
 #define ARGV0 "syscheck_update"
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     printf("\nOSSEC HIDS %s: Updates (clears) the integrity check database.\n", ARGV0);
     printf("Available options:\n");
@@ -26,7 +26,7 @@ static void helpmsg()
     printf("\t-a       Update (clear) syscheck database for all agents.\n");
     printf("\t-u <id>  Update (clear) syscheck database for a specific agent.\n");
     printf("\t-u local Update (clear) syscheck database locally.\n\n");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 
     /* User arguments */
     if (argc < 2) {
-        helpmsg();
+        helpmsg(1);
     }
 
     /* Get the group name */
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 
     /* User options */
     if (strcmp(argv[1], "-h") == 0) {
-        helpmsg();
+        helpmsg(0);
     } else if (strcmp(argv[1], "-l") == 0) {
         printf("\nOSSEC HIDS %s: Updates the integrity check database.",
                ARGV0);
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     } else if (strcmp(argv[1], "-u") == 0) {
         if (argc != 3) {
             printf("\n** Option -u requires an extra argument\n");
-            helpmsg();
+            helpmsg(1);
         }
     } else if (strcmp(argv[1], "-a") == 0) {
         DIR *sys_dir;
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
         exit(0);
     } else {
         printf("\n** Invalid option '%s'.\n", argv[1]);
-        helpmsg();
+        helpmsg(1);
     }
 
     /* Local */
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
         i = OS_IsAllowedID(&keys, argv[2]);
         if (i < 0) {
             printf("\n** Invalid agent id '%s'.\n", argv[2]);
-            helpmsg();
+            helpmsg(1);
         }
 
         /* Delete syscheck */
