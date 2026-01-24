@@ -83,7 +83,7 @@ void OS_StartCounter(keystore *keys)
 
     rids_file[OS_FLSIZE] = '\0';
 
-    debug2("OS_StartCounter: keysize: %u", keys->keysize);
+    /* debug2("OS_StartCounter: keysize: %u", keys->keysize); */
 
     /* Start receiving counter */
     for (i = 0; i <= keys->keysize; i++) {
@@ -122,9 +122,9 @@ void OS_StartCounter(keystore *keys)
             unsigned int g_c = 0, l_c = 0;
             if (fscanf(keys->keyentries[i]->fp, "%u:%u", &g_c, &l_c) != 2) {
                 if (i == keys->keysize) {
-                    debug1("No previous sender counter.");
+                    debug2("No previous sender counter.");
                 } else {
-                    debug1("No previous counter available for '%s'.",
+                    debug2("No previous counter available for '%s'.",
                             keys->keyentries[i]->name);
                 }
 
@@ -133,12 +133,12 @@ void OS_StartCounter(keystore *keys)
             }
 
             if (i == keys->keysize) {
-                debug1("Assigning sender counter: %u:%u",
+                debug2("Assigning sender counter: %u:%u",
                         g_c, l_c);
                 global_count = g_c;
                 local_count = l_c;
             } else {
-                debug1("Assigning counter for agent %s: '%u:%u'.",
+                debug2("Assigning counter for agent %s: '%u:%u'.",
                         keys->keyentries[i]->name, g_c, l_c);
 
                 keys->keyentries[i]->global = g_c;
