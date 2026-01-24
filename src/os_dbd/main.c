@@ -82,7 +82,7 @@ int main(int argc, char **argv)
         switch (c) {
             case 'V':
                 dbd_print_version();
-                break;
+                return 0;
             case 'h':
                 help_dbd(0);
                 break;
