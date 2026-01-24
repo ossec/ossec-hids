@@ -134,7 +134,7 @@ int main(int argc, char **argv)
                 break;
             case 'f':
                 if (!optarg) {
-                    merror("%s: -e needs an argument", ARGV0);
+                    merror("%s: -f needs an argument", ARGV0);
                     helpmsg(1);
                 }
                 ar = optarg;
