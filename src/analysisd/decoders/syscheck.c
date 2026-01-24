@@ -663,8 +663,16 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                      "New sha256sum is : '%s'\n",
                      newfilesha256);
             os_strdup(newfilesha256, lf->sha256_after);
+        } else {
+            sdb.sha256[0] = '\0';
         }
 
+        if (!newfilemd5) {
+            newfilemd5 = "Unknown";
+        }
+        if (!newfilesha1) {
+            newfilesha1 = "Unknown";
+        }
         /* SHA-1 message */
         snprintf(sdb.sha1, OS_FLSIZE,
                  "New sha1sum is : '%s'\n",
