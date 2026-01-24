@@ -99,7 +99,7 @@ int main(int argc, char **argv)
             case 'i':
                 info_agent++;
                 if (!optarg) {
-                    merror("%s: -u needs an argument", ARGV0);
+                    merror("%s: -i needs an argument", ARGV0);
                     helpmsg(1);
                 }
                 agent_id = optarg;
