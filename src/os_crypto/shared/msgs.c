@@ -83,7 +83,7 @@ void OS_StartCounter(keystore *keys)
 
     rids_file[OS_FLSIZE] = '\0';
 
-    debug1("OS_StartCounter: keysize: %u", keys->keysize);
+    debug2("OS_StartCounter: keysize: %u", keys->keysize);
 
     /* Start receiving counter */
     for (i = 0; i <= keys->keysize; i++) {
@@ -229,7 +229,7 @@ static void ReloadCounter(const keystore *keys, unsigned int id, const char * ci
                 if (id == keys->keysize) {
                     debug1("No previous sender counter.");
                 } else {
-                    debug1("No previous counter available for '%s'.", keys->keyentries[id]->id);
+                    debug2("No previous counter available for '%s'.", keys->keyentries[id]->id);
                 }
 
                 g_c = 0;
