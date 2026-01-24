@@ -24,7 +24,7 @@ static int _writecontent(const char *str, size_t size, unsigned int parent, OS_X
 static int _writememory(const char *str, XML_TYPE type, size_t size,
                         unsigned int parent, OS_XML *_lxml) __attribute__((nonnull));
 static int _xml_fgetc(FILE *fp) __attribute__((nonnull));
-static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml) __attribute__((nonnull));
+static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml, unsigned int recursion_level) __attribute__((nonnull));
 static int _getattributes(FILE *fp, unsigned int parent, OS_XML *_lxml) __attribute__((nonnull));
 static void xml_error(OS_XML *_lxml, const char *msg, ...) __attribute__((format(printf, 2, 3), nonnull));
 
@@ -118,7 +118,7 @@ int OS_ReadXML(const char *file, OS_XML *_lxml)
     /* Zero the line */
     _line = 1;
 
-    if ((r = _ReadElem(fp, 0, _lxml)) < 0) { /* First position */
+    if ((r = _ReadElem(fp, 0, _lxml, 0)) < 0) { /* First position */
         if (r != LEOF) {
             fclose(fp);
             return (-1);
@@ -166,21 +166,32 @@ static int _oscomment(FILE *fp)
     return (0);
 }
 
-static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
+static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml, unsigned int recursion_level)
 {
     int c;
     unsigned int count = 0;
     unsigned int _currentlycont = 0;
     short int location = -1;
+    int retval = -1;
 
     int prevv = 0;
-    char elem[XML_MAXSIZE + 1];
-    char cont[XML_MAXSIZE + 1];
-    char closedelim[XML_MAXSIZE + 1];
+    char *elem = NULL;
+    char *cont = NULL;
+    char *closedelim = NULL;
 
-    memset(elem, '\0', XML_MAXSIZE + 1);
-    memset(cont, '\0', XML_MAXSIZE + 1);
-    memset(closedelim, '\0', XML_MAXSIZE + 1);
+    if (++recursion_level > 1024) {
+        xml_error(_lxml, "XMLERR: Max recursion level reached.");
+        return (-1);
+    }
+
+    elem = (char *)calloc(XML_MAXSIZE + 1, sizeof(char));
+    cont = (char *)calloc(XML_MAXSIZE + 1, sizeof(char));
+    closedelim = (char *)calloc(XML_MAXSIZE + 1, sizeof(char));
+
+    if (!elem || !cont || !closedelim) {
+        xml_error(_lxml, "XMLERR: Memory error.");
+        goto end;
+    }
 
     while ((c = _xml_fgetc(fp)) != EOF) {
         if (c == '\\') {
@@ -194,7 +205,7 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
         /* Max size */
         if (count >= XML_MAXSIZE) {
             xml_error(_lxml, "XMLERR: String overflow.");
-            return (-1);
+            goto end;
         }
 
         /* Check for comments */
@@ -202,7 +213,7 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
             int r = 0;
             if ((r = _oscomment(fp)) < 0) {
                 xml_error(_lxml, "XMLERR: Comment not closed.");
-                return (-1);
+                goto end;
             } else if (r == 1) {
                 continue;
             }
@@ -213,7 +224,7 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
             if (c == _R_CONFS) {
                 if ((c = fgetc(fp)) == '/') {
                     xml_error(_lxml, "XMLERR: Element not opened.");
-                    return (-1);
+                    goto end;
                 } else {
                     ungetc(c, fp);
                 }
@@ -235,19 +246,19 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
             }
 
             if (_writememory(elem, XML_ELEM, count + 1, parent, _lxml) < 0) {
-                return (-1);
+                goto end;
             }
             _currentlycont = _lxml->cur - 1;
             if (isspace(c)) {
                 if ((_ga = _getattributes(fp, parent, _lxml)) < 0) {
-                    return (-1);
+                    goto end;
                 }
             }
 
             /* If the element is closed already (finished in />) */
             if ((_ge == '/') || (_ga == '/')) {
                 if (_writecontent("\0", 2, _currentlycont, _lxml) < 0) {
-                    return (-1);
+                    goto end;
                 }
                 _lxml->ck[_currentlycont] = 1;
                 _currentlycont = 0;
@@ -259,7 +270,8 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
                 memset(cont, '\0', XML_MAXSIZE);
 
                 if (parent > 0) {
-                    return (0);
+                    retval = 0;
+                    goto end;
                 }
             } else {
                 count = 0;
@@ -271,10 +283,10 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
             closedelim[count] = '\0';
             if (strcmp(closedelim, elem) != 0) {
                 xml_error(_lxml, "XMLERR: Element '%s' not closed.", elem);
-                return (-1);
+                goto end;
             }
             if (_writecontent(cont, strlen(cont) + 1, _currentlycont, _lxml) < 0) {
-                return (-1);
+                goto end;
             }
             _lxml->ck[_currentlycont] = 1;
             memset(elem, '\0', XML_MAXSIZE);
@@ -284,7 +296,8 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
             count = 0;
             location = -1;
             if (parent > 0) {
-                return (0);
+                retval = 0;
+                goto end;
             }
         } else if ((location == 1) && (c == _R_CONFS) && (prevv == 0)) {
             if ((c = fgetc(fp)) == '/') {
@@ -295,8 +308,8 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
                 ungetc(c, fp);
                 ungetc(_R_CONFS, fp);
 
-                if (_ReadElem(fp, parent + 1, _lxml) < 0) {
-                    return (-1);
+                if (_ReadElem(fp, parent + 1, _lxml, recursion_level) < 0) {
+                    goto end;
                 }
                 count = 0;
             }
@@ -315,11 +328,17 @@ static int _ReadElem(FILE *fp, unsigned int parent, OS_XML *_lxml)
         }
     }
     if (location == -1) {
-        return (LEOF);
+        retval = LEOF;
+        goto end;
     }
 
     xml_error(_lxml, "XMLERR: End of file and some elements were not closed.");
-    return (-1);
+
+end:
+    free(elem);
+    free(cont);
+    free(closedelim);
+    return (retval);
 }
 
 static int _writememory(const char *str, XML_TYPE type, size_t size,
