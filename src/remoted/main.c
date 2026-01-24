@@ -11,11 +11,11 @@
 #include "remoted.h"
 
 /* Prototypes */
-static void help_remoted(void) __attribute__((noreturn));
+static void help_remoted(int status) __attribute__((noreturn));
 
 
 /* Print help statement */
-static void help_remoted()
+static void help_remoted(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtf] [-u user] [-g group] [-c config] [-D dir]", ARGV0);
@@ -31,7 +31,7 @@ static void help_remoted()
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_remoted();
+                help_remoted(0);
                 break;
             case 'd':
                 nowDebug();
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
                 dir = optarg;
                 break;
             default:
-                help_remoted();
+                help_remoted(1);
                 break;
         }
     }

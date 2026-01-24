@@ -13,13 +13,13 @@
 #define ARGV0 "ossec-regex"
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     printf("\nOSSEC HIDS %s: ossec-regex pattern\n", ARGV0);
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -35,13 +35,13 @@ int main(int argc, char **argv)
 
     /* User arguments */
     if (argc != 2) {
-        helpmsg();
+        helpmsg(1);
         return (-1);
     }
 
     /* User options */
     if (strcmp(argv[1], "-h") == 0) {
-        helpmsg();
+        helpmsg(0);
         return (-1);
     }
 

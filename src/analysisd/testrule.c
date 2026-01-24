@@ -38,7 +38,7 @@ void DecodeEvent(Eventinfo *lf);
 
 /* Print help statement */
 __attribute__((noreturn))
-static void help_logtest(void)
+static void help_logtest(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtva] [-c config] [-D dir] [-U rule:alert:decoder]", ARGV0);
@@ -54,7 +54,7 @@ static void help_logtest(void)
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out("    -U <rule:alert:decoder>  Unit test. Refer to contrib/ossec-testing/runtests.py");
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
                 test_config = 1;
                 break;
             case 'h':
-                help_logtest();
+                help_logtest(0);
                 break;
             case 'd':
                 nowDebug();
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
                 full_output = 1;
                 break;
             default:
-                help_logtest();
+                help_logtest(1);
                 break;
         }
     }

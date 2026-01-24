@@ -16,10 +16,10 @@
 #define ARGV0 "rootcheck_control"
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     printf("\nOSSEC HIDS %s: Manages the policy and auditing database.\n",
            ARGV0);
@@ -35,7 +35,7 @@ static void helpmsg()
     printf("\t-L          Used with -i, prints the last scan.\n");
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
     printf("\t-j          Changes the output to JSON.\n");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
     /* User arguments */
     if (argc < 2) {
-        helpmsg();
+        helpmsg(1);
     }
 
     while ((c = getopt(argc, argv, "VhqrDdLlcsju:i:")) != -1) {
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                helpmsg();
+                helpmsg(0);
                 break;
             case 'D':
                 nowDebug();
@@ -99,21 +99,21 @@ int main(int argc, char **argv)
             case 'i':
                 info_agent++;
                 if (!optarg) {
-                    merror("%s: -u needs an argument", ARGV0);
-                    helpmsg();
+                    merror("%s: -i needs an argument", ARGV0);
+                    helpmsg(1);
                 }
                 agent_id = optarg;
                 break;
             case 'u':
                 if (!optarg) {
                     merror("%s: -u needs an argument", ARGV0);
-                    helpmsg();
+                    helpmsg(1);
                 }
                 agent_id = optarg;
                 update_rootcheck = 1;
                 break;
             default:
-                helpmsg();
+                helpmsg(1);
                 break;
         }
 
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
                     exit(1);
                 } else {
                     printf("\n** Invalid agent id '%s'.\n", agent_id);
-                    helpmsg();
+                    helpmsg(1);
                 }
 
             }
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
                     exit(1);
                 } else {
                     printf("\n** Invalid agent id '%s'.\n", agent_id);
-                    helpmsg();
+                    helpmsg(1);
                 }
 
             }
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
         exit(1);
     } else {
         printf("\n** Invalid argument combination.\n");
-        helpmsg();
+        helpmsg(1);
     }
 
 

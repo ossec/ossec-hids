@@ -16,7 +16,7 @@
 
 /* Prototypes */
 static void print_db_info(void);
-static void help_dbd(void) __attribute__((noreturn));
+static void help_dbd(int status) __attribute__((noreturn));
 
 
 /* Print information regarding enabled databases */
@@ -36,7 +36,7 @@ static void print_db_info()
 }
 
 /* Print help statement */
-static void help_dbd()
+static void help_dbd(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtfv] [-u user] [-g group] [-c config] [-D dir]", ARGV0);
@@ -55,7 +55,7 @@ static void help_dbd()
     print_out("  Database Support:");
     print_db_info();
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -82,9 +82,9 @@ int main(int argc, char **argv)
         switch (c) {
             case 'V':
                 dbd_print_version();
-                break;
+                return 0;
             case 'h':
-                help_dbd();
+                help_dbd(0);
                 break;
             case 'd':
                 nowDebug();
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
                 test_config = 1;
                 break;
             default:
-                help_dbd();
+                help_dbd(1);
                 break;
         }
     }

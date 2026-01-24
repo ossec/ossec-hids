@@ -16,10 +16,10 @@
 #define ARGV0 "verify-agent-conf"
 
 /* Prototypes */
-static void helpmsg(void) __attribute__((noreturn));
+static void helpmsg(int status) __attribute__((noreturn));
 
 
-static void helpmsg()
+static void helpmsg(int status)
 {
     printf("\nOSSEC HIDS %s: Verify agent.conf syntax for errors.\n", ARGV0);
     printf("Usage:  %s [-f <agent.conf file>]\n\n", ARGV0);
@@ -30,7 +30,7 @@ static void helpmsg()
     printf("\t            will be used.\n");
     printf(" ");
     printf("\t            Validation is successful, if no errors are shown.\n");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
                     print_version();
                     break;
                 case 'h':
-                    helpmsg();
+                    helpmsg(0);
                     break;
                 case 'd':
                     nowDebug();
@@ -59,12 +59,12 @@ int main(int argc, char **argv)
                 case 'f':
                     if (!optarg) {
                         merror("%s: -f needs an argument", ARGV0);
-                        helpmsg();
+                        helpmsg(1);
                     }
                     ar = optarg;
                     break;
                 default:
-                    helpmsg();
+                    helpmsg(1);
                     break;
             }
         }

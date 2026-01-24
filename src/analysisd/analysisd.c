@@ -89,7 +89,7 @@ static int hourly_firewall;
 
 /* Print help statement */
 __attribute__((noreturn))
-static void help_analysisd(void)
+static void help_analysisd(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtf] [-u user] [-g group] [-c config] [-D dir]", ARGV0);
@@ -105,7 +105,7 @@ static void help_analysisd(void)
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 #ifndef TESTRULE
@@ -148,7 +148,7 @@ int main_analysisd(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_analysisd();
+                help_analysisd(0);
                 break;
             case 'd':
                 nowDebug();
@@ -185,7 +185,7 @@ int main_analysisd(int argc, char **argv)
                 test_config = 1;
                 break;
             default:
-                help_analysisd();
+                help_analysisd(1);
                 break;
         }
 

@@ -23,11 +23,11 @@
 #include "logcollector.h"
 
 /* Prototypes */
-static void help_logcollector(void) __attribute__((noreturn));
+static void help_logcollector(int status) __attribute__((noreturn));
 
 
 /* Print help statement */
-static void help_logcollector()
+static void help_logcollector(int status)
 {
     print_header();
     print_out("  %s: -[Vhdtf] [-c config]", ARGV0);
@@ -40,7 +40,7 @@ static void help_logcollector()
     print_out("    -f          Run in foreground");
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_logcollector();
+                help_logcollector(0);
                 break;
             case 'd':
                 nowDebug();
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
                 test_config = 1;
                 break;
             default:
-                help_logcollector();
+                help_logcollector(1);
                 break;
         }
 

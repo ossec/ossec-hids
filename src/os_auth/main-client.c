@@ -40,10 +40,10 @@ int main()
 #include <openssl/ssl.h>
 #include "auth.h"
 
-static void help_agent_auth(void) __attribute__((noreturn));
+static void help_agent_auth(int status) __attribute__((noreturn));
 
 /* Print help statement */
-static void help_agent_auth()
+static void help_agent_auth(int status)
 {
     print_header();
     print_out("  %s: -[Vhdt] [-g group] [-D dir] [-m IP address] [-p port] [-A name] [-c ciphers] [-v path] [-x path] [-k path]", ARGV0);
@@ -64,7 +64,7 @@ static void help_agent_auth()
     print_out("    -k <path>   Full path to agent key");
     print_out("    -P <path>   Authorization password file [default: /var/ossec/etc/authd.pass");
     print_out(" ");
-    exit(1);
+    exit(status);
 }
 
 int main(int argc, char **argv)
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
                 print_version();
                 break;
             case 'h':
-                help_agent_auth();
+                help_agent_auth(0);
                 break;
             case 'd':
                 nowDebug();
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
                 authenticate++;
                 break;
             default:
-                help_agent_auth();
+                help_agent_auth(1);
                 break;
         }
     }
