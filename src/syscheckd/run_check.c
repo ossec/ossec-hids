@@ -22,6 +22,7 @@
 #include "syscheck.h"
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
+#include "os_crypto/sha256/sha256_op.h"
 #include "os_crypto/md5_sha1/md5_sha1_op.h"
 #include "rootcheck/rootcheck.h"
 
@@ -318,15 +319,17 @@ void start_daemon()
 /* Read file information and return a pointer to the checksum */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 {
-    int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0;
+    int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0, sha256sum = 0;
     int return_error = 0;
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
+    os_sha256 sha256_sum;
 
     /* Clean sums */
     strncpy(mf_sum, "xxx", 4);
     strncpy(sf_sum, "xxx", 4);
+    strncpy(sha256_sum, "xxx", 4);
 
     /* Stat the file */
 #ifdef WIN32
@@ -381,14 +384,29 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         sha1sum = 0;
     }
 
+    /* sha256 sum - check backward compatibility */
+    if (oldsum[6] == '+') {
+        sha256sum = 1;
+    } else if (oldsum[6] == '-') {
+        sha256sum = 0;
+    }
+    /* If it's a digit (size), then it's the old format, no sha256 */
+
     /* Generate new checksum */
     if (S_ISREG(statbuf.st_mode))
     {
-        if (sha1sum || md5sum) {
+        if (sha1sum || md5sum || sha256sum) {
             /* Generate checksums of the file */
-            if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
-                strncpy(sf_sum, "xxx", 4);
-                strncpy(mf_sum, "xxx", 4);
+            if (sha1sum || md5sum) {
+                if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                    strncpy(sf_sum, "xxx", 4);
+                    strncpy(mf_sum, "xxx", 4);
+                }
+            }
+            if (sha256sum) {
+                if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                    strncpy(sha256_sum, "xxx", 4);
+                }
             }
         }
     }
@@ -398,11 +416,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         struct stat statbuf_lnk;
         if (stat(file_name, &statbuf_lnk) == 0) {
             if (S_ISREG(statbuf_lnk.st_mode)) {
-                if (sha1sum || md5sum) {
+                if (sha1sum || md5sum || sha256sum) {
                     /* Generate checksums of the file */
-                    if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
-                        strncpy(sf_sum, "xxx", 4);
-                        strncpy(mf_sum, "xxx", 4);
+                    if (sha1sum || md5sum) {
+                        if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                            strncpy(sf_sum, "xxx", 4);
+                            strncpy(mf_sum, "xxx", 4);
+                        }
+                    }
+                    if (sha256sum) {
+                        if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                            strncpy(sha256_sum, "xxx", 4);
+                        }
                     }
                 }
             }
@@ -411,15 +436,25 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #endif
 
     newsum[0] = '\0';
-    newsum[255] = '\0';
+    /* Caller is expected to provide a buffer of at least 
+     * 256 + 2 bytes for `newsum` 
+     * (see create_db.c: char c_sum[OS_MAXSTR + 1];). The
+     * snprintf() below is limited to
+     * OS_MAXSTR bytes, which is safely within that size even 
+     * when including all checksum
+     * fields (size, perm, uid, gid, md5, sha1, 
+     * sha256).
+     */
+
 #ifndef WIN32
-    snprintf(newsum, 255, "%ld:%d:%d:%d:%s:%s",
+    snprintf(newsum, OS_MAXSTR, "%ld:%d:%d:%d:%s:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
              perm == 0 ? 0 : (int)statbuf.st_mode,
              owner == 0 ? 0 : (int)statbuf.st_uid,
              group == 0 ? 0 : (int)statbuf.st_gid,
              md5sum   == 0 ? "xxx" : mf_sum,
-             sha1sum  == 0 ? "xxx" : sf_sum);
+             sha1sum  == 0 ? "xxx" : sf_sum,
+             sha256sum == 0 ? "xxx" : sha256_sum);
 #else
     HANDLE hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -454,13 +489,14 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     LocalFree(szSID);
     CloseHandle(hFile);
 
-    snprintf(newsum, 255, "%ld:%d:%s:%d:%s:%s",
+    snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s",
              size == 0 ? 0 : (long)statbuf.st_size,
              perm == 0 ? 0 : (int)statbuf.st_mode,
              owner == 0 ? "0" : st_uid,
              group == 0 ? 0 : (int)statbuf.st_gid,
              md5sum   == 0 ? "xxx" : mf_sum,
-             sha1sum  == 0 ? "xxx" : sf_sum);
+             sha1sum  == 0 ? "xxx" : sf_sum,
+             sha256sum == 0 ? "xxx" : sha256_sum);
 
     free(st_uid);
 #endif

@@ -44,10 +44,10 @@ int realtime_checksumfile(const char *file_name)
 
     buf = (char *) OSHash_Get(syscheck.fp, file_name);
     if (buf != NULL) {
-        char c_sum[256 + 2];
+        char c_sum[OS_MAXSTR + 1];
 
         c_sum[0] = '\0';
-        c_sum[255] = '\0';
+        c_sum[OS_MAXSTR] = '\0';
 
         /* If it returns < 0, we have already alerted */
         if (c_read_file(file_name, buf, c_sum) < 0) {

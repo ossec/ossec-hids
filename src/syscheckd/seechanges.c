@@ -8,7 +8,7 @@
  */
 
 #include "shared.h"
-#include "os_crypto/md5/md5_op.h"
+#include "os_crypto/sha256/sha256_op.h"
 #include "syscheck.h"
 
 /* Prototypes */
@@ -232,8 +232,8 @@ char *seechanges_addfile(const char *filename)
     char new_tmp[OS_MAXSTR + 1];
     char diff_tmp[OS_MAXSTR + 1];
     char diff_cmd[OS_MAXSTR + 1];
-    os_md5 md5sum_old;
-    os_md5 md5sum_new;
+    os_sha256 sha256_old;
+    os_sha256 sha256_new;
     int status = -1;
 
     old_location[OS_MAXSTR] = '\0';
@@ -243,8 +243,8 @@ char *seechanges_addfile(const char *filename)
     new_tmp[OS_MAXSTR] = '\0';
     diff_tmp[OS_MAXSTR] = '\0';
     diff_cmd[OS_MAXSTR] = '\0';
-    md5sum_new[0] = '\0';
-    md5sum_old[0] = '\0';
+    sha256_new[0] = '\0';
+    sha256_old[0] = '\0';
 
     snprintf(
         old_location,
@@ -256,7 +256,7 @@ char *seechanges_addfile(const char *filename)
     );
 
     /* If the file is not there, rename new location to last location */
-    if (OS_MD5_File(old_location, md5sum_old, OS_BINARY) != 0) {
+    if (OS_SHA256_File(old_location, sha256_old, OS_BINARY) != 0) {
         seechanges_createpath(old_location);
         if (seechanges_dupfile(filename, old_location) != 1) {
             merror(RENAME_ERROR, ARGV0, filename, old_location, errno, strerror(errno));
@@ -264,13 +264,13 @@ char *seechanges_addfile(const char *filename)
         return (NULL);
     }
 
-    /* Get md5sum of the new file */
-    if (OS_MD5_File(filename, md5sum_new, OS_BINARY) != 0) {
+    /* Get sha256sum of the new file */
+    if (OS_SHA256_File(filename, sha256_new, OS_BINARY) != 0) {
         return (NULL);
     }
 
     /* If they match, keep the old file and remove the new */
-    if (strcmp(md5sum_new, md5sum_old) == 0) {
+    if (strcmp(sha256_new, sha256_old) == 0) {
         return (NULL);
     }
 
@@ -322,7 +322,7 @@ char *seechanges_addfile(const char *filename)
         "%s/%s/syscheck-changes-%s-%d",
         DEFAULTDIR,
         TMP_DIR,
-        md5sum_old,
+        sha256_old,
         (int)old_date_of_change
     );
 
@@ -332,7 +332,7 @@ char *seechanges_addfile(const char *filename)
         "%s/%s/syscheck-changes-%s-%d",
         DEFAULTDIR,
         TMP_DIR,
-        md5sum_new,
+        sha256_new,
         (int)new_date_of_change
     );
 
@@ -342,9 +342,9 @@ char *seechanges_addfile(const char *filename)
         "%s/%s/syscheck-changes-%s-%d-%s-%d",
         DEFAULTDIR,
         TMP_DIR,
-        md5sum_old,
+        sha256_old,
         (int)old_date_of_change,
-        md5sum_new,
+        sha256_new,
         (int)new_date_of_change
     );
     /* Create diff location */
