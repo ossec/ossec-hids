@@ -50,18 +50,13 @@ int list_agents(int cmdlist);
 char *chomp(char *str);
 
 /* Shared variables */
-extern int restart_necessary;
-extern time_t time1;
-extern time_t time2;
-extern time_t time3;
-extern long int rand1;
-extern long int rand2;
-extern fpos_t fp_pos;
+#define STR_SIZE    512
+#define FILE_SIZE   257
+#define USER_SIZE   514
 
-/* Internal defines */
-#define USER_SIZE       514
-#define FILE_SIZE       257
-#define STR_SIZE        66
+/* Global variables */
+extern int restart_necessary;
+extern fpos_t fp_pos;
 
 /* Internal strings */
 #define QUIT                "\\q"

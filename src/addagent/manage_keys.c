@@ -8,6 +8,7 @@
  */
 
 #include "manage_agents.h"
+#include <openssl/rand.h>
 #include "os_crypto/md5/md5_op.h"
 #include "external/cJSON/cJSON.h"
 #include <stdlib.h>
@@ -383,12 +384,6 @@ int k_bulkload(const char *cmdbulk)
         }
 #endif
 
-        /* Set time 2 */
-        time2 = time(0);
-
-        srandom_init();
-        rand1 = random();
-
         /* Zero strings */
         memset(str1, '\0', STR_SIZE + 1);
         memset(str2, '\0', STR_SIZE + 1);
@@ -438,10 +433,6 @@ int k_bulkload(const char *cmdbulk)
 
         printf(AGENT_INFO, id, name, ip);
         fflush(stdout);
-
-        time3 = time(0);
-        rand2 = random();
-
         fp = fopen(authfile, "a");
         if (!fp) {
             ErrorExit(FOPEN_ERROR, ARGV0, KEYS_FILE, errno, strerror(errno));
@@ -452,24 +443,29 @@ int k_bulkload(const char *cmdbulk)
         }
 #endif
 
-        /* Random 1: Time took to write the agent information
-         * Random 2: Time took to choose the action
-         * Random 3: All of this + time + pid
-         * Random 4: MD5 all of this + the name, key and IP
-         * Random 5: Final key
-         */
+    /* Cryptographically secure random number generation */
+    unsigned char random_data[64];
+    char rand_hex[129];
+    
+    if (!RAND_bytes(random_data, sizeof(random_data))) {
+        merror("Failed to generate secure random data for agent key");
+        return 0;
+    }
 
-        snprintf(str1, STR_SIZE, "%d%s%d", (int)(time3 - time2), name, (int)rand1);
-        snprintf(str2, STR_SIZE, "%d%s%s%d", (int)(time2 - time1), ip, id, (int)rand2);
+    /* Hex encode the random data */
+    for(int i=0; i<64; i++) {
+        sprintf(&rand_hex[i*2], "%02x", random_data[i]);
+    }
 
-        OS_MD5_Str(str1, md1);
-        OS_MD5_Str(str2, md2);
+    /* First key component: name + ID + random data */
+    snprintf(str1, STR_SIZE, "%s%s%s", name, id, rand_hex);
+    OS_MD5_Str(str1, md1);
 
-        snprintf(str1, STR_SIZE, "%s%d%d%d", md1, (int)getpid(), (int)random(),
-                 (int)time3);
-        OS_MD5_Str(str1, md1);
+    /* Second key component: IP + name + random data (offset) */
+    snprintf(str2, STR_SIZE, "%s%s%s", ip, name, rand_hex + 64);
+    OS_MD5_Str(str2, md2);
 
-        fprintf(fp, "%s %s %s %s%s\n", id, name, c_ip.ip, md1, md2);
+    fprintf(fp, "%s %s %s %s%s\n", id, name, ip, md1, md2);
         fclose(fp);
 
         printf(AGENT_ADD, id);
