@@ -672,8 +672,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         }
         if (!newfilesha1) {
             newfilesha1 = "Unknown";
-
-
+        }
         /* SHA-1 message */
         snprintf(sdb.sha1, OS_FLSIZE,
                  "New sha1sum is : '%s'\n",
