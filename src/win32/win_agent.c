@@ -423,7 +423,7 @@ int SendMSG(__attribute__((unused)) int queue, const char *message, const char *
     debug2("%s: DEBUG: Sending message to server: '%s'", ARGV0, message);
 
     snprintf(tmpstr, OS_MAXSTR, "%c:%s:%s", loc, pl, message);
-    _ssize = CreateSecMSG(&keys, tmpstr, crypt_msg, 0);
+    _ssize = CreateSecMSG(&keys, tmpstr, strlen(tmpstr), crypt_msg, 0);
 
     /* Returns NULL if can't create encrypted message */
     if (_ssize == 0) {
@@ -523,7 +523,7 @@ void send_win32_info(time_t curr_time)
     /* Create message */
     debug1("%s: DEBUG: Sending keep alive: %s", ARGV0, tmp_msg);
 
-    msg_size = CreateSecMSG(&keys, tmp_msg, crypt_msg, 0);
+    msg_size = CreateSecMSG(&keys, tmp_msg, strlen(tmp_msg), crypt_msg, 0);
 
     if (msg_size == 0) {
         merror(SEC_ERROR, ARGV0);

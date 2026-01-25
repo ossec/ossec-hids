@@ -201,7 +201,6 @@ int main(int argc, char **argv)
     }
 
     /* Get current time */
-    time1 = time(0);
     restart_necessary = 0;
 
     /* Before chroot */

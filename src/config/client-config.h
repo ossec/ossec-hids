@@ -30,6 +30,7 @@ typedef struct _agent {
     int notify_time;
     int max_time_reconnect_try;
     char *profile;
+    int crypto_method;
 
 #ifndef WIN32
     struct imsgbuf ibuf;

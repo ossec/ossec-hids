@@ -22,6 +22,7 @@ typedef struct _agent_info {
     char *rootcheck_endtime;
     char *os;
     char *version;
+    char *crypto_method;
 } agent_info;
 
 /* Print syscheck db (of modified files) */

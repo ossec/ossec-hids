@@ -404,6 +404,7 @@ int main(int argc, char **argv)
         if (!csv_output && !json_output) {
             printf("   Operating system:    %s\n", agt_info->os);
             printf("   Client version:      %s\n", agt_info->version);
+            printf("   Encryption:          %s\n", agt_info->crypto_method ? agt_info->crypto_method : "unknown");
             printf("   Last keep alive:     %s\n\n", agt_info->last_keepalive);
 
             if (end_time) {
@@ -418,6 +419,7 @@ int main(int argc, char **argv)
         }else if(json_output){
                 cJSON_AddStringToObject(response, "os", agt_info->os);
                 cJSON_AddStringToObject(response, "version", agt_info->version);
+                cJSON_AddStringToObject(response, "encryption", agt_info->crypto_method ? agt_info->crypto_method : "unknown");
                 cJSON_AddStringToObject(response, "lastKeepAlive", agt_info->last_keepalive);
                 cJSON_AddStringToObject(response, "syscheckTime", agt_info->syscheck_time);
                 cJSON_AddStringToObject(response, "syscheckEndTime", end_time ? agt_info->syscheck_endtime : "");

@@ -14,15 +14,11 @@
 #include "manage_agents.h"
 #include "os_crypto/md5/md5_op.h"
 #include "external/cJSON/cJSON.h"
+#include <openssl/rand.h>
 #include <stdlib.h>
 
 /* Global variables */
 int restart_necessary;
-time_t time1;
-time_t time2;
-time_t time3;
-long int rand1;
-long int rand2;
 
 
 /* Remove spaces, newlines, etc from a string */
@@ -130,11 +126,6 @@ int add_agent(int json_output)
 
     }
 #endif
-
-    /* Set time 2 */
-    time2 = time(0);
-
-    rand1 = random();
 
     /* Zero strings */
     memset(str1, '\0', STR_SIZE + 1);
@@ -333,8 +324,6 @@ int add_agent(int json_output)
 
         /* If user accepts to add */
         if (user_input[0] == 'y' || user_input[0] == 'Y') {
-            time3 = time(0);
-            rand2 = random();
 
             fp = fopen(authfile, "a");
             if (!fp) {
@@ -365,22 +354,42 @@ int add_agent(int json_output)
             }
 #endif
 
-            /* Random 1: Time took to write the agent information
-             * Random 2: Time took to choose the action
-             * Random 3: All of this + time + pid
-             * Random 4: Md5 all of this + the name, key and IP
-             * Random 5: Final key
+            /* Generate agent authentication key from:
+             * - Cryptographically secure random data (primary entropy)
+             * - Agent metadata (name, IP, ID) for uniqueness
+             * 
+             * We hex-encode the random data to ensure it's safe to use in snprintf
+             * and then hash it with MD5 to produce the final key.
              */
+             
+            unsigned char random_data[64];
+            char rand_hex[129];
+            
+            /* Generate cryptographically secure random bytes */
+            if (!RAND_bytes(random_data, sizeof(random_data))) {
+                if (json_output) {
+                    cJSON *json_root = cJSON_CreateObject();
+                    cJSON_AddNumberToObject(json_root, "error", 75);
+                    cJSON_AddStringToObject(json_root, "description", "Failed to generate secure random data");
+                    printf("%s", cJSON_PrintUnformatted(json_root));
+                    exit(1);
+                } else {
+                    merror("Failed to generate secure random data for agent key");
+                    return (1);
+                }
+            }
 
-            snprintf(str1, STR_SIZE, "%d%s%d", (int)(time3 - time2), name, (int)rand1);
-            snprintf(str2, STR_SIZE, "%d%s%s%d", (int)(time2 - time1), ip, id, (int)rand2);
+            for(int i=0; i<64; i++) {
+                sprintf(&rand_hex[i*2], "%02x", random_data[i]);
+            }
 
+            /* First key component: name + ID + random data */
+            snprintf(str1, STR_SIZE, "%s%s%s", name, id, rand_hex);
             OS_MD5_Str(str1, md1);
+            
+            /* Second key component: IP + name + random data (offset) */
+            snprintf(str2, STR_SIZE, "%s%s%s", ip, name, rand_hex + 64);
             OS_MD5_Str(str2, md2);
-
-            snprintf(str1, STR_SIZE, "%s%d%d%d", md1, (int)getpid(), (int)random(),
-                     (int)time3);
-            OS_MD5_Str(str1, md1);
 
             fprintf(fp, "%s %s %s %s%s\n", id, name, c_ip.ip, md1, md2);
             fclose(fp);
