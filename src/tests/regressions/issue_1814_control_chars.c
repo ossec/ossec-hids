@@ -43,8 +43,12 @@ int OS_CleanMSG(char *msg, Eventinfo *lf);
 int main(void) {
     char msg[2048];
     // Format: id:location:message
-    // We inject \n (newline) and \x07 (bell) in the message
-    snprintf(msg, sizeof(msg), "1:agent1:Test message with \n and \x07 control chars");
+    // We inject:
+    // - \n (newline, 10): Should be removed
+    // - \x07 (bell, 7): Should be removed
+    // - \x1B (ESC, 27): Should be removed (start of ANSI codes)
+    // - \xC3\xA4 (ä, UTF-8): Should be PRESERVED
+    snprintf(msg, sizeof(msg), "1:agent1:Test message with \n, \x07 (bell), \x1B (ESC) and UTF-8 \xC3\xA4");
     
     Eventinfo lf;
     memset(&lf, 0, sizeof(Eventinfo));
@@ -72,6 +76,18 @@ int main(void) {
         return 1;
     }
 
-    printf("SAFE: No control characters found.\n");
+    // Check for ESC
+    if (strchr(lf.full_log, '\x1B')) {
+        printf("VULNERABLE: ESC char \\x1B found in processed log!\n");
+        return 1;
+    }
+
+    // Check for UTF-8 preservation (ä should remain)
+    if (!strstr(lf.full_log, "\xC3\xA4")) {
+        printf("BROKEN: Valid UTF-8 characters were incorrectly removed!\n");
+        return 1;
+    }
+
+    printf("SAFE: Control characters removed, UTF-8 preserved.\n");
     return 0;
 }
