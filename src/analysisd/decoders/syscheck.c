@@ -603,6 +603,18 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                     );
         }
 
+        /* Preserve program_name and hostname before freeing full_log */
+        if (lf->program_name) {
+            char *tmp_pname = strdup(lf->program_name);
+            lf->program_name = tmp_pname;
+            lf->flags |= EF_FREE_PNAME;
+        }
+        if (lf->hostname) {
+            char *tmp_hname = strdup(lf->hostname);
+            lf->hostname = tmp_hname;
+            lf->flags |= EF_FREE_HNAME;
+        }
+
         /* Create a new log message */
         free(lf->full_log);
         os_strdup(sdb.comment, lf->full_log);
@@ -697,6 +709,18 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                  sdb.md5,
                  sdb.sha256
                 );
+
+        /* Preserve program_name and hostname before freeing full_log */
+        if (lf->program_name) {
+            char *tmp_pname = strdup(lf->program_name);
+            lf->program_name = tmp_pname;
+            lf->flags |= EF_FREE_PNAME;
+        }
+        if (lf->hostname) {
+            char *tmp_hname = strdup(lf->hostname);
+            lf->hostname = tmp_hname;
+            lf->flags |= EF_FREE_HNAME;
+        }
 
         /* Create a new log message */
         free(lf->full_log);
