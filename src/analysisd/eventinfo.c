@@ -518,6 +518,8 @@ void Zero_Eventinfo(Eventinfo *lf)
     lf->data = NULL;
     lf->systemname = NULL;
 
+    lf->flags = 0;
+
     if (lf->fields) {
         int i;
         for (i = 0; i < Config.decoder_order_size; i++) {
@@ -680,13 +682,26 @@ void Free_Eventinfo(Eventinfo *lf)
         }
     }
 
+    /* Check if we need to free program_name */
+    if (lf->flags & EF_FREE_PNAME) {
+        if (lf->program_name) {
+            free(lf->program_name);
+        }
+    }
+
+    /* Check if we need to free hostname */
+    if (lf->flags & EF_FREE_HNAME) {
+        if (lf->hostname) {
+            free(lf->hostname);
+        }
+    }
+
     /* We dont need to free:
      * fts
      * comment
      */
     free(lf);
     lf = NULL;
-
     return;
 }
 
