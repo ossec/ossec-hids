@@ -605,12 +605,14 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 
         /* Preserve program_name and hostname before freeing full_log */
         if (lf->program_name) {
-            char *tmp_pname = strdup(lf->program_name);
+            char *tmp_pname = NULL;
+            os_strdup(lf->program_name, tmp_pname);
             lf->program_name = tmp_pname;
             lf->flags |= EF_FREE_PNAME;
         }
         if (lf->hostname) {
-            char *tmp_hname = strdup(lf->hostname);
+            char *tmp_hname = NULL;
+            os_strdup(lf->hostname, tmp_hname);
             lf->hostname = tmp_hname;
             lf->flags |= EF_FREE_HNAME;
         }
@@ -712,12 +714,14 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 
         /* Preserve program_name and hostname before freeing full_log */
         if (lf->program_name) {
-            char *tmp_pname = strdup(lf->program_name);
+            char *tmp_pname = NULL;
+            os_strdup(lf->program_name, tmp_pname);
             lf->program_name = tmp_pname;
             lf->flags |= EF_FREE_PNAME;
         }
         if (lf->hostname) {
-            char *tmp_hname = strdup(lf->hostname);
+            char *tmp_hname = NULL;
+            os_strdup(lf->hostname, tmp_hname);
             lf->hostname = tmp_hname;
             lf->flags |= EF_FREE_HNAME;
         }
