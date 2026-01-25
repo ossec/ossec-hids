@@ -184,10 +184,12 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
     if (lf->program_name) {
         char *tmp_pname = strdup(lf->program_name);
         lf->program_name = tmp_pname;
+        lf->flags |= EF_FREE_PNAME;
     }
     if (lf->hostname) {
         char *tmp_hname = strdup(lf->hostname);
         lf->hostname = tmp_hname;
+        lf->flags |= EF_FREE_HNAME;
     }
 
     free(lf->full_log);

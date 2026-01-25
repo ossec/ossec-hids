@@ -56,6 +56,11 @@ typedef struct _Eventinfo {
     size_t size;
     size_t p_name_size;
 
+    /* Memory management flags */
+    unsigned int flags;
+    #define EF_FREE_PNAME 0x001
+    #define EF_FREE_HNAME 0x002
+
     /* Other internal variables */
     int matched;
 
