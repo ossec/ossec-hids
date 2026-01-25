@@ -191,6 +191,12 @@ static FILE *DB_File(const char *agent, int *agent_id)
 {
     int i = 0;
 
+    /* Validate agent name */
+    if (w_ref_parent_folder(agent)) {
+        merror("%s: Invalid agent name: '%s'", ARGV0, agent);
+        return (NULL);
+    }
+
     /* Find file pointer */
     while (sdb.agent_ips[i] != NULL  &&  i < MAX_AGENTS) {
         if (strcmp(sdb.agent_ips[i], agent) == 0) {
