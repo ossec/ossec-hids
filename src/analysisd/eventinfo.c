@@ -495,6 +495,14 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
 /* Zero the loginfo structure */
 void Zero_Eventinfo(Eventinfo *lf)
 {
+    /* Free flagged allocations first to prevent memory leaks */
+    if (lf->flags & EF_FREE_PNAME) {
+        free(lf->program_name);
+    }
+    if (lf->flags & EF_FREE_HNAME) {
+        free(lf->hostname);
+    }
+
     lf->log = NULL;
     lf->full_log = NULL;
     lf->hostname = NULL;
@@ -684,16 +692,16 @@ void Free_Eventinfo(Eventinfo *lf)
 
     /* Check if we need to free program_name */
     if (lf->flags & EF_FREE_PNAME) {
-        if (lf->program_name) {
-            free(lf->program_name);
-        }
+        free(lf->program_name);
+        lf->program_name = NULL;
+        lf->flags &= ~EF_FREE_PNAME;
     }
 
     /* Check if we need to free hostname */
     if (lf->flags & EF_FREE_HNAME) {
-        if (lf->hostname) {
-            free(lf->hostname);
-        }
+        free(lf->hostname);
+        lf->hostname = NULL;
+        lf->flags &= ~EF_FREE_HNAME;
     }
 
     /* We dont need to free:

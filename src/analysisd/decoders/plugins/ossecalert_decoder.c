@@ -182,12 +182,20 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
     strncpy(tmpstr_buffer, tmp_str, 4094);
 
     if (lf->program_name) {
+        /* Free existing allocation if flag is already set (event reuse case) */
+        if (lf->flags & EF_FREE_PNAME) {
+            free(lf->program_name);
+        }
         char *tmp_pname = NULL;
         os_strdup(lf->program_name, tmp_pname);
         lf->program_name = tmp_pname;
         lf->flags |= EF_FREE_PNAME;
     }
     if (lf->hostname) {
+        /* Free existing allocation if flag is already set (event reuse case) */
+        if (lf->flags & EF_FREE_HNAME) {
+            free(lf->hostname);
+        }
         char *tmp_hname = NULL;
         os_strdup(lf->hostname, tmp_hname);
         lf->hostname = tmp_hname;
