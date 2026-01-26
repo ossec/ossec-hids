@@ -181,13 +181,17 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
     tmpstr_buffer[4095] = '\0';
     strncpy(tmpstr_buffer, tmp_str, 4094);
 
-    if (lf->program_name) {
-        char *tmp_pname = strdup(lf->program_name);
+    if (lf->program_name && !(lf->flags & EF_FREE_PNAME)) {
+        /* Only duplicate if we don't already own it */
+        char *tmp_pname = NULL;
+        os_strdup(lf->program_name, tmp_pname);
         lf->program_name = tmp_pname;
         lf->flags |= EF_FREE_PNAME;
     }
-    if (lf->hostname) {
-        char *tmp_hname = strdup(lf->hostname);
+    if (lf->hostname && !(lf->flags & EF_FREE_HNAME)) {
+        /* Only duplicate if we don't already own it */
+        char *tmp_hname = NULL;
+        os_strdup(lf->hostname, tmp_hname);
         lf->hostname = tmp_hname;
         lf->flags |= EF_FREE_HNAME;
     }
