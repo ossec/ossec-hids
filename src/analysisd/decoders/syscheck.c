@@ -604,21 +604,15 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         }
 
         /* Preserve program_name and hostname before freeing full_log */
-        if (lf->program_name) {
-            /* Free existing allocation if flag is already set (event reuse case) */
-            if (lf->flags & EF_FREE_PNAME) {
-                free(lf->program_name);
-            }
+        if (lf->program_name && !(lf->flags & EF_FREE_PNAME)) {
+            /* Only duplicate if we don't already own it */
             char *tmp_pname = NULL;
             os_strdup(lf->program_name, tmp_pname);
             lf->program_name = tmp_pname;
             lf->flags |= EF_FREE_PNAME;
         }
-        if (lf->hostname) {
-            /* Free existing allocation if flag is already set (event reuse case) */
-            if (lf->flags & EF_FREE_HNAME) {
-                free(lf->hostname);
-            }
+        if (lf->hostname && !(lf->flags & EF_FREE_HNAME)) {
+            /* Only duplicate if we don't already own it */
             char *tmp_hname = NULL;
             os_strdup(lf->hostname, tmp_hname);
             lf->hostname = tmp_hname;
@@ -721,21 +715,15 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                 );
 
         /* Preserve program_name and hostname before freeing full_log */
-        if (lf->program_name) {
-            /* Free existing allocation if flag is already set (event reuse case) */
-            if (lf->flags & EF_FREE_PNAME) {
-                free(lf->program_name);
-            }
+        if (lf->program_name && !(lf->flags & EF_FREE_PNAME)) {
+            /* Only duplicate if we don't already own it */
             char *tmp_pname = NULL;
             os_strdup(lf->program_name, tmp_pname);
             lf->program_name = tmp_pname;
             lf->flags |= EF_FREE_PNAME;
         }
-        if (lf->hostname) {
-            /* Free existing allocation if flag is already set (event reuse case) */
-            if (lf->flags & EF_FREE_HNAME) {
-                free(lf->hostname);
-            }
+        if (lf->hostname && !(lf->flags & EF_FREE_HNAME)) {
+            /* Only duplicate if we don't already own it */
             char *tmp_hname = NULL;
             os_strdup(lf->hostname, tmp_hname);
             lf->hostname = tmp_hname;
