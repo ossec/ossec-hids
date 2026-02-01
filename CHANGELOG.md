@@ -1,3 +1,73 @@
+**OSSEC changelog (4.0.0) <support@atomicorp.com>**
+
+**Release Maintainers**
+
+Dan Parriott
+
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+
+**Release Notes**
+
+Major security and stability release addressing critical memory safety issues and modernizing cryptographic implementations. This release includes fixes for multiple heap use-after-free (UAF) vulnerabilities, uncontrolled recursion in XML parsing, and implementation of secure random number generation for agent key creation. Additionally, file integrity monitoring has been modernized with SHA-256 support, and several external dependencies have been updated to their latest stable versions.
+
+**Breaking Changes**
+
+> [!WARNING]
+> **AES Encryption Now Default for Agent Communication**
+> 
+> OSSEC 4.0.0 agents now use AES encryption by default for agent-server communication. This is **NOT backwards compatible** with OSSEC 3.8.0 and older servers.
+> 
+> **Migration Options:**
+> 
+> 1. **Upgrade servers first** (recommended): Update all OSSEC servers to 4.0.0 before upgrading agents
+> 2. **Use legacy Blowfish encryption on 4.0.0 agents**: Add to agent `ossec.conf`:
+>    ```xml
+>    <client>
+>      <crypto_method>blowfish</crypto_method>
+>    </client>
+>    ```
+
+**Configuration Changes**
+
+- **SHA-256 File Integrity Monitoring**: SHA-256 is now **enabled by default** for all monitored directories. No configuration changes are required.
+  
+- **To disable SHA-256** (if needed for compatibility):
+  ```xml
+  <syscheck>
+    <directories check_sha256sum="no">/etc</directories>
+  </syscheck>
+  ```
+
+**Security Fixes**
+
+- @atomicturtle - [PR 2178](https://github.com/ossec/ossec-hids/pull/2178) - Fix critical UAF bug in memory leak fix (Issue #1818)
+- @atomicturtle - [PR 2177](https://github.com/ossec/ossec-hids/pull/2177) - Fix Issue #1817: Heap UAF in OSSEC Alert decoder with leak-free Eventinfo refactor
+- @atomicturtle - [PR 2175](https://github.com/ossec/ossec-hids/pull/2175) - Fix uncontrolled recursion in os_xml _ReadElem (Issue #1953)
+- @atomicturtle - [PR 2167](https://github.com/ossec/ossec-hids/pull/2167) - Implement secure RNG for agent key generation using OpenSSL RAND_bytes
+
+**General**
+
+- @atomicturtle - [PR 2174](https://github.com/ossec/ossec-hids/pull/2174) - Fix help/version argument exit codes
+- @atomicturtle - [PR 2173](https://github.com/ossec/ossec-hids/pull/2173) - Fix for Issue #2056 in syscheck decoder
+- @atomicturtle - [PR 2171](https://github.com/ossec/ossec-hids/pull/2171) - Ignore ENOENT in OS_RemoveCounter to prevent benign error messages
+- @atomicturtle - [PR 2170](https://github.com/ossec/ossec-hids/pull/2170) - Improve error message in ossec-testrule for missing rule matches (Issue #2093)
+- @atomicturtle - [PR 2169](https://github.com/ossec/ossec-hids/pull/2169) - Clean up redundant NULL checks in report filter function (Issue #2133)
+- @atomicturtle - [PR 2168](https://github.com/ossec/ossec-hids/pull/2168) - Improve logcollector crash fix to check read function pointer (Issue #2156)
+- @atomicturtle - [PR 2166](https://github.com/ossec/ossec-hids/pull/2166) - FIM modernization: SHA-256 integration and safe buffer handling
+- @atomicturtle - [PR 2165](https://github.com/ossec/ossec-hids/pull/2165) - Update Lua to version 5.4.7
+- @atomicturtle - [PR 2164](https://github.com/ossec/ossec-hids/pull/2164) - Update zlib to version 1.3.1
+- @atomicturtle - [PR 2163](https://github.com/ossec/ossec-hids/pull/2163) - Update cJSON to version 1.7.18
+- @atomicturtle - [PR 2162](https://github.com/ossec/ossec-hids/pull/2162) - Build fixes for Windows
+- @atomicturtle - [PR 2147](https://github.com/ossec/ossec-hids/pull/2147) - Add RPM spec file
+- @atomicturtle - [PR 2146](https://github.com/ossec/ossec-hids/pull/2146) - Handle SSL EOF condition in agent-auth
+
+
+
+
 **OSSEC changelog (3.8.0) <scott@atomicorp.com>**
 
 **Release Maintainers**
