@@ -1,0 +1,54 @@
+#!/bin/bash
+# Regression test for Issue #162 - use_own_name doesn't work in ossec-logtest
+# https://github.com/ossec/ossec-hids/issues/162
+#
+# This test verifies that child decoders with use_own_name=true correctly
+# display their own name instead of inheriting the parent decoder's name.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OSSEC_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+echo "Regression Test: Issue #162 - use_own_name decoder option"
+echo "=========================================================="
+echo ""
+
+# Test 1: postfix-reject decoder (has use_own_name=true)
+echo "Test 1: postfix-reject decoder should show 'postfix-reject', not 'postfix'"
+echo "Log: Feb  1 14:53:00 hostname postfix/smtpd[32297]: NOQUEUE: reject: RCPT from unknown[213.255.237.245]: 554"
+echo ""
+
+# Find ossec-logtest binary
+if [ -n "$OSSEC_LOGTEST" ] && [ -x "$OSSEC_LOGTEST" ]; then
+    LOGTEST_BIN="$OSSEC_LOGTEST"
+elif [ -x "$OSSEC_ROOT/src/ossec-logtest" ]; then
+    LOGTEST_BIN="$OSSEC_ROOT/src/ossec-logtest"
+elif [ -x "$OSSEC_ROOT/bin/ossec-logtest" ]; then
+    LOGTEST_BIN="$OSSEC_ROOT/bin/ossec-logtest"
+elif command -v ossec-logtest >/dev/null 2>&1; then
+    LOGTEST_BIN="$(command -v ossec-logtest)"
+else
+    echo "ERROR: ossec-logtest binary not found. Set OSSEC_LOGTEST env var."
+    exit 1
+fi
+
+RESULT=$(echo "Feb  1 14:53:00 hostname postfix/smtpd[32297]: NOQUEUE: reject: RCPT from unknown[213.255.237.245]: 554" | \
+    "$LOGTEST_BIN" -v 2>&1)
+
+DECODER_NAME=$(echo "$RESULT" | grep "decoder:" | head -1 | sed "s/.*decoder: '//;s/'.*//")
+
+if [ "$DECODER_NAME" = "postfix-reject" ]; then
+    echo "✓ PASS: Decoder name is 'postfix-reject' (use_own_name working)"
+    exit 0
+elif [ "$DECODER_NAME" = "postfix" ]; then
+    echo "✗ FAIL: Decoder name is 'postfix' (use_own_name NOT working - BUG)"
+    echo ""
+    echo "Expected: postfix-reject"
+    echo "Got:      $DECODER_NAME"
+    exit 1
+else
+    echo "? UNKNOWN: Decoder name is '$DECODER_NAME'"
+    echo ""
+    echo "Full output:"
+    echo "$RESULT" | head -30
+    exit 2
+fi

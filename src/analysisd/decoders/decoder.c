@@ -71,11 +71,6 @@ void DecodeEvent(Eventinfo *lf)
             }
         }
 
-#ifdef TESTRULE
-        if (!alert_only) {
-            print_out("       decoder: '%s'", nnode->name);
-        }
-#endif
 
         lf->decoder_info = nnode;
         child_node = node->child;
@@ -160,7 +155,7 @@ void DecodeEvent(Eventinfo *lf)
         /* If we have an external decoder, execute it */
         if (nnode->plugindecoder) {
             nnode->plugindecoder(lf);
-            return;
+            goto out;
         }
 
         /* Get the regex */
@@ -198,7 +193,7 @@ void DecodeEvent(Eventinfo *lf)
                         nnode = child_node->osdecoder;
                         continue;
                     }
-                    return;
+                    goto out;
                 }
 
                 lf->decoder_info = nnode;
@@ -259,7 +254,7 @@ void DecodeEvent(Eventinfo *lf)
                         nnode = child_node->osdecoder;
                         continue;
                     }
-                    return;
+                    goto out;
                 }
 
 
@@ -290,12 +285,13 @@ void DecodeEvent(Eventinfo *lf)
             }
 
 
+
             /* If we don't have a regex, we may leave now */
-            return;
+            goto out;
         }
 
         /* ok to return  */
-        return;
+        goto out;
     } while ((node = node->next) != NULL);
 
 #ifdef TESTRULE
@@ -303,6 +299,15 @@ void DecodeEvent(Eventinfo *lf)
         print_out("       No decoder matched.");
     }
 #endif
+    return;
+
+out:
+#ifdef TESTRULE
+    if (!alert_only && lf->decoder_info) {
+        print_out("       decoder: '%s'", lf->decoder_info->name);
+    }
+#endif
+    return;
 }
 
 /*** Event decoders ****/
