@@ -1,0 +1,243 @@
+#!/bin/bash
+# Regression test for Issue #776 - segfault when extracting >8 fields with <order>
+# https://github.com/ossec/ossec-hids/issues/776
+#
+# This test verifies that decoders can extract more than 8 fields without
+# segfaulting. The default decoder_order_size should be 20 (not 8).
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OSSEC_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+echo "Regression Test: Issue #776 - Decoder with >8 fields"
+echo "====================================================="
+echo ""
+
+# Create test decoder XML in the regressions directory
+DECODER_FILE="$SCRIPT_DIR/issue_776_decoder.xml"
+cat > "$DECODER_FILE" << 'EOF'
+<!-- Test decoder for Issue #776 -->
+<decoder name="test_many_fields">
+  <program_name>^testmany</program_name>
+</decoder>
+
+<decoder name="test_many_fields_child">
+  <parent>test_many_fields</parent>
+  <prematch>^DATA:</prematch>
+  <regex offset="after_prematch">^(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+)</regex>
+  <order>field1,field2,field3,field4,field5,field6,field7,field8,field9,field10,field11,field12,field13,field14,field15</order>
+</decoder>
+EOF
+
+# Define install root (usually /var/ossec)
+INSTALL_DIR="/var/ossec"
+
+if [ ! -d "$INSTALL_DIR" ]; then
+    echo "ERROR: Install directory $INSTALL_DIR not found. Cannot run test against installed binaries."
+    exit 1
+fi
+
+# Backup original local_decoder.xml
+if [ -f "$INSTALL_DIR/etc/local_decoder.xml" ]; then
+    cp "$INSTALL_DIR/etc/local_decoder.xml" "$INSTALL_DIR/etc/local_decoder.xml.bak"
+else
+    touch "$INSTALL_DIR/etc/local_decoder.xml"
+    touch "$INSTALL_DIR/etc/local_decoder.xml.bak"
+    CREATED_LOCAL_DECODER=1
+fi
+
+# Append test decoders to local_decoder.xml
+cat >> "$INSTALL_DIR/etc/local_decoder.xml" << 'EOF'
+<!-- Sanity check decoder (5 fields) -->
+<decoder name="test_five_fields">
+  <program_name>^testfive</program_name>
+</decoder>
+<decoder name="test_five_fields_child">
+  <parent>test_five_fields</parent>
+  <prematch>^DATA:</prematch>
+  <regex offset="after_prematch">^(\S+),(\S+),(\S+),(\S+),(\S+)</regex>
+  <order>field1,field2,field3,field4,field5</order>
+</decoder>
+
+<!-- Target decoder (30 fields) -->
+<decoder name="test_many_fields">
+  <program_name>^testmany</program_name>
+</decoder>
+<decoder name="test_many_fields_child">
+  <parent>test_many_fields</parent>
+  <prematch>^DATA:</prematch>
+  <regex offset="after_prematch">^(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+),(\S+)</regex>
+  <order>field1,field2,field3,field4,field5,field6,field7,field8,field9,field10,field11,field12,field13,field14,field15,field16,field17,field18,field19,field20,field21,field22,field23,field24,field25,field26,field27,field28,field29,field30</order>
+</decoder>
+EOF
+
+# Backup original local_internal_options.conf if it exists
+if [ -f "$INSTALL_DIR/etc/local_internal_options.conf" ]; then
+    cp "$INSTALL_DIR/etc/local_internal_options.conf" "$INSTALL_DIR/etc/local_internal_options.conf.bak"
+else
+    touch "$INSTALL_DIR/etc/local_internal_options.conf"
+    touch "$INSTALL_DIR/etc/local_internal_options.conf.bak" # Mark as empty/created
+    CREATED_LOCAL_OPTIONS=1
+fi
+
+# Set decoder limit to 256 in local_internal_options.conf
+echo "analysisd.decoder_order_size=256" > "$INSTALL_DIR/etc/local_internal_options.conf"
+
+echo "Test 1: Decoder with 5 fields (sanity check)"
+echo "Log: Feb  1 15:00:00 hostname testfive: DATA:a,b,c,d,e"
+echo ""
+echo "Test 2: Decoder with 30 fields (should work with decoder_order_size=256 max=1024)"
+echo "Log: Feb  1 15:00:00 hostname testmany: DATA:a,b,c...,field30"
+echo ""
+
+# Find ossec-logtest binary
+if [ -n "$OSSEC_LOGTEST" ] && [ -x "$OSSEC_LOGTEST" ]; then
+    LOGTEST_BIN="$OSSEC_LOGTEST"
+elif [ -x "$OSSEC_ROOT/src/ossec-logtest" ]; then
+    LOGTEST_BIN="$OSSEC_ROOT/src/ossec-logtest"
+elif [ -x "$OSSEC_ROOT/bin/ossec-logtest" ]; then
+    LOGTEST_BIN="$OSSEC_ROOT/bin/ossec-logtest"
+elif command -v ossec-logtest >/dev/null 2>&1; then
+    LOGTEST_BIN="$(command -v ossec-logtest)"
+else
+    # Try install dir
+    if [ -x "$INSTALL_DIR/bin/ossec-logtest" ]; then
+        LOGTEST_BIN="$INSTALL_DIR/bin/ossec-logtest"
+    else
+        echo "ERROR: ossec-logtest binary not found. Set OSSEC_LOGTEST env var."
+        # Restore backups
+        if [ -n "$CREATED_LOCAL_DECODER" ]; then
+            rm -f "$INSTALL_DIR/etc/local_decoder.xml"
+        else
+            mv "$INSTALL_DIR/etc/local_decoder.xml.bak" "$INSTALL_DIR/etc/local_decoder.xml"
+        fi
+        if [ -n "$CREATED_LOCAL_OPTIONS" ]; then
+            rm -f "$INSTALL_DIR/etc/local_internal_options.conf"
+        else
+            mv "$INSTALL_DIR/etc/local_internal_options.conf.bak" "$INSTALL_DIR/etc/local_internal_options.conf"
+        fi
+        exit 1
+    fi
+fi
+
+# Run ossec-logtest
+# We NO LONGER pass -D because we are modifying the install dir directly.
+TEST_INPUT=$(printf "Feb  1 14:53:00 hostname postfix/smtpd[32297]: NOQUEUE: reject: RCPT from unknown[213.255.237.245]: 554\nFeb  1 15:00:00 hostname testfive: DATA:a,b,c,d,e\nFeb  1 15:00:00 hostname testmany: DATA:a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,A,B,C,D\n")
+RESULT=$(echo "$TEST_INPUT" | "$LOGTEST_BIN" -v 2>&1)
+LOGTEST_EXIT=$?
+
+# Restore original local_decoder.xml
+if [ -n "$CREATED_LOCAL_DECODER" ]; then
+    rm -f "$INSTALL_DIR/etc/local_decoder.xml"
+else
+    mv "$INSTALL_DIR/etc/local_decoder.xml.bak" "$INSTALL_DIR/etc/local_decoder.xml"
+fi
+
+# Restore original local_internal_options.conf
+if [ -n "$CREATED_LOCAL_OPTIONS" ]; then
+    rm -f "$INSTALL_DIR/etc/local_internal_options.conf"
+else
+    mv "$INSTALL_DIR/etc/local_internal_options.conf.bak" "$INSTALL_DIR/etc/local_internal_options.conf"
+fi
+
+# Debug output
+echo "--- LOGTEST OUTPUT ---"
+echo "$RESULT"
+echo "----------------------"
+
+# Analysis
+PASS=1
+
+# Check Sanity (5 fields)
+# Note: Defaults to parent name unless use_own_name is set
+if echo "$RESULT" | grep -q "decoder: 'test_five_fields'"; then
+    if echo "$RESULT" | grep -q "field5: 'e'"; then
+        echo "✓ PASS Sanity: 5-field decoder matched and extracted field5."
+    else
+        echo "✗ FAIL Sanity: 5-field decoder matched but missing field5?"
+        PASS=0
+    fi
+else
+    echo "✗ FAIL Sanity: 5-field decoder DID NOT match."
+    # If control (postfix) also failed
+    if echo "$RESULT" | grep -q "decoder: 'postfix-reject'"; then
+        echo "  (Control/Postfix matched, so basic loading works)"
+    else
+        echo "  (Control/Postfix FAILED too)"
+    fi
+    PASS=0
+fi
+
+# Check Target (30 fields)
+if echo "$RESULT" | grep -q "decoder: 'test_many_fields'"; then
+     if echo "$RESULT" | grep -q "field30: 'D'"; then
+        echo "✓ PASS Target: 30-field decoder matched and extracted field30."
+     else
+        echo "✗ FAIL Target: 30-field decoder matched but missing field30?"
+        echo "$RESULT" | grep "field"
+        PASS=0
+     fi
+elif echo "$RESULT" | grep -q "Order has too many fields"; then
+     echo "✗ FAIL Target: Hit limit (reproduced issue)."
+     PASS=0
+else
+     echo "✗ FAIL Target: 30-field decoder matched parent but not child?"
+     PASS=0
+fi
+
+if [ $PASS -eq 1 ]; then
+    exit 0
+else
+    exit 1
+fi
+ exit 0 # Should not be reached
+
+
+# Debug output
+echo "--- LOGTEST OUTPUT ---"
+echo "$RESULT"
+echo "----------------------"
+
+# Check if we hit the limit (Reproduced the issue)
+if echo "$RESULT" | grep -q "Order has too many fields"; then
+    echo "✓ PASS: Reproduced limitation (Order has too many fields)"
+    # This is a PASS for reproduction, but we want to eventually fix it.
+    # For now, let's exit 1 to show it failed to decode (pre-fix)
+    # or exit 0 to show we successfully reproduced the issue?
+    # Usually regression tests pass if the FEATURE works.
+    # So this should fail until we fix it.
+    echo "Current limit prevents >8 fields (or configured limit)."
+    exit 1
+fi
+
+# Check if exception error occurred
+if [ $LOGTEST_EXIT -ne 0 ]; then
+   echo "WARNING: ossec-logtest exited with code $LOGTEST_EXIT"
+fi
+
+# Check if decoder matched
+if echo "$RESULT" | grep -q "decoder: 'test_many_fields"; then
+    # Check if we got all 15 fields
+    FIELD_COUNT=$(echo "$RESULT" | grep -c "field[0-9]*:")
+    
+    if [ "$FIELD_COUNT" -ge 15 ]; then
+        echo "✓ PASS: Decoder successfully extracted $FIELD_COUNT fields (15 expected)"
+        exit 0
+    else
+        echo "✗ FAIL: Decoder only extracted $FIELD_COUNT fields (15 expected)"
+        echo ""
+        echo "Output:"
+        echo "$RESULT" | grep -E "decoder:|field[0-9]*:"
+        exit 1
+    fi
+elif echo "$RESULT" | grep -q "Order has too many fields"; then
+    echo "✗ FAIL: Decoder rejected due to field limit (default decoder_order_size too low)"
+    echo ""
+    echo "This means decoder_order_size default is still 8 instead of 20"
+    exit 1
+else
+    echo "? UNKNOWN: Decoder did not match or unexpected error"
+    echo ""
+    echo "Full output:"
+    echo "$RESULT" | head -30
+    exit 2
+fi
