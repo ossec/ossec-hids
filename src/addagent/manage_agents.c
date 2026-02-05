@@ -379,7 +379,7 @@ int add_agent(int json_output)
                 }
             }
 
-            for(int i=0; i<64; i++) {
+            for(i=0; i<64; i++) {
                 sprintf(&rand_hex[i*2], "%02x", random_data[i]);
             }
 
