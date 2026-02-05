@@ -453,7 +453,7 @@ int k_bulkload(const char *cmdbulk)
     }
 
     /* Hex encode the random data */
-    for(int i=0; i<64; i++) {
+    for(i=0; i<64; i++) {
         sprintf(&rand_hex[i*2], "%02x", random_data[i]);
     }
 
