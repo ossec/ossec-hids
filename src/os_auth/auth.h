@@ -45,7 +45,7 @@
 extern BIO *bio_err;
 #define KEYFILE  "/etc/sslmanager.key"
 #define CERTFILE "/etc/sslmanager.cert"
-#define DEFAULT_CIPHERS "EECDH+AESGCM:EDH+AESGCM:EECDH+AES256:EDH+AES256:EECDH+AES128:EDH+AES128:HIGH:!ADH:!EXP:!MD5:!RC4:!3DES:!CAMELLIA:@STRENGTH"
+#define DEFAULT_CIPHERS "EECDH+AESGCM:EDH+AESGCM:EECDH+AES256:EDH+AES256:EECDH+AES128:EDH+AES128:HIGH:!kRSA:!ADH:!EXP:!MD5:!RC4:!3DES:!CAMELLIA:@STRENGTH"
 #define DEFAULT_PORT "1515"
 
 SSL_CTX *os_ssl_keys(int is_server, const char *os_dir, const char *ciphers, const char *cert, const char *key, const char *ca_cert);
