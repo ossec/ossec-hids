@@ -381,8 +381,7 @@ int FW_Log(Eventinfo *lf)
      * action, there is no point in going
      * forward over here
      */
-    if (!lf->action || !lf->srcip || !lf->dstip || !lf->srcport ||
-            !lf->dstport || !lf->protocol) {
+    if (!lf->action || !lf->srcip || !lf->dstip || !lf->protocol) {
         return (0);
     }
 
@@ -449,9 +448,9 @@ int FW_Log(Eventinfo *lf)
             lf->action,
             lf->protocol,
             lf->srcip,
-            lf->srcport,
+            lf->srcport ? lf->srcport : "0",
             lf->dstip,
-            lf->dstport);
+            lf->dstport ? lf->dstport : "0");
 
     fflush(_fflog);
 
