@@ -1,4 +1,5 @@
-/* Copyright (C) 2010 Trend Micro Inc.
+/* Copyright (C) 2026 Atomicorp, Inc.
+ * Copyright (C) 2010 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -27,6 +28,8 @@
 #include "shared.h"
 #include "auth.h"
 #include <openssl/dh.h>
+#include <openssl/ec.h>
+#include <openssl/objects.h>
 
 /* Global variables */
 BIO *bio_err;
@@ -95,7 +98,7 @@ SSL_ERROR:
     return (SSL_CTX *)NULL;
 }
 
-DH *get_dh2048()
+static DH *get_dh2048(void)
 {
     static const unsigned char dh2048_p[] = {
         0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xAD,0xF8,0x54,0x58,0x72,0xDD,0x3B,0x75,
@@ -162,9 +165,24 @@ SSL_CTX *get_ssl_context(const char *ciphers)
         goto CONTEXT_ERR;
     }
 
+    /* Enable ECDHE support */
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+    SSL_CTX_set_ecdh_auto(ctx, 1);
+#else
+    EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+    if (ecdh) {
+        SSL_CTX_set_tmp_ecdh(ctx, ecdh);
+        EC_KEY_free(ecdh);
+    }
+#endif
+
     /* Initialize Diffie-Hellman parameters */
     if ((dh = get_dh2048())) {
-        SSL_CTX_set_tmp_dh(ctx, dh);
+        if (!SSL_CTX_set_tmp_dh(ctx, dh)) {
+            merror("%s: ERROR: Unable to set temporary DH parameters", ARGV0);
+            DH_free(dh);
+            goto CONTEXT_ERR;
+        }
         DH_free(dh);
     } else {
         merror("%s: ERROR: Unable to load DH parameters", ARGV0);
