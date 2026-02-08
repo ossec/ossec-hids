@@ -167,11 +167,18 @@ SSL_CTX *get_ssl_context(const char *ciphers)
 
     /* Enable ECDHE support */
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L && OPENSSL_VERSION_NUMBER < 0x10100000L
-    SSL_CTX_set_ecdh_auto(ctx, 1);
+    if (SSL_CTX_set_ecdh_auto(ctx, 1) != 1) {
+        merror("%s: ERROR: Unable to enable ECDHE via SSL_CTX_set_ecdh_auto", ARGV0);
+        goto CONTEXT_ERR;
+    }
 #elif OPENSSL_VERSION_NUMBER < 0x10002000L
     EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (ecdh) {
-        SSL_CTX_set_tmp_ecdh(ctx, ecdh);
+        if (SSL_CTX_set_tmp_ecdh(ctx, ecdh) != 1) {
+            merror("%s: ERROR: Unable to set ECDHE curve", ARGV0);
+            EC_KEY_free(ecdh);
+            goto CONTEXT_ERR;
+        }
         EC_KEY_free(ecdh);
     }
 #endif
