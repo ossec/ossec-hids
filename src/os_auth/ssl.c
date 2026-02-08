@@ -166,9 +166,9 @@ SSL_CTX *get_ssl_context(const char *ciphers)
     }
 
     /* Enable ECDHE support */
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L && OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_CTX_set_ecdh_auto(ctx, 1);
-#else
+#elif OPENSSL_VERSION_NUMBER < 0x10002000L
     EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (ecdh) {
         SSL_CTX_set_tmp_ecdh(ctx, ecdh);
