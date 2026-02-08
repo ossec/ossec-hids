@@ -296,6 +296,105 @@ int isVista = 0;
 #ifndef PRODUCT_WEB_SERVER_CORE_C
 #define PRODUCT_WEB_SERVER_CORE_C "Web Server Edition "
 #endif
+
+#ifndef PRODUCT_EDUCATION
+#define PRODUCT_EDUCATION 0x00000079
+#endif
+#ifndef PRODUCT_EDUCATION_C
+#define PRODUCT_EDUCATION_C "Education Edition "
+#endif
+
+#ifndef PRODUCT_EDUCATION_N
+#define PRODUCT_EDUCATION_N 0x0000007A
+#endif
+#ifndef PRODUCT_EDUCATION_N_C
+#define PRODUCT_EDUCATION_N_C "Education Edition "
+#endif
+
+#ifndef PRODUCT_ENTERPRISE_S
+#define PRODUCT_ENTERPRISE_S 0x0000007D
+#endif
+#ifndef PRODUCT_ENTERPRISE_S_C
+#define PRODUCT_ENTERPRISE_S_C "Enterprise S Edition "
+#endif
+
+#ifndef PRODUCT_ENTERPRISE_S_N
+#define PRODUCT_ENTERPRISE_S_N 0x0000007E
+#endif
+#ifndef PRODUCT_ENTERPRISE_S_N_C
+#define PRODUCT_ENTERPRISE_S_N_C "Enterprise S Edition "
+#endif
+
+#ifndef PRODUCT_PROFESSIONAL
+#define PRODUCT_PROFESSIONAL 0x00000030
+#endif
+#ifndef PRODUCT_PROFESSIONAL_C
+#define PRODUCT_PROFESSIONAL_C "Professional Edition "
+#endif
+
+#ifndef PRODUCT_PROFESSIONAL_N
+#define PRODUCT_PROFESSIONAL_N 0x00000031
+#endif
+#ifndef PRODUCT_PROFESSIONAL_N_C
+#define PRODUCT_PROFESSIONAL_N_C "Professional Edition "
+#endif
+
+#ifndef PRODUCT_PROFESSIONAL_WMC
+#define PRODUCT_PROFESSIONAL_WMC 0x00000067
+#endif
+#ifndef PRODUCT_PROFESSIONAL_WMC_C
+#define PRODUCT_PROFESSIONAL_WMC_C "Professional with Media Center Edition "
+#endif
+
+#ifndef PRODUCT_CORE
+#define PRODUCT_CORE 0x00000065
+#endif
+#ifndef PRODUCT_CORE_C
+#define PRODUCT_CORE_C "Home Edition "
+#endif
+
+#ifndef PRODUCT_CORE_N
+#define PRODUCT_CORE_N 0x00000062
+#endif
+#ifndef PRODUCT_CORE_N_C
+#define PRODUCT_CORE_N_C "Home Edition "
+#endif
+
+#ifndef PRODUCT_CORE_COUNTRYSPECIFIC
+#define PRODUCT_CORE_COUNTRYSPECIFIC 0x00000063
+#endif
+#ifndef PRODUCT_CORE_COUNTRYSPECIFIC_C
+#define PRODUCT_CORE_COUNTRYSPECIFIC_C "Home Edition "
+#endif
+
+#ifndef PRODUCT_CORE_SINGLELANGUAGE
+#define PRODUCT_CORE_SINGLELANGUAGE 0x00000064
+#endif
+#ifndef PRODUCT_CORE_SINGLELANGUAGE_C
+#define PRODUCT_CORE_SINGLELANGUAGE_C "Home Edition "
+#endif
+
+#ifndef PRODUCT_DATACENTER_A_SERVER_CORE
+#define PRODUCT_DATACENTER_A_SERVER_CORE 0x00000091
+#endif
+#ifndef PRODUCT_DATACENTER_A_SERVER_CORE_C
+#define PRODUCT_DATACENTER_A_SERVER_CORE_C "Datacenter A Edition (core) "
+#endif
+
+#ifndef PRODUCT_PRO_WORKSTATION
+#define PRODUCT_PRO_WORKSTATION 0x000000A1
+#endif
+#ifndef PRODUCT_PRO_WORKSTATION_C
+#define PRODUCT_PRO_WORKSTATION_C "Pro for Workstations "
+#endif
+
+#ifndef PRODUCT_PRO_WORKSTATION_N
+#define PRODUCT_PRO_WORKSTATION_N 0x000000A2
+#endif
+#ifndef PRODUCT_PRO_WORKSTATION_N_C
+#define PRODUCT_PRO_WORKSTATION_N_C "Pro for Workstations "
+#endif
+
 #endif /* WIN32 */
 
 #ifdef WIN32
@@ -1135,7 +1234,33 @@ char *getuname()
     ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
-    if (!(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi))) {
+    /* Try to use RtlGetVersion from ntdll.dll */
+    HMODULE hMod = GetModuleHandle("ntdll.dll");
+    if (hMod) {
+        typedef LONG (WINAPI *tRtlGetVersion)(void *);
+        tRtlGetVersion pRtlGetVersion = (tRtlGetVersion)GetProcAddress(hMod, "RtlGetVersion");
+        if (pRtlGetVersion) {
+            OSVERSIONINFOEXW osviW;
+            ZeroMemory(&osviW, sizeof(osviW));
+            osviW.dwOSVersionInfoSize = sizeof(osviW);
+            
+            if (pRtlGetVersion(&osviW) == 0) {
+                osvi.dwMajorVersion = osviW.dwMajorVersion;
+                osvi.dwMinorVersion = osviW.dwMinorVersion;
+                osvi.dwBuildNumber = osviW.dwBuildNumber;
+                osvi.dwPlatformId = osviW.dwPlatformId;
+                osvi.wProductType = osviW.wProductType;
+                osvi.wSuiteMask = osviW.wSuiteMask;
+                
+                WideCharToMultiByte(CP_ACP, 0, osviW.szCSDVersion, -1, 
+                                  osvi.szCSDVersion, sizeof(osvi.szCSDVersion), NULL, NULL);
+                                  
+                bOsVersionInfoEx = TRUE;
+            }
+        }
+    }
+
+    if (!bOsVersionInfoEx && !(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi))) {
         osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
         if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
             return (NULL);
@@ -1149,7 +1274,25 @@ char *getuname()
     switch (osvi.dwPlatformId) {
         /* Test for the Windows NT product family */
         case VER_PLATFORM_WIN32_NT:
-            if (osvi.dwMajorVersion == 6) {
+            if (osvi.dwMajorVersion == 10) {
+                if (osvi.wProductType == VER_NT_WORKSTATION) {
+                    if (osvi.dwBuildNumber >= 22000) {
+                        strncat(ret, "Microsoft Windows 11 ", ret_size - 1);
+                    } else {
+                        strncat(ret, "Microsoft Windows 10 ", ret_size - 1);
+                    }
+                } else {
+                    if (osvi.dwBuildNumber >= 26040) {
+                        strncat(ret, "Microsoft Windows Server 2025 ", ret_size - 1);
+                    } else if (osvi.dwBuildNumber >= 20348) {
+                        strncat(ret, "Microsoft Windows Server 2022 ", ret_size - 1);
+                    } else if (osvi.dwBuildNumber >= 17763) {
+                        strncat(ret, "Microsoft Windows Server 2019 ", ret_size - 1);
+                    } else {
+                        strncat(ret, "Microsoft Windows Server 2016 ", ret_size - 1);
+                    }
+                }
+            } else if (osvi.dwMajorVersion == 6) {
                 if (osvi.dwMinorVersion == 0) {
                     if (osvi.wProductType == VER_NT_WORKSTATION ) {
                         strncat(ret, "Microsoft Windows Vista ", ret_size - 1);
@@ -1175,7 +1318,9 @@ char *getuname()
                         strncat(ret, "Microsoft Windows Server 2012 R2 ", ret_size - 1);
                     }
                 }
+            }
 
+            if (osvi.dwMajorVersion == 10 || osvi.dwMajorVersion == 6) {
                 ret_size -= strlen(ret) + 1;
 
 
@@ -1184,7 +1329,11 @@ char *getuname()
                            GetModuleHandle(TEXT("kernel32.dll")),
                            "GetProductInfo");
 
-                pGPI( 6, 0, 0, 0, &dwType);
+                if (pGPI) {
+                    pGPI( osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &dwType);
+                } else {
+                    dwType = PRODUCT_UNLICENSED;
+                }
 
                 switch (dwType) {
                     case PRODUCT_UNLICENSED:
@@ -1303,6 +1452,48 @@ char *getuname()
                         break;
                     case PRODUCT_WEB_SERVER_CORE:
                         strncat(ret, PRODUCT_WEB_SERVER_CORE_C, ret_size - 1);
+                        break;
+                    case PRODUCT_EDUCATION:
+                        strncat(ret, PRODUCT_EDUCATION_C, ret_size - 1);
+                        break;
+                    case PRODUCT_EDUCATION_N:
+                        strncat(ret, PRODUCT_EDUCATION_N_C, ret_size - 1);
+                        break;
+                    case PRODUCT_ENTERPRISE_S:
+                        strncat(ret, PRODUCT_ENTERPRISE_S_C, ret_size - 1);
+                        break;
+                    case PRODUCT_ENTERPRISE_S_N:
+                        strncat(ret, PRODUCT_ENTERPRISE_S_N_C, ret_size - 1);
+                        break;
+                    case PRODUCT_PROFESSIONAL:
+                        strncat(ret, PRODUCT_PROFESSIONAL_C, ret_size - 1);
+                        break;
+                    case PRODUCT_PROFESSIONAL_N:
+                        strncat(ret, PRODUCT_PROFESSIONAL_N_C, ret_size - 1);
+                        break;
+                    case PRODUCT_PROFESSIONAL_WMC:
+                        strncat(ret, PRODUCT_PROFESSIONAL_WMC_C, ret_size - 1);
+                        break;
+                    case PRODUCT_CORE:
+                        strncat(ret, PRODUCT_CORE_C, ret_size - 1);
+                        break;
+                    case PRODUCT_CORE_N:
+                        strncat(ret, PRODUCT_CORE_N_C, ret_size - 1);
+                        break;
+                    case PRODUCT_CORE_COUNTRYSPECIFIC:
+                        strncat(ret, PRODUCT_CORE_COUNTRYSPECIFIC_C, ret_size - 1);
+                        break;
+                    case PRODUCT_CORE_SINGLELANGUAGE:
+                        strncat(ret, PRODUCT_CORE_SINGLELANGUAGE_C, ret_size - 1);
+                        break;
+                    case PRODUCT_DATACENTER_A_SERVER_CORE:
+                        strncat(ret, PRODUCT_DATACENTER_A_SERVER_CORE_C, ret_size - 1);
+                        break;
+                    case PRODUCT_PRO_WORKSTATION:
+                        strncat(ret, PRODUCT_PRO_WORKSTATION_C, ret_size - 1);
+                        break;
+                    case PRODUCT_PRO_WORKSTATION_N:
+                        strncat(ret, PRODUCT_PRO_WORKSTATION_N_C, ret_size - 1);
                         break;
                 }
 
