@@ -941,7 +941,9 @@ int checkVista()
             strstr(m_uname, "Vista") ||
             strstr(m_uname, "Windows 7") ||
             strstr(m_uname, "Windows 8") ||
-            strstr(m_uname, "Windows Server 2012")) {
+            strstr(m_uname, "Windows Server 2012") ||
+            strstr(m_uname, "Windows 1") ||    /* Windows 10 and 11 */
+            strstr(m_uname, "Windows Server 20")) { /* Windows Server 2016, 2019, 2022, 2025 */
         isVista = 1;
         verbose("%s: INFO: System is Vista or newer (%s).",
                 __local_name, m_uname);
@@ -1235,7 +1237,7 @@ char *getuname()
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
     /* Try to use RtlGetVersion from ntdll.dll */
-    HMODULE hMod = GetModuleHandle("ntdll.dll");
+    HMODULE hMod = GetModuleHandleA("ntdll.dll");
     if (hMod) {
         typedef LONG (WINAPI *tRtlGetVersion)(void *);
         tRtlGetVersion pRtlGetVersion = (tRtlGetVersion)GetProcAddress(hMod, "RtlGetVersion");
@@ -1329,16 +1331,17 @@ char *getuname()
                            GetModuleHandle(TEXT("kernel32.dll")),
                            "GetProductInfo");
 
+                int have_product_info = 0;
                 if (pGPI) {
                     pGPI( osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &dwType);
-                } else {
-                    dwType = PRODUCT_UNLICENSED;
+                    have_product_info = 1;
                 }
 
-                switch (dwType) {
-                    case PRODUCT_UNLICENSED:
-                        strncat(ret, PRODUCT_UNLICENSED_C, ret_size - 1);
-                        break;
+                if (have_product_info) {
+                    switch (dwType) {
+                        case PRODUCT_UNLICENSED:
+                            strncat(ret, PRODUCT_UNLICENSED_C, ret_size - 1);
+                            break;
                     case PRODUCT_BUSINESS:
                         strncat(ret, PRODUCT_BUSINESS_C, ret_size - 1);
                         break;
@@ -1495,6 +1498,7 @@ char *getuname()
                     case PRODUCT_PRO_WORKSTATION_N:
                         strncat(ret, PRODUCT_PRO_WORKSTATION_N_C, ret_size - 1);
                         break;
+                }
                 }
 
                 ret_size -= strlen(ret) + 1;
