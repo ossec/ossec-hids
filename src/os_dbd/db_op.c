@@ -124,6 +124,7 @@ static void osdb_checkerror()
 
             /* If we were able to reconnect, keep going */
             if (db_config_pt->conn) {
+                db_config_pt->error_count = 0;
                 break;
             }
             sleep(sleep_time);
