@@ -1228,7 +1228,7 @@ char *getuname()
     SYSTEM_INFO si;
     PGNSI pGNSI;
     PGPI pGPI;
-    BOOL bOsVersionInfoEx;
+    BOOL bOsVersionInfoEx = FALSE;
     DWORD dwType;
 
     ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
