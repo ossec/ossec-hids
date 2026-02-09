@@ -9,6 +9,7 @@
 
 #include "shared.h"
 #include "rules.h"
+#include "eventinfo.h"
 
 /* Rulenode local  */
 static RuleNode *rulenode;
@@ -335,6 +336,21 @@ int OS_AddRuleInfo(RuleNode *r_node, RuleInfo *newrule, int sid)
     return (0);
 }
 
+/* Callback function to mark event node for deletion
+ * This is called by OSList when auto-deleting the oldest node
+ * to prevent double-free in Free_Eventinfo
+ */
+static void Mark_EventNodeDelete(void *data)
+{
+    Eventinfo *lf = (Eventinfo *)data;
+    if (lf) {
+        /* Clear the sid_node_to_delete pointer to prevent
+         * Free_Eventinfo from trying to delete an already-freed node
+         */
+        lf->sid_node_to_delete = NULL;
+    }
+}
+
 /* Mark rules that match specific id (for if_matched_sid) */
 int OS_MarkID(RuleNode *r_node, RuleInfo *orig_rule)
 {
@@ -350,6 +366,14 @@ int OS_MarkID(RuleNode *r_node, RuleInfo *orig_rule)
                 r_node->ruleinfo->sid_prev_matched = OSList_Create();
                 if (!r_node->ruleinfo->sid_prev_matched) {
                     ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+                }
+                
+                /* Set the callback to clear sid_node_to_delete before auto-deletion
+                 * This prevents double-free when the list reaches max size
+                 */
+                if (!OSList_SetFreeDataPointer(r_node->ruleinfo->sid_prev_matched, 
+                                                Mark_EventNodeDelete)) {
+                    ErrorExit("%s: ERROR: Unable to set free data pointer for sid list", ARGV0);
                 }
             }
 
