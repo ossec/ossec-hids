@@ -129,10 +129,6 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
         }
     }
     
-
-
-
-
     /* Check for the syslog date format
      * ( ex: Dec 29 10:00:01
      *   or  2015-04-16 21:51:02,805 for proftpd 1.3.5
