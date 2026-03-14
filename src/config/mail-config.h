@@ -35,6 +35,12 @@ typedef struct _MailConfig {
     char *smtpserver;
     char *heloserver;
 
+    /* auth smtp options */
+    int authsmtp;
+    char *smtp_user;
+    char *smtp_pass;
+    int securesmtp;
+
     /* Granular e-mail options */
     unsigned int *gran_level;
     unsigned int **gran_id;
