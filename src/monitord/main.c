@@ -145,7 +145,11 @@ int main(int argc, char **argv)
         mond.emailidsname = OS_GetOneContentforElement(&xml, xml_idsname);
 
         if (tmpsmtp && mond.emailfrom) {
+#ifdef USE_SMTP_CURL
+            os_strdup(tmpsmtp, mond.smtpserver);
+#else
             mond.smtpserver = OS_GetHost(tmpsmtp, 5);
+#endif
             if (!mond.smtpserver) {
                 merror(INVALID_SMTP, ARGV0, tmpsmtp);
                 if (mond.emailfrom) {
@@ -154,6 +158,8 @@ int main(int argc, char **argv)
                 mond.emailfrom = NULL;
                 merror("%s: Invalid SMTP server.  Disabling email reports.", ARGV0);
             }
+            free(tmpsmtp);
+            tmpsmtp = NULL;
         } else {
             if (tmpsmtp) {
                 free(tmpsmtp);

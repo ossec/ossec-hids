@@ -122,6 +122,11 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_smtpserver = "smtp_server";
     const char *xml_heloserver = "helo_server";
     const char *xml_mailmaxperhour = "email_maxperhour";
+    const char *xml_auth_smtp = "auth_smtp";
+    const char *xml_smtp_user = "smtp_user";
+    const char *xml_smtp_password = "smtp_password";
+    const char *xml_secure_smtp = "secure_smtp";
+    const char *xml_smtp_port = "smtp_port";
 
 #ifdef LIBGEOIP_ENABLED
     const char *xml_geoip_db_path = "geoip_db_path";
@@ -453,17 +458,82 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 }
                 os_strdup(node[i]->content, Mail->idsname);
             }
+        } else if (strcmp(node[i]->element, xml_auth_smtp) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                if (Config) {
+                    Config->authsmtp = 1;
+                }
+                if (Mail) {
+                    Mail->authsmtp = 1;
+                }
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                if (Config) {
+                    Config->authsmtp = 0;
+                }
+                if (Mail) {
+                    Mail->authsmtp = 0;
+                }
+            } else {
+                return (OS_INVALID);
+            }
+        } else if (strcmp(node[i]->element, xml_secure_smtp) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                if (Config) {
+                    Config->securesmtp = 1;
+                }
+                if (Mail) {
+                    Mail->securesmtp = 1;
+                }
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                if (Config) {
+                    Config->securesmtp = 0;
+                }
+                if (Mail) {
+                    Mail->securesmtp = 0;
+                }
+            } else {
+                return (OS_INVALID);
+            }
+        } else if (strcmp(node[i]->element, xml_smtp_user) == 0) {
+            if (Mail) {
+                if (Mail->smtp_user) {
+                    free(Mail->smtp_user);
+                }
+                os_strdup(node[i]->content, Mail->smtp_user);
+            }
+        } else if (strcmp(node[i]->element, xml_smtp_password) == 0) {
+            if (Mail) {
+                if (Mail->smtp_pass) {
+                    memset_secure(Mail->smtp_pass, 0, strlen(Mail->smtp_pass));
+                    free(Mail->smtp_pass);
+                }
+                os_strdup(node[i]->content, Mail->smtp_pass);
+            }
         } else if (strcmp(node[i]->element, xml_smtpserver) == 0) {
 #ifndef WIN32
             if (Mail && (Mail->mn)) {
                 if (node[i]->content[0] == '/') {
                     os_strdup(node[i]->content, Mail->smtpserver);
                 } else {
+#ifdef USE_SMTP_CURL
+                    /* Pre-resolve for CURLOPT_RESOLVE; DNS is unavailable after chroot */
+                    if (Mail->smtpserver_resolved) {
+                        free(Mail->smtpserver_resolved);
+                        Mail->smtpserver_resolved = NULL;
+                    }
+                    Mail->smtpserver_resolved = OS_GetHost(node[i]->content, 5);
+                    if (!Mail->smtpserver_resolved) {
+                        merror(INVALID_SMTP, __local_name, node[i]->content);
+                        return (OS_INVALID);
+                    }
+                    /* Hostname as-is for libcurl; common free + os_strdup below */
+#else
                     Mail->smtpserver = OS_GetHost(node[i]->content, 5);
                     if (!Mail->smtpserver) {
                         merror(INVALID_SMTP, __local_name, node[i]->content);
                         return (OS_INVALID);
                     }
+#endif
                 }
                 free(Mail->smtpserver);
                 os_strdup(node[i]->content, Mail->smtpserver);
@@ -472,6 +542,18 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
         } else if (strcmp(node[i]->element, xml_heloserver) == 0) {
             if (Mail && (Mail->mn)) {
                 os_strdup(node[i]->content, Mail->heloserver);
+            }
+        } else if (strcmp(node[i]->element, xml_smtp_port) == 0) {
+            if (Mail && (Mail->mn)) {
+                if (!OS_StrIsNum(node[i]->content)) {
+                    merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                    return (OS_INVALID);
+                }
+                Mail->smtp_port = atoi(node[i]->content);
+                if (Mail->smtp_port < 1 || Mail->smtp_port > 65535) {
+                    merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                    return (OS_INVALID);
+                }
             }
         } else if (strcmp(node[i]->element, xml_mailmaxperhour) == 0) {
             if (Mail) {

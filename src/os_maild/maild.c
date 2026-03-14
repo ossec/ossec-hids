@@ -10,6 +10,9 @@
 #include "shared.h"
 #include "maild.h"
 #include "mail_list.h"
+#ifdef USE_SMTP_CURL
+#include "os_net/os_net.h"
+#endif
 
 #ifndef ARGV0
 #define ARGV0 "ossec-maild"
@@ -23,6 +26,25 @@ char _g_subject[SUBJECT_SIZE + 2];
 /* Prototypes */
 static void OS_Run(MailConfig *mail) __attribute__((nonnull)) __attribute__((noreturn));
 static void help_maild(int status) __attribute__((noreturn));
+
+#ifdef USE_SMTP_CURL
+static MailConfig *s_mail_cleanup = NULL;
+static void maild_clear_smtp_secrets(void)
+{
+    if (s_mail_cleanup) {
+        if (s_mail_cleanup->smtp_user) {
+            memset_secure(s_mail_cleanup->smtp_user, 0, strlen(s_mail_cleanup->smtp_user));
+        }
+        if (s_mail_cleanup->smtp_pass) {
+            memset_secure(s_mail_cleanup->smtp_pass, 0, strlen(s_mail_cleanup->smtp_pass));
+        }
+        if (s_mail_cleanup->smtpserver_resolved) {
+            free(s_mail_cleanup->smtpserver_resolved);
+            s_mail_cleanup->smtpserver_resolved = NULL;
+        }
+    }
+}
+#endif
 
 
 /* Print help statement */
@@ -123,6 +145,11 @@ int main(int argc, char **argv)
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }
 
+#ifdef USE_SMTP_CURL
+    s_mail_cleanup = &mail;
+    atexit(maild_clear_smtp_secrets);
+#endif
+
     /* Read internal options */
     mail.strict_checking = getDefine_Int("maild",
                                          "strict_checking",
@@ -159,6 +186,18 @@ int main(int argc, char **argv)
     if (Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
     }
+
+#ifdef USE_SMTP_CURL
+    /* Pre-resolve SMTP hostname before chroot; DNS is unavailable inside the jail.
+     * global-config.c also resolves at parse time, but verify here as a safeguard. */
+    if (mail.smtpserver && mail.smtpserver[0] != '/' && !mail.smtpserver_resolved) {
+        mail.smtpserver_resolved = OS_GetHost(mail.smtpserver, 5);
+        if (!mail.smtpserver_resolved) {
+            merror("%s: Could not resolve smtp_server '%s'. DNS will not work after chroot.", ARGV0, mail.smtpserver);
+            ErrorExit(CONFIG_ERROR, ARGV0, cfg);
+        }
+    }
+#endif
 
     if (mail.smtpserver[0] != '/') {
         /* chroot */
@@ -268,7 +307,15 @@ static void OS_Run(MailConfig *mail)
                 if (OS_Sendmail(mail, p) < 0) {
                     merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
                 }
-
+#ifdef USE_SMTP_CURL
+                /* Clear credentials from child memory before exit (not zeroed by atexit in time) */
+                if (mail->smtp_user) {
+                    memset_secure(mail->smtp_user, 0, strlen(mail->smtp_user));
+                }
+                if (mail->smtp_pass) {
+                    memset_secure(mail->smtp_pass, 0, strlen(mail->smtp_pass));
+                }
+#endif
                 exit(0);
             }
 

@@ -27,6 +27,7 @@ INSTALL_RESOLVCONF?=yes
 USE_PRELUDE?=no
 USE_ZEROMQ?=no
 USE_GEOIP?=no
+USE_CURL?=no
 USE_INOTIFY=no
 USE_PCRE2_JIT=yes
 USE_SYSTEMD?=yes
@@ -258,6 +259,11 @@ ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	DEFINES+=-DLIBGEOIP_ENABLED
 	OSSEC_LDFLAGS+=-lGeoIP
 endif # USE_GEOIP
+
+ifneq (,$(filter ${USE_CURL},yes y Y 1))
+	DEFINES+=-DUSE_SMTP_CURL
+	OSSEC_LDFLAGS+=-lcurl
+endif # USE_CURL
 
 ifneq (,$(filter ${USE_SQLITE},auto yes y Y 1))
 	DEFINES+=-DSQLITE_ENABLED
@@ -618,6 +624,7 @@ settings:
 	@echo "USE settings:"
 	@echo "    USE_ZEROMQ:       ${USE_ZEROMQ}"
 	@echo "    USE_GEOIP:        ${USE_GEOIP}"
+	@echo "    USE_CURL:         ${USE_CURL}"
 	@echo "    USE_PRELUDE:      ${USE_PRELUDE}"
 	@echo "    USE_OPENSSL:      ${USE_OPENSSL}"
 	@echo "    USE_INOTIFY:      ${USE_INOTIFY}"

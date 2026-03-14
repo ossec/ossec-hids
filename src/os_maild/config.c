@@ -25,6 +25,12 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     Mail->idsname = NULL;
     Mail->smtpserver = NULL;
     Mail->heloserver = NULL;
+    Mail->smtpserver_resolved = NULL;
+    Mail->authsmtp = 0;
+    Mail->securesmtp = 0;
+    Mail->smtp_port = 0;
+    Mail->smtp_user = NULL;
+    Mail->smtp_pass = NULL;
     Mail->mn = 0;
     Mail->priority = 0;
     Mail->maxperhour = 12;
@@ -44,6 +50,18 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     if (ReadConfig(modules, cfgfile, NULL, Mail) < 0) {
         return (OS_INVALID);
     }
+
+#ifndef USE_SMTP_CURL
+    if (Mail->authsmtp) {
+        merror("%s: SMTP authentication (auth_smtp=yes) requires building with USE_CURL=yes.", ARGV0);
+        return (OS_INVALID);
+    }
+#else
+    if (Mail->authsmtp && (!Mail->smtp_user || !Mail->smtp_pass)) {
+        merror("%s: auth_smtp=yes requires both smtp_user and smtp_password to be set.", ARGV0);
+        return (OS_INVALID);
+    }
+#endif
 
     if (!Mail->mn) {
         if (!test_config) {
