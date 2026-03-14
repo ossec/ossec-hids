@@ -1,0 +1,55 @@
+# Multi-platform build workflow.
+# Initial CI structure and idea from PR #2158 by @cmac9203. Adapted to use the
+# project's Make-based build (OSSEC-HIDS does not use CMake).
+name: Build (multi-platform)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-rocky:
+    name: Rocky Linux 10 (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    container: rockylinux:10
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ server, agent ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          dnf install -y gcc make openssl-devel pcre2-devel zlib-devel \
+            systemd-devel libevent-devel
+          dnf install -y file-devel || true
+
+      - name: Build
+        run: |
+          cd src
+          make TARGET=${{ matrix.target }} PCRE2_SYSTEM=yes -j$(nproc)
+
+  build-windows-agent:
+    name: Windows agent (cross-compile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MinGW and deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential mingw-w64 libssl-dev
+
+      - name: Fetch PCRE2 for Windows build
+        run: |
+          mkdir -p src/external
+          wget -q https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.32/pcre2-10.32.tar.gz -O - | tar xz -C src/external
+
+      - name: Build Windows agent
+        run: |
+          cd src
+          make TARGET=winagent -j$(nproc)
