@@ -70,8 +70,10 @@ ifeq (${USE_SYSTEMD},yes)
 		DEFINES+=-DHAVE_SYSTEMD
 		OSSEC_LDFLAGS+=-lsystemd
 endif
-#		DEFINES+=-DUSE_MAGIC
-#		OSSEC_LDFLAGS+=-lmagic
+ifneq (${USE_MAGIC},no)
+		DEFINES+=-DUSE_MAGIC
+		OSSEC_LDFLAGS+=-lmagic
+endif
 else
 ifeq (${uname_S},AIX)
 		DEFINES+=-DAIX
@@ -1272,6 +1274,9 @@ ifdef TEST
 endif #TEST
 
 test_programs = test_os_zlib test_os_xml test_os_regex test_os_crypto test_shared
+ifneq ($(filter -DUSE_MAGIC,$(DEFINES)),)
+test_programs += test_seechanges
+endif
 
 .PHONY: test run_tests build_tests test_valgrind test_coverage
 
@@ -1306,6 +1311,9 @@ test_os_crypto: tests/test_os_crypto.c os_crypto.a shared.a os_xml.a os_net.a os
 #	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 test_shared: tests/test_shared.c shared.a os_xml.a os_net.a os_regex.a ${JSON_LIB}
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
+
+test_seechanges: tests/test_seechanges.o syscheckd/seechanges.o config.a shared.a os_xml.a os_net.a os_regex.a os_crypto.a ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
 test_valgrind: build_tests
