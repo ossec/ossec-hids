@@ -1,39 +1,35 @@
 #!/bin/bash
-# Codenames for Debian suites according to their alias. Update these when
-# needed.
+# Pbuilder configuration for OSSEC-HIDS. Used by generate_ossec.sh with
+#   sudo DIST=<codename> ARCH=<arch> pbuilder create|update|... --configfile contrib/debian-packages/pbuilderrc
+# Codenames: update when new releases exist.
 UNSTABLE_CODENAME="sid"
-TESTING_CODENAME="bullseye"
-STABLE_CODENAME="buster"
+TESTING_CODENAME="trixie"
+STABLE_CODENAME="bookworm"
 STABLE_BACKPORTS_SUITE="$STABLE_CODENAME-backports"
 
-# List of Debian suites.
+# List of Debian suites (codenames and aliases).
 DEBIAN_SUITES=($UNSTABLE_CODENAME $TESTING_CODENAME $STABLE_CODENAME
     "unstable" "testing" "stable")
 
-# List of Ubuntu suites. Update these when needed.
-UBUNTU_SUITES=("eoan" "bionic" "xenial")
+# List of Ubuntu suites. LTS: noble (24.04), jammy (22.04), focal (20.04), bionic (18.04).
+UBUNTU_SUITES=("noble" "jammy" "focal" "bionic" "xenial")
 
-# Mirrors to use. Update these to your preferred mirror.
-DEBIAN_MIRROR="ftp.us.debian.org"
-UBUNTU_MIRROR="ftp.ubuntu.com"
+# Mirrors. Override via DEBIAN_MIRROR / UBUNTU_MIRROR if needed.
+DEBIAN_MIRROR="deb.debian.org"
+UBUNTU_MIRROR="archive.ubuntu.com"
 UBUNTU_PORTS_MIRROR="ports.ubuntu.com"
 
-# Optionally use the changelog of a package to determine the suite to use if
-# none set.
+# Optionally use the changelog of a package to determine the suite to use if none set.
 if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
     DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
     DIST="${DIST%%-*}"
-    # Use the unstable suite for certain suite values.
     if $(echo "experimental UNRELEASED" | grep -q $DIST); then
         DIST="$UNSTABLE_CODENAME"
     fi
 fi
 
-# Optionally set a default distribution if none is used. Note that you can set
-# your own default (i.e. ${DIST:="unstable"}).
-: ${DIST:="$(lsb_release --short --codename)"}
+: ${DIST:="$(lsb_release --short --codename 2>/dev/null)"}
 
-# Optionally change Debian release states in $DIST to their names.
 case "$DIST" in
     unstable)
         DIST="$UNSTABLE_CODENAME"
@@ -46,8 +42,6 @@ case "$DIST" in
         ;;
 esac
 
-# Optionally set the architecture to the host architecture if none set. Note
-# that you can set your own default (i.e. ${ARCH:="i386"}).
 : ${ARCH:="$(dpkg --print-architecture)"}
 
 NAME="$DIST"
@@ -56,21 +50,17 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 fi
 BASETGZ="/var/cache/pbuilder/$NAME-base.tgz"
-# Optionally, set BASEPATH (and not BASETGZ) if using cowbuilder
-# BASEPATH="/var/cache/pbuilder/$NAME/base.cow/"
+# For cowbuilder: BASEPATH="/var/cache/pbuilder/$NAME/base.cow/"
 DISTRIBUTION="$DIST"
 BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 BUILDPLACE="/var/cache/pbuilder/build/"
 
 if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
-    # Debian configuration
     MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
     COMPONENTS="main contrib non-free"
     DEBOOTSTRAPOPTS=("${DEBOOTSTRAPOPTS[@]}" "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg")
-
 elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
-    # Ubuntu configuration
     case "$ARCH" in
         i386|amd64)
             MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
@@ -78,13 +68,15 @@ elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
         arm64)
             MIRRORSITE="http://$UBUNTU_PORTS_MIRROR/ubuntu-ports/"
             DEBOOTSTRAP="qemu-debootstrap"
-            # pbuilder-satisfydepends-aptitude SEGVs on arm64 qemu env.
             PBUILDERSATISFYDEPENDSCMD=/usr/lib/pbuilder/pbuilder-satisfydepends-experimental
+            ;;
+        *)
+            MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
             ;;
     esac
     COMPONENTS="main restricted universe multiverse"
     DEBOOTSTRAPOPTS=("${DEBOOTSTRAPOPTS[@]}" "--keyring=/usr/share/keyrings/ubuntu-archive-keyring.gpg")
 else
-    echo "Unknown distribution: $DIST"
+    echo "Unknown distribution: $DIST (supported: Debian ${DEBIAN_SUITES[*]}, Ubuntu ${UBUNTU_SUITES[*]})"
     exit 1
 fi
