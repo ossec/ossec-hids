@@ -148,11 +148,11 @@ int main(int argc, char **argv)
     }
 
 #ifdef USE_SMTP_CURL
-    s_mail_cleanup = &mail;
-    atexit(maild_clear_smtp_secrets);
     if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
         ErrorExit("%s: curl_global_init failed.", ARGV0);
     }
+    s_mail_cleanup = &mail;
+    atexit(maild_clear_smtp_secrets);
 #endif
 
     /* Read internal options */
