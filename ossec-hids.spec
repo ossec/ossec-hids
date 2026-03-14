@@ -22,7 +22,7 @@ Summary:     An Open Source Host-based Intrusion Detection System
 Name:        ossec-hids
 Epoch: 1
 Version:     4.0.0
-Release: RELEASE-AUTO%{?dist}.art
+Release:     1%{?dist}.art
 License:     GPL
 Group:       Applications/System
 URL:         https://www.ossec.net/
@@ -30,23 +30,6 @@ BuildRoot:   %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Vendor:      https://www.ossec.net
 Packager:    https://www.atomicorp.com
 Source0:     https://github.com/ossec/ossec-hids/archive/%{version}/%{name}-%{version}.tar.gz
-Source1:     filter-requires.sh
-Source2:     %{name}.init
-Source3:     ossec-hids-hybrid.conf
-Source4:     ossec-hids.service
-Source5:     ossec-hids-hybrid.service
-Source6:     ossec-hids.logrotate
-Source7:     zabbix-alert.sh
-Source8:     ossec-configure
-Source9:     ossec-hids-agent.conf
-Source10:    ar-tracking.sh
-Source11:    ossec-hids-authd.service
-Source12:    ossec-hids-hybrid.init
-Source13:    default-ossec-agent.conf
-Source14:    ossec-hids-authd
-Source15:    ossec-authd
-Source16:    ossec-server.conf
-Source1000:	exclusion_rules.xml
 Requires(pre):    /usr/sbin/groupadd /usr/sbin/useradd
 Requires(post): openssl 
 BuildRequires: make
@@ -79,6 +62,11 @@ BuildRequires: pcre2-devel
 BuildRequires: systemd-devel
 %endif
 
+%bcond_without magic
+%if %{with magic}
+BuildRequires: file-devel
+%endif
+
 
 Provides: ossec-%{version}-%{release}
 # Do we really need inotify-tools?
@@ -89,7 +77,7 @@ ExclusiveOS: linux
 
 
 %define    _use_internal_dependency_generator 0
-%define __find_requires %{SOURCE1}
+%define __find_requires %{_builddir}/%{name}-%{version}/contrib/specs/filter-requires.sh
 
 %description
 OSSEC is a scalable, multi-platform, open source Host-based Intrusion Detection
@@ -197,6 +185,12 @@ Postgresql connector for OSSEC
 
 %build
 
+%if %{without magic}
+%global make_magic_opt USE_MAGIC=no
+%else
+%global make_magic_opt %{nil}
+%endif
+
 CFLAGS="$RPM_OPT_FLAGS -fpic -fPIE -Wformat -Wformat-security -fstack-protector-all -Wstack-protector --param ssp-buffer-size=4 -D_FORTIFY_SOURCE=2 -fcommon"
 
 %if  0%{?rhel} == 5
@@ -212,7 +206,7 @@ pushd src
 
 # Agent
 mkdir clients/
-make TARGET=agent PCRE2_SYSTEM=yes  
+make TARGET=agent PCRE2_SYSTEM=yes %{?make_magic_opt}
 mv manage_agents clients/manage_agent
 mv ossec-logcollector  clients/client-logcollector
 mv ossec-syscheckd  clients/client-syscheckd
@@ -223,7 +217,7 @@ mv agent-auth  clients/
 # Hybrid
 make clean
 mkdir hybrid/
-make TARGET=agent PCRE2_SYSTEM=yes PREFIX=/var/ossec/ossec-agent 
+make TARGET=agent PCRE2_SYSTEM=yes PREFIX=/var/ossec/ossec-agent %{?make_magic_opt}
 mv ossec-agentd hybrid/
 mv ossec-execd hybrid/
 mv ossec-logcollector hybrid/
@@ -235,7 +229,7 @@ mv manage_agents hybrid/manage_agent
 make clean 
 # not on amzn22023
 #make DATABASE=pgsql MAXAGENTS=16384 GEOIP=1 TARGET=server PCRE2_SYSTEM=yes 
-make DATABASE=pgsql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes 
+make DATABASE=pgsql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
 mkdir postgres
 cp ossec-dbd postgres/
 
@@ -243,11 +237,11 @@ cp ossec-dbd postgres/
 make clean
 # not on amzn2023
 #make DATABASE=mysql MAXAGENTS=16384 USE_GEOIP=1 TARGET=server PCRE2_SYSTEM=yes 
-make DATABASE=mysql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes 
+make DATABASE=mysql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
 mkdir mariadb
 cp ossec-dbd mariadb
 make clean
-make MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes 
+make MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
 #make DATABASE=mysql MAXAGENTS=16384  TARGET=server
 
 popd
@@ -313,31 +307,25 @@ install -m 0550 src/hybrid/ossec-syscheckd ${RPM_BUILD_ROOT}%{_localstatedir}/os
 # etc
 install -m 0644 etc/internal_options.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc
 # TODO: local_internal_options, probably not needed
-install -m 0644 %{SOURCE3}  ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc/ossec.conf
+install -m 0644 etc/ossec-agent.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc/ossec.conf
 # TODO:ossec-init.conf
 # needs to be reviewed
 install -m 0644 src/rootcheck/db/*.txt ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc/shared
 
 
 # Copy changelog
-#cp %{SOURCE1} CHANGELOG
+#cp CHANGELOG
 
-%if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
 mkdir -p %{buildroot}%{_unitdir}
-%{__install} -Dp -m0644 %{SOURCE4} %{buildroot}%{_unitdir}/ossec-hids.service
-%{__install} -Dp -m0644 %{SOURCE5} %{buildroot}%{_unitdir}/ossec-hids-hybrid.service
-%{__install} -Dp -m0644 %{SOURCE11} %{buildroot}%{_unitdir}/ossec-hids-authd.service
-%else
-%{__install} -m 0755 %{SOURCE2} ${RPM_BUILD_ROOT}%{_initrddir}/%{name}
-%{__install} -m 0755 %{SOURCE14} ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-authd
-%{__install} -m 0755 %{SOURCE12} ${RPM_BUILD_ROOT}%{_initrddir}/ossec-hids-hybrid
-%endif
-%{__install} -m 0755 %{SOURCE15} ${RPM_BUILD_ROOT}/etc/sysconfig/ossec-authd
+%{__install} -Dp -m0644 src/systemd/ossec-hids.service %{buildroot}%{_unitdir}/ossec-hids.service
+%{__install} -Dp -m0644 src/systemd/ossec-hids-hybrid.service %{buildroot}%{_unitdir}/ossec-hids-hybrid.service
+%{__install} -Dp -m0644 src/systemd/server/ossec-hids-authd.service %{buildroot}%{_unitdir}/ossec-hids-authd.service
+%{__install} -m 0755 contrib/specs/ossec-authd ${RPM_BUILD_ROOT}/etc/sysconfig/ossec-authd
 
 install -m 0600 ossec-init.conf ${RPM_BUILD_ROOT}%{_sysconfdir}
 install -m 0644 etc/ossec.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec.conf.sample
-install -m 0644 %{SOURCE16} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec-server.conf
-install -m 0644 %{SOURCE13} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec-agent.conf
+install -m 0644 etc/ossec-server.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec-server.conf
+install -m 0644 etc/ossec-agent.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec-agent.conf
 install -m 0644 etc/*.xml ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc
 install -m 0644 etc/internal_options* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc
 install -m 0644 etc/rules/*xml ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/rules
@@ -395,8 +383,6 @@ install -m 0644 src/os_dbd/postgresql.schema ${RPM_BUILD_ROOT}%{_datadir}/ossec/
 install -m 0550 src/init/ossec-{client,server}.sh ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 src/agentlessd/scripts/* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/agentless
 
-# Legacy file
-install -m 0644 %{SOURCE1000} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/rules/exclusion_rules.xml
 
 
 # Install contrib files
@@ -414,12 +400,10 @@ popd
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec.conf
 
 mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
-install -m 0644 %{SOURCE6} ${RPM_BUILD_ROOT}/etc/logrotate.d/%{name}
-install -m 0755 %{SOURCE7} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/active-response/bin/zabbix-alert.sh
-install -m 0755 %{SOURCE10} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/active-response/bin/ar-tracking.sh
-install -m 0755 %{SOURCE8} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/ossec-configure
-install -m 0644 %{SOURCE9} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared/agent.conf
-install -m 0644 %{SOURCE9} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc/shared/agent.conf
+install -m 0644 contrib/specs/ossec-hids.logrotate ${RPM_BUILD_ROOT}/etc/logrotate.d/%{name}
+install -m 0755 contrib/ossec-configure ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/ossec-configure
+install -m 0644 etc/ossec-agent.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared/agent.conf
+install -m 0644 etc/ossec-agent.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc/shared/agent.conf
 
 
 %pre
@@ -767,7 +751,7 @@ fi
 
 # Changes
 %changelog
-* Sat Feb 1 2026 Support <support@atomicorp.com> - 4.0.0-1
+* Sun Feb 1 2026 Support <support@atomicorp.com> - 4.0.0-1
 - Update to 4.0.0
 
 * Tue Jan 7 2025 Support <support@atomicorp.com> - 3.8.0-1
