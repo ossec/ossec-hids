@@ -1,0 +1,4 @@
+# Sysconfig for ossec-authd (agent auth daemon)
+# Options passed to ossec-authd when started by the init script or systemd
+
+PORT=1515

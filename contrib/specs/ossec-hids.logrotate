@@ -1,0 +1,8 @@
+# Logrotate config for OSSEC HIDS
+/var/ossec/logs/ossec.log {
+    missingok
+    notifempty
+    copytruncate
+    rotate 4
+    weekly
+}

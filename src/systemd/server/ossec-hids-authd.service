@@ -1,0 +1,15 @@
+[Unit]
+Description=OSSEC HIDS agent authentication daemon
+After=network.target
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/ossec-init.conf
+Environment=DIRECTORY=/var/ossec
+
+ExecStartPre=/usr/bin/env ${DIRECTORY}/bin/ossec-authd -t
+ExecStart=/usr/bin/env ${DIRECTORY}/bin/ossec-authd -f
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target
