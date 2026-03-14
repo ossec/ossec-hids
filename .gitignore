@@ -87,3 +87,6 @@ src/win32/route-null.cmd
 
 # Local testsuite (not tracked)
 testsuite/
+
+# Pbuilder prepared source (generate_ossec.sh -d writes here)
+contrib/debian-packages/build/

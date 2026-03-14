@@ -20,28 +20,36 @@
 # CONFIGURATION VARIABLES
 #
 
-ossec_version='3.6.0'
-source_file="ossec-hids-${ossec_version}.tar.gz"
+NAME="ossec-hids"
+ossec_version='4.0.0'
+source_file="${NAME}-${ossec_version}.tar.gz"
 #packages=(ossec-hids ossec-hids-agent) # only options available
-packages=(ossec-hids-agent)
+packages=(ossec-hids ossec-hids-agent)
 
 # codenames=(sid jessie wheezy precise trusty utopic)
-codenames=(bionic)
+codenames=(bookworm)
 
-# For Debian use: sid, jessie or wheezy (hardcoded in update_changelog function)
-# For Ubuntu use: lucid, precise, trusty or utopic
-codenames_ubuntu=(precise trusty xenial bionic focal)
-codenames_debian=(sid jessie wheezy)
+# For Debian use: sid, jessie, wheezy, bookworm (hardcoded in update_changelog function)
+# For Ubuntu use: xenial, bionic, focal, jammy, noble (24.04)
+codenames_ubuntu=(xenial bionic focal jammy noble)
+codenames_debian=(sid jessie wheezy bookworm)
 
 # architectures=(amd64 i386) only options available
-architectures=(arm64)
+architectures=(amd64)
 
-# Debian files
-debian_files_path="/home/ubuntu/debian_files"
+# Debian files path (set after scriptpath below; use contrib/debian-packages, no version subdir)
+debian_files_path=""
 
-# Setting up logfile
+# Setting up paths
 scriptpath=$( cd $(dirname $0) ; pwd -P )
+debian_files_path="${scriptpath}"
+repo_root="$(cd "${scriptpath}/../.." && pwd)"
+build_root="${scriptpath}/build"
 logfile=$scriptpath/ossec_packages.log
+
+# Optional env overrides for one-off tests (e.g. on Fedora: CODENAMES=noble ARCHITECTURES=amd64)
+[[ -n "${CODENAMES:-}" ]]    && codenames=(${CODENAMES})
+[[ -n "${ARCHITECTURES:-}" ]] && architectures=(${ARCHITECTURES})
 
 
 #
@@ -77,7 +85,7 @@ contains_element() {
 show_help()
 { 
   echo "
-  This tool can be used to generate OSSEC packages for Ubuntu and Debian.
+  This tool builds OSSEC Debian/Ubuntu packages with pbuilder.
 
   CONFIGURATION: The script is currently configured with the following variables:
     * Packages: ${packages[*]}. 
@@ -151,6 +159,8 @@ update_changelog()
     local debdist="testing"
   elif [ $codename = "wheezy" ]; then
     local debdist="stable"
+  elif [ $codename = "bookworm" ]; then
+    local debdist="bookworm"
   fi
 
   # For Ubuntu
@@ -196,7 +206,11 @@ update_chroots()
   do
     for arch in ${architectures[@]}
     do
-      if [ -f /var/cache/pbuilder/$codename-$arrch-base.tgz ]; then
+      # Ensure pbuilder cache dirs exist (debootstrap fails if aptcache/ is missing)
+      sudo mkdir -p /var/cache/pbuilder/${codename}-${arch}/aptcache \
+                    /var/cache/pbuilder/${codename}-${arch}/result \
+                    /var/cache/pbuilder/build
+      if [ -f /var/cache/pbuilder/$codename-$arch-base.tgz ]; then
         echo "Updating chroot environment: ${codename}-${arch}" | write_log
         if sudo DIST=$codename ARCH=$arch pbuilder update --configfile $scriptpath/pbuilderrc ; then
           echo "Successfully updated chroot environment: ${codename}-${arch}" | write_log
@@ -219,57 +233,63 @@ update_chroots()
 
 
 #
-# Downloads packages and prepare source directories.
-# This is needed before building the packages.
+# Prepare source directories for building. Uses a dedicated build/ dir so we never
+# overwrite the packaging dirs (contrib/debian-packages/ossec-hids, ossec-hids-agent).
+# Prefer building from the local tree when possible (repo with .git and src/).
 #
 download_source()
 {
-  cd ${scriptpath}
-
-  # Checking that Debian files exist for this version
-  for package in ${packages[*]}
-  do
-    if [ ! -d ${debian_files_path}/${ossec_version}/$package/debian ]; then
-      echo "Error: Couldn't find debian files directory for $package, version ${ossec_version}" | write_log
+  # Check that Debian packaging dirs exist (we only read from them)
+  for package in ${packages[*]}; do
+    if [ ! -d "${debian_files_path}/$package/debian" ]; then
+      echo "Error: Couldn't find debian files directory for $package at ${debian_files_path}/$package/debian" | write_log
       exit 1
     fi
   done
 
-  # Downloading file
-  if wget -O $scriptpath/${source_file} -U ossec https://github.com/ossec/ossec-hids/archive/${ossec_version}.tar.gz ; then
-    echo "Successfully downloaded source file ${source_file} from ossec.net" | write_log
-  else
-    echo "Error: File ${source_file} was could not be downloaded" | write_log
-    exit 1
-  fi
+  mkdir -p "${build_root}"
+  cd "${build_root}"
+  tmp_directory="${NAME}-${ossec_version}"
 
-  # Uncompressing files
-  tmp_directory=$(echo ${source_file} | sed -e 's/.tar.gz$//')
-  if [ -d ${scriptpath}/${tmp_directory} ]; then
-    echo " + Deleting previous directory ${scriptpath}/${tmp_directory}" | write_log
-    sudo rm -rf ${scriptpath}/${tmp_directory}
-  fi
-  tar -xvzf ${scriptpath}/${source_file}
-  if [ ! -d ${scriptpath}/${tmp_directory} ]; then
-    echo "Error: Couldn't find uncompressed directory, named ${tmp_directory}" | write_log
-    exit 1
-  fi
-
-  # Organizing directories structure
-  for package in ${packages[*]}
-  do
-    if [ -d ${scriptpath}/$package ]; then
-      echo " + Deleting previous source directory ${scriptpath}/$package" | write_log
-      sudo rm -rf ${scriptpath}/$package
+  # Prefer local tree when we have a full repo (src/ present)
+  if [ -d "${repo_root}/src" ]; then
+    echo "Building from local source tree at ${repo_root}" | write_log
+    if [ -f "${build_root}/${source_file}" ]; then
+      rm -f "${build_root}/${source_file}"
     fi
-    mkdir $scriptpath/$package
-    cp -pr $scriptpath/${tmp_directory} $scriptpath/$package/$package-${ossec_version}
-    cp -p $scriptpath/${source_file} $scriptpath/$package/${package}_${ossec_version}.orig.tar.gz
-    cp -pr ${debian_files_path}/${ossec_version}/$package/debian $scriptpath/$package/${package}-${ossec_version}/debian
-  done
-  rm -rf $scriptpath/${tmp_directory}
+    (cd "${repo_root}" && tar -czf "${build_root}/${source_file}" --exclude='.git' --exclude="${source_file}" \
+      --transform "s,^\./,${tmp_directory}/," .)
+  else
+    # Download or use SOURCE_TARBALL
+    if [ -n "${SOURCE_TARBALL:-}" ] && [ -f "${SOURCE_TARBALL}" ]; then
+      cp -p "${SOURCE_TARBALL}" "${build_root}/${source_file}"
+      echo "Using local source tarball ${SOURCE_TARBALL}" | write_log
+    elif wget -O "${build_root}/${source_file}" -U ossec "https://github.com/ossec/ossec-hids/archive/${ossec_version}.tar.gz"; then
+      echo "Successfully downloaded ${source_file} from GitHub" | write_log
+    else
+      echo "Error: Could not obtain ${source_file}. Set SOURCE_TARBALL or run from a git clone." | write_log
+      exit 1
+    fi
+  fi
 
-  echo "The packages directories for ${packages[*]} version ${ossec_version} have been successfully prepared." | write_log
+  # Unpack and prepare each package under build/ (never touch scriptpath/package)
+  for package in ${packages[*]}; do
+    rm -rf "${build_root}/${package}"
+    mkdir -p "${build_root}/${package}"
+    tar -xzf "${build_root}/${source_file}" -C "${build_root}/${package}"
+    if [ ! -d "${build_root}/${package}/${tmp_directory}" ]; then
+      echo "Error: Unpack did not create ${build_root}/${package}/${tmp_directory}" | write_log
+      exit 1
+    fi
+    target="${build_root}/${package}/${package}-${ossec_version}"
+    if [ "${build_root}/${package}/${tmp_directory}" != "${target}" ]; then
+      mv "${build_root}/${package}/${tmp_directory}" "${target}"
+    fi
+    cp -p "${build_root}/${source_file}" "${build_root}/${package}/${package}_${ossec_version}.orig.tar.gz"
+    cp -pr "${debian_files_path}/${package}/debian" "${target}/debian"
+  done
+
+  echo "Prepared source for ${packages[*]} version ${ossec_version} under ${build_root}" | write_log
 }
 
 
@@ -288,12 +308,18 @@ do
 
       echo "Building Debian package ${package} ${codename}-${arch}" | write_log
 
-      local source_path="$scriptpath/${package}/${package}-${ossec_version}"
-      local changelog_file="${source_path}/debian/changelog"
-      if [ ! -f ${changelog_file} ] ; then
-        echo "Error: Couldn't find changelog file for ${package}-${ossec_version}" | write_log
+      # Prefer build/ (local or prepared source); fall back to scriptpath/package for backward compat
+      local source_path=""
+      if [ -f "${build_root}/${package}/${package}-${ossec_version}/debian/changelog" ]; then
+        source_path="${build_root}/${package}/${package}-${ossec_version}"
+      elif [ -f "$scriptpath/${package}/${package}-${ossec_version}/debian/changelog" ]; then
+        source_path="$scriptpath/${package}/${package}-${ossec_version}"
+      fi
+      if [ -z "${source_path}" ] || [ ! -f "${source_path}/debian/changelog" ]; then
+        echo "Error: Couldn't find changelog for ${package}-${ossec_version}. Run -d first to prepare source." | write_log
         exit 1
       fi
+      local changelog_file="${source_path}/debian/changelog"
       
       # Updating changelog file with new codename, date and debdist.
       if update_changelog ${changelog_file} ${codename} ; then
@@ -317,13 +343,19 @@ do
         sudo mkdir -p ${results_dir}
       fi
 
-      # Building the package
+      # Building the package (configfile must be absolute so it works from any cwd)
+      local build_log="${build_root}/pdebuild-${package}-${codename}-${arch}.log"
       cd ${source_path}
-      if sudo DIST=$codename ARCH=$arch /usr/bin/pdebuild --configfile $scriptpath/pbuilderrc --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} -- --basetgz \
-      ${base_tgz} --distribution ${codename} --architecture ${arch} --aptcache ${cache_dir} --override-config ; then
+      if sudo DIST=$codename ARCH=$arch /usr/bin/pdebuild --configfile "$scriptpath/pbuilderrc" --use-pdebuild-internal --architecture ${arch} --buildresult ${results_dir} -- --basetgz \
+      ${base_tgz} --distribution ${codename} --architecture ${arch} --aptcache ${cache_dir} --override-config >> "${build_log}" 2>&1 ; then
         echo " + Successfully built Debian package ${package} ${codename}-${arch}" | write_log
       else
         echo "Error: Could not build package $package ${codename}-${arch}" | write_log
+        echo "Last 100 lines of build log (full log: ${build_log}):" | write_log
+        tail -100 "${build_log}" | while read line; do echo "$line" | write_log; done
+        echo "---" | write_log
+        echo "Build failed. Last 100 lines of build output:" 1>&2
+        tail -100 "${build_log}" 1>&2
         exit 1
       fi
 
@@ -343,11 +375,19 @@ do
         echo " + Package ${results_dir}/${deb_file} ${codename}-${arch} contains ${files} files" | write_log
       fi
 
+      # Copy built artifacts into repo for easy access (build/result/<codename>-<arch>/)
+      local out_dir="${build_root}/result/${codename}-${arch}"
+      mkdir -p "${out_dir}"
+      sudo cp -p "${results_dir}/${deb_file}" "${results_dir}/${changes_file}" "${out_dir}/" 2>/dev/null || true
+      sudo cp -p "${results_dir}"/*.buildinfo "${out_dir}/" 2>/dev/null || true
+      sudo chown "$(id -un):$(id -gn)" "${out_dir}"/* 2>/dev/null || true
+
       echo "Successfully built Debian package ${package} ${codename}-${arch}" | write_log
 
     done
   done
 done
+  echo "Built .deb and .changes are in ${build_root}/result/<codename>-<arch>/ and in /var/cache/pbuilder/<codename>-<arch>/result/<package>/" | write_log
 }
 
 # Synchronizes with the external repository, uploading new packages and ubstituting old ones.
