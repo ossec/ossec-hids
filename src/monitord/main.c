@@ -146,7 +146,18 @@ int main(int argc, char **argv)
 
         if (tmpsmtp && mond.emailfrom) {
 #ifdef USE_SMTP_CURL
-            os_strdup(tmpsmtp, mond.smtpserver);
+            /* Validate hostname with OS_GetHost() but store original string for libcurl. */
+            if (tmpsmtp[0] != '/') {
+                char *validated_host = OS_GetHost(tmpsmtp, 5);
+                if (!validated_host) {
+                    mond.smtpserver = NULL;
+                } else {
+                    free(validated_host);
+                    os_strdup(tmpsmtp, mond.smtpserver);
+                }
+            } else {
+                os_strdup(tmpsmtp, mond.smtpserver);
+            }
 #else
             mond.smtpserver = OS_GetHost(tmpsmtp, 5);
 #endif

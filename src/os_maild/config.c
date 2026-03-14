@@ -52,8 +52,9 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     }
 
 #ifndef USE_SMTP_CURL
-    if (Mail->authsmtp) {
-        merror("%s: SMTP authentication (auth_smtp=yes) requires building with USE_CURL=yes.", ARGV0);
+    if (Mail->authsmtp || Mail->securesmtp || Mail->smtp_port ||
+        Mail->smtp_user || Mail->smtp_pass) {
+        merror("%s: SMTP authentication/TLS options (auth_smtp, secure_smtp, smtp_port, smtp_user, smtp_password) require building with USE_CURL=yes.", ARGV0);
         return (OS_INVALID);
     }
 #else

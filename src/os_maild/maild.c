@@ -11,6 +11,7 @@
 #include "maild.h"
 #include "mail_list.h"
 #ifdef USE_SMTP_CURL
+#include <curl/curl.h>
 #include "os_net/os_net.h"
 #endif
 
@@ -43,6 +44,7 @@ static void maild_clear_smtp_secrets(void)
             s_mail_cleanup->smtpserver_resolved = NULL;
         }
     }
+    curl_global_cleanup();
 }
 #endif
 
@@ -148,6 +150,9 @@ int main(int argc, char **argv)
 #ifdef USE_SMTP_CURL
     s_mail_cleanup = &mail;
     atexit(maild_clear_smtp_secrets);
+    if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
+        ErrorExit("%s: curl_global_init failed.", ARGV0);
+    }
 #endif
 
     /* Read internal options */
@@ -199,7 +204,7 @@ int main(int argc, char **argv)
     }
 #endif
 
-    if (mail.smtpserver[0] != '/') {
+    if (mail.smtpserver && mail.smtpserver[0] != '/') {
         /* chroot */
         if (Privsep_Chroot(dir) < 0) {
             ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));

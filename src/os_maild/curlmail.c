@@ -131,6 +131,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
     /* Build URL: optional smtp_port overrides defaults (465/587/25 per mode) */
     {
         int port = mail->smtp_port;
+        int n;
         if (port <= 0 || port > 65535) {
             if (mail->securesmtp) {
                 port = 465;
@@ -141,18 +142,28 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
             }
         }
         if (mail->securesmtp) {
-            snprintf(url, sizeof(url), "smtps://%s:%d", mail->smtpserver, port);
+            n = snprintf(url, sizeof(url), "smtps://%s:%d", mail->smtpserver, port);
         } else {
-            snprintf(url, sizeof(url), "smtp://%s:%d", mail->smtpserver, port);
+            n = snprintf(url, sizeof(url), "smtp://%s:%d", mail->smtpserver, port);
+        }
+        if (n < 0 || (size_t)n >= sizeof(url)) {
+            merror("%s: smtp_server or URL too long (truncation).", ARGV0);
+            return -1;
         }
         /* Pre-resolved IP for chroot (no DNS inside jail); hostname:port:ip for CURLOPT_RESOLVE */
         if (mail->smtpserver_resolved) {
             char resolve_buf[384];
-            snprintf(resolve_buf, sizeof(resolve_buf), "%s:%d:%s", mail->smtpserver, port, mail->smtpserver_resolved);
-            resolve_list = curl_slist_append(NULL, resolve_buf);
-            if (resolve_list) {
-                curl_easy_setopt(curl, CURLOPT_RESOLVE, resolve_list);
+            n = snprintf(resolve_buf, sizeof(resolve_buf), "%s:%d:%s", mail->smtpserver, port, mail->smtpserver_resolved);
+            if (n < 0 || (size_t)n >= sizeof(resolve_buf)) {
+                merror("%s: smtp_server or resolved IP too long for CURLOPT_RESOLVE (truncation).", ARGV0);
+                return -1;
             }
+            resolve_list = curl_slist_append(NULL, resolve_buf);
+            if (!resolve_list) {
+                merror("%s: Failed to build resolve list for chroot (CURLOPT_RESOLVE).", ARGV0);
+                return -1;
+            }
+            curl_easy_setopt(curl, CURLOPT_RESOLVE, resolve_list);
         }
     }
 
@@ -217,19 +228,25 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
     sanitize_header_value(mail->to[0], sanitized_to, sizeof(sanitized_to));
 
     body_len = msg->body ? strlen(msg->body) : 0;
-    snprintf(header_buf, sizeof(header_buf),
-             "Date: %s\r\n"
-             "To: %s\r\n"
-             "From: %s\r\n"
-             "Message-ID: <%s@%s>\r\n"
-             "Subject: %s\r\n"
-             "\r\n",
-             date_buf,
-             sanitized_to,
-             sanitized_from,
-             message_id,
-             hostname,
-             sanitized_subject);
+    {
+        int n = snprintf(header_buf, sizeof(header_buf),
+                         "Date: %s\r\n"
+                         "To: %s\r\n"
+                         "From: %s\r\n"
+                         "Message-ID: <%s@%s>\r\n"
+                         "Subject: %s\r\n"
+                         "\r\n",
+                         date_buf,
+                         sanitized_to,
+                         sanitized_from,
+                         message_id,
+                         hostname,
+                         sanitized_subject);
+        if (n < 0 || (size_t)n >= sizeof(header_buf)) {
+            merror("%s: Email header truncated (subject/from/to too long).", ARGV0);
+            goto done;
+        }
+    }
 
     ctx.header = header_buf;
     ctx.header_len = strlen(header_buf);
