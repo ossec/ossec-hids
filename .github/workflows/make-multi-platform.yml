@@ -39,20 +39,28 @@ jobs:
   build-windows-agent:
     name: Windows agent (cross-compile)
     runs-on: ubuntu-latest
+    container: fedora:40
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install MinGW and deps
+      - name: Install build dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y build-essential mingw-w64 libssl-dev
-
-      - name: Fetch PCRE2 for Windows build
-        run: |
-          mkdir -p src/external
-          wget -q https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.32/pcre2-10.32.tar.gz -O - | tar xz -C src/external
+          dnf -y install \
+            gcc \
+            make \
+            mingw32-gcc \
+            mingw32-binutils \
+            mingw32-nsis \
+            mingw32-pcre2 \
+            mingw32-zlib \
+            mingw32-openssl \
+            perl \
+            wget \
+            tar \
+            perl-Time-HiRes \
+            which
 
       - name: Build Windows agent
         run: |
           cd src
-          make TARGET=winagent -j$(nproc)
+          make TARGET=winagent PCRE2_SYSTEM=yes ZLIB_SYSTEM=yes -j$(nproc)

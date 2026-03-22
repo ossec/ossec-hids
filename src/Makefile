@@ -173,7 +173,8 @@ ifneq (${ZLIB_SYSTEM},no)
 endif
 
 ifeq (${TARGET}, winagent)
-	PCRE2_SYSTEM=no
+	ZLIB_SYSTEM?=no
+	PCRE2_SYSTEM?=no
 endif
 
 ifeq (${PCRE2_SYSTEM},no)
