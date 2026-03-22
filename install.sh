@@ -859,7 +859,7 @@ AddWhite()
                 for ip in ${IPS};
                 do
                     if [ ! "X${ip}" = "X" ]; then
-                        echo $ip | grep -Ei "^[0-9a-f.:/]{5,45}$" > /dev/null 2>&1
+                        echo $ip | grep -Ei "^[0-9a-f.:/]{2,48}$" > /dev/null 2>&1
                         if [ $? = 0 ]; then
                         echo "    <allow_list>${ip}</allow_list>" >>$NEWCONFIG
                         fi
