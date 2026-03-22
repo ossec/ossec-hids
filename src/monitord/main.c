@@ -11,9 +11,29 @@
 #include "config/config.h"
 #include "monitord.h"
 #include "os_net/os_net.h"
+#ifdef USE_SMTP_CURL
+#include <curl/curl.h>
+#endif
 
 /* Prototypes */
 static void help_monitord(int status) __attribute__((noreturn));
+
+#ifdef USE_SMTP_CURL
+static void mond_clear_smtp_secrets(void)
+{
+    if (mond.smtp_user) {
+        memset_secure(mond.smtp_user, 0, strlen(mond.smtp_user));
+    }
+    if (mond.smtp_pass) {
+        memset_secure(mond.smtp_pass, 0, strlen(mond.smtp_pass));
+    }
+    if (mond.smtpserver_resolved) {
+        free(mond.smtpserver_resolved);
+        mond.smtpserver_resolved = NULL;
+    }
+    curl_global_cleanup();
+}
+#endif
 
 
 /* Print help statement */
@@ -118,8 +138,15 @@ int main(int argc, char **argv)
     mond.notify_time = getDefine_Int("monitord", "notify_time", 60, 3600);
     mond.agents = NULL;
     mond.smtpserver = NULL;
+    mond.smtpserver_resolved = NULL;
     mond.emailfrom = NULL;
     mond.emailidsname = NULL;
+
+    mond.authsmtp = 0;
+    mond.securesmtp = 0;
+    mond.smtp_port = 0;
+    mond.smtp_user = NULL;
+    mond.smtp_pass = NULL;
 
     c = 0;
     c |= CREPORTS;
@@ -135,10 +162,22 @@ int main(int argc, char **argv)
         const char *(xml_smtp[]) = {"ossec_config", "global", "smtp_server", NULL};
         const char *(xml_from[]) = {"ossec_config", "global", "email_from", NULL};
         const char *(xml_idsname[]) = {"ossec_config", "global", "email_idsname", NULL};
+        const char *(xml_auth_smtp[]) = {"ossec_config", "global", "auth_smtp", NULL};
+        const char *(xml_secure_smtp[]) = {"ossec_config", "global", "secure_smtp", NULL};
+        const char *(xml_smtp_port[]) = {"ossec_config", "global", "smtp_port", NULL};
+        const char *(xml_smtp_user[]) = {"ossec_config", "global", "smtp_user", NULL};
+        const char *(xml_smtp_pass[]) = {"ossec_config", "global", "smtp_password", NULL};
 
         if (OS_ReadXML(cfg, &xml) < 0) {
             ErrorExit(CONFIG_ERROR, ARGV0, cfg);
         }
+
+#ifdef USE_SMTP_CURL
+        if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
+            ErrorExit("%s: curl_global_init failed.", ARGV0);
+        }
+        atexit(mond_clear_smtp_secrets);
+#endif
 
         tmpsmtp = OS_GetOneContentforElement(&xml, xml_smtp);
         mond.emailfrom = OS_GetOneContentforElement(&xml, xml_from);
@@ -146,13 +185,14 @@ int main(int argc, char **argv)
 
         if (tmpsmtp && mond.emailfrom) {
 #ifdef USE_SMTP_CURL
-            /* Validate hostname with OS_GetHost() but store original string for libcurl. */
+            /* For libcurl builds, we store the original hostname and the resolved IP.
+             * DNS resolution is required prior to chroot.
+             */
             if (tmpsmtp[0] != '/') {
-                char *validated_host = OS_GetHost(tmpsmtp, 5);
-                if (!validated_host) {
+                mond.smtpserver_resolved = OS_GetHost(tmpsmtp, 5);
+                if (!mond.smtpserver_resolved) {
                     mond.smtpserver = NULL;
                 } else {
-                    free(validated_host);
                     os_strdup(tmpsmtp, mond.smtpserver);
                 }
             } else {
@@ -168,6 +208,75 @@ int main(int argc, char **argv)
                 }
                 mond.emailfrom = NULL;
                 merror("%s: Invalid SMTP server.  Disabling email reports.", ARGV0);
+            } else {
+                /* Read SMTP auth config if available */
+                char *tmp_auth = OS_GetOneContentforElement(&xml, xml_auth_smtp);
+                if (tmp_auth) {
+                    if (strcmp(tmp_auth, "yes") == 0) {
+                        mond.authsmtp = 1;
+                    } else if (strcmp(tmp_auth, "no") == 0) {
+                        mond.authsmtp = 0;
+                    } else {
+                        merror("%s: ERROR: Invalid value for 'auth_smtp' (expected yes/no). Disabling email reports.", ARGV0);
+                        mond.reports = NULL;
+                    }
+                    free(tmp_auth);
+                }
+
+                if (mond.reports) {
+                    char *tmp_secure = OS_GetOneContentforElement(&xml, xml_secure_smtp);
+                    if (tmp_secure) {
+                        if (strcmp(tmp_secure, "yes") == 0) {
+                            mond.securesmtp = 1;
+                        } else if (strcmp(tmp_secure, "no") == 0) {
+                            mond.securesmtp = 0;
+                        } else {
+                            merror("%s: ERROR: Invalid value for 'secure_smtp' (expected yes/no). Disabling email reports.", ARGV0);
+                            mond.reports = NULL;
+                        }
+                        free(tmp_secure);
+                    }
+                }
+
+                if (mond.reports) {
+                    char *tmp_port = OS_GetOneContentforElement(&xml, xml_smtp_port);
+                    if (tmp_port) {
+                        if (OS_StrIsNum(tmp_port)) {
+                            int p = atoi(tmp_port);
+                            if (p > 0 && p <= 65535) {
+                                mond.smtp_port = p;
+                            } else {
+                                merror("%s: ERROR: Invalid SMTP port '%s' (out of range 1-65535). Disabling email reports.", ARGV0, tmp_port);
+                                mond.reports = NULL;
+                            }
+                        } else {
+                            merror("%s: ERROR: Invalid SMTP port '%s' (not a number). Disabling email reports.", ARGV0, tmp_port);
+                            mond.reports = NULL;
+                        }
+                        free(tmp_port);
+                    }
+                }
+
+                if (mond.reports) {
+                    mond.smtp_user = OS_GetOneContentforElement(&xml, xml_smtp_user);
+                    mond.smtp_pass = OS_GetOneContentforElement(&xml, xml_smtp_pass);
+
+                    if (mond.authsmtp && (!mond.smtp_user || !mond.smtp_pass)) {
+                        merror("%s: ERROR: SMTP auth enabled but user/pass missing. Disabling email reports.", ARGV0);
+                        if (mond.emailfrom) {
+                            free(mond.emailfrom);
+                            mond.emailfrom = NULL;
+                        }
+                        mond.reports = NULL;
+                    } else if (mond.authsmtp && !mond.securesmtp) {
+                        merror("%s: ERROR: SMTP auth enabled without TLS. This is insecure and disallowed. Disabling email reports.", ARGV0);
+                        if (mond.emailfrom) {
+                            free(mond.emailfrom);
+                            mond.emailfrom = NULL;
+                        }
+                        mond.reports = NULL;
+                    }
+                }
             }
             free(tmpsmtp);
             tmpsmtp = NULL;

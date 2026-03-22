@@ -39,8 +39,8 @@ typedef struct _smtp_payload_ctx {
     const char *header;
     size_t header_len;
     size_t header_sent;
-    const char *body;
-    size_t body_len;
+    MailNode *first_node;
+    MailNode *current_node;
     size_t body_sent;
 } smtp_payload_ctx;
 
@@ -91,12 +91,32 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
         return sent;
     }
 
-    if (ctx->body_sent < ctx->body_len) {
-        size_t left = ctx->body_len - ctx->body_sent;
-        sent = (want < left) ? want : left;
-        memcpy(ptr, ctx->body + ctx->body_sent, sent);
-        ctx->body_sent += sent;
-        return sent;
+    if (!ctx->current_node) {
+        ctx->current_node = ctx->first_node;
+        ctx->body_sent = 0;
+    }
+
+    while (ctx->current_node) {
+        const char *body = ctx->current_node->mail->body ? ctx->current_node->mail->body : "";
+        size_t body_len = strlen(body);
+
+        if (ctx->body_sent < body_len) {
+            size_t left = body_len - ctx->body_sent;
+            sent = (want < left) ? want : left;
+            memcpy(ptr, body + ctx->body_sent, sent);
+            ctx->body_sent += sent;
+            return sent;
+        }
+
+        /* Current body finished, pull next from queue (batch mode) */
+        {
+            MailNode *next = OS_PopLastMail();
+            if (ctx->current_node != ctx->first_node) {
+                FreeMail(ctx->current_node);
+            }
+            ctx->current_node = next;
+            ctx->body_sent = 0;
+        }
     }
 
     return 0;
@@ -154,7 +174,7 @@ static void log_smtp_curl_perform_failure(CURL *curl, CURLcode res, const char *
     }
 }
 
-static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *msg)
+static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *mailmsg)
 {
     struct curl_slist *recipients = NULL;
     struct curl_slist *resolve_list = NULL;
@@ -170,7 +190,6 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
     smtp_payload_ctx ctx;
     CURLcode res;
     unsigned int i;
-    size_t body_len;
     int ret = -1;
 
     curl_easy_reset(curl);
@@ -215,7 +234,11 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
         /* Pre-resolved IP for chroot (no DNS inside jail); hostname:port:ip for CURLOPT_RESOLVE */
         if (mail->smtpserver_resolved) {
             char resolve_buf[384];
-            n = snprintf(resolve_buf, sizeof(resolve_buf), "%s:%d:%s", mail->smtpserver, port, mail->smtpserver_resolved);
+            if (strchr(mail->smtpserver_resolved, ':')) {
+                n = snprintf(resolve_buf, sizeof(resolve_buf), "%s:%d:[%s]", mail->smtpserver, port, mail->smtpserver_resolved);
+            } else {
+                n = snprintf(resolve_buf, sizeof(resolve_buf), "%s:%d:%s", mail->smtpserver, port, mail->smtpserver_resolved);
+            }
             if (n < 0 || (size_t)n >= sizeof(resolve_buf)) {
                 merror("%s: smtp_server or resolved IP too long for CURLOPT_RESOLVE (truncation).", ARGV0);
                 return -1;
@@ -285,11 +308,10 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
     strftime(message_id, sizeof(message_id), "%Y%m%d%H%M%S.%z", p);
     strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %T %z", p);
 
-    sanitize_header_value(msg->subject ? msg->subject : "", sanitized_subject, sizeof(sanitized_subject));
+    sanitize_header_value(mailmsg->mail->subject ? mailmsg->mail->subject : "", sanitized_subject, sizeof(sanitized_subject));
     sanitize_header_value(mail->from, sanitized_from, sizeof(sanitized_from));
     sanitize_header_value(mail->to[0], sanitized_to, sizeof(sanitized_to));
 
-    body_len = msg->body ? strlen(msg->body) : 0;
     {
         int n = snprintf(header_buf, sizeof(header_buf),
                          "Date: %s\r\n"
@@ -313,8 +335,8 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
     ctx.header = header_buf;
     ctx.header_len = strlen(header_buf);
     ctx.header_sent = 0;
-    ctx.body = msg->body ? msg->body : "";
-    ctx.body_len = body_len;
+    ctx.first_node = mailmsg;
+    ctx.current_node = NULL;
     ctx.body_sent = 0;
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -383,8 +405,9 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         return (OS_INVALID);
     }
 
-    while ((mailmsg = OS_PopLastMail()) != NULL) {
-        if (send_one_mail(curl, mail, p, mailmsg->mail) < 0) {
+    mailmsg = OS_PopLastMail();
+    if (mailmsg) {
+        if (send_one_mail(curl, mail, p, mailmsg) < 0) {
             ret = OS_INVALID;
         }
         FreeMail(mailmsg);
