@@ -11,6 +11,28 @@
 #include "maild.h"
 #include "config/config.h"
 
+static void MailConf_clear_smtp_config(MailConfig *Mail)
+{
+    if (Mail->smtp_user) {
+        memset_secure(Mail->smtp_user, 0, strlen(Mail->smtp_user));
+        free(Mail->smtp_user);
+        Mail->smtp_user = NULL;
+    }
+
+    if (Mail->smtp_pass) {
+        memset_secure(Mail->smtp_pass, 0, strlen(Mail->smtp_pass));
+        free(Mail->smtp_pass);
+        Mail->smtp_pass = NULL;
+    }
+
+#ifdef USE_SMTP_CURL
+    if (Mail->smtpserver_resolved) {
+        free(Mail->smtpserver_resolved);
+        Mail->smtpserver_resolved = NULL;
+    }
+#endif
+}
+
 
 /* Read the Mail configuration */
 int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
@@ -48,6 +70,7 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
 #endif
 
     if (ReadConfig(modules, cfgfile, NULL, Mail) < 0) {
+        MailConf_clear_smtp_config(Mail);
         return (OS_INVALID);
     }
 
@@ -55,29 +78,13 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     if (Mail->authsmtp || Mail->securesmtp || Mail->smtp_port ||
         Mail->smtp_user || Mail->smtp_pass) {
         merror("%s: SMTP authentication/TLS options (auth_smtp, secure_smtp, smtp_port, smtp_user, smtp_password) require building with USE_CURL=yes.", ARGV0);
-        if (Mail->smtp_pass) {
-            memset_secure(Mail->smtp_pass, 0, strlen(Mail->smtp_pass));
-            free(Mail->smtp_pass);
-            Mail->smtp_pass = NULL;
-        }
-        if (Mail->smtp_user) {
-            free(Mail->smtp_user);
-            Mail->smtp_user = NULL;
-        }
+        MailConf_clear_smtp_config(Mail);
         return (OS_INVALID);
     }
 #else
     if (Mail->authsmtp && (!Mail->smtp_user || !Mail->smtp_pass)) {
         merror("%s: auth_smtp=yes requires both smtp_user and smtp_password to be set.", ARGV0);
-        if (Mail->smtp_pass) {
-            memset_secure(Mail->smtp_pass, 0, strlen(Mail->smtp_pass));
-            free(Mail->smtp_pass);
-            Mail->smtp_pass = NULL;
-        }
-        if (Mail->smtp_user) {
-            free(Mail->smtp_user);
-            Mail->smtp_user = NULL;
-        }
+        MailConf_clear_smtp_config(Mail);
         return (OS_INVALID);
     }
 #endif
@@ -86,9 +93,9 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
         if (!test_config) {
             verbose(MAIL_DIS, ARGV0);
         }
+        MailConf_clear_smtp_config(Mail);
         exit(0);
     }
 
     return (0);
 }
-
