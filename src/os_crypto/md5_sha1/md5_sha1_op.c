@@ -7,13 +7,10 @@
  * Foundation
  */
 
-#include <stdio.h>
-#include <string.h>
-
+#include "headers/shared.h"
 #include "md5_sha1_op.h"
 #include "../md5/md5.h"
 #include "../sha1/sha.h"
-#include "headers/defs.h"
 
 
 int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5output, os_sha1 sha1output, int mode)

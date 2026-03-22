@@ -11,12 +11,9 @@
  * APIs for many crypto operations
  */
 
-#include <stdio.h>
-#include <string.h>
-
+#include "headers/shared.h"
 #include "md5_op.h"
 #include "md5.h"
-#include "headers/defs.h"
 
 
 int OS_MD5_File(const char *fname, os_md5 output, int mode)

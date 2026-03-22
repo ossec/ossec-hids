@@ -7,11 +7,8 @@
  * Foundation
  */
 
-#include <stdio.h>
-#include <string.h>
-
+#include "headers/shared.h"
 #include "sha1_op.h"
-#include "headers/defs.h"
 
 /* OpenSSL SHA-1
  * Only use if OpenSSL is not available
