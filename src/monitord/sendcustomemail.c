@@ -320,7 +320,13 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
             i++;
             continue;
         }
-        recipients = curl_slist_append(recipients, to[i]);
+        struct curl_slist *tmp_recipients = curl_slist_append(recipients, to[i]);
+        if (!tmp_recipients) {
+            merror("%s: ERROR: Memory error building recipient list.", ARGV0);
+            res = CURLE_OUT_OF_MEMORY;
+            goto cleanup_curl;
+        }
+        recipients = tmp_recipients;
         i++;
     }
     
