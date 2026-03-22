@@ -379,8 +379,8 @@ ConfigureClient()
         while [ 1 ]; do
             $ECHO "  3.1- ${serveraddr}: "
                 read ADDRANSWER
-            # Is it an IP?
-            echo $ADDRANSWER | grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$" > /dev/null 2>&1
+            # Is it an IP (v4 or v6)?
+            echo $ADDRANSWER | grep -E "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|^[0-9a-fA-F:]+:[0-9a-fA-F:]+$" > /dev/null 2>&1
             if [ $? = 0 ]; then
                     echo ""
                 IP=$ADDRANSWER
@@ -859,7 +859,7 @@ AddWhite()
                 for ip in ${IPS};
                 do
                     if [ ! "X${ip}" = "X" ]; then
-                        echo $ip | grep -Ei "^[0-9a-f.:/]{5,20}$" > /dev/null 2>&1
+                        echo $ip | grep -Ei "^[0-9a-f.:/]{5,45}$" > /dev/null 2>&1
                         if [ $? = 0 ]; then
                         echo "    <allow_list>${ip}</allow_list>" >>$NEWCONFIG
                         fi
