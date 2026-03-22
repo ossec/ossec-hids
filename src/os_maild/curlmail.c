@@ -7,11 +7,20 @@
  * Foundation.
  *
  * SMTP send via libcurl (TLS + AUTH). Built only when USE_SMTP_CURL is defined.
+ *
+ * On curl_easy_perform failure, errors are logged via merror with:
+ *   - A TLS category line when verification fails (grep "SMTP TLS verification failed").
+ *   - curl_easy_strerror(res) and CURLOPT_ERRORBUFFER detail when libcurl provides it.
+ *   - CURLINFO_SSL_VERIFYRESULT for TLS verification failures (meaning is backend-specific).
+ *   - CURLINFO_OS_ERRNO when the platform errno is set (e.g. connection failures).
+ * Mail bodies and credentials are not logged here.
  */
 
 #ifdef USE_SMTP_CURL
 
 #include <curl/curl.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -93,6 +102,58 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
     return 0;
 }
 
+/* True if res indicates server certificate / chain verification problems. */
+static int curlcode_is_tls_peer_failure(CURLcode res)
+{
+    if (res == CURLE_PEER_FAILED_VERIFICATION || res == CURLE_SSL_CERTPROBLEM) {
+        return 1;
+    }
+#ifdef CURLE_SSL_INVALIDCERTSTATUS
+    if (res == CURLE_SSL_INVALIDCERTSTATUS) {
+        return 1;
+    }
+#endif
+#ifdef CURLE_SSL_ISSUER_ERROR
+    if (res == CURLE_SSL_ISSUER_ERROR) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
+/* Log libcurl failure after curl_easy_perform; errbuf is CURLOPT_ERRORBUFFER storage. */
+static void log_smtp_curl_perform_failure(CURL *curl, CURLcode res, const char *errbuf)
+{
+    if (curlcode_is_tls_peer_failure(res)) {
+        merror("%s: SMTP TLS verification failed (see following curl messages).", ARGV0);
+    }
+
+    merror("%s: curl_easy_perform failed: %s", ARGV0, curl_easy_strerror(res));
+
+    if (errbuf != NULL && errbuf[0] != '\0') {
+        merror("%s: curl error detail: %s", ARGV0, errbuf);
+    }
+
+    if (curl != NULL && curlcode_is_tls_peer_failure(res)) {
+        long verify_result = 0;
+        if (curl_easy_getinfo(curl, CURLINFO_SSL_VERIFYRESULT, &verify_result) == CURLE_OK) {
+            merror("%s: CURLINFO_SSL_VERIFYRESULT=%ld (meaning depends on TLS backend).", ARGV0, verify_result);
+        }
+    }
+
+    if (curl != NULL) {
+        long oserrno = 0;
+        if (curl_easy_getinfo(curl, CURLINFO_OS_ERRNO, &oserrno) == CURLE_OK && oserrno != 0) {
+            if (oserrno > 0 && oserrno <= INT_MAX) {
+                int e = (int)oserrno;
+                merror("%s: curl OS errno %d: %s", ARGV0, e, strerror(e));
+            } else {
+                merror("%s: curl OS errno %ld (outside int range for strerror).", ARGV0, oserrno);
+            }
+        }
+    }
+}
+
 static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *msg)
 {
     struct curl_slist *recipients = NULL;
@@ -105,6 +166,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
     char sanitized_subject[512];
     char sanitized_from[384];
     char sanitized_to[384];
+    char curl_errbuf[CURL_ERROR_SIZE];
     smtp_payload_ctx ctx;
     CURLcode res;
     unsigned int i;
@@ -282,9 +344,12 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailMsg *ms
         curl_easy_setopt(curl, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
     }
 
+    memset(curl_errbuf, 0, sizeof(curl_errbuf));
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
+
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-        merror("%s: curl_easy_perform failed: %s", ARGV0, curl_easy_strerror(res));
+        log_smtp_curl_perform_failure(curl, res, curl_errbuf);
         goto done;
     }
 
