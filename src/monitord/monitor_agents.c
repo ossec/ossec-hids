@@ -46,7 +46,7 @@ void monitor_agents()
 
             /* Send disconnected message */
             snprintf(str, OS_SIZE_1024 - 1, OS_AG_DISCON, *cr_agents);
-            if (SendMSG(mond.a_queue, str, ARGV0,
+            if (SendMSG(mond.a_queue, str, *cr_agents,
                         LOCALFILE_MQ) < 0) {
                 merror(QUEUE_SEND, ARGV0);
             }
