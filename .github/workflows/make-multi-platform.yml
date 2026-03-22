@@ -63,4 +63,4 @@ jobs:
       - name: Build Windows agent
         run: |
           cd src
-          make TARGET=winagent -j$(nproc)
+          make TARGET=winagent PCRE2_SYSTEM=yes ZLIB_SYSTEM=yes -j$(nproc)
