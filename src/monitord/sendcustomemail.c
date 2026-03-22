@@ -63,6 +63,7 @@ static size_t custom_payload_source(void *ptr, size_t size, size_t nmemb, void *
 /* SMTP curl timeouts */
 #define CONNECT_TIMEOUT 30
 #define TRANSFER_TIMEOUT 120
+#define HOSTNAME_MAX    253
 
 /* Default values used to connect */
 #define SMTP_DEFAULT_PORT   "25"
@@ -106,6 +107,23 @@ static void sanitize_header_value(const char *src, char *dst, size_t dst_size)
         src++;
     }
     dst[j] = '\0';
+}
+
+/* Allow only hostname-safe chars (alphanumeric, hyphen, dot) or IPv6 literals.
+ * Reject empty, overlength, or strings with malicious characters. */
+static int is_valid_smtp_host(const char *host)
+{
+    size_t n = 0;
+    if (!host || !host[0]) return 0;
+    for (; host[n]; n++) {
+        if (n > 255) return 0;
+        /* Allow alphanumeric, hyphen, dot, colon (IPv6), and brackets (IPv6 literal) */
+        if (!isalnum((unsigned char)host[n]) && host[n] != '-' && host[n] != '.' &&
+            host[n] != ':' && host[n] != '[' && host[n] != ']') {
+            return 0;
+        }
+    }
+    return (n > 0 && n <= HOSTNAME_MAX);
 }
 
 int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *mail)
@@ -219,12 +237,25 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
 
     /* Build URL */
     int port = mail->smtp_port > 0 ? mail->smtp_port : (mail->securesmtp ? 465 : 25);
-    int n2 = snprintf(mail_url, sizeof(mail_url), "smtp%s://%s:%d",
-             mail->securesmtp ? "s" : "", smtpserver, port);
+    int n2;
+
+    if (!is_valid_smtp_host(smtpserver)) {
+        merror("%s: ERROR: Invalid SMTP server '%s' (contains invalid characters).", ARGV0, smtpserver);
+        return (0);
+    }
+
+    /* Bracket IPv6 literals in the URL if not already bracketed */
+    if (strchr(smtpserver, ':') && smtpserver[0] != '[') {
+        n2 = snprintf(mail_url, sizeof(mail_url), "smtp%s://[%s]:%d",
+                 mail->securesmtp ? "s" : "", smtpserver, port);
+    } else {
+        n2 = snprintf(mail_url, sizeof(mail_url), "smtp%s://%s:%d",
+                 mail->securesmtp ? "s" : "", smtpserver, port);
+    }
+
     if (n2 < 0 || (size_t)n2 >= sizeof(mail_url)) {
         merror("%s: ERROR: SMTP server or URL too long (truncation).", ARGV0);
-        res = CURLE_URL_MALFORMAT;
-        goto cleanup_curl;
+        return (0);
     }
 
     curl_easy_setopt(curl, CURLOPT_URL, mail_url);
@@ -243,13 +274,10 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
     if (mail->authsmtp && mail->smtp_user && mail->smtp_pass) {
-        if (!mail->securesmtp) {
-            merror("%s: ERROR: SMTP auth enabled without TLS. This is insecure and disallowed.", ARGV0);
-            res = CURLE_SSL_CONNECT_ERROR;
-            goto cleanup_curl;
-        }
         curl_easy_setopt(curl, CURLOPT_USERNAME, mail->smtp_user);
         curl_easy_setopt(curl, CURLOPT_PASSWORD, mail->smtp_pass);
+        /* Require TLS when using AUTH so credentials are not sent in plaintext */
+        curl_easy_setopt(curl, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
     }
 
     if (mail->securesmtp) {

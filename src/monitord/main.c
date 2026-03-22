@@ -268,13 +268,6 @@ int main(int argc, char **argv)
                             mond.emailfrom = NULL;
                         }
                         mond.reports = NULL;
-                    } else if (mond.authsmtp && !mond.securesmtp) {
-                        merror("%s: ERROR: SMTP auth enabled without TLS. This is insecure and disallowed. Disabling email reports.", ARGV0);
-                        if (mond.emailfrom) {
-                            free(mond.emailfrom);
-                            mond.emailfrom = NULL;
-                        }
-                        mond.reports = NULL;
                     }
                 }
             }
