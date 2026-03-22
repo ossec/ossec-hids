@@ -374,11 +374,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
             /* Windows do not need it */
 #ifndef WIN32
 
-            const char *ip_address_regex =
-                "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/?"
-                "([0-9]{0,2}|[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})$";
-
-            if (Config && OS_PRegex(node[i]->content, ip_address_regex)) {
+            if (Config && OS_IsValidIP(node[i]->content, NULL)) {
                 allow_size++;
                 Config->allow_list = (os_ip **)
                                      realloc(Config->allow_list, sizeof(os_ip *)*allow_size);
