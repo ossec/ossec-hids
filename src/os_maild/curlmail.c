@@ -369,24 +369,111 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
     strftime(message_id, sizeof(message_id), "%Y%m%d%H%M%S.%z", p);
     strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %T %z", p);
 
-    sanitize_header_value(mailmsg->mail->subject ? mailmsg->mail->subject : "", sanitized_subject, sizeof(sanitized_subject));
+    /* Subject: allow global override (_g_subject) to match legacy behavior. */
+    {
+        const char *raw_subject;
+
+        if (_g_subject && _g_subject[0] != '\0') {
+            raw_subject = _g_subject;
+        } else if (mailmsg->mail->subject) {
+            raw_subject = mailmsg->mail->subject;
+        } else {
+            raw_subject = "";
+        }
+
+        sanitize_header_value(raw_subject, sanitized_subject, sizeof(sanitized_subject));
+    }
+
     sanitize_header_value(mail->from, sanitized_from, sizeof(sanitized_from));
     sanitize_header_value(mail->to[0], sanitized_to, sizeof(sanitized_to));
 
+    /* Optional headers: CC, Reply-To, and X-IDS-OSSEC. */
     {
-        int n = snprintf(header_buf, sizeof(header_buf),
-                         "Date: %s\r\n"
-                         "To: %s\r\n"
-                         "From: %s\r\n"
-                         "Message-ID: <%s@%s>\r\n"
-                         "Subject: %s\r\n"
-                         "\r\n",
-                         date_buf,
-                         sanitized_to,
-                         sanitized_from,
-                         message_id,
-                         hostname,
-                         sanitized_subject);
+        char cc_header_line[HEADER_MAX];
+        char replyto_header_line[HEADER_MAX];
+        char sanitized_idsname[HEADER_MAX];
+        int n;
+        size_t i;
+
+        cc_header_line[0] = '\0';
+        replyto_header_line[0] = '\0';
+
+        /* Build CC header from additional recipients (mail->to[1..]). */
+        if (mail->to[1]) {
+            char cc_value[HEADER_MAX];
+            size_t cc_len = 0;
+
+            cc_value[0] = '\0';
+
+            for (i = 1; mail->to[i] != NULL; ++i) {
+                char sanitized_cc[HEADER_MAX];
+                size_t addr_len;
+
+                sanitize_header_value(mail->to[i], sanitized_cc, sizeof(sanitized_cc));
+                addr_len = strlen(sanitized_cc);
+
+                if (addr_len == 0) {
+                    continue;
+                }
+
+                /* Add comma+space between multiple CC addresses. */
+                if (cc_len > 0) {
+                    if (cc_len + 2 >= sizeof(cc_value)) {
+                        break;
+                    }
+                    cc_value[cc_len++] = ',';
+                    cc_value[cc_len++] = ' ';
+                }
+
+                if (cc_len + addr_len >= sizeof(cc_value)) {
+                    break;
+                }
+
+                memcpy(cc_value + cc_len, sanitized_cc, addr_len);
+                cc_len += addr_len;
+                cc_value[cc_len] = '\0';
+            }
+
+            if (cc_len > 0) {
+                (void)snprintf(cc_header_line, sizeof(cc_header_line),
+                               "Cc: %s\r\n", cc_value);
+            }
+        }
+
+        /* Optional Reply-To header, if configured in the mail structure. */
+        if (mail->reply_to) {
+            char sanitized_reply_to[HEADER_MAX];
+
+            sanitize_header_value(mail->reply_to, sanitized_reply_to, sizeof(sanitized_reply_to));
+            if (sanitized_reply_to[0] != '\0') {
+                (void)snprintf(replyto_header_line, sizeof(replyto_header_line),
+                               "Reply-To: %s\r\n", sanitized_reply_to);
+            }
+        }
+
+        /* X-IDS-OSSEC header from mail->idsname, matching legacy behavior. */
+        sanitize_header_value(mail->idsname ? mail->idsname : "",
+                              sanitized_idsname, sizeof(sanitized_idsname));
+
+        n = snprintf(header_buf, sizeof(header_buf),
+                     "Date: %s\r\n"
+                     "To: %s\r\n"
+                     "%s"
+                     "From: %s\r\n"
+                     "%s"
+                     "Message-ID: <%s@%s>\r\n"
+                     "X-IDS-OSSEC: %s\r\n"
+                     "Subject: %s\r\n"
+                     "\r\n",
+                     date_buf,
+                     sanitized_to,
+                     cc_header_line,
+                     sanitized_from,
+                     replyto_header_line,
+                     message_id,
+                     hostname,
+                     sanitized_idsname,
+                     sanitized_subject);
         if (n < 0 || (size_t)n >= sizeof(header_buf)) {
             merror("%s: Email header truncated (subject/from/to too long).", ARGV0);
             goto done;
