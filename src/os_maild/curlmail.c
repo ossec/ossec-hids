@@ -59,17 +59,78 @@ static void sanitize_header_value(const char *src, char *dst, size_t dst_size)
     dst[j] = '\0';
 }
 
-/* Allow only hostname-safe chars (alphanumeric, hyphen, dot). Reject empty and overlength. */
+/* Validate an SMTP host string.
+ * Accept:
+ *   - Regular hostnames: alphanumeric, hyphen, dot, up to HOSTNAME_MAX chars.
+ *   - IPv6 literals, with or without brackets: [2001:db8::1], 2001:db8::1, etc.
+ *     For IPv6 literals we allow hex digits, ':', and '.', and require at least one ':'.
+ */
 static int is_valid_smtp_host(const char *host)
 {
-    size_t n = 0;
-    if (!host || !host[0]) return 0;
-    for (; host[n] && n <= HOSTNAME_MAX; n++) {
-        if (!isalnum((unsigned char)host[n]) && host[n] != '-' && host[n] != '.') {
+    size_t len;
+    const char *p;
+    const char *end;
+    size_t i;
+    int has_colon = 0;
+
+    if (!host) {
+        return 0;
+    }
+
+    len = strlen(host);
+    if (len == 0) {
+        return 0;
+    }
+
+    /* Handle optional brackets for IPv6 literals: [addr] */
+    if (host[0] == '[' && host[len - 1] == ']') {
+        /* Inner content must be non-empty and within HOSTNAME_MAX */
+        if (len <= 2 || (len - 2) > HOSTNAME_MAX) {
+            return 0;
+        }
+        p = host + 1;
+        end = host + len - 1;
+    } else {
+        if (len > HOSTNAME_MAX) {
+            return 0;
+        }
+        p = host;
+        end = host + len;
+    }
+
+    /* First, try strict hostname rules: [A-Za-z0-9.-]+ */
+    for (i = 0; p + i < end; i++) {
+        unsigned char c = (unsigned char)p[i];
+        if (!isalnum(c) && c != '-' && c != '.') {
+            break;
+        }
+    }
+    if (p + i == end && i > 0) {
+        /* Entire string is a valid hostname */
+        return 1;
+    }
+
+    /* Fallback: allow IPv6 literals (possibly with embedded IPv4). */
+    for (i = 0; p + i < end; i++) {
+        unsigned char c = (unsigned char)p[i];
+
+        if (c == ':') {
+            has_colon = 1;
+            continue;
+        }
+
+        /* Allow '.' for IPv4-embedded IPv6 */
+        if (c == '.') {
+            continue;
+        }
+
+        if (!isxdigit(c)) {
             return 0;
         }
     }
-    return (host[n] == '\0' && n > 0 && n <= HOSTNAME_MAX);
+
+    /* Must contain at least one ':' to be considered IPv6. */
+    return (i > 0 && has_colon);
 }
 
 static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
