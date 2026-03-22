@@ -34,6 +34,14 @@ typedef struct _MailConfig {
     char *idsname;
     char *smtpserver;
     char *heloserver;
+    char *smtpserver_resolved;  /* pre-resolved IP for CURLOPT_RESOLVE when chrooted (USE_SMTP_CURL) */
+
+    /* SMTP auth (USE_CURL build only) */
+    int authsmtp;       /* 0 = off (default), 1 = on */
+    int securesmtp;     /* 0 = off (default), 1 = on */
+    int smtp_port;      /* 0 = use default per mode (465/587/25); else override */
+    char *smtp_user;
+    char *smtp_pass;
 
     /* Granular e-mail options */
     unsigned int *gran_level;

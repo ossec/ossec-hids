@@ -7,7 +7,9 @@
  * Foundation
  */
 
-/* Basic e-mailing operations */
+/* Basic e-mailing operations (plain TCP / local sendmail). Not used when USE_SMTP_CURL is defined. */
+
+#ifndef USE_SMTP_CURL
 
 #include "shared.h"
 #include "os_net/os_net.h"
@@ -392,3 +394,5 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     memset_secure(snd_msg, '\0', 128);
     return (0);
 }
+
+#endif /* !USE_SMTP_CURL */

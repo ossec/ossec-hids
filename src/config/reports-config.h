@@ -31,8 +31,16 @@ typedef struct _monitor_config {
     int notify_time;
 
     char *smtpserver;
+    char *smtpserver_resolved;
     char *emailfrom;
     char *emailidsname;
+
+    /* SMTP auth (USE_SMTP_CURL only) */
+    int authsmtp;
+    int securesmtp;
+    int smtp_port;
+    char *smtp_user;
+    char *smtp_pass;
 
     char **agents;
     report_config **reports;

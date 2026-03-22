@@ -17,6 +17,10 @@ The current stable releases are available on the ossec website.
 * Releases can be downloaded from: [Downloads](https://www.ossec.net/downloads/)
 * Release documentation is available at: [docs](https://www.ossec.net/docs/)
 
+## ossec-maild and libcurl SMTP TLS ##
+
+When built with `USE_CURL=yes`, failed SMTP sends log detailed libcurl errors in `ossec.log`: a TLS verification category line when certificate checks fail, `curl_easy_strerror` text, optional `CURLOPT_ERRORBUFFER` detail, `CURLINFO_SSL_VERIFYRESULT` (backend-specific), and `CURLINFO_OS_ERRNO` when set. See comments at the top of `src/os_maild/curlmail.c`.
+
 ## Development ##
 
 The development version is hosted on GitHub and just a simple git clone away. 

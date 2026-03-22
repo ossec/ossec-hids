@@ -78,10 +78,8 @@ void generate_reports(int cday, int cmon, int cyear)
                     merror("%s: INFO: Report '%s' empty.", ARGV0, mond.reports[s]->title);
                 } else if (OS_SendCustomEmail2(mond.reports[s]->emailto,
                                               mond.reports[s]->title,
-                                              mond.smtpserver,
-                                              mond.emailfrom,
-                                              mond.emailidsname,
-                                              fname)
+                                              fname,
+                                              &mond)
                            != 0) {
                     merror("%s: WARN: Unable to send report email.", ARGV0);
                 }

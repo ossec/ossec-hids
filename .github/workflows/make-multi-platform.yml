@@ -12,13 +12,15 @@ on:
 
 jobs:
   build-rocky:
-    name: Rocky Linux 9 (${{ matrix.target }})
+    name: Rocky Linux 9 (${{ matrix.target }}, USE_CURL=${{ matrix.use_curl }})
     runs-on: ubuntu-latest
     container: rockylinux:9
     strategy:
       fail-fast: false
       matrix:
         target: [ server, agent ]
+        # Exercise optional libcurl SMTP path (curlmail.c) in CI, not only local builds.
+        use_curl: [ no, yes ]
 
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +32,18 @@ jobs:
           dnf install -y gcc make openssl-devel pcre2-devel zlib-devel \
             systemd-devel libevent-devel
           dnf install -y file-devel || true
+          if [ "${{ matrix.use_curl }}" = "yes" ]; then
+            dnf install -y libcurl-devel
+          fi
 
       - name: Build
         run: |
           cd src
-          make TARGET=${{ matrix.target }} PCRE2_SYSTEM=yes -j$(nproc)
+          if [ "${{ matrix.use_curl }}" = "yes" ]; then
+            make TARGET=${{ matrix.target }} PCRE2_SYSTEM=yes USE_CURL=yes -j$(nproc)
+          else
+            make TARGET=${{ matrix.target }} PCRE2_SYSTEM=yes -j$(nproc)
+          fi
 
   build-windows-agent:
     name: Windows agent (cross-compile)
