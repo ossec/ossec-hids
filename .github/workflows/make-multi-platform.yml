@@ -8,12 +8,13 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:  # Run manually from Actions tab (choose branch)
 
 jobs:
   build-rocky:
-    name: Rocky Linux 10 (${{ matrix.target }})
+    name: Rocky Linux 9 (${{ matrix.target }})
     runs-on: ubuntu-latest
-    container: rockylinux:10
+    container: rockylinux:9
     strategy:
       fail-fast: false
       matrix:
@@ -24,6 +25,8 @@ jobs:
 
       - name: Install build dependencies
         run: |
+          dnf install -y dnf-plugins-core
+          dnf config-manager --set-enabled crb || true
           dnf install -y gcc make openssl-devel pcre2-devel zlib-devel \
             systemd-devel libevent-devel
           dnf install -y file-devel || true
