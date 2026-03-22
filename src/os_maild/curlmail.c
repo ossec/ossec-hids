@@ -542,8 +542,8 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
     }
 
     if (mail->smtpserver && mail->smtpserver[0] == '/') {
-        /* Local sendmail path not supported in curl build; would need fallback to plain path */
-        merror("%s: Local sendmail path not supported when built with USE_CURL.", ARGV0);
+        /* Local sendmail path (e.g. /usr/sbin/sendmail) is not supported in USE_SMTP_CURL builds. */
+        merror("%s: Invalid smtp_server configuration: local sendmail paths are not supported when built with USE_SMTP_CURL. Please configure smtp_server as an SMTP host[:port].", ARGV0);
         return (OS_INVALID);
     }
 
