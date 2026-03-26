@@ -13,14 +13,14 @@
 #include "rules_op.h"
 
 /* Prototypes */
-static int __DBSelectLocation(const char *location, const DBConfig *db_config) __attribute__((nonnull));
-static int __DBInsertLocation(const char *location, const DBConfig *db_config) __attribute__((nonnull));
+static int __DBSelectLocation(const char *location, DBConfig *db_config) __attribute__((nonnull));
+static int __DBInsertLocation(const char *location, DBConfig *db_config) __attribute__((nonnull));
 
 
 /* Select the maximum ID from the alert table
  * Returns 0 if not found
  */
-int OS_SelectMaxID(const DBConfig *db_config)
+int OS_SelectMaxID(DBConfig *db_config)
 {
     int result = 0;
     char sql_query[OS_SIZE_1024];
@@ -33,7 +33,9 @@ int OS_SelectMaxID(const DBConfig *db_config)
              "alert WHERE server_id = '%u'",
              db_config->server_id);
 
-    result = osdb_query_select(db_config->conn, sql_query);
+    result = db_config->db_query_select(db_config, sql_query);
+    if (result == 0) {
+    }
 
     return (result);
 }
@@ -42,7 +44,7 @@ int OS_SelectMaxID(const DBConfig *db_config)
 /* Select the location ID from the db
  * Returns 0 if not found
  */
-static int __DBSelectLocation(const char *location, const DBConfig *db_config)
+static int __DBSelectLocation(const char *location, DBConfig *db_config)
 {
     int result = 0;
     char sql_query[OS_SIZE_1024];
@@ -56,13 +58,13 @@ static int __DBSelectLocation(const char *location, const DBConfig *db_config)
              "LIMIT 1",
              location, db_config->server_id);
 
-    result = osdb_query_select(db_config->conn, sql_query);
+    result = db_config->db_query_select(db_config, sql_query);
 
     return (result);
 }
 
 /* Insert location in to the db */
-static int __DBInsertLocation(const char *location, const DBConfig *db_config)
+static int __DBInsertLocation(const char *location, DBConfig *db_config)
 {
     char sql_query[OS_SIZE_1024];
 
@@ -75,7 +77,7 @@ static int __DBInsertLocation(const char *location, const DBConfig *db_config)
              "VALUES ('%u', '%s')",
              db_config->server_id, location);
 
-    if (!osdb_query_insert(db_config->conn, sql_query)) {
+    if (!db_config->db_query_insert(db_config, sql_query)) {
         merror(DB_GENERROR, ARGV0);
     }
 
@@ -197,7 +199,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     fulllog = NULL;
 
     /* Insert into the db */
-    if (!osdb_query_insert(db_config->conn, sql_query)) {
+    if (!db_config->db_query_insert(db_config, sql_query)) {
         merror(DB_GENERROR, ARGV0);
     }
 

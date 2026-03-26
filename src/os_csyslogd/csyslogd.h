@@ -18,6 +18,8 @@
 
 /* Read syslog config */
 SyslogConfig **OS_ReadSyslogConf(int test_config, const char *cfgfile);
+void FreeSyslogConfig(SyslogConfig **config);
+extern const char *cfgfile;
 
 /* Send alerts via syslog */
 int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config);

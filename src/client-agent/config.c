@@ -18,22 +18,56 @@ time_t available_server;
 int run_foreground;
 keystore keys;
 agent *agt;
+#ifndef WIN32
+const char *cfgfile;
+#endif
+
+
+/* Free the agent configuration */
+void FreeAgentConfig(agent *config)
+{
+    int i = 0;
+
+    if (config->rip) {
+        while (config->rip[i]) {
+            free(config->rip[i]);
+            i++;
+        }
+        free(config->rip);
+        config->rip = NULL;
+    }
+
+    if (config->lip) {
+        free(config->lip);
+        config->lip = NULL;
+    }
+
+    if (config->profile) {
+        free(config->profile);
+        config->profile = NULL;
+    }
+
+    if (config->port) {
+        free(config->port);
+        config->port = NULL;
+    }
+}
 
 
 /* Read the config file (for the remote client) */
-int ClientConf(const char *cfgfile)
+int ClientConf(const char *cfgfile, agent *config)
 {
     int modules = 0;
-    agt->port = DEFAULT_SECURE;
-    agt->rip = NULL;
-    agt->lip = NULL;
-    agt->rip_id = 0;
-    agt->execdq = 0;
-    agt->profile = NULL;
+    os_strdup(DEFAULT_SECURE, config->port);
+    config->rip = NULL;
+    config->lip = NULL;
+    config->rip_id = 0;
+    config->execdq = 0;
+    config->profile = NULL;
 
     modules |= CCLIENT;
 
-    if (ReadConfig(modules, cfgfile, agt, NULL) < 0) {
+    if (ReadConfig(modules, cfgfile, config, NULL) < 0) {
         return (OS_INVALID);
     }
 

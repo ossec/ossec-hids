@@ -37,34 +37,36 @@ static char *rand_keepalive_str(char *dst, int size)
     return dst;
 }
 
-/* Handle file management */
-void LogCollectorStart()
+/* Free the localfiles */
+void Free_Localfile(logreader *logf)
+{
+    int i = 0;
+    if (logf) {
+        for (i = 0;; i++) {
+            if (logf[i].file == NULL) {
+                break;
+            }
+            if (logf[i].fp) {
+                fclose(logf[i].fp);
+            }
+            free(logf[i].file);
+            free(logf[i].logformat);
+            free(logf[i].ffile);
+            free(logf[i].djb_program_name);
+            free(logf[i].command);
+            free(logf[i].alias);
+            free(logf[i].query);
+        }
+        free(logf);
+    }
+}
+
+/* Initialize each file and structure */
+int Localfile_Init()
 {
     int i = 0, r = 0;
-    int max_file = 0;
-    int f_check = 0;
-    time_t curr_time = 0;
-    char keepalive[1024];
 
-
-#ifndef WIN32
-    int int_error = 0;
-    struct timeval fp_timeout;
-    /* To check for inode changes */
-    struct stat tmp_stat;
-#else
-    BY_HANDLE_FILE_INFORMATION lpFileInformation;
-
-    /* Check if we are on Windows Vista */
-    checkVista();
-
-    /* Read vista descriptions */
-    if (isVista) {
-        win_read_vista_sec();
-    }
-#endif
-
-    debug1("%s: DEBUG: Entering LogCollectorStart().", ARGV0);
+    debug1("%s: DEBUG: Entering Localfile_Init().", ARGV0);
 
     /* Initialize each file and structure */
     for (i = 0;; i++) {
@@ -248,6 +250,40 @@ void LogCollectorStart()
         }
     }
 
+    return (i - 1);
+}
+
+/* Handle file management */
+void LogCollectorStart(const char *cfgfile, int accept_remote)
+{
+    int i = 0, r = 0;
+    int max_file = 0;
+    int f_check = 0;
+    time_t curr_time = 0;
+    char keepalive[1024];
+
+
+#ifndef WIN32
+    int int_error = 0;
+    struct timeval fp_timeout;
+    /* To check for inode changes */
+    struct stat tmp_stat;
+#else
+    BY_HANDLE_FILE_INFORMATION lpFileInformation;
+
+    /* Check if we are on Windows Vista */
+    checkVista();
+
+    /* Read vista descriptions */
+    if (isVista) {
+        win_read_vista_sec();
+    }
+#endif
+
+    debug1("%s: DEBUG: Entering LogCollectorStart().", ARGV0);
+
+    max_file = Localfile_Init();
+
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
@@ -259,13 +295,43 @@ void LogCollectorStart()
     }
 
     /* Daemon loop */
+#ifndef WIN32
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+#endif
+
     while (1) {
+        if (sighup_received) {
+            logreader *new_logff;
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+
+            new_logff = LogCollectorConfig(cfgfile, accept_remote);
+            if (!new_logff) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            } else {
+                /* Atomic swap */
+                Free_Localfile(logff);
+                logff = new_logff;
+                max_file = Localfile_Init();
+            }
+        }
+
 #ifndef WIN32
         fp_timeout.tv_sec = loop_timeout;
         fp_timeout.tv_usec = 0;
 
-        /* Wait for the select timeout */
-        if ((r = select(0, NULL, NULL, NULL, &fp_timeout)) < 0) {
+        /* Wait for the select timeout - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        r = select(0, NULL, NULL, NULL, &fp_timeout);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (r < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             merror(SELECT_ERROR, ARGV0, errno, strerror(errno));
             int_error++;
 

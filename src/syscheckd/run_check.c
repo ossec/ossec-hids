@@ -185,8 +185,31 @@ void start_daemon()
         }
     }
 
+#ifndef WIN32
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+#endif
+
     /* Check every SYSCHECK_WAIT */
     while (1) {
+        if (sighup_received) {
+            syscheck_config new_syscheck;
+            memset(&new_syscheck, 0, sizeof(syscheck_config));
+
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+
+            if (Read_Syscheck_Config(cfgfile, &new_syscheck) < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            } else {
+                /* Atomic swap */
+                FreeSyscheckConfig(&syscheck);
+                memcpy(&syscheck, &new_syscheck, sizeof(syscheck_config));
+            }
+        }
+
         int run_now = 0;
         curr_time = time(0);
 
@@ -286,9 +309,19 @@ void start_daemon()
             FD_ZERO (&rfds);
             FD_SET(syscheck.realtime->fd, &rfds);
 
+            /* Wait for realtime events - unblock SIGHUP during wait */
+#ifndef WIN32
+            sigprocmask(SIG_SETMASK, &old_set, NULL);
+#endif
             run_now = select(syscheck.realtime->fd + 1, &rfds,
                              NULL, NULL, &selecttime);
+#ifndef WIN32
+            sigprocmask(SIG_BLOCK, &set, NULL);
+#endif
             if (run_now < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
                 merror("%s: ERROR: Select failed (for realtime fim).", ARGV0);
                 sleep(SYSCHECK_WAIT);
             } else if (run_now == 0) {
@@ -297,7 +330,13 @@ void start_daemon()
                 realtime_process();
             }
         } else {
+#ifndef WIN32
+            sigprocmask(SIG_SETMASK, &old_set, NULL);
+#endif
             sleep(SYSCHECK_WAIT);
+#ifndef WIN32
+            sigprocmask(SIG_BLOCK, &set, NULL);
+#endif
         }
 #elif defined(WIN32)
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
@@ -311,7 +350,9 @@ void start_daemon()
             sleep(SYSCHECK_WAIT);
         }
 #else
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
         sleep(SYSCHECK_WAIT);
+        sigprocmask(SIG_BLOCK, &set, NULL);
 #endif
     }
 }

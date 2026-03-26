@@ -17,7 +17,7 @@
 
 
 /* Receive events from the server */
-void *receiver_thread(__attribute__((unused)) void *none)
+DWORD WINAPI receiver_thread(__attribute__((unused)) void *none)
 {
     extern agent *agt;
     int recv_b;
@@ -226,7 +226,7 @@ void *receiver_thread(__attribute__((unused)) void *none)
         }
     }
 
-    return (NULL);
+    return (0);
 }
 
 #endif /* WIN32 */
