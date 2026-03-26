@@ -295,3 +295,38 @@ int FTS(Eventinfo *lf)
     return (1);
 }
 
+
+/* Free the FTS module */
+void FTS_Free()
+{
+    if (fts_list) {
+        OSList_SetFreeDataPointer(fts_list, free);
+        OSList_Free(fts_list);
+        fts_list = NULL;
+    }
+
+    if (fts_store) {
+        /* Since in FTS the data is a strdup'ed string (same as the key), 
+         * we must free it. OSHash_Free only frees the key.
+         */
+        unsigned int i;
+        for (i = 0; i <= fts_store->rows; i++) {
+            OSHashNode *curr = fts_store->table[i];
+            while (curr) {
+                free(curr->data);
+                curr = curr->next;
+            }
+        }
+        OSHash_Free(fts_store);
+        fts_store = NULL;
+    }
+
+    if (fp_list) {
+        fclose(fp_list);
+        fp_list = NULL;
+    }
+    if (fp_ignore) {
+        fclose(fp_ignore);
+        fp_ignore = NULL;
+    }
+}

@@ -12,11 +12,13 @@
 #include "config/config.h"
 
 
-/* Read database configuration */
 int OS_ReadDBConf(__attribute__((unused)) int test_config, const char *cfgfile, DBConfig *db_config)
 {
     int modules = 0;
     _Config *tmp_config;
+
+    /* Initialize the config structure */
+    memset(db_config, 0, sizeof(DBConfig));
 
     /* Modules for the configuration */
     modules |= CDBD;
@@ -27,10 +29,6 @@ int OS_ReadDBConf(__attribute__((unused)) int test_config, const char *cfgfile, 
 
     /* Clear configuration variables */
     tmp_config->includes = NULL;
-    db_config->includes = NULL;
-    db_config->host = NULL;
-    db_config->user = NULL;
-    db_config->pass = NULL;
     db_config->db = NULL;
     db_config->port = 0;
     db_config->sock = NULL;
@@ -67,25 +65,24 @@ int OS_ReadDBConf(__attribute__((unused)) int test_config, const char *cfgfile, 
         return (OS_INVALID);
     }
 
-    osdb_connect = NULL;
 
     /* Assign the proper location for the function calls */
 
 #ifdef MYSQL_DATABASE_ENABLED
     if (db_config->db_type == MYSQLDB) {
-        osdb_connect = mysql_osdb_connect;
-        osdb_query_insert = mysql_osdb_query_insert;
-        osdb_query_select = mysql_osdb_query_select;
-        osdb_close = mysql_osdb_close;
+        db_config->db_connect = mysql_osdb_connect;
+        db_config->db_query_insert = mysql_osdb_query_insert;
+        db_config->db_query_select = mysql_osdb_query_select;
+        db_config->db_close = mysql_osdb_close;
     }
 #endif
 
 #ifdef PGSQL_DATABASE_ENABLED
     if (db_config->db_type == POSTGDB) {
-        osdb_connect = postgresql_osdb_connect;
-        osdb_query_insert = postgresql_osdb_query_insert;
-        osdb_query_select = postgresql_osdb_query_select;
-        osdb_close = postgresql_osdb_close;
+        db_config->db_connect = postgresql_osdb_connect;
+        db_config->db_query_insert = postgresql_osdb_query_insert;
+        db_config->db_query_select = postgresql_osdb_query_select;
+        db_config->db_close = postgresql_osdb_close;
     }
 #endif
 
@@ -102,7 +99,7 @@ int OS_ReadDBConf(__attribute__((unused)) int test_config, const char *cfgfile, 
 #endif
     }
 
-    if (osdb_connect == NULL) {
+    if (db_config->db_connect == NULL) {
         merror("%s: Invalid DB configuration (Internal error?). ", ARGV0);
         return (OS_INVALID);
     }
@@ -110,3 +107,35 @@ int OS_ReadDBConf(__attribute__((unused)) int test_config, const char *cfgfile, 
     return (1);
 }
 
+const char *cfgfile;
+
+/* Free configuration */
+void FreeDBConfig(DBConfig *config)
+{
+    if (config) {
+        free(config->host);
+        free(config->user);
+        free(config->pass);
+        free(config->db);
+        free(config->sock);
+        if (config->location_hash) {
+            OSHash_Free(config->location_hash);
+            config->location_hash = NULL;
+        }
+        if (config->includes) {
+            int i = 0;
+            while (config->includes[i]) {
+                free(config->includes[i]);
+                i++;
+            }
+            free(config->includes);
+            config->includes = NULL;
+        }
+        if (config->conn) {
+            if (config->db_close) {
+                config->db_close(config->conn);
+            }
+            config->conn = NULL;
+        }
+    }
+}

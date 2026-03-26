@@ -401,6 +401,7 @@ int isVista = 0;
 #define mkstemp(x) 0
 #endif
 
+static char _pidfile_path[256] = "";
 const char *__local_name = "unset";
 
 /* Set the name of the starting program */
@@ -459,6 +460,10 @@ int CreatePID(const char *name, int pid)
 
     fclose(fp);
 
+    /* Cache the PID file path for async-safe deletion */
+    strncpy(_pidfile_path, file, sizeof(_pidfile_path) - 1);
+    _pidfile_path[sizeof(_pidfile_path) - 1] = '\0';
+
     return (0);
 }
 
@@ -491,6 +496,10 @@ int DeletePID(const char *name)
 {
     char file[256];
 
+    if (name == NULL) {
+        return (-1);
+    }
+
     if (isChroot()) {
         snprintf(file, 255, "%s/%s-%d.pid", OS_PIDFILE, name, (int)getpid());
     } else {
@@ -513,6 +522,13 @@ int DeletePID(const char *name)
     }
 
     return (0);
+}
+
+void DeletePID_AsyncSafe(void)
+{
+    if (_pidfile_path[0] != '\0') {
+        unlink(_pidfile_path);
+    }
 }
 
 int UnmergeFiles(const char *finalpath, const char *optdir)

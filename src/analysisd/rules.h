@@ -235,6 +235,10 @@ RuleNode *OS_GetFirstRule(void);
 
 void Rules_OP_CreateRules(void);
 
+void OS_FreeRuleList(RuleNode *node);
+
+void OS_FreeRuleInfo(RuleInfo *rule);
+
 int Rules_OP_ReadRules(const char *rulefile);
 
 int AddHash_Rule(RuleNode *node);

@@ -21,10 +21,12 @@
 /*** Function prototypes ***/
 
 /* Read logcollector config */
-int LogCollectorConfig(const char *cfgfile, int accept_remote);
+int Localfile_Init(void);
+logreader *LogCollectorConfig(const char *cfgfile, int accept_remote);
+void Free_Localfile(logreader *logf);
 
 /* Start log collector daemon */
-void LogCollectorStart(void) __attribute__((noreturn));
+void LogCollectorStart(const char *cfgfile, int accept_remote) __attribute__((noreturn));
 
 /* Handle files */
 int handle_file(int i, int do_fseek, int do_log);

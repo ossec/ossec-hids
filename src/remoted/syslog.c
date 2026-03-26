@@ -63,11 +63,45 @@ void HandleSyslog()
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
+    sigset_t set, old_set;
+    int r;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     /* Infinite loop */
     while (1) {
+        if (sighup_received) {
+            remoted new_logr;
+            memset(&new_logr, 0, sizeof(remoted));
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration (Network bind settings require restart).", ARGV0);
+
+            /* Copy current runtime state to temporary struct */
+            new_logr.m_queue = logr.m_queue;
+            new_logr.netinfo = logr.netinfo;
+
+            if (RemotedConfig(cfgfile, &new_logr) < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            } else {
+                /* Atomic swap */
+                FreeRemotedConfig(&logr);
+                memcpy(&logr, &new_logr, sizeof(remoted));
+            }
+        }
+
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
-        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+
+        /* Wait for connections - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        r = select(fdmax, &fdwork, NULL, NULL, NULL);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (r < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit("ERROR: Call to syslog select() failed, errno %d - %s",
                       errno, strerror (errno));
         }

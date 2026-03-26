@@ -46,5 +46,8 @@ void OSList_DeleteOldestNode(OSList *list) __attribute__((nonnull));
 
 int OSList_AddData(OSList *list, void *data) __attribute__((nonnull(1)));
 
+void OSList_CleanNodes(OSList *list);
+void OSList_Free(OSList *list);
+
 #endif
 

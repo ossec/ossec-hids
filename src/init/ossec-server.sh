@@ -284,6 +284,26 @@ stopa()
     echo "$NAME $VERSION Stopped"
 }
 
+# Reload function
+reload()
+{
+    lock;
+    checkpid;
+    for i in ${DAEMONS}; do
+        pstatus ${i};
+        if [ $? = 1 ]; then
+            echo "Sending reload signal to ${i} .. ";
+
+            kill -HUP `cat ${DIR}/var/run/${i}*.pid`;
+        else
+            echo "${i} not running ..";
+        fi
+    done
+
+    unlock;
+    echo "$NAME $VERSION reload signal sent"
+}
+
 ### MAIN HERE ###
 
 case "$1" in
@@ -301,9 +321,7 @@ restart)
     start
     ;;
 reload)
-    DAEMONS="ossec-monitord ossec-logcollector ossec-remoted ossec-syscheckd ossec-analysisd ossec-maild ${DB_DAEMON} ${CSYSLOG_DAEMON} ${AGENTLESS_DAEMON}"
-    stopa
-    start
+    reload
     ;;
 status)
     status
