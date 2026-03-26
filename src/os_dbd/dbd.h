@@ -18,15 +18,17 @@
 
 /* Read database config */
 int OS_ReadDBConf(int test_config, const char *cfgfile, DBConfig *db_config) __attribute__((nonnull));
+void FreeDBConfig(DBConfig *config);
+extern const char *cfgfile;
 
 /* Inserts server info to the db */
-int OS_Server_ReadInsertDB(const DBConfig *db_config) __attribute__((nonnull));
+int OS_Server_ReadInsertDB(DBConfig *db_config) __attribute__((nonnull));
 
 /* Insert rules in to the database */
 int OS_InsertRulesDB(DBConfig *db_config) __attribute__((nonnull));
 
 /* Get maximum ID */
-int OS_SelectMaxID(const DBConfig *db_config) __attribute__((nonnull));
+int OS_SelectMaxID(DBConfig *db_config) __attribute__((nonnull));
 
 /* Insert alerts in to the database */
 int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config) __attribute__((nonnull));

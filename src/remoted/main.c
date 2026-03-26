@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 
     debug1(STARTED_MSG, ARGV0);
 
-    /* Return 0 if not configured */
+    cfgfile = cfg;
     if (RemotedConfig(cfg, &logr) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }

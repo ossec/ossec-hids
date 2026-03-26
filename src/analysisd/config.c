@@ -73,3 +73,70 @@ int GlobalConf(const char *cfgfile)
 
     return (0);
 }
+
+/* Free a NULL-terminated array of strings */
+static void free_str_array(char **array)
+{
+    int i = 0;
+    if (array) {
+        while (array[i]) {
+            free(array[i]);
+            i++;
+        }
+        free(array);
+    }
+}
+
+/* Free the Config structure */
+void FreeConfig(_Config *config)
+{
+    int i;
+    if (!config) {
+        return;
+    }
+
+    free(config->prelude_profile);
+    free(config->geoipdb_file);
+    free(config->zeromq_output_uri);
+    free(config->zeromq_output_server_cert);
+    free(config->zeromq_output_client_cert);
+    free(config->custom_alert_output_format);
+    free(config->md5_allowlist);
+
+    free_str_array(config->syscheck_ignore);
+    free_str_array(config->hostname_allow_list);
+    free_str_array(config->includes);
+    free_str_array(config->lists);
+    free_str_array(config->decoders);
+
+    if (config->allow_list) {
+        for (i = 0; config->allow_list[i]; i++) {
+            free(config->allow_list[i]);
+        }
+        free(config->allow_list);
+    }
+
+#ifdef LIBGEOIP_ENABLED
+    free(config->geoip_db_path);
+    free(config->geoip6_db_path);
+#endif
+
+    /* Reset pointers to NULL to prevent double-free if called again */
+    config->prelude_profile = NULL;
+    config->geoipdb_file = NULL;
+    config->zeromq_output_uri = NULL;
+    config->zeromq_output_server_cert = NULL;
+    config->zeromq_output_client_cert = NULL;
+    config->custom_alert_output_format = NULL;
+    config->md5_allowlist = NULL;
+    config->syscheck_ignore = NULL;
+    config->hostname_allow_list = NULL;
+    config->includes = NULL;
+    config->lists = NULL;
+    config->decoders = NULL;
+    config->allow_list = NULL;
+#ifdef LIBGEOIP_ENABLED
+    config->geoip_db_path = NULL;
+    config->geoip6_db_path = NULL;
+#endif
+}

@@ -12,7 +12,7 @@
 
 
 /* Read the config file (the localfiles) */
-int LogCollectorConfig(const char *cfgfile, int accept_remote)
+logreader *LogCollectorConfig(const char *cfgfile, int accept_remote)
 {
     int modules = 0;
     logreader_config log_config;
@@ -24,18 +24,19 @@ int LogCollectorConfig(const char *cfgfile, int accept_remote)
     log_config.accept_remote = accept_remote;
 
     if (ReadConfig(modules, cfgfile, &log_config, NULL) < 0) {
-        return (OS_INVALID);
+        return (NULL);
     }
 
 #ifdef CLIENT
     modules |= CAGENT_CONFIG;
     log_config.agent_cfg = 1;
-    ReadConfig(modules, AGENTCONFIG, &log_config, NULL);
+    if (ReadConfig(modules, AGENTCONFIG, &log_config, NULL) < 0) {
+        Free_Localfile(log_config.config);
+        return (NULL);
+    }
     log_config.agent_cfg = 0;
 #endif
 
-    logff = log_config.config;
-
-    return (1);
+    return (log_config.config);
 }
 

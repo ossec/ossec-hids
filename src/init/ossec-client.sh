@@ -86,6 +86,26 @@ help()
     exit 1;
 }
 
+# Reload function
+reload()
+{
+    lock;
+    checkpid;
+    for i in ${DAEMONS}; do
+        pstatus ${i};
+        if [ $? = 1 ]; then
+            echo "Sending reload signal to ${i} .. ";
+
+            kill -HUP `cat ${DIR}/var/run/${i}*.pid`;
+        else
+            echo "${i} not running ..";
+        fi
+    done
+
+    unlock;
+    echo "$NAME $VERSION reload signal sent"
+}
+
 status()
 {
     RETVAL=0
@@ -214,9 +234,7 @@ restart)
     start
     ;;
 reload)
-    DAEMONS="ossec-logcollector ossec-syscheckd ossec-agentd"
-    stopa
-    start
+    reload
     ;;
 status)
     status

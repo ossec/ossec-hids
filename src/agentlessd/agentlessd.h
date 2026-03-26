@@ -20,6 +20,8 @@
 
 /* Main monitord */
 void Agentlessd(void) __attribute__((noreturn));
+void FreeAgentlessConfig(agentlessd_config *config);
+extern const char *cfgfile;
 
 /* Global variables */
 extern agentlessd_config lessdc;

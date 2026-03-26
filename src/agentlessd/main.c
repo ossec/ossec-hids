@@ -111,6 +111,7 @@ int main(int argc, char **argv)
     lessdc.entries = NULL;
     lessdc.queue = 0;
 
+    cfgfile = cfg;
     if (ReadConfig(c, cfg, &lessdc, NULL) < 0) {
         ErrorExit(XML_INV_AGENTLESS, ARGV0);
     }

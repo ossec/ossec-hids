@@ -208,7 +208,7 @@ void FreeTimeoutEntry(timeout_data *timeout_entry)
 /* Main function on the execd. Does all the data receiving, etc. */
 static void ExecdStart(int q)
 {
-    int i, childcount = 0;
+    int i, r, childcount = 0;
     time_t curr_time;
 
     char buffer[OS_MAXSTR + 1];
@@ -242,7 +242,18 @@ static void ExecdStart(int q)
     }
 
     /* Main loop */
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+        if (sighup_received) {
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Re-opening log files.", ARGV0);
+            /* Reload configuration placeholder */
+        }
+
         int timeout_value;
         int added_before = 0;
         char **timeout_args;
@@ -303,9 +314,18 @@ static void ExecdStart(int q)
         FD_ZERO(&fdset);
         FD_SET(q, &fdset);
 
-        /* Add timeout */
-        if (select(q + 1, &fdset, NULL, NULL, &socket_timeout) == 0) {
-            /* Timeout */
+        /* Add timeout - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        r = select(q + 1, &fdset, NULL, NULL, &socket_timeout);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (r == 0) {
+            continue;
+        } else if (r < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            merror(SELECT_ERROR, ARGV0, errno, strerror(errno));
             continue;
         }
 
