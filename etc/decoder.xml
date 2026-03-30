@@ -971,7 +971,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="dovecot-disconnect">
   <parent>dovecot</parent>
   <prematch_pcre2 offset="after_parent">^\w{4}-login: Disconnected: </prematch_pcre2>
-  <pcre2 offset="after_prematch">^rip=(\S+), lip=(\S+)</pcre2>
+  <pcre2 offset="after_prematch">^rip=(\S+), lip=(\S+)(?:,|$)</pcre2>
   <order>srcip, dstip</order>
 </decoder>
 
