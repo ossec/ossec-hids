@@ -32,10 +32,6 @@ time_t c_time;
 char __shost[512];
 OSDecoderInfo *NULL_Decoder;
 
-#ifdef LIBGEOIP_ENABLED
-GeoIP *geoipdb;
-#endif
-
 /* print help statement */
 __attribute__((noreturn))
 static void help_makelists(void)
