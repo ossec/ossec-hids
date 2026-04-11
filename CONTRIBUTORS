@@ -1,5 +1,5 @@
-OSSEC v3.2.0
-Copyright (C) 2019 Trend Micro Inc.
+OSSEC v4.1.0
+Copyright (C) 2026 Trend Micro Inc.
 
 Many thanks to everyone who contributed and helped with
 the ossec project. Below is the list of all the people
@@ -52,6 +52,7 @@ who helped us since our first release (0.1).
   - Jason Stelzer <jason.stelzer@gmail.com>
   - Antonio Querubin <tony@lavanauts.org>
   - Santiago Bassett <santiago.bassett@gmail.com>
+  - mobstef <mobstef@bemsoft.pl>
 
 -Testing/Patches Rules and other contributions.
   - Cédric Bleimling <cedri@dryades.org
