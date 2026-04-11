@@ -1,0 +1,43 @@
+<!-- OSSEC USB-detection Rule for Linux - https://www.thomas-krenn.com/de/wiki/Ubuntu_Syslog -->
+
+<group name="linux, usb,">
+	
+  <rule id="53600" level="0">
+    <program_name_pcre2>kernel</program_name_pcre2>
+    <pcre2>usb</pcre2>
+    <description>Linux USB detection messages grouped</description>
+  </rule>
+
+	
+  <rule id="53601" level="8">
+    <if_sid>53600</if_sid>
+    <pcre2>New USB device found</pcre2>
+    <description>A new USB device was found by the system</description>
+    <group>linux,</group>
+  </rule>
+
+	
+  <rule id="53602" level="8">
+    <if_sid>53600</if_sid>
+    <pcre2>new low-speed USB device</pcre2>
+    <description>New Low-Speed USB Device was connected.</description>
+    <group>linux,</group>
+  </rule>
+
+
+  <rule id="53603" level="8">
+    <if_sid>53600</if_sid>
+    <pcre2>new high-speed USB device</pcre2>
+    <description>New High-Speed USB Device was connected</description>
+    <group>linux,</group>
+  </rule>
+
+	
+  <rule id="53604" level="3">
+    <if_sid>53600</if_sid>
+    <pcre2>USB disconnect</pcre2>
+    <description>USB device was disconnected</description>
+    <group>linux,</group>
+  </rule>
+
+</group>

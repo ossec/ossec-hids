@@ -1,0 +1,123 @@
+2026-03-14 14:44:35: Successfully downloaded source file ossec-hids-4.0.0.tar.gz from GitHub
+2026-03-14 14:44:36: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids
+2026-03-14 14:44:36: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids-agent
+2026-03-14 14:44:36: The packages directories for ossec-hids ossec-hids-agent version 4.0.0 have been successfully prepared.
+2026-03-14 14:44:43: Creating chroot environment: noble-amd64
+2026-03-14 14:44:43: Error: Problem detected creating chroot environment: noble-amd64
+2026-03-14 14:45:31: Error: Couldn't find debian files directory for ossec-hids at /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids/debian
+2026-03-14 14:46:25: Successfully downloaded source file ossec-hids-4.0.0.tar.gz from GitHub
+2026-03-14 14:46:25: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids
+2026-03-14 14:46:26: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids-agent
+2026-03-14 14:46:26: The packages directories for ossec-hids ossec-hids-agent version 4.0.0 have been successfully prepared.
+2026-03-14 14:46:48: Creating chroot environment: noble-amd64
+2026-03-14 14:46:50: Error: Problem detected creating chroot environment: noble-amd64
+2026-03-14 14:47:30: Creating chroot environment: noble-amd64
+2026-03-14 14:47:31: Error: Problem detected creating chroot environment: noble-amd64
+2026-03-14 14:48:04: Successfully downloaded source file ossec-hids-4.0.0.tar.gz from GitHub
+2026-03-14 14:48:04: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids
+2026-03-14 14:48:04: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids-agent
+2026-03-14 14:48:04: The packages directories for ossec-hids ossec-hids-agent version 4.0.0 have been successfully prepared.
+2026-03-14 14:48:15: Creating chroot environment: noble-amd64
+2026-03-14 14:48:18: Error: Problem detected creating chroot environment: noble-amd64
+2026-03-14 14:48:35: Building Debian package ossec-hids noble-amd64
+2026-03-14 14:48:35:  + Changelog file /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids/ossec-hids-4.0.0/debian/changelog updated for ossec-hids noble-amd64
+2026-03-14 14:48:38: Error: Could not build package ossec-hids noble-amd64
+2026-03-14 14:48:59: Creating chroot environment: noble-amd64
+2026-03-14 14:48:59: Error: Problem detected creating chroot environment: noble-amd64
+2026-03-14 14:49:23: Successfully downloaded source file ossec-hids-4.0.0.tar.gz from GitHub
+2026-03-14 14:49:23: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids
+2026-03-14 14:49:24: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids-agent
+2026-03-14 14:49:24: The packages directories for ossec-hids ossec-hids-agent version 4.0.0 have been successfully prepared.
+2026-03-14 14:50:16: Creating chroot environment: noble-amd64
+2026-03-14 14:52:18: Successfully created chroot environment: noble-amd64
+2026-03-14 14:53:17: Updating chroot environment: noble-amd64
+2026-03-14 14:53:18: Error: Problem detected updating chroot environment: noble-amd64
+2026-03-14 14:53:20: Building Debian package ossec-hids noble-amd64
+2026-03-14 14:53:20: Error: Couldn't find changelog file for ossec-hids-4.0.0
+2026-03-14 14:53:46: Error: Couldn't find debian files directory for ossec-hids at /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids/debian
+2026-03-14 14:55:30: Successfully downloaded source file ossec-hids-4.0.0.tar.gz from GitHub
+2026-03-14 14:55:30: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids
+2026-03-14 14:55:31: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids-agent
+2026-03-14 14:55:31: The packages directories for ossec-hids ossec-hids-agent version 4.0.0 have been successfully prepared.
+2026-03-14 14:55:52: Building Debian package ossec-hids noble-amd64
+2026-03-14 14:55:52: Error: Couldn't find changelog file for ossec-hids-4.0.0
+2026-03-14 14:55:52: Run -d first to prepare source. If package dirs were overwritten: git checkout -- contrib/debian-packages/ossec-hids contrib/debian-packages/ossec-hids-agent
+2026-03-14 14:56:06: Successfully downloaded source file ossec-hids-4.0.0.tar.gz from GitHub
+2026-03-14 14:56:06: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids
+2026-03-14 14:56:07: + Deleting previous source directory /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids-agent
+2026-03-14 14:56:07: The packages directories for ossec-hids ossec-hids-agent version 4.0.0 have been successfully prepared.
+2026-03-14 14:56:31: Building Debian package ossec-hids noble-amd64
+2026-03-14 14:56:31:  + Changelog file /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/ossec-hids/ossec-hids-4.0.0/debian/changelog updated for ossec-hids noble-amd64
+2026-03-14 14:56:35: Error: Could not build package ossec-hids noble-amd64
+2026-03-14 14:59:38: Successfully downloaded ossec-hids-4.0.0.tar.gz from GitHub
+2026-03-14 14:59:38: Error: Unpack did not create /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/ossec-hids/-4.0.0
+2026-03-14 15:19:07: Building from local source tree at /home/sshinn/src/ossec/ossec-hids
+2026-03-14 15:19:12: Prepared source for ossec-hids ossec-hids-agent version 4.0.0 under /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build
+2026-03-14 15:20:57: Building from local source tree at /home/sshinn/src/ossec/ossec-hids
+2026-03-14 15:21:17: Prepared source for ossec-hids ossec-hids-agent version 4.0.0 under /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build
+2026-03-14 15:21:42: Building Debian package ossec-hids noble-amd64
+2026-03-14 15:21:42:  + Changelog file /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/ossec-hids/ossec-hids-4.0.0/debian/changelog updated for ossec-hids noble-amd64
+2026-03-14 15:21:54: Error: Could not build package ossec-hids noble-amd64
+2026-03-14 15:25:39: Building Debian package ossec-hids bookworm-amd64
+2026-03-14 15:25:39:  + Changelog file /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/ossec-hids/ossec-hids-4.0.0/debian/changelog updated for ossec-hids bookworm-amd64
+2026-03-14 15:25:40: Error: Could not build package ossec-hids bookworm-amd64
+2026-03-14 15:25:40: Last 100 lines of build log (full log: /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/pdebuild-ossec-hids-bookworm-amd64.log):
+2026-03-14 15:25:40: W: /root/.pbuilderrc does not exist
+2026-03-14 15:25:40: W: /root/.pbuilderrc does not exist
+2026-03-14 15:25:40: [0;31mE: File /var/cache/pbuilder/bookworm-amd64-base.tgz does not exist[0m
+2026-03-14 15:25:40: ---
+2026-03-14 15:25:45: Building from local source tree at /home/sshinn/src/ossec/ossec-hids
+2026-03-14 15:26:28: Prepared source for ossec-hids ossec-hids-agent version 4.0.0 under /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build
+2026-03-14 15:26:53: Building Debian package ossec-hids bookworm-amd64
+2026-03-14 15:26:53:  + Changelog file /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/ossec-hids/ossec-hids-4.0.0/debian/changelog updated for ossec-hids bookworm-amd64
+2026-03-14 15:26:53: Error: Could not build package ossec-hids bookworm-amd64
+2026-03-14 15:26:53: Last 100 lines of build log (full log: /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/pdebuild-ossec-hids-bookworm-amd64.log):
+2026-03-14 15:26:53: W: /root/.pbuilderrc does not exist
+2026-03-14 15:26:53: W: /root/.pbuilderrc does not exist
+2026-03-14 15:26:53: [0;31mE: File /var/cache/pbuilder/bookworm-amd64-base.tgz does not exist[0m
+2026-03-14 15:26:53: W: /root/.pbuilderrc does not exist
+2026-03-14 15:26:53: W: /root/.pbuilderrc does not exist
+2026-03-14 15:26:53: [0;31mE: File /var/cache/pbuilder/bookworm-amd64-base.tgz does not exist[0m
+2026-03-14 15:26:53: ---
+2026-03-14 15:27:01: Creating chroot environment: bookworm-amd64
+2026-03-14 15:28:25: Successfully created chroot environment: bookworm-amd64
+2026-03-14 15:28:40: Building Debian package ossec-hids bookworm-amd64
+2026-03-14 15:28:40:  + Changelog file /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/ossec-hids/ossec-hids-4.0.0/debian/changelog updated for ossec-hids bookworm-amd64
+2026-03-14 15:28:45: Error: Could not build package ossec-hids bookworm-amd64
+2026-03-14 15:28:45: Last 100 lines of build log (full log: /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/pdebuild-ossec-hids-bookworm-amd64.log):
+2026-03-14 15:28:45: W: /root/.pbuilderrc does not exist
+2026-03-14 15:28:45: W: /root/.pbuilderrc does not exist
+2026-03-14 15:28:45: [0;31mE: File /var/cache/pbuilder/bookworm-amd64-base.tgz does not exist[0m
+2026-03-14 15:28:45: W: /root/.pbuilderrc does not exist
+2026-03-14 15:28:45: W: /root/.pbuilderrc does not exist
+2026-03-14 15:28:45: [0;31mE: File /var/cache/pbuilder/bookworm-amd64-base.tgz does not exist[0m
+2026-03-14 15:28:45: W: /root/.pbuilderrc does not exist
+2026-03-14 15:28:45: W: /root/.pbuilderrc does not exist
+2026-03-14 15:28:45: dpkg-query: no packages found matching systemd
+2026-03-14 15:28:45: [1;33mW: cgroups are not available on the host, not using them.[0m
+2026-03-14 15:28:45: [0mI: Building the build Environment[0m
+2026-03-14 15:28:45: [0mI: extracting base tarball [/var/cache/pbuilder/bookworm-amd64-base.tgz][0m
+2026-03-14 15:28:45: [0mI: copying local configuration[0m
+2026-03-14 15:28:45: [1;33mW: No local /etc/mailname to copy, relying on /var/cache/pbuilder/build//1687924/etc/mailname to be correct[0m
+2026-03-14 15:28:45: [0mI: Installing apt-lines[0m
+2026-03-14 15:28:45: [0mI: mounting /proc filesystem[0m
+2026-03-14 15:28:45: [0mI: mounting /sys filesystem[0m
+2026-03-14 15:28:45: [0mI: creating /{dev,run}/shm[0m
+2026-03-14 15:28:45: [0mI: mounting /dev/pts filesystem[0m
+2026-03-14 15:28:45: [0mI: redirecting /dev/ptmx to /dev/pts/ptmx[0m
+2026-03-14 15:28:45: [0mI: mounting /dev/pts/22 over /dev/console[0m
+2026-03-14 15:28:45: [0mI: Mounting /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/ossec-hids[0m
+2026-03-14 15:28:45: [0mI: policy-rc.d already exists[0m
+2026-03-14 15:28:45: [0mI: Obtaining the cached apt archive contents[0m
+2026-03-14 15:28:45: chroot: failed to run command '/runscript': No such file or directory
+2026-03-14 15:28:45: [0mI: Copying back the cached apt archive contents[0m
+2026-03-14 15:28:45: [0mI: unmounting /home/sshinn/src/ossec/ossec-hids/contrib/debian-packages/build/ossec-hids filesystem[0m
+2026-03-14 15:28:45: [0mI: unmounting dev/console filesystem[0m
+2026-03-14 15:28:45: [0mI: unmounting dev/ptmx filesystem[0m
+2026-03-14 15:28:45: [0mI: unmounting dev/pts filesystem[0m
+2026-03-14 15:28:45: [0mI: unmounting dev/shm filesystem[0m
+2026-03-14 15:28:45: [0mI: unmounting proc filesystem[0m
+2026-03-14 15:28:45: [0mI: unmounting sys filesystem[0m
+2026-03-14 15:28:45: [0mI: cleaning the build env [0m
+2026-03-14 15:28:45: [0mI: removing directory /var/cache/pbuilder/build//1687924 and its subdirectories[0m
+2026-03-14 15:28:45: ---

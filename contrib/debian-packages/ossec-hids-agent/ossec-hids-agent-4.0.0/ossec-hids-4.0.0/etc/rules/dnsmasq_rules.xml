@@ -1,0 +1,12 @@
+<group name="local,dns,dnsmasq,">
+
+  <rule id="53551" level="0">
+    <decoded_as>dnsmasq</decoded_as>
+    <description>dnsmasq grouping rule.</description>
+  </rule>
+
+
+
+
+</group>
+

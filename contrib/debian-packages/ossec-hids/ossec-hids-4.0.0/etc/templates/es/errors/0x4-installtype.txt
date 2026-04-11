@@ -1,0 +1,5 @@
+
+ Error 0x4.
+ Fallo en el tipo de instalación. Unicamente puede ser 'agente', 'servidor' o 'local'.
+
+

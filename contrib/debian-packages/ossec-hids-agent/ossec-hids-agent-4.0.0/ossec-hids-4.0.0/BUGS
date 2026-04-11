@@ -1,0 +1,23 @@
+OSSEC v4.0.0
+
+
+** Reporting bugs **
+
+Please, make sure to include the following information:
+
+-OSSEC version number.
+-Content of /etc/ossec-init.conf
+-Content of /var/ossec/etc/ossec.conf
+-Content of /var/ossec/logs/ossec.log
+-Operating system name/version (uname -a if Unix)
+-Any other relevant information.
+
+
+
+Github (Public Issue Reporting):
+https://github.com/ossec/ossec-hids/issues
+
+Email (Private Issue Reporting):
+If you prefer to contact us privately or if it is a security
+issue, send an e-mail to OSSEC Project ( ossec@ossec-hids.org ).
+

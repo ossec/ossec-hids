@@ -1,0 +1,122 @@
+<!-- 
+  -
+  - Rules for Kaspersky Endpoint Security 10 for Linux
+  - IDs=53801-53825
+  -
+  - Set UseSysLog to yes in kesl appSettings.xml for eventlogging in syslog
+  -
+  -->
+
+<group name="kesl,">
+  <rule id="53801" level="0" noalert="1">
+    <decoded_as>kesl</decoded_as>
+    <description>kesl messages grouped</description>
+  </rule>
+
+  <rule id="53802" level="8">
+    <if_sid>53801</if_sid>
+    <pcre2>UpdateError</pcre2>
+    <description>An error occurred during an Update Task.</description>
+  </rule>
+
+  <rule id="53803" level="8">
+    <if_sid>53801</if_sid>
+    <status_pcre2>AVBasesAreOutOfDate</status_pcre2>
+    <description>AVBasesAreOutOfDate (kesl Task: update)</description>
+  </rule>
+
+  <rule id="53804" level="8">
+    <if_sid>53801</if_sid>
+    <status_pcre2>AVBasesAreTotallyOutOfDate</status_pcre2>
+    <description>AVBasesAreTotallyOutOfDate (kesl Task: update)</description>
+  </rule>
+  
+  <rule id="53805" level="8">
+    <if_sid>53801</if_sid>
+    <action>TaskStateChanged</action>
+    <status_pcre2>Started|Stopped</status_pcre2>
+    <extra_data_pcre2>^Rollback</extra_data_pcre2>
+    <description>An Update Rollback Task has been started / stopped</description>
+  </rule>
+  
+  <rule id="53806" level="8">
+    <if_sid>53801</if_sid>
+    <pcre2>AVBasesRollbackError</pcre2>
+    <description>An error occurred during AVBases Update Rollback Task</description>
+  </rule>
+
+  <rule id="53807" level="8">
+    <if_sid>53801</if_sid>
+    <action>TaskStateChanged</action>
+    <status_pcre2>Started|Stopped</status_pcre2>
+    <extra_data_pcre2>^Retranslate</extra_data_pcre2>
+    <description>An update distribution (Retranslate) Task has been started / stopped</description>
+  </rule>
+
+  <rule id="53808" level="8">
+    <if_sid>53801</if_sid>
+    <pcre2>RetranslationError</pcre2>
+    <description>An error occurred during an update distribution (Retranslate) Task</description>
+  </rule>
+
+  <rule id="53809" level="3">
+    <if_sid>53801</if_sid>
+    <action>TaskStateChanged</action>
+    <status_pcre2>Started</status_pcre2>
+    <description>A kesl Task has been started.</description>
+  </rule>
+
+  <rule id="53810" level="8">
+    <if_sid>53801</if_sid>
+    <action>TaskStateChanged</action>
+    <status_pcre2>Suspended</status_pcre2>
+    <description>A kesl Task has been suspended.</description>
+  </rule>
+ 
+  <rule id="53811" level="8">
+    <if_sid>53801</if_sid>
+    <action>TaskStateChanged</action>
+    <status_pcre2>Stopped</status_pcre2>
+    <extra_data_pcre2>^Backup|^License|^OAS</extra_data_pcre2>
+    <description>A kesl Task has been stopped.</description>
+  </rule>
+
+  <rule id="53812" level="2">
+    <if_sid>53801</if_sid>
+    <action>TaskStateChanged</action>
+    <status_pcre2>Stopped</status_pcre2>
+    <extra_data_pcre2>^ODS|^BootScan|^MemoryScan|^Update</extra_data_pcre2>
+    <description>A kesl Task has been stopped.</description>
+  </rule>
+  
+  <rule id="53813" level="8">
+    <if_sid>53801</if_sid>
+    <status_pcre2>ThreatDetected</status_pcre2>
+    <description>Kesl detected a Threat (kesl Task: File_Monitoring)</description>
+  </rule>
+  
+  <rule id="53814" level="3">
+    <if_sid>53801</if_sid>
+    <pcre2>ObjectSavedToBackup</pcre2>
+    <description>Threat Object was saved to Backup (kesl Task: File_Monitoring)</description>
+  </rule>
+
+  <rule id="53815" level="3">
+    <if_sid>53801</if_sid>
+    <pcre2>ObjectNotDisinfected</pcre2>
+    <description>Threat Object could not be disinfected (kesl Task: File_Monitoring)</description>
+  </rule>
+
+  <rule id="53816" level="3">
+    <if_sid>53801</if_sid>
+    <pcre2>ObjectDeleted</pcre2>
+    <description>Threat Object was deleted (kesl Task: File_Monitoring)</description>
+  </rule>
+
+  <rule id="53817" level="8">
+    <if_sid>53801</if_sid>
+    <pcre2>ObjectProcessingError</pcre2>
+    <description>An error occurred during kesl scan</description>
+  </rule>
+
+</group>

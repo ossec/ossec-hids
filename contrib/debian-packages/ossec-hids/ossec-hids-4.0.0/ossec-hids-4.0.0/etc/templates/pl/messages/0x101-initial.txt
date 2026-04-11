@@ -1,0 +1,4 @@
+
+ Rozpoczynasz proces instalacji programu  OSSEC HIDS.
+ Aby kontynuować musisz mieć zainstalowany kompilator C.
+

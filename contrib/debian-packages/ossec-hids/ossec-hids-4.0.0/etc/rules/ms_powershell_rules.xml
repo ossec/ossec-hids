@@ -1,0 +1,50 @@
+<!-- OSSEC PowerShell event rules for Windows (https://www.rootusers.com/enable-and-configure-module-script-block-and-transcription-logging-in-windows-powershell/, https://www.searchdatacenter.de/tipp/PowerShell-Logging-steigert-die-Unternehmenssicherheit, https://static1.squarespace.com/static/552092d5e4b0661088167e5c/t/5760096ecf80a129e0b17634/1465911664070/Windows-PowerShell+Logging+Cheat+Sheet+ver+June+2016+v2.pdf -->
+
+<!-- Not recommended by CIS due to Windows default ACL settings -->
+<!-- Turn on logging: Computer Configuration > Policies > Administrative Templates > Windows Components > Windows PowerShell -> Turn on PowerShell Script Block Logging -->
+<!-- Add <localfile> <location>Powershell</location> <log_format>eventlog</log_format> </localfile> to ossec.conf on Windows Agent -->
+
+<!-- Rule IDs 20500-2509 -->
+
+<group name="windows,powershell,">
+
+  <rule id="20500" level="8">
+    <if_sid>18101</if_sid>
+    <id_pcre2>^400$</id_pcre2>
+    <pcre2>PowerShell</pcre2>
+    <description>Windows PowerShell was started.</description>
+  </rule>
+
+  <rule id="20501" level="8">
+    <if_sid>18101</if_sid>
+    <id_pcre2>^800$</id_pcre2>
+    <pcre2>PowerShell</pcre2>
+    <description>Windows PowerShell command executed.</description>
+  </rule>
+
+  <rule id="20502" level="8">
+    <if_sid>18101</if_sid>
+    <id_pcre2>^403$</id_pcre2>
+    <pcre2>PowerShell</pcre2>
+    <description>Windows PowerShell was stopped.</description>
+  </rule>
+  
+  <rule id="20503" level="2">
+    <if_sid>20501</if_sid>
+    <pcre2>Set-StrictMode -Version 1; .+[A-Za-z0-9@_-]+</pcre2>
+    <description>A wrong/misspelled command was tried</description>
+  </rule>
+
+  <rule id="20504" level="2">
+    <if_sid>20501</if_sid>
+    <pcre2>CommandLine= CommandInvocation</pcre2>
+    <description>Powershell background activity</description>
+  </rule>
+
+  <rule id="20505" level="12">
+    <if_sid>20501</if_sid>
+    <pcre2>Set-ExecutionPolicy|Mimikatz|EncodedCommand|Payload|Find-AVSignature|DllInjection|ReflectivePEInjection|Invoke-Shellcode|Invoke--Shellcode|Invoke-ShellcodeMSIL|Get-GPPPassword|Get-Keystrokes|Get-TimedScreenshot|Get-VaultCredential|Invoke-CredentialInjection|Invoke-NinjaCopy|Invoke-TokenManipulation|Out-Minidump|Set-MasterBootRecord|New-ElevatedPersistenceOption|Invoke-CallbackIEX|Invoke-PSInject|Invoke-DllEncode|Get-ServiceUnquoted|Get-ServiceEXEPerms|Get-ServicePerms|Invoke-ServiceUserAdd|Invoke-ServiceCMD|Write-UserAddServiceBinary|Write-CMDServiceBinary|Write-UserAddMSI|Write-ServiceEXE|Write-ServiceEXECMD|Restore-ServiceEXE|Invoke-ServiceStart|Invoke-ServiceStop|Invoke-ServiceEnable|Invoke-ServiceDisable|Invoke-FindDLLHijack|Invoke-FindPathHijack|Get-RegAlwaysInstallElevated|Get-RegAutoLogon|Get-UnattendedInstallFiles|Get-Webconfig|Get-Webconfig|Get-ApplicationHost|Invoke-AllChecks|Invoke-MassCommand|Invoke-MassMimikatz|Invoke-MassSearch|Invoke-MassTemplate|Invoke-MassTokens|HTTP-Backdoor|Add-ScrnSaveBackdoor|Gupt-Backdoor|Invoke-ADSBackdoor|Execute-OnTime|DNS_TXT_Pwnage|Out-Word|Out-Excel|Out-Java|Out-Shortcut|Out-CHM|Out-HTA|Enable-DuplicateToken|Remove-Update|Execute-DNSTXT-Code|Download-Execute-PS|Execute-Command-MSSQL|Download_Execute|Get-PassHashes|Invoke-CredentialsPhish|Get-LsaSecret|Get-Information|Invoke-MimikatzWDigestDowngrade|Copy-VSS|Check-VM|Invoke-NetworkRelay|Create-MultipleSessions|Run-EXEonRemote|Invoke-BruteForce|Port-Scan|Invoke-PowerShellIcmp|Invoke-PowerShellUdp|Invoke-PsGcatAgent|Invoke-PoshRatHttps|Invoke-PowerShellTcp|Invoke-PoshRatHttp|Invoke-PowerShellWmi|Invoke-PSGcat|Remove-PoshRat|TexttoEXE|Invoke-Encode|Invoke-Decode|Base64ToString|StringtoBase64|Do-Exfiltration|Parse_Keys|Add-Exfiltration|Add-Persistence|Remove-Persistence|Invoke-CreateCertificate|powercat|Find-PSServiceAccounts|Get-PSADForestKRBTGTInfo|Discover-PSMSSQLServers|Discover-PSMSExchangeServers|Get-PSADForestInfo|Get-KerberosPolicy|Discover-PSInterestingServices</pcre2>
+    <description>Possibly Dangerous Command Detected (https://gist.github.com/gfoss/2b39d680badd2cad9d82#file-powershell-command-line-logging)</description>
+  </rule>
+
+</group>

@@ -1,0 +1,14 @@
+<!-- Rules for detecting maybe critical top-level-domains  -->
+<!-- https://www.symantec.com/blogs/feature-stories/top-20-shady-top-level-domains, https://twitter.com/someinfosecguy -->
+
+<!-- 192.168.0.1 - - [13/Feb/2019:03:12:56 +0100] "CONNECT kino.to:443 HTTP/1.1" 407 3725 TCP_DENIED:HIER_NONE -->
+
+<group name="web-access,">
+
+  <rule id="31111" level="2">
+    <if_sid>31100</if_sid>
+    <url_pcre2>\.top:|\.to:|\.gq:|\.cf:|\.men:|\.loan:|\.ml:|\.work:|\.click:|\.tk:|\.country:|\.pw:|\.party:|\.trade:|\.review:|\.club:|\.bid:|\.country:|\.stream:|\.download:|\.xin:|\.gdn:|\.racing:|\.jetzt:|\.win:|\.vip:|\.ren:|\.kim:|\.mom:|\.date:|\.wang:|\.accountants:|\.science:|\.work:|\.ninja:|\.xyz:|\.faith:|\.zip:|\.racing:|\.cricket:|\.space:|\.realtor:|\.christmas:|\.gdn:|\.pro:</url_pcre2>
+    <description>Maybe critical URL access attempt</description>
+  </rule>
+
+</group>

@@ -1,0 +1,20 @@
+Issues
+    
+
+  at the end of install.sh it says
+           More information at: 
+           http://www.ossec.net/docs/docs/programs/manage_agents.html
+
+  FIM does not detect new directories, but it does detect new files in those new directories.
+
+  opensuse rpm packaging
+
+  check SUPPORT.md if we need to change anything
+
+  update the docs
+
+  fix whatevers going on with www.ossec.net net for docs
+  
+
+  facebook: https://www.linkedin.com/groups/25424/
+  

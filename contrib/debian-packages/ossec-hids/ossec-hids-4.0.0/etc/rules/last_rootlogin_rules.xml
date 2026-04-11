@@ -1,0 +1,13 @@
+<!-- Rules for detecting sensitive users in last logged in users list -->
+<!-- Set level 3 or higher at rule 535 in ossec_rules.xml and comment out <options>no_log</options> to get this working -->
+
+
+<group name="access-control,">
+
+  <rule id="25000" level="7">
+    <if_sid>535</if_sid>
+    <pcre2>root|reboot|admin|superuser|administrator|supervisor|toor</pcre2>
+    <description>sensitive login detected</description>
+  </rule>
+
+</group>

@@ -1,0 +1,42 @@
+/* Copyright (C) 2009 Trend Micro Inc.
+ * All right reserved.
+ *
+ * This program is a free software; you can redistribute it
+ * and/or modify it under the terms of the GNU General Public
+ * License (version 2) as published by the FSF - Free Software
+ * Foundation
+ */
+
+#ifndef __CLOGREMOTE_H
+#define __CLOGREMOTE_H
+
+#define SYSLOG_CONN 1
+#define SECURE_CONN 2
+
+#define W_ACCEPT_BF  0
+#define W_ACCEPT_AES 1
+#define W_ACCEPT_ANY 2
+
+#include "shared.h"
+#include "os_net/os_net.h"
+
+/* socklen_t header */
+typedef struct _remoted {
+    int *proto;
+    char **port;
+    int *conn;
+    int *ipv6;
+
+    char **lip;
+    os_ip **allowips;
+    os_ip **denyips;
+
+    int m_queue;
+    int sock;
+    OSNetInfo *netinfo;
+    socklen_t peer_size;
+    int crypto_accept;
+} remoted;
+
+#endif /* __CLOGREMOTE_H */
+

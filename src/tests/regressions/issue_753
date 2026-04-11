@@ -1,0 +1,104 @@
+#!/bin/bash
+# Regression test for Issue #753: Realtime FIM not detecting changes in subfolders
+# Expects to run on remote server with ossec installed in /var/ossec
+
+INSTALL_DIR="/var/ossec"
+TEST_DIR="/tmp/fim_test"
+CONF_FILE="$INSTALL_DIR/etc/ossec.conf"
+ANALYSISD_BIN="$INSTALL_DIR/bin/ossec-analysisd"
+SYSCHECKD_BIN="$INSTALL_DIR/bin/ossec-syscheckd"
+CONTROL_BIN="$INSTALL_DIR/bin/ossec-control"
+
+# Initialize
+echo "Running Issue #753 Regression Test..."
+
+# Clean up previous runs
+rm -rf "$TEST_DIR"
+mkdir -p "$TEST_DIR"
+
+# Backup ossec.conf
+cp "$CONF_FILE" "$CONF_FILE.bak"
+
+# Create minimal config with realtime monitoring
+cat <<EOF > "$CONF_FILE"
+<ossec_config>
+  <global>
+    <email_notification>no</email_notification>
+  </global>
+  <syscheck>
+    <disabled>no</disabled>
+    <frequency>7200</frequency> <!-- Long frequency, relying on realtime -->
+    <scan_on_start>yes</scan_on_start>
+    <alert_new_files>yes</alert_new_files>
+    <directories realtime="yes">$TEST_DIR</directories>
+  </syscheck>
+  <alerts>
+    <log_alert_level>1</log_alert_level>
+  </alerts>
+</ossec_config>
+EOF
+
+# Stop running OSSEC
+"$CONTROL_BIN" stop
+
+# Start analysisd (needed?) No, we can just spy on syscheckd debug or check if it queues events.
+# But for full integration, let's look at syscheckd debug output.
+# If we run syscheckd in foreground with debug, we can capture output.
+
+echo "Starting syscheckd in background with debug..."
+# We use nohup and capture output
+nohup "$SYSCHECKD_BIN" -d -f > "$TEST_DIR/syscheckd.log" 2>&1 &
+SYSCHECK_PID=$!
+
+echo "Waiting for syscheckd to verify the watch..."
+sleep 5
+
+# Create a file in root test dir (should be detected)
+touch "$TEST_DIR/root_file"
+sleep 2
+
+# Create subfolder (should be detected)
+mkdir -p "$TEST_DIR/subfolder"
+sleep 2
+
+# Create file in subfolder (THIS is the failure point if logic is broken)
+touch "$TEST_DIR/subfolder/subfile"
+sleep 5
+
+# Stop syscheckd
+kill "$SYSCHECK_PID"
+
+# Analyze logs
+echo "Analyzing logs..."
+LOG_CONTENT=$(cat "$TEST_DIR/syscheckd.log")
+
+# Check if root_file was detected
+if echo "$LOG_CONTENT" | grep -q "root_file"; then
+    echo "✓ Root file change detected (Realtime works basic)."
+else
+    echo "✗ Root file change NOT detected."
+fi
+
+# Check if subfolder creation was detected (dir creation often ignored by syscheck unless new_files set, but realtime inotify checks events)
+# Inotify usually sees CREATE,ISDIR.
+
+# Check if subfile was detected
+if echo "$LOG_CONTENT" | grep -q "subfile"; then
+    echo "✓ Subfile change detected! (Issue NOT REPRODUCED?)"
+else
+    echo "✗ Subfile change NOT detected. (Issue #753 REPRODUCED)"
+    FAIL=1
+fi
+
+# Cleanup
+rm -rf "$TEST_DIR"
+mv "$CONF_FILE.bak" "$CONF_FILE"
+"$CONTROL_BIN" start # Restart normal OSSEC
+
+if [ -n "$FAIL" ]; then
+    echo "FAILURE: Issue #753 Reproduced."
+    exit 1
+else
+    echo "SUCCESS: All changes detected."
+    exit 0
+fi

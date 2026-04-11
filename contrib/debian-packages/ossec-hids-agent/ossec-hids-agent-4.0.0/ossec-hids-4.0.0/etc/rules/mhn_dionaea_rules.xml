@@ -1,0 +1,13 @@
+<!-- Rules for Modern Honeypot Network - Dionaea, -->
+
+<!-- IDs: 53826 - 53829 -->
+<!-- include /var/log/mhn/mhn-json.log to ossec.conf -->
+
+<group name="mhn,json">
+
+  <rule id="53826" level="8">
+    <decoded_as>dionaea</decoded_as>
+    <description>Connection to Dionaea Honeypot identified</description>
+  </rule>
+
+</group>

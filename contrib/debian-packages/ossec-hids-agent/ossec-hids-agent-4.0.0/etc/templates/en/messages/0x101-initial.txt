@@ -1,0 +1,4 @@
+ 
+ You are about to start the installation process of the OSSEC HIDS.
+ You must have a C compiler pre-installed in your system.
+ 

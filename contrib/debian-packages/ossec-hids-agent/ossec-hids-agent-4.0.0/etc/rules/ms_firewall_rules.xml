@@ -1,0 +1,173 @@
+<!-- OSSEC Rules for Windows Firewall - https://support.microsoft.com/en-us/help/977519/description-of-security-events-in-windows-7-and-in-windows-server-2008 -->
+
+<group name="windows,firewall,">
+
+  <rule id="53631" level="3">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5024$</id_pcre2>
+    <description>Windows Firewall Service has started successfully</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53632" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5025$</id_pcre2>
+    <description>Windows Firewall Service has been stopped</description>
+    <group>windows_firewall</group>
+  </rule>
+	
+  <rule id="53633" level="4">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5027$</id_pcre2>
+    <description>Windows Firewall Service was unable to retrieve the security policy from the local storage. Windows Firewall will continue to enforce the current policy</description>
+    <group>windows_firewall</group>
+  </rule>
+	
+  <rule id="53634" level="4">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5028$</id_pcre2>
+    <description>Windows Firewall was unable to parse the new security policy. Windows Firewall will continue to enforce the current policy</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53635" level="4">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5029$</id_pcre2>
+    <description>The Windows Firewall service failed to initialize the driver. Windows Firewall will continue to enforce the current policy</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53636" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5030$</id_pcre2>
+    <description>Windows Firewall Service failed to start</description>
+    <group>windows_firewall</group>
+  </rule>
+  
+  <rule id="53637" level="2">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^5031$</id_pcre2>
+    <description>Windows Firewall Service blocked an application from accepting incoming connections on the network</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53638" level="2">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^5032$</id_pcre2>
+    <description>Windows Firewall was unable to notify the user that it blocked an application from accepting incoming connections on the network</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53639" level="3">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5033$</id_pcre2>
+    <description>Windows Firewall Driver started successfully</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53640" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^5034$</id_pcre2>
+    <description>Windows Firewall Driver was stopped</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53641" level="8">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^5035$</id_pcre2>
+    <description>Windows Firewall Driver failed to start</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53642" level="8">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^5037$</id_pcre2>
+    <description>Windows Firewall Driver detected a critical runtime error, terminating</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53643" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^4946$</id_pcre2>
+    <description>A rule was added to Windows Firewall exception list</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53644" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^4947$</id_pcre2>
+    <description>A rule was modified from Windows Firewall exception list</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53645" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^4948$</id_pcre2>
+    <description>A rule was deleted from Windows Firewall exception list</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53646" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^4949$</id_pcre2>
+    <description>Windows Firewall settings were restored to the default values</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53647" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^4950$</id_pcre2>
+    <description>A Windows Firewall setting was changed</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53648" level="8">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^4951$</id_pcre2>
+    <description>Windows Firewall ignored a rule because its major version number is not recognized.</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53649" level="8">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^4952$</id_pcre2>
+    <description>Windows Firewall ignored parts of a rule because its minor version number is not recognized. Other parts of the rule will be enforced</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53650" level="8">
+    <if_sid>18105</if_sid> 
+    <id_pcre2>^4953$</id_pcre2>
+    <description>Windows Firewall ignored a rule because it could not be parsed</description> 
+    <group>windows_firewall</group> 
+  </rule>
+ 
+  <rule id="53651" level="8"> 
+    <if_sid>18104</if_sid> 
+    <id_pcre2>^4954$</id_pcre2>
+    <description>Group Policy settings for Windows Firewall were changed, and the new settings were applied</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53652" level="8">
+    <if_sid>18104</if_sid>
+    <id_pcre2>^4956$</id_pcre2>
+    <description>Windows Firewall changed the active profile</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53653" level="8">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^4957$</id_pcre2>
+    <description>Windows Firewall did not apply some rules</description>
+    <group>windows_firewall</group>
+  </rule>
+
+  <rule id="53654" level="8">
+    <if_sid>18105</if_sid>
+    <id_pcre2>^4958$</id_pcre2>
+    <description>Windows Firewall did not apply some rules because the rule referred to items not configured on this computer</description>
+    <group>windows_firewall</group>
+  </rule>
+
+</group>

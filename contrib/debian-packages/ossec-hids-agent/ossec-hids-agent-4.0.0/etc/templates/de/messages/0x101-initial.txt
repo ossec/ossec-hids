@@ -1,0 +1,4 @@
+
+ Um OSSEC HIDS zu installieren muﬂ auf Ihrem System ein C-Compiler
+ installiert sein.
+
