@@ -19,7 +19,7 @@ if [ $? = 0 ]; then
 fi
 
 NAME="OSSEC HIDS"
-VERSION="v4.0.0"
+VERSION="v4.1.0"
 
 [ -f /etc/ossec-init.conf ] && . /etc/ossec-init.conf;
 

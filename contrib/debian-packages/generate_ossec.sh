@@ -21,7 +21,7 @@
 #
 
 NAME="ossec-hids"
-ossec_version='4.0.0'
+ossec_version='4.1.0'
 source_file="${NAME}-${ossec_version}.tar.gz"
 #packages=(ossec-hids ossec-hids-agent) # only options available
 packages=(ossec-hids ossec-hids-agent)

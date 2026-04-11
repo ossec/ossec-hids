@@ -1,3 +1,49 @@
+**OSSEC changelog (4.1.0) <support@atomicorp.com>**
+
+**Release Maintainers**
+
+Dan Parriott
+
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+- @mobstef
+
+**Release Notes**
+
+This release focuses on improving core stability, scalability, and platform support. Key enhancements include SMTP authentication support, IPv6 whitelisting improvements, and support for large files (>2GB). This release also includes multiple bug fixes for analysisd and logcollector crashes.
+
+**Security Fixes**
+
+- @atomicturtle - [PR 2181](https://github.com/ossec/ossec-hids/pull/2181) - Increase default decoder field limit to 256 to support complex log formats
+- @atomicturtle - [PR 2195](https://github.com/ossec/ossec-hids/pull/2195) - Add SMTP TLS and authentication support to maild and monitord
+
+**General**
+
+- @Tylerlhess - [PR 2139](https://github.com/ossec/ossec-hids/pull/2139) - Add log cleanup and parsing for syslog protocol 23 logging format
+- @atomicturtle - [PR 2183](https://github.com/ossec/ossec-hids/pull/2183) - CentOS 7 build fixes and C99 adjustments
+- @atomicturtle - [PR 2185](https://github.com/ossec/ossec-hids/pull/2185) - Add support for Rocky Linux 9
+- @atomicturtle - [PR 2186](https://github.com/ossec/ossec-hids/pull/2186) - Fix agent_control -l output formatting and ICMP logging
+- @atomicturtle - [PR 2192](https://github.com/ossec/ossec-hids/pull/2192) - Spec file improvements for RPM packaging
+- @mobstef - [PR 2194](https://github.com/ossec/ossec-hids/pull/2194) - Fix Lua symlink targets in build process
+- @atomicturtle - [PR 2196](https://github.com/ossec/ossec-hids/pull/2196) - Add GitHub Actions for automated Linux builds
+- @atomicturtle - [PR 2197](https://github.com/ossec/ossec-hids/pull/2197) - Add GitHub Actions for automated Windows builds
+- @atomicturtle - [PR 2198](https://github.com/ossec/ossec-hids/pull/2198) - Increase OS_MAXSTR to 6144 to prevent log truncation
+- @atomicturtle - [PR 2200](https://github.com/ossec/ossec-hids/pull/2200) - Improve IPv6 whitelisting and support in install.sh
+- @atomicturtle - [PR 2201](https://github.com/ossec/ossec-hids/pull/2201) - Enable large file support (>2GB) in Makefile and hash operations
+
+**Bug Fixes**
+
+- @atomicturtle - [PR 2162](https://github.com/ossec/ossec-hids/pull/2162) - Fix Windows version reporting and DB reconnection logic
+- @atomicturtle - [PR 2184](https://github.com/ossec/ossec-hids/pull/2184) - Fix false positive in rootcheck for /dev/shm
+- @atomicturtle - [PR 2187](https://github.com/ossec/ossec-hids/pull/2187) - Fix memory leak in logcollector and initialize DH parameters in os_auth
+- @atomicturtle - [PR 2188](https://github.com/ossec/ossec-hids/pull/2188) - Fix crash in analysisd on sid_prev_matched list overflow
+- @atomicturtle - [PR 2191](https://github.com/ossec/ossec-hids/pull/2191) - Fix segfault in analysisd with custom decoders and LibMagic
+- @atomicturtle - [PR 2199](https://github.com/ossec/ossec-hids/pull/2199) - FIM: handle missing fields in syscheck logs and update Windows manifest IDs
+
+
 **OSSEC changelog (4.0.0) <support@atomicorp.com>**
 
 **Release Maintainers**

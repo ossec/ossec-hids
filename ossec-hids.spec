@@ -21,7 +21,7 @@
 Summary:     An Open Source Host-based Intrusion Detection System
 Name:        ossec-hids
 Epoch: 1
-Version:     4.0.0
+Version:     4.1.0
 Release:     1%{?dist}.art
 License:     GPL
 Group:       Applications/System
@@ -77,7 +77,6 @@ ExclusiveOS: linux
 
 
 %define    _use_internal_dependency_generator 0
-%define __find_requires %{_builddir}/%{name}-%{version}/contrib/specs/filter-requires.sh
 
 %description
 OSSEC is a scalable, multi-platform, open source Host-based Intrusion Detection
@@ -751,6 +750,9 @@ fi
 
 # Changes
 %changelog
+* Sat Apr 11 2026 Support <support@atomicorp.com> - 4.1.0-1
+- Update to 4.1.0
+
 * Sun Feb 1 2026 Support <support@atomicorp.com> - 4.0.0-1
 - Update to 4.0.0
 
