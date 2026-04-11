@@ -77,7 +77,6 @@ ExclusiveOS: linux
 
 
 %define    _use_internal_dependency_generator 0
-%define __find_requires %{_builddir}/%{name}-%{version}/contrib/specs/filter-requires.sh
 
 %description
 OSSEC is a scalable, multi-platform, open source Host-based Intrusion Detection
