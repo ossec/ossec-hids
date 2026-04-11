@@ -1,5 +1,10 @@
 OSSEC v4.1.0 
 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/ossec/ossec-hids)](https://github.com/ossec/ossec-hids/releases)
+[![GitHub license](https://img.shields.io/github/license/ossec/ossec-hids)](https://github.com/ossec/ossec-hids/blob/master/LICENSE)
+[![GitHub language count](https://img.shields.io/github/languages/count/ossec/ossec-hids)](https://github.com/ossec/ossec-hids)
+[![GitHub issues](https://img.shields.io/github/issues/ossec/ossec-hids)](https://github.com/ossec/ossec-hids/issues)
+
 # Information about OSSEC 
 
 OSSEC is a full platform to monitor and control your systems. It mixes together 
