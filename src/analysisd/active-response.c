@@ -60,3 +60,42 @@ int AR_ReadConfig(const char *cfgfile)
     return (0);
 }
 
+
+/* Free an ar_command structure */
+static void Free_ARCommand(void *data)
+{
+    ar_command *cmd = (ar_command *)data;
+    if (cmd) {
+        free(cmd->name);
+        free(cmd->executable);
+        free(cmd);
+    }
+}
+
+/* Free an active_response structure */
+static void Free_AR(void *data)
+{
+    active_response *ar = (active_response *)data;
+    if (ar) {
+        free(ar->name);
+        free(ar->command);
+        free(ar->agent_id);
+        free(ar->rules_id);
+        free(ar->rules_group);
+        /* ar_cmd is a pointer to an element in ar_commands, so we don't free it here */
+        free(ar);
+    }
+}
+
+/* Free the active response configuration */
+void FreeARConfig()
+{
+    if (ar_commands) {
+        OSList_SetFreeDataPointer(ar_commands, Free_ARCommand);
+        OSList_CleanNodes(ar_commands);
+    }
+    if (active_responses) {
+        OSList_SetFreeDataPointer(active_responses, Free_AR);
+        OSList_CleanNodes(active_responses);
+    }
+}

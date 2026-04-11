@@ -337,3 +337,29 @@ int acm_str_replace(char **dst, const char *src)
     return result;
 }
 
+
+/* Free the Accumulator module */
+void Accumulate_Free()
+{
+    unsigned int i;
+    OSHashNode *curr;
+    OSHashNode *next;
+
+    if (!acm_store) {
+        return;
+    }
+
+    for (i = 0; i <= acm_store->rows; i++) {
+        curr = acm_store->table[i];
+        while (curr) {
+            next = curr->next;
+            if (curr->data) {
+                FreeACMStore((OS_ACM_Store *)curr->data);
+            }
+            curr = next;
+        }
+    }
+
+    OSHash_Free(acm_store);
+    acm_store = NULL;
+}

@@ -27,7 +27,8 @@ int CreatePID(const char *name, int pid) __attribute__((nonnull));
 
 char *GetRandomNoise();
 
-int DeletePID(const char *name) __attribute__((nonnull));
+int DeletePID(const char *name);
+void DeletePID_AsyncSafe(void);
 
 int MergeFiles(const char *finalpath, char **files) __attribute__((nonnull));
 

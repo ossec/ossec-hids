@@ -539,6 +539,7 @@ void OS_ReadMSG_analysisd(int m_queue)
     int i;
     char msg[OS_MAXSTR + 1];
     Eventinfo *lf;
+    sigset_t set, old_set;
 
     RuleInfo *stats_rule = NULL;
 
@@ -683,20 +684,38 @@ void OS_ReadMSG_analysisd(int m_queue)
     }
 
     /* Daemon loop */
-    while (1) {
-        lf = (Eventinfo *)calloc(1, sizeof(Eventinfo));
-        os_calloc(Config.decoder_order_size, sizeof(char*), lf->fields);
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
 
-        /* This shouldn't happen */
-        if (lf == NULL) {
-            ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+    while (1) {
+        /* Check for SIGHUP */
+        if (sighup_received) {
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading rules and configuration.", ARGV0);
+            /* Reload configuration or rules - Not yet implemented fully for analysisd
+             * but we acknowledge the signal.
+             */
+            merror("%s: INFO: Configuration reload not yet fully implemented for analysisd.", ARGV0);
         }
 
-        DEBUG_MSG("%s: DEBUG: Waiting for msgs - %d ", ARGV0, (int)time(0));
-
         /* Receive message from queue */
-        if ((i = OS_RecvUnix(m_queue, OS_MAXSTR, msg))) {
+        /* Wait for message - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        i = OS_RecvUnix(m_queue, OS_MAXSTR, msg);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (i) {
             RuleNode *rulenode_pt;
+
+            lf = (Eventinfo *)calloc(1, sizeof(Eventinfo));
+            if (lf == NULL) {
+                merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+                continue;
+            }
+
+            /* Allocate fields only if we have a message */
+            os_calloc(Config.decoder_order_size, sizeof(char*), lf->fields);
 
             /* Get the time we received the event */
             c_time = time(NULL);
@@ -1049,8 +1068,6 @@ CLMEM:
             if (lf->generated_rule == NULL) {
                 Free_Eventinfo(lf);
             }
-        } else {
-            free(lf);
         }
     }
 }

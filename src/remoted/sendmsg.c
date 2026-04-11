@@ -81,6 +81,20 @@ void send_msg_init()
     pthread_mutex_init(&sendmsg_mutex, NULL);
 }
 
+void send_msg_lock()
+{
+    if (pthread_mutex_lock(&sendmsg_mutex) != 0) {
+        merror(MUTEX_ERROR, ARGV0);
+    }
+}
+
+void send_msg_unlock()
+{
+    if (pthread_mutex_unlock(&sendmsg_mutex) != 0) {
+        merror(MUTEX_ERROR, ARGV0);
+    }
+}
+
 
 /*
  * Send message to an agent

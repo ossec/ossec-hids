@@ -28,6 +28,12 @@ typedef struct _DBConfig {
     void *conn;
     OSHash *location_hash;
 
+    void *(*db_connect)(const char *host, const char *user, const char *pass, const char *db, unsigned int port, const char *sock);
+    int (*db_query_insert)(struct _DBConfig *config, const char *query);
+    int (*db_query_select)(struct _DBConfig *config, const char *query);
+    void (*db_close)(void *conn);
+    void (*db_escapestr)(char *str);
+
     char **includes;
 } DBConfig;
 

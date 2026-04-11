@@ -22,6 +22,8 @@ void AR_Init(void);
  */
 int AR_ReadConfig(const char *cfgfile);
 
+void FreeARConfig(void);
+
 /* Active response information */
 extern OSList *active_responses;
 

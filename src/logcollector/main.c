@@ -106,7 +106,7 @@ int main(int argc, char **argv)
                                             0, 1);
 
     /* Read config file */
-    if (LogCollectorConfig(cfg, accept_manager_commands) < 0) {
+    if ((logff = LogCollectorConfig(cfg, accept_manager_commands)) == NULL) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }
 
@@ -160,6 +160,6 @@ int main(int argc, char **argv)
     }
 
     /* Main loop */
-    LogCollectorStart();
+    LogCollectorStart(cfg, accept_manager_commands);
 }
 

@@ -436,3 +436,255 @@ int OS_MarkGroup(RuleNode *r_node, RuleInfo *orig_rule)
     return (0);
 }
 
+
+/* Free a RuleInfo structure and all its members */
+void OS_FreeRuleInfo(RuleInfo *rule)
+{
+    unsigned int i;
+
+    if (!rule) {
+        return;
+    }
+
+    free(rule->group);
+    free(rule->day_time);
+    free(rule->week_day);
+    free(rule->action);
+    free(rule->comment);
+    free(rule->info);
+    free(rule->cve);
+    free(rule->if_sid);
+    free(rule->if_level);
+    free(rule->if_group);
+
+    if (rule->match) {
+        OSMatch_FreePattern(rule->match);
+        free(rule->match);
+    }
+
+    if (rule->match_pcre2) {
+        OSPcre2_FreePattern(rule->match_pcre2);
+        free(rule->match_pcre2);
+    }
+
+    if (rule->regex) {
+        OSRegex_FreePattern(rule->regex);
+        free(rule->regex);
+    }
+
+    if (rule->pcre2) {
+        OSPcre2_FreePattern(rule->pcre2);
+        free(rule->pcre2);
+    }
+
+    if (rule->srcip) {
+        for (i = 0; rule->srcip[i]; i++) {
+            free(rule->srcip[i]);
+        }
+        free(rule->srcip);
+    }
+
+    if (rule->dstip) {
+        for (i = 0; rule->dstip[i]; i++) {
+            free(rule->dstip[i]);
+        }
+        free(rule->dstip);
+    }
+
+    if (rule->srcgeoip) {
+        OSMatch_FreePattern(rule->srcgeoip);
+        free(rule->srcgeoip);
+    }
+
+    if (rule->dstgeoip) {
+        OSMatch_FreePattern(rule->dstgeoip);
+        free(rule->dstgeoip);
+    }
+
+    if (rule->srcport) {
+        OSMatch_FreePattern(rule->srcport);
+        free(rule->srcport);
+    }
+
+    if (rule->dstport) {
+        OSMatch_FreePattern(rule->dstport);
+        free(rule->dstport);
+    }
+
+    if (rule->user) {
+        OSMatch_FreePattern(rule->user);
+        free(rule->user);
+    }
+
+    if (rule->url) {
+        OSMatch_FreePattern(rule->url);
+        free(rule->url);
+    }
+
+    if (rule->id) {
+        OSMatch_FreePattern(rule->id);
+        free(rule->id);
+    }
+
+    if (rule->status) {
+        OSMatch_FreePattern(rule->status);
+        free(rule->status);
+    }
+
+    if (rule->hostname) {
+        OSMatch_FreePattern(rule->hostname);
+        free(rule->hostname);
+    }
+
+    if (rule->program_name) {
+        OSMatch_FreePattern(rule->program_name);
+        free(rule->program_name);
+    }
+
+    if (rule->extra_data) {
+        OSMatch_FreePattern(rule->extra_data);
+        free(rule->extra_data);
+    }
+
+    if (rule->srcgeoip_pcre2) {
+        OSPcre2_FreePattern(rule->srcgeoip_pcre2);
+        free(rule->srcgeoip_pcre2);
+    }
+
+    if (rule->dstgeoip_pcre2) {
+        OSPcre2_FreePattern(rule->dstgeoip_pcre2);
+        free(rule->dstgeoip_pcre2);
+    }
+
+    if (rule->srcport_pcre2) {
+        OSPcre2_FreePattern(rule->srcport_pcre2);
+        free(rule->srcport_pcre2);
+    }
+
+    if (rule->dstport_pcre2) {
+        OSPcre2_FreePattern(rule->dstport_pcre2);
+        free(rule->dstport_pcre2);
+    }
+
+    if (rule->user_pcre2) {
+        OSPcre2_FreePattern(rule->user_pcre2);
+        free(rule->user_pcre2);
+    }
+
+    if (rule->url_pcre2) {
+        OSPcre2_FreePattern(rule->url_pcre2);
+        free(rule->url_pcre2);
+    }
+
+    if (rule->id_pcre2) {
+        OSPcre2_FreePattern(rule->id_pcre2);
+        free(rule->id_pcre2);
+    }
+
+    if (rule->status_pcre2) {
+        OSPcre2_FreePattern(rule->status_pcre2);
+        free(rule->status_pcre2);
+    }
+
+    if (rule->hostname_pcre2) {
+        OSPcre2_FreePattern(rule->hostname_pcre2);
+        free(rule->hostname_pcre2);
+    }
+
+    if (rule->program_name_pcre2) {
+        OSPcre2_FreePattern(rule->program_name_pcre2);
+        free(rule->program_name_pcre2);
+    }
+
+    if (rule->extra_data_pcre2) {
+        OSPcre2_FreePattern(rule->extra_data_pcre2);
+        free(rule->extra_data_pcre2);
+    }
+
+    if (rule->if_matched_regex) {
+        OSRegex_FreePattern(rule->if_matched_regex);
+        free(rule->if_matched_regex);
+    }
+
+    if (rule->if_matched_group) {
+        OSMatch_FreePattern(rule->if_matched_group);
+        free(rule->if_matched_group);
+    }
+
+    if (rule->fields) {
+        for (i = 0; rule->fields[i]; i++) {
+            free(rule->fields[i]->name);
+            if (rule->fields[i]->regex) {
+                OSRegex_FreePattern(rule->fields[i]->regex);
+                free(rule->fields[i]->regex);
+            }
+            free(rule->fields[i]);
+        }
+        free(rule->fields);
+    }
+
+    if (rule->info_details) {
+        RuleInfoDetail *tmp;
+        while (rule->info_details) {
+            tmp = rule->info_details;
+            rule->info_details = rule->info_details->next;
+            free(tmp->data);
+            free(tmp);
+        }
+    }
+
+    if (rule->lists) {
+        ListRule *tmp;
+        while (rule->lists) {
+            tmp = rule->lists;
+            rule->lists = rule->lists->next;
+            free(tmp);
+        }
+    }
+
+    if (rule->ar) {
+        free(rule->ar);
+    }
+
+    if (rule->sid_prev_matched) {
+        OSList_Free(rule->sid_prev_matched);
+    }
+
+    if (rule->group_prev_matched) {
+        free(rule->group_prev_matched);
+    }
+
+    if (rule->last_events) {
+        for (i = 0; i < MAX_LAST_EVENTS; i++) {
+            free(rule->last_events[i]);
+        }
+        free(rule->last_events);
+    }
+
+    free(rule);
+}
+
+/* Free a RuleNode tree recursively */
+void OS_FreeRuleList(RuleNode *node)
+{
+    if (!node) {
+        return;
+    }
+
+    /* Free children first */
+    if (node->child) {
+        OS_FreeRuleList(node->child);
+    }
+
+    /* Free siblings next */
+    if (node->next) {
+        OS_FreeRuleList(node->next);
+    }
+
+    /* Free this ruleinfo */
+    if (node->ruleinfo) {
+        OS_FreeRuleInfo(node->ruleinfo);
+    }
+
+    free(node);
+}

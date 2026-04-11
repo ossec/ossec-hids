@@ -25,7 +25,6 @@ SyslogConfig **OS_ReadSyslogConf(__attribute__((unused)) int test_config, const 
 
     /* Read configuration */
     if (ReadConfig(modules, cfgfile, &config, NULL) < 0) {
-        ErrorExit(CONFIG_ERROR, ARGV0, cfgfile);
         return (NULL);
     }
 
@@ -34,3 +33,31 @@ SyslogConfig **OS_ReadSyslogConf(__attribute__((unused)) int test_config, const 
     return (syslog_config);
 }
 
+const char *cfgfile;
+
+/* Free configuration */
+void FreeSyslogConfig(SyslogConfig **config)
+{
+    int i = 0;
+    if (config) {
+        while (config[i]) {
+            free(config[i]->port);
+            free(config[i]->server);
+            free(config[i]->rule_id);
+            if (config[i]->group) {
+                OSMatch_FreePattern(config[i]->group);
+                free(config[i]->group);
+            }
+            if (config[i]->location) {
+                OSMatch_FreePattern(config[i]->location);
+                free(config[i]->location);
+            }
+            if (config[i]->socket > 0) {
+                close(config[i]->socket);
+            }
+            free(config[i]);
+            i++;
+        }
+        free(config);
+    }
+}

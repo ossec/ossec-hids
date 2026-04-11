@@ -135,6 +135,7 @@ int main(int argc, char **argv)
         ErrorExit(USER_ERROR, ARGV0, user, group);
     }
 
+    cfgfile = cfg;
     /* Read configuration */
     if ((c = OS_ReadDBConf(test_config, cfg, &db_config)) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
@@ -177,7 +178,7 @@ int main(int argc, char **argv)
     /* Connect to the database */
     d = 0;
     while (d <= (db_config.maxreconnect * 10)) {
-        db_config.conn = osdb_connect(db_config.host, db_config.user,
+        db_config.conn = db_config.db_connect(db_config.host, db_config.user,
                                       db_config.pass, db_config.db,
                                       db_config.port, db_config.sock);
 

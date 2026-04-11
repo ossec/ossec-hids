@@ -87,7 +87,7 @@ help()
 {
     # Help message
     echo ""
-    echo "Usage: $0 {start|stop|restart|status|enable|disable}";
+    echo "Usage: $0 {start|stop|reload|restart|status|enable|disable}";
     exit 1;
 }
 
@@ -272,7 +272,28 @@ stopa()
         echo "Stopping sub agent directory (for hybrid mode)"
         ${DIR}/ossec-agent/bin/ossec-control stop
     fi
+    unlock;
     echo "$NAME $VERSION Stopped"
+}
+
+# Reload function
+reload()
+{
+    lock;
+    checkpid;
+    for i in ${DAEMONS}; do
+        pstatus ${i};
+        if [ $? = 1 ]; then
+            echo "Sending reload signal to ${i} .. ";
+
+            kill -HUP `cat ${DIR}/var/run/${i}*.pid`;
+        else
+            echo "${i} not running ..";
+        fi
+    done
+
+    unlock;
+    echo "$NAME $VERSION reload signal sent"
 }
 
 ### MAIN HERE ###
@@ -302,6 +323,9 @@ enable)
     ;;
 disable)
     disable $1 $2;
+    ;;
+reload)
+    reload
     ;;
 *)
     help

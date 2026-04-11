@@ -136,7 +136,13 @@ static void clean_exit(SSL_CTX *ctx, int sock)
 
 /* Exit handler */
 static void cleanup();
-
+static void process_sighup_authd(void)
+{
+    if (sighup_received) {
+        sighup_received = 0;
+        merror("%s: INFO: SIGHUP received; full reload not implemented", ARGV0);
+    }
+}
 
 
 int main(int argc, char **argv)
@@ -394,13 +400,30 @@ int main(int argc, char **argv)
 
     /* initialize select() save area */
     fdsave = netinfo->fdset;
+    fdwork = fdsave;
     fdmax  = netinfo->fdmax;            /* value preset to max fd + 1 */
 
-    debug1("%s: DEBUG: Going into listening mode.", ARGV0);
+#ifndef WIN32
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+#endif
 
+    debug1("%s: DEBUG: Going into listening mode.", ARGV0);
     while (1) {
+        process_sighup_authd();
+
         /* No need to completely pin the cpu, 100ms should be fast enough */
+#ifndef WIN32
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+#endif
         usleep(100 * 1000);
+#ifndef WIN32
+        sigprocmask(SIG_BLOCK, &set, NULL);
+#endif
+
+        process_sighup_authd();
 
         /* Only check process-pool if we have active processes */
         if (active_processes > 0) {
@@ -421,7 +444,14 @@ int main(int argc, char **argv)
         _ncl = sizeof(_nc);
 
         fdwork = fdsave;
-        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        ret = select (fdmax, &fdwork, NULL, NULL, NULL);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (ret < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit("ERROR: Call to os_auth select() failed, errno %d - %s",
                       errno, strerror (errno));
         }
@@ -523,7 +553,7 @@ int main(int argc, char **argv)
                             fname[2048] = '\0';
                             if (!OS_IsValidName(agentname)) {
                                 merror("%s: ERROR: Invalid agent name: %s from %s", ARGV0, agentname, srcip);
-                                snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
+                                snprintf(response, 2048, "ERROR: Invalid agent name: %.1024s\n\n", agentname);
                                 SSL_write(ssl, response, strlen(response));
                                 snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
                                 SSL_write(ssl, response, strlen(response));
@@ -538,7 +568,7 @@ int main(int argc, char **argv)
                                 acount++;
                                 if (acount > 256) {
                                     merror("%s: ERROR: Invalid agent name %s (duplicated)", ARGV0, agentname);
-                                    snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
+                                    snprintf(response, 2048, "ERROR: Invalid agent name: %.1024s\n\n", agentname);
                                     SSL_write(ssl, response, strlen(response));
                                     snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
                                     SSL_write(ssl, response, strlen(response));
@@ -569,7 +599,7 @@ int main(int argc, char **argv)
                             }
                             if (!finalkey) {
                                 merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
-                                snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
+                                snprintf(response, 2048, "ERROR: Internal manager error adding agent: %.1024s\n\n", agentname);
                                 SSL_write(ssl, response, strlen(response));
                                 snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
                                 SSL_write(ssl, response, strlen(response));
@@ -609,5 +639,5 @@ int main(int argc, char **argv)
 
 /* Exit handler */
 static void cleanup() {
-	DeletePID(ARGV0);
+	DeletePID_AsyncSafe();
 }

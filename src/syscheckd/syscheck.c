@@ -87,7 +87,7 @@ int Start_win32_Syscheck()
     }
 
     /* Read syscheck config */
-    if ((r = Read_Syscheck_Config(cfg)) < 0) {
+    if ((r = Read_Syscheck_Config(cfg, &syscheck)) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     } else if ((r == 1) || (syscheck.disabled == 1)) {
         /* Disabled */
@@ -234,8 +234,10 @@ int main(int argc, char **argv)
         ErrorExit(NO_CONFIG, ARGV0, cfg);
     }
 
+    cfgfile = cfg;
+
     /* Read syscheck config */
-    if ((r = Read_Syscheck_Config(cfg)) < 0) {
+    if ((r = Read_Syscheck_Config(cfg, &syscheck)) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     } else if ((r == 1) || (syscheck.disabled == 1)) {
         if (!syscheck.dir) {

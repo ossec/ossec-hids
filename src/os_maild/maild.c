@@ -25,7 +25,7 @@ unsigned int   _g_subject_level;
 char _g_subject[SUBJECT_SIZE + 2];
 
 /* Prototypes */
-static void OS_Run(MailConfig *mail) __attribute__((nonnull)) __attribute__((noreturn));
+static void OS_Run(MailConfig *mail, const char *cfgfile) __attribute__((nonnull)) __attribute__((noreturn));
 static void help_maild(int status) __attribute__((noreturn));
 
 #ifdef USE_SMTP_CURL
@@ -143,8 +143,12 @@ int main(int argc, char **argv)
     }
 
     /* Read configuration */
-    if (MailConf(test_config, cfg, &mail) < 0) {
+    int rc;
+    rc = MailConf(test_config, cfg, &mail);
+    if (rc < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
+    } else if (rc == 1) {
+        exit(0);
     }
 
 #ifdef USE_SMTP_CURL
@@ -232,13 +236,13 @@ int main(int argc, char **argv)
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
     /* The real daemon now */
-    OS_Run(&mail);
+    OS_Run(&mail, cfg);
 }
 
 /* Read the queue and send the appropriate alerts
  * Not supposed to return
  */
-static void OS_Run(MailConfig *mail)
+static void OS_Run(MailConfig *mail, const char *cfgfile)
 {
     MailMsg *msg;
     MailMsg *s_msg = NULL;
@@ -277,7 +281,34 @@ static void OS_Run(MailConfig *mail)
     _g_subject_level = 0;
     memset(_g_subject, '\0', SUBJECT_SIZE + 2);
 
+    /* Daemon loop */
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+        if (sighup_received) {
+            MailConfig new_mail;
+            int rc;
+
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+
+            memset(&new_mail, 0, sizeof(MailConfig));
+            rc = MailConf(0, cfgfile, &new_mail);
+            if (rc < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            } else {
+                /* Atomic swap */
+                FreeMailConfig(mail);
+                memcpy(mail, &new_mail, sizeof(MailConfig));
+                if (rc == 1) {
+                    merror("%s: INFO: Email notifications disabled in reload.", ARGV0);
+                }
+            }
+        }
+
         tm = time(NULL);
         p = localtime(&tm);
 
@@ -381,8 +412,12 @@ snd_check_hour:
             continue;
         }
 
-        /* Receive message from queue */
-        if ((msg = OS_RecvMailQ(fileq, p, mail, &msg_sms)) != NULL) {
+        /* Receive message from queue - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        msg = OS_RecvMailQ(fileq, p, mail, &msg_sms);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (msg != NULL) {
             /* If the e-mail priority is do_not_group,
              * flush all previous entries and then send it.
              * Use s_msg to hold the pointer to the message while we flush it.
