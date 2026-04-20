@@ -22,16 +22,13 @@ The current stable releases are available on the ossec website.
 * Releases can be downloaded from: [Downloads](https://www.ossec.net/downloads/)
 * Release documentation is available at: [docs](https://www.ossec.net/docs/)
 
-## ossec-maild and libcurl SMTP TLS ##
-
-When built with `USE_CURL=yes`, failed SMTP sends log detailed libcurl errors in `ossec.log`: a TLS verification category line when certificate checks fail, `curl_easy_strerror` text, optional `CURLOPT_ERRORBUFFER` detail, `CURLINFO_SSL_VERIFYRESULT` (backend-specific), and `CURLINFO_OS_ERRNO` when set. See comments at the top of `src/os_maild/curlmail.c`.
 
 ## Development ##
 
 The development version is hosted on GitHub and just a simple git clone away. 
 
-[![Build Status](https://travis-ci.org/ossec/ossec-hids.svg?branch=master)](https://travis-ci.org/ossec/ossec-hids)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/1847/badge.svg)](https://scan.coverity.com/projects/1847)
+[![Build Status](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml)
+[![CodeQL](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml)
 
 
 ## Screenshots ##
@@ -64,5 +61,9 @@ Join us on Discord: https://discord.gg/BXzM75Xzq7
 * This product include software developed by the cJSON project 
   (Dave Gamble)
 * [Atomicorp](https://www.atomicorp.com) hosting the annual OSSEC conference. Presentations for the 2019 conference can be found at https://www.atomicorp.com/ossec-con2019/
+
+## License
+
+OSSEC is licensed under the [GNU General Public License version 2 (GPLv2)](LICENSE).
 
 
