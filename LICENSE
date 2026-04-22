@@ -1,5 +1,5 @@
+ Copyright (C) 2014 - 2026 Atomicorp Inc.
  Copyright (C) 2003 - 2013 Trend Micro Inc. All rights reserved.
-
 
 		    GNU GENERAL PUBLIC LICENSE
 		       Version 2, June 1991
@@ -448,7 +448,7 @@ OpenSSL License
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *    "This product includes cryptographic software written by
+ *    "This product includes software written by
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the routines from the library
  *    being used are not cryptographic related :-).

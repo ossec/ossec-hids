@@ -22,7 +22,7 @@ Summary:     An Open Source Host-based Intrusion Detection System
 Name:        ossec-hids
 Epoch: 1
 Version:     4.1.0
-Release:     1%{?dist}.art
+Release:     2%{?dist}.art
 License:     GPL
 Group:       Applications/System
 URL:         https://www.ossec.net/
@@ -69,6 +69,9 @@ BuildRequires: file-devel
 
 
 Provides: ossec-%{version}-%{release}
+Provides: group(ossec)
+Provides: user(ossec)
+Provides: user(ossecr)
 # Do we really need inotify-tools?
 #Requires: inotify-tools
 #
@@ -121,6 +124,8 @@ OSSEC HIDS for systems running in hierarchical server configurations.
 Summary:     The OSSEC HIDS Server
 Group:       System Environment/Daemons
 Provides:    ossec-server-%{version}-%{release}
+Provides:    user(ossecm)
+Provides:    user(ossece)
 Requires:    %{name} = %{epoch}:%{version}-%{release} 
 #Requires:	ossec-rules
 #Conflicts:   %{name}-client
@@ -750,6 +755,9 @@ fi
 
 # Changes
 %changelog
+* Wed Apr 22 2026 Support <support@atomicorp.com> - 4.1.0-2
+- Add virtual user and group provides for Fedora 43 compatibility
+
 * Sat Apr 11 2026 Support <support@atomicorp.com> - 4.1.0-1
 - Update to 4.1.0
 

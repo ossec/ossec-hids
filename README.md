@@ -1,3 +1,4 @@
+[comment]: # (Copyright (C) 2014 - 2026 Atomicorp Inc.)
 OSSEC v4.1.0 
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/ossec/ossec-hids)](https://github.com/ossec/ossec-hids/releases)
@@ -21,6 +22,7 @@ The current stable releases are available on the ossec website.
 
 * Releases can be downloaded from: [Downloads](https://www.ossec.net/downloads/)
 * Release documentation is available at: [docs](https://www.ossec.net/docs/)
+
 
 
 ## Development ##
@@ -65,5 +67,3 @@ Join us on Discord: https://discord.gg/BXzM75Xzq7
 ## License
 
 OSSEC is licensed under the [GNU General Public License version 2 (GPLv2)](LICENSE).
-
-

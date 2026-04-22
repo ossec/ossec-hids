@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (C) 2014 - 2026 Atomicorp Inc.
 # Installation script for the OSSEC
 # Author: Daniel B. Cid <daniel.cid@gmail.com>
 # Last modification: Aug 30, 2012
@@ -540,6 +541,46 @@ ConfigureServer()
             else
                 SMTP=${USER_EMAIL_SMTP}
             fi
+
+            # SMTP Auth
+            if [ "X${USER_SMTP_AUTH}" = "X" ]; then
+                echo ""
+                $ECHO "   - ${smtpauth} ($yes/$no) [$no]: "
+                read AUTH_SMTP
+            else
+                AUTH_SMTP=${USER_SMTP_AUTH}
+            fi
+
+            if [ "X${AUTH_SMTP}" = "X${yes}" ]; then
+                if [ "X${USER_SMTP_USER}" = "X" ]; then
+                    $ECHO "   - ${smtpuser}: "
+                    read SMTP_USER
+                else
+                    SMTP_USER=${USER_SMTP_USER}
+                fi
+                if [ "X${USER_SMTP_PASS}" = "X" ]; then
+                    $ECHO "   - ${smtppass}: "
+                    read SMTP_PASS
+                else
+                    SMTP_PASS=${USER_SMTP_PASS}
+                fi
+            fi
+
+            # SMTP Secure
+            if [ "X${USER_SMTP_SECURE}" = "X" ]; then
+                $ECHO "   - ${smtpsecure} ($yes/$no) [$no]: "
+                read SMTP_SECURE
+            else
+                SMTP_SECURE=${USER_SMTP_SECURE}
+            fi
+
+            # SMTP Port
+            if [ "X${USER_SMTP_PORT}" = "X" ]; then
+                $ECHO "   - ${smtpport} [25]: "
+                read SMTP_PORT
+            else
+                SMTP_PORT=${USER_SMTP_PORT}
+            fi
         ;;
     esac
 
@@ -551,6 +592,17 @@ ConfigureServer()
         echo "    <email_notification>yes</email_notification>" >> $NEWCONFIG
         echo "    <email_to>$EMAIL</email_to>" >> $NEWCONFIG
         echo "    <smtp_server>$SMTP</smtp_server>" >> $NEWCONFIG
+        if [ "X${AUTH_SMTP}" = "X${yes}" ]; then
+            echo "    <auth_smtp>yes</auth_smtp>" >> $NEWCONFIG
+            echo "    <smtp_user>$SMTP_USER</smtp_user>" >> $NEWCONFIG
+            echo "    <smtp_password>$SMTP_PASS</smtp_password>" >> $NEWCONFIG
+        fi
+        if [ "X${SMTP_SECURE}" = "X${yes}" ]; then
+            echo "    <secure_smtp>yes</secure_smtp>" >> $NEWCONFIG
+        fi
+        if [ "X${SMTP_PORT}" != "X" ]; then
+            echo "    <smtp_port>$SMTP_PORT</smtp_port>" >> $NEWCONFIG
+        fi
         echo "    <email_from>ossecm@${HOST}</email_from>" >> $NEWCONFIG
     else
         echo "    <email_notification>no</email_notification>" >> $NEWCONFIG
