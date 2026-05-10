@@ -12,18 +12,18 @@
 #include "rules_op.h"
 
 /* Prototypes */
-static int __Groups_SelectGroup(const char *group, const DBConfig *db_config) __attribute((nonnull));
-static int __Groups_InsertGroup(const char *group, const DBConfig *db_config) __attribute((nonnull));
-static int __Groups_SelectGroupMapping(int cat_id, int rule_id, const DBConfig *db_config) __attribute((nonnull));
-static int __Groups_InsertGroupMapping(int cat_id, int rule_id, const DBConfig *db_config) __attribute((nonnull));
-static void _Groups_ReadInsertDB(RuleInfo *rule, const DBConfig *db_config) __attribute((nonnull));
+static int __Groups_SelectGroup(const char *group, DBConfig *db_config) __attribute((nonnull));
+static int __Groups_InsertGroup(const char *group, DBConfig *db_config) __attribute((nonnull));
+static int __Groups_SelectGroupMapping(int cat_id, int rule_id, DBConfig *db_config) __attribute((nonnull));
+static int __Groups_InsertGroupMapping(int cat_id, int rule_id, DBConfig *db_config) __attribute((nonnull));
+static void _Groups_ReadInsertDB(RuleInfo *rule, DBConfig *db_config) __attribute((nonnull));
 static void *_Rules_ReadInsertDB(RuleInfo *rule, void *db_config) __attribute((nonnull));
 
 
 /* Select group (categories) from the db
  * Returns 0 if not found
  */
-static int __Groups_SelectGroup(const char *group, const DBConfig *db_config)
+static int __Groups_SelectGroup(const char *group, DBConfig *db_config)
 {
     int result = 0;
     char sql_query[OS_SIZE_1024];
@@ -36,13 +36,13 @@ static int __Groups_SelectGroup(const char *group, const DBConfig *db_config)
              "category WHERE cat_name = '%s'",
              group);
 
-    result = osdb_query_select(db_config->conn, sql_query);
+    result = db_config->db_query_select(db_config, sql_query);
 
     return (result);
 }
 
 /* Insert group (categories) in to the db */
-static int __Groups_InsertGroup(const char *group, const DBConfig *db_config)
+static int __Groups_InsertGroup(const char *group, DBConfig *db_config)
 {
     char sql_query[OS_SIZE_1024];
 
@@ -55,14 +55,14 @@ static int __Groups_InsertGroup(const char *group, const DBConfig *db_config)
              "VALUES ('%s')",
              group);
 
-    if (!osdb_query_insert(db_config->conn, sql_query)) {
+    if (!db_config->db_query_insert(db_config, sql_query)) {
         merror(DB_GENERROR, ARGV0);
     }
 
     return (0);
 }
 
-static int __Groups_SelectGroupMapping(int cat_id, int rule_id, const DBConfig *db_config)
+static int __Groups_SelectGroupMapping(int cat_id, int rule_id, DBConfig *db_config)
 {
     int result = 0;
     char sql_query[OS_SIZE_1024];
@@ -75,12 +75,12 @@ static int __Groups_SelectGroupMapping(int cat_id, int rule_id, const DBConfig *
              "WHERE cat_id = '%u' AND rule_id = '%u'",
              cat_id, rule_id);
 
-    result = osdb_query_select(db_config->conn, sql_query);
+    result = db_config->db_query_select(db_config, sql_query);
 
     return (result);
 }
 
-static int __Groups_InsertGroupMapping(int cat_id, int rule_id, const DBConfig *db_config)
+static int __Groups_InsertGroupMapping(int cat_id, int rule_id, DBConfig *db_config)
 {
     char sql_query[OS_SIZE_1024];
 
@@ -93,14 +93,14 @@ static int __Groups_InsertGroupMapping(int cat_id, int rule_id, const DBConfig *
              "VALUES ('%u', '%u')",
              cat_id, rule_id);
 
-    if (!osdb_query_insert(db_config->conn, sql_query)) {
+    if (!db_config->db_query_insert(db_config, sql_query)) {
         merror(DB_GENERROR, ARGV0);
     }
 
     return (0);
 }
 
-static void _Groups_ReadInsertDB(RuleInfo *rule, const DBConfig *db_config)
+static void _Groups_ReadInsertDB(RuleInfo *rule, DBConfig *db_config)
 {
     /* We must insert each group separately */
     int cat_id;

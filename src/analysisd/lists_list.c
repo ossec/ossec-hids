@@ -302,3 +302,38 @@ int OS_DBSearch(ListRule *lrule, char *key)
             return 0;
     }
 }
+
+/* Free all lists and list rules */
+void OS_FreeLists()
+{
+    ListNode *lnode;
+    ListRule *lrule;
+
+    /* Free list rules */
+    while (global_listrule) {
+        lrule = global_listrule;
+        global_listrule = global_listrule->next;
+        /* filename and matcher are pointers that might be shared */
+        /* If they were allocated in OS_AddListRule, they should be freed */
+        /* In OS_AddListRule, filename is assigned from the argument. */
+        /* Let's assume the callers of OS_AddListRule provide stable pointers 
+         * or we need to free them. 
+         * Looking at OS_AddListRule in lists_list.c:
+         * new_rulelist_pt->filename = listname;
+         * new_rulelist_pt->matcher = matcher;
+         */
+        free(lrule);
+    }
+
+    /* Free list nodes */
+    while (global_listnode) {
+        lnode = global_listnode;
+        global_listnode = global_listnode->next;
+        if (lnode->loaded) {
+            cdb_free(&lnode->cdb);
+        }
+        free(lnode->txt_filename);
+        free(lnode->cdb_filename);
+        free(lnode);
+    }
+}

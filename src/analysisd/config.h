@@ -29,5 +29,7 @@ GeoIP *geoipdb;
 
 int GlobalConf(const char *cfgfile);
 
+void FreeConfig(_Config *config);
+
 #endif /* _CONFIG__H */
 

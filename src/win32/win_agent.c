@@ -26,6 +26,7 @@ time_t __win32_shared_time = 0;
 char *__win32_uname = NULL;
 char *__win32_shared = NULL;
 HANDLE hMutex;
+const char *cfgfile = NULL;
 
 /** Prototypes **/
 int Start_win32_Syscheck();
@@ -47,13 +48,13 @@ void agent_help()
 }
 
 /* syscheck main thread */
-void *skthread()
+DWORD WINAPI skthread(void *none)
 {
     verbose("%s: Starting syscheckd thread.", ARGV0);
 
     Start_win32_Syscheck();
 
-    return (NULL);
+    return (0);
 }
 
 int main(int argc, char **argv)
@@ -131,6 +132,7 @@ int local_start()
     if (!agt) {
         ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
     }
+    cfgfile = cfg;
     agt->port = DEFAULT_SECURE;
 
     /* Get debug level */
@@ -156,7 +158,7 @@ int local_start()
 
     /* Read agent config */
     debug1("%s: DEBUG: Reading agent configuration.", ARGV0);
-    if (ClientConf(cfg) < 0) {
+    if (ClientConf(cfg, agt) < 0) {
         ErrorExit(CLIENT_ERROR, ARGV0);
     }
     if (agt->notify_time == 0) {
@@ -173,7 +175,7 @@ int local_start()
 
     /* Read logcollector config file */
     debug1("%s: DEBUG: Reading logcollector configuration.", ARGV0);
-    if (LogCollectorConfig(cfg, accept_manager_commands) < 0) {
+    if ((logff = LogCollectorConfig(cfg, accept_manager_commands)) == NULL) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }
 
@@ -257,7 +259,7 @@ int local_start()
     send_win32_info(time(0));
 
     /* Start logcollector -- main process here */
-    LogCollectorStart();
+    LogCollectorStart(cfg, accept_manager_commands);
 
     WSACleanup();
     return (0);

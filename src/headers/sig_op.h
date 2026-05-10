@@ -12,8 +12,12 @@
 #ifndef __SIG_H
 #define __SIG_H
 
+#include <signal.h>
+extern volatile sig_atomic_t sighup_received;
+
 void HandleSIG(int sig) __attribute__((noreturn));
 void HandleSIGPIPE(int sig);
+void HandleSIGHUP(int sig);
 
 /* Start signal manipulation */
 void StartSIG(const char *process_name) __attribute__((nonnull));

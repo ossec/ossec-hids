@@ -42,14 +42,72 @@ void OS_DBD(DBConfig *db_config)
     /* Get maximum ID */
     db_config->alert_id = OS_SelectMaxID(db_config);
     db_config->alert_id++;
-
     /* Infinite loop reading the alerts and inserting them */
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+
+        if (sighup_received) {
+            DBConfig new_db_config;
+            memset(&new_db_config, 0, sizeof(DBConfig));
+
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+
+            if (OS_ReadDBConf(0, cfgfile, &new_db_config) <= 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            } else {
+                /* Reconnect to database */
+                unsigned int d = 0;
+                while (d <= (new_db_config.maxreconnect * 10)) {
+                    new_db_config.conn = new_db_config.db_connect(new_db_config.host, new_db_config.user,
+                                                  new_db_config.pass, new_db_config.db,
+                                                  new_db_config.port, new_db_config.sock);
+                    if (new_db_config.conn) {
+                        break;
+                    }
+                    d++;
+                    sleep(d * 10); // Faster reconnect than in main for reload
+                }
+
+                if (!new_db_config.conn) {
+                    merror(DB_CONFIGERR, ARGV0);
+                    FreeDBConfig(&new_db_config);
+                    merror("%s: ERROR: Error connecting to database (using old config)", ARGV0);
+                } else {
+                    /* Create location hash for the new config */
+                    new_db_config.location_hash = OSHash_Create();
+                    if (!new_db_config.location_hash) {
+                        merror("%s: ERROR: Unable to create location hash for new config", ARGV0);
+                        FreeDBConfig(&new_db_config);
+                    } else {
+                        /* Get maximum ID for the new config */
+                        new_db_config.alert_id = OS_SelectMaxID(&new_db_config);
+                        new_db_config.alert_id++;
+
+                        /* Atomic swap */
+                        FreeDBConfig(db_config);
+                        memcpy(db_config, &new_db_config, sizeof(DBConfig));
+                        osdb_setconfig(db_config);
+
+                        verbose("%s: Connected to database '%s' at '%s' (reloaded).",
+                                ARGV0, db_config->db, db_config->host);
+                    }
+                }
+            }
+        }
+
         tm = time(NULL);
         p = localtime(&tm);
 
-        /* Get message if available (timeout of 5 seconds) */
+        /* Get message if available (timeout of 5 seconds) - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
         al_data = Read_FileMon(fileq, p, 5);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
         if (!al_data) {
             continue;
         }

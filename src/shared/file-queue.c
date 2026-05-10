@@ -30,7 +30,11 @@ static void file_sleep()
     fp_timeout.tv_usec = 0;
 
     /* Wait for the select timeout */
-    select(0, NULL, NULL, NULL, &fp_timeout);
+    if (select(0, NULL, NULL, NULL, &fp_timeout) < 0) {
+        if (errno == EINTR) {
+            return;
+        }
+    }
 
 #else
     /* Windows does not like select that way */

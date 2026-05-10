@@ -12,10 +12,6 @@
 #include "dbd.h"
 
 /* Prototypes */
-void *(*osdb_connect)(const char *host, const char *user, const char *pass, const char *db, unsigned int port, const char *sock);
-int (* osdb_query_insert)(void *db_conn, const char *query);
-int (* osdb_query_select)(void *db_conn, const char *query);
-void *(*osdb_close)(void *db_conn);
 const unsigned char insert_map[256] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 1, 0, 0, 0, 0, 0,
@@ -59,13 +55,8 @@ const unsigned char insert_map[256] = {
 #include <libpq-fe.h>
 #endif
 
-#if defined(MYSQL_DATABASE_ENABLED) || defined(PGSQL_DATABASE_ENABLED)
-static void osdb_checkerror(void);
-static void osdb_seterror(void);
-#endif
-
-/* Config pointer */
-static DBConfig *db_config_pt = NULL;
+void osdb_checkerror(DBConfig *db_config_pt);
+void osdb_seterror(DBConfig *db_config_pt);
 
 
 /* Escapes a null terminated string before inserting into the database
@@ -95,10 +86,9 @@ void osdb_escapestr(char *str)
     }
 }
 
-#if defined(MYSQL_DATABASE_ENABLED) || defined(PGSQL_DATABASE_ENABLED)
 
 /* Check for errors and handle them appropriately */
-static void osdb_checkerror()
+void osdb_checkerror(DBConfig *db_config_pt)
 {
     if (!db_config_pt || db_config_pt->error_count > 20) {
         ErrorExit(DB_MAINERROR, ARGV0);
@@ -109,18 +99,18 @@ static void osdb_checkerror()
         unsigned int i = 0, sleep_time = 2;
 
         if (db_config_pt->conn) {
-            osdb_close(db_config_pt->conn);
+            db_config_pt->db_close(db_config_pt->conn);
             db_config_pt->conn = NULL;
         }
 
         while (i <= db_config_pt->maxreconnect) {
             merror(DB_ATTEMPT, ARGV0);
-            db_config_pt->conn = osdb_connect(db_config_pt->host,
-                                              db_config_pt->user,
-                                              db_config_pt->pass,
-                                              db_config_pt->db,
-                                              db_config_pt->port,
-                                              db_config_pt->sock);
+            db_config_pt->conn = db_config_pt->db_connect(db_config_pt->host,
+                                                          db_config_pt->user,
+                                                          db_config_pt->pass,
+                                                          db_config_pt->db,
+                                                          db_config_pt->port,
+                                                          db_config_pt->sock);
 
             /* If we were able to reconnect, keep going */
             if (db_config_pt->conn) {
@@ -143,19 +133,18 @@ static void osdb_checkerror()
 }
 
 /* Set the error counter */
-static void osdb_seterror()
+void osdb_seterror(DBConfig *db_config_pt)
 {
     db_config_pt->error_count++;
-    osdb_checkerror();
+    osdb_checkerror(db_config_pt);
 }
-
-#endif
 
 
 /* Create an internal pointer to the db configuration */
-void osdb_setconfig(DBConfig *db_config)
+void osdb_setconfig(__attribute__((unused)) DBConfig *db_config)
 {
-    db_config_pt = db_config;
+    // db_config_pt = db_config; // Deprecated
+    return;
 }
 
 /** MySQL calls **/
@@ -204,12 +193,12 @@ void *mysql_osdb_close(void *db_conn)
 }
 
 /* Sends insert query to database */
-int mysql_osdb_query_insert(void *db_conn, const char *query)
+int mysql_osdb_query_insert(DBConfig *db_config, const char *query)
 {
-    if (mysql_query(db_conn, query) != 0) {
+    if (mysql_query(db_config->conn, query) != 0) {
         /* failure; report error */
-        merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
-        osdb_seterror();
+        merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_config->conn));
+        osdb_seterror(db_config);
         return (0);
     }
 
@@ -219,26 +208,26 @@ int mysql_osdb_query_insert(void *db_conn, const char *query)
 /* Sends a select query to database. Returns the value of it.
  * Returns 0 on error (not found).
  */
-int mysql_osdb_query_select(void *db_conn, const char *query)
+int mysql_osdb_query_select(DBConfig *db_config, const char *query)
 {
     int result_int = 0;
     MYSQL_RES *result_data;
     MYSQL_ROW result_row;
 
     /* Send the query. It can not fail. */
-    if (mysql_query(db_conn, query) != 0) {
+    if (mysql_query(db_config->conn, query) != 0) {
         /* Failure: report error */
-        merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
-        osdb_seterror();
+        merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_config->conn));
+        osdb_seterror(db_config);
         return (0);
     }
 
     /* Get result */
-    result_data = mysql_use_result(db_conn);
+    result_data = mysql_use_result(db_config->conn);
     if (result_data == NULL) {
         /* Failure: report error */
-        merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
-        osdb_seterror();
+        merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_config->conn));
+        osdb_seterror(db_config);
         return (0);
     }
 
@@ -293,21 +282,21 @@ void *postgresql_osdb_close(void *db_conn)
 }
 
 /* Send insert query to database */
-int postgresql_osdb_query_insert(void *db_conn, const char *query)
+int postgresql_osdb_query_insert(DBConfig *db_config, const char *query)
 {
     PGresult *result;
 
-    result = PQexec(db_conn, query);
+    result = PQexec(db_config->conn, query);
     if (!result) {
-        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
-        osdb_seterror();
+        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_config->conn));
+        osdb_seterror(db_config);
         return (0);
     }
 
     if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
+        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_config->conn));
         PQclear(result);
-        osdb_seterror();
+        osdb_seterror(db_config);
         return (0);
     }
 
@@ -319,15 +308,15 @@ int postgresql_osdb_query_insert(void *db_conn, const char *query)
 /* Send a select query to database. Returns the value of it.
  * Returns 0 on error (not found).
  */
-int postgresql_osdb_query_select(void *db_conn, const char *query)
+int postgresql_osdb_query_select(DBConfig *db_config, const char *query)
 {
     int result_int = 0;
     PGresult *result;
 
-    result = PQexec(db_conn, query);
+    result = PQexec(db_config->conn, query);
     if (!result) {
-        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
-        osdb_seterror();
+        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_config->conn));
+        osdb_seterror(db_config);
         return (0);
     }
 
@@ -336,8 +325,8 @@ int postgresql_osdb_query_select(void *db_conn, const char *query)
             result_int = atoi(PQgetvalue(result, 0, 0));
         }
     } else {
-        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
-        osdb_seterror();
+        merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_config->conn));
+        osdb_seterror(db_config);
         return (0);
     }
 
@@ -364,12 +353,12 @@ void *none_osdb_close(__attribute__((unused)) void *db_conn)
     merror("%s: ERROR: Database support not enabled. Exiting.", ARGV0);
     return (NULL);
 }
-int none_osdb_query_insert(__attribute__((unused)) void *db_conn, __attribute__((unused)) const char *query)
+int none_osdb_query_insert(__attribute__((unused)) DBConfig *db_config, __attribute__((unused)) const char *query)
 {
     merror("%s: ERROR: Database support not enabled. Exiting.", ARGV0);
     return (0);
 }
-int none_osdb_query_select(__attribute__((unused)) void *db_conn, __attribute__((unused)) const char *query)
+int none_osdb_query_select(__attribute__((unused)) DBConfig *db_config, __attribute__((unused)) const char *query)
 {
     merror("%s: ERROR: Database support not enabled. Exiting.", ARGV0);
     return (0);

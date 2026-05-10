@@ -33,6 +33,85 @@ static void MailConf_clear_smtp_config(MailConfig *Mail)
 #endif
 }
 
+/* Free the Mail configuration */
+void FreeMailConfig(MailConfig *Mail)
+{
+
+    if (Mail->to) {
+        char **tmp = Mail->to;
+        while (*tmp) {
+            free(*tmp);
+            tmp++;
+        }
+        free(Mail->to);
+        Mail->to = NULL;
+    }
+
+    free(Mail->reply_to);
+    free(Mail->from);
+    free(Mail->idsname);
+    free(Mail->smtpserver);
+    free(Mail->heloserver);
+
+    Mail->reply_to = NULL;
+    Mail->from = NULL;
+    Mail->idsname = NULL;
+    Mail->smtpserver = NULL;
+    Mail->heloserver = NULL;
+
+    MailConf_clear_smtp_config(Mail);
+
+    if (Mail->gran_to) {
+        char **tmp = Mail->gran_to;
+        while (*tmp) {
+            free(*tmp);
+            tmp++;
+        }
+        free(Mail->gran_to);
+        Mail->gran_to = NULL;
+    }
+
+    if (Mail->gran_id) {
+        unsigned int **tmp = Mail->gran_id;
+        while (*tmp) {
+            free(*tmp);
+            tmp++;
+        }
+        free(Mail->gran_id);
+        Mail->gran_id = NULL;
+    }
+
+    if (Mail->gran_location) {
+        OSMatch **tmp = Mail->gran_location;
+        while (*tmp) {
+            OSMatch_FreePattern(*tmp);
+            free(*tmp);
+            tmp++;
+        }
+        free(Mail->gran_location);
+        Mail->gran_location = NULL;
+    }
+
+    if (Mail->gran_group) {
+        OSMatch **tmp = Mail->gran_group;
+        while (*tmp) {
+            OSMatch_FreePattern(*tmp);
+            free(*tmp);
+            tmp++;
+        }
+        free(Mail->gran_group);
+        Mail->gran_group = NULL;
+    }
+
+    free(Mail->gran_level);
+    free(Mail->gran_set);
+    free(Mail->gran_format);
+
+    Mail->gran_level = NULL;
+    Mail->gran_set = NULL;
+    Mail->gran_format = NULL;
+}
+
 
 /* Read the Mail configuration */
 int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
@@ -92,6 +171,7 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     if (!Mail->mn) {
         if (!test_config) {
             verbose(MAIL_DIS, ARGV0);
+            return (1);
         }
         MailConf_clear_smtp_config(Mail);
         exit(0);

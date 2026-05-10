@@ -60,14 +60,60 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 
         s++;
     }
-
     /* Infinite loop reading the alerts and inserting them */
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+        if (sighup_received) {
+            SyslogConfig **new_config;
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+
+            new_config = OS_ReadSyslogConf(0, cfgfile);
+            if (!new_config || !new_config[0]) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+                if (new_config) {
+                    FreeSyslogConfig(new_config);
+                }
+            } else {
+                int connected = 0;
+                /* Connect to new syslog servers */
+                s = 0;
+                while (new_config[s]) {
+                    new_config[s]->socket = OS_ConnectUDP(new_config[s]->port,
+                                                             new_config[s]->server);
+                    if (new_config[s]->socket < 0) {
+                        merror(CONNS_ERROR, ARGV0, new_config[s]->server);
+                    } else {
+                        merror("%s: INFO: Forwarding alerts via syslog to: '%s:%s'.",
+                               ARGV0, new_config[s]->server, new_config[s]->port);
+                        connected++;
+                    }
+                    s++;
+                }
+
+                if (connected == 0) {
+                    merror("%s: ERROR: No syslog servers could be connected. Using old configuration.", ARGV0);
+                    FreeSyslogConfig(new_config);
+                } else {
+                    /* Atomic swap */
+                    FreeSyslogConfig(syslog_config);
+                    syslog_config = new_config;
+                }
+            }
+        }
+
         tm = time(NULL);
         p = localtime(&tm);
 
-        /* Get message if available (timeout of 5 seconds) */
+        /* Get message if available (timeout of 5 seconds) - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
         al_data = Read_FileMon(fileq, p, 5);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
         if (!al_data) {
             continue;
         }

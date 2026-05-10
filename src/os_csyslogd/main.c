@@ -108,6 +108,7 @@ int main(int argc, char **argv)
         ErrorExit(USER_ERROR, ARGV0, user, group);
     }
 
+    cfgfile = cfg;
     /* Read configuration */
     syslog_config = OS_ReadSyslogConf(test_config, cfg);
 
@@ -130,6 +131,9 @@ int main(int argc, char **argv)
 
     /* Exit here if test config is set */
     if (test_config) {
+        if (!syslog_config || !syslog_config[0]) {
+            exit(1);
+        }
         exit(0);
     }
 

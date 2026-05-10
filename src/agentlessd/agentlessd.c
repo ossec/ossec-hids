@@ -10,6 +10,7 @@
 #include "shared.h"
 #include "os_crypto/md5/md5_op.h"
 #include "agentlessd.h"
+#include "config/config.h"
 
 /* Prototypes */
 static int  save_agentless_entry(const char *host, const char *script, const char *agttype);
@@ -435,8 +436,33 @@ void Agentlessd()
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
-    /* Main monitor loop */
+    /* Daemon loop */
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+        if (sighup_received) {
+            agentlessd_config new_lessdc;
+            memset(&new_lessdc, 0, sizeof(agentlessd_config));
+
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+
+            new_lessdc.entries = NULL;
+            new_lessdc.queue = lessdc.queue; /* Keep existing queue */
+
+            if (ReadConfig(CAGENTLESS, cfgfile, &new_lessdc, NULL) < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+                FreeAgentlessConfig(&new_lessdc);
+            } else {
+                /* Atomic swap */
+                FreeAgentlessConfig(&lessdc);
+                memcpy(&lessdc, &new_lessdc, sizeof(agentlessd_config));
+            }
+        }
+
         unsigned int i = 0;
         tm = time(NULL);
         p = localtime(&tm);
@@ -474,9 +500,11 @@ void Agentlessd()
             sleep(i);
         }
 
-        /* We only check every minute */
+        /* We only check every minute - unblock SIGHUP during wait */
         test_it = 0;
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
         sleep(60);
+        sigprocmask(SIG_BLOCK, &set, NULL);
     }
 }
 

@@ -12,8 +12,8 @@
 #include "rules_op.h"
 
 /* Prototypes */
-static int __DBSelectServer(const char *server, const DBConfig *db_config) __attribute__((nonnull));
-static int __DBInsertServer(const char *server, const char *info, const DBConfig *db_config) __attribute__((nonnull));
+static int __DBSelectServer(const char *server, DBConfig *db_config) __attribute__((nonnull));
+static int __DBInsertServer(const char *server, const char *info, DBConfig *db_config) __attribute__((nonnull));
 
 /* System hostname */
 static char __shost[512];
@@ -22,7 +22,7 @@ static char __shost[512];
 /* Select the server ID from the db
  * Returns 0 if not found
  */
-static int __DBSelectServer(const char *server, const DBConfig *db_config)
+static int __DBSelectServer(const char *server, DBConfig *db_config)
 {
     int result = 0;
     char sql_query[OS_SIZE_1024];
@@ -35,13 +35,15 @@ static int __DBSelectServer(const char *server, const DBConfig *db_config)
              "server WHERE hostname = '%s'",
              server);
 
-    result = osdb_query_select(db_config->conn, sql_query);
+    result = db_config->db_query_select(db_config, sql_query);
+    if (result == 0) {
+    }
 
     return (result);
 }
 
 /* Inserts server in to the db */
-static int __DBInsertServer(const char *server, const char *info, const DBConfig *db_config)
+static int __DBInsertServer(const char *server, const char *info, DBConfig *db_config)
 {
     char sql_query[OS_SIZE_1024];
 
@@ -53,14 +55,14 @@ static int __DBInsertServer(const char *server, const char *info, const DBConfig
              server);
 
     /* If not present, insert */
-    if (osdb_query_select(db_config->conn, sql_query) == 0) {
+    if (db_config->db_query_select(db_config, sql_query) == 0) {
         snprintf(sql_query, OS_SIZE_1024 - 1,
                  "INSERT INTO "
                  "server(last_contact, version, hostname, information) "
                  "VALUES ('%u', '%s', '%s', '%s')",
                  (unsigned int)time(0), __ossec_version, server, info);
 
-        if (!osdb_query_insert(db_config->conn, sql_query)) {
+        if (!db_config->db_query_insert(db_config, sql_query)) {
             merror(DB_GENERROR, ARGV0);
         }
     }
@@ -73,7 +75,7 @@ static int __DBInsertServer(const char *server, const char *info, const DBConfig
                  "WHERE hostname = '%s'",
                  (unsigned int)time(0), __ossec_version, info, server);
 
-        if (!osdb_query_insert(db_config->conn, sql_query)) {
+        if (!db_config->db_query_insert(db_config, sql_query)) {
             merror(DB_GENERROR, ARGV0);
         }
     }
@@ -84,7 +86,7 @@ static int __DBInsertServer(const char *server, const char *info, const DBConfig
 /* Insert server info to the db
  * Returns server ID or 0 on error
  */
-int OS_Server_ReadInsertDB(const DBConfig *db_config)
+int OS_Server_ReadInsertDB(DBConfig *db_config)
 {
     int server_id = 0;
     char *info;

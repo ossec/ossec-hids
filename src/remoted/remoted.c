@@ -18,6 +18,7 @@
 /* Global variables */
 keystore keys;
 remoted logr;
+const char *cfgfile;
 
 
 /* Handle remote connections */

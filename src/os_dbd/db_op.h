@@ -12,32 +12,35 @@
 #ifndef _OS_DBOP_H
 #define _OS_DBOP_H
 
+struct _DBConfig;
+
 /* Connect to the database */
-extern void *(*osdb_connect)(const char *host, const char *user, const char *pass, const char *db, unsigned int port, const char *sock);
 void *mysql_osdb_connect(const char *host, const char *user, const char *pass, const char *db, unsigned int port, const char *sock);
 void *postgresql_osdb_connect(const char *host, const char *user, const char *pass, const char *db, unsigned int port, const char *sock);
 void *none_osdb_connect(const char *host, const char *user, const char *pass, const char *db, unsigned int port, const char *sock);
 
 /* Send insert query to the database */
-extern int (* osdb_query_insert)(void *db_conn, const char *query);
-int mysql_osdb_query_insert(void *db_conn, const char *query);
-int postgresql_osdb_query_insert(void *db_conn, const char *query);
-int none_osdb_query_insert(void *db_conn, const char *query);
+int mysql_osdb_query_insert(struct _DBConfig *config, const char *query);
+int postgresql_osdb_query_insert(struct _DBConfig *config, const char *query);
+int none_osdb_query_insert(struct _DBConfig *config, const char *query);
 
 /* Send select query to the database */
-extern int (* osdb_query_select)(void *db_conn, const char *query);
-int mysql_osdb_query_select(void *db_conn, const char *query);
-int postgresql_osdb_query_select(void *db_conn, const char *query);
-int none_osdb_query_select(void *db_conn, const char *query);
+int mysql_osdb_query_select(struct _DBConfig *config, const char *query);
+int postgresql_osdb_query_select(struct _DBConfig *config, const char *query);
+int none_osdb_query_select(struct _DBConfig *config, const char *query);
 
 /* Close connection to the database */
-extern void *(*osdb_close)(void *db_conn);
 void *mysql_osdb_close(void *db_conn);
 void *postgresql_osdb_close(void *db_conn);
 void *none_osdb_close(void *db_conn);
 
 /* Escape strings before inserting */
 void osdb_escapestr(char *str);
+
+/* Check for errors and handle them appropriately */
+void osdb_checkerror(struct _DBConfig *config);
+void osdb_seterror(struct _DBConfig *config);
+void osdb_setconfig(struct _DBConfig *config);
 
 /* Allowed characters */
 /* Insert charmap.

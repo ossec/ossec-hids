@@ -121,7 +121,34 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     maxfd++;
 
     /* Monitor loop */
+#ifndef WIN32
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+#endif
+
     while (1) {
+        if (sighup_received) {
+            agent new_agt;
+
+            memset(&new_agt, 0, sizeof(agent));
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+
+            /* Copy current runtime state to temporary struct */
+            new_agt.sock = agt->sock;
+            new_agt.m_queue = agt->m_queue;
+
+            if (ClientConf(cfgfile, &new_agt) < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            } else {
+                /* Atomic swap */
+                FreeAgentConfig(agt);
+                memcpy(agt, &new_agt, sizeof(agent));
+            }
+        }
+
         /* Monitor all available sockets from here */
         FD_ZERO(&fdset);
         FD_SET(agt->sock, &fdset);
@@ -133,9 +160,19 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
         /* Continuously send notifications */
         run_notify();
 
-        /* Wait with a timeout for any descriptor */
+        /* Wait for the next socket message - unblock SIGHUP during wait */
+#ifndef WIN32
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+#endif
         rc = select(maxfd, &fdset, NULL, NULL, &fdtimeout);
+#ifndef WIN32
+        sigprocmask(SIG_BLOCK, &set, NULL);
+#endif
+
         if (rc == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit(SELECT_ERROR, ARGV0, errno, strerror(errno));
         } else if (rc == 0) {
             continue;

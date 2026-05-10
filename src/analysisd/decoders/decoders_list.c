@@ -13,6 +13,7 @@
 
 #include "headers/debug_op.h"
 #include "decoder.h"
+#include "config.h"
 #include "error_messages/error_messages.h"
 
 /* We have two internal lists. One with the program_name
@@ -205,3 +206,84 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
     return (1);
 }
 
+
+/* Free a OSDecoderInfo structure and all its members */
+void OS_FreeDecoderInfo(OSDecoderInfo *pi)
+{
+    int i;
+    if (!pi) {
+        return;
+    }
+
+    free(pi->parent);
+    free(pi->name);
+    free(pi->ftscomment);
+
+    if (pi->fields) {
+        for (i = 0; i < Config.decoder_order_size; i++) {
+            free(pi->fields[i]);
+        }
+        free(pi->fields);
+    }
+
+    if (pi->order) {
+        free(pi->order);
+    }
+
+    if (pi->regex) {
+        OSRegex_FreePattern(pi->regex);
+        free(pi->regex);
+    }
+
+    if (pi->prematch) {
+        OSRegex_FreePattern(pi->prematch);
+        free(pi->prematch);
+    }
+
+    if (pi->program_name) {
+        OSMatch_FreePattern(pi->program_name);
+        free(pi->program_name);
+    }
+
+    if (pi->pcre2) {
+        OSPcre2_FreePattern(pi->pcre2);
+        free(pi->pcre2);
+    }
+
+    if (pi->prematch_pcre2) {
+        OSPcre2_FreePattern(pi->prematch_pcre2);
+        free(pi->prematch_pcre2);
+    }
+
+    if (pi->program_name_pcre2) {
+        OSPcre2_FreePattern(pi->program_name_pcre2);
+        free(pi->program_name_pcre2);
+    }
+
+    free(pi);
+}
+
+/* Free a OSDecoderNode tree recursively */
+void OS_FreeOSDecoderList(OSDecoderNode *node)
+{
+    if (!node) {
+        return;
+    }
+
+    /* Free children first */
+    if (node->child) {
+        OS_FreeOSDecoderList(node->child);
+    }
+
+    /* Free siblings next */
+    if (node->next) {
+        OS_FreeOSDecoderList(node->next);
+    }
+
+    /* Free this decoderinfo */
+    if (node->osdecoder) {
+        OS_FreeDecoderInfo(node->osdecoder);
+    }
+
+    free(node);
+}
