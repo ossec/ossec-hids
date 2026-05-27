@@ -269,9 +269,14 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
     memset(curl_errbuf, 0, sizeof(curl_errbuf));
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
 
-    /* Explicit TLS verification so behavior is not dependent on libcurl defaults */
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    if (mail->smtp_tls_verify) {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    } else {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        verbose("%s: SMTP TLS certificate verification disabled (smtp_tls_verify=no).", ARGV0);
+    }
 
     if (mail->authsmtp && mail->smtp_user && mail->smtp_pass) {
         curl_easy_setopt(curl, CURLOPT_USERNAME, mail->smtp_user);

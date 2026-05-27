@@ -50,6 +50,7 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     Mail->smtpserver_resolved = NULL;
     Mail->authsmtp = 0;
     Mail->securesmtp = 0;
+    Mail->smtp_tls_verify = 1;
     Mail->smtp_port = 0;
     Mail->smtp_user = NULL;
     Mail->smtp_pass = NULL;
@@ -75,9 +76,9 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail)
     }
 
 #ifndef USE_SMTP_CURL
-    if (Mail->authsmtp || Mail->securesmtp || Mail->smtp_port ||
+    if (Mail->authsmtp || Mail->securesmtp || !Mail->smtp_tls_verify || Mail->smtp_port ||
         Mail->smtp_user || Mail->smtp_pass) {
-        merror("%s: SMTP authentication/TLS options (auth_smtp, secure_smtp, smtp_port, smtp_user, smtp_password) require building with USE_CURL=yes.", ARGV0);
+        merror("%s: SMTP authentication/TLS options (auth_smtp, secure_smtp, smtp_tls_verify, smtp_port, smtp_user, smtp_password) require building with USE_CURL=yes.", ARGV0);
         MailConf_clear_smtp_config(Mail);
         return (OS_INVALID);
     }

@@ -102,7 +102,11 @@ Install()
     if [ "X${USER_BINARYINSTALL}" = "X" ]; then
         # Add DATABASE=pgsql or DATABASE=mysql to add support for database
         # alert entry
-        ${MAKEBIN} PREFIX=${INSTALLDIR} TARGET=${INSTYPE} build
+        _make_opts="PREFIX=${INSTALLDIR} TARGET=${INSTYPE}"
+        if [ "X${USE_CURL_BUILD}" = "Xyes" ]; then
+            _make_opts="${_make_opts} USE_CURL=yes"
+        fi
+        ${MAKEBIN} ${_make_opts} build
         if [ $? != 0 ]; then
             cd ../
             catError "0x5-build"
@@ -114,7 +118,11 @@ Install()
         UpdateStopOSSEC
     fi
 
-    ${MAKEBIN} PREFIX=${INSTALLDIR} TARGET=${INSTYPE} install
+    _make_opts="PREFIX=${INSTALLDIR} TARGET=${INSTYPE}"
+    if [ "X${USE_CURL_BUILD}" = "Xyes" ]; then
+        _make_opts="${_make_opts} USE_CURL=yes"
+    fi
+    ${MAKEBIN} ${_make_opts} install
     if [ $? != 0 ]; then
         cd ../
         catError "0x5-build"
@@ -540,6 +548,78 @@ ConfigureServer()
             else
                 SMTP=${USER_EMAIL_SMTP}
             fi
+
+            USE_CURL_BUILD="no"
+
+            # SMTP Auth
+            if [ "X${USER_SMTP_AUTH}" = "X" ]; then
+                echo ""
+                $ECHO "   - ${smtpauth} ($yes/$no) [$no]: "
+                read AUTH_SMTP
+            else
+                AUTH_SMTP=${USER_SMTP_AUTH}
+            fi
+
+            if [ "X${AUTH_SMTP}" = "X${yes}" ]; then
+                USE_CURL_BUILD="yes"
+                if [ "X${USER_SMTP_USER}" = "X" ]; then
+                    $ECHO "   - ${smtpuser}: "
+                    read SMTP_USER
+                else
+                    SMTP_USER=${USER_SMTP_USER}
+                fi
+                if [ "X${USER_SMTP_PASS}" = "X" ]; then
+                    $ECHO "   - ${smtppass}: "
+                    read SMTP_PASS
+                else
+                    SMTP_PASS=${USER_SMTP_PASS}
+                fi
+            fi
+
+            # SMTP Secure (smtps:// on connect; port 587 submission uses auth + STARTTLS with secure_smtp=no)
+            if [ "X${USER_SMTP_SECURE}" = "X" ]; then
+                $ECHO "   - ${smtpsecure} ($yes/$no) [$no]: "
+                read SMTP_SECURE
+            else
+                SMTP_SECURE=${USER_SMTP_SECURE}
+            fi
+
+            if [ "X${SMTP_SECURE}" = "X${yes}" ]; then
+                USE_CURL_BUILD="yes"
+            fi
+
+            # SMTP Port
+            if [ "X${AUTH_SMTP}" = "X${yes}" ]; then
+                _smtp_port_default="587"
+            else
+                _smtp_port_default="25"
+            fi
+            if [ "X${USER_SMTP_PORT}" = "X" ]; then
+                $ECHO "   - ${smtpport} [${_smtp_port_default}]: "
+                read SMTP_PORT
+                if [ "X${SMTP_PORT}" = "X" ]; then
+                    SMTP_PORT=${_smtp_port_default}
+                fi
+            else
+                SMTP_PORT=${USER_SMTP_PORT}
+            fi
+            if [ "X${SMTP_PORT}" != "X" ] && [ "X${SMTP_PORT}" != "X25" ]; then
+                USE_CURL_BUILD="yes"
+            fi
+
+            # TLS certificate verification (libcurl builds only)
+            if [ "X${USER_SMTP_TLS_VERIFY}" = "X" ]; then
+                $ECHO "   - ${smtptlsverify} ($yes/$no) [$yes]: "
+                read SMTP_TLS_VERIFY
+            else
+                SMTP_TLS_VERIFY=${USER_SMTP_TLS_VERIFY}
+            fi
+            if [ "X${SMTP_TLS_VERIFY}" = "X" ]; then
+                SMTP_TLS_VERIFY=${yes}
+            fi
+            if [ "X${SMTP_TLS_VERIFY}" = "X${no}" ]; then
+                USE_CURL_BUILD="yes"
+            fi
         ;;
     esac
 
@@ -551,7 +631,25 @@ ConfigureServer()
         echo "    <email_notification>yes</email_notification>" >> $NEWCONFIG
         echo "    <email_to>$EMAIL</email_to>" >> $NEWCONFIG
         echo "    <smtp_server>$SMTP</smtp_server>" >> $NEWCONFIG
-        echo "    <email_from>ossecm@${HOST}</email_from>" >> $NEWCONFIG
+        if [ "X${AUTH_SMTP}" = "X${yes}" ]; then
+            echo "    <auth_smtp>yes</auth_smtp>" >> $NEWCONFIG
+            echo "    <smtp_user>$SMTP_USER</smtp_user>" >> $NEWCONFIG
+            echo "    <smtp_password>$SMTP_PASS</smtp_password>" >> $NEWCONFIG
+        fi
+        if [ "X${SMTP_SECURE}" = "X${yes}" ]; then
+            echo "    <secure_smtp>yes</secure_smtp>" >> $NEWCONFIG
+        fi
+        if [ "X${SMTP_PORT}" != "X" ]; then
+            echo "    <smtp_port>$SMTP_PORT</smtp_port>" >> $NEWCONFIG
+        fi
+        if [ "X${SMTP_TLS_VERIFY}" = "X${no}" ]; then
+            echo "    <smtp_tls_verify>no</smtp_tls_verify>" >> $NEWCONFIG
+        fi
+        if [ "X${AUTH_SMTP}" = "X${yes}" ] && [ "X${SMTP_USER}" != "X" ]; then
+            echo "    <email_from>${SMTP_USER}</email_from>" >> $NEWCONFIG
+        else
+            echo "    <email_from>ossecm@${HOST}</email_from>" >> $NEWCONFIG
+        fi
     else
         echo "    <email_notification>no</email_notification>" >> $NEWCONFIG
     fi
@@ -977,7 +1075,7 @@ main()
 
 
     # Initial message
-    echo " $NAME $VERSION ${installscript} - http://www.ossec.net"
+    echo " $NAME $VERSION ${installscript} - https://www.ossec.net"
 
     catMsg "0x101-initial"
 
