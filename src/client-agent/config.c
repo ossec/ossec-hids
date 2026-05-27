@@ -64,6 +64,7 @@ int ClientConf(const char *cfgfile, agent *config)
     config->rip_id = 0;
     config->execdq = 0;
     config->profile = NULL;
+    config->allow_reload_reconnect = 0;
 
     modules |= CCLIENT;
 

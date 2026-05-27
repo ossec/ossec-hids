@@ -134,21 +134,76 @@ static void clean_exit(SSL_CTX *ctx, int sock)
     exit(0);
 }
 
+static SSL_CTX *g_authd_ctx = NULL;
+static const char *g_authd_dir = NULL;
+static const char *g_authd_ciphers = NULL;
+static const char *g_authd_server_cert = NULL;
+static const char *g_authd_server_key = NULL;
+static const char *g_authd_ca_cert = NULL;
+static int g_authd_use_pass = 1;
+static char *g_authpass = NULL;
+static volatile sig_atomic_t authd_reload_pending = 0;
+
 /* Exit handler */
 static void cleanup();
-static void process_sighup_authd(void)
+
+static void process_sighup_authd(int active_processes)
 {
+    FILE *fp;
+    char buf[4096 + 1];
+    SSL_CTX *new_ctx;
+
     if (sighup_received) {
+        authd_reload_pending = 1;
         sighup_received = 0;
-        merror("%s: INFO: SIGHUP received; full reload not implemented", ARGV0);
     }
+
+    if (!authd_reload_pending) {
+        return;
+    }
+
+    if (active_processes > 0) {
+        merror("%s: WARNING: Deferring authd SSL reload while %d children are active.", ARGV0, active_processes);
+        return;
+    }
+
+    authd_reload_pending = 0;
+    merror("%s: INFO: Reloading authd configuration.", ARGV0);
+
+    new_ctx = os_ssl_keys(1, g_authd_dir, g_authd_ciphers, g_authd_server_cert,
+                          g_authd_server_key, g_authd_ca_cert);
+    if (!new_ctx) {
+        merror("%s: ERROR: Error reloading SSL configuration (using old config)", ARGV0);
+        return;
+    }
+
+    if (g_authd_use_pass) {
+        fp = fopen(AUTHDPASS_PATH, "r");
+        buf[0] = '\0';
+        if (fp) {
+            buf[4096] = '\0';
+            if (fgets(buf, 4095, fp) && strlen(buf) > 2) {
+                buf[strlen(buf) - 1] = '\0';
+                if (g_authpass) {
+                    free(g_authpass);
+                }
+                g_authpass = strdup(buf);
+            }
+            fclose(fp);
+        }
+    }
+
+    if (g_authd_ctx) {
+        SSL_CTX_free(g_authd_ctx);
+    }
+    g_authd_ctx = new_ctx;
+    merror("%s: INFO: Authd configuration reloaded successfully.", ARGV0);
 }
 
 
 int main(int argc, char **argv)
 {
     FILE *fp;
-    char *authpass = NULL;
     /* Bucket to keep pids in */
     int process_pool[POOL_SIZE];
     /* Count of pids we are wait()ing on */
@@ -338,7 +393,7 @@ int main(int argc, char **argv)
             if (ret && strlen(buf) > 2) {
                 /* Remove newline */
                 buf[strlen(buf) - 1] = '\0';
-                authpass = strdup(buf);
+                g_authpass = strdup(buf);
             }
 
             fclose(fp);
@@ -348,8 +403,8 @@ int main(int argc, char **argv)
             verbose("Accepting connections. Using password specified on file: %s",AUTHDPASS_PATH);
         else {
             /* Getting temporary pass. */
-            authpass = __generatetmppass();
-            verbose("Accepting connections. Random password chosen for agent authentication: %s", authpass);
+            g_authpass = __generatetmppass();
+            verbose("Accepting connections. Random password chosen for agent authentication: %s", g_authpass);
         }
     } else {
         verbose("Accepting connections. No password required (not recommended)");
@@ -359,13 +414,20 @@ int main(int argc, char **argv)
     /* Setup random */
     srandom_init();
 
+    g_authd_dir = dir;
+    g_authd_ciphers = ciphers;
+    g_authd_server_cert = server_cert;
+    g_authd_server_key = server_key;
+    g_authd_ca_cert = ca_cert;
+    g_authd_use_pass = use_pass;
+
     /* Start SSL */
-    /* Getting SSL cert. */
     ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {
         merror("%s: ERROR: SSL error. Exiting.", ARGV0);
         exit(1);
     }
+    g_authd_ctx = ctx;
 
     /* Connect via TCP */
     netinfo = OS_Bindporttcp(port, NULL);
@@ -412,7 +474,7 @@ int main(int argc, char **argv)
 
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
     while (1) {
-        process_sighup_authd();
+        process_sighup_authd(active_processes);
 
         /* No need to completely pin the cpu, 100ms should be fast enough */
 #ifndef WIN32
@@ -423,7 +485,7 @@ int main(int argc, char **argv)
         sigprocmask(SIG_BLOCK, &set, NULL);
 #endif
 
-        process_sighup_authd();
+        process_sighup_authd(active_processes);
 
         /* Only check process-pool if we have active processes */
         if (active_processes > 0) {
@@ -478,7 +540,7 @@ int main(int argc, char **argv)
                     } else {
                         satop((struct sockaddr *) &_nc, srcip, IPSIZE);
                         char *agentname = NULL;
-                        ssl = SSL_new(ctx);
+                        ssl = SSL_new(g_authd_ctx);
                         SSL_set_fd(ssl, client_sock);
         
                         do {
@@ -505,13 +567,13 @@ int main(int argc, char **argv)
                         char *tmpstr = buf;
         
                         /* Checking for shared password authentication. */
-                        if(authpass) {
+                        if(g_authpass) {
                             /* Format is pretty simple: OSSEC PASS: PASS WHATEVERACTION */
                             if (strncmp(tmpstr, "OSSEC PASS: ", 12) == 0) {
                                 tmpstr = tmpstr + 12;
         
-                                if (strlen(tmpstr) > strlen(authpass) && strncmp(tmpstr, authpass, strlen(authpass)) == 0) {
-                                    tmpstr += strlen(authpass);
+                                if (strlen(tmpstr) > strlen(g_authpass) && strncmp(tmpstr, g_authpass, strlen(g_authpass)) == 0) {
+                                    tmpstr += strlen(g_authpass);
         
                                     if (*tmpstr == ' ') {
                                         tmpstr++;

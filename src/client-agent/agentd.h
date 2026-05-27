@@ -51,6 +51,9 @@ void start_agent(int is_startup);
 /* Connect to the server */
 int connect_server(int initial_id);
 
+int agent_address_in_rip(const char *addr);
+int agent_connect_id_for_address(const char *addr);
+
 /* Notify server */
 void run_notify(void);
 

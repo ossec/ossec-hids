@@ -167,22 +167,9 @@ void HandleSyslogTCP()
 
     while (1) {
         if (sighup_received) {
-            remoted new_logr;
-            memset(&new_logr, 0, sizeof(remoted));
             sighup_received = 0;
             merror("%s: INFO: SIGHUP received. Reloading configuration (Network bind settings require restart).", ARGV0);
-
-            /* Copy current runtime state to temporary struct */
-            new_logr.m_queue = logr.m_queue;
-            new_logr.netinfo = logr.netinfo;
-
-            if (RemotedConfig(cfgfile, &new_logr) < 0) {
-                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
-            } else {
-                /* Atomic swap */
-                FreeRemotedConfig(&logr);
-                memcpy(&logr, &new_logr, sizeof(remoted));
-            }
+            RemotedReloadFromSighup(cfgfile, &logr, &set, &old_set);
         }
 
         /* Wait for the children */

@@ -18,60 +18,69 @@
 long int __crt_ftell; /* Global ftell pointer */
 _Config Config;       /* Global Config structure */
 
-int GlobalConf(const char *cfgfile)
+int GlobalConfInto(_Config *config, const char *cfgfile)
 {
     int modules = 0;
 
-    /* Default values */
-    Config.logall = 0;
-    Config.logall_json = 0;
-    Config.stats = 4;
-    Config.integrity = 8;
-    Config.rootcheck = 8;
-    Config.hostinfo = 8;
-    Config.prelude = 0;
-    Config.zeromq_output = 0;
-    Config.zeromq_output_uri = NULL;
-    Config.zeromq_output_server_cert = NULL;
-    Config.zeromq_output_client_cert = NULL;
-    Config.jsonout_output = 0;
-    Config.memorysize = 8192;
-    Config.mailnotify = -1;
-    Config.keeplogdate = 0;
-    Config.syscheck_alert_new = 0;
-    Config.syscheck_auto_ignore = 1;
-    Config.ar = 0;
+    if (!config) {
+        return (OS_INVALID);
+    }
 
-    Config.syscheck_ignore = NULL;
-    Config.allow_list = NULL;
-    Config.hostname_allow_list = NULL;
+    /* Default values */
+    config->logall = 0;
+    config->logall_json = 0;
+    config->stats = 4;
+    config->integrity = 8;
+    config->rootcheck = 8;
+    config->hostinfo = 8;
+    config->prelude = 0;
+    config->zeromq_output = 0;
+    config->zeromq_output_uri = NULL;
+    config->zeromq_output_server_cert = NULL;
+    config->zeromq_output_client_cert = NULL;
+    config->jsonout_output = 0;
+    config->memorysize = 8192;
+    config->mailnotify = -1;
+    config->keeplogdate = 0;
+    config->syscheck_alert_new = 0;
+    config->syscheck_auto_ignore = 1;
+    config->ar = 0;
+
+    config->syscheck_ignore = NULL;
+    config->allow_list = NULL;
+    config->hostname_allow_list = NULL;
 
     /* Default actions -- only log above level 1 */
-    Config.mailbylevel = 7;
-    Config.logbylevel  = 1;
+    config->mailbylevel = 7;
+    config->logbylevel  = 1;
 
-    Config.custom_alert_output = 0;
-    Config.custom_alert_output_format = NULL;
+    config->custom_alert_output = 0;
+    config->custom_alert_output_format = NULL;
 
-    Config.includes = NULL;
-    Config.lists = NULL;
-    Config.decoders = NULL;
+    config->includes = NULL;
+    config->lists = NULL;
+    config->decoders = NULL;
 
     modules |= CGLOBAL;
     modules |= CRULES;
     modules |= CALERTS;
 
     /* Read config */
-    if (ReadConfig(modules, cfgfile, &Config, NULL) < 0) {
+    if (ReadConfig(modules, cfgfile, config, NULL) < 0) {
         return (OS_INVALID);
     }
 
     /* Minimum memory size */
-    if (Config.memorysize < 2048) {
-        Config.memorysize = 2048;
+    if (config->memorysize < 2048) {
+        config->memorysize = 2048;
     }
 
     return (0);
+}
+
+int GlobalConf(const char *cfgfile)
+{
+    return (GlobalConfInto(&Config, cfgfile));
 }
 
 /* Free a NULL-terminated array of strings */

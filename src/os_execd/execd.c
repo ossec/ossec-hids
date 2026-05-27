@@ -130,6 +130,8 @@ int main(int argc, char **argv)
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
     }
 
+    execd_cfgfile = cfg;
+
     /* Read config */
     if ((c = ExecdConfig(cfg)) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
@@ -250,8 +252,10 @@ static void ExecdStart(int q)
     while (1) {
         if (sighup_received) {
             sighup_received = 0;
-            merror("%s: INFO: SIGHUP received. Re-opening log files.", ARGV0);
-            /* Reload configuration placeholder */
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+            if (ExecdReloadConfig() < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            }
         }
 
         int timeout_value;

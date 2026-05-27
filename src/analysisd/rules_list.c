@@ -13,25 +13,220 @@
 
 /* Rulenode local  */
 static RuleNode *rulenode;
+static RuleNode *rulenode_staging;
+static int rulelist_staging_active;
+
+static RuleNode **rulelist_head(void)
+{
+    if (rulelist_staging_active) {
+        return (&rulenode_staging);
+    }
+    return (&rulenode);
+}
+
+/* Track heap pointers already released while tearing down a rule tree */
+static OSHash *rule_free_seen;
+
+static int rule_ptr_already_freed(const void *ptr)
+{
+    char key[32];
+
+    if (!ptr || !rule_free_seen) {
+        return (0);
+    }
+
+    snprintf(key, sizeof(key), "%p", ptr);
+    return (OSHash_Get(rule_free_seen, key) != NULL);
+}
+
+static void rule_ptr_mark_freed(const void *ptr)
+{
+    char key[32];
+
+    if (!ptr || !rule_free_seen) {
+        return;
+    }
+
+    snprintf(key, sizeof(key), "%p", ptr);
+    OSHash_Add(rule_free_seen, key, (void *)1);
+}
+
+static void free_str_field(char **field)
+{
+    if (*field && !rule_ptr_already_freed(*field)) {
+        free(*field);
+        rule_ptr_mark_freed(*field);
+    }
+    *field = NULL;
+}
+
+static void free_osmatch_field(OSMatch **field)
+{
+    if (*field && !rule_ptr_already_freed(*field)) {
+        OSMatch_FreePattern(*field);
+        free(*field);
+        rule_ptr_mark_freed(*field);
+    }
+    *field = NULL;
+}
+
+static void free_osregex_field(OSRegex **field)
+{
+    if (*field && !rule_ptr_already_freed(*field)) {
+        OSRegex_FreePattern(*field);
+        free(*field);
+        rule_ptr_mark_freed(*field);
+    }
+    *field = NULL;
+}
+
+static void free_ospcre2_field(OSPcre2 **field)
+{
+    if (*field && !rule_ptr_already_freed(*field)) {
+        OSPcre2_FreePattern(*field);
+        free(*field);
+        rule_ptr_mark_freed(*field);
+    }
+    *field = NULL;
+}
+
+static void free_osip_field(os_ip **field)
+{
+    if (*field && !rule_ptr_already_freed(*field)) {
+        free(*field);
+        rule_ptr_mark_freed(*field);
+    }
+    *field = NULL;
+}
 
 /* _OS_Addrule: Internal AddRule */
 static RuleNode *_OS_AddRule(RuleNode *_rulenode, RuleInfo *read_rule);
 static int _AddtoRule(int sid, int level, int none, const char *group,
                RuleNode *r_node, RuleInfo *read_rule);
+static void destroy_rule_tree(RuleNode *tree);
+
+#define RULELIST_FAIL(...) do {                                         \
+        if (rulelist_staging_active) {                                  \
+            merror(__VA_ARGS__);                                        \
+            return (-1);                                                \
+        }                                                               \
+        ErrorExit(__VA_ARGS__);                                         \
+    } while (0)
+
+#define RULELIST_PTR_FAIL(...) do {                                     \
+        if (rulelist_staging_active) {                                  \
+            merror(__VA_ARGS__);                                        \
+            return (NULL);                                              \
+        }                                                               \
+        ErrorExit(__VA_ARGS__);                                         \
+    } while (0)
+
+#define RULELIST_MARK_FAIL(...) do {                                    \
+        if (rulelist_staging_active) {                                  \
+            merror(__VA_ARGS__);                                        \
+            return (-1);                                                \
+        }                                                               \
+        ErrorExit(__VA_ARGS__);                                         \
+    } while (0)
+
+static int os_addrule_child(RuleNode *r_node, RuleInfo *read_rule)
+{
+    RuleNode *child;
+
+    child = _OS_AddRule(r_node->child, read_rule);
+    if (!child) {
+        return (-1);
+    }
+
+    r_node->child = child;
+    return (0);
+}
+
+static void *rulelist_realloc(void *ptr, size_t size)
+{
+    void *p;
+
+    p = realloc(ptr, size);
+    if (!p) {
+        if (rulelist_staging_active) {
+            merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+            return (NULL);
+        }
+        ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+    }
+
+    return (p);
+}
 
 
 /* Create the RuleList */
 void OS_CreateRuleList()
 {
-    rulenode = NULL;
+    *rulelist_head() = NULL;
     return;
+}
+
+void OS_RuleListStagingBegin(void)
+{
+    rulelist_staging_active = 1;
+    rulenode_staging = NULL;
+}
+
+void OS_RuleListStagingCommit(void)
+{
+    OS_AbandonRuleList();
+    rulenode = rulenode_staging;
+    rulenode_staging = NULL;
+    rulelist_staging_active = 0;
+}
+
+void OS_RuleListStagingAbort(void)
+{
+    RuleNode *staging = rulenode_staging;
+
+    rulenode_staging = NULL;
+    rulelist_staging_active = 0;
+    destroy_rule_tree(staging);
+}
+
+int OS_RuleListStagingActive(void)
+{
+    return (rulelist_staging_active);
+}
+
+/* Free all rules and reset the list */
+void OS_AbandonRuleList(void)
+{
+    rulenode = NULL;
+}
+
+static void destroy_rule_tree(RuleNode *tree)
+{
+    if (!tree) {
+        return;
+    }
+
+    rule_free_seen = OSHash_Create();
+    if (rule_free_seen) {
+        OSHash_setSize(rule_free_seen, 4096);
+    }
+    OS_FreeRuleList(tree);
+    if (rule_free_seen) {
+        OSHash_Free(rule_free_seen);
+        rule_free_seen = NULL;
+    }
+}
+
+void OS_DestroyRuleList()
+{
+    destroy_rule_tree(rulenode);
+    rulenode = NULL;
 }
 
 /* Get first node from rule */
 RuleNode *OS_GetFirstRule()
 {
-    RuleNode *rulenode_pt = rulenode;
-    return (rulenode_pt);
+    return (*rulelist_head());
 }
 
 /* Search all rules, including children */
@@ -63,8 +258,9 @@ static int _AddtoRule(int sid, int level, int none, const char *group,
                     read_rule->last_events = r_node->ruleinfo->last_events;
                 }
 
-                r_node->child =
-                    _OS_AddRule(r_node->child, read_rule);
+                if (os_addrule_child(r_node, read_rule) < 0) {
+                    return (-1);
+                }
                 return (1);
             }
         }
@@ -81,8 +277,9 @@ static int _AddtoRule(int sid, int level, int none, const char *group,
                 }
 
                 /* Loop over all rules until we find it */
-                r_node->child =
-                    _OS_AddRule(r_node->child, read_rule);
+                if (os_addrule_child(r_node, read_rule) < 0) {
+                    return (-1);
+                }
                 r_code = 1;
             }
         }
@@ -91,8 +288,9 @@ static int _AddtoRule(int sid, int level, int none, const char *group,
         else if (level) {
             if ((r_node->ruleinfo->level >= level) &&
                     (r_node->ruleinfo->sigid != read_rule->sigid)) {
-                r_node->child =
-                    _OS_AddRule(r_node->child, read_rule);
+                if (os_addrule_child(r_node, read_rule) < 0) {
+                    return (-1);
+                }
                 r_code = 1;
             }
         }
@@ -109,14 +307,20 @@ static int _AddtoRule(int sid, int level, int none, const char *group,
         else {
             /* Set the parent category to it */
             read_rule->category = r_node->ruleinfo->category;
-            r_node->child =
-                _OS_AddRule(r_node->child, read_rule);
+            if (os_addrule_child(r_node, read_rule) < 0) {
+                return (-1);
+            }
             return (1);
         }
 
         /* Check if the child has a rule */
         if (r_node->child) {
-            if (_AddtoRule(sid, level, none, group, r_node->child, read_rule)) {
+            int child_rc = _AddtoRule(sid, level, none, group, r_node->child, read_rule);
+
+            if (child_rc < 0) {
+                return (-1);
+            }
+            if (child_rc) {
                 r_code = 1;
             }
         }
@@ -150,16 +354,21 @@ int OS_AddChild(RuleInfo *read_rule)
                 continue;
             } else if ((isdigit((int)*sid)) || (*sid == '\0')) {
                 if (val == 0) {
+                    int add_rc;
+
                     rule_id = atoi(sid);
-                    if (!_AddtoRule(rule_id, 0, 0, NULL, NULL, read_rule)) {
-                        ErrorExit("rules_list: Signature ID '%d' not "
-                                  "found. Invalid 'if_sid'.", rule_id);
+                    add_rc = _AddtoRule(rule_id, 0, 0, NULL, NULL, read_rule);
+                    if (add_rc < 0) {
+                        return (-1);
+                    }
+                    if (!add_rc) {
+                        RULELIST_FAIL("rules_list: Signature ID '%d' not "
+                                      "found. Invalid 'if_sid'.", rule_id);
                     }
                     val = 1;
                 }
             } else {
-                ErrorExit("rules_list: Signature ID must be an integer. "
-                          "Exiting...");
+                RULELIST_FAIL("rules_list: Signature ID must be an integer.");
             }
         } while (*sid++ != '\0');
     }
@@ -176,25 +385,42 @@ int OS_AddChild(RuleInfo *read_rule)
 
         ilevel *= 100;
 
-        if (!_AddtoRule(0, ilevel, 0, NULL, NULL, read_rule)) {
-            ErrorExit("rules_list: Level ID '%d' not "
-                      "found. Invalid 'if_level'.", ilevel);
+        {
+            int add_rc = _AddtoRule(0, ilevel, 0, NULL, NULL, read_rule);
+
+            if (add_rc < 0) {
+                return (-1);
+            }
+            if (!add_rc) {
+                RULELIST_FAIL("rules_list: Level ID '%d' not "
+                              "found. Invalid 'if_level'.", ilevel);
+            }
         }
     }
 
     /* Adding for if_group */
     else if (read_rule->if_group) {
-        if (!_AddtoRule(0, 0, 0, read_rule->if_group, NULL, read_rule)) {
-            ErrorExit("rules_list: Group '%s' not "
-                      "found. Invalid 'if_group'.", read_rule->if_group);
+        int add_rc = _AddtoRule(0, 0, 0, read_rule->if_group, NULL, read_rule);
+
+        if (add_rc < 0) {
+            return (-1);
+        }
+        if (!add_rc) {
+            RULELIST_FAIL("rules_list: Group '%s' not "
+                          "found. Invalid 'if_group'.", read_rule->if_group);
         }
     }
 
     /* Just add based on the category */
     else {
-        if (!_AddtoRule(0, 0, 0, NULL, NULL, read_rule)) {
-            ErrorExit("rules_list: Category '%d' not "
-                      "found. Invalid 'category'.", read_rule->category);
+        int add_rc = _AddtoRule(0, 0, 0, NULL, NULL, read_rule);
+
+        if (add_rc < 0) {
+            return (-1);
+        }
+        if (!add_rc) {
+            RULELIST_FAIL("rules_list: Category '%d' not "
+                          "found. Invalid 'category'.", read_rule->category);
         }
     }
 
@@ -224,7 +450,7 @@ static RuleNode *_OS_AddRule(RuleNode *_rulenode, RuleInfo *read_rule)
         new_rulenode = (RuleNode *)calloc(1, sizeof(RuleNode));
 
         if (!new_rulenode) {
-            ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+            RULELIST_PTR_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
         if (middle_insertion == 1) {
@@ -237,16 +463,26 @@ static RuleNode *_OS_AddRule(RuleNode *_rulenode, RuleInfo *read_rule)
             new_rulenode->next = tmp_rulenode;
             new_rulenode->ruleinfo = read_rule;
             new_rulenode->child = NULL;
-        } else {
+        } else if (prev_rulenode) {
             prev_rulenode->next = new_rulenode;
-            prev_rulenode->next->ruleinfo = read_rule;
-            prev_rulenode->next->next = NULL;
-            prev_rulenode->next->child = NULL;
+            new_rulenode->ruleinfo = read_rule;
+            new_rulenode->next = NULL;
+            new_rulenode->child = NULL;
+        } else {
+            RuleNode *tail = _rulenode;
+
+            while (tail->next) {
+                tail = tail->next;
+            }
+            tail->next = new_rulenode;
+            new_rulenode->ruleinfo = read_rule;
+            new_rulenode->next = NULL;
+            new_rulenode->child = NULL;
         }
     } else {
         _rulenode = (RuleNode *)calloc(1, sizeof(RuleNode));
         if (_rulenode == NULL) {
-            ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+            RULELIST_PTR_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
         _rulenode->ruleinfo = read_rule;
@@ -260,7 +496,15 @@ static RuleNode *_OS_AddRule(RuleNode *_rulenode, RuleInfo *read_rule)
 /* External AddRule */
 int OS_AddRule(RuleInfo *read_rule)
 {
-    rulenode = _OS_AddRule(rulenode, read_rule);
+    RuleNode **head = rulelist_head();
+    RuleNode *node;
+
+    node = _OS_AddRule(*head, read_rule);
+    if (!node) {
+        return (-1);
+    }
+
+    *head = node;
 
     return (0);
 }
@@ -319,6 +563,9 @@ int OS_AddRuleInfo(RuleNode *r_node, RuleInfo *newrule, int sid)
                 r_node->ruleinfo->last_events = newrule->last_events;
             }
 
+            /* Ownership moved to the existing rule node */
+            memset(newrule, 0, sizeof(RuleInfo));
+
             return (1);
         }
 
@@ -365,15 +612,15 @@ int OS_MarkID(RuleNode *r_node, RuleInfo *orig_rule)
             if (!r_node->ruleinfo->sid_prev_matched) {
                 r_node->ruleinfo->sid_prev_matched = OSList_Create();
                 if (!r_node->ruleinfo->sid_prev_matched) {
-                    ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+                    RULELIST_MARK_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
                 }
-                
+
                 /* Set the callback to clear sid_node_to_delete before auto-deletion
                  * This prevents double-free when the list reaches max size
                  */
-                if (!OSList_SetFreeDataPointer(r_node->ruleinfo->sid_prev_matched, 
+                if (!OSList_SetFreeDataPointer(r_node->ruleinfo->sid_prev_matched,
                                                 Mark_EventNodeDelete)) {
-                    ErrorExit("%s: ERROR: Unable to set free data pointer for sid list", ARGV0);
+                    RULELIST_MARK_FAIL("%s: ERROR: Unable to set free data pointer for sid list", ARGV0);
                 }
             }
 
@@ -383,7 +630,9 @@ int OS_MarkID(RuleNode *r_node, RuleInfo *orig_rule)
 
         /* Check if the child has a rule */
         if (r_node->child) {
-            OS_MarkID(r_node->child, orig_rule);
+            if (OS_MarkID(r_node->child, orig_rule) < 0) {
+                return (-1);
+            }
         }
 
         r_node = r_node->next;
@@ -411,9 +660,12 @@ int OS_MarkGroup(RuleNode *r_node, RuleInfo *orig_rule)
                 }
             }
 
-            os_realloc(r_node->ruleinfo->group_prev_matched,
-                       (rule_g + 2)*sizeof(OSList *),
-                       r_node->ruleinfo->group_prev_matched);
+            r_node->ruleinfo->group_prev_matched = (OSList **)rulelist_realloc(
+                r_node->ruleinfo->group_prev_matched,
+                (rule_g + 2) * sizeof(OSList *));
+            if (!r_node->ruleinfo->group_prev_matched) {
+                return (-1);
+            }
 
             r_node->ruleinfo->group_prev_matched[rule_g] = NULL;
             r_node->ruleinfo->group_prev_matched[rule_g + 1] = NULL;
@@ -427,7 +679,9 @@ int OS_MarkGroup(RuleNode *r_node, RuleInfo *orig_rule)
 
         /* Check if the child has a rule */
         if (r_node->child) {
-            OS_MarkGroup(r_node->child, orig_rule);
+            if (OS_MarkGroup(r_node->child, orig_rule) < 0) {
+                return (-1);
+            }
         }
 
         r_node = r_node->next;
@@ -446,181 +700,85 @@ void OS_FreeRuleInfo(RuleInfo *rule)
         return;
     }
 
-    free(rule->group);
-    free(rule->day_time);
-    free(rule->week_day);
-    free(rule->action);
-    free(rule->comment);
-    free(rule->info);
-    free(rule->cve);
-    free(rule->if_sid);
-    free(rule->if_level);
-    free(rule->if_group);
+    free_str_field(&rule->group);
+    free_str_field(&rule->day_time);
+    free_str_field(&rule->week_day);
+    free_str_field(&rule->action);
+    free_str_field(&rule->comment);
+    free_str_field(&rule->info);
+    free_str_field(&rule->cve);
+    free_str_field(&rule->if_sid);
+    free_str_field(&rule->if_level);
+    free_str_field(&rule->if_group);
 
-    if (rule->match) {
-        OSMatch_FreePattern(rule->match);
-        free(rule->match);
-    }
-
-    if (rule->match_pcre2) {
-        OSPcre2_FreePattern(rule->match_pcre2);
-        free(rule->match_pcre2);
-    }
-
-    if (rule->regex) {
-        OSRegex_FreePattern(rule->regex);
-        free(rule->regex);
-    }
-
-    if (rule->pcre2) {
-        OSPcre2_FreePattern(rule->pcre2);
-        free(rule->pcre2);
-    }
+    free_osmatch_field(&rule->match);
+    free_ospcre2_field(&rule->match_pcre2);
+    free_osregex_field(&rule->regex);
+    free_ospcre2_field(&rule->pcre2);
 
     if (rule->srcip) {
         for (i = 0; rule->srcip[i]; i++) {
-            free(rule->srcip[i]);
+            free_osip_field(&rule->srcip[i]);
         }
-        free(rule->srcip);
+        if (!rule_ptr_already_freed(rule->srcip)) {
+            free(rule->srcip);
+            rule_ptr_mark_freed(rule->srcip);
+        }
+        rule->srcip = NULL;
     }
 
     if (rule->dstip) {
         for (i = 0; rule->dstip[i]; i++) {
-            free(rule->dstip[i]);
+            free_osip_field(&rule->dstip[i]);
         }
-        free(rule->dstip);
+        if (!rule_ptr_already_freed(rule->dstip)) {
+            free(rule->dstip);
+            rule_ptr_mark_freed(rule->dstip);
+        }
+        rule->dstip = NULL;
     }
 
-    if (rule->srcgeoip) {
-        OSMatch_FreePattern(rule->srcgeoip);
-        free(rule->srcgeoip);
-    }
+    free_osmatch_field(&rule->srcgeoip);
+    free_osmatch_field(&rule->dstgeoip);
+    free_osmatch_field(&rule->srcport);
+    free_osmatch_field(&rule->dstport);
+    free_osmatch_field(&rule->user);
+    free_osmatch_field(&rule->url);
+    free_osmatch_field(&rule->id);
+    free_osmatch_field(&rule->status);
+    free_osmatch_field(&rule->hostname);
+    free_osmatch_field(&rule->program_name);
+    free_osmatch_field(&rule->extra_data);
 
-    if (rule->dstgeoip) {
-        OSMatch_FreePattern(rule->dstgeoip);
-        free(rule->dstgeoip);
-    }
+    free_ospcre2_field(&rule->srcgeoip_pcre2);
+    free_ospcre2_field(&rule->dstgeoip_pcre2);
+    free_ospcre2_field(&rule->srcport_pcre2);
+    free_ospcre2_field(&rule->dstport_pcre2);
+    free_ospcre2_field(&rule->user_pcre2);
+    free_ospcre2_field(&rule->url_pcre2);
+    free_ospcre2_field(&rule->id_pcre2);
+    free_ospcre2_field(&rule->status_pcre2);
+    free_ospcre2_field(&rule->hostname_pcre2);
+    free_ospcre2_field(&rule->program_name_pcre2);
+    free_ospcre2_field(&rule->extra_data_pcre2);
 
-    if (rule->srcport) {
-        OSMatch_FreePattern(rule->srcport);
-        free(rule->srcport);
-    }
-
-    if (rule->dstport) {
-        OSMatch_FreePattern(rule->dstport);
-        free(rule->dstport);
-    }
-
-    if (rule->user) {
-        OSMatch_FreePattern(rule->user);
-        free(rule->user);
-    }
-
-    if (rule->url) {
-        OSMatch_FreePattern(rule->url);
-        free(rule->url);
-    }
-
-    if (rule->id) {
-        OSMatch_FreePattern(rule->id);
-        free(rule->id);
-    }
-
-    if (rule->status) {
-        OSMatch_FreePattern(rule->status);
-        free(rule->status);
-    }
-
-    if (rule->hostname) {
-        OSMatch_FreePattern(rule->hostname);
-        free(rule->hostname);
-    }
-
-    if (rule->program_name) {
-        OSMatch_FreePattern(rule->program_name);
-        free(rule->program_name);
-    }
-
-    if (rule->extra_data) {
-        OSMatch_FreePattern(rule->extra_data);
-        free(rule->extra_data);
-    }
-
-    if (rule->srcgeoip_pcre2) {
-        OSPcre2_FreePattern(rule->srcgeoip_pcre2);
-        free(rule->srcgeoip_pcre2);
-    }
-
-    if (rule->dstgeoip_pcre2) {
-        OSPcre2_FreePattern(rule->dstgeoip_pcre2);
-        free(rule->dstgeoip_pcre2);
-    }
-
-    if (rule->srcport_pcre2) {
-        OSPcre2_FreePattern(rule->srcport_pcre2);
-        free(rule->srcport_pcre2);
-    }
-
-    if (rule->dstport_pcre2) {
-        OSPcre2_FreePattern(rule->dstport_pcre2);
-        free(rule->dstport_pcre2);
-    }
-
-    if (rule->user_pcre2) {
-        OSPcre2_FreePattern(rule->user_pcre2);
-        free(rule->user_pcre2);
-    }
-
-    if (rule->url_pcre2) {
-        OSPcre2_FreePattern(rule->url_pcre2);
-        free(rule->url_pcre2);
-    }
-
-    if (rule->id_pcre2) {
-        OSPcre2_FreePattern(rule->id_pcre2);
-        free(rule->id_pcre2);
-    }
-
-    if (rule->status_pcre2) {
-        OSPcre2_FreePattern(rule->status_pcre2);
-        free(rule->status_pcre2);
-    }
-
-    if (rule->hostname_pcre2) {
-        OSPcre2_FreePattern(rule->hostname_pcre2);
-        free(rule->hostname_pcre2);
-    }
-
-    if (rule->program_name_pcre2) {
-        OSPcre2_FreePattern(rule->program_name_pcre2);
-        free(rule->program_name_pcre2);
-    }
-
-    if (rule->extra_data_pcre2) {
-        OSPcre2_FreePattern(rule->extra_data_pcre2);
-        free(rule->extra_data_pcre2);
-    }
-
-    if (rule->if_matched_regex) {
-        OSRegex_FreePattern(rule->if_matched_regex);
-        free(rule->if_matched_regex);
-    }
-
-    if (rule->if_matched_group) {
-        OSMatch_FreePattern(rule->if_matched_group);
-        free(rule->if_matched_group);
-    }
+    free_osregex_field(&rule->if_matched_regex);
+    free_osmatch_field(&rule->if_matched_group);
 
     if (rule->fields) {
         for (i = 0; rule->fields[i]; i++) {
-            free(rule->fields[i]->name);
-            if (rule->fields[i]->regex) {
-                OSRegex_FreePattern(rule->fields[i]->regex);
-                free(rule->fields[i]->regex);
+            free_str_field(&rule->fields[i]->name);
+            free_osregex_field(&rule->fields[i]->regex);
+            if (!rule_ptr_already_freed(rule->fields[i])) {
+                free(rule->fields[i]);
+                rule_ptr_mark_freed(rule->fields[i]);
             }
-            free(rule->fields[i]);
         }
-        free(rule->fields);
+        if (!rule_ptr_already_freed(rule->fields)) {
+            free(rule->fields);
+            rule_ptr_mark_freed(rule->fields);
+        }
+        rule->fields = NULL;
     }
 
     if (rule->info_details) {
@@ -628,8 +786,11 @@ void OS_FreeRuleInfo(RuleInfo *rule)
         while (rule->info_details) {
             tmp = rule->info_details;
             rule->info_details = rule->info_details->next;
-            free(tmp->data);
-            free(tmp);
+            free_str_field(&tmp->data);
+            if (!rule_ptr_already_freed(tmp)) {
+                free(tmp);
+                rule_ptr_mark_freed(tmp);
+            }
         }
     }
 
@@ -638,53 +799,90 @@ void OS_FreeRuleInfo(RuleInfo *rule)
         while (rule->lists) {
             tmp = rule->lists;
             rule->lists = rule->lists->next;
-            free(tmp);
+            free_osmatch_field(&tmp->matcher);
+            if (!rule_ptr_already_freed(tmp)) {
+                free(tmp);
+                rule_ptr_mark_freed(tmp);
+            }
         }
     }
 
-    if (rule->ar) {
+    if (rule->ar && !rule_ptr_already_freed(rule->ar)) {
         free(rule->ar);
+        rule_ptr_mark_freed(rule->ar);
+        rule->ar = NULL;
     }
 
-    if (rule->sid_prev_matched) {
+    if (rule->sid_prev_matched && !rule_ptr_already_freed(rule->sid_prev_matched)) {
         OSList_Free(rule->sid_prev_matched);
+        rule_ptr_mark_freed(rule->sid_prev_matched);
+        rule->sid_prev_matched = NULL;
+    }
+
+    if (rule->group_search && !rule_ptr_already_freed(rule->group_search)) {
+        OSList_Free(rule->group_search);
+        rule_ptr_mark_freed(rule->group_search);
+        rule->group_search = NULL;
     }
 
     if (rule->group_prev_matched) {
-        free(rule->group_prev_matched);
+        unsigned int g = 0;
+
+        while (rule->group_prev_matched[g]) {
+            if (!rule_ptr_already_freed(rule->group_prev_matched[g])) {
+                OSList_Free(rule->group_prev_matched[g]);
+                rule_ptr_mark_freed(rule->group_prev_matched[g]);
+            }
+            g++;
+        }
+        if (!rule_ptr_already_freed(rule->group_prev_matched)) {
+            free(rule->group_prev_matched);
+            rule_ptr_mark_freed(rule->group_prev_matched);
+        }
+        rule->group_prev_matched = NULL;
     }
 
-    if (rule->last_events) {
+    if (rule->last_events && !rule_ptr_already_freed(rule->last_events)) {
         for (i = 0; i < MAX_LAST_EVENTS; i++) {
-            free(rule->last_events[i]);
+            free_str_field(&rule->last_events[i]);
         }
         free(rule->last_events);
+        rule_ptr_mark_freed(rule->last_events);
+        rule->last_events = NULL;
     }
 
-    free(rule);
+    if (!rule_ptr_already_freed(rule)) {
+        free(rule);
+        rule_ptr_mark_freed(rule);
+    }
 }
 
-/* Free a RuleNode tree recursively */
+/* Free a RuleNode tree recursively.
+ * parent_ruleinfo: if_matched_sid children may share last_events with the parent. */
+static void OS_FreeRuleList_rec(RuleNode *node, RuleInfo *parent_ruleinfo)
+{
+    while (node) {
+        RuleNode *next = node->next;
+
+        if (node->child) {
+            OS_FreeRuleList_rec(node->child, node->ruleinfo);
+        }
+
+        if (parent_ruleinfo && node->ruleinfo && node->ruleinfo->last_events &&
+                node->ruleinfo->last_events == parent_ruleinfo->last_events) {
+            node->ruleinfo->last_events = NULL;
+        }
+
+        if (node->ruleinfo) {
+            OS_FreeRuleInfo(node->ruleinfo);
+        }
+
+        free(node);
+        node = next;
+    }
+}
+
 void OS_FreeRuleList(RuleNode *node)
 {
-    if (!node) {
-        return;
-    }
-
-    /* Free children first */
-    if (node->child) {
-        OS_FreeRuleList(node->child);
-    }
-
-    /* Free siblings next */
-    if (node->next) {
-        OS_FreeRuleList(node->next);
-    }
-
-    /* Free this ruleinfo */
-    if (node->ruleinfo) {
-        OS_FreeRuleInfo(node->ruleinfo);
-    }
-
-    free(node);
+    OS_FreeRuleList_rec(node, NULL);
 }

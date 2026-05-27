@@ -63,6 +63,16 @@ typedef struct _OSDecoderNode {
  * list and to get the first osdecoder
  */
 void OS_CreateOSDecoderList(void);
+void OS_DecoderListStagingBegin(void);
+void OS_DecoderListStagingCommit(void);
+void OS_DecoderListStagingAbort(void);
+int OS_DecoderListStagingActive(void);
+void OS_AbandonOSDecoderList(void);
+void OS_DestroyOSDecoderList(void);
+void OS_DecoderStoreStagingBegin(void);
+void OS_DecoderStoreStagingCommit(void);
+void OS_DecoderStoreStagingAbort(void);
+void OS_DestroyDecoderStore(void);
 int OS_AddOSDecoder(OSDecoderInfo *pi);
 OSDecoderNode *OS_GetFirstOSDecoder(const char *pname);
 int getDecoderfromlist(const char *name);
@@ -75,6 +85,9 @@ int SetDecodeXML(void);
 void HostinfoInit(void);
 void SyscheckInit(void);
 void RootcheckInit(void);
+void HostinfoRefreshDecoderIds(void);
+void SyscheckRefreshDecoderIds(void);
+void RootcheckRefreshDecoderIds(void);
 
 int ReadDecodeXML(const char *file);
 

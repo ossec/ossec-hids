@@ -207,6 +207,8 @@ void start_daemon()
                 /* Atomic swap */
                 FreeSyscheckConfig(&syscheck);
                 memcpy(&syscheck, &new_syscheck, sizeof(syscheck_config));
+                /* Apply new directories / realtime watches */
+                os_check_restart_syscheck();
             }
         }
 

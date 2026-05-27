@@ -214,6 +214,12 @@ RuleInfo *zerorulemember(int id,
 
 /* create the rule list */
 void OS_CreateRuleList(void);
+void OS_RuleListStagingBegin(void);
+void OS_RuleListStagingCommit(void);
+void OS_RuleListStagingAbort(void);
+int OS_RuleListStagingActive(void);
+void OS_AbandonRuleList(void);
+void OS_DestroyRuleList(void);
 
 /* Add rule information to the list */
 int OS_AddRule(RuleInfo *read_rule);
@@ -241,7 +247,7 @@ void OS_FreeRuleInfo(RuleInfo *rule);
 
 int Rules_OP_ReadRules(const char *rulefile);
 
-int AddHash_Rule(RuleNode *node);
+int AddHash_Rule(OSHash *rules_hash, RuleNode *node);
 
 int _setlevels(RuleNode *node, int nnode);
 

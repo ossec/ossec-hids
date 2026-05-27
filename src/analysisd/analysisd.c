@@ -32,6 +32,7 @@
 #include "cleanevent.h"
 #include "dodiff.h"
 #include "output/jsonout.h"
+#include "analysisd_reload.h"
 
 #ifdef PRELUDE_OUTPUT_ENABLED
 #include "output/prelude.h"
@@ -224,6 +225,8 @@ int main_analysisd(int argc, char **argv)
     }
     debug1(ASINIT, ARGV0);
 
+    Analysisd_SetCfgfile(cfg);
+
     /* Read configuration file */
     if (GlobalConf(cfg) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
@@ -301,6 +304,14 @@ int main_analysisd(int argc, char **argv)
         ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));
     }
     nowChroot();
+
+    /* Writable sink for active-response reload (chroot has no /dev/null). */
+    {
+        FILE *sink = fopen("var/run/ar_reload_sink", "w");
+        if (sink) {
+            fclose(sink);
+        }
+    }
 
     Config.decoder_order_size = (size_t)getDefine_Int("analysisd", "decoder_order_size", 8, MAX_DECODER_ORDER_SIZE);
 
@@ -430,7 +441,7 @@ int main_analysisd(int argc, char **argv)
         if (!Config.g_rules_hash) {
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
-        AddHash_Rule(tmp_node);
+        AddHash_Rule(Config.g_rules_hash, tmp_node);
     }
 
     /* Ignored files on syscheck */
@@ -693,10 +704,15 @@ void OS_ReadMSG_analysisd(int m_queue)
         if (sighup_received) {
             sighup_received = 0;
             merror("%s: INFO: SIGHUP received. Reloading rules and configuration.", ARGV0);
-            /* Reload configuration or rules - Not yet implemented fully for analysisd
-             * but we acknowledge the signal.
-             */
-            merror("%s: INFO: Configuration reload not yet fully implemented for analysisd.", ARGV0);
+            {
+                int reload_rc = Analysisd_Reload();
+
+                if (reload_rc == ANALYSISD_RELOAD_FAIL_STAGING) {
+                    merror("%s: ERROR: Configuration reload failed; continuing with previous configuration.", ARGV0);
+                } else if (reload_rc == ANALYSISD_RELOAD_FAIL_POST_COMMIT) {
+                    merror("%s: ERROR: Partial configuration reload; restart ossec-analysisd recommended.", ARGV0);
+                }
+            }
         }
 
         /* Receive message from queue */

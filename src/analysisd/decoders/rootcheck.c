@@ -50,6 +50,16 @@ void RootcheckInit()
     return;
 }
 
+void RootcheckRefreshDecoderIds(void)
+{
+    if (!rootcheck_dec) {
+        RootcheckInit();
+        return;
+    }
+
+    rootcheck_dec->id = getDecoderfromlist(ROOTCHECK_MOD);
+}
+
 /* Return the file pointer to be used */
 static FILE *RK_File(const char *agent, int *agent_id)
 {

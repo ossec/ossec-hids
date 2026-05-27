@@ -88,30 +88,9 @@ void HandleSecure()
 
     while (1) {
         if (sighup_received) {
-            remoted new_logr;
-            memset(&new_logr, 0, sizeof(remoted));
             sighup_received = 0;
             merror("%s: INFO: SIGHUP received. Reloading configuration (Network bind settings require restart).", ARGV0);
-
-            /* Copy current runtime state to temporary struct */
-            new_logr.m_queue = logr.m_queue;
-            new_logr.netinfo = logr.netinfo;
-
-            if (RemotedConfig(cfgfile, &new_logr) < 0) {
-                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
-            } else {
-                /* Atomic swap - protect against threads using logr
-                 * Follow 'lock-first' pattern to avoid potential deadlocks.
-                 */
-                sigprocmask(SIG_SETMASK, &old_set, NULL);
-                send_msg_lock();
-                sigprocmask(SIG_BLOCK, &set, NULL);
-
-                FreeRemotedConfig(&logr);
-                memcpy(&logr, &new_logr, sizeof(remoted));
-
-                send_msg_unlock();
-            }
+            RemotedReloadFromSighup(cfgfile, &logr, &set, &old_set);
         }
 
         /* process connections through select() for multiple sockets */

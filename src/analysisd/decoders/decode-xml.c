@@ -16,6 +16,13 @@
 #include "plugin_decoders.h"
 #include "config.h"
 
+#define DECODER_XML_FAIL(...) do {                                      \
+        if (OS_DecoderListStagingActive()) {                            \
+            merror(__VA_ARGS__);                                        \
+            return (0);                                                 \
+        }                                                               \
+        ErrorExit(__VA_ARGS__);                                         \
+    } while (0)
 
 #ifdef TESTRULE
 #undef XML_LDECODER
@@ -28,29 +35,74 @@ static int addDecoder2list(const char *name);
 static int os_setdecoderids(const char *p_name);
 static int ReadDecodeAttrs(char *const *names, char *const *values);
 static OSStore *os_decoder_store = NULL;
+static OSStore *os_decoder_store_staging = NULL;
+static int decoder_store_staging_active;
 
+static OSStore **decoder_store_active(void)
+{
+    if (decoder_store_staging_active) {
+        return (&os_decoder_store_staging);
+    }
+    return (&os_decoder_store);
+}
 
 int getDecoderfromlist(const char *name)
 {
-    if (os_decoder_store) {
-        return (OSStore_GetPosition(os_decoder_store, name));
+    OSStore *store = *decoder_store_active();
+
+    if (store) {
+        return (OSStore_GetPosition(store, name));
     }
 
     return (0);
 }
 
+void OS_DestroyDecoderStore(void)
+{
+    if (os_decoder_store) {
+        os_decoder_store = OSStore_Free(os_decoder_store);
+    }
+}
+
+void OS_DecoderStoreStagingBegin(void)
+{
+    decoder_store_staging_active = 1;
+    os_decoder_store_staging = NULL;
+}
+
+void OS_DecoderStoreStagingCommit(void)
+{
+    if (os_decoder_store) {
+        os_decoder_store = OSStore_Free(os_decoder_store);
+    }
+    os_decoder_store = os_decoder_store_staging;
+    os_decoder_store_staging = NULL;
+    decoder_store_staging_active = 0;
+}
+
+void OS_DecoderStoreStagingAbort(void)
+{
+    if (os_decoder_store_staging) {
+        os_decoder_store_staging = OSStore_Free(os_decoder_store_staging);
+    }
+    os_decoder_store_staging = NULL;
+    decoder_store_staging_active = 0;
+}
+
 static int addDecoder2list(const char *name)
 {
-    if (os_decoder_store == NULL) {
-        os_decoder_store = OSStore_Create();
-        if (os_decoder_store == NULL) {
+    OSStore **store = decoder_store_active();
+
+    if (*store == NULL) {
+        *store = OSStore_Create();
+        if (*store == NULL) {
             merror(LIST_ERROR, ARGV0);
             return (0);
         }
     }
 
     /* Store data */
-    if (!OSStore_Put(os_decoder_store, name, NULL)) {
+    if (!OSStore_Put(*store, name, NULL)) {
         merror(LIST_ADD_ERROR, ARGV0);
         return (0);
     }
@@ -399,13 +451,13 @@ int ReadDecodeXML(const char *file)
                                elements[j]->values);
 
                 if (r_offset & AFTER_ERROR) {
-                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    DECODER_XML_FAIL(DEC_REGEX_ERROR, ARGV0, pi->name);
                 }
 
                 /* Only the first prematch entry may have an offset */
                 if (prematch && r_offset) {
                     merror(DUP_REGEX, ARGV0, pi->name);
-                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    DECODER_XML_FAIL(DEC_REGEX_ERROR, ARGV0, pi->name);
                 }
 
                 if (r_offset) {
@@ -424,13 +476,13 @@ int ReadDecodeXML(const char *file)
                                elements[j]->values);
 
                 if (r_offset & AFTER_ERROR) {
-                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    DECODER_XML_FAIL(DEC_REGEX_ERROR, ARGV0, pi->name);
                 }
 
                 /* Only the first prematch entry may have an offset */
                 if (prematch_pcre2 && r_offset) {
                     merror(DUP_REGEX, ARGV0, pi->name);
-                    ErrorExit(DEC_REGEX_ERROR, ARGV0, pi->name);
+                    DECODER_XML_FAIL(DEC_REGEX_ERROR, ARGV0, pi->name);
                 }
 
                 if (r_offset) {
@@ -522,14 +574,14 @@ int ReadDecodeXML(const char *file)
                 /* Check the values from the order */
                 while (*norder) {
                     if (order_int >= Config.decoder_order_size) {
-                        ErrorExit("%s: ERROR: Order has too many fields.", ARGV0);
+                        DECODER_XML_FAIL("%s: ERROR: Order has too many fields.", ARGV0);
                     }
 
                     char *word = &(*norder)[strspn(*norder, " ")];
                     word[strcspn(word, " ")] = '\0';
 
                     if (strlen(word) == 0) {
-                        ErrorExit("decode-xml: Wrong field '%s' in the order"
+                        DECODER_XML_FAIL("decode-xml: Wrong field '%s' in the order"
                                   " of decoder '%s'", *norder, pi->name);
                     }
 
@@ -597,7 +649,7 @@ int ReadDecodeXML(const char *file)
                 /* Maximum number is 8 for the FTS */
                 norder = OS_StrBreak(',', elements[j]->content, 8);
                 if (norder == NULL) {
-                    ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+                    DECODER_XML_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
                 }
 
                 /* Save the initial point to free later */
@@ -629,7 +681,7 @@ int ReadDecodeXML(const char *file)
                     } else if (strstr(*norder, "name") != NULL) {
                         pi->fts |= FTS_NAME;
                     } else {
-                        ErrorExit("decode-xml: Wrong field '%s' in the fts"
+                        DECODER_XML_FAIL("decode-xml: Wrong field '%s' in the fts"
                                   " decoder '%s'", *norder, pi->name);
                     }
 

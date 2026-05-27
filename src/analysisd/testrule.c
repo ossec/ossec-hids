@@ -307,7 +307,7 @@ int main(int argc, char **argv)
         if (!Config.g_rules_hash) {
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
-        AddHash_Rule(tmp_node);
+        AddHash_Rule(Config.g_rules_hash, tmp_node);
     }
 
     if (test_config == 1) {

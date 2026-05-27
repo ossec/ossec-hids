@@ -37,6 +37,8 @@ char *GetCommandbyName(const char *name, int *timeout) __attribute__((nonnull));
 void ExecCmd(char *const *cmd) __attribute__((nonnull));
 void ExecCmd_Win32(char *cmd);
 int ExecdConfig(const char *cfgfile) __attribute__((nonnull));
+int ExecdReloadConfig(void);
+extern const char *execd_cfgfile;
 int WinExecd_Start(void);
 void WinTimeoutRun(int timeout);
 

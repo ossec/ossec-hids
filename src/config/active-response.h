@@ -36,5 +36,8 @@ typedef struct _ar {
 /* Active response flag */
 extern int ar_flag;
 
+/* When set, ReadActiveResponses skips ar.conf / sink writes (reload staging parse) */
+void AR_SetSkipSharedFileWrite(int skip);
+
 #endif /* _CAR__H */
 

@@ -38,6 +38,66 @@ checkpid()
     done
 }
 
+resolve_daemon_pid()
+{
+    RELOAD_PID=""
+    RELOAD_PIDFILE=""
+    RELOAD_PID_COUNT=0
+
+    for RELOAD_PIDFILE in ${DIR}/var/run/${1}*.pid; do
+        [ -f "${RELOAD_PIDFILE}" ] || continue
+        RELOAD_PID_COUNT=$((RELOAD_PID_COUNT + 1))
+        RELOAD_PID=$(cat "${RELOAD_PIDFILE}" 2>/dev/null)
+    done
+
+    if [ "${RELOAD_PID_COUNT}" -ne 1 ]; then
+        return 1
+    fi
+
+    if [ -z "${RELOAD_PID}" ] || ! ps -p "${RELOAD_PID}" >/dev/null 2>&1; then
+        return 1
+    fi
+
+    if [ -r "/proc/${RELOAD_PID}/exe" ]; then
+        RELOAD_EXE=$(readlink -f "/proc/${RELOAD_PID}/exe" 2>/dev/null)
+        RELOAD_BASE=$(basename "${RELOAD_EXE}" 2>/dev/null)
+        if [ "${RELOAD_BASE}" != "${1}" ]; then
+            return 1
+        fi
+    elif [ -r "/proc/${RELOAD_PID}/comm" ]; then
+        RELOAD_COMM=$(cat "/proc/${RELOAD_PID}/comm" 2>/dev/null)
+        case "${RELOAD_COMM}" in
+            "${1}"|ossec-agentd)
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    fi
+
+    return 0
+}
+
+reload_rate_ok()
+{
+    RELOAD_STAMP="${DIR}/var/run/.reload_stamp"
+    RELOAD_MIN_INTERVAL="${OSSEC_RELOAD_MIN_INTERVAL:-5}"
+    NOW=$(date +%s)
+    LAST=0
+
+    if [ -f "${RELOAD_STAMP}" ]; then
+        LAST=$(cat "${RELOAD_STAMP}" 2>/dev/null)
+    fi
+
+    if [ -n "${LAST}" ] && [ $((NOW - LAST)) -lt "${RELOAD_MIN_INTERVAL}" ]; then
+        echo "Reload ignored: minimum interval is ${RELOAD_MIN_INTERVAL}s"
+        return 1
+    fi
+
+    echo "${NOW}" > "${RELOAD_STAMP}"
+    return 0
+}
+
 lock()
 {
     i=0;
@@ -91,12 +151,21 @@ reload()
 {
     lock;
     checkpid;
+
+    if ! reload_rate_ok; then
+        unlock;
+        return 1
+    fi
+
     for i in ${DAEMONS}; do
         pstatus ${i};
         if [ $? = 1 ]; then
-            echo "Sending reload signal to ${i} .. ";
-
-            kill -HUP `cat ${DIR}/var/run/${i}*.pid`;
+            if resolve_daemon_pid "${i}"; then
+                echo "Sending reload signal to ${i} (pid ${RELOAD_PID}) .. ";
+                kill -HUP "${RELOAD_PID}"
+            else
+                echo "ERROR: ambiguous or missing PID for ${i}; reload skipped"
+            fi
         else
             echo "${i} not running ..";
         fi

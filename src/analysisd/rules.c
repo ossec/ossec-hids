@@ -8,6 +8,22 @@
  */
 
 #include "rules.h"
+
+#define RULES_LOAD_FAIL(...) do {                                       \
+        if (OS_RuleListStagingActive()) {                               \
+            merror(__VA_ARGS__);                                        \
+            return (-1);                                                \
+        }                                                               \
+        ErrorExit(__VA_ARGS__);                                         \
+    } while (0)
+
+#define RULES_PTR_FAIL(...) do {                                        \
+        if (OS_RuleListStagingActive()) {                               \
+            merror(__VA_ARGS__);                                        \
+            return (NULL);                                              \
+        }                                                               \
+        ErrorExit(__VA_ARGS__);                                         \
+    } while (0)
 #include "config.h"
 #include "eventinfo.h"
 #include "compiled_rules/compiled_rules.h"
@@ -148,7 +164,7 @@ int Rules_OP_ReadRules(const char *rulefile)
         i = strlen(RULEPATH) + strlen(rulefile) + 2;
         rulepath = (char *)calloc(i, sizeof(char));
         if (!rulepath) {
-            ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+            RULES_LOAD_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
         snprintf(rulepath, i, "%s/%s", RULEPATH, rulefile);
     } else {
@@ -1477,7 +1493,10 @@ int Rules_OP_ReadRules(const char *rulefile)
              * will be a "child" of someone.
              */
             if (config_ruleinfo->sigid < 10) {
-                OS_AddRule(config_ruleinfo);
+                if (OS_AddRule(config_ruleinfo) < 0) {
+                    OS_ClearXML(&xml);
+                    return (-1);
+                }
             } else if (config_ruleinfo->alert_opts & DO_OVERWRITE) {
                 if (!OS_AddRuleInfo(NULL, config_ruleinfo,
                                     config_ruleinfo->sigid)) {
@@ -1487,7 +1506,11 @@ int Rules_OP_ReadRules(const char *rulefile)
                     return (-1);
                 }
             } else {
-                OS_AddChild(config_ruleinfo);
+                if (OS_AddChild(config_ruleinfo) < 0) {
+                    merror("%s: Invalid child rule linkage.", ARGV0);
+                    OS_ClearXML(&xml);
+                    return (-1);
+                }
             }
 
             /* Clean what we do not need */
@@ -1502,7 +1525,10 @@ int Rules_OP_ReadRules(const char *rulefile)
                     Search_LastSids;
 
                 /* Mark rules that match this id */
-                OS_MarkID(NULL, config_ruleinfo);
+                if (OS_MarkID(NULL, config_ruleinfo) < 0) {
+                    OS_ClearXML(&xml);
+                    return (-1);
+                }
             }
 
             /* Mark the rules that match if_matched_group */
@@ -1510,11 +1536,14 @@ int Rules_OP_ReadRules(const char *rulefile)
                 /* Create list */
                 config_ruleinfo->group_search = OSList_Create();
                 if (!config_ruleinfo->group_search) {
-                    ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+                    RULES_LOAD_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
                 }
 
                 /* Mark rules that match this group */
-                OS_MarkGroup(NULL, config_ruleinfo);
+                if (OS_MarkGroup(NULL, config_ruleinfo) < 0) {
+                    OS_ClearXML(&xml);
+                    return (-1);
+                }
 
                 /* Set function pointer */
                 config_ruleinfo->event_search = (void *(*)(void *, void *))
@@ -1613,7 +1642,7 @@ RuleInfoDetail *zeroinfodetails(int type, const char *data)
     info_details_pt = (RuleInfoDetail *)calloc(1, sizeof(RuleInfoDetail));
 
     if (info_details_pt == NULL) {
-        ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+        RULES_PTR_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
     }
 
     info_details_pt->type = type;
@@ -1634,7 +1663,7 @@ RuleInfo *zerorulemember(int id, int level,
     ruleinfo_pt = (RuleInfo *)calloc(1, sizeof(RuleInfo));
 
     if (ruleinfo_pt == NULL) {
-        ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+        RULES_PTR_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
     }
 
     /* Default values */
@@ -2019,7 +2048,7 @@ static void printRuleinfo(const RuleInfo *rule, int node)
 }
 
 /* Add rule to hash */
-int AddHash_Rule(RuleNode *node)
+int AddHash_Rule(OSHash *rules_hash, RuleNode *node)
 {
     while (node) {
         char id_key[15];
@@ -2027,9 +2056,9 @@ int AddHash_Rule(RuleNode *node)
         snprintf(id_key, 14, "%d", node->ruleinfo->sigid);
 
         /* Add key to hash */
-        OSHash_Add(Config.g_rules_hash, id_key, node->ruleinfo);
+        OSHash_Add(rules_hash, id_key, node->ruleinfo);
         if (node->child) {
-            AddHash_Rule(node->child);
+            AddHash_Rule(rules_hash, node->child);
         }
 
         node = node->next;

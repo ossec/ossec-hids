@@ -20,6 +20,9 @@ typedef struct _os_ip {
 /* Run-time definitions */
 int getDefine_Int(const char *high_name, const char *low_name, int min, int max) __attribute__((nonnull));
 
+/* Like getDefine_Int but returns default_val when the define is missing or invalid */
+int getDefine_IntDefault(const char *high_name, const char *low_name, int default_val, int min, int max) __attribute__((nonnull));
+
 /* Check if IP_address is present at that_ip
  * Returns 1 on success or 0 on failure
  */

@@ -22,6 +22,9 @@
 /* Read remoted config */
 int RemotedConfig(const char *cfgfile, remoted *cfg);
 void FreeRemotedConfig(remoted *cfg);
+int RemotedBindSettingsChanged(const remoted *old_cfg, const remoted *new_cfg);
+void RemotedConfigSwap(remoted *logr, remoted *new_logr, sigset_t *block_set, sigset_t *old_set);
+int RemotedReloadFromSighup(const char *cfgfile, remoted *logr, sigset_t *block_set, sigset_t *old_set);
 
 /* Handle Remote connections */
 void HandleRemote(int position, int uid) __attribute__((noreturn));

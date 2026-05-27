@@ -22,16 +22,98 @@
  */
 static OSDecoderNode *osdecodernode_forpname;
 static OSDecoderNode *osdecodernode_nopname;
+static OSDecoderNode *osdecodernode_forpname_staging;
+static OSDecoderNode *osdecodernode_nopname_staging;
+static int decoderlist_staging_active;
+
+static OSDecoderNode **decoderlist_forpname_head(void)
+{
+    if (decoderlist_staging_active) {
+        return (&osdecodernode_forpname_staging);
+    }
+    return (&osdecodernode_forpname);
+}
+
+static OSDecoderNode **decoderlist_nopname_head(void)
+{
+    if (decoderlist_staging_active) {
+        return (&osdecodernode_nopname_staging);
+    }
+    return (&osdecodernode_nopname);
+}
 
 static OSDecoderNode *_OS_AddOSDecoder(OSDecoderNode *s_node, OSDecoderInfo *pi);
 
 /* Create the Event List */
 void OS_CreateOSDecoderList()
 {
-    osdecodernode_forpname = NULL;
-    osdecodernode_nopname = NULL;
+    *decoderlist_forpname_head() = NULL;
+    *decoderlist_nopname_head() = NULL;
 
     return;
+}
+
+void OS_DecoderListStagingBegin(void)
+{
+    decoderlist_staging_active = 1;
+    osdecodernode_forpname_staging = NULL;
+    osdecodernode_nopname_staging = NULL;
+}
+
+void OS_DecoderListStagingCommit(void)
+{
+    OS_AbandonOSDecoderList();
+    osdecodernode_forpname = osdecodernode_forpname_staging;
+    osdecodernode_nopname = osdecodernode_nopname_staging;
+    osdecodernode_forpname_staging = NULL;
+    osdecodernode_nopname_staging = NULL;
+    decoderlist_staging_active = 0;
+}
+
+void OS_DecoderListStagingAbort(void)
+{
+    if (osdecodernode_forpname_staging) {
+        OS_FreeOSDecoderList(osdecodernode_forpname_staging);
+        osdecodernode_forpname_staging = NULL;
+    }
+    if (osdecodernode_nopname_staging) {
+        OS_FreeOSDecoderList(osdecodernode_nopname_staging);
+        osdecodernode_nopname_staging = NULL;
+    }
+    decoderlist_staging_active = 0;
+}
+
+int OS_DecoderListStagingActive(void)
+{
+    return decoderlist_staging_active;
+}
+
+#define DECODER_LIST_FAIL(...) do {                                     \
+        if (decoderlist_staging_active) {                               \
+            merror(__VA_ARGS__);                                        \
+            return (NULL);                                              \
+        }                                                               \
+        ErrorExit(__VA_ARGS__);                                         \
+    } while (0)
+
+/* Drop decoder lists without freeing nodes (used during SIGHUP reload). */
+void OS_AbandonOSDecoderList(void)
+{
+    osdecodernode_forpname = NULL;
+    osdecodernode_nopname = NULL;
+}
+
+/* Free all decoders and reset lists */
+void OS_DestroyOSDecoderList()
+{
+    if (osdecodernode_forpname) {
+        OS_FreeOSDecoderList(osdecodernode_forpname);
+        osdecodernode_forpname = NULL;
+    }
+    if (osdecodernode_nopname) {
+        OS_FreeOSDecoderList(osdecodernode_nopname);
+        osdecodernode_nopname = NULL;
+    }
 }
 
 /* Get first osdecoder */
@@ -39,10 +121,10 @@ OSDecoderNode *OS_GetFirstOSDecoder(const char *p_name)
 {
     /* If program name is set, we return the forpname list */
     if (p_name) {
-        return (osdecodernode_forpname);
+        return (*decoderlist_forpname_head());
     }
 
-    return (osdecodernode_nopname);
+    return (*decoderlist_nopname_head());
 }
 
 /* Add an osdecoder to the list */
@@ -118,7 +200,7 @@ static OSDecoderNode *_OS_AddOSDecoder(OSDecoderNode *s_node, OSDecoderInfo *pi)
         tmp_node = (OSDecoderNode *)calloc(1, sizeof(OSDecoderNode));
 
         if (tmp_node == NULL) {
-            ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
+            DECODER_LIST_FAIL(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
         tmp_node->child = NULL;
@@ -146,14 +228,14 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
      * name and the other without.
      */
     if (pi->program_name || pi->program_name_pcre2) {
-        osdecodernode = osdecodernode_forpname;
+        osdecodernode = *decoderlist_forpname_head();
     } else {
-        osdecodernode = osdecodernode_nopname;
+        osdecodernode = *decoderlist_nopname_head();
     }
 
     /* Search for parent on both lists */
     if (pi->parent) {
-        OSDecoderNode *tmp_node = osdecodernode_forpname;
+        OSDecoderNode *tmp_node = *decoderlist_forpname_head();
 
         /* List with p_name */
         while (tmp_node) {
@@ -169,7 +251,7 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
         }
 
         /* List without p name */
-        tmp_node = osdecodernode_nopname;
+        tmp_node = *decoderlist_nopname_head();
         while (tmp_node) {
             if (strcmp(tmp_node->osdecoder->name, pi->parent) == 0) {
                 tmp_node->child = _OS_AddOSDecoder(tmp_node->child, pi);
@@ -198,9 +280,9 @@ int OS_AddOSDecoder(OSDecoderInfo *pi)
 
         /* Update global decoder pointers */
         if (pi->program_name || pi->program_name_pcre2) {
-            osdecodernode_forpname = osdecodernode;
+            *decoderlist_forpname_head() = osdecodernode;
         } else {
-            osdecodernode_nopname = osdecodernode;
+            *decoderlist_nopname_head() = osdecodernode;
         }
     }
     return (1);

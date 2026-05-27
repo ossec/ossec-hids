@@ -23,7 +23,35 @@ static int  run_periodic_cmd(agentlessd_entries *entry, int test_it);
 
 /* Global variables */
 agentlessd_config lessdc;
+const char *cfgfile = NULL;
 
+/* Free the agentlessd configuration */
+void FreeAgentlessConfig(agentlessd_config *config)
+{
+    int i = 0;
+    int j = 0;
+
+    if (!config || !config->entries) {
+        return;
+    }
+
+    while (config->entries[i]) {
+        if (config->entries[i]->server) {
+            j = 0;
+            while (config->entries[i]->server[j]) {
+                free(config->entries[i]->server[j]);
+                j++;
+            }
+            free(config->entries[i]->server);
+        }
+        free(config->entries[i]->type);
+        free(config->entries[i]->command);
+        free(config->entries[i]);
+        i++;
+    }
+    free(config->entries);
+    config->entries = NULL;
+}
 
 /* Save agentless entry for the control tools to gather */
 static int save_agentless_entry(const char *host, const char *script, const char *agttype)

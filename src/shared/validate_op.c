@@ -145,6 +145,39 @@ int getDefine_Int(const char *high_name, const char *low_name, int min, int max)
     return (ret);
 }
 
+int getDefine_IntDefault(const char *high_name, const char *low_name, int default_val, int min, int max)
+{
+    int ret;
+    char *value;
+    char *pt;
+
+    value = _read_file(high_name, low_name, OSSEC_LDEFINES);
+    if (!value) {
+        value = _read_file(high_name, low_name, OSSEC_DEFINES);
+        if (!value) {
+            return (default_val);
+        }
+    }
+
+    pt = value;
+    while (*pt != '\0') {
+        if (!isdigit((int)*pt)) {
+            free(value);
+            return (default_val);
+        }
+        pt++;
+    }
+
+    ret = atoi(value);
+    free(value);
+
+    if ((ret < min) || (ret > max)) {
+        return (default_val);
+    }
+
+    return (ret);
+}
+
 /* Check if IP_address is present at that_IP
  * Returns 1 on success or 0 on failure
  */

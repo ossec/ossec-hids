@@ -59,9 +59,10 @@ void Monitord()
     while (1) {
         if (sighup_received) {
             sighup_received = 0;
-            merror("%s: INFO: SIGHUP received. Re-opening log files.", ARGV0);
-            /* Reload configuration placeholder */
-            merror("%s: INFO: Configuration reload not yet fully implemented for monitord.", ARGV0);
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+            if (MonitordReloadConfig() < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            }
         }
 
         tm = time(NULL);

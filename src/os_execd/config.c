@@ -10,9 +10,9 @@
 #include "shared.h"
 #include "execd.h"
 
+const char *execd_cfgfile = NULL;
 
-/* Read the config file */
-int ExecdConfig(const char *cfgfile)
+static int _execd_read_config(const char *cfgfile, int reload)
 {
 #ifdef WIN32
     int is_disabled = 1;
@@ -29,6 +29,10 @@ int ExecdConfig(const char *cfgfile)
 
     /* Read XML file */
     if (OS_ReadXML(cfgfile, &xml) < 0) {
+        if (reload) {
+            merror(XML_ERROR, ARGV0, cfgfile, xml.err, xml.err_line);
+            return (-1);
+        }
         ErrorExit(XML_ERROR, ARGV0, cfgfile, xml.err, xml.err_line);
     }
 
@@ -91,5 +95,21 @@ int ExecdConfig(const char *cfgfile)
     OS_ClearXML(&xml);
 
     return (is_disabled);
+}
+
+/* Read the config file */
+int ExecdConfig(const char *cfgfile)
+{
+    return (_execd_read_config(cfgfile, 0));
+}
+
+int ExecdReloadConfig(void)
+{
+    if (!execd_cfgfile) {
+        return (-1);
+    }
+
+    memset(repeated_offenders_timeout, 0, 7 * sizeof(int));
+    return (_execd_read_config(execd_cfgfile, 1));
 }
 

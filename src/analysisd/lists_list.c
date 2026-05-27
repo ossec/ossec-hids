@@ -18,28 +18,86 @@
 /* Local variables */
 static ListNode *global_listnode;
 static ListRule *global_listrule;
+static ListNode *global_listnode_staging;
+static ListRule *global_listrule_staging;
+static int lists_staging_active;
 
+static ListNode **lists_node_head(void)
+{
+    if (lists_staging_active) {
+        return (&global_listnode_staging);
+    }
+    return (&global_listnode);
+}
+
+static ListRule **lists_rule_head(void)
+{
+    if (lists_staging_active) {
+        return (&global_listrule_staging);
+    }
+    return (&global_listrule);
+}
 
 /* Create the ListRule */
 void OS_CreateListsList()
 {
-    global_listnode = NULL;
-    global_listrule = NULL;
+    *lists_node_head() = NULL;
+    *lists_rule_head() = NULL;
 
     return;
+}
+
+void OS_ListsStagingBegin(void)
+{
+    lists_staging_active = 1;
+    global_listnode_staging = NULL;
+    global_listrule_staging = NULL;
+}
+
+void OS_ListsStagingCommit(void)
+{
+    OS_FreeLists();
+    global_listnode = global_listnode_staging;
+    global_listrule = global_listrule_staging;
+    global_listnode_staging = NULL;
+    global_listrule_staging = NULL;
+    lists_staging_active = 0;
+}
+
+void OS_ListsStagingAbort(void)
+{
+    ListNode *lnode;
+    ListRule *lrule;
+
+    while (global_listrule_staging) {
+        lrule = global_listrule_staging;
+        global_listrule_staging = global_listrule_staging->next;
+        free(lrule);
+    }
+
+    while (global_listnode_staging) {
+        lnode = global_listnode_staging;
+        global_listnode_staging = global_listnode_staging->next;
+        if (lnode->loaded) {
+            cdb_free(&lnode->cdb);
+        }
+        free(lnode->txt_filename);
+        free(lnode->cdb_filename);
+        free(lnode);
+    }
+
+    lists_staging_active = 0;
 }
 
 /* Get first listnode  */
 ListNode *OS_GetFirstList()
 {
-    ListNode *listnode_pt = global_listnode;
-
-    return (listnode_pt);
+    return (*lists_node_head());
 }
 
 void OS_ListLoadRules()
 {
-    ListRule *lrule = global_listrule;
+    ListRule *lrule = *lists_rule_head();
     while (lrule != NULL) {
         if (!lrule->loaded) {
             lrule->db = OS_FindList(lrule->filename);
@@ -52,12 +110,14 @@ void OS_ListLoadRules()
 /* External AddList */
 int OS_AddList(ListNode *new_listnode)
 {
-    if (global_listnode == NULL) {
+    ListNode **head = lists_node_head();
+
+    if (*head == NULL) {
         /* First list */
-        global_listnode = new_listnode;
+        *head = new_listnode;
     } else {
         /* Add new list to the end */
-        ListNode *last_list_node = global_listnode;
+        ListNode *last_list_node = *head;
 
         while (last_list_node->next != NULL) {
             last_list_node = last_list_node->next;

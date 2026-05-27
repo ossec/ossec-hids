@@ -120,6 +120,8 @@ int main(int argc, char **argv)
 
     }
 
+    mond_cfgfile = cfg;
+
     /* Start daemon */
     debug1(STARTED_MSG, ARGV0);
 

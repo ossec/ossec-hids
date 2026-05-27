@@ -129,6 +129,22 @@ void SyscheckInit()
     return;
 }
 
+/* Refresh decoder IDs after rules/decoders reload */
+void SyscheckRefreshDecoderIds(void)
+{
+    if (!sdb.syscheck_dec) {
+        SyscheckInit();
+        return;
+    }
+
+    sdb.syscheck_dec->id = getDecoderfromlist(SYSCHECK_MOD);
+    sdb.id1 = getDecoderfromlist(SYSCHECK_MOD);
+    sdb.id2 = getDecoderfromlist(SYSCHECK_MOD2);
+    sdb.id3 = getDecoderfromlist(SYSCHECK_MOD3);
+    sdb.idn = getDecoderfromlist(SYSCHECK_NEW);
+    sdb.idd = getDecoderfromlist(SYSCHECK_DEL);
+}
+
 /* Check if the db is completed for that specific agent */
 #define DB_IsCompleted(x) (sdb.agent_cp[x][0] == '1')?1:0
 

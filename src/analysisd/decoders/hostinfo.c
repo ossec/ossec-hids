@@ -99,6 +99,18 @@ void HostinfoInit()
     return;
 }
 
+void HostinfoRefreshDecoderIds(void)
+{
+    if (!hostinfo_dec) {
+        HostinfoInit();
+        return;
+    }
+
+    hostinfo_dec->id = getDecoderfromlist(HOSTINFO_MOD);
+    id_new = getDecoderfromlist(HOSTINFO_NEW);
+    id_mod = getDecoderfromlist(HOSTINFO_MOD);
+}
+
 /* Return the file pointer to be used */
 static FILE *HI_File(void)
 {
