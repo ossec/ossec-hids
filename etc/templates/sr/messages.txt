@@ -41,6 +41,12 @@ yoursmtp="Našli smo da je tvoj SMTP server"
 usesmtp="Da li želiš da ga koristiš?"
 usingsmtp="Koristi SMTP server: "
 whatsmtp="Koji je tvoj SMTP server IP/host?"
+smtpauth="Da li želite da koristite SMTP autentifikaciju?"
+smtpuser="Koje je vaše SMTP korisničko ime?"
+smtppass="Koja je vaša SMTP lozinka?"
+smtpsecure="Da li želite bezbednu konekciju (SSL/TLS pri povezivanju, smtps)?"
+smtpport="Koji je vaš SMTP port?"
+smtptlsverify="Proveriti TLS sertifikat SMTP servera?"
 
 # Part 3.1/agent
 serverip="Koja je IP adresa OSSEC HIDS servera?"

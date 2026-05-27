@@ -668,7 +668,7 @@ ConfigureServer()
         if [ "X${SMTP_SECURE}" = "X${yes}" ]; then
             echo "    <secure_smtp>yes</secure_smtp>" >> $NEWCONFIG
         fi
-        if [ "X${SMTP_PORT}" != "X" ]; then
+        if [ "X${SMTP_PORT}" != "X" ] && [ "X${USE_CURL_BUILD}" = "Xyes" ]; then
             echo "    <smtp_port>$SMTP_PORT</smtp_port>" >> $NEWCONFIG
         fi
         if [ "X${SMTP_TLS_VERIFY}" = "X${no}" ]; then

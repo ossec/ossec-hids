@@ -41,6 +41,12 @@ yoursmtp="SMTP sunucunuz olarak bunu bulduk"
 usesmtp="Kullanmak ister misiniz?"
 usingsmtp="SMTP sunucu kullanılıyor: "
 whatsmtp="SMTP sunucunuzun IP adresi veya ismi nedir?"
+smtpauth="SMTP kimlik doğrulaması kullanmak istiyor musunuz?"
+smtpuser="SMTP kullanıcı adınız nedir?"
+smtppass="SMTP parolanız nedir?"
+smtpsecure="Güvenli bağlantı kullanmak istiyor musunuz (bağlantıda SSL/TLS, smtps)?"
+smtpport="SMTP bağlantı noktanız (port) nedir?"
+smtptlsverify="SMTP sunucusunun TLS sertifikası doğrulansın mı?"
 
 # Part 3.1/agent
 serverip="OSSEC HIDS sunucusunun IP adresi nedir?"
