@@ -101,6 +101,14 @@
 # USER_EMAIL_SMTP defines the SMTP server to send the e-mails.
 #USER_EMAIL_SMTP="test.ossec.net"
 
+# SMTP authentication and TLS (require USE_CURL=yes at build; install.sh sets this automatically)
+#USER_SMTP_AUTH="y"
+#USER_SMTP_USER="user@example.com"
+#USER_SMTP_PASS="secret"
+#USER_SMTP_SECURE="n"
+#USER_SMTP_PORT="587"
+#USER_SMTP_TLS_VERIFY="y"
+
 
 # USER_ENABLE_SYSLOG enables or disables remote syslog.
 #USER_ENABLE_SYSLOG="y"

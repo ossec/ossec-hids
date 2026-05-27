@@ -41,6 +41,12 @@ yoursmtp="Hemos encontrado su servidor de correo (SMTP)"
 usesmtp="Desea usarlo?"
 usingsmtp="Usando el servidor SMTP: "
 whatsmtp="Cuál es la direccion ó nombre de su servidor de correo SMTP?"
+smtpauth="¿Desea usar autenticación SMTP?"
+smtpuser="¿Cuál es su nombre de usuario SMTP?"
+smtppass="¿Cuál es su contraseña SMTP?"
+smtpsecure="¿Desea usar una conexión segura (SSL/TLS al conectar, smtps)?"
+smtpport="¿Cuál es su puerto SMTP?"
+smtptlsverify="¿Verificar el certificado TLS del servidor SMTP?"
 
 # Part 3.1/agent
 serverip="Cuál es la direccion del servidor OSSEC HIDS?"

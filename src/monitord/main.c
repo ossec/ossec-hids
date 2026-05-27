@@ -144,6 +144,7 @@ int main(int argc, char **argv)
 
     mond.authsmtp = 0;
     mond.securesmtp = 0;
+    mond.smtp_tls_verify = 1;
     mond.smtp_port = 0;
     mond.smtp_user = NULL;
     mond.smtp_pass = NULL;
@@ -164,6 +165,7 @@ int main(int argc, char **argv)
         const char *(xml_idsname[]) = {"ossec_config", "global", "email_idsname", NULL};
         const char *(xml_auth_smtp[]) = {"ossec_config", "global", "auth_smtp", NULL};
         const char *(xml_secure_smtp[]) = {"ossec_config", "global", "secure_smtp", NULL};
+        const char *(xml_smtp_tls_verify[]) = {"ossec_config", "global", "smtp_tls_verify", NULL};
         const char *(xml_smtp_port[]) = {"ossec_config", "global", "smtp_port", NULL};
         const char *(xml_smtp_user[]) = {"ossec_config", "global", "smtp_user", NULL};
         const char *(xml_smtp_pass[]) = {"ossec_config", "global", "smtp_password", NULL};
@@ -235,6 +237,21 @@ int main(int argc, char **argv)
                             mond.reports = NULL;
                         }
                         free(tmp_secure);
+                    }
+                }
+
+                if (mond.reports) {
+                    char *tmp_tls_verify = OS_GetOneContentforElement(&xml, xml_smtp_tls_verify);
+                    if (tmp_tls_verify) {
+                        if (strcmp(tmp_tls_verify, "yes") == 0) {
+                            mond.smtp_tls_verify = 1;
+                        } else if (strcmp(tmp_tls_verify, "no") == 0) {
+                            mond.smtp_tls_verify = 0;
+                        } else {
+                            merror("%s: ERROR: Invalid value for 'smtp_tls_verify' (expected yes/no). Disabling email reports.", ARGV0);
+                            mond.reports = NULL;
+                        }
+                        free(tmp_tls_verify);
                     }
                 }
 
