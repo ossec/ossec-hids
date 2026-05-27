@@ -33,6 +33,8 @@
 #include "check_cert.h"
 
 
+
+
 /* Compare the manager's name or IP address given on the command line with the
  * subject alternative names and common names present in a received certificate.
  * This could be replaced with X509_check_host() in future but this is only
@@ -43,7 +45,7 @@ int check_x509_cert(const SSL *ssl, const char *manager)
     X509 *cert = NULL;
     int verified = VERIFY_FALSE;
 
-    if (!(cert = SSL_get_peer_certificate(ssl))) {
+    if (!(cert = SSL_get1_peer_certificate(ssl))) {
         goto CERT_CHECK_ERROR;
     }
 

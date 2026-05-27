@@ -128,8 +128,9 @@ int main(int argc, char **argv)
         }
     }
 
+    cfgfile = cfg;
     /* Read config */
-    if (ClientConf(cfg) < 0) {
+    if (ClientConf(cfg, agt) < 0) {
         ErrorExit(CLIENT_ERROR, ARGV0);
     }
 

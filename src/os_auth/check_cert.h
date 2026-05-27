@@ -30,6 +30,13 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+/* In OpenSSL 3.0, SSL_get_peer_certificate was deprecated in favor of
+ * SSL_get1_peer_certificate.
+ */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#define SSL_get1_peer_certificate SSL_get_peer_certificate
+#endif
+
 #define VERIFY_TRUE   1
 #define VERIFY_FALSE  0
 #define VERIFY_ERROR -1

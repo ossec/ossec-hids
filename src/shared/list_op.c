@@ -285,3 +285,39 @@ int OSList_AddData(OSList *list, void *data)
     return (1);
 }
 
+
+/* Clear all nodes from a list, using the free_data_function if available */
+void OSList_CleanNodes(OSList *list)
+{
+    OSListNode *node;
+    OSListNode *next;
+
+    if (!list) {
+        return;
+    }
+
+    node = list->first_node;
+    while (node) {
+        next = node->next;
+        if (list->free_data_function && node->data) {
+            list->free_data_function(node->data);
+        }
+        free(node);
+        node = next;
+    }
+
+    list->first_node = NULL;
+    list->last_node = NULL;
+    list->cur_node = NULL;
+    list->currently_size = 0;
+}
+
+/* Free the list and all its nodes */
+void OSList_Free(OSList *list)
+{
+    if (!list) {
+        return;
+    }
+    OSList_CleanNodes(list);
+    free(list);
+}

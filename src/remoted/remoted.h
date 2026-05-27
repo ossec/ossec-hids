@@ -21,6 +21,10 @@
 
 /* Read remoted config */
 int RemotedConfig(const char *cfgfile, remoted *cfg);
+void FreeRemotedConfig(remoted *cfg);
+int RemotedBindSettingsChanged(const remoted *old_cfg, const remoted *new_cfg);
+void RemotedConfigSwap(remoted *logr, remoted *new_logr, sigset_t *block_set, sigset_t *old_set);
+int RemotedReloadFromSighup(const char *cfgfile, remoted *logr, sigset_t *block_set, sigset_t *old_set);
 
 /* Handle Remote connections */
 void HandleRemote(int position, int uid) __attribute__((noreturn));
@@ -52,6 +56,10 @@ int send_msg(unsigned int agentid, const char *msg);
 /* Initializing send_msg */
 void send_msg_init(void);
 
+void send_msg_lock(void);
+
+void send_msg_unlock(void);
+
 int check_keyupdate(void);
 
 void key_lock(void);
@@ -64,5 +72,6 @@ void keyupdate_init(void);
 
 extern keystore keys;
 extern remoted logr;
+extern const char *cfgfile;
 
 #endif /* __LOGREMOTE_H */

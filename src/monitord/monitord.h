@@ -18,6 +18,9 @@
 
 /* Prototypes */
 void Monitord(void) __attribute__((noreturn));
+void FreeMonitordConfig(monitor_config *config);
+int MonitordReloadConfig(void);
+extern const char *mond_cfgfile;
 void manage_files(int cday, int cmon, int cyear);
 void generate_reports(int cday, int cmon, int cyear);
 void monitor_agents(void);

@@ -27,6 +27,7 @@ void HandleSecure()
     fd_set fdsave, fdwork;			/* select() work areas */
     int fdmax;					/* max socket number + 1 */
     int sock;					/* active socket */
+    int r;
 
     /* Send msg init */
     send_msg_init();
@@ -80,10 +81,30 @@ void HandleSecure()
     fdsave = logr.netinfo->fdset;
     fdmax  = logr.netinfo->fdmax;	/* value preset to max fd + 1 */
 
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+        if (sighup_received) {
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration (Network bind settings require restart).", ARGV0);
+            RemotedReloadFromSighup(cfgfile, &logr, &set, &old_set);
+        }
+
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
-        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+
+        /* Wait for connections - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        r = select(fdmax, &fdwork, NULL, NULL, NULL);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (r < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit("ERROR: Call to secure select() failed, errno %d - %s",
                       errno, strerror (errno));
         }

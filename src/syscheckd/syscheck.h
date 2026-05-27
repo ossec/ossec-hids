@@ -28,7 +28,9 @@ void run_check(void);
 void start_daemon(void) __attribute__((noreturn));
 
 /* Read the XML config */
-int Read_Syscheck_Config(const char *cfgfile) __attribute__((nonnull));
+int Read_Syscheck_Config(const char *cfgfile, syscheck_config *config);
+void FreeSyscheckConfig(syscheck_config *config);
+extern const char *cfgfile;
 
 /* Create the database */
 int create_db(void);

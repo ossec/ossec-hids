@@ -61,6 +61,7 @@ typedef struct _MailMsg {
 
 /* Config function */
 int MailConf(int test_config, const char *cfgfile, MailConfig *Mail) __attribute__((nonnull));
+void FreeMailConfig(MailConfig *Mail) __attribute__((nonnull));
 
 /* Receive the e-mail message */
 MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *mail,

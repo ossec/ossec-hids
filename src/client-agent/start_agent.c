@@ -12,19 +12,82 @@
 #include "os_net/os_net.h"
 
 
+static int agent_rip_count(void)
+{
+    int n = 0;
+
+    if (!agt || !agt->rip) {
+        return (0);
+    }
+
+    while (agt->rip[n]) {
+        n++;
+    }
+
+    return (n);
+}
+
+int agent_address_in_rip(const char *addr)
+{
+    int i = 0;
+
+    if (!addr || !agt || !agt->rip) {
+        return (0);
+    }
+
+    while (agt->rip[i]) {
+        if (strcmp(agt->rip[i], addr) == 0) {
+            return (1);
+        }
+        i++;
+    }
+
+    return (0);
+}
+
+int agent_connect_id_for_address(const char *addr)
+{
+    int i = 0;
+
+    if (!addr || !agt || !agt->rip) {
+        return (0);
+    }
+
+    while (agt->rip[i]) {
+        if (strcmp(agt->rip[i], addr) == 0) {
+            return (i);
+        }
+        i++;
+    }
+
+    return (0);
+}
+
 /* Attempt to connect to all configured servers */
 int connect_server(int initial_id)
 {
     unsigned int attempts = 2;
+    int rip_count;
 
     extern agent *agt;
 
-    int rc = initial_id;
+    int rc = 0;
+
+    rip_count = agent_rip_count();
+    if (rip_count == 0) {
+        return (0);
+    }
+
+    if (initial_id < 0 || initial_id >= rip_count) {
+        rc = 0;
+    } else {
+        rc = initial_id;
+    }
 
     /* Checking if the initial is zero, meaning we have to
      * rotate to the beginning
      */
-    if (agt->rip[initial_id] == NULL) {
+    if (!agt->rip[rc]) {
         rc = 0;
     }
 

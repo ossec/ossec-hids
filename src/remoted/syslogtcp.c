@@ -159,7 +159,19 @@ void HandleSyslogTCP()
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
+    sigset_t set, old_set;
+    int r;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+        if (sighup_received) {
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration (Network bind settings require restart).", ARGV0);
+            RemotedReloadFromSighup(cfgfile, &logr, &set, &old_set);
+        }
+
         /* Wait for the children */
         while (childcount) {
             int wp;
@@ -178,7 +190,16 @@ void HandleSyslogTCP()
 
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
-        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+
+        /* Wait for connections - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        r = select(fdmax, &fdwork, NULL, NULL, NULL);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (r < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit("ERROR: Call to syslogtcp select() failed, errno %d - %s",
                       errno, strerror (errno));
         }

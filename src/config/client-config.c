@@ -28,6 +28,7 @@ int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     const char *xml_max_time_reconnect_try = "time-reconnect";
     const char *xml_profile_name = "config-profile";
     const char *xml_crypto_method = "crypto_method";
+    const char *xml_allow_reload_reconnect = "allow-reload-reconnect";
 
     agent *logr;
 
@@ -36,6 +37,7 @@ int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     logr->notify_time = 0;
     logr->max_time_reconnect_try = 0;
     logr->crypto_method = W_METH_AES;
+    logr->allow_reload_reconnect = 0;
 
     while (node[i]) {
         if (!node[i]->element) {
@@ -137,6 +139,15 @@ int Read_Client(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                 logr->crypto_method = W_METH_AES;
             } else if (strcmp(node[i]->content, "blowfish") == 0) {
                 logr->crypto_method = W_METH_BLOWFISH;
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                return (OS_INVALID);
+            }
+        } else if (strcmp(node[i]->element, xml_allow_reload_reconnect) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                logr->allow_reload_reconnect = 1;
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                logr->allow_reload_reconnect = 0;
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);

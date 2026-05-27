@@ -16,7 +16,9 @@
 /*** Function Prototypes ***/
 
 /* Client configuration */
-int ClientConf(const char *cfgfile);
+int ClientConf(const char *cfgfile, agent *config);
+void FreeAgentConfig(agent *config);
+extern const char *cfgfile;
 
 /* Agentd init function */
 void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group) __attribute__((noreturn));
@@ -28,7 +30,11 @@ void *EventForward(void);
 void *receive_msg(void);
 
 /* Receiver messages for Windows */
+#ifdef WIN32
+DWORD WINAPI receiver_thread(void *none);
+#else
 void *receiver_thread(void *none);
+#endif
 
 /* Send integrity checking information about a file to the server */
 int intcheck_file(const char *file_name, const char *dir);
@@ -44,6 +50,9 @@ void start_agent(int is_startup);
 
 /* Connect to the server */
 int connect_server(int initial_id);
+
+int agent_address_in_rip(const char *addr);
+int agent_connect_id_for_address(const char *addr);
 
 /* Notify server */
 void run_notify(void);

@@ -51,7 +51,20 @@ void Monitord()
     }
 
     /* Main monitor loop */
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+
     while (1) {
+        if (sighup_received) {
+            sighup_received = 0;
+            merror("%s: INFO: SIGHUP received. Reloading configuration.", ARGV0);
+            if (MonitordReloadConfig() < 0) {
+                merror("%s: ERROR: Error reloading configuration (using old config)", ARGV0);
+            }
+        }
+
         tm = time(NULL);
         p = localtime(&tm);
 
@@ -72,8 +85,10 @@ void Monitord()
             thisyear = p->tm_year + 1900;
         }
 
-        /* We only check every two minutes */
+        /* We only check every two minutes - unblock SIGHUP during wait */
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
         sleep(120);
+        sigprocmask(SIG_BLOCK, &set, NULL);
     }
 }
 

@@ -134,15 +134,76 @@ static void clean_exit(SSL_CTX *ctx, int sock)
     exit(0);
 }
 
+static SSL_CTX *g_authd_ctx = NULL;
+static const char *g_authd_dir = NULL;
+static const char *g_authd_ciphers = NULL;
+static const char *g_authd_server_cert = NULL;
+static const char *g_authd_server_key = NULL;
+static const char *g_authd_ca_cert = NULL;
+static int g_authd_use_pass = 1;
+static char *g_authpass = NULL;
+static volatile sig_atomic_t authd_reload_pending = 0;
+
 /* Exit handler */
 static void cleanup();
 
+static void process_sighup_authd(int active_processes)
+{
+    FILE *fp;
+    char buf[4096 + 1];
+    SSL_CTX *new_ctx;
+
+    if (sighup_received) {
+        authd_reload_pending = 1;
+        sighup_received = 0;
+    }
+
+    if (!authd_reload_pending) {
+        return;
+    }
+
+    if (active_processes > 0) {
+        merror("%s: WARNING: Deferring authd SSL reload while %d children are active.", ARGV0, active_processes);
+        return;
+    }
+
+    authd_reload_pending = 0;
+    merror("%s: INFO: Reloading authd configuration.", ARGV0);
+
+    new_ctx = os_ssl_keys(1, g_authd_dir, g_authd_ciphers, g_authd_server_cert,
+                          g_authd_server_key, g_authd_ca_cert);
+    if (!new_ctx) {
+        merror("%s: ERROR: Error reloading SSL configuration (using old config)", ARGV0);
+        return;
+    }
+
+    if (g_authd_use_pass) {
+        fp = fopen(AUTHDPASS_PATH, "r");
+        buf[0] = '\0';
+        if (fp) {
+            buf[4096] = '\0';
+            if (fgets(buf, 4095, fp) && strlen(buf) > 2) {
+                buf[strlen(buf) - 1] = '\0';
+                if (g_authpass) {
+                    free(g_authpass);
+                }
+                g_authpass = strdup(buf);
+            }
+            fclose(fp);
+        }
+    }
+
+    if (g_authd_ctx) {
+        SSL_CTX_free(g_authd_ctx);
+    }
+    g_authd_ctx = new_ctx;
+    merror("%s: INFO: Authd configuration reloaded successfully.", ARGV0);
+}
 
 
 int main(int argc, char **argv)
 {
     FILE *fp;
-    char *authpass = NULL;
     /* Bucket to keep pids in */
     int process_pool[POOL_SIZE];
     /* Count of pids we are wait()ing on */
@@ -332,7 +393,7 @@ int main(int argc, char **argv)
             if (ret && strlen(buf) > 2) {
                 /* Remove newline */
                 buf[strlen(buf) - 1] = '\0';
-                authpass = strdup(buf);
+                g_authpass = strdup(buf);
             }
 
             fclose(fp);
@@ -342,8 +403,8 @@ int main(int argc, char **argv)
             verbose("Accepting connections. Using password specified on file: %s",AUTHDPASS_PATH);
         else {
             /* Getting temporary pass. */
-            authpass = __generatetmppass();
-            verbose("Accepting connections. Random password chosen for agent authentication: %s", authpass);
+            g_authpass = __generatetmppass();
+            verbose("Accepting connections. Random password chosen for agent authentication: %s", g_authpass);
         }
     } else {
         verbose("Accepting connections. No password required (not recommended)");
@@ -353,13 +414,20 @@ int main(int argc, char **argv)
     /* Setup random */
     srandom_init();
 
+    g_authd_dir = dir;
+    g_authd_ciphers = ciphers;
+    g_authd_server_cert = server_cert;
+    g_authd_server_key = server_key;
+    g_authd_ca_cert = ca_cert;
+    g_authd_use_pass = use_pass;
+
     /* Start SSL */
-    /* Getting SSL cert. */
     ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {
         merror("%s: ERROR: SSL error. Exiting.", ARGV0);
         exit(1);
     }
+    g_authd_ctx = ctx;
 
     /* Connect via TCP */
     netinfo = OS_Bindporttcp(port, NULL);
@@ -394,13 +462,30 @@ int main(int argc, char **argv)
 
     /* initialize select() save area */
     fdsave = netinfo->fdset;
+    fdwork = fdsave;
     fdmax  = netinfo->fdmax;            /* value preset to max fd + 1 */
 
-    debug1("%s: DEBUG: Going into listening mode.", ARGV0);
+#ifndef WIN32
+    sigset_t set, old_set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGHUP);
+    sigprocmask(SIG_BLOCK, &set, &old_set);
+#endif
 
+    debug1("%s: DEBUG: Going into listening mode.", ARGV0);
     while (1) {
+        process_sighup_authd(active_processes);
+
         /* No need to completely pin the cpu, 100ms should be fast enough */
+#ifndef WIN32
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+#endif
         usleep(100 * 1000);
+#ifndef WIN32
+        sigprocmask(SIG_BLOCK, &set, NULL);
+#endif
+
+        process_sighup_authd(active_processes);
 
         /* Only check process-pool if we have active processes */
         if (active_processes > 0) {
@@ -421,7 +506,14 @@ int main(int argc, char **argv)
         _ncl = sizeof(_nc);
 
         fdwork = fdsave;
-        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        ret = select (fdmax, &fdwork, NULL, NULL, NULL);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+
+        if (ret < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit("ERROR: Call to os_auth select() failed, errno %d - %s",
                       errno, strerror (errno));
         }
@@ -448,7 +540,7 @@ int main(int argc, char **argv)
                     } else {
                         satop((struct sockaddr *) &_nc, srcip, IPSIZE);
                         char *agentname = NULL;
-                        ssl = SSL_new(ctx);
+                        ssl = SSL_new(g_authd_ctx);
                         SSL_set_fd(ssl, client_sock);
         
                         do {
@@ -475,13 +567,13 @@ int main(int argc, char **argv)
                         char *tmpstr = buf;
         
                         /* Checking for shared password authentication. */
-                        if(authpass) {
+                        if(g_authpass) {
                             /* Format is pretty simple: OSSEC PASS: PASS WHATEVERACTION */
                             if (strncmp(tmpstr, "OSSEC PASS: ", 12) == 0) {
                                 tmpstr = tmpstr + 12;
         
-                                if (strlen(tmpstr) > strlen(authpass) && strncmp(tmpstr, authpass, strlen(authpass)) == 0) {
-                                    tmpstr += strlen(authpass);
+                                if (strlen(tmpstr) > strlen(g_authpass) && strncmp(tmpstr, g_authpass, strlen(g_authpass)) == 0) {
+                                    tmpstr += strlen(g_authpass);
         
                                     if (*tmpstr == ' ') {
                                         tmpstr++;
@@ -523,7 +615,7 @@ int main(int argc, char **argv)
                             fname[2048] = '\0';
                             if (!OS_IsValidName(agentname)) {
                                 merror("%s: ERROR: Invalid agent name: %s from %s", ARGV0, agentname, srcip);
-                                snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
+                                snprintf(response, 2048, "ERROR: Invalid agent name: %.1024s\n\n", agentname);
                                 SSL_write(ssl, response, strlen(response));
                                 snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
                                 SSL_write(ssl, response, strlen(response));
@@ -538,7 +630,7 @@ int main(int argc, char **argv)
                                 acount++;
                                 if (acount > 256) {
                                     merror("%s: ERROR: Invalid agent name %s (duplicated)", ARGV0, agentname);
-                                    snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
+                                    snprintf(response, 2048, "ERROR: Invalid agent name: %.1024s\n\n", agentname);
                                     SSL_write(ssl, response, strlen(response));
                                     snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
                                     SSL_write(ssl, response, strlen(response));
@@ -569,7 +661,7 @@ int main(int argc, char **argv)
                             }
                             if (!finalkey) {
                                 merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
-                                snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
+                                snprintf(response, 2048, "ERROR: Internal manager error adding agent: %.1024s\n\n", agentname);
                                 SSL_write(ssl, response, strlen(response));
                                 snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
                                 SSL_write(ssl, response, strlen(response));
@@ -609,5 +701,5 @@ int main(int argc, char **argv)
 
 /* Exit handler */
 static void cleanup() {
-	DeletePID(ARGV0);
+	DeletePID_AsyncSafe();
 }

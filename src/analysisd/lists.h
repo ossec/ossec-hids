@@ -43,6 +43,11 @@ typedef struct ListRule {
 
 /* Create the rule list */
 void OS_CreateListsList(void);
+void OS_ListsStagingBegin(void);
+void OS_ListsStagingCommit(void);
+void OS_ListsStagingAbort(void);
+
+void OS_FreeLists(void);
 
 /* Add rule information to the list */
 int OS_AddList( ListNode *new_listnode );

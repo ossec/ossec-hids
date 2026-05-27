@@ -22,6 +22,16 @@ void AR_Init(void);
  */
 int AR_ReadConfig(const char *cfgfile);
 
+/* Parse into staging lists without touching live AR or ar.conf */
+int AR_LoadConfigStaging(const char *cfgfile);
+
+/* After successful parse: write ar.conf (if allowed) and swap into globals */
+int AR_CommitConfig(void);
+
+void AR_AbortConfigStaging(void);
+
+void FreeARConfig(void);
+
 /* Active response information */
 extern OSList *active_responses;
 

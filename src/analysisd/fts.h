@@ -22,6 +22,7 @@
 #endif
 
 int FTS_Init(void);
+void FTS_Free(void);
 void AddtoIGnore(Eventinfo *lf);
 int IGnore(Eventinfo *lf);
 int FTS(Eventinfo *lf);

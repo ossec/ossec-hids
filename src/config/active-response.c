@@ -18,16 +18,47 @@
 #include "active-response.h"
 #include "config.h"
 
+#ifndef AR_RELOAD_SINK_MAX
+#define AR_RELOAD_SINK_MAX 1048576
+#endif
+
+#ifndef WIN32
+#include <sys/stat.h>
+
+static FILE *ar_open_reload_sink(const char *path, const char *mode)
+{
+    struct stat st;
+
+    if (mode[0] == 'a' && stat(path, &st) == 0 && st.st_size >= AR_RELOAD_SINK_MAX) {
+        merror("%s: ERROR: %s exceeds %d bytes; refusing append.", __local_name, path,
+               AR_RELOAD_SINK_MAX);
+        return (NULL);
+    }
+
+    return (fopen(path, mode));
+}
+#else
+static FILE *ar_open_reload_sink(const char *path, const char *mode)
+{
+    return (fopen(path, mode));
+}
+#endif
+
 /* Global variables */
 int ar_flag = 0;
+static int ar_skip_shared_file_write = 0;
 
+void AR_SetSkipSharedFileWrite(int skip)
+{
+    ar_skip_shared_file_write = skip ? 1 : 0;
+}
 
 /* Generate a list with all active responses */
 int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 {
     OSList *l1 = (OSList *) d1;
     OSList *l2 = (OSList *) d2;
-    FILE *fp;
+    FILE *fp = NULL;
     int i = 0;
     int r_ar = 0;
     int l_ar = 0;
@@ -49,39 +80,54 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     /* Currently active response */
     active_response *tmp_ar;
 
-    /* Open shared ar file */
-    fp = fopen(DEFAULTARPATH, "a");
-    if (!fp) {
-        merror(FOPEN_ERROR, __local_name, DEFAULTARPATH, errno, strerror(errno));
-        return (-1);
-    }
+    /* Open shared ar file (append). Skipped during analysisd reload staging parse. */
+    if (!ar_skip_shared_file_write) {
+        const char *arpath = isChroot() ? DEFAULTAR : DEFAULTARPATH;
+        int ar_skip_file = 0;
+
+        if (geteuid() != 0) {
+            fp = ar_open_reload_sink("var/run/ar_reload_sink", "a");
+            ar_skip_file = 1;
+        } else {
+            fp = fopen(arpath, "a");
+        }
+        if (!fp) {
+            const char *errpath = (geteuid() != 0) ? "var/run/ar_reload_sink" : arpath;
+            merror(FOPEN_ERROR, __local_name, errpath, errno, strerror(errno));
+            return (-1);
+        }
 
 #ifndef WIN32
-    struct group *os_group;
-    if ((os_group = getgrnam(USER)) == NULL) {
-        merror("Could not get ossec gid.");
-        fclose(fp);
-        return (-1);
-    }
+        if (!ar_skip_file) {
+            struct group *os_group;
+            if ((os_group = getgrnam(USER)) == NULL) {
+                merror("Could not get ossec gid.");
+                fclose(fp);
+                return (-1);
+            }
 
-    if ((chown(DEFAULTARPATH, (uid_t) - 1, os_group->gr_gid)) == -1) {
-        merror("Could not change the group to ossec: %d", errno);
-        fclose(fp);
-        return (-1);
-    }
+            if ((chown(arpath, (uid_t) - 1, os_group->gr_gid)) == -1) {
+                merror("Could not change the group to ossec: %d", errno);
+                fclose(fp);
+                return (-1);
+            }
+
+            if ((chmod(arpath, 0440)) == -1) {
+                merror("Could not chmod to 0440: %d", errno);
+                fclose(fp);
+                return (-1);
+            }
+        }
 #endif
-
-    if ((chmod(DEFAULTARPATH, 0440)) == -1) {
-        merror("Could not chmod to 0440: %d", errno);
-        fclose(fp);
-        return (-1);
     }
 
     /* Allocate for the active-response */
     tmp_ar = (active_response *) calloc(1, sizeof(active_response));
     if (!tmp_ar) {
         merror(MEM_ERROR, __local_name, errno, strerror(errno));
-        fclose(fp);
+        if (fp) {
+            fclose(fp);
+        }
         return (-1);
     }
 
@@ -163,7 +209,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         if (tmp_ar->command) {
             debug1("active response command '%s' is disabled", tmp_ar->command);
         }
-        fclose(fp);
+        if (fp) {
+            fclose(fp);
+        }
         free(tmp_ar);
         free(tmp_location);
         return (0);
@@ -172,7 +220,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     /* Command and location must be there */
     if (!tmp_ar->command || !tmp_location) {
         debug1("command or location missing");
-        fclose(fp);
+        if (fp) {
+            fclose(fp);
+        }
         free(tmp_ar);
         free(tmp_location);
 
@@ -196,7 +246,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         if (!tmp_ar->agent_id) {
             debug1("'defined-agent' agent_id not defined");
             merror(AR_DEF_AGENT, __local_name);
-            fclose(fp);
+            if (fp) {
+                fclose(fp);
+            }
             free(tmp_ar);
             free(tmp_location);
             return (-1);
@@ -213,7 +265,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if (tmp_ar->location == 0) {
         debug1("no location defined");
         merror(AR_INV_LOC, __local_name, tmp_location);
-        fclose(fp);
+        if (fp) {
+            fclose(fp);
+        }
         free(tmp_ar);
         free(tmp_location);
         return (-1);
@@ -244,7 +298,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         if (tmp_ar->ar_cmd == NULL) {
             debug1("invalid command");
             merror(AR_INV_CMD, __local_name, tmp_ar->command);
-            fclose(fp);
+            if (fp) {
+                fclose(fp);
+            }
             free(tmp_ar);
             return (-1);
         }
@@ -254,7 +310,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     if (tmp_ar->timeout && !tmp_ar->ar_cmd->timeout_allowed) {
         debug1("timeout is not allowed");
         merror(AR_NO_TIMEOUT, __local_name, tmp_ar->ar_cmd->name);
-        fclose(fp);
+        if (fp) {
+            fclose(fp);
+        }
         free(tmp_ar);
         return (-1);
     }
@@ -262,7 +320,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     /* d1 is the active response list */
     if (!OSList_AddData(l2, (void *)tmp_ar)) {
         merror(LIST_ADD_ERROR, __local_name);
-        fclose(fp);
+        if (fp) {
+            fclose(fp);
+        }
         free(tmp_ar);
         return (-1);
     }
@@ -277,11 +337,13 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
              tmp_ar->timeout);
 
     /* Add to shared file */
-    debug1("writing command '%s' to '%s'", tmp_ar->command, DEFAULTARPATH);
-    fprintf(fp, "%s - %s - %d\n",
-            tmp_ar->name,
-            tmp_ar->ar_cmd->executable,
-            tmp_ar->timeout);
+    if (fp) {
+        debug1("writing command '%s' to '%s'", tmp_ar->command, DEFAULTARPATH);
+        fprintf(fp, "%s - %s - %d\n",
+                tmp_ar->name,
+                tmp_ar->ar_cmd->executable,
+                tmp_ar->timeout);
+    }
 
     /* Set the configs to start the right queues */
     if (tmp_ar->location & AS_ONLY) {
@@ -307,14 +369,18 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
     }
 
     /* Close shared file for active response */
-    fclose(fp);
+    if (fp) {
+        fclose(fp);
+    }
 
     /* Done over here */
     return (0);
 
 error_invalid:
     /* In case of an error clean up first*/
-    fclose(fp);
+    if (fp) {
+        fclose(fp);
+    }
     free(tmp_ar);
     free(tmp_location);
 

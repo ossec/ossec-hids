@@ -16,6 +16,7 @@
 int Accumulate_Init(void);
 Eventinfo *Accumulate(Eventinfo *lf);
 void Accumulate_CleanUp(void);
+void Accumulate_Free(void);
 
 #endif /* __ACCUMULATOR_H */
 
