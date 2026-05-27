@@ -462,6 +462,26 @@ ConfigureClient()
 
 
 ##########
+# xml_escape()
+# Escape user input for safe inclusion in ossec.conf XML element text.
+##########
+xml_escape()
+{
+    if [ $# -lt 1 ] || [ -z "$1" ]; then
+        echo ""
+        return
+    fi
+    printf '%s' "$1" | sed \
+        -e 's/&/\&amp;/g' \
+        -e 's/</\&lt;/g' \
+        -e 's/>/\&gt;/g' \
+        -e 's/"/\&quot;/g'
+}
+
+
+
+
+##########
 # ConfigureServer()
 ##########
 ConfigureServer()
@@ -570,7 +590,14 @@ ConfigureServer()
                 fi
                 if [ "X${USER_SMTP_PASS}" = "X" ]; then
                     $ECHO "   - ${smtppass}: "
-                    read SMTP_PASS
+                    if [ -t 0 ] || [ -r /dev/tty ]; then
+                        stty -echo 2>/dev/null
+                        read -r SMTP_PASS < /dev/tty 2>/dev/null || read -r SMTP_PASS
+                        stty echo 2>/dev/null
+                        echo ""
+                    else
+                        read -r SMTP_PASS
+                    fi
                 else
                     SMTP_PASS=${USER_SMTP_PASS}
                 fi
@@ -632,9 +659,11 @@ ConfigureServer()
         echo "    <email_to>$EMAIL</email_to>" >> $NEWCONFIG
         echo "    <smtp_server>$SMTP</smtp_server>" >> $NEWCONFIG
         if [ "X${AUTH_SMTP}" = "X${yes}" ]; then
+            _smtp_user_esc=`xml_escape "${SMTP_USER}"`
+            _smtp_pass_esc=`xml_escape "${SMTP_PASS}"`
             echo "    <auth_smtp>yes</auth_smtp>" >> $NEWCONFIG
-            echo "    <smtp_user>$SMTP_USER</smtp_user>" >> $NEWCONFIG
-            echo "    <smtp_password>$SMTP_PASS</smtp_password>" >> $NEWCONFIG
+            echo "    <smtp_user>${_smtp_user_esc}</smtp_user>" >> $NEWCONFIG
+            echo "    <smtp_password>${_smtp_pass_esc}</smtp_password>" >> $NEWCONFIG
         fi
         if [ "X${SMTP_SECURE}" = "X${yes}" ]; then
             echo "    <secure_smtp>yes</secure_smtp>" >> $NEWCONFIG
@@ -646,7 +675,8 @@ ConfigureServer()
             echo "    <smtp_tls_verify>no</smtp_tls_verify>" >> $NEWCONFIG
         fi
         if [ "X${AUTH_SMTP}" = "X${yes}" ] && [ "X${SMTP_USER}" != "X" ]; then
-            echo "    <email_from>${SMTP_USER}</email_from>" >> $NEWCONFIG
+            _email_from_esc=`xml_escape "${SMTP_USER}"`
+            echo "    <email_from>${_email_from_esc}</email_from>" >> $NEWCONFIG
         else
             echo "    <email_from>ossecm@${HOST}</email_from>" >> $NEWCONFIG
         fi

@@ -236,8 +236,18 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
     upload_ctx.header_pos = 0;
 
     /* Build URL */
-    int port = mail->smtp_port > 0 ? mail->smtp_port : (mail->securesmtp ? 465 : 25);
+    int port = mail->smtp_port;
     int n2;
+
+    if (port <= 0 || port > 65535) {
+        if (mail->securesmtp) {
+            port = 465;
+        } else if (mail->authsmtp) {
+            port = 587;
+        } else {
+            port = 25;
+        }
+    }
 
     if (!is_valid_smtp_host(smtpserver)) {
         merror("%s: ERROR: Invalid SMTP server '%s' (contains invalid characters).", ARGV0, smtpserver);
