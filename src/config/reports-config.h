@@ -38,6 +38,7 @@ typedef struct _monitor_config {
     /* SMTP auth (USE_SMTP_CURL only) */
     int authsmtp;
     int securesmtp;
+    int smtp_tls_verify;
     int smtp_port;
     char *smtp_user;
     char *smtp_pass;

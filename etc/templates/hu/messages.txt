@@ -41,6 +41,12 @@ yoursmtp="Az ön SMTP szerverének állapota: "
 usesmtp="Szeretné használni?"
 usingsmtp="SMTP szerver használata: "
 whatsmtp="Mi az ön SMTP szerverének ip címe/hoszt neve?"
+smtpauth="SMTP hitelesítést szeretne használni?"
+smtpuser="Mi az SMTP felhasználóneve?"
+smtppass="Mi az SMTP jelszava?"
+smtpsecure="Biztonságos kapcsolatot szeretne (SSL/TLS csatlakozáskor, smtps)?"
+smtpport="Mi az SMTP port?"
+smtptlsverify="Ellenőrizze a SMTP szerver TLS tanúsítványát?"
 
 # Part 3.1/agent
 serverip="Mi az IP címe az OSSEC HIDS szervernek?"

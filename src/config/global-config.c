@@ -126,6 +126,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
     const char *xml_smtp_user = "smtp_user";
     const char *xml_smtp_password = "smtp_password";
     const char *xml_secure_smtp = "secure_smtp";
+    const char *xml_smtp_tls_verify = "smtp_tls_verify";
     const char *xml_smtp_port = "smtp_port";
 
 #ifdef LIBGEOIP_ENABLED
@@ -486,6 +487,18 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                 }
                 if (Mail) {
                     Mail->securesmtp = 0;
+                }
+            } else {
+                return (OS_INVALID);
+            }
+        } else if (strcmp(node[i]->element, xml_smtp_tls_verify) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                if (Mail) {
+                    Mail->smtp_tls_verify = 1;
+                }
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                if (Mail) {
+                    Mail->smtp_tls_verify = 0;
                 }
             } else {
                 return (OS_INVALID);

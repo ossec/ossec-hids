@@ -236,8 +236,18 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
     upload_ctx.header_pos = 0;
 
     /* Build URL */
-    int port = mail->smtp_port > 0 ? mail->smtp_port : (mail->securesmtp ? 465 : 25);
+    int port = mail->smtp_port;
     int n2;
+
+    if (port <= 0 || port > 65535) {
+        if (mail->securesmtp) {
+            port = 465;
+        } else if (mail->authsmtp) {
+            port = 587;
+        } else {
+            port = 25;
+        }
+    }
 
     if (!is_valid_smtp_host(smtpserver)) {
         merror("%s: ERROR: Invalid SMTP server '%s' (contains invalid characters).", ARGV0, smtpserver);
@@ -269,9 +279,14 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
     memset(curl_errbuf, 0, sizeof(curl_errbuf));
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
 
-    /* Explicit TLS verification so behavior is not dependent on libcurl defaults */
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    if (mail->smtp_tls_verify) {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    } else {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        verbose("%s: SMTP TLS certificate verification disabled (smtp_tls_verify=no).", ARGV0);
+    }
 
     if (mail->authsmtp && mail->smtp_user && mail->smtp_pass) {
         curl_easy_setopt(curl, CURLOPT_USERNAME, mail->smtp_user);

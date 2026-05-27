@@ -39,6 +39,7 @@ typedef struct _MailConfig {
     /* SMTP auth (USE_CURL build only) */
     int authsmtp;       /* 0 = off (default), 1 = on */
     int securesmtp;     /* 0 = off (default), 1 = on */
+    int smtp_tls_verify; /* 1 = verify peer/host (default), 0 = accept any cert */
     int smtp_port;      /* 0 = use default per mode (465/587/25); else override */
     char *smtp_user;
     char *smtp_pass;

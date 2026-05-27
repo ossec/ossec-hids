@@ -41,6 +41,12 @@ yoursmtp="我们找到您的 SMTP 服务器为"
 usesmtp="您希望使用它吗?"
 usingsmtp="使用 SMTP 服务器: "
 whatsmtp="请输入您的 SMTP 服务器IP或主机名 ?"
+smtpauth="是否使用 SMTP 身份验证?"
+smtpuser="请输入 SMTP 用户名"
+smtppass="请输入 SMTP 密码"
+smtpsecure="是否使用安全连接 (连接时 SSL/TLS，smtps)?"
+smtpport="请输入 SMTP 端口"
+smtptlsverify="是否验证 SMTP 服务器的 TLS 证书?"
 
 # Part 3.1/agent
 serverip="请输入 OSSEC HIDS 服务器的IP地址"

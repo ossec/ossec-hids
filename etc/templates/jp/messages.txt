@@ -44,6 +44,12 @@ yoursmtp="あなたの SMTP サーバを発見しました"
 usesmtp="このサーバを使用しますか?"
 usingsmtp="この SMTP サーバを使用します: "
 whatsmtp="使用する SMTP サーバの ip/host は何ですか?"
+smtpauth="SMTP認証を使用しますか?"
+smtpuser="SMTPユーザー名は何ですか?"
+smtppass="SMTPパスワードは何ですか?"
+smtpsecure="安全な接続を使用しますか (接続時SSL/TLS、smtps)?"
+smtpport="SMTPポートは何ですか?"
+smtptlsverify="SMTPサーバのTLS証明書を検証しますか?"
 
 # Part 3.1/agent
 serverip="OSSEC HIDS サーバの IP アドレスは何ですか?"

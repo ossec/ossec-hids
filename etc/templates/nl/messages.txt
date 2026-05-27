@@ -41,6 +41,12 @@ yoursmtp="We hebben uw SMTP server gevonden als: "
 usesmtp="Wilt u deze gebruiken ?"
 usingsmtp="Gebruik maken van SMTP server: "
 whatsmtp="Wat is uw SMTP server ip/host?"
+smtpauth="Wilt u SMTP-authenticatie gebruiken?"
+smtpuser="Wat is uw SMTP-gebruikersnaam?"
+smtppass="Wat is uw SMTP-wachtwoord?"
+smtpsecure="Wilt u een beveiligde verbinding gebruiken (SSL/TLS bij verbinden, smtps)?"
+smtpport="Wat is uw SMTP-poort?"
+smtptlsverify="TLS-certificaat van de SMTP-server verifiëren?"
 
 # Part 3.1/agent
 serverip="Wat is het IP adres van uw OSSEC HIDS host?"
