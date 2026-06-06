@@ -90,6 +90,12 @@ void HandleSecure()
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            if (remoted_shutting_down) {
+                return;
+            }
+            if (errno == EINTR || errno == EBADF) {
+                return;
+            }
             ErrorExit("ERROR: Call to secure select() failed, errno %d - %s",
                       errno, strerror (errno));
         }
@@ -97,6 +103,9 @@ void HandleSecure()
         /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
+
+                /* peer_size must be reset before each recvfrom */
+                peer_size = sizeof(peer_info);
 
                 /* Receive message  */
                 recv_b = recvfrom(sock, buffer, OS_MAXSTR, 0,
@@ -113,7 +122,9 @@ void HandleSecure()
                 * This sets the socket for send_msg().
                 */
 
+                sendmsg_lock();
                 remoted_self->sock = sock;
+                sendmsg_unlock();
 
                 /* Set the source IP */
                 satop((struct sockaddr *) &peer_info, srcip, IPSIZE);

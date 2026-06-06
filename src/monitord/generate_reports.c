@@ -54,6 +54,9 @@ static void *report_worker(void *arg)
     mond.reports[s]->r_filter.fp = fopen(fname, "w+");
     if (!mond.reports[s]->r_filter.fp) {
         merror("%s: ERROR: Unable to open temporary reports file.", ARGV0);
+        os_mutex_lock(&report_workers_mu);
+        report_active_workers--;
+        os_mutex_unlock(&report_workers_mu);
         return NULL;
     }
 

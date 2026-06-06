@@ -351,6 +351,7 @@ int main(int argc, char **argv)
     srandom_init();
 
     /* Start SSL */
+    os_ssl_thread_setup();
     /* Getting SSL cert. */
     ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {

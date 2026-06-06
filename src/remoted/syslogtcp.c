@@ -11,11 +11,35 @@
 #include "os_net/os_net.h"
 #include "remoted.h"
 
+#include <errno.h>
+
+#define SYSLOG_TCP_READ_TIMEOUT_DEFAULT 30
+
 typedef struct syslog_client_arg {
     remoted_listener *listener;
     int client_socket;
     char srcip[IPSIZE + 1];
 } syslog_client_arg;
+
+static void syslog_set_client_timeout(int sock, int sec)
+{
+    struct timeval tv;
+
+    tv.tv_sec = sec;
+    tv.tv_usec = 0;
+    (void)setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+}
+
+static int syslog_recv_buffer(int sock, char *buffer, int sizet)
+{
+    int retsize;
+
+    if ((retsize = recv(sock, buffer, sizet - 1, 0)) > 0) {
+        buffer[retsize] = '\0';
+        return (retsize);
+    }
+    return (-1);
+}
 
 /* Checks if an IP is not allowed */
 static int OS_IPNotAllowed(char *srcip)
@@ -55,12 +79,26 @@ static void *syslog_client_worker(void *arg)
     srcip[IPSIZE] = '\0';
     free(client);
 
+    os_block_worker_signals();
+
     memset(buffer, '\0', OS_MAXSTR + 2);
     memset(storage_buffer, '\0', OS_MAXSTR + 2);
     memset(tmp_buffer, '\0', OS_MAXSTR + 2);
 
     while (1) {
-        if ((r_sz = OS_RecvTCPBuffer(client_socket, buffer, OS_MAXSTR - 2)) < 0) {
+        if (remoted_shutting_down) {
+            close(client_socket);
+            return NULL;
+        }
+
+        if ((r_sz = syslog_recv_buffer(client_socket, buffer, OS_MAXSTR - 2)) < 0) {
+            if (remoted_shutting_down) {
+                close(client_socket);
+                return NULL;
+            }
+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ETIMEDOUT) {
+                continue;
+            }
             close(client_socket);
             return NULL;
         }
@@ -184,6 +222,15 @@ void HandleSyslogTCP()
                     merror(DENYIP_WARN, ARGV0, srcip);
                     close(client_socket);
                     continue;
+                }
+
+                {
+                    int read_timeout = getDefine_Int("remoted", "syslog_tcp_read_timeout",
+                                                     1, 3600);
+                    if (read_timeout <= 0) {
+                        read_timeout = SYSLOG_TCP_READ_TIMEOUT_DEFAULT;
+                    }
+                    syslog_set_client_timeout(client_socket, read_timeout);
                 }
 
                 os_calloc(1, sizeof(syslog_client_arg), client);

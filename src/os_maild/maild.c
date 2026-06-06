@@ -691,6 +691,10 @@ static void OS_Run(MailConfig *mail)
             } else if (sms_deferred) {
                 sleep(1);
             }
+
+            if (OS_SmsQueuePending()) {
+                continue;
+            }
         }
 
         /* If mail_timeout == NEXTMAIL_TIMEOUT, we will try to get

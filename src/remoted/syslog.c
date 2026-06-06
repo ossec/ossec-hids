@@ -72,6 +72,12 @@ void HandleSyslog()
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            if (remoted_shutting_down) {
+                return;
+            }
+            if (errno == EINTR || errno == EBADF) {
+                return;
+            }
             ErrorExit("ERROR: Call to syslog select() failed, errno %d - %s",
                       errno, strerror (errno));
         }
@@ -79,6 +85,8 @@ void HandleSyslog()
         /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
+
+                peer_size = sizeof(peer_info);
 
                 /* Receive message */
                 recv_b = recvfrom(sock, buffer, OS_SIZE_1024, 0,

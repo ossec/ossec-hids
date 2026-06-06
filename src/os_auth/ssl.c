@@ -298,5 +298,64 @@ int verify_callback(int ok, X509_STORE_CTX *store)
     return ok;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+static pthread_mutex_t *ssl_locks = NULL;
+static int ssl_lock_count = 0;
+
+static void ssl_locking_callback(int mode, int type, const char *file, int line)
+{
+    (void)file;
+    (void)line;
+
+    if (type < 0 || type >= ssl_lock_count || !ssl_locks) {
+        return;
+    }
+
+    if (mode & CRYPTO_LOCK) {
+        pthread_mutex_lock(&ssl_locks[type]);
+    } else {
+        pthread_mutex_unlock(&ssl_locks[type]);
+    }
+}
+
+static unsigned long ssl_id_callback(void)
+{
+    return (unsigned long)pthread_self();
+}
+
+void os_ssl_thread_setup(void)
+{
+    int i;
+
+    if (ssl_locks) {
+        return;
+    }
+
+    ssl_lock_count = CRYPTO_num_locks();
+    if (ssl_lock_count <= 0) {
+        return;
+    }
+
+    ssl_locks = (pthread_mutex_t *)calloc((size_t)ssl_lock_count,
+                                          sizeof(pthread_mutex_t));
+    if (!ssl_locks) {
+        merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+        return;
+    }
+
+    for (i = 0; i < ssl_lock_count; i++) {
+        pthread_mutex_init(&ssl_locks[i], NULL);
+    }
+
+    CRYPTO_set_locking_callback(ssl_locking_callback);
+    CRYPTO_set_id_callback(ssl_id_callback);
+}
+#else
+void os_ssl_thread_setup(void)
+{
+    /* OpenSSL >= 1.1.0 is internally thread-safe; no legacy callbacks needed. */
+}
+#endif
+
 #endif /* LIBOPENSSL_ENABLED */
 
