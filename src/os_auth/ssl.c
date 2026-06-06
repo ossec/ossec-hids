@@ -98,7 +98,7 @@ SSL_ERROR:
     return (SSL_CTX *)NULL;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static DH *get_dh2048(void)
 {
     static const unsigned char dh2048_p[] = {
@@ -185,16 +185,8 @@ SSL_CTX *get_ssl_context(const char *ciphers)
 #endif
 
     /* Initialize Diffie-Hellman parameters */
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
-    /* Let OpenSSL select DH parameters that comply with the active
-     * system crypto policy / security level. Required for RHEL 8+ and
-     * other distributions whose default policies reject hardcoded DH
-     * groups at security level >= 2, even when those groups are 2048-bit
-     * and cryptographically valid (e.g. RFC 3526 MODP-2048).
-     *
-     * This also follows modern OpenSSL best practice of avoiding
-     * application-supplied DH groups in favor of the named groups
-     * defined in RFC 7919. */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    /* OpenSSL 1.1.0+: let OpenSSL select DH parameters (RFC 7919 named groups). */
     SSL_CTX_set_dh_auto(ctx, 1);
 #else
     {

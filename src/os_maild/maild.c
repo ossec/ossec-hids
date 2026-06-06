@@ -599,19 +599,20 @@ static void OS_Run(MailConfig *mail)
             active = mail_active_workers;
             os_mutex_unlock(&mail_workers_mu);
 
-            if (active == 0) {
-                if (!OS_SmsQueuePending() && OS_CheckLastMail() == NULL) {
-                    verbose("%s: Shutdown complete (no active mail workers).", ARGV0);
-                } else {
-                    verbose("%s: Shutdown complete (pending mail/SMS abandoned).", ARGV0);
-                }
+            if (active == 0 && !OS_SmsQueuePending() && OS_CheckLastMail() == NULL) {
+                verbose("%s: Shutdown complete (no active mail workers).", ARGV0);
                 DeletePID(ARGV0);
                 exit(0);
             }
 
             if ((tm - shutdown_start) >= MAILD_SHUTDOWN_WORKER_TIMEOUT) {
-                merror("%s: Shutdown timeout (%d s) with %d mail worker(s) still active.",
-                       ARGV0, MAILD_SHUTDOWN_WORKER_TIMEOUT, active);
+                if (active > 0) {
+                    merror("%s: Shutdown timeout (%d s) with %d mail worker(s) still active.",
+                           ARGV0, MAILD_SHUTDOWN_WORKER_TIMEOUT, active);
+                } else {
+                    merror("%s: Shutdown timeout (%d s); pending mail/SMS abandoned.",
+                           ARGV0, MAILD_SHUTDOWN_WORKER_TIMEOUT);
+                }
                 DeletePID(ARGV0);
                 exit(1);
             }

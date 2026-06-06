@@ -59,6 +59,20 @@ static int OS_IPNotAllowed(char *srcip)
     return (1);
 }
 
+static void syslog_client_drop_pending(void *arg)
+{
+    syslog_client_arg *client = (syslog_client_arg *)arg;
+
+    if (!client) {
+        return;
+    }
+
+    if (client->client_socket >= 0) {
+        close(client->client_socket);
+    }
+    free(client);
+}
+
 /* Handle each client connection in a worker thread */
 static void *syslog_client_worker(void *arg)
 {
@@ -191,6 +205,8 @@ void HandleSyslogTCP()
         if (!remoted_self->syslog_tcp_pool) {
             ErrorExit(THREAD_ERROR, ARGV0);
         }
+        thread_pool_set_drop_fn(remoted_self->syslog_tcp_pool,
+                                syslog_client_drop_pending);
     }
 
     while (1) {
@@ -200,8 +216,14 @@ void HandleSyslogTCP()
 
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            if (remoted_shutting_down) {
+                return;
+            }
             if (errno == EINTR) {
                 continue;
+            }
+            if (errno == EBADF) {
+                return;
             }
             merror("%s: ERROR: syslogtcp select() failed: %s", ARGV0, strerror(errno));
             sleep(1);
@@ -229,6 +251,9 @@ void HandleSyslogTCP()
                                                      1, 3600);
                     if (read_timeout <= 0) {
                         read_timeout = SYSLOG_TCP_READ_TIMEOUT_DEFAULT;
+                    }
+                    if (read_timeout > REMOTED_SHUTDOWN_POOL_TIMEOUT) {
+                        read_timeout = REMOTED_SHUTDOWN_POOL_TIMEOUT;
                     }
                     syslog_set_client_timeout(client_socket, read_timeout);
                 }

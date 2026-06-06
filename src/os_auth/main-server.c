@@ -403,6 +403,7 @@ int main(int argc, char **argv)
             merror("%s: ERROR: Unable to create auth worker thread pool.", ARGV0);
             exit(1);
         }
+        thread_pool_set_drop_fn(auth_pool, auth_conn_drop_pending);
     }
 
     auth_keys_init();

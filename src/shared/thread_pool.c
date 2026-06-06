@@ -77,15 +77,19 @@ thread_pool *thread_pool_create_limited(int max_workers, int max_tasks)
     for (i = 0; i < max_workers; i++) {
 #ifdef THREAD_POOL_TEST_HOOK
         if (thread_pool_test_fail_worker_at == i) {
+            os_mutex_lock(&pool->mu);
             pool->shutdown = 1;
             os_cond_broadcast(&pool->work_cond);
+            os_mutex_unlock(&pool->mu);
             thread_pool_destroy(pool);
             return NULL;
         }
 #endif
         if (CreateThreadJoinable(&pool->workers[i], thread_pool_worker, pool) != 0) {
+            os_mutex_lock(&pool->mu);
             pool->shutdown = 1;
             os_cond_broadcast(&pool->work_cond);
+            os_mutex_unlock(&pool->mu);
             thread_pool_destroy(pool);
             return NULL;
         }
@@ -120,6 +124,9 @@ void thread_pool_destroy(thread_pool *pool)
     while (pool->head) {
         thread_pool_task *task = pool->head;
         pool->head = task->next;
+        if (pool->drop_fn && task->arg) {
+            pool->drop_fn(task->arg);
+        }
         free(task);
     }
 
@@ -127,6 +134,17 @@ void thread_pool_destroy(thread_pool *pool)
     os_cond_destroy(&pool->work_cond);
     free(pool->workers);
     free(pool);
+}
+
+void thread_pool_set_drop_fn(thread_pool *pool, thread_pool_drop_fn fn)
+{
+    if (!pool) {
+        return;
+    }
+
+    os_mutex_lock(&pool->mu);
+    pool->drop_fn = fn;
+    os_mutex_unlock(&pool->mu);
 }
 
 int thread_pool_active(thread_pool *pool)

@@ -22,6 +22,8 @@ typedef struct thread_pool_task {
     struct thread_pool_task *next;
 } thread_pool_task;
 
+typedef void (*thread_pool_drop_fn)(void *arg);
+
 typedef struct thread_pool {
     int max_workers;
     int max_tasks;
@@ -29,6 +31,7 @@ typedef struct thread_pool {
     int active_workers;
     int pending;
     int shutdown;
+    thread_pool_drop_fn drop_fn;
     pthread_mutex_t mu;
     pthread_cond_t work_cond;
     thread_pool_task *head;
@@ -43,9 +46,11 @@ extern int thread_pool_test_fail_worker_at;
 thread_pool *thread_pool_create(int max_workers);
 thread_pool *thread_pool_create_limited(int max_workers, int max_tasks);
 
-/* Shutdown-only: joins workers, frees queued tasks without running handlers.
- * Pending task arg pointers are dropped; do not reuse pools after destroy. */
+/* Shutdown-only: joins workers, then frees any queued tasks without running
+ * handlers. drop_fn (if set) is called on each dropped task arg. */
 void thread_pool_destroy(thread_pool *pool);
+
+void thread_pool_set_drop_fn(thread_pool *pool, thread_pool_drop_fn fn);
 
 /* Returns 0 on success, -1 if at capacity, shutting down, or on error */
 int thread_pool_submit(thread_pool *pool, thread_pool_fn fn, void *arg);

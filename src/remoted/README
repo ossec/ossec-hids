@@ -30,7 +30,8 @@ Tuning (internal_options.conf)
   (each worker serves one long-lived client connection; size this for your forwarder count)
 - remoted.syslog_tcp_max_tasks — max queued + active syslog TCP tasks per pool (backpressure)
 - remoted.syslog_tcp_read_timeout — socket read timeout (seconds) per syslog TCP client;
-  unblocks idle workers and allows shutdown drain when clients stay connected
+  unblocks idle workers and allows shutdown drain when clients stay connected. Values above
+  the shutdown pool timeout (60 s) are clamped so workers can be joined during SIGTERM drain.
 
 How secured works
 -----------------
@@ -74,6 +75,6 @@ blocked recv() calls return periodically. Workers exit when remoted_shutting_dow
 or when the read times out on an idle connection.
 
 remoted_wait_for_shutdown() polls syslog TCP thread pools until no active or queued tasks
-remain, or until a 60 s timeout. Secure and UDP listener threads are not explicitly joined;
-process exit follows pool drain (or timeout). Syslog TCP pools are not destroyed explicitly
-at shutdown — acceptable because the process is exiting.
+remain, or until a 60 s timeout, then destroys pools via remoted_destroy_tcp_pools().
+Secure and UDP listener threads are not explicitly joined; process exit follows pool drain
+(or timeout).

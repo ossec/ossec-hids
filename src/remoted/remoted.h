@@ -95,8 +95,11 @@ extern remoted_listener *remoted_secure_listener;
 
 extern volatile sig_atomic_t remoted_shutting_down;
 
+#define REMOTED_SHUTDOWN_POOL_TIMEOUT 60
+
 void remoted_request_shutdown(int sig);
 void remoted_close_listeners(void);
 int remoted_wait_for_shutdown(void);
+void remoted_destroy_tcp_pools(void);
 
 #endif /* __LOGREMOTE_H */

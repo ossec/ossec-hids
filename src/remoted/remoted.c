@@ -23,8 +23,6 @@ __thread remoted_listener *remoted_self = NULL;
 remoted_listener *remoted_secure_listener = NULL;
 volatile sig_atomic_t remoted_shutting_down = 0;
 
-#define REMOTED_SHUTDOWN_POOL_TIMEOUT 60
-
 void remoted_request_shutdown(int sig)
 {
     if (!remoted_shutting_down) {
@@ -83,6 +81,7 @@ int remoted_wait_for_shutdown(void)
     while (1) {
         if (remoted_pools_active() == 0) {
             verbose("%s: Shutdown complete (no active syslog TCP workers).", ARGV0);
+            remoted_destroy_tcp_pools();
             DeletePID(ARGV0);
             return 0;
         }
@@ -95,11 +94,24 @@ int remoted_wait_for_shutdown(void)
         if ((now - start) >= REMOTED_SHUTDOWN_POOL_TIMEOUT) {
             merror("%s: Shutdown timeout (%d s) with syslog TCP work still active.",
                    ARGV0, REMOTED_SHUTDOWN_POOL_TIMEOUT);
+            remoted_destroy_tcp_pools();
             DeletePID(ARGV0);
             return 1;
         }
 
         sleep(1);
+    }
+}
+
+void remoted_destroy_tcp_pools(void)
+{
+    int i;
+
+    for (i = 0; i < REMOTE_LISTENERS_MAX; i++) {
+        if (remoted_listeners[i].syslog_tcp_pool) {
+            thread_pool_destroy(remoted_listeners[i].syslog_tcp_pool);
+            remoted_listeners[i].syslog_tcp_pool = NULL;
+        }
     }
 }
 

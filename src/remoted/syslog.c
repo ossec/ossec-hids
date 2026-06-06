@@ -128,7 +128,8 @@ void HandleSyslog()
                 }
 
                 if (remoted_send_syslog_msg(remoted_self, buffer_pt, srcip) < 0) {
-                    ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
+                    merror("%s: WARN: Unable to send message to queue %s",
+                           ARGV0, DEFAULTQUEUE);
                 }
             } /* if socket active */
         } /* for() loop on sockets */

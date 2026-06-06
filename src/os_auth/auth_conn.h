@@ -26,4 +26,6 @@ typedef struct auth_conn_arg {
 
 void *auth_connection_worker(void *arg);
 
+void auth_conn_drop_pending(void *arg);
+
 #endif /* AUTH_CONN_H */

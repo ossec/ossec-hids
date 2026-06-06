@@ -23,6 +23,7 @@ int getDefine_Int(const char *section, const char *key, int min, int max)
 }
 
 static int completed = 0;
+static int dropped = 0;
 static pthread_mutex_t done_mu = PTHREAD_MUTEX_INITIALIZER;
 
 static void *count_task(void *arg)
@@ -42,6 +43,14 @@ static void *block_task(void *arg)
     (void)arg;
     usleep(200000);
     return NULL;
+}
+
+static void track_drop(void *arg)
+{
+    free(arg);
+    os_mutex_lock(&done_mu);
+    dropped++;
+    os_mutex_unlock(&done_mu);
 }
 
 int main(void)
@@ -100,6 +109,20 @@ int main(void)
     }
 
     thread_pool_destroy(pool);
+
+    /* drop_fn cleans args left on the queue after workers join. */
+    dropped = 0;
+    pool = thread_pool_create(1);
+    if (!pool) {
+        fprintf(stderr, "FAIL: thread_pool_create for drop_fn\n");
+        return 1;
+    }
+    thread_pool_set_drop_fn(pool, track_drop);
+    thread_pool_destroy(pool);
+    if (dropped != 0) {
+        fprintf(stderr, "FAIL: drop_fn on empty destroy, got %d\n", dropped);
+        return 1;
+    }
 
 #ifdef THREAD_POOL_TEST_HOOK
     /* Partial worker create: destroy must join only started workers. */
