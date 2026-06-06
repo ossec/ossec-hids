@@ -1,0 +1,96 @@
+/* Thread pool smoke test - build: make -C shared/tests thread_pool_test */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "shared.h"
+
+int getDefine_Int(const char *section, const char *key, int min, int max)
+{
+    (void)section;
+    (void)key;
+    (void)max;
+    return min;
+}
+
+static int completed = 0;
+static pthread_mutex_t done_mu = PTHREAD_MUTEX_INITIALIZER;
+
+static void *count_task(void *arg)
+{
+    int id = *(int *)arg;
+    free(arg);
+    usleep(10000);
+    os_mutex_lock(&done_mu);
+    completed++;
+    os_mutex_unlock(&done_mu);
+    (void)id;
+    return NULL;
+}
+
+static void *block_task(void *arg)
+{
+    (void)arg;
+    usleep(200000);
+    return NULL;
+}
+
+int main(void)
+{
+    thread_pool *pool;
+    int i;
+
+    pool = thread_pool_create(4);
+    if (!pool) {
+        fprintf(stderr, "FAIL: thread_pool_create\n");
+        return 1;
+    }
+
+    for (i = 0; i < 8; i++) {
+        int *id = calloc(1, sizeof(int));
+        *id = i;
+        if (thread_pool_submit(pool, count_task, id) != 0) {
+            fprintf(stderr, "FAIL: submit %d\n", i);
+            thread_pool_destroy(pool);
+            return 1;
+        }
+    }
+
+    while (completed < 8) {
+        usleep(50000);
+    }
+
+    thread_pool_destroy(pool);
+
+    /* max_tasks = queued + active: third submit should fail until a slot frees */
+    pool = thread_pool_create_limited(2, 2);
+    if (!pool) {
+        fprintf(stderr, "FAIL: thread_pool_create_limited\n");
+        return 1;
+    }
+
+    if (thread_pool_submit(pool, block_task, NULL) != 0 ||
+        thread_pool_submit(pool, block_task, NULL) != 0) {
+        fprintf(stderr, "FAIL: backpressure setup submit\n");
+        thread_pool_destroy(pool);
+        return 1;
+    }
+
+    if (thread_pool_submit(pool, block_task, NULL) == 0) {
+        fprintf(stderr, "FAIL: expected backpressure on third submit\n");
+        thread_pool_destroy(pool);
+        return 1;
+    }
+
+    usleep(300000);
+
+    if (thread_pool_submit(pool, block_task, NULL) != 0) {
+        fprintf(stderr, "FAIL: submit after slot freed\n");
+        thread_pool_destroy(pool);
+        return 1;
+    }
+
+    thread_pool_destroy(pool);
+    printf("PASS: thread_pool_test\n");
+    return 0;
+}
