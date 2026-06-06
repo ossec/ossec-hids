@@ -1,14 +1,19 @@
-/* Copyright (C) 2010 Trend Micro Inc.
+/* Copyright (C) 2026 Atomicorp, Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
  * and/or modify it under the terms of the GNU General Public
  * License (version 2) as published by the FSF - Free Software
- * Foundation
+ * Foundation.
  */
 
 #include "auth.h"
 #include "auth_conn.h"
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+
+#define AUTHD_CONN_IO_TIMEOUT_SEC 30
 
 static pthread_mutex_t auth_keys_mutex;
 static int auth_keys_mutex_ready = 0;
@@ -59,6 +64,16 @@ static void auth_close_connection(SSL *ssl, int sock)
     }
 }
 
+static void auth_set_socket_timeouts(int sock)
+{
+    struct timeval tv;
+
+    tv.tv_sec = AUTHD_CONN_IO_TIMEOUT_SEC;
+    tv.tv_usec = 0;
+    (void)setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    (void)setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+}
+
 void *auth_connection_worker(void *arg)
 {
     auth_conn_arg *conn = (auth_conn_arg *)arg;
@@ -78,6 +93,8 @@ void *auth_connection_worker(void *arg)
     strncpy(srcip, conn->srcip, IPSIZE);
     srcip[IPSIZE] = '\0';
     free(conn);
+
+    auth_set_socket_timeouts(client_sock);
 
     ssl = SSL_new(ctx);
     if (!ssl) {
@@ -108,6 +125,12 @@ void *auth_connection_worker(void *arg)
         }
 
     } while (ret <= 0);
+
+    if (ret > 0 && (size_t)ret < sizeof(buf)) {
+        buf[ret] = '\0';
+    } else if (ret > 0) {
+        buf[sizeof(buf) - 1] = '\0';
+    }
 
     parseok = 0;
     {

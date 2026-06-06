@@ -1,16 +1,20 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2026 Atomicorp, Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
  * and/or modify it under the terms of the GNU General Public
  * License (version 2) as published by the FSF - Free Software
- * Foundation
+ * Foundation.
  */
 
 #ifndef WIN32
 
 #include "shared.h"
 #include "thread_pool.h"
+
+#ifdef THREAD_POOL_TEST_HOOK
+int thread_pool_test_fail_worker_at = -1;
+#endif
 
 static void *thread_pool_worker(void *arg)
 {
@@ -64,18 +68,28 @@ thread_pool *thread_pool_create_limited(int max_workers, int max_tasks)
     os_calloc(1, sizeof(thread_pool), pool);
     pool->max_workers = max_workers;
     pool->max_tasks = max_tasks;
+    pool->workers_started = 0;
     os_calloc((size_t)max_workers, sizeof(pthread_t), pool->workers);
 
     os_mutex_init(&pool->mu, NULL);
     os_cond_init(&pool->work_cond, NULL);
 
     for (i = 0; i < max_workers; i++) {
+#ifdef THREAD_POOL_TEST_HOOK
+        if (thread_pool_test_fail_worker_at == i) {
+            pool->shutdown = 1;
+            os_cond_broadcast(&pool->work_cond);
+            thread_pool_destroy(pool);
+            return NULL;
+        }
+#endif
         if (CreateThreadJoinable(&pool->workers[i], thread_pool_worker, pool) != 0) {
             pool->shutdown = 1;
             os_cond_broadcast(&pool->work_cond);
             thread_pool_destroy(pool);
             return NULL;
         }
+        pool->workers_started++;
     }
 
     return pool;
@@ -99,7 +113,7 @@ void thread_pool_destroy(thread_pool *pool)
     os_cond_broadcast(&pool->work_cond);
     os_mutex_unlock(&pool->mu);
 
-    for (i = 0; i < pool->max_workers; i++) {
+    for (i = 0; i < pool->workers_started; i++) {
         pthread_join(pool->workers[i], NULL);
     }
 
@@ -128,19 +142,6 @@ int thread_pool_active(thread_pool *pool)
     os_mutex_unlock(&pool->mu);
 
     return total;
-}
-
-int thread_pool_has_slot(thread_pool *pool)
-{
-    if (!pool) {
-        return 0;
-    }
-
-    if (pool->max_tasks == 0) {
-        return 1;
-    }
-
-    return thread_pool_active(pool) < pool->max_tasks;
 }
 
 int thread_pool_submit(thread_pool *pool, thread_pool_fn fn, void *arg)

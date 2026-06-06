@@ -153,8 +153,13 @@ void OS_RequeueMailBatch(MailNode *batch)
     newest = prev_next;
 
     if (n_node) {
-        newest->next = n_node;
-        n_node->prev = newest;
+        MailNode *oldest = newest;
+
+        while (oldest->next) {
+            oldest = oldest->next;
+        }
+        oldest->next = n_node;
+        n_node->prev = oldest;
         n_node = newest;
     } else {
         n_node = newest;
@@ -175,14 +180,15 @@ void OS_RequeueMailBatch(MailNode *batch)
     while (_memoryused > _memorymaxsize && lastnode) {
         MailNode *oldlast = lastnode;
 
-        lastnode = lastnode->prev;
+        lastnode = oldlast->prev;
+        if (lastnode) {
+            lastnode->next = NULL;
+        }
         if (n_node == oldlast) {
             n_node = oldlast->next;
             if (n_node) {
                 n_node->prev = NULL;
             }
-        } else if (oldlast->next) {
-            oldlast->next->prev = lastnode;
         }
         FreeMail(oldlast);
         _memoryused--;
@@ -263,6 +269,15 @@ void OS_AddMailtoList(MailMsg *ml)
 
             oldlast = lastnode;
             lastnode = lastnode->prev;
+            if (lastnode) {
+                lastnode->next = NULL;
+            }
+            if (n_node == oldlast) {
+                n_node = oldlast->next;
+                if (n_node) {
+                    n_node->prev = NULL;
+                }
+            }
 
             /* Free last node */
             FreeMail(oldlast);
@@ -284,6 +299,7 @@ void OS_AddMailtoList(MailMsg *ml)
         n_node->mail = ml;
 
         lastnode = n_node;
+        _memoryused = 1;
     }
 
     os_mutex_unlock(&mail_list_mu);

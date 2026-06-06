@@ -76,6 +76,7 @@ static int remoted_pools_active(void)
 
 int remoted_wait_for_shutdown(void)
 {
+    /* Syslog TCP pools only; see src/remoted/README (Shutdown). */
     time_t start = 0;
     time_t now;
 

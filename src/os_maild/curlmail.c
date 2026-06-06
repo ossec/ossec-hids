@@ -436,7 +436,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
         replyto_header_line[0] = '\0';
 
         /* Build CC header from additional recipients (mail->to[1..]). */
-        if (mail->to[1]) {
+        if (mail_has_cc_recipients(mail->to, sms_only)) {
             char cc_value[HEADER_MAX];
             size_t cc_len = 0;
 

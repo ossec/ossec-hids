@@ -59,6 +59,7 @@ static void *mail_send_worker(void *arg);
 static void *sms_send_worker(void *arg);
 static void maild_HandleSIG(int sig);
 static void mail_spawn_backoff(void);
+static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fileq);
 
 /* Returns 0 on success, -1 on allocation failure. */
 static int mail_snapshot_gran(MailConfig *mail, int **gran_set_snap, int *gran_count)
@@ -104,6 +105,130 @@ static void mail_spawn_backoff(void)
     }
 
     sleep((unsigned int)delay);
+}
+
+/* During SIGTERM, send one pending SMS or batch if a worker slot is free. */
+static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fileq)
+{
+    int spawn = 0;
+
+    os_mutex_lock(&mail_workers_mu);
+    if (mail_active_workers < mail_max_workers) {
+        mail_active_workers++;
+        spawn = 1;
+    }
+    os_mutex_unlock(&mail_workers_mu);
+
+    if (!spawn) {
+        return;
+    }
+
+    if (OS_SmsQueuePending()) {
+        sms_worker_arg *sms_work;
+        MailMsg *sms_msg = OS_SmsDequeue();
+
+        if (!sms_msg) {
+            os_mutex_lock(&mail_workers_mu);
+            mail_active_workers--;
+            os_mutex_unlock(&mail_workers_mu);
+            return;
+        }
+
+        os_calloc(1, sizeof(sms_worker_arg), sms_work);
+        sms_work->mail = mail;
+        memcpy(&sms_work->tm_copy, p, sizeof(struct tm));
+        sms_work->sms_msg = sms_msg;
+        sms_work->gran_count = 0;
+        sms_work->gran_set_snap = NULL;
+
+        os_mutex_lock(&mail_send_mu);
+        if (mail_snapshot_gran(mail, &sms_work->gran_set_snap,
+                               &sms_work->gran_count) < 0) {
+            os_mutex_unlock(&mail_send_mu);
+            os_mutex_lock(&mail_workers_mu);
+            mail_active_workers--;
+            os_mutex_unlock(&mail_workers_mu);
+            OS_SmsRequeueFront(sms_msg);
+            free(sms_work);
+            return;
+        }
+        os_mutex_unlock(&mail_send_mu);
+
+        if (CreateThread(sms_send_worker, sms_work) != 0) {
+            os_mutex_lock(&mail_workers_mu);
+            mail_active_workers--;
+            os_mutex_unlock(&mail_workers_mu);
+            OS_SmsRequeueFront(sms_work->sms_msg);
+            free(sms_work->gran_set_snap);
+            free(sms_work);
+            return;
+        }
+
+        return;
+    }
+
+    if (OS_CheckLastMail() == NULL) {
+        os_mutex_lock(&mail_workers_mu);
+        mail_active_workers--;
+        os_mutex_unlock(&mail_workers_mu);
+        return;
+    }
+
+    {
+        mail_worker_arg *work;
+        MailNode *batch;
+
+        fflush(fileq->fp);
+
+        os_calloc(1, sizeof(mail_worker_arg), work);
+        work->mail = mail;
+        memcpy(&work->tm_copy, p, sizeof(struct tm));
+        work->gran_count = 0;
+        work->gran_set_snap = NULL;
+        work->batch = NULL;
+
+        os_mutex_lock(&mail_send_mu);
+        OS_MailListLock();
+        work->subject_level = _g_subject_level;
+        memcpy(work->subject, _g_subject, SUBJECT_SIZE + 2);
+        if (mail_snapshot_gran(mail, &work->gran_set_snap, &work->gran_count) < 0) {
+            OS_MailListUnlock();
+            os_mutex_unlock(&mail_send_mu);
+            os_mutex_lock(&mail_workers_mu);
+            mail_active_workers--;
+            os_mutex_unlock(&mail_workers_mu);
+            free(work);
+            return;
+        }
+
+        batch = OS_DrainMailListUnlocked();
+        work->batch = batch;
+        OS_MailListUnlock();
+        os_mutex_unlock(&mail_send_mu);
+
+        if (batch == NULL) {
+            os_mutex_lock(&mail_workers_mu);
+            mail_active_workers--;
+            os_mutex_unlock(&mail_workers_mu);
+            free(work->gran_set_snap);
+            free(work);
+            return;
+        }
+
+        if (CreateThread(mail_send_worker, work) != 0) {
+            os_mutex_lock(&mail_send_mu);
+            OS_MailListLock();
+            OS_RequeueMailBatch(batch);
+            OS_MailListUnlock();
+            os_mutex_unlock(&mail_send_mu);
+            os_mutex_lock(&mail_workers_mu);
+            mail_active_workers--;
+            os_mutex_unlock(&mail_workers_mu);
+            free(work->gran_set_snap);
+            free(work);
+            return;
+        }
+    }
 }
 
 #ifndef WIN32
@@ -468,12 +593,18 @@ static void OS_Run(MailConfig *mail)
                 shutdown_start = tm;
             }
 
+            maild_shutdown_drain(mail, p, fileq);
+
             os_mutex_lock(&mail_workers_mu);
             active = mail_active_workers;
             os_mutex_unlock(&mail_workers_mu);
 
             if (active == 0) {
-                verbose("%s: Shutdown complete (no active mail workers).", ARGV0);
+                if (!OS_SmsQueuePending() && OS_CheckLastMail() == NULL) {
+                    verbose("%s: Shutdown complete (no active mail workers).", ARGV0);
+                } else {
+                    verbose("%s: Shutdown complete (pending mail/SMS abandoned).", ARGV0);
+                }
                 DeletePID(ARGV0);
                 exit(0);
             }
@@ -589,6 +720,11 @@ static void OS_Run(MailConfig *mail)
             }
 
             if (!spawn_batch) {
+                if (OS_CheckLastMail() != NULL &&
+                    (mails_sent_this_hour < mail->maxperhour ||
+                     p->tm_hour != thishour)) {
+                    sleep(1);
+                }
                 goto snd_check_hour;
             }
 

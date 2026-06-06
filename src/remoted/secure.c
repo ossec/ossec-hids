@@ -239,9 +239,11 @@ void HandleSecure()
                 /* Check if it is a control message */
                 if (IsValidHeader(tmp_msg)) {
                     /* We need to save the peerinfo if it is a control msg */
+                    sendmsg_lock();
                     memcpy(&keys.keyentries[agentid]->peer_info,
                            &peer_info, peer_size);
                     keys.keyentries[agentid]->rcvd = time(0);
+                    sendmsg_unlock();
                     save_controlmsg((unsigned)agentid, tmp_msg);
                     continue;
                 }

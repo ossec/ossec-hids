@@ -5,7 +5,7 @@ THREAD_POOL_TEST_OBJS = thread_pool_test.c ../thread_pool.c ../pthreads_op.c \
 
 thread_pool_test: $(THREAD_POOL_TEST_OBJS)
 	$(CC) -pthread -g -o $@ $(THREAD_POOL_TEST_OBJS) -I../../headers/ -I../../ \
-		-DARGV0=\"thread_pool_test\" -Wall
+		-DARGV0=\"thread_pool_test\" -DTHREAD_POOL_TEST_HOOK -Wall
 
 maketest: thread_pool_test
 		$(CC) -g -o string_test string_test.c ../string_op.c -I../ -I../../ -I../../headers/ -I../headers/ -Wall

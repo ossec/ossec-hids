@@ -1,3 +1,12 @@
+/* Copyright (C) 2026 Atomicorp, Inc.
+ * All rights reserved.
+ *
+ * This program is a free software; you can redistribute it
+ * and/or modify it under the terms of the GNU General Public
+ * License (version 2) as published by the FSF - Free Software
+ * Foundation.
+ */
+
 /* Standalone test for OS_RequeueMailBatch ordering (no SMTP). */
 
 #include <stdio.h>
@@ -54,6 +63,27 @@ static MailMsg *fake_mail(const char *body)
     return (m);
 }
 
+static MailNode *fake_node(const char *body)
+{
+    MailNode *n;
+
+    n = (MailNode *)calloc(1, sizeof(MailNode));
+    assert(n != NULL);
+    n->mail = fake_mail(body);
+    return (n);
+}
+
+static MailNode *chain_nodes(const char *b1, const char *b2, const char *b3)
+{
+    MailNode *a = fake_node(b1);
+    MailNode *b = fake_node(b2);
+    MailNode *c = fake_node(b3);
+
+    a->next = b;
+    b->next = c;
+    return (a);
+}
+
 int main(void)
 {
     const char *round1[] = { "oldest", "middle", "newest" };
@@ -72,7 +102,9 @@ int main(void)
     assert(batch != NULL);
     assert(drain_order_matches(batch, round1, 3));
 
+    OS_MailListLock();
     OS_RequeueMailBatch(batch);
+    OS_MailListUnlock();
 
     batch = OS_DrainMailList();
     assert(batch != NULL);
@@ -83,6 +115,37 @@ int main(void)
 
         batch = batch->next;
         FreeMail(n);
+    }
+
+    /* Requeue overflow: trim must drop multiple tail nodes without UAF. */
+    {
+        MailNode *cur;
+        int nodes = 0;
+
+        OS_CreateMailList(2);
+        OS_AddMailtoList(fake_mail("seed"));
+        OS_AddMailtoList(fake_mail("live_a"));
+        OS_AddMailtoList(fake_mail("live_b"));
+
+        batch = chain_nodes("rq1", "rq2", "rq3");
+        batch->next->next->next = fake_node("rq4");
+        OS_MailListLock();
+        OS_RequeueMailBatch(batch);
+        OS_MailListUnlock();
+
+        batch = OS_DrainMailList();
+        assert(batch != NULL);
+        for (cur = batch; cur; cur = cur->next) {
+            nodes++;
+        }
+        assert(nodes == 2);
+
+        while (batch) {
+            MailNode *n = batch;
+
+            batch = batch->next;
+            FreeMail(n);
+        }
     }
 
     (void)i;

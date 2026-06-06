@@ -244,8 +244,7 @@ int main(int argc, char **argv)
 
     while (1) {
         if (remoted_shutting_down) {
-            remoted_wait_for_shutdown();
-            exit(0);
+            exit(remoted_wait_for_shutdown());
         }
         sleep(1);
     }

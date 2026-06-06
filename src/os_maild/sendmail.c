@@ -109,7 +109,7 @@ static void mail_safe_header_addr(const char *addr, char *dst, size_t dst_size)
 }
 
 static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
-                                char *final_to, size_t final_to_sz,
+                                char *final_to, size_t final_to_cap,
                                 int *crlf_warned)
 {
     char snd_msg[128];
@@ -137,8 +137,11 @@ static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
         memset(snd_msg, '\0', 128);
         mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
         snprintf(snd_msg, 127, TO, safe_addr);
-        strncat(final_to, snd_msg, final_to_sz);
-        final_to_sz -= strlen(snd_msg) + 2;
+        if (mail_append_header_line(final_to, final_to_cap, snd_msg) != 0) {
+            merror("%s: SMS To header buffer full; remaining recipients omitted.",
+                   ARGV0);
+            break;
+        }
 
         i++;
     }
@@ -151,7 +154,6 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
 {
     FILE *sendmail = NULL;
     int socket = -1;
-    size_t final_to_sz;
     char *msg;
     char snd_msg[128];
     char final_to[512];
@@ -164,7 +166,6 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
     }
 
     final_to[0] = '\0';
-    final_to_sz = sizeof(final_to) - 2;
 
     if (mail->smtpserver[0] == '/') {
         sendmail = popen(mail->smtpserver, "w");
@@ -172,7 +173,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
             return (OS_INVALID);
         }
 
-        if (!sms_build_to_headers(mail, gran_override, final_to, final_to_sz,
+        if (!sms_build_to_headers(mail, gran_override, final_to, sizeof(final_to),
                                   &crlf_warned)) {
             pclose(sendmail);
             return (OS_INVALID);
@@ -244,7 +245,6 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
         free(msg);
 
         final_to[0] = '\0';
-        final_to_sz = sizeof(final_to) - 2;
 
         if (mail->gran_to) {
             i = 0;
@@ -276,8 +276,11 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
                 memset(snd_msg, '\0', 128);
                 mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
                 snprintf(snd_msg, 127, TO, safe_addr);
-                strncat(final_to, snd_msg, final_to_sz);
-                final_to_sz -= strlen(snd_msg) + 2;
+                if (mail_append_header_line(final_to, sizeof(final_to), snd_msg) != 0) {
+                    merror("%s: SMS To header buffer full; remaining recipients omitted.",
+                           ARGV0);
+                    break;
+                }
 
                 i++;
             }
@@ -609,7 +612,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
     }
 
     /* Add CCs */
-    if (mail->to[1]) {
+    if (mail_has_cc_recipients(mail->to, 0)) {
         i = 1;
         while (1) {
             if (mail->to[i] == NULL) {

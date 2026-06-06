@@ -66,6 +66,9 @@ int send_msg(remoted_listener *listener, unsigned int agentid, const char *msg);
 /* Initializing send_msg */
 void send_msg_init(void);
 
+void sendmsg_lock(void);
+void sendmsg_unlock(void);
+
 int check_keyupdate(void);
 
 void key_lock(void);

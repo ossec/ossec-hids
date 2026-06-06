@@ -1,3 +1,12 @@
+/* Copyright (C) 2026 Atomicorp, Inc.
+ * All rights reserved.
+ *
+ * This program is a free software; you can redistribute it
+ * and/or modify it under the terms of the GNU General Public
+ * License (version 2) as published by the FSF - Free Software
+ * Foundation.
+ */
+
 /* Thread pool smoke test - build: make -C shared/tests thread_pool_test */
 
 #include <stdio.h>
@@ -91,6 +100,19 @@ int main(void)
     }
 
     thread_pool_destroy(pool);
+
+#ifdef THREAD_POOL_TEST_HOOK
+    /* Partial worker create: destroy must join only started workers. */
+    thread_pool_test_fail_worker_at = 2;
+    pool = thread_pool_create_limited(4, 0);
+    thread_pool_test_fail_worker_at = -1;
+    if (pool != NULL) {
+        fprintf(stderr, "FAIL: expected partial create to fail\n");
+        thread_pool_destroy(pool);
+        return 1;
+    }
+#endif
+
     printf("PASS: thread_pool_test\n");
     return 0;
 }
