@@ -27,7 +27,7 @@ The current stable releases are available on the ossec website.
 
 The development version is hosted on GitHub and just a simple git clone away.
 
-Server component notes (e.g. threaded `ossec-maild`) are in [docs/MAILD_THREADING.md](docs/MAILD_THREADING.md). 
+Server component notes are in [docs/MAILD_THREADING.md](docs/MAILD_THREADING.md) (maild) and [docs/REMOTED_THREADING.md](docs/REMOTED_THREADING.md) (remoted). 
 
 [![Build Status](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml)
 [![CodeQL](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml)

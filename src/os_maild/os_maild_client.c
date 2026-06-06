@@ -9,14 +9,14 @@
 
 #include "shared.h"
 #include "maild.h"
+#include "sms_queue.h"
 #ifdef LIBGEOIP_ENABLED
 #include "config/config.h"
 #endif
 
 
 /* Receive a Message on the Mail queue */
-MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
-                      MailConfig *Mail, MailMsg **msg_sms)
+MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
 {
     int i = 0, sms_set = 0, donotgroup = 0;
     size_t body_size = OS_MAXSTR - 3, log_size;
@@ -334,7 +334,7 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
 
         strncpy(msg_sms_tmp->body, logs, 128);
         msg_sms_tmp->body[127] = '\0';
-        *msg_sms = msg_sms_tmp;
+        OS_SmsEnqueue(msg_sms_tmp);
     }
 
     /* Clear the memory */

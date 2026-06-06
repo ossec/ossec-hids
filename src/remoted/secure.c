@@ -83,6 +83,10 @@ void HandleSecure()
     fdmax  = remoted_self->netinfo->fdmax;	/* value preset to max fd + 1 */
 
     while (1) {
+        if (remoted_shutting_down) {
+            return;
+        }
+
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {

@@ -65,9 +65,9 @@ typedef struct _MailNode MailNode;
 /* Config function */
 int MailConf(int test_config, const char *cfgfile, MailConfig *Mail) __attribute__((nonnull));
 
-/* Receive the e-mail message */
-MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *mail,
-                      MailMsg **msg_sms) __attribute__((nonnull));
+/* Receive the e-mail message (SMS alerts are enqueued via OS_SmsEnqueue). */
+MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *mail)
+    __attribute__((nonnull));
 
 /* Send SMS to granular recipients marked SMS_FORMAT (gran_override may be NULL). */
 int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,

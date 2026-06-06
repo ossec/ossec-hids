@@ -108,6 +108,44 @@ static void mail_safe_header_addr(const char *addr, char *dst, size_t dst_size)
     mail_sanitize_header_value(addr, dst, dst_size);
 }
 
+static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
+                                char *final_to, size_t final_to_sz,
+                                int *crlf_warned)
+{
+    char snd_msg[128];
+    char safe_addr[256];
+    int i;
+
+    if (!mail->gran_to) {
+        return (0);
+    }
+
+    final_to[0] = '\0';
+
+    i = 0;
+    while (mail->gran_to[i] != NULL) {
+        if (sms_gran_format(mail, gran_override, i) != SMS_FORMAT) {
+            i++;
+            continue;
+        }
+
+        if (mail_skip_unsafe_recipient(mail->gran_to[i], crlf_warned)) {
+            i++;
+            continue;
+        }
+
+        memset(snd_msg, '\0', 128);
+        mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
+        snprintf(snd_msg, 127, TO, safe_addr);
+        strncat(final_to, snd_msg, final_to_sz);
+        final_to_sz -= strlen(snd_msg) + 2;
+
+        i++;
+    }
+
+    return (final_to[0] != '\0');
+}
+
 int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
                const int *gran_override)
 {
@@ -125,10 +163,18 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
         return (OS_INVALID);
     }
 
+    final_to[0] = '\0';
+    final_to_sz = sizeof(final_to) - 2;
+
     if (mail->smtpserver[0] == '/') {
-        /* Local sendmail pipe: no per-recipient granular SMS RCPT (use TCP smtp_server). */
         sendmail = popen(mail->smtpserver, "w");
         if (!sendmail) {
+            return (OS_INVALID);
+        }
+
+        if (!sms_build_to_headers(mail, gran_override, final_to, final_to_sz,
+                                  &crlf_warned)) {
+            pclose(sendmail);
             return (OS_INVALID);
         }
     } else {
@@ -286,6 +332,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
 
     if (sendmail) {
         fprintf(sendmail, "%s", snd_msg);
+        fprintf(sendmail, "%s", final_to);
     } else {
         OS_SendTCP(socket, snd_msg);
     }

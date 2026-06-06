@@ -21,6 +21,18 @@ typedef struct report_worker_arg {
     int cyear;
 } report_worker_arg;
 
+static pthread_mutex_t report_workers_mu;
+static int report_active_workers = 0;
+static int report_workers_mu_ready = 0;
+
+static void report_workers_init(void)
+{
+    if (!report_workers_mu_ready) {
+        os_mutex_init(&report_workers_mu, NULL);
+        report_workers_mu_ready = 1;
+    }
+}
+
 static void *report_worker(void *arg)
 {
     report_worker_arg *work = (report_worker_arg *)arg;
@@ -76,6 +88,10 @@ static void *report_worker(void *arg)
     free(mond.reports[s]->r_filter.filename);
     mond.reports[s]->r_filter.filename = NULL;
 
+    os_mutex_lock(&report_workers_mu);
+    report_active_workers--;
+    os_mutex_unlock(&report_workers_mu);
+
     return NULL;
 }
 
@@ -90,7 +106,11 @@ void generate_reports(int cday, int cmon, int cyear)
     if (mond.reports) {
         int threadcount = 0;
         int max_reports = 0;
+        int max_report_workers;
         pthread_t *threads = NULL;
+
+        report_workers_init();
+        max_report_workers = getDefine_Int("monitord", "max_report_workers", 1, 16);
 
         while (mond.reports[max_reports]) {
             max_reports++;
@@ -110,6 +130,17 @@ void generate_reports(int cday, int cmon, int cyear)
                 continue;
             }
 
+            while (1) {
+                os_mutex_lock(&report_workers_mu);
+                if (report_active_workers < max_report_workers) {
+                    report_active_workers++;
+                    os_mutex_unlock(&report_workers_mu);
+                    break;
+                }
+                os_mutex_unlock(&report_workers_mu);
+                sleep(1);
+            }
+
             os_calloc(1, sizeof(report_worker_arg), work);
             work->report_idx = s;
             work->cday = cday;
@@ -118,14 +149,15 @@ void generate_reports(int cday, int cmon, int cyear)
 
             if (CreateThreadJoinable(&threads[threadcount], report_worker, work) != 0) {
                 free(work);
+                os_mutex_lock(&report_workers_mu);
+                report_active_workers--;
+                os_mutex_unlock(&report_workers_mu);
                 merror("%s: ERROR: Unable to start report thread for '%s'", ARGV0,
                        mond.reports[s]->title);
                 s++;
                 continue;
             }
 
-            /* Throttle parallel report SMTP load (one report every 20s). */
-            sleep(20);
             threadcount++;
             s++;
         }

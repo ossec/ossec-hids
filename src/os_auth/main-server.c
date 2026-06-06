@@ -29,6 +29,10 @@
 /* Prototypes */
 static void help_authd(int status) __attribute((noreturn));
 static void auth_shutdown(SSL_CTX *ctx, int sock) __attribute__((noreturn));
+static void authd_HandleSIG(int sig);
+
+static volatile sig_atomic_t authd_shutting_down = 0;
+#define AUTHD_SHUTDOWN_POOL_TIMEOUT 60
 
 
 /* Print help statement */
@@ -107,6 +111,20 @@ static void auth_shutdown(SSL_CTX *ctx, int sock)
     SSL_CTX_free(ctx);
     close(sock);
     exit(0);
+}
+
+static void authd_HandleSIG(int sig)
+{
+    if (!authd_shutting_down) {
+        authd_shutting_down = 1;
+        merror("%s: Shutdown requested (signal %d); stopping new enrollments.",
+               ARGV0, sig);
+        return;
+    }
+
+    merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
+    DeletePID(ARGV0);
+    exit(1);
 }
 
 /* Exit handler */
@@ -267,7 +285,7 @@ int main(int argc, char **argv)
 
 
     /* Signal manipulation */
-    StartSIG(ARGV0);
+    StartSIG2(ARGV0, authd_HandleSIG);
 
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
@@ -390,16 +408,25 @@ int main(int argc, char **argv)
 
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
 
-    while (1) {
-        usleep(100 * 1000);
+    while (!authd_shutting_down) {
+        struct timeval tv;
 
         memset(&_nc, 0, sizeof(_nc));
         _ncl = sizeof(_nc);
 
         fdwork = fdsave;
-        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        if (select (fdmax, &fdwork, NULL, NULL, &tv) < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit("ERROR: Call to os_auth select() failed, errno %d - %s",
                       errno, strerror (errno));
+        }
+
+        if (authd_shutting_down) {
+            break;
         }
 
         /* read through socket list for active socket */
@@ -407,12 +434,6 @@ int main(int argc, char **argv)
             if (FD_ISSET (sock, &fdwork)) {
                 if ((client_sock = accept(sock, (struct sockaddr *) &_nc, &_ncl)) > 0) {
                     auth_conn_arg *conn;
-
-                    if (!thread_pool_has_slot(auth_pool)) {
-                        merror("%s: Error: Max concurrency reached. Unable to start worker thread", ARGV0);
-                        close(client_sock);
-                        continue;
-                    }
 
                     satop((struct sockaddr *) &_nc, srcip, IPSIZE);
                     os_calloc(1, sizeof(auth_conn_arg), conn);
@@ -423,7 +444,7 @@ int main(int argc, char **argv)
                     conn->authpass = authpass;
                     conn->ctx = ctx;
 
-                    if (thread_pool_submit(auth_pool, auth_connection_worker, conn) != 0) {
+                    if (thread_pool_try_submit(auth_pool, auth_connection_worker, conn) != 0) {
                         free(conn);
                         close(client_sock);
                         merror("%s: ERROR: Unable to queue auth connection from %s", ARGV0, srcip);
@@ -432,7 +453,22 @@ int main(int argc, char **argv)
             } /* if active socket */
         } /* for() loop on available sockets */
 
-    } /* while(1) loop for messages */
+    } /* while listening */
+
+    {
+        time_t start = time(NULL);
+
+        verbose("%s: Waiting for auth worker threads to finish.", ARGV0);
+        while (thread_pool_active(auth_pool) > 0) {
+            if ((time(NULL) - start) >= AUTHD_SHUTDOWN_POOL_TIMEOUT) {
+                merror("%s: Shutdown timeout (%d s) with auth workers still active.",
+                       ARGV0, AUTHD_SHUTDOWN_POOL_TIMEOUT);
+                break;
+            }
+            sleep(1);
+        }
+        thread_pool_destroy(auth_pool);
+    }
 
     /* Shut down the socket */
     auth_shutdown(ctx, sock);

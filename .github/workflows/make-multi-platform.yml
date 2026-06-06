@@ -45,6 +45,15 @@ jobs:
             make TARGET=${{ matrix.target }} PCRE2_SYSTEM=yes -j$(nproc)
           fi
 
+      - name: Run unit tests
+        if: matrix.target == 'server'
+        run: |
+          make -C src/shared/tests thread_pool_test
+          ./src/shared/tests/thread_pool_test
+          make -C src/os_maild/tests mail_list_requeue_test sms_queue_test
+          ./src/os_maild/tests/mail_list_requeue_test
+          ./src/os_maild/tests/sms_queue_test
+
   build-windows-agent:
     name: Windows agent (cross-compile)
     runs-on: ubuntu-latest

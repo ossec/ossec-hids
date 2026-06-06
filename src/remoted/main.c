@@ -17,6 +17,7 @@ typedef struct remoted_listener_arg {
 /* Prototypes */
 static void help_remoted(int status) __attribute__((noreturn));
 static void *remoted_listener_thread(void *arg);
+static void remoted_HandleSIG(int sig);
 
 
 /* Print help statement */
@@ -37,6 +38,11 @@ static void help_remoted(int status)
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out(" ");
     exit(status);
+}
+
+static void remoted_HandleSIG(int sig)
+{
+    remoted_request_shutdown(sig);
 }
 
 static void *remoted_listener_thread(void *arg)
@@ -195,7 +201,7 @@ int main(int argc, char **argv)
     nowChroot();
 
     /* Start the signal manipulation */
-    StartSIG(ARGV0);
+    StartSIG2(ARGV0, remoted_HandleSIG);
 
     random();
 
@@ -237,7 +243,11 @@ int main(int argc, char **argv)
     }
 
     while (1) {
-        sleep(3600);
+        if (remoted_shutting_down) {
+            remoted_wait_for_shutdown();
+            exit(0);
+        }
+        sleep(1);
     }
 
     return (0);

@@ -64,6 +64,11 @@ src/verify-agent-conf
 *.rej
 *.orig
 
+# maild unit test binaries (built locally)
+src/os_maild/tests/mail_list_requeue_test
+src/os_maild/tests/sms_queue_test
+src/shared/tests/thread_pool_test
+
 # test and coverage files
 *.gcno
 *.gcda

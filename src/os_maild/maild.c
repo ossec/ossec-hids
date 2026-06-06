@@ -10,6 +10,7 @@
 #include "shared.h"
 #include "maild.h"
 #include "mail_list.h"
+#include "sms_queue.h"
 #ifdef USE_SMTP_CURL
 #include <curl/curl.h>
 #include "os_net/os_net.h"
@@ -413,7 +414,6 @@ static void OS_Run(MailConfig *mail)
 {
     MailMsg *msg;
     MailMsg *s_msg = NULL;
-    MailMsg *msg_sms = NULL;
 
     time_t tm;
     struct tm *p;
@@ -447,6 +447,7 @@ static void OS_Run(MailConfig *mail)
 
     /* Create the list */
     OS_CreateMailList(MAIL_LIST_SIZE);
+    OS_SmsQueueInit();
 
     /* Set default timeout */
     mail_timeout = DEFAULT_TIMEOUT;
@@ -489,9 +490,11 @@ static void OS_Run(MailConfig *mail)
         }
 
         /* SMS messages are sent without grouping delay (4.6 parity). */
-        if (msg_sms) {
+        if (OS_SmsQueuePending()) {
             sms_worker_arg *sms_work;
+            MailMsg *sms_msg;
             int spawn_sms = 0;
+            int sms_deferred = 0;
 
             if (mails_sent_this_hour >= mail->maxperhour) {
                 if (sms_defer_logged_hour != thishour) {
@@ -499,6 +502,7 @@ static void OS_Run(MailConfig *mail)
                             ARGV0, mail->maxperhour);
                     sms_defer_logged_hour = thishour;
                 }
+                sms_deferred = 1;
             } else {
                 os_mutex_lock(&mail_workers_mu);
                 if (mail_active_workers < mail_max_workers) {
@@ -506,48 +510,55 @@ static void OS_Run(MailConfig *mail)
                     spawn_sms = 1;
                 } else {
                     debug2("%s: SMS deferred (max_workers=%d busy).",
-                             ARGV0, mail_max_workers);
+                           ARGV0, mail_max_workers);
+                    sms_deferred = 1;
                 }
                 os_mutex_unlock(&mail_workers_mu);
             }
 
             if (spawn_sms) {
-                os_calloc(1, sizeof(sms_worker_arg), sms_work);
-                sms_work->mail = mail;
-                memcpy(&sms_work->tm_copy, p, sizeof(struct tm));
-                sms_work->sms_msg = msg_sms;
-                msg_sms = NULL;
-                sms_work->gran_count = 0;
-                sms_work->gran_set_snap = NULL;
-
-                os_mutex_lock(&mail_send_mu);
-                if (mail_snapshot_gran(mail, &sms_work->gran_set_snap,
-                                       &sms_work->gran_count) < 0) {
-                    os_mutex_unlock(&mail_send_mu);
+                sms_msg = OS_SmsDequeue();
+                if (!sms_msg) {
                     os_mutex_lock(&mail_workers_mu);
                     mail_active_workers--;
                     os_mutex_unlock(&mail_workers_mu);
-                    msg_sms = sms_work->sms_msg;
-                    sms_work->sms_msg = NULL;
-                    free(sms_work);
                 } else {
-                    os_mutex_unlock(&mail_send_mu);
+                    os_calloc(1, sizeof(sms_worker_arg), sms_work);
+                    sms_work->mail = mail;
+                    memcpy(&sms_work->tm_copy, p, sizeof(struct tm));
+                    sms_work->sms_msg = sms_msg;
+                    sms_work->gran_count = 0;
+                    sms_work->gran_set_snap = NULL;
 
-                    if (CreateThread(sms_send_worker, sms_work) != 0) {
+                    os_mutex_lock(&mail_send_mu);
+                    if (mail_snapshot_gran(mail, &sms_work->gran_set_snap,
+                                           &sms_work->gran_count) < 0) {
+                        os_mutex_unlock(&mail_send_mu);
                         os_mutex_lock(&mail_workers_mu);
                         mail_active_workers--;
                         os_mutex_unlock(&mail_workers_mu);
-                        msg_sms = sms_work->sms_msg;
-                        sms_work->sms_msg = NULL;
-                        free(sms_work->gran_set_snap);
+                        OS_SmsRequeueFront(sms_msg);
                         free(sms_work);
-                        merror(THREAD_ERROR, ARGV0);
-                        mail_spawn_backoff();
                     } else {
-                        mail_spawn_fail_streak = 0;
-                        mails_sent_this_hour++;
+                        os_mutex_unlock(&mail_send_mu);
+
+                        if (CreateThread(sms_send_worker, sms_work) != 0) {
+                            os_mutex_lock(&mail_workers_mu);
+                            mail_active_workers--;
+                            os_mutex_unlock(&mail_workers_mu);
+                            OS_SmsRequeueFront(sms_work->sms_msg);
+                            free(sms_work->gran_set_snap);
+                            free(sms_work);
+                            merror(THREAD_ERROR, ARGV0);
+                            mail_spawn_backoff();
+                        } else {
+                            mail_spawn_fail_streak = 0;
+                            mails_sent_this_hour++;
+                        }
                     }
                 }
+            } else if (sms_deferred) {
+                sleep(1);
             }
         }
 
@@ -686,7 +697,7 @@ snd_check_hour:
         }
 
         /* Receive message from queue */
-        if ((msg = OS_RecvMailQ(fileq, p, mail, &msg_sms)) != NULL) {
+        if ((msg = OS_RecvMailQ(fileq, p, mail)) != NULL) {
             /* If the e-mail priority is do_not_group,
              * flush all previous entries and then send it.
              * Use s_msg to hold the pointer to the message while we flush it.

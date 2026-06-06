@@ -21,6 +21,86 @@ remoted logr;
 remoted_listener remoted_listeners[REMOTE_LISTENERS_MAX];
 __thread remoted_listener *remoted_self = NULL;
 remoted_listener *remoted_secure_listener = NULL;
+volatile sig_atomic_t remoted_shutting_down = 0;
+
+#define REMOTED_SHUTDOWN_POOL_TIMEOUT 60
+
+void remoted_request_shutdown(int sig)
+{
+    if (!remoted_shutting_down) {
+        remoted_shutting_down = 1;
+        merror("%s: Shutdown requested (signal %d); closing listeners.",
+               ARGV0, sig);
+        remoted_close_listeners();
+        return;
+    }
+
+    merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
+    DeletePID(ARGV0);
+    exit(1);
+}
+
+void remoted_close_listeners(void)
+{
+    int i;
+    int j;
+
+    for (i = 0; i < REMOTE_LISTENERS_MAX; i++) {
+        remoted_listener *listener = &remoted_listeners[i];
+
+        if (listener->netinfo == NULL) {
+            continue;
+        }
+
+        for (j = 0; j < listener->netinfo->fdcnt; j++) {
+            if (listener->netinfo->fds[j] >= 0) {
+                close(listener->netinfo->fds[j]);
+            }
+        }
+    }
+}
+
+static int remoted_pools_active(void)
+{
+    int i;
+    int total = 0;
+
+    for (i = 0; i < REMOTE_LISTENERS_MAX; i++) {
+        if (remoted_listeners[i].syslog_tcp_pool) {
+            total += thread_pool_active(remoted_listeners[i].syslog_tcp_pool);
+        }
+    }
+
+    return total;
+}
+
+int remoted_wait_for_shutdown(void)
+{
+    time_t start = 0;
+    time_t now;
+
+    while (1) {
+        if (remoted_pools_active() == 0) {
+            verbose("%s: Shutdown complete (no active syslog TCP workers).", ARGV0);
+            DeletePID(ARGV0);
+            return 0;
+        }
+
+        now = time(NULL);
+        if (start == 0) {
+            start = now;
+        }
+
+        if ((now - start) >= REMOTED_SHUTDOWN_POOL_TIMEOUT) {
+            merror("%s: Shutdown timeout (%d s) with syslog TCP work still active.",
+                   ARGV0, REMOTED_SHUTDOWN_POOL_TIMEOUT);
+            DeletePID(ARGV0);
+            return 1;
+        }
+
+        sleep(1);
+    }
+}
 
 
 /* Bind one listener (called from main before setuid and before listener threads) */

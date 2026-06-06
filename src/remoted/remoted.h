@@ -37,16 +37,16 @@ int RemotedConfig(const char *cfgfile, remoted *cfg);
 int remoted_bind_listener(int position);
 
 /* Handle Remote connections (sockets must already be bound) */
-void HandleRemote(int position) __attribute__((noreturn));
+void HandleRemote(int position);
 
 /* Handle Syslog */
-void HandleSyslog(void) __attribute__((noreturn));
+void HandleSyslog(void);
 
 /* Handle Syslog TCP */
-void HandleSyslogTCP(void) __attribute__((noreturn));
+void HandleSyslogTCP(void);
 
 /* Handle Secure connections */
-void HandleSecure(void) __attribute__((noreturn));
+void HandleSecure(void);
 
 /* Forward active response events */
 void *AR_Forward(void *arg) __attribute__((noreturn));
@@ -89,5 +89,11 @@ extern remoted_listener remoted_listeners[REMOTE_LISTENERS_MAX];
 extern __thread remoted_listener *remoted_self;
 /* Set in HandleSecure(); used by AR_Forward and wait_for_msgs */
 extern remoted_listener *remoted_secure_listener;
+
+extern volatile sig_atomic_t remoted_shutting_down;
+
+void remoted_request_shutdown(int sig);
+void remoted_close_listeners(void);
+int remoted_wait_for_shutdown(void);
 
 #endif /* __LOGREMOTE_H */

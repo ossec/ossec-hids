@@ -156,6 +156,10 @@ void HandleSyslogTCP()
     }
 
     while (1) {
+        if (remoted_shutting_down) {
+            return;
+        }
+
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
             if (errno == EINTR) {
@@ -182,24 +186,18 @@ void HandleSyslogTCP()
                     continue;
                 }
 
-                if (!thread_pool_has_slot(remoted_self->syslog_tcp_pool)) {
-                    merror("%s: WARN: Syslog TCP worker pool full, dropping connection from %s",
-                           ARGV0, srcip);
-                    close(client_socket);
-                    continue;
-                }
-
                 os_calloc(1, sizeof(syslog_client_arg), client);
                 client->listener = remoted_self;
                 client->client_socket = client_socket;
                 strncpy(client->srcip, srcip, IPSIZE);
                 client->srcip[IPSIZE] = '\0';
 
-                if (thread_pool_submit(remoted_self->syslog_tcp_pool,
+                if (thread_pool_try_submit(remoted_self->syslog_tcp_pool,
                                        syslog_client_worker, client) != 0) {
                     free(client);
                     close(client_socket);
-                    merror("%s: WARN: Unable to queue syslog TCP client for %s", ARGV0, srcip);
+                    merror("%s: WARN: Syslog TCP worker pool full, dropping connection from %s",
+                           ARGV0, srcip);
                     continue;
                 }
             }
