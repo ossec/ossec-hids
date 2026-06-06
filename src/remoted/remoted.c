@@ -18,11 +18,28 @@
 /* Global variables */
 keystore keys;
 remoted logr;
+remoted_listener remoted_listeners[REMOTE_LISTENERS_MAX];
+__thread remoted_listener *remoted_self = NULL;
+remoted_listener *remoted_secure_listener = NULL;
 
 
-/* Handle remote connections */
-void HandleRemote(int position, int uid)
+/* Bind one listener (called from main before setuid and before listener threads) */
+int remoted_bind_listener(int position)
 {
+    remoted_listener *listener;
+
+    if (position < 0 || position >= REMOTE_LISTENERS_MAX) {
+        ErrorExit("%s: Invalid listener position %d", ARGV0, position);
+    }
+
+    listener = &remoted_listeners[position];
+    listener->sock = 0;
+    listener->netinfo = NULL;
+    listener->m_queue = -1;
+    listener->peer_size = 0;
+    listener->syslog_tcp_pool = NULL;
+    os_mutex_init(&listener->mq_mutex, NULL);
+
     /* If syslog connection and allowips is not defined, exit */
     if (logr.conn[position] == SYSLOG_CONN) {
         if (logr.allowips == NULL) {
@@ -41,28 +58,30 @@ void HandleRemote(int position, int uid)
 
     /* Bind TCP */
     if (logr.proto[position] == IPPROTO_TCP) {
-        logr.sock    = 0;
-        logr.netinfo = OS_Bindporttcp(logr.port[position], logr.lip[position]);
-        if (logr.netinfo->status < 0) {
+        listener->netinfo = OS_Bindporttcp(logr.port[position], logr.lip[position]);
+        if (listener->netinfo->status < 0) {
             ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
         }
     } else {
-        /* Using UDP. Fast, unreliable... perfect */
-        logr.sock    = 0;
-        logr.netinfo = OS_Bindportudp(logr.port[position], logr.lip[position]);
-        if (logr.netinfo->status < 0) {
+        listener->netinfo = OS_Bindportudp(logr.port[position], logr.lip[position]);
+        if (listener->netinfo->status < 0) {
             ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
         }
     }
 
-    /* Revoke privileges */
-    if (Privsep_SetUser(uid) < 0) {
-        ErrorExit(SETUID_ERROR, ARGV0, REMUSER, errno, strerror(errno));
+    return (0);
+}
+
+/* Handle remote connections */
+void HandleRemote(int position)
+{
+    if (position < 0 || position >= REMOTE_LISTENERS_MAX) {
+        ErrorExit("%s: Invalid listener position %d", ARGV0, position);
     }
 
-    /* Create PID */
-    if (CreatePID(ARGV0, getpid()) < 0) {
-        ErrorExit(PID_ERROR, ARGV0);
+    remoted_self = &remoted_listeners[position];
+    if (remoted_self->netinfo == NULL) {
+        ErrorExit("%s: Listener %d is not bound.", ARGV0, position);
     }
 
     /* Start up message */
@@ -82,5 +101,39 @@ void HandleRemote(int position, int uid)
     else {
         HandleSyslog();
     }
+}
+
+int remoted_send_mq_msg(remoted_listener *listener, const char *msg,
+                        const char *srcip, char loc)
+{
+    if (!listener || !msg || !srcip) {
+        return -1;
+    }
+
+    os_mutex_lock(&listener->mq_mutex);
+
+    if (SendMSG(listener->m_queue, msg, srcip, loc) < 0) {
+        merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
+
+        listener->m_queue = StartMQ(DEFAULTQUEUE, WRITE);
+        if (listener->m_queue < 0) {
+            os_mutex_unlock(&listener->mq_mutex);
+            return -1;
+        }
+
+        if (SendMSG(listener->m_queue, msg, srcip, loc) < 0) {
+            os_mutex_unlock(&listener->mq_mutex);
+            return -1;
+        }
+    }
+
+    os_mutex_unlock(&listener->mq_mutex);
+    return 0;
+}
+
+int remoted_send_syslog_msg(remoted_listener *listener, const char *msg,
+                            const char *srcip)
+{
+    return remoted_send_mq_msg(listener, msg, srcip, SYSLOG_MQ);
 }
 

@@ -1,15 +1,10 @@
 How Remoted works:
 
-Three daemons (forked):
-
--Secured (udp port 1514)
--Syslogd (udp port 514)
--Syslogd (tcp port 514)
-
+One process with one thread per configured listener (secure, syslog UDP, syslog TCP).
 
 -How secured works:
 
--Three threads.
+-Three threads in the secure listener.
 
 -Main thread (remote receiver).
   - Receives data from remote clients.
@@ -22,3 +17,6 @@ Three daemons (forked):
 -Manager (sends data to remote clients).
   - Waits for messages from the main thread (wait_for_msgs).
 
+-How syslog TCP works:
+
+-A bounded thread pool handles each accepted TCP client connection.

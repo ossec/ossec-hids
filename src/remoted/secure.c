@@ -15,6 +15,8 @@
 /* Handle secure connections */
 void HandleSecure()
 {
+    remoted_secure_listener = remoted_self;
+
     int agentid;
     char buffer[OS_MAXSTR + 1];
     char cleartext_msg[OS_MAXSTR + 1];
@@ -51,7 +53,7 @@ void HandleSecure()
     * Connect to the message queue
     * Exit if it fails.
     */
-    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
+    if ((remoted_self->m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
@@ -68,7 +70,7 @@ void HandleSecure()
 
     /* Set up peer size */
     peer_size = sizeof(peer_info);
-    logr.peer_size = sizeof(peer_info);
+    remoted_self->peer_size = sizeof(peer_info);
 
     /* Initialize some variables */
     memset(buffer, '\0', OS_MAXSTR + 1);
@@ -77,8 +79,8 @@ void HandleSecure()
     tmp_msg = NULL;
 
     /* initialize select() save area */
-    fdsave = logr.netinfo->fdset;
-    fdmax  = logr.netinfo->fdmax;	/* value preset to max fd + 1 */
+    fdsave = remoted_self->netinfo->fdset;
+    fdmax  = remoted_self->netinfo->fdmax;	/* value preset to max fd + 1 */
 
     while (1) {
         /* process connections through select() for multiple sockets */
@@ -107,7 +109,7 @@ void HandleSecure()
                 * This sets the socket for send_msg().
                 */
 
-                logr.sock = sock;
+                remoted_self->sock = sock;
 
                 /* Set the source IP */
                 satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
@@ -249,13 +251,10 @@ void HandleSecure()
                 * If we can't send the message, try to connect to the
                 * socket again. If it fails exit.
                 */
-                if (SendMSG(logr.m_queue, tmp_msg, srcmsg,
-                            SECURE_MQ) < 0) {
-                    merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
-
-                    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
-                        ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
-                    }
+                if (remoted_send_mq_msg(remoted_self, tmp_msg, srcmsg,
+                                        SECURE_MQ) < 0) {
+                    merror("%s: WARN: Unable to send message to queue %s",
+                           ARGV0, DEFAULTQUEUE);
                 }
             } /* if socket active */
         } /* for() loop on sockets */

@@ -32,8 +32,6 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
     MailMsg *mail;
     alert_data *al_data;
 
-    Mail->priority = 0;
-
     /* Get message if available */
     al_data = Read_FileMon(fileq, p, mail_timeout);
     if (!al_data) {
@@ -213,6 +211,10 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
 #endif
     debug2("OS_RecvMailQ: mail->body[%s]", mail->body);
 
+    os_mutex_lock(&mail_send_mu);
+    Mail->priority = 0;
+
+    /* Live gran_set is batch-scoped until the main loop commits a send. */
     /* Check for granular email configs */
     if (Mail->gran_to) {
         i = 0;
@@ -297,20 +299,23 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
         }
     }
 
-
     /* If DONOTGROUP is set, we can't assign the new subject */
     if (!donotgroup) {
         /* Get highest level for alert */
         if (_g_subject[0] != '\0') {
             if (_g_subject_level < al_data->level) {
                 strncpy(_g_subject, mail->subject, SUBJECT_SIZE);
+                _g_subject[SUBJECT_SIZE] = '\0';
                 _g_subject_level = al_data->level;
             }
         } else {
             strncpy(_g_subject, mail->subject, SUBJECT_SIZE);
+            _g_subject[SUBJECT_SIZE] = '\0';
             _g_subject_level = al_data->level;
         }
     }
+
+    os_mutex_unlock(&mail_send_mu);
 
     /* If SMS is set, create the SMS output */
     if (sms_set) {

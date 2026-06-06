@@ -53,13 +53,13 @@ void HandleSyslog()
     memset(buffer, '\0', OS_SIZE_1024 + 2);
 
     /* initialize select() save area */
-    fdsave = logr.netinfo->fdset;
-    fdmax  = logr.netinfo->fdmax;        /* value preset to max fd + 1 */
+    fdsave = remoted_self->netinfo->fdset;
+    fdmax  = remoted_self->netinfo->fdmax;        /* value preset to max fd + 1 */
 
     /* Connect to the message queue
      * Exit if it fails.
      */
-    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
+    if ((remoted_self->m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
@@ -115,12 +115,8 @@ void HandleSyslog()
                     continue;
                 }
 
-                if (SendMSG(logr.m_queue, buffer_pt, srcip, SYSLOG_MQ) < 0) {
-                    merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
-
-                    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
-                        ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
-                    }
+                if (remoted_send_syslog_msg(remoted_self, buffer_pt, srcip) < 0) {
+                    ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
                 }
             } /* if socket active */
         } /* for() loop on sockets */

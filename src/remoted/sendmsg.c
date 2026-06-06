@@ -87,11 +87,16 @@ void send_msg_init()
  * Returns -1 on error
  */
 
-int send_msg(unsigned int agentid, const char *msg)
+int send_msg(remoted_listener *listener, unsigned int agentid, const char *msg)
 {
     size_t msg_size, sa_size;
     char crypt_msg[OS_MAXSTR + 1];
     struct sockaddr * dest_sa;
+
+    if (!listener || !listener->netinfo) {
+        merror("%s: send_msg called without a bound listener.", ARGV0);
+        return (-1);
+    }
 
     /* If we don't have the agent id, ignore it */
     if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * NOTIFY_TIME))) {
@@ -107,6 +112,9 @@ int send_msg(unsigned int agentid, const char *msg)
     msg_size = CreateSecMSG(&keys, msg, strlen(msg), crypt_msg, agentid);
     if (msg_size == 0) {
         merror(SEC_ERROR, ARGV0);
+        if (pthread_mutex_unlock(&sendmsg_mutex) != 0) {
+            merror(MUTEX_ERROR, ARGV0);
+        }
         return (-1);
     }
 
@@ -122,12 +130,12 @@ int send_msg(unsigned int agentid, const char *msg)
     * we have identified the working interface in secure.c. (dgs - 2/26/18)
     */
 
-    if (logr.sock == 0) {
+    if (listener->sock == 0) {
         int i, ok = 0;
 
         /* socket not established - try current sockets */
-        for (i = 0; i < logr.netinfo->fdcnt; i++) {
-            if (sendto(logr.netinfo->fds[i], crypt_msg, msg_size, 0,
+        for (i = 0; i < listener->netinfo->fdcnt; i++) {
+            if (sendto(listener->netinfo->fds[i], crypt_msg, msg_size, 0,
                        dest_sa, sa_size) < 0) {
                 continue;
             }
@@ -142,7 +150,7 @@ int send_msg(unsigned int agentid, const char *msg)
         }
     } else {
         /* working socket identified in secure.c */
-        if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
+        if (sendto(listener->sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
             merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
         }
     }

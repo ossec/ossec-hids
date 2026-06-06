@@ -98,6 +98,7 @@ SSL_ERROR:
     return (SSL_CTX *)NULL;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
 static DH *get_dh2048(void)
 {
     static const unsigned char dh2048_p[] = {
@@ -142,12 +143,12 @@ static DH *get_dh2048(void)
 #endif
     return(dh);
 }
+#endif
 
 SSL_CTX *get_ssl_context(const char *ciphers)
 {
     const SSL_METHOD *sslmeth = NULL;
     SSL_CTX *ctx = NULL;
-    DH *dh;
 
     SSL_library_init();
     SSL_load_error_strings();
@@ -184,17 +185,34 @@ SSL_CTX *get_ssl_context(const char *ciphers)
 #endif
 
     /* Initialize Diffie-Hellman parameters */
-    if ((dh = get_dh2048())) {
-        if (!SSL_CTX_set_tmp_dh(ctx, dh)) {
-            merror("%s: ERROR: Unable to set temporary DH parameters", ARGV0);
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+    /* Let OpenSSL select DH parameters that comply with the active
+     * system crypto policy / security level. Required for RHEL 8+ and
+     * other distributions whose default policies reject hardcoded DH
+     * groups at security level >= 2, even when those groups are 2048-bit
+     * and cryptographically valid (e.g. RFC 3526 MODP-2048).
+     *
+     * This also follows modern OpenSSL best practice of avoiding
+     * application-supplied DH groups in favor of the named groups
+     * defined in RFC 7919. */
+    SSL_CTX_set_dh_auto(ctx, 1);
+#else
+    {
+        DH *dh;
+
+        if ((dh = get_dh2048())) {
+            if (!SSL_CTX_set_tmp_dh(ctx, dh)) {
+                merror("%s: ERROR: Unable to set temporary DH parameters", ARGV0);
+                DH_free(dh);
+                goto CONTEXT_ERR;
+            }
             DH_free(dh);
+        } else {
+            merror("%s: ERROR: Unable to load DH parameters", ARGV0);
             goto CONTEXT_ERR;
         }
-        DH_free(dh);
-    } else {
-        merror("%s: ERROR: Unable to load DH parameters", ARGV0);
-        goto CONTEXT_ERR;
     }
+#endif
 
     return ctx;
 

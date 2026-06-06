@@ -25,6 +25,19 @@ void OS_AddMailtoList(MailMsg *ml) __attribute__((nonnull));
  */
 MailNode *OS_PopLastMail(void);
 
+/* Detach all queued mail into a list (oldest first via ->next). Caller frees nodes. */
+MailNode *OS_DrainMailList(void);
+
+/* mail_list_mu must already be held (lock order: mail_send_mu then mail_list_mu).
+ * Do not call OS_CheckLastMail() while holding mail_workers_mu (nested lock). */
+MailNode *OS_DrainMailListUnlocked(void);
+
+/* Re-insert a detached batch (oldest first via ->next). mail_list_mu must be held. */
+void OS_RequeueMailBatch(MailNode *batch);
+
+void OS_MailListLock(void);
+void OS_MailListUnlock(void);
+
 /* Return a pointer to the last email, not removing it */
 MailNode *OS_CheckLastMail(void);
 

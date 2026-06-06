@@ -196,6 +196,7 @@ extern const char *__local_name;
 #include "mq_op.h"
 #include "privsep_op.h"
 #include "pthreads_op.h"
+#include "thread_pool.h"
 #include "regex_op.h"
 #include "sig_op.h"
 #include "list_op.h"

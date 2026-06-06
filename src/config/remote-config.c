@@ -20,6 +20,7 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     unsigned int allow_size = 1;
     unsigned int deny_size = 1;
     int portnum;
+    int secure_count = 0;
     remoted *logr;
 
     /*** XML Definitions ***/
@@ -82,6 +83,12 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
         pl++;
     }
 
+    if (pl >= REMOTE_LISTENERS_MAX) {
+        merror("%s: Too many remoted connections (max %d).",
+               __local_name, REMOTE_LISTENERS_MAX);
+        return (OS_INVALID);
+    }
+
     /* Add space for the last null connection/port */
     logr->port = (char **) realloc(logr->port, sizeof(char *) * (pl + 2));
     logr->conn = (int *) realloc(logr->conn, sizeof(int) * (pl + 2));
@@ -115,6 +122,12 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
             if (strcmp(node[i]->content, "syslog") == 0) {
                 logr->conn[pl] = SYSLOG_CONN;
             } else if (strcmp(node[i]->content, "secure") == 0) {
+                secure_count++;
+                if (secure_count > 1) {
+                    merror("%s: Only one <connection>secure</connection> is supported.",
+                           __local_name);
+                    return (OS_INVALID);
+                }
                 logr->conn[pl] = SECURE_CONN;
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);

@@ -28,6 +28,7 @@
 #include "shared.h"
 #include "maild.h"
 #include "mail_list.h"
+#include "mail_utils.h"
 
 #define HEADER_MAX      2048
 #define SMTP_URL_MAX    512
@@ -43,21 +44,6 @@ typedef struct _smtp_payload_ctx {
     MailNode *current_node;
     size_t body_sent;
 } smtp_payload_ctx;
-
-/* Copy at most dst_size-1 chars from src into dst, stripping CR/LF to prevent header injection. */
-static void sanitize_header_value(const char *src, char *dst, size_t dst_size)
-{
-    size_t j = 0;
-    if (!dst || dst_size == 0) return;
-    if (!src) { dst[0] = '\0'; return; }
-    while (src[0] && j < dst_size - 1) {
-        if (src[0] != '\r' && src[0] != '\n') {
-            dst[j++] = src[0];
-        }
-        src++;
-    }
-    dst[j] = '\0';
-}
 
 /* Validate an SMTP host string.
  * Accept:
@@ -169,15 +155,9 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
             return sent;
         }
 
-        /* Current body finished, pull next from queue (batch mode) */
-        {
-            MailNode *next = OS_PopLastMail();
-            if (ctx->current_node != ctx->first_node) {
-                FreeMail(ctx->current_node);
-            }
-            ctx->current_node = next;
-            ctx->body_sent = 0;
-        }
+        /* Current body finished, advance through detached batch */
+        ctx->current_node = ctx->current_node->next;
+        ctx->body_sent = 0;
     }
 
     return 0;
@@ -235,7 +215,33 @@ static void log_smtp_curl_perform_failure(CURL *curl, CURLcode res, const char *
     }
 }
 
-static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *mailmsg)
+static void free_mail_batch(MailNode *batch)
+{
+    MailNode *n;
+
+    while (batch) {
+        n = batch;
+        batch = batch->next;
+        FreeMail(n);
+    }
+}
+
+static int mail_gran_format(const MailConfig *mail, const int *gran_override,
+                            unsigned int i)
+{
+    if (gran_override) {
+        return gran_override[i];
+    }
+    if (mail->gran_set) {
+        return mail->gran_set[i];
+    }
+    return 0;
+}
+
+static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
+                         MailNode *mailmsg, const int *gran_override,
+                         const char *group_subject,
+                         unsigned int group_subject_level, int sms_only)
 {
     struct curl_slist *recipients = NULL;
     struct curl_slist *resolve_list = NULL;
@@ -255,19 +261,24 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
 
     curl_easy_reset(curl);
 
-    if (!mail->smtpserver || !mail->from || !mail->to || !mail->to[0]) {
-        merror("%s: Incomplete mail config (smtp_server, email_from, email_to).", ARGV0);
-        return -1;
+    if (!mail->smtpserver || !mail->from) {
+        merror("%s: Incomplete mail config (smtp_server, email_from).", ARGV0);
+        goto done;
+    }
+
+    if (!sms_only && (!mail->to || !mail->to[0])) {
+        merror("%s: Incomplete mail config (email_to).", ARGV0);
+        goto done;
     }
 
     if (!is_valid_smtp_host(mail->smtpserver)) {
         merror("%s: Invalid smtp_server (hostname only, no path or invalid chars).", ARGV0);
-        return -1;
+        goto done;
     }
 
     if (mail->authsmtp && (!mail->smtp_user || !mail->smtp_pass)) {
         merror("%s: auth_smtp=yes requires smtp_user and smtp_password to be set.", ARGV0);
-        return -1;
+        goto done;
     }
 
     /* Build URL: optional smtp_port overrides defaults (465/587/25 per mode) */
@@ -290,7 +301,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
         }
         if (n < 0 || (size_t)n >= sizeof(url)) {
             merror("%s: smtp_server or URL too long (truncation).", ARGV0);
-            return -1;
+            goto done;
         }
         /* Pre-resolved IP for chroot (no DNS inside jail); hostname:port:ip for CURLOPT_RESOLVE */
         if (mail->smtpserver_resolved) {
@@ -302,12 +313,12 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
             }
             if (n < 0 || (size_t)n >= sizeof(resolve_buf)) {
                 merror("%s: smtp_server or resolved IP too long for CURLOPT_RESOLVE (truncation).", ARGV0);
-                return -1;
+                goto done;
             }
             resolve_list = curl_slist_append(NULL, resolve_buf);
             if (!resolve_list) {
                 merror("%s: Failed to build resolve list for chroot (CURLOPT_RESOLVE).", ARGV0);
-                return -1;
+                goto done;
             }
             curl_easy_setopt(curl, CURLOPT_RESOLVE, resolve_list);
         }
@@ -324,32 +335,42 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
      * append failure we keep the list and free it in done. */
     {
         struct curl_slist *new_node;
-        for (i = 0; mail->to[i] != NULL; i++) {
-            if (strchr(mail->to[i], '\r') || strchr(mail->to[i], '\n')) {
-                merror("%s: Skipping recipient with invalid CR/LF (SMTP injection attempt or misconfiguration).", ARGV0);
-                continue;
+        if (!sms_only) {
+            for (i = 0; mail->to[i] != NULL; i++) {
+                if (mail_address_has_crlf(mail->to[i])) {
+                    merror("%s: Skipping recipient with invalid CR/LF (SMTP injection attempt or misconfiguration).", ARGV0);
+                    continue;
+                }
+                new_node = curl_slist_append(recipients, mail->to[i]);
+                if (!new_node) {
+                    merror("%s: Failed to append recipient.", ARGV0);
+                    goto done;
+                }
+                recipients = new_node;
             }
-            new_node = curl_slist_append(recipients, mail->to[i]);
-            if (!new_node) {
-                merror("%s: Failed to append recipient.", ARGV0);
-                goto done;
-            }
-            recipients = new_node;
         }
-        if (mail->gran_to && mail->gran_set) {
+        if (mail->gran_to) {
             for (i = 0; mail->gran_to[i] != NULL; i++) {
-                if (mail->gran_set[i] == FULL_FORMAT) {
-                    if (strchr(mail->gran_to[i], '\r') || strchr(mail->gran_to[i], '\n')) {
-                        merror("%s: Skipping granular recipient with invalid CR/LF.", ARGV0);
+                int fmt = mail_gran_format(mail, gran_override, i);
+
+                if (sms_only) {
+                    if (fmt != SMS_FORMAT) {
                         continue;
                     }
-                    new_node = curl_slist_append(recipients, mail->gran_to[i]);
-                    if (!new_node) {
-                        merror("%s: Failed to append granular recipient.", ARGV0);
-                        goto done;
-                    }
-                    recipients = new_node;
+                } else if (fmt != FULL_FORMAT) {
+                    continue;
                 }
+
+                if (mail_address_has_crlf(mail->gran_to[i])) {
+                    merror("%s: Skipping granular recipient with invalid CR/LF.", ARGV0);
+                    continue;
+                }
+                new_node = curl_slist_append(recipients, mail->gran_to[i]);
+                if (!new_node) {
+                    merror("%s: Failed to append granular recipient.", ARGV0);
+                    goto done;
+                }
+                recipients = new_node;
             }
         }
     }
@@ -369,23 +390,39 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
     strftime(message_id, sizeof(message_id), "%Y%m%d%H%M%S.%z", p);
     strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %T %z", p);
 
-    /* Subject: allow global override (_g_subject) to match legacy behavior. */
+    /* Subject: use snapshotted grouped subject when provided. */
     {
         const char *raw_subject;
 
-        if (_g_subject && _g_subject[0] != '\0') {
-            raw_subject = _g_subject;
+        if (group_subject_level != 0 && group_subject && group_subject[0] != '\0') {
+            raw_subject = group_subject;
         } else if (mailmsg->mail->subject) {
             raw_subject = mailmsg->mail->subject;
         } else {
             raw_subject = "";
         }
 
-        sanitize_header_value(raw_subject, sanitized_subject, sizeof(sanitized_subject));
+        mail_sanitize_header_value(raw_subject, sanitized_subject, sizeof(sanitized_subject));
     }
 
-    sanitize_header_value(mail->from, sanitized_from, sizeof(sanitized_from));
-    sanitize_header_value(mail->to[0], sanitized_to, sizeof(sanitized_to));
+    mail_sanitize_header_value(mail->from, sanitized_from, sizeof(sanitized_from));
+    if (sms_only && mail->gran_to) {
+        const char *sms_to = NULL;
+
+        for (i = 0; mail->gran_to[i] != NULL; i++) {
+            if (mail_gran_format(mail, gran_override, i) == SMS_FORMAT) {
+                sms_to = mail->gran_to[i];
+                break;
+            }
+        }
+        if (!sms_to) {
+            merror("%s: No SMS granular recipients.", ARGV0);
+            goto done;
+        }
+        mail_sanitize_header_value(sms_to, sanitized_to, sizeof(sanitized_to));
+    } else {
+        mail_sanitize_header_value(mail->to[0], sanitized_to, sizeof(sanitized_to));
+    }
 
     /* Optional headers: CC, Reply-To, and X-IDS-OSSEC. */
     {
@@ -409,7 +446,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
                 char sanitized_cc[HEADER_MAX];
                 size_t addr_len;
 
-                sanitize_header_value(mail->to[i], sanitized_cc, sizeof(sanitized_cc));
+                mail_sanitize_header_value(mail->to[i], sanitized_cc, sizeof(sanitized_cc));
                 addr_len = strlen(sanitized_cc);
 
                 if (addr_len == 0) {
@@ -444,7 +481,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
         if (mail->reply_to) {
             char sanitized_reply_to[HEADER_MAX];
 
-            sanitize_header_value(mail->reply_to, sanitized_reply_to, sizeof(sanitized_reply_to));
+            mail_sanitize_header_value(mail->reply_to, sanitized_reply_to, sizeof(sanitized_reply_to));
             if (sanitized_reply_to[0] != '\0') {
                 (void)snprintf(replyto_header_line, sizeof(replyto_header_line),
                                "Reply-To: %s\r\n", sanitized_reply_to);
@@ -452,7 +489,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
         }
 
         /* X-IDS-OSSEC header from mail->idsname, matching legacy behavior. */
-        sanitize_header_value(mail->idsname ? mail->idsname : "",
+        mail_sanitize_header_value(mail->idsname ? mail->idsname : "",
                               sanitized_idsname, sizeof(sanitized_idsname));
 
         n = snprintf(header_buf, sizeof(header_buf),
@@ -532,25 +569,65 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p, MailNode *m
 done:
     curl_slist_free_all(recipients);
     curl_slist_free_all(resolve_list);
-    /* message_id is date+hostname only, no secrets */
+    if (!sms_only) {
+        free_mail_batch(mailmsg);
+    }
     return ret;
 }
 
-int OS_Sendmail(MailConfig *mail, struct tm *p)
+int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
+                const int *gran_override, const char *group_subject,
+                unsigned int group_subject_level)
 {
     CURL *curl = NULL;
-    MailNode *mailmsg;
     int ret = 0;
 
-    if (!mail || !p) {
+    if (!mail || !p || !batch) {
         return (OS_INVALID);
     }
 
     if (mail->smtpserver && mail->smtpserver[0] == '/') {
         /* Local sendmail path (e.g. /usr/sbin/sendmail) is not supported in USE_SMTP_CURL builds. */
         merror("%s: Invalid smtp_server configuration: local sendmail paths are not supported when built with USE_SMTP_CURL. Please configure smtp_server as an SMTP host[:port].", ARGV0);
+        free_mail_batch(batch);
         return (OS_INVALID);
     }
+
+    curl = curl_easy_init();
+    if (!curl) {
+        merror("%s: curl_easy_init failed.", ARGV0);
+        free_mail_batch(batch);
+        return (OS_INVALID);
+    }
+
+    if (send_one_mail(curl, mail, p, batch, gran_override, group_subject,
+                      group_subject_level, 0) < 0) {
+        ret = OS_INVALID;
+    }
+
+    curl_easy_cleanup(curl);
+    return ret;
+}
+
+int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
+               const int *gran_override)
+{
+    CURL *curl = NULL;
+    MailNode node;
+    int ret = 0;
+
+    if (!mail || !p || !sms_msg) {
+        return (OS_INVALID);
+    }
+
+    if (mail->smtpserver && mail->smtpserver[0] == '/') {
+        merror("%s: Invalid smtp_server configuration: local sendmail paths are not supported when built with USE_SMTP_CURL. Please configure smtp_server as an SMTP host[:port].", ARGV0);
+        return (OS_INVALID);
+    }
+
+    node.mail = sms_msg;
+    node.next = NULL;
+    node.prev = NULL;
 
     curl = curl_easy_init();
     if (!curl) {
@@ -558,12 +635,8 @@ int OS_Sendmail(MailConfig *mail, struct tm *p)
         return (OS_INVALID);
     }
 
-    mailmsg = OS_PopLastMail();
-    if (mailmsg) {
-        if (send_one_mail(curl, mail, p, mailmsg) < 0) {
-            ret = OS_INVALID;
-        }
-        FreeMail(mailmsg);
+    if (send_one_mail(curl, mail, p, &node, gran_override, NULL, 0, 1) < 0) {
+        ret = OS_INVALID;
     }
 
     curl_easy_cleanup(curl);

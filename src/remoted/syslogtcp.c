@@ -11,6 +11,11 @@
 #include "os_net/os_net.h"
 #include "remoted.h"
 
+typedef struct syslog_client_arg {
+    remoted_listener *listener;
+    int client_socket;
+    char srcip[IPSIZE + 1];
+} syslog_client_arg;
 
 /* Checks if an IP is not allowed */
 static int OS_IPNotAllowed(char *srcip)
@@ -30,9 +35,13 @@ static int OS_IPNotAllowed(char *srcip)
     return (1);
 }
 
-/* Handle each client */
-static void HandleClient(int client_socket, char *srcip)
+/* Handle each client connection in a worker thread */
+static void *syslog_client_worker(void *arg)
 {
+    syslog_client_arg *client = (syslog_client_arg *)arg;
+    remoted_listener *listener = client->listener;
+    int client_socket = client->client_socket;
+    char srcip[IPSIZE + 1];
     int sb_size = OS_MAXSTR;
     int r_sz = 0;
 
@@ -42,29 +51,22 @@ static void HandleClient(int client_socket, char *srcip)
 
     char *buffer_pt = NULL;
 
-    /* Create PID file */
-    if (CreatePID(ARGV0, getpid()) < 0) {
-        ErrorExit(PID_ERROR, ARGV0);
-    }
+    strncpy(srcip, client->srcip, IPSIZE);
+    srcip[IPSIZE] = '\0';
+    free(client);
 
-    /* Initialize some variables */
     memset(buffer, '\0', OS_MAXSTR + 2);
     memset(storage_buffer, '\0', OS_MAXSTR + 2);
     memset(tmp_buffer, '\0', OS_MAXSTR + 2);
 
-
     while (1) {
-        /* If we fail, we need to return and close the socket */
         if ((r_sz = OS_RecvTCPBuffer(client_socket, buffer, OS_MAXSTR - 2)) < 0) {
             close(client_socket);
-            DeletePID(ARGV0);
-            return;
+            return NULL;
         }
 
-        /* We must have a new line at the end */
         buffer_pt = strchr(buffer, '\n');
         if (!buffer_pt) {
-            /* Buffer is full */
             if ((sb_size - r_sz) <= 2) {
                 merror("%s: Full buffer receiving from: '%s'", ARGV0, srcip);
                 sb_size = OS_MAXSTR;
@@ -77,16 +79,12 @@ static void HandleClient(int client_socket, char *srcip)
             continue;
         }
 
-        /* See if we received more than just one message */
         if (*(buffer_pt + 1) != '\0') {
             *buffer_pt = '\0';
             buffer_pt++;
             strncpy(tmp_buffer, buffer_pt, OS_MAXSTR);
         }
 
-        /* Store everything in the storage_buffer
-         * Check if buffer will be full
-         */
         if ((sb_size - r_sz) <= 2) {
             merror("%s: Full buffer receiving from: '%s'.", ARGV0, srcip);
             sb_size = OS_MAXSTR;
@@ -97,13 +95,11 @@ static void HandleClient(int client_socket, char *srcip)
 
         strncat(storage_buffer, buffer, sb_size);
 
-        /* Remove carriage returns too */
         buffer_pt = strchr(storage_buffer, '\r');
         if (buffer_pt) {
             *buffer_pt = '\0';
         }
 
-        /* Remove syslog header */
         if (storage_buffer[0] == '<') {
             buffer_pt = strchr(storage_buffer + 1, '>');
             if (buffer_pt) {
@@ -115,16 +111,11 @@ static void HandleClient(int client_socket, char *srcip)
             buffer_pt = storage_buffer;
         }
 
-        /* Send to the queue */
-        if (SendMSG(logr.m_queue, buffer_pt, srcip, SYSLOG_MQ) < 0) {
-            merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
-
-            if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
-                ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
-            }
+        if (remoted_send_syslog_msg(listener, buffer_pt, srcip) < 0) {
+            close(client_socket);
+            return NULL;
         }
 
-        /* Clean up the buffers */
         if (tmp_buffer[0] != '\0') {
             strncpy(storage_buffer, tmp_buffer, OS_MAXSTR);
             sb_size = OS_MAXSTR - (strlen(storage_buffer) + 1);
@@ -139,81 +130,79 @@ static void HandleClient(int client_socket, char *srcip)
 /* Handle syslog TCP connections */
 void HandleSyslogTCP()
 {
-    int childcount = 0;
     char srcip[IPSIZE + 1];
-    fd_set fdsave, fdwork;			/* select() work areas */
-    int fdmax;					/* max socket number + 1 */
-    int sock;					/* active socket */
+    fd_set fdsave, fdwork;
+    int fdmax;
+    int sock;
 
-    /* Initialize some variables */
     memset(srcip, '\0', IPSIZE + 1);
 
-    /* initialize select() save area */
-    fdsave = logr.netinfo->fdset;
-    fdmax  = logr.netinfo->fdmax;		/* value preset to max fd + 1 */
+    fdsave = remoted_self->netinfo->fdset;
+    fdmax  = remoted_self->netinfo->fdmax;
 
-    /* Connecting to the message queue
-     * Exit if it fails.
-     */
-    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
+    if ((remoted_self->m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
-    while (1) {
-        /* Wait for the children */
-        while (childcount) {
-            int wp;
-            wp = waitpid((pid_t) - 1, NULL, WNOHANG);
-            if (wp < 0) {
-                merror(WAITPID_ERROR, ARGV0, errno, strerror(errno));
-            }
+    {
+        int worker_pool = getDefine_Int("remoted", "syslog_tcp_worker_pool", 1, 64);
+        int max_tasks = getDefine_Int("remoted", "syslog_tcp_max_tasks", 1, 1024);
 
-            /* if = 0, we still need to wait for the child process */
-            else if (wp == 0) {
-                break;
-            } else {
-                childcount--;
-            }
+        remoted_self->syslog_tcp_pool =
+            thread_pool_create_limited(worker_pool, max_tasks);
+        if (!remoted_self->syslog_tcp_pool) {
+            ErrorExit(THREAD_ERROR, ARGV0);
         }
+    }
 
-        /* process connections through select() for multiple sockets */
+    while (1) {
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
-            ErrorExit("ERROR: Call to syslogtcp select() failed, errno %d - %s",
-                      errno, strerror (errno));
+            if (errno == EINTR) {
+                continue;
+            }
+            merror("%s: ERROR: syslogtcp select() failed: %s", ARGV0, strerror(errno));
+            sleep(1);
+            continue;
         }
 
-        /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
-
-                /* Accept new connections */
+                syslog_client_arg *client;
                 int client_socket = OS_AcceptTCP(sock, srcip, IPSIZE);
+
                 if (client_socket < 0) {
                     merror("%s: WARN: Accepting tcp connection from client failed.", ARGV0);
                     continue;
                 }
 
-                /* Check if IP is allowed here */
                 if (OS_IPNotAllowed(srcip)) {
                     merror(DENYIP_WARN, ARGV0, srcip);
                     close(client_socket);
                     continue;
                 }
 
-                /* Fork to deal with new client */
-                if (fork() == 0) {
-                    HandleClient(client_socket, srcip);
-                    exit(0);
-                } else {
-                    childcount++;
-
-                    /* Close client socket, since the child is handling it */
+                if (!thread_pool_has_slot(remoted_self->syslog_tcp_pool)) {
+                    merror("%s: WARN: Syslog TCP worker pool full, dropping connection from %s",
+                           ARGV0, srcip);
                     close(client_socket);
                     continue;
                 }
-            } /* if socket active */
-        } /* for() loop on available sockets */
-    } /* while(1) loop for messages */
-}
 
+                os_calloc(1, sizeof(syslog_client_arg), client);
+                client->listener = remoted_self;
+                client->client_socket = client_socket;
+                strncpy(client->srcip, srcip, IPSIZE);
+                client->srcip[IPSIZE] = '\0';
+
+                if (thread_pool_submit(remoted_self->syslog_tcp_pool,
+                                       syslog_client_worker, client) != 0) {
+                    free(client);
+                    close(client_socket);
+                    merror("%s: WARN: Unable to queue syslog TCP client for %s", ARGV0, srcip);
+                    continue;
+                }
+            }
+        }
+    }
+}

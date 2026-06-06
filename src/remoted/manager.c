@@ -52,7 +52,7 @@ void save_controlmsg(unsigned int agentid, char *r_msg)
 
     /* Reply to the agent */
     snprintf(msg_ack, OS_FLSIZE, "%s%s", CONTROL_HEADER, HC_ACK);
-    send_msg(agentid, msg_ack);
+    send_msg(remoted_secure_listener, agentid, msg_ack);
 
     /* Check if there is a keep alive already for this agent */
     if (_keep_alive[agentid] && _msg[agentid] &&
@@ -283,7 +283,7 @@ static int send_file_toagent(unsigned int agentid, const char *name, const char 
     /* Send the file name first */
     snprintf(buf, OS_SIZE_1024, "%s%s%s %s\n",
              CONTROL_HEADER, FILE_UPDATE_HEADER, sum, name);
-    if (send_msg(agentid, buf) == -1) {
+    if (send_msg(remoted_secure_listener, agentid, buf) == -1) {
         merror(SEC_ERROR, ARGV0);
         fclose(fp);
         return (-1);
@@ -293,7 +293,7 @@ static int send_file_toagent(unsigned int agentid, const char *name, const char 
     while ((n = fread(buf, 1, 900, fp)) > 0) {
         buf[n] = '\0';
 
-        if (send_msg(agentid, buf) == -1) {
+        if (send_msg(remoted_secure_listener, agentid, buf) == -1) {
             merror(SEC_ERROR, ARGV0);
             fclose(fp);
             return (-1);
@@ -309,7 +309,7 @@ static int send_file_toagent(unsigned int agentid, const char *name, const char 
 
     /* Send the message to close the file */
     snprintf(buf, OS_SIZE_1024, "%s%s", CONTROL_HEADER, FILE_CLOSE_HEADER);
-    if (send_msg(agentid, buf) == -1) {
+    if (send_msg(remoted_secure_listener, agentid, buf) == -1) {
         merror(SEC_ERROR, ARGV0);
         fclose(fp);
         return (-1);
