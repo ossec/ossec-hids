@@ -64,6 +64,12 @@ src/verify-agent-conf
 *.rej
 *.orig
 
+# Local IDE settings
+.vscode/
+
+# Local server threading notes (not tracked)
+docs/
+
 # maild unit test binaries (built locally)
 src/os_maild/tests/mail_list_requeue_test
 src/os_maild/tests/sms_queue_test
