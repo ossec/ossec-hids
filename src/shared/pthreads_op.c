@@ -7,19 +7,8 @@
  * Foundation
  */
 
-#ifndef WIN32
-
 #include "shared.h"
 #include <pthread.h>
-#include <signal.h>
-
-size_t os_thread_stack_size(void)
-{
-    int stack_kb = getDefine_Int("ossec", "thread_stack_size",
-                                 2048, 65536);
-
-    return (size_t)stack_kb * 1024;
-}
 
 void os_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
 {
@@ -51,6 +40,18 @@ void os_mutex_destroy(pthread_mutex_t *mutex)
     if (error != 0) {
         ErrorExit("%s: At pthread_mutex_destroy(): %s", __local_name, strerror(error));
     }
+}
+
+#ifndef WIN32
+
+#include <signal.h>
+
+size_t os_thread_stack_size(void)
+{
+    int stack_kb = getDefine_Int("ossec", "thread_stack_size",
+                                 2048, 65536);
+
+    return (size_t)stack_kb * 1024;
 }
 
 void os_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)

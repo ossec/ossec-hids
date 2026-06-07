@@ -10,18 +10,18 @@
 #ifndef PTHREADS_OP_H
 #define PTHREADS_OP_H
 
-#ifndef WIN32
-
 #include <pthread.h>
-
-#define OS_THREAD_STACK_DEFAULT_KB 2048
-
-size_t os_thread_stack_size(void);
 
 void os_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
 void os_mutex_lock(pthread_mutex_t *mutex);
 void os_mutex_unlock(pthread_mutex_t *mutex);
 void os_mutex_destroy(pthread_mutex_t *mutex);
+
+#ifndef WIN32
+
+#define OS_THREAD_STACK_DEFAULT_KB 2048
+
+size_t os_thread_stack_size(void);
 
 void os_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
 void os_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
