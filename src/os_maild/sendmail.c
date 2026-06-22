@@ -108,6 +108,22 @@ static void mail_safe_header_addr(const char *addr, char *dst, size_t dst_size)
     mail_sanitize_header_value(addr, dst, dst_size);
 }
 
+static int mail_safe_envelope(const char *src, char *dst, size_t dst_size,
+                              int *warned, const char *field)
+{
+    if (mail_safe_envelope_value(src, dst, dst_size) == 0) {
+        return (0);
+    }
+
+    if (src && mail_address_has_crlf(src) && warned && !*warned) {
+        merror("%s: Rejecting SMTP %s with CR/LF (SMTP injection risk).",
+               ARGV0, field);
+        *warned = 1;
+    }
+
+    return (-1);
+}
+
 static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
                                 char *final_to, size_t final_to_cap,
                                 int *crlf_warned)
@@ -161,7 +177,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
     int i;
     int crlf_warned = 0;
 
-    if (!mail || !p || !sms_msg) {
+    if (!mail || !p || !sms_msg || !mail->smtpserver || !mail->from) {
         return (OS_INVALID);
     }
 
@@ -196,10 +212,15 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
         free(msg);
 
         memset(snd_msg, '\0', 128);
-        if (mail->heloserver) {
-            snprintf(snd_msg, 127, "Helo %s\r\n", mail->heloserver);
-        } else {
+        if (mail->heloserver &&
+            mail_safe_envelope(mail->heloserver, safe_addr, sizeof(safe_addr),
+                               &crlf_warned, "HELO host") == 0) {
+            snprintf(snd_msg, 127, "Helo %s\r\n", safe_addr);
+        } else if (!mail->heloserver) {
             snprintf(snd_msg, 127, "Helo %s\r\n", "notify.ossec.net");
+        } else {
+            close(socket);
+            return (OS_INVALID);
         }
         OS_SendTCP(socket, snd_msg);
         msg = OS_RecvTCP(socket, OS_SIZE_1024);
@@ -231,7 +252,12 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
         free(msg);
 
         memset(snd_msg, '\0', 128);
-        snprintf(snd_msg, 127, MAILFROM, mail->from);
+        if (mail_safe_envelope(mail->from, safe_addr, sizeof(safe_addr),
+                               &crlf_warned, "MAIL FROM") != 0) {
+            close(socket);
+            return (OS_INVALID);
+        }
+        snprintf(snd_msg, 127, MAILFROM, safe_addr);
         OS_SendTCP(socket, snd_msg);
         msg = OS_RecvTCP(socket, OS_SIZE_1024);
         if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
@@ -307,7 +333,16 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
     }
 
     memset(snd_msg, '\0', 128);
-    snprintf(snd_msg, 127, FROM, mail->from);
+    if (mail_safe_envelope(mail->from, safe_addr, sizeof(safe_addr),
+                           &crlf_warned, "From") != 0) {
+        if (sendmail) {
+            pclose(sendmail);
+        } else if (socket >= 0) {
+            close(socket);
+        }
+        return (OS_INVALID);
+    }
+    snprintf(snd_msg, 127, FROM, safe_addr);
 
     if (sendmail) {
         fprintf(sendmail, "%s", snd_msg);
@@ -317,12 +352,15 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
 
     if (mail->reply_to) {
         memset(snd_msg, '\0', 128);
-        snprintf(snd_msg, 127, REPLYTO, mail->reply_to);
+        if (mail_safe_envelope(mail->reply_to, safe_addr, sizeof(safe_addr),
+                               &crlf_warned, "Reply-To") == 0) {
+            snprintf(snd_msg, 127, REPLYTO, safe_addr);
 
-        if (sendmail) {
-            fprintf(sendmail, "%s", snd_msg);
-        } else {
-            OS_SendTCP(socket, snd_msg);
+            if (sendmail) {
+                fprintf(sendmail, "%s", snd_msg);
+            } else {
+                OS_SendTCP(socket, snd_msg);
+            }
         }
     }
 
@@ -404,6 +442,11 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
         return (OS_INVALID);
     }
 
+    if (!mail->smtpserver || !mail->from) {
+        free_mail_batch(batch);
+        return (OS_INVALID);
+    }
+
 #define mail_send_fail(code) do { free_mail_batch(batch); return (code); } while (0)
 
     if (mail->smtpserver[0] == '/') {
@@ -433,10 +476,15 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
 
         /* Send HELO message */
         memset(snd_msg, '\0', 128);
-        if (mail->heloserver) {
-            snprintf(snd_msg, 127, "Helo %s\r\n", mail->heloserver);
-        } else {
+        if (mail->heloserver &&
+            mail_safe_envelope(mail->heloserver, safe_addr, sizeof(safe_addr),
+                               &crlf_warned, "HELO host") == 0) {
+            snprintf(snd_msg, 127, "Helo %s\r\n", safe_addr);
+        } else if (!mail->heloserver) {
             snprintf(snd_msg, 127, "Helo %s\r\n", "notify.ossec.net");
+        } else {
+            close(socket);
+            mail_send_fail(OS_INVALID);
         }
         OS_SendTCP(socket, snd_msg);
         msg = OS_RecvTCP(socket, OS_SIZE_1024);
@@ -476,7 +524,12 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
 
         /* Build "Mail from" msg */
         memset(snd_msg, '\0', 128);
-        snprintf(snd_msg, 127, MAILFROM, mail->from);
+        if (mail_safe_envelope(mail->from, safe_addr, sizeof(safe_addr),
+                               &crlf_warned, "MAIL FROM") != 0) {
+            close(socket);
+            mail_send_fail(OS_INVALID);
+        }
+        snprintf(snd_msg, 127, MAILFROM, safe_addr);
         OS_SendTCP(socket, snd_msg);
         msg = OS_RecvTCP(socket, OS_SIZE_1024);
         if ((msg == NULL) || (!OS_Match(VALIDMAIL, msg))) {
@@ -592,7 +645,16 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
     }
 
     memset(snd_msg, '\0', 128);
-    snprintf(snd_msg, 127, FROM, mail->from);
+    if (mail_safe_envelope(mail->from, safe_addr, sizeof(safe_addr),
+                           &crlf_warned, "From") != 0) {
+        if (sendmail) {
+            pclose(sendmail);
+        } else if (socket >= 0) {
+            close(socket);
+        }
+        mail_send_fail(OS_INVALID);
+    }
+    snprintf(snd_msg, 127, FROM, safe_addr);
 
     if (sendmail) {
         fprintf(sendmail, "%s", snd_msg);
@@ -601,13 +663,16 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
     }
 
     /* Send reply-to if set */
-    if (mail->reply_to){
+    if (mail->reply_to) {
         memset(snd_msg, '\0', 128);
-        snprintf(snd_msg, 127, REPLYTO, mail->reply_to);
-        if (sendmail) {
-            fprintf(sendmail, "%s", snd_msg);
-        } else {
-            OS_SendTCP(socket, snd_msg);
+        if (mail_safe_envelope(mail->reply_to, safe_addr, sizeof(safe_addr),
+                               &crlf_warned, "Reply-To") == 0) {
+            snprintf(snd_msg, 127, REPLYTO, safe_addr);
+            if (sendmail) {
+                fprintf(sendmail, "%s", snd_msg);
+            } else {
+                OS_SendTCP(socket, snd_msg);
+            }
         }
     }
 

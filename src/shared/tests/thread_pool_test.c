@@ -45,6 +45,13 @@ static void *block_task(void *arg)
     return NULL;
 }
 
+static void *never_run_task(void *arg)
+{
+    (void)arg;
+    fprintf(stderr, "FAIL: queued task ran after destroy was requested\n");
+    return NULL;
+}
+
 static void track_drop(void *arg)
 {
     free(arg);
@@ -121,6 +128,26 @@ int main(void)
     thread_pool_destroy(pool);
     if (dropped != 0) {
         fprintf(stderr, "FAIL: drop_fn on empty destroy, got %d\n", dropped);
+        return 1;
+    }
+
+    /* Queued tasks must be dropped (not run) when the pool is destroyed. */
+    dropped = 0;
+    pool = thread_pool_create(1);
+    if (!pool) {
+        fprintf(stderr, "FAIL: thread_pool_create for queued drop\n");
+        return 1;
+    }
+    thread_pool_set_drop_fn(pool, track_drop);
+    if (thread_pool_submit(pool, block_task, NULL) != 0 ||
+        thread_pool_submit(pool, never_run_task, calloc(1, 1)) != 0) {
+        fprintf(stderr, "FAIL: submit for queued drop test\n");
+        thread_pool_destroy(pool);
+        return 1;
+    }
+    thread_pool_destroy(pool);
+    if (dropped != 1) {
+        fprintf(stderr, "FAIL: expected one dropped queued task, got %d\n", dropped);
         return 1;
     }
 

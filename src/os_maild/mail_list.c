@@ -43,6 +43,17 @@ void OS_CreateMailList(int maxsize)
     return;
 }
 
+int OS_MailListPending(void)
+{
+    int pending;
+
+    os_mutex_lock(&mail_list_mu);
+    pending = _memoryused;
+    os_mutex_unlock(&mail_list_mu);
+
+    return pending;
+}
+
 /* Check last mail */
 MailNode *OS_CheckLastMail()
 {

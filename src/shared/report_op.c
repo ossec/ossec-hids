@@ -413,6 +413,7 @@ void os_ReportdStart(report_filter *r_filter)
     FILE *out;
 
     time_t tm;
+    struct tm tm_buf;
     struct tm *p;
 
     file_queue *fileq;
@@ -422,7 +423,8 @@ void os_ReportdStart(report_filter *r_filter)
 
     /* Get current time before starting */
     tm = time(NULL);
-    p = localtime(&tm);
+    localtime_r(&tm, &tm_buf);
+    p = &tm_buf;
 
     /* Initiate file queue - to read the alerts */
     os_calloc(1, sizeof(file_queue), fileq);

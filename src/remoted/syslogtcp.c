@@ -196,6 +196,8 @@ void HandleSyslogTCP()
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
+    int tcp_read_timeout;
+
     {
         int worker_pool = getDefine_Int("remoted", "syslog_tcp_worker_pool", 1, 64);
         int max_tasks = getDefine_Int("remoted", "syslog_tcp_max_tasks", 1, 1024);
@@ -207,6 +209,14 @@ void HandleSyslogTCP()
         }
         thread_pool_set_drop_fn(remoted_self->syslog_tcp_pool,
                                 syslog_client_drop_pending);
+    }
+
+    tcp_read_timeout = getDefine_Int("remoted", "syslog_tcp_read_timeout", 1, 3600);
+    if (tcp_read_timeout <= 0) {
+        tcp_read_timeout = SYSLOG_TCP_READ_TIMEOUT_DEFAULT;
+    }
+    if (tcp_read_timeout > REMOTED_SHUTDOWN_POOL_TIMEOUT) {
+        tcp_read_timeout = REMOTED_SHUTDOWN_POOL_TIMEOUT;
     }
 
     while (1) {
@@ -246,17 +256,7 @@ void HandleSyslogTCP()
                     continue;
                 }
 
-                {
-                    int read_timeout = getDefine_Int("remoted", "syslog_tcp_read_timeout",
-                                                     1, 3600);
-                    if (read_timeout <= 0) {
-                        read_timeout = SYSLOG_TCP_READ_TIMEOUT_DEFAULT;
-                    }
-                    if (read_timeout > REMOTED_SHUTDOWN_POOL_TIMEOUT) {
-                        read_timeout = REMOTED_SHUTDOWN_POOL_TIMEOUT;
-                    }
-                    syslog_set_client_timeout(client_socket, read_timeout);
-                }
+                syslog_set_client_timeout(client_socket, tcp_read_timeout);
 
                 os_calloc(1, sizeof(syslog_client_arg), client);
                 client->listener = remoted_self;

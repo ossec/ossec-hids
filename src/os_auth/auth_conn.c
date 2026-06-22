@@ -10,20 +10,23 @@
 #include "auth.h"
 #include "auth_conn.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 
 #define AUTHD_CONN_IO_TIMEOUT_SEC 30
 
 static pthread_mutex_t auth_keys_mutex;
-static int auth_keys_mutex_ready = 0;
+static pthread_once_t auth_keys_once = PTHREAD_ONCE_INIT;
+
+static void auth_keys_mutex_init(void)
+{
+    os_mutex_init(&auth_keys_mutex, NULL);
+}
 
 void auth_keys_init(void)
 {
-    if (!auth_keys_mutex_ready) {
-        os_mutex_init(&auth_keys_mutex, NULL);
-        auth_keys_mutex_ready = 1;
-    }
+    pthread_once(&auth_keys_once, auth_keys_mutex_init);
 }
 
 void auth_keys_lock(void)
@@ -36,22 +39,28 @@ void auth_keys_unlock(void)
     os_mutex_unlock(&auth_keys_mutex);
 }
 
-static int ssl_error(const SSL *ssl, int ret)
+static int ssl_error_timed(const SSL *ssl, int ret, time_t deadline)
 {
-    if (ret <= 0) {
-        switch (SSL_get_error(ssl, ret)) {
-            case SSL_ERROR_WANT_READ:
-            case SSL_ERROR_WANT_WRITE:
-                usleep(100 * 1000);
-                return (0);
-            default:
-                merror("%s: ERROR: SSL Error (%d)", ARGV0, ret);
-                ERR_print_errors_fp(stderr);
-                return (1);
-        }
+    if (ret > 0) {
+        return (0);
     }
 
-    return (0);
+    if (time(NULL) >= deadline) {
+        merror("%s: ERROR: SSL I/O timed out after %d seconds.", ARGV0,
+               AUTHD_CONN_IO_TIMEOUT_SEC);
+        return (1);
+    }
+
+    switch (SSL_get_error(ssl, ret)) {
+        case SSL_ERROR_WANT_READ:
+        case SSL_ERROR_WANT_WRITE:
+            usleep(100 * 1000);
+            return (0);
+        default:
+            merror("%s: ERROR: SSL Error (%d)", ARGV0, ret);
+            ERR_print_errors_fp(stderr);
+            return (1);
+    }
 }
 
 static void auth_close_connection(SSL *ssl, int sock)
@@ -67,11 +76,17 @@ static void auth_close_connection(SSL *ssl, int sock)
 static void auth_set_socket_timeouts(int sock)
 {
     struct timeval tv;
+    int flags;
 
     tv.tv_sec = AUTHD_CONN_IO_TIMEOUT_SEC;
     tv.tv_usec = 0;
     (void)setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     (void)setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
+    flags = fcntl(sock, F_GETFL, 0);
+    if (flags >= 0) {
+        (void)fcntl(sock, F_SETFL, flags & ~O_NONBLOCK);
+    }
 }
 
 void *auth_connection_worker(void *arg)
@@ -86,7 +101,10 @@ void *auth_connection_worker(void *arg)
     SSL *ssl = NULL;
     int ret;
     char *agentname = NULL;
+    char response[2048 + 1];
+    char *finalkey = NULL;
     int parseok;
+    time_t io_deadline;
 
     os_block_worker_signals();
 
@@ -95,6 +113,7 @@ void *auth_connection_worker(void *arg)
     free(conn);
 
     auth_set_socket_timeouts(client_sock);
+    io_deadline = time(NULL) + AUTHD_CONN_IO_TIMEOUT_SEC;
 
     ssl = SSL_new(ctx);
     if (!ssl) {
@@ -106,7 +125,7 @@ void *auth_connection_worker(void *arg)
     do {
         ret = SSL_accept(ssl);
 
-        if (ssl_error(ssl, ret)) {
+        if (ssl_error_timed(ssl, ret, io_deadline)) {
             auth_close_connection(ssl, client_sock);
             return NULL;
         }
@@ -119,7 +138,7 @@ void *auth_connection_worker(void *arg)
     do {
         ret = SSL_read(ssl, buf, sizeof(buf));
 
-        if (ssl_error(ssl, ret)) {
+        if (ssl_error_timed(ssl, ret, io_deadline)) {
             auth_close_connection(ssl, client_sock);
             return NULL;
         }
@@ -175,8 +194,7 @@ void *auth_connection_worker(void *arg)
         } else {
             int acount = 2;
             char fname[2048 + 1];
-            char response[2048 + 1];
-            char *finalkey = NULL;
+
             response[2048] = '\0';
             fname[2048] = '\0';
             if (!OS_IsValidName(agentname)) {
@@ -215,6 +233,7 @@ void *auth_connection_worker(void *arg)
                         SSL_write(ssl, response, strlen(response));
                         snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
                         SSL_write(ssl, response, strlen(response));
+                        free(check_ip_address);
                         sleep(1);
                     } else {
                         if (use_ip_address) {
@@ -243,6 +262,9 @@ void *auth_connection_worker(void *arg)
                             } else {
                                 verbose("%s: INFO: Agent key created for %s (requested by %s)", ARGV0, agentname, srcip);
                             }
+                            memset_secure(finalkey, 0, strlen(finalkey));
+                            free(finalkey);
+                            finalkey = NULL;
                         }
                     }
                 }
@@ -251,6 +273,11 @@ void *auth_connection_worker(void *arg)
     }
 
 done:
+    if (finalkey) {
+        memset_secure(finalkey, 0, strlen(finalkey));
+        free(finalkey);
+    }
+    memset_secure(response, 0, sizeof(response));
     auth_close_connection(ssl, client_sock);
     return NULL;
 }

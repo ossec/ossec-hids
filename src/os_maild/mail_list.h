@@ -41,6 +41,9 @@ void OS_MailListUnlock(void);
 /* Return a pointer to the last email, not removing it */
 MailNode *OS_CheckLastMail(void);
 
+/* Number of messages currently queued in the mail list. */
+int OS_MailListPending(void);
+
 /* Create the mail list. Maxsize must be specified */
 void OS_CreateMailList(int maxsize);
 

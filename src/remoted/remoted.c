@@ -22,20 +22,22 @@ remoted_listener remoted_listeners[REMOTE_LISTENERS_MAX];
 __thread remoted_listener *remoted_self = NULL;
 remoted_listener *remoted_secure_listener = NULL;
 volatile sig_atomic_t remoted_shutting_down = 0;
+volatile sig_atomic_t remoted_force_exit = 0;
+
+static unsigned int remoted_queue_drops = 0;
+static pthread_mutex_t remoted_drops_mu = PTHREAD_MUTEX_INITIALIZER;
 
 void remoted_request_shutdown(int sig)
 {
+    (void)sig;
+
     if (!remoted_shutting_down) {
         remoted_shutting_down = 1;
-        merror("%s: Shutdown requested (signal %d); closing listeners.",
-               ARGV0, sig);
         remoted_close_listeners();
         return;
     }
 
-    merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
-    DeletePID(ARGV0);
-    exit(1);
+    remoted_force_exit = 1;
 }
 
 void remoted_close_listeners(void)
@@ -79,6 +81,13 @@ int remoted_wait_for_shutdown(void)
     time_t now;
 
     while (1) {
+        if (remoted_force_exit) {
+            merror("%s: Forced shutdown; dropping queued syslog TCP work.", ARGV0);
+            remoted_destroy_tcp_pools();
+            DeletePID(ARGV0);
+            return 1;
+        }
+
         if (remoted_pools_active() == 0) {
             verbose("%s: Shutdown complete (no active syslog TCP workers).", ARGV0);
             remoted_destroy_tcp_pools();
@@ -89,6 +98,7 @@ int remoted_wait_for_shutdown(void)
         now = time(NULL);
         if (start == 0) {
             start = now;
+            merror("%s: Shutdown requested; closing listeners.", ARGV0);
         }
 
         if ((now - start) >= REMOTED_SHUTDOWN_POOL_TIMEOUT) {
@@ -210,11 +220,35 @@ int remoted_send_mq_msg(remoted_listener *listener, const char *msg,
 
         listener->m_queue = StartMQ(DEFAULTQUEUE, WRITE);
         if (listener->m_queue < 0) {
+            unsigned int drops;
+
+            os_mutex_lock(&remoted_drops_mu);
+            remoted_queue_drops++;
+            drops = remoted_queue_drops;
+            os_mutex_unlock(&remoted_drops_mu);
+
+            if (drops == 1 || (drops % 100) == 0) {
+                merror("%s: WARN: Queue send failures (%u messages dropped).",
+                       ARGV0, drops);
+            }
+
             os_mutex_unlock(&listener->mq_mutex);
             return -1;
         }
 
         if (SendMSG(listener->m_queue, msg, srcip, loc) < 0) {
+            unsigned int drops;
+
+            os_mutex_lock(&remoted_drops_mu);
+            remoted_queue_drops++;
+            drops = remoted_queue_drops;
+            os_mutex_unlock(&remoted_drops_mu);
+
+            if (drops == 1 || (drops % 100) == 0) {
+                merror("%s: WARN: Queue send failures (%u messages dropped).",
+                       ARGV0, drops);
+            }
+
             os_mutex_unlock(&listener->mq_mutex);
             return -1;
         }

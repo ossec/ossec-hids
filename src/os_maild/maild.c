@@ -48,7 +48,10 @@ pthread_mutex_t mail_send_mu;
 static int mail_active_workers = 0;
 static int mail_max_workers = MAX_MAIL_WORKERS;
 static volatile sig_atomic_t maild_shutting_down = 0;
+static volatile sig_atomic_t maild_force_exit = 0;
 static int mail_spawn_fail_streak = 0;
+static int mails_sent_this_hour = 0;
+static int mail_hour_rollover_pending = 0;
 
 #define MAILD_SHUTDOWN_WORKER_TIMEOUT 60
 
@@ -90,6 +93,31 @@ static int mail_snapshot_gran(MailConfig *mail, int **gran_set_snap, int *gran_c
     }
     memcpy(*gran_set_snap, mail->gran_set, (size_t)n * sizeof(int));
     return (0);
+}
+
+static void mail_worker_finished(int sent_ok)
+{
+    os_mutex_lock(&mail_workers_mu);
+    if (sent_ok) {
+        mails_sent_this_hour++;
+    }
+    mail_active_workers--;
+    if (mail_active_workers == 0 && mail_hour_rollover_pending) {
+        mails_sent_this_hour = 0;
+        mail_hour_rollover_pending = 0;
+    }
+    os_mutex_unlock(&mail_workers_mu);
+}
+
+static void maild_log_abandoned(void)
+{
+    int mail_pending = OS_MailListPending();
+    int sms_pending = OS_SmsQueueCount();
+
+    if (mail_pending > 0 || sms_pending > 0) {
+        merror("%s: Shutdown abandoning %d queued email(s) and %d SMS message(s).",
+               ARGV0, mail_pending, sms_pending);
+    }
 }
 
 static void mail_spawn_backoff(void)
@@ -161,6 +189,7 @@ static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fil
             OS_SmsRequeueFront(sms_work->sms_msg);
             free(sms_work->gran_set_snap);
             free(sms_work);
+            merror(THREAD_ERROR, ARGV0);
             return;
         }
 
@@ -226,6 +255,7 @@ static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fil
             os_mutex_unlock(&mail_workers_mu);
             free(work->gran_set_snap);
             free(work);
+            merror(THREAD_ERROR, ARGV0);
             return;
         }
     }
@@ -234,16 +264,14 @@ static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fil
 #ifndef WIN32
 static void maild_HandleSIG(int sig)
 {
+    (void)sig;
+
     if (!maild_shutting_down) {
         maild_shutting_down = 1;
-        merror("%s: Shutdown requested (signal %d); waiting for mail workers to finish.",
-               ARGV0, sig);
         return;
     }
 
-    merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
-    DeletePID(ARGV0);
-    exit(1);
+    maild_force_exit = 1;
 }
 #endif
 
@@ -480,9 +508,7 @@ static void *mail_send_worker(void *arg)
 
     if (!batch) {
         free(gran_set_snap);
-        os_mutex_lock(&mail_workers_mu);
-        mail_active_workers--;
-        os_mutex_unlock(&mail_workers_mu);
+        mail_worker_finished(0);
         return NULL;
     }
 
@@ -493,13 +519,12 @@ static void *mail_send_worker(void *arg)
     if (OS_Sendmail(mail, &tm_copy, batch, gran_override, subject,
                     subject_level) < 0) {
         merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
+        mail_worker_finished(0);
+    } else {
+        mail_worker_finished(1);
     }
 
     free(gran_set_snap);
-
-    os_mutex_lock(&mail_workers_mu);
-    mail_active_workers--;
-    os_mutex_unlock(&mail_workers_mu);
 
     return NULL;
 }
@@ -523,14 +548,14 @@ static void *sms_send_worker(void *arg)
 
     if (OS_Sendsms(mail, &tm_copy, sms_msg, gran_override) < 0) {
         merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
+        OS_SmsRequeueFront(sms_msg);
+        mail_worker_finished(0);
+    } else {
+        FreeMailMsg(sms_msg);
+        mail_worker_finished(1);
     }
 
-    FreeMailMsg(sms_msg);
     free(gran_set_snap);
-
-    os_mutex_lock(&mail_workers_mu);
-    mail_active_workers--;
-    os_mutex_unlock(&mail_workers_mu);
 
     return NULL;
 }
@@ -545,8 +570,6 @@ static void OS_Run(MailConfig *mail)
 
     int i = 0;
     int mailtosend = 0;
-    /* Counts batch/SMS worker spawns per hour (email_maxperhour), not SMTP completions. */
-    int mails_sent_this_hour = 0;
     int thishour = 0;
     int sms_defer_logged_hour = -1;
     struct tm tm_buf;
@@ -586,11 +609,27 @@ static void OS_Run(MailConfig *mail)
         localtime_r(&tm, &tm_buf);
         p = &tm_buf;
 
+        os_mutex_lock(&mail_workers_mu);
+        if (!mail_hour_rollover_pending && mail_active_workers == 0 &&
+            p->tm_hour != thishour) {
+            thishour = p->tm_hour;
+            mails_sent_this_hour = 0;
+            sms_defer_logged_hour = -1;
+        }
+        os_mutex_unlock(&mail_workers_mu);
+
         if (maild_shutting_down) {
             int active;
+            MailMsg *shutdown_msg;
 
             if (shutdown_start == 0) {
                 shutdown_start = tm;
+                merror("%s: Shutdown requested; waiting for mail workers to finish.",
+                       ARGV0);
+            }
+
+            if ((shutdown_msg = OS_RecvMailQ(fileq, p, mail)) != NULL) {
+                OS_AddMailtoList(shutdown_msg);
             }
 
             maild_shutdown_drain(mail, p, fileq);
@@ -605,6 +644,12 @@ static void OS_Run(MailConfig *mail)
                 exit(0);
             }
 
+            if (maild_force_exit) {
+                maild_log_abandoned();
+                DeletePID(ARGV0);
+                exit(1);
+            }
+
             if ((tm - shutdown_start) >= MAILD_SHUTDOWN_WORKER_TIMEOUT) {
                 if (active > 0) {
                     merror("%s: Shutdown timeout (%d s) with %d mail worker(s) still active.",
@@ -613,6 +658,7 @@ static void OS_Run(MailConfig *mail)
                     merror("%s: Shutdown timeout (%d s); pending mail/SMS abandoned.",
                            ARGV0, MAILD_SHUTDOWN_WORKER_TIMEOUT);
                 }
+                maild_log_abandoned();
                 DeletePID(ARGV0);
                 exit(1);
             }
@@ -685,7 +731,6 @@ static void OS_Run(MailConfig *mail)
                             mail_spawn_backoff();
                         } else {
                             mail_spawn_fail_streak = 0;
-                            mails_sent_this_hour++;
                         }
                     }
                 }
@@ -789,7 +834,6 @@ static void OS_Run(MailConfig *mail)
             }
 
             mail_spawn_fail_streak = 0;
-            mails_sent_this_hour++;
 
             /* Commit batch: clear grouped subject and live granular routing state. */
             os_mutex_lock(&mail_send_mu);
@@ -807,11 +851,16 @@ static void OS_Run(MailConfig *mail)
 snd_check_hour:
             /* If we sent everything */
             if (p->tm_hour != thishour) {
-                thishour = p->tm_hour;
-
-                mailtosend = 0;
-                mails_sent_this_hour = 0;
-                sms_defer_logged_hour = -1;
+                os_mutex_lock(&mail_workers_mu);
+                if (mail_active_workers > 0) {
+                    mail_hour_rollover_pending = 1;
+                } else {
+                    thishour = p->tm_hour;
+                    mailtosend = 0;
+                    mails_sent_this_hour = 0;
+                    sms_defer_logged_hour = -1;
+                }
+                os_mutex_unlock(&mail_workers_mu);
             }
         }
 

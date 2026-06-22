@@ -104,8 +104,12 @@ void os_block_worker_signals(void)
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGALRM);
 
-    if (pthread_sigmask(SIG_BLOCK, &set, NULL) != 0) {
-        merror("%s: pthread_sigmask failed: %s", __local_name, strerror(errno));
+    {
+        int ret = pthread_sigmask(SIG_BLOCK, &set, NULL);
+
+        if (ret != 0) {
+            merror("%s: pthread_sigmask failed: %s", __local_name, strerror(ret));
+        }
     }
 }
 

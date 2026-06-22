@@ -55,6 +55,16 @@ static void test_append_header_line_bounds(void)
     assert(strlen(buf) < sizeof(buf));
 }
 
+static void test_safe_envelope_value(void)
+{
+    char dst[64];
+
+    assert(mail_safe_envelope_value("user@example.com", dst, sizeof(dst)) == 0);
+    assert(strcmp(dst, "user@example.com") == 0);
+    assert(mail_safe_envelope_value("bad\ruser", dst, sizeof(dst)) == -1);
+    assert(dst[0] == '\0');
+}
+
 static void test_append_header_line_no_underflow(void)
 {
     char buf[128];
@@ -79,6 +89,7 @@ int main(void)
     test_cc_guard_sms_only_null_to();
     test_cc_guard_with_recipients();
     test_append_header_line_bounds();
+    test_safe_envelope_value();
     test_append_header_line_no_underflow();
 
     printf("mail_utils_test: OK\n");

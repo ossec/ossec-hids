@@ -17,6 +17,7 @@ void OS_SmsEnqueue(MailMsg *msg) __attribute__((nonnull));
 MailMsg *OS_SmsDequeue(void);
 void OS_SmsRequeueFront(MailMsg *msg) __attribute__((nonnull));
 int OS_SmsQueuePending(void);
+int OS_SmsQueueCount(void);
 void OS_SmsQueueClear(void);
 
 #endif /* SMS_QUEUE_H */

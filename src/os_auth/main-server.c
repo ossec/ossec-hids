@@ -32,6 +32,7 @@ static void auth_shutdown(SSL_CTX *ctx, int sock) __attribute__((noreturn));
 static void authd_HandleSIG(int sig);
 
 static volatile sig_atomic_t authd_shutting_down = 0;
+static volatile sig_atomic_t authd_force_exit = 0;
 #define AUTHD_SHUTDOWN_POOL_TIMEOUT 60
 
 
@@ -115,16 +116,14 @@ static void auth_shutdown(SSL_CTX *ctx, int sock)
 
 static void authd_HandleSIG(int sig)
 {
+    (void)sig;
+
     if (!authd_shutting_down) {
         authd_shutting_down = 1;
-        merror("%s: Shutdown requested (signal %d); stopping new enrollments.",
-               ARGV0, sig);
         return;
     }
 
-    merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
-    DeletePID(ARGV0);
-    exit(1);
+    authd_force_exit = 1;
 }
 
 /* Exit handler */
@@ -427,10 +426,6 @@ int main(int argc, char **argv)
                       errno, strerror (errno));
         }
 
-        if (authd_shutting_down) {
-            break;
-        }
-
         /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
@@ -457,17 +452,24 @@ int main(int argc, char **argv)
 
     } /* while listening */
 
+    if (!authd_force_exit) {
+        merror("%s: Shutdown requested; stopping new enrollments.", ARGV0);
+    }
+
     {
-        time_t start = time(NULL);
+        int wait_rc;
 
         verbose("%s: Waiting for auth worker threads to finish.", ARGV0);
-        while (thread_pool_active(auth_pool) > 0) {
-            if ((time(NULL) - start) >= AUTHD_SHUTDOWN_POOL_TIMEOUT) {
+        if (!authd_force_exit) {
+            wait_rc = thread_pool_wait_idle(auth_pool, AUTHD_SHUTDOWN_POOL_TIMEOUT);
+            if (wait_rc == 1) {
                 merror("%s: Shutdown timeout (%d s) with auth workers still active.",
                        ARGV0, AUTHD_SHUTDOWN_POOL_TIMEOUT);
-                break;
+            } else if (wait_rc < 0) {
+                merror("%s: ERROR: Unable to wait for auth worker threads.", ARGV0);
             }
-            sleep(1);
+        } else {
+            merror("%s: Forced shutdown; dropping queued auth connections.", ARGV0);
         }
         thread_pool_destroy(auth_pool);
     }

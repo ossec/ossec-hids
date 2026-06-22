@@ -34,6 +34,7 @@ typedef struct thread_pool {
     thread_pool_drop_fn drop_fn;
     pthread_mutex_t mu;
     pthread_cond_t work_cond;
+    pthread_cond_t idle_cond;
     thread_pool_task *head;
     thread_pool_task *tail;
     pthread_t *workers;
@@ -59,6 +60,9 @@ int thread_pool_submit(thread_pool *pool, thread_pool_fn fn, void *arg);
 int thread_pool_try_submit(thread_pool *pool, thread_pool_fn fn, void *arg);
 
 int thread_pool_active(thread_pool *pool);
+
+/* Wait until no pending or active tasks. Returns 0 when idle, 1 on timeout, -1 on error. */
+int thread_pool_wait_idle(thread_pool *pool, int timeout_sec);
 
 #endif /* !WIN32 */
 

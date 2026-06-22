@@ -152,6 +152,7 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
     char sanitized_idsname[384];
     char sanitized_subject[512];
     time_t tm;
+    struct tm tm_buf;
     struct tm *p;
 
     if (!smtpserver || !from) {
@@ -185,7 +186,8 @@ int OS_SendCustomEmail2(char **to, char *subject, char *fname, monitor_config *m
 
     /* Build header */
     tm = time(NULL);
-    p = localtime(&tm);
+    localtime_r(&tm, &tm_buf);
+    p = &tm_buf;
     char date_buf[128];
 #ifdef SOLARIS
     strftime(date_buf, 127, "Date: %a, %d %b %Y %T -0000\r\n", p);
@@ -540,7 +542,8 @@ legacy_path:
     /* Send date */
     memset(snd_msg, '\0', 128);
     tm = time(NULL);
-    p = localtime(&tm);
+    localtime_r(&tm, &tm_buf);
+    p = &tm_buf;
 
     /* Solaris doesn't have the "%z", so we set the timezone to 0 */
 #ifdef SOLARIS

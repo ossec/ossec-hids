@@ -9,6 +9,9 @@
 
 #ifndef WIN32
 
+#include <errno.h>
+#include <time.h>
+
 #include "shared.h"
 #include "thread_pool.h"
 
@@ -30,7 +33,8 @@ static void *thread_pool_worker(void *arg)
             os_cond_wait(&pool->work_cond, &pool->mu);
         }
 
-        if (pool->shutdown && pool->head == NULL) {
+        /* On shutdown, stop dequeuing; in-flight tasks still run to completion. */
+        if (pool->shutdown) {
             os_mutex_unlock(&pool->mu);
             break;
         }
@@ -50,10 +54,37 @@ static void *thread_pool_worker(void *arg)
 
         os_mutex_lock(&pool->mu);
         pool->active_workers--;
+        if (pool->active_workers == 0 && pool->pending == 0) {
+            os_cond_broadcast(&pool->idle_cond);
+        }
         os_mutex_unlock(&pool->mu);
     }
 
     return NULL;
+}
+
+static void thread_pool_flush_pending(thread_pool *pool)
+{
+    thread_pool_task *task;
+
+    os_mutex_lock(&pool->mu);
+
+    while (pool->head) {
+        task = pool->head;
+        pool->head = task->next;
+        pool->pending--;
+        os_mutex_unlock(&pool->mu);
+
+        if (pool->drop_fn && task->arg) {
+            pool->drop_fn(task->arg);
+        }
+        free(task);
+
+        os_mutex_lock(&pool->mu);
+    }
+
+    pool->tail = NULL;
+    os_mutex_unlock(&pool->mu);
 }
 
 thread_pool *thread_pool_create_limited(int max_workers, int max_tasks)
@@ -73,6 +104,7 @@ thread_pool *thread_pool_create_limited(int max_workers, int max_tasks)
 
     os_mutex_init(&pool->mu, NULL);
     os_cond_init(&pool->work_cond, NULL);
+    os_cond_init(&pool->idle_cond, NULL);
 
     for (i = 0; i < max_workers; i++) {
 #ifdef THREAD_POOL_TEST_HOOK
@@ -121,17 +153,11 @@ void thread_pool_destroy(thread_pool *pool)
         pthread_join(pool->workers[i], NULL);
     }
 
-    while (pool->head) {
-        thread_pool_task *task = pool->head;
-        pool->head = task->next;
-        if (pool->drop_fn && task->arg) {
-            pool->drop_fn(task->arg);
-        }
-        free(task);
-    }
+    thread_pool_flush_pending(pool);
 
     os_mutex_destroy(&pool->mu);
     os_cond_destroy(&pool->work_cond);
+    os_cond_destroy(&pool->idle_cond);
     free(pool->workers);
     free(pool);
 }
@@ -207,7 +233,43 @@ int thread_pool_submit(thread_pool *pool, thread_pool_fn fn, void *arg)
 
 int thread_pool_try_submit(thread_pool *pool, thread_pool_fn fn, void *arg)
 {
+    /* Bounded enqueue under one lock; identical to thread_pool_submit. */
     return thread_pool_submit(pool, fn, arg);
+}
+
+int thread_pool_wait_idle(thread_pool *pool, int timeout_sec)
+{
+    struct timespec deadline;
+    struct timespec now;
+    int ret = 0;
+
+    if (!pool || timeout_sec < 0) {
+        return -1;
+    }
+
+    if (clock_gettime(CLOCK_REALTIME, &now) != 0) {
+        return -1;
+    }
+
+    deadline.tv_sec = now.tv_sec + timeout_sec;
+    deadline.tv_nsec = now.tv_nsec;
+
+    os_mutex_lock(&pool->mu);
+
+    while (pool->active_workers > 0 || pool->pending > 0) {
+        ret = pthread_cond_timedwait(&pool->idle_cond, &pool->mu, &deadline);
+        if (ret == ETIMEDOUT) {
+            os_mutex_unlock(&pool->mu);
+            return 1;
+        }
+        if (ret != 0) {
+            os_mutex_unlock(&pool->mu);
+            return -1;
+        }
+    }
+
+    os_mutex_unlock(&pool->mu);
+    return 0;
 }
 
 #endif /* !WIN32 */

@@ -94,6 +94,7 @@ extern __thread remoted_listener *remoted_self;
 extern remoted_listener *remoted_secure_listener;
 
 extern volatile sig_atomic_t remoted_shutting_down;
+extern volatile sig_atomic_t remoted_force_exit;
 
 #define REMOTED_SHUTDOWN_POOL_TIMEOUT 60
 

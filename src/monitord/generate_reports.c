@@ -23,14 +23,16 @@ typedef struct report_worker_arg {
 
 static pthread_mutex_t report_workers_mu;
 static int report_active_workers = 0;
-static int report_workers_mu_ready = 0;
+static pthread_once_t report_workers_once = PTHREAD_ONCE_INIT;
+
+static void report_workers_mutex_init(void)
+{
+    os_mutex_init(&report_workers_mu, NULL);
+}
 
 static void report_workers_init(void)
 {
-    if (!report_workers_mu_ready) {
-        os_mutex_init(&report_workers_mu, NULL);
-        report_workers_mu_ready = 1;
-    }
+    pthread_once(&report_workers_once, report_workers_mutex_init);
 }
 
 static void *report_worker(void *arg)
@@ -48,7 +50,7 @@ static void *report_worker(void *arg)
 
     fname[255] = '\0';
     aname[255] = '\0';
-    snprintf(fname, 255, "/logs/.report-%lu.log", (unsigned long)pthread_self());
+    snprintf(fname, sizeof(fname), "/logs/.report-%lu.log", (unsigned long)pthread_self());
 
     merror("%s: INFO: Starting daily reporting for '%s'", ARGV0, mond.reports[s]->title);
     mond.reports[s]->r_filter.fp = fopen(fname, "w+");
@@ -60,7 +62,7 @@ static void *report_worker(void *arg)
         return NULL;
     }
 
-    snprintf(aname, 255, "%s/%d/%s/ossec-%s-%02d.log",
+    snprintf(aname, sizeof(aname), "%s/%d/%s/ossec-%s-%02d.log",
              ALERTS, cyear, monthss[cmon], "alerts", cday);
     os_strdup(aname, mond.reports[s]->r_filter.filename);
 

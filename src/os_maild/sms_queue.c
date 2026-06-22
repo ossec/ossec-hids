@@ -19,14 +19,17 @@ static sms_queue_node *sms_head = NULL;
 static sms_queue_node *sms_tail = NULL;
 static pthread_mutex_t sms_queue_mu;
 static int sms_queue_ready = 0;
+static pthread_once_t sms_queue_once = PTHREAD_ONCE_INIT;
+
+static void sms_queue_mutex_init(void)
+{
+    os_mutex_init(&sms_queue_mu, NULL);
+    sms_queue_ready = 1;
+}
 
 void OS_SmsQueueInit(void)
 {
-    if (!sms_queue_ready) {
-        os_mutex_init(&sms_queue_mu, NULL);
-        sms_queue_ready = 1;
-    }
-
+    pthread_once(&sms_queue_once, sms_queue_mutex_init);
     OS_SmsQueueClear();
 }
 
@@ -105,17 +108,25 @@ void OS_SmsRequeueFront(MailMsg *msg)
 
 int OS_SmsQueuePending(void)
 {
-    int pending = 0;
+    return (OS_SmsQueueCount() > 0);
+}
+
+int OS_SmsQueueCount(void)
+{
+    sms_queue_node *node;
+    int count = 0;
 
     if (!sms_queue_ready) {
         return 0;
     }
 
     os_mutex_lock(&sms_queue_mu);
-    pending = (sms_head != NULL);
+    for (node = sms_head; node != NULL; node = node->next) {
+        count++;
+    }
     os_mutex_unlock(&sms_queue_mu);
 
-    return pending;
+    return count;
 }
 
 void OS_SmsQueueClear(void)

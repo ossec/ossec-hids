@@ -76,3 +76,18 @@ int mail_has_cc_recipients(char **to, int sms_only)
 
     return (to[1] != NULL);
 }
+
+int mail_safe_envelope_value(const char *src, char *dst, size_t dst_size)
+{
+    if (!dst || dst_size == 0) {
+        return (-1);
+    }
+
+    if (!src || mail_address_has_crlf(src)) {
+        dst[0] = '\0';
+        return (-1);
+    }
+
+    mail_sanitize_header_value(src, dst, dst_size);
+    return (dst[0] != '\0') ? 0 : -1;
+}

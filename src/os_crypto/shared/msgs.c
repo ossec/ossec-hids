@@ -565,6 +565,7 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
     local_count++;
     msg_global = global_count;
     msg_local = local_count;
+    StoreSenderCounter(keys, msg_global, msg_local);
     os_mutex_unlock(&sender_counter_mutex);
 
     length = snprintf(_tmpmsg, OS_MAXSTR, "%05hu%010u:%04u:", rand1, msg_global, msg_local);
@@ -641,11 +642,6 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
         keys->keyentries[id]->key,
         (long) cmp_size,
         OS_ENCRYPT,crypto_method);
-
-    /* Store before leaving */
-    os_mutex_lock(&sender_counter_mutex);
-    StoreSenderCounter(keys, msg_global, msg_local);
-    os_mutex_unlock(&sender_counter_mutex);
 
     if(cmp_size < crypto_length)
         cmp_size = crypto_length;
