@@ -12,6 +12,8 @@
 
 #define MAIL_LIST_SIZE      96   /* Max number of emails to be saved */
 #define MAXCHILDPROCESS     6    /* Maximum simultaneous children */
+#define MAX_SEND_ERRORS     6    /* SMTP failures before backoff (issue #1890) */
+#define SMTP_BACKOFF_SEC    30   /* Pause after too many SMTP failures */
 
 /* Each timeout is x * 5 */
 #define NEXTMAIL_TIMEOUT    2    /* Time to check for next msg - 5 */
