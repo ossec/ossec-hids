@@ -309,8 +309,11 @@ static void OS_Run(MailConfig *mail)
                 sleep(30);
                 continue;
             } else if (pid == 0) {
+                int send_rc = 0;
+
                 if (OS_Sendmail(mail, p) < 0) {
                     merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
+                    send_rc = 1;
                 }
 #ifdef USE_SMTP_CURL
                 /* Clear credentials from child memory before exit (not zeroed by atexit in time) */
@@ -321,7 +324,7 @@ static void OS_Run(MailConfig *mail)
                     memset_secure(mail->smtp_pass, 0, strlen(mail->smtp_pass));
                 }
 #endif
-                exit(0);
+                exit(send_rc);
             }
 
             /* Clean the memory */
@@ -438,15 +441,18 @@ snd_check_hour:
                     merror(CHLDWAIT_ERROR, ARGV0, p_status);
                     merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
                     n_errs++;
+                } else {
+                    n_errs = 0;
                 }
                 childcount--;
             }
 
-            /* Too many errors */
-            if (n_errs > 6) {
+            /* Back off instead of exiting when SMTP is unavailable (#1890) */
+            if (n_errs > MAX_SEND_ERRORS) {
                 merror(TOOMANY_WAIT_ERROR, ARGV0);
                 merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
-                exit(1);
+                n_errs = 0;
+                sleep(SMTP_BACKOFF_SEC);
             }
         }
 
