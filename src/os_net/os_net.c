@@ -379,6 +379,15 @@ int OS_Connect(char *_port, unsigned int protocol, const char *_ip)
     hints.ai_flags = 0;
 
     s = getaddrinfo(_ip, _port, &hints, &result);
+
+    /* Retry with IPv4-only hints when dual-stack lookup fails. OS_Bindport()
+     * has had this fallback since PR #1259; agents use OS_Connect() and hit
+     * the same resolver failures on RHEL 8+ (issue #2046). */
+    if (s == EAI_FAMILY || s == EAI_NONAME || s == EAI_SYSTEM) {
+        hints.ai_family = AF_INET;
+        s = getaddrinfo(_ip, _port, &hints, &result);
+    }
+
     if (s != 0) {
         verbose("getaddrinfo: %s", gai_strerror(s));
         if(result) {
