@@ -286,26 +286,9 @@ char *seechanges_addfile(const char *filename)
         (int)old_date_of_change
     );
 
-    /* Saving the old file at timestamp and renaming new to last. */
-    old_date_of_change = File_DateofChange(old_location);
-
-    snprintf(
-        tmp_location,
-        sizeof(tmp_location),
-        "%s/local/%s/state.%d",
-        DIFF_DIR_PATH,
-        filename + 1,
-       (int)old_date_of_change
-    );
-
-
-    if((rename(old_location, tmp_location)) < 0) {
+    if (rename(old_location, tmp_location) < 0) {
         merror("%s: ERROR rename of %s failed: %s", ARGV0, old_location, strerror(errno));
-    }
-    if(seechanges_dupfile(filename, old_location) != 1)
-    {
-        merror("%s: ERROR: Unable to create snapshot for %s",ARGV0, filename);
-        return(NULL);
+        return (NULL);
     }
 
     if (seechanges_dupfile(filename, old_location) != 1) {
@@ -397,9 +380,15 @@ char *seechanges_addfile(const char *filename)
             diff_tmp
         );
 
-        if (system(diff_cmd) != 256) {
-            merror("%s: ERROR: Unable to run `%s`", ARGV0, diff_cmd);
-            goto cleanup;
+        {
+            int diff_status = system(diff_cmd);
+
+            if (diff_status == -1 ||
+                !WIFEXITED(diff_status) ||
+                WEXITSTATUS(diff_status) > 1) {
+                merror("%s: ERROR: Unable to run `%s`", ARGV0, diff_cmd);
+                goto cleanup;
+            }
         }
 
         /* Success */
