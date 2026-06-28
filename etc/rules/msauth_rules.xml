@@ -531,7 +531,7 @@
 
   <rule id="18222" level="12">
     <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-512\}| ID:[ ]+S-1-5-21\S+-512</pcre2>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-512\}| ID:[ ]+S-1-5-21\S+-512(\D|$)</pcre2>
     <description>Domain Admins Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
@@ -539,7 +539,7 @@
 
   <rule id="18223" level="5">
     <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-513\}| ID:[ ]+S-1-5-21\S+-513</pcre2>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-513\}| ID:[ ]+S-1-5-21\S+-513(\D|$)</pcre2>
     <description>Domain Users Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
@@ -554,7 +554,7 @@
 
   <rule id="18225" level="12">
     <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-514\}| ID:[ ]+S-1-5-21\S+-514</pcre2>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-514\}| ID:[ ]+S-1-5-21\S+-514(\D|$)</pcre2>
     <description>Domain Guests Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
@@ -562,7 +562,7 @@
 
   <rule id="18226" level="5">
     <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-515\}| ID:[ ]+S-1-5-21\S+-515</pcre2>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-515\}| ID:[ ]+S-1-5-21\S+-515(\D|$)</pcre2>
     <description>Domain Computers Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
@@ -570,7 +570,7 @@
 
   <rule id="18227" level="12">
     <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-516\}| ID:[ ]+S-1-5-21\S+-516</pcre2>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-516\}| ID:[ ]+S-1-5-21\S+-516(\D|$)</pcre2>
     <description>Domain Controllers Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
@@ -578,31 +578,31 @@
 
   <rule id="18228" level="10">
     <if_sid>18207,18208</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-517\}| ID:[ ]+S-1-5-21\S+-517</pcre2>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-517\}| ID:[ ]+S-1-5-21\S+-517(\D|$)</pcre2>
     <description>Cert Publishers Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
   </rule>
 
   <rule id="18229" level="12">
-    <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21.+-518\}| ID:[ ]+S-1-5-21.+-518</pcre2>
+    <if_sid>18213,18214,18215</if_sid>
+    <pcre2> ID:[ ]+%\{S-1-5-21.+-518\}| ID:[ ]+S-1-5-21.+-518(\D|$)</pcre2>
     <description>Schema Admins Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
   </rule>
 
   <rule id="18230" level="12">
-    <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-519\}| ID:[ ]+S-1-5-21\S+-519</pcre2>
+    <if_sid>18213,18214,18215</if_sid>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-519\}| ID:[ ]+S-1-5-21\S+-519(\D|$)</pcre2>
     <description>Enterprise Admins Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
   </rule>
 
   <rule id="18231" level="10">
-    <if_sid>18203,18204</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-520\}| ID:[ ]+S-1-5-21\S+-520</pcre2>
+    <if_sid>18213,18214,18215</if_sid>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-520\}| ID:[ ]+S-1-5-21\S+-520(\D|$)</pcre2>
     <description>Group Policy Creator Owners Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
@@ -610,7 +610,7 @@
 
   <rule id="18232" level="10">
     <if_sid>18207,18208</if_sid>
-    <pcre2> ID:[ ]+%\{S-1-5-21\S+-553\}| ID:[ ]+S-1-5-21\S+-553</pcre2>
+    <pcre2> ID:[ ]+%\{S-1-5-21\S+-553\}| ID:[ ]+S-1-5-21\S+-553(\D|$)</pcre2>
     <description>RAS and IAS Servers Group Changed</description>
     <group>group_changed,win_group_changed,</group>
     <info>http://support.microsoft.com/kb/243330</info>
