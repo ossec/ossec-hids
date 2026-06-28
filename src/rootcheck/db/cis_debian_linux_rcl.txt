@@ -79,8 +79,7 @@ f:/etc/ssh/sshd_config -> !r:^# && r:PermitRootLogin\.+yes;
 
 # Section 2.6 Ensure sources.list Sanity
 [CIS - Debian Linux - 2.6 - Sources list sanity - Security updates not enabled {CIS: 2.6 Debian Linux} {PCI_DSS: 6.2}] [any] [https://benchmarks.cisecurity.org/tools2/linux/CIS_Debian_Benchmark_v1.0.pdf]
-f:!/etc/apt/sources.list;
-f:!/etc/apt/sources.list -> !r:^# && r:http://security.debian|http://security.ubuntu;
+f:!/etc/apt/sources.list,/etc/apt/sources.list.d/ubuntu.sources -> !r:^# && r:http://security.debian|http://security.ubuntu;
 
 
 # Section 3 - Minimize inetd services
