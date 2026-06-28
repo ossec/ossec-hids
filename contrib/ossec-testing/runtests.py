@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import ConfigParser
 import subprocess
+import re
 import os
 import sys
 import os.path
@@ -16,7 +17,12 @@ class OssecTester(object):
         self._ossec_path = "/var/ossec/bin/"
         self._test_path = "./tests"
 
+    _SAFE_PARAM = re.compile(r'^[A-Za-z0-9_\-\.]+$')
+
     def buildCmd(self, rule, alert, decoder):
+        for name, val in (('rule', rule), ('alert', alert), ('decoder', decoder)):
+            if not self._SAFE_PARAM.match(val):
+                raise ValueError("Invalid characters in %s: %r" % (name, val))
         cmd = ['%s/ossec-logtest' % (self._ossec_path), ]
         cmd += ['-q']
         if self._ossec_conf:
