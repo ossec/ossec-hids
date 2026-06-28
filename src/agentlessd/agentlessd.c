@@ -95,6 +95,7 @@ static int gen_diff_alert(const char *host, const char *script, time_t alert_dif
     char *tmp_str;
     char buf[2048 + 1];
     char diff_alert[4096 + 1];
+    int truncated = 0;
 
     buf[2048] = '\0';
     diff_alert[4096] = '\0';
@@ -114,6 +115,7 @@ static int gen_diff_alert(const char *host, const char *script, time_t alert_dif
         fclose(fp);
         return (0);
     } else if (n >= 2040) {
+        truncated = 1;
         /* We need to clear the last newline */
         buf[n] = '\0';
         tmp_str = strrchr(buf, '\n');
@@ -127,6 +129,10 @@ static int gen_diff_alert(const char *host, const char *script, time_t alert_dif
         buf[n] = '\0';
     }
 
+    if (!feof(fp)) {
+        truncated = 1;
+    }
+
     n = 0;
 
     /* Get up to 8 line changes */
@@ -138,6 +144,7 @@ static int gen_diff_alert(const char *host, const char *script, time_t alert_dif
             break;
         } else if (n >= 7) {
             *tmp_str = '\0';
+            truncated = 1;
             break;
         }
         n++;
@@ -146,8 +153,8 @@ static int gen_diff_alert(const char *host, const char *script, time_t alert_dif
 
     /* Create alert */
     snprintf(diff_alert, 4096 - 1, "ossec: agentless: Change detected:\n%s%s",
-             buf, n >= 7 ?
-             "\nMore changes.." :
+             buf, truncated ?
+             "\n... diff was truncated ..." :
              "");
 
     snprintf(buf, 1024, "(%s) %s->agentless", script, host);

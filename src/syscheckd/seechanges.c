@@ -73,6 +73,7 @@ static char *gen_diff_alert(const char *filename, time_t alert_diff_time)
     char *tmp_str;
     char buf[OS_MAXSTR + 1];
     char diff_alert[OS_MAXSTR + 1];
+    int truncated = 0;
 
     buf[OS_MAXSTR] = '\0';
     diff_alert[OS_MAXSTR] = '\0';
@@ -92,6 +93,7 @@ static char *gen_diff_alert(const char *filename, time_t alert_diff_time)
         fclose(fp);
         return (NULL);
     } else if (n >= 4000) {
+        truncated = 1;
         /* Clear the last newline */
         buf[n] = '\0';
         tmp_str = strrchr(buf, '\n');
@@ -105,6 +107,10 @@ static char *gen_diff_alert(const char *filename, time_t alert_diff_time)
         buf[n] = '\0';
     }
 
+    if (!feof(fp)) {
+        truncated = 1;
+    }
+
     n = 0;
 
     /* Get up to 20 line changes */
@@ -116,6 +122,7 @@ static char *gen_diff_alert(const char *filename, time_t alert_diff_time)
             break;
         } else if (n >= 19) {
             *tmp_str = '\0';
+            truncated = 1;
             break;
         }
         n++;
@@ -124,8 +131,8 @@ static char *gen_diff_alert(const char *filename, time_t alert_diff_time)
 
     /* Create alert */
     snprintf(diff_alert, 4096 - 1, "%s%s",
-             buf, n >= 19 ?
-             "\nMore changes.." :
+             buf, truncated ?
+             "\n... diff was truncated ..." :
              "");
 
     fclose(fp);
