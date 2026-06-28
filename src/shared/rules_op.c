@@ -962,6 +962,7 @@ static RuleInfo *_OS_AllocateRule()
     /* Zero last matched events */
     ruleinfo_pt->__frequency = 0;
     ruleinfo_pt->last_events = NULL;
+    ruleinfo_pt->last_events_copied = 0;
 
     /* Zero the list of previous matches */
     ruleinfo_pt->sid_prev_matched = NULL;

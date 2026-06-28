@@ -19,6 +19,50 @@ int alert_only;
 #endif
 
 
+/* Free heap-owned frequency context log lines */
+void OS_FreeRuleLastEvents(RuleInfo *rule)
+{
+    int ii;
+
+    if (!rule || !rule->last_events || !rule->last_events_copied) {
+        return;
+    }
+
+    for (ii = 0; ii <= MAX_LAST_EVENTS; ii++) {
+        if (rule->last_events[ii]) {
+            free(rule->last_events[ii]);
+            rule->last_events[ii] = NULL;
+        }
+    }
+
+    rule->last_events_copied = 0;
+}
+
+/* Store a copy of a log line in the rule frequency context buffer */
+void OS_SetRuleLastEvent(RuleInfo *rule, int idx, const char *log)
+{
+    if (!rule || !rule->last_events || !log) {
+        return;
+    }
+
+    if (idx < 0 || idx > MAX_LAST_EVENTS) {
+        return;
+    }
+
+    if (rule->last_events_copied && rule->last_events[idx]) {
+        free(rule->last_events[idx]);
+        rule->last_events[idx] = NULL;
+    }
+
+    os_strdup(log, rule->last_events[idx]);
+    rule->last_events_copied = 1;
+
+    if (idx < MAX_LAST_EVENTS) {
+        rule->last_events[idx + 1] = NULL;
+    }
+}
+
+
 /* Search last times a signature fired
  * Will look for only that specific signature.
  */
@@ -30,6 +74,7 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
 
     /* Set frequency to 0 */
     rule->__frequency = 0;
+    OS_FreeRuleLastEvents(rule);
 
     /* Checking if sid search is valid */
     if (!rule->sid_search) {
@@ -159,10 +204,7 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
 
         /* Check if the number of matches worked */
         if (rule->__frequency <= 10) {
-            rule->last_events[rule->__frequency]
-                = lf->full_log;
-            rule->last_events[rule->__frequency + 1]
-                = NULL;
+            OS_SetRuleLastEvent(rule, rule->__frequency, lf->full_log);
         }
 
         if (rule->__frequency < rule->frequency) {
@@ -195,6 +237,7 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
 
     /* Set frequency to 0 */
     rule->__frequency = 0;
+    OS_FreeRuleLastEvents(rule);
 
     /* Check if sid search is valid */
     if (!rule->group_search) {
@@ -326,10 +369,7 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
         /* Check if the number of matches worked */
         if (rule->__frequency < rule->frequency) {
             if (rule->__frequency <= 10) {
-                rule->last_events[rule->__frequency]
-                    = lf->full_log;
-                rule->last_events[rule->__frequency + 1]
-                    = NULL;
+                OS_SetRuleLastEvent(rule, rule->__frequency, lf->full_log);
             }
 
             rule->__frequency++;
@@ -360,6 +400,8 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
     Eventinfo *lf;
     Eventinfo *first_lf;
 
+    rule->__frequency = 0;
+    OS_FreeRuleLastEvents(rule);
 
     /* Last events */
     eventnode_pt = OS_GetLastEvent();
@@ -368,8 +410,6 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
         return (NULL);
     }
 
-    /* Set frequency to 0 */
-    rule->__frequency = 0;
     first_lf = (Eventinfo *)eventnode_pt->event;
 
     /* Search all previous events */
@@ -470,10 +510,7 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
         /* Check if the number of matches worked */
         if (rule->__frequency < rule->frequency) {
             if (rule->__frequency <= 10) {
-                rule->last_events[rule->__frequency]
-                    = lf->full_log;
-                rule->last_events[rule->__frequency + 1]
-                    = NULL;
+                OS_SetRuleLastEvent(rule, rule->__frequency, lf->full_log);
             }
 
             rule->__frequency++;
