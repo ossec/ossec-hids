@@ -14,12 +14,54 @@
 #include "config/config.h"
 #endif
 
+/* Append formatted text to buf without overrunning buf_size or *space. */
+static void mail_append(char *buf, size_t buf_size, size_t *space,
+                        const char *fmt, ...)
+{
+    size_t used;
+    size_t room;
+    va_list args;
+    int written;
+
+    if (*space == 0 || buf_size == 0) {
+        return;
+    }
+
+    used = strlen(buf);
+    if (used >= buf_size - 1) {
+        *space = 0;
+        return;
+    }
+
+    room = buf_size - used;
+    if (room - 1 > *space) {
+        room = *space + 1;
+    }
+
+    va_start(args, fmt);
+    written = vsnprintf(buf + used, room, fmt, args);
+    va_end(args);
+
+    if (written < 0) {
+        return;
+    }
+
+    if ((size_t)written >= room) {
+        buf[used] = '\0';
+        *space = 0;
+        return;
+    }
+
+    *space -= (size_t)written;
+}
+
 
 /* Receive a Message on the Mail queue */
 MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
 {
     int i = 0, sms_set = 0, donotgroup = 0;
-    size_t body_size = OS_MAXSTR - 3, log_size;
+    size_t body_size = OS_MAXSTR - 3;
+    size_t log_size;
     char logs[OS_MAXSTR + 1];
     char extra_data[OS_MAXSTR + 1];
     char log_string[OS_MAXSTR / 4 + 1];
@@ -49,63 +91,32 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
     logs[OS_MAXSTR] = '\0';
 
     while (al_data->log[i]) {
-        log_size = strlen(al_data->log[i]) + 4;
-
-        /* If size left is small than the size of the log, stop it */
-        if (body_size <= log_size) {
+        mail_append(logs, sizeof(logs), &body_size, "%s\r\n", al_data->log[i]);
+        if (body_size == 0) {
             break;
         }
-
-        strncat(logs, al_data->log[i], body_size);
-        strncat(logs, "\r\n", body_size);
-        body_size -= log_size;
         i++;
     }
 
     if (al_data->old_md5) {
-        log_size = strlen(al_data->old_md5) + 16 + 4;
-        if (body_size > log_size) {
-            strncat(logs, "Old md5sum was: ", 16);
-            strncat(logs, al_data->old_md5, body_size);
-            strncat(logs, "\r\n", 4);
-            body_size -= log_size;
-        }
+        mail_append(logs, sizeof(logs), &body_size, "Old md5sum was: %s\r\n",
+                    al_data->old_md5);
     }
     if (al_data->new_md5) {
-        log_size = strlen(al_data->new_md5) + 16 + 4;
-        if (body_size > log_size) {
-            strncat(logs, "New md5sum is : ", 16);
-            strncat(logs, al_data->new_md5, body_size);
-            strncat(logs, "\r\n", 4);
-            body_size -= log_size;
-        }
+        mail_append(logs, sizeof(logs), &body_size, "New md5sum is : %s\r\n",
+                    al_data->new_md5);
     }
     if (al_data->old_sha1) {
-        log_size = strlen(al_data->old_sha1) + 17 + 4;
-        if (body_size > log_size) {
-            strncat(logs, "Old sha1sum was: ", 17);
-            strncat(logs, al_data->old_sha1, body_size);
-            strncat(logs, "\r\n", 4);
-            body_size -= log_size;
-        }
+        mail_append(logs, sizeof(logs), &body_size, "Old sha1sum was: %s\r\n",
+                    al_data->old_sha1);
     }
     if (al_data->new_sha1) {
-        log_size = strlen(al_data->new_sha1) + 17 + 4;
-        if (body_size > log_size) {
-            strncat(logs, "New sha1sum is : ", 17);
-            strncat(logs, al_data->new_sha1, body_size);
-            strncat(logs, "\r\n", 4);
-            body_size -= log_size;
-        }
+        mail_append(logs, sizeof(logs), &body_size, "New sha1sum is : %s\r\n",
+                    al_data->new_sha1);
     }
     if (al_data->perm_chg) {
-       log_size = strlen(al_data->perm_chg) + 17 + 4;
-       if (body_size > log_size) {
-           strncat(logs, "Permission change: ", 20);
-           strncat(logs, al_data->perm_chg, body_size);
-           strncat(logs, "\r\n", 4);
-           body_size -= log_size;
-       }
+        mail_append(logs, sizeof(logs), &body_size, "Permission change: %s\r\n",
+                    al_data->perm_chg);
     }
 
 
@@ -113,25 +124,19 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
     if (al_data->srcip) {
         log_size = snprintf(log_string, sizeof(log_string) - 1, "Src IP: %s\r\n", al_data->srcip );
         if (body_size > log_size) {
-            if ( strncat(extra_data, log_string, log_size) != NULL ) {
-                body_size -= log_size;
-            }
+            mail_append(extra_data, sizeof(extra_data), &body_size, "%s", log_string);
         }
     }
     if (al_data->dstip) {
         log_size = snprintf(log_string, sizeof(log_string) - 1, "Dst IP: %s\r\n", al_data->dstip );
         if (body_size > log_size) {
-            if ( strncat(extra_data, log_string, log_size) != NULL ) {
-                body_size -= log_size;
-            }
+            mail_append(extra_data, sizeof(extra_data), &body_size, "%s", log_string);
         }
     }
     if (al_data->user) {
         log_size = snprintf(log_string, sizeof(log_string) - 1, "User: %s\r\n", al_data->user );
         if (body_size > log_size) {
-            if ( strncat(extra_data, log_string, log_size) != NULL ) {
-                body_size -= log_size;
-            }
+            mail_append(extra_data, sizeof(extra_data), &body_size, "%s", log_string);
         }
     }
 

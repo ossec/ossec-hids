@@ -346,6 +346,11 @@ int main(int argc, char **argv)
                     }
                     *tmpstr = '\0';
 
+                    if (!OS_IsValidAgentKey(key)) {
+                        printf("ERROR: Invalid key received (2). Closing connection.\n");
+                        exit(1);
+                    }
+
                     FILE *fp = fopen(KEYSFILE_PATH, "w");
                     if (!fp) {
                         printf("ERROR: Unable to open key file: %s", KEYSFILE_PATH);

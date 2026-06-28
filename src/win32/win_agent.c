@@ -405,7 +405,7 @@ int SendMSG(__attribute__((unused)) int queue, const char *message, const char *
 #endif
 
     /* Send notification */
-    else if ((cu_time - __win32_curr_time) > (NOTIFY_TIME - 200)) {
+    else if ((cu_time - __win32_curr_time) > (agt->notify_time - 200)) {
         debug1("%s: DEBUG: Sending info to server (ctime2)...", ARGV0);
         send_win32_info(cu_time);
     }

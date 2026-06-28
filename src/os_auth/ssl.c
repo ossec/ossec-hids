@@ -149,6 +149,7 @@ SSL_CTX *get_ssl_context(const char *ciphers)
 {
     const SSL_METHOD *sslmeth = NULL;
     SSL_CTX *ctx = NULL;
+    DH *dh;
 
     SSL_library_init();
     SSL_load_error_strings();
@@ -186,23 +187,29 @@ SSL_CTX *get_ssl_context(const char *ciphers)
 
     /* Initialize Diffie-Hellman parameters */
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    /* OpenSSL 1.1.0+: let OpenSSL select DH parameters (RFC 7919 named groups). */
+    /* Let OpenSSL select DH parameters that comply with the active
+     * system crypto policy / security level. Required for RHEL 8+ and
+     * other distributions whose default policies reject hardcoded DH
+     * groups at security level >= 2, even when those groups are 2048-bit
+     * and cryptographically valid (e.g. RFC 3526 MODP-2048).
+     *
+     * OpenSSL 1.1.0 introduced both security levels and
+     * SSL_CTX_set_dh_auto(); OpenSSL 1.0.2 (e.g. CentOS 7) lacks a
+     * reliable linkable SSL_CTX_set_dh_auto() and does not enforce
+     * security-level DH checks, so keep the hardcoded group there. */
     SSL_CTX_set_dh_auto(ctx, 1);
+    (void)dh; /* silence unused-variable warning on this code path */
 #else
-    {
-        DH *dh;
-
-        if ((dh = get_dh2048())) {
-            if (!SSL_CTX_set_tmp_dh(ctx, dh)) {
-                merror("%s: ERROR: Unable to set temporary DH parameters", ARGV0);
-                DH_free(dh);
-                goto CONTEXT_ERR;
-            }
+    if ((dh = get_dh2048())) {
+        if (!SSL_CTX_set_tmp_dh(ctx, dh)) {
+            merror("%s: ERROR: Unable to set temporary DH parameters", ARGV0);
             DH_free(dh);
-        } else {
-            merror("%s: ERROR: Unable to load DH parameters", ARGV0);
             goto CONTEXT_ERR;
         }
+        DH_free(dh);
+    } else {
+        merror("%s: ERROR: Unable to load DH parameters", ARGV0);
+        goto CONTEXT_ERR;
     }
 #endif
 
