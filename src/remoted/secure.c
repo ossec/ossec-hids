@@ -256,6 +256,12 @@ void HandleSecure()
                     if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
                         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
                     }
+
+                    if (SendMSG(logr.m_queue, tmp_msg, srcmsg,
+                                SECURE_MQ) < 0) {
+                        merror("%s: ERROR: Message from agent '%s' was lost "
+                               "after queue reconnect.", ARGV0, srcmsg);
+                    }
                 }
             } /* if socket active */
         } /* for() loop on sockets */

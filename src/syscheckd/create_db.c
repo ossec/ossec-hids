@@ -176,7 +176,9 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
         buf = (char *) OSHash_Get(syscheck.fp, file_name);
         if (!buf) {
             char alert_msg[916 + 1];    /* to accommodate a long */
+            char hash_entry[916 + 1];
             alert_msg[916] = '\0';
+            hash_entry[916] = '\0';
 
 #ifndef WIN32
             if (opts & CHECK_SEECHANGES) {
@@ -188,7 +190,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
 #endif
 
-            snprintf(alert_msg, 916, "%c%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s:%s",
+            snprintf(hash_entry, 916, "%c%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s:%s",
                      opts & CHECK_SIZE ? '+' : '-',
                      opts & CHECK_PERM ? '+' : '-',
                      opts & CHECK_OWNER ? '+' : '-',
@@ -203,10 +205,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
                      opts & CHECK_SHA256SUM ? sha256_sum : "xxx");
-
-            if (OSHash_Add(syscheck.fp, file_name, strdup(alert_msg)) <= 0) {
-                merror("%s: ERROR: Unable to add file to db: %s", ARGV0, file_name);
-            }
 
             /* Send the new checksum to the analysis server */
             alert_msg[916] = '\0';
@@ -267,7 +265,14 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      file_name);
             free(st_uid);
 #endif
-            send_syscheck_msg(alert_msg);
+            if (send_syscheck_msg(alert_msg) == 0) {
+                if (OSHash_Add(syscheck.fp, file_name, strdup(hash_entry)) <= 0) {
+                    merror("%s: ERROR: Unable to add file to db: %s", ARGV0, file_name);
+                }
+            } else {
+                merror("%s: WARN: Failed to send syscheck baseline for '%s'. "
+                      "File will be retried on the next scan.", ARGV0, file_name);
+            }
         } else {
             char alert_msg[OS_MAXSTR + 1];
             char c_sum[OS_MAXSTR + 1];
@@ -302,7 +307,10 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
                 }
                 #endif
-                send_syscheck_msg(alert_msg);
+                if (send_syscheck_msg(alert_msg) != 0) {
+                    merror("%s: WARN: Failed to send syscheck update for '%s'. "
+                          "Change will be retried on the next scan.", ARGV0, file_name);
+                }
             }
         }
 
