@@ -69,7 +69,7 @@ void *read_fullcommand(int pos, int *rc, int drop_it);
 void *read_audit(int pos, int *rc, int drop_it);
 
 #ifdef WIN32
-void win_startel();
+void win_startel(char *evt_log);
 void win_readel();
 void win_read_vista_sec();
 void win_start_event_channel(char *evt_log, char future, char *query);

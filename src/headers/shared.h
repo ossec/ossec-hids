@@ -146,6 +146,7 @@ typedef int socklen_t;
 #define random(x) rand(x)
 #define lstat(x,y) stat(x,y)
 #define CloseSocket(x) closesocket(x)
+#define localtime_r(t, r) ((localtime_s((r), (t)) == 0) ? (r) : (struct tm *)NULL)
 void WinSetError();
 typedef unsigned short int u_int16_t;
 typedef unsigned char u_int8_t;
