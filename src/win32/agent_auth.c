@@ -278,7 +278,6 @@ void InstallAuthKeys(char *msg)
     {
         char *key;
         char *tmpstr;
-        char **entry;
         FILE *fp;
 
         printf("INFO: Received response with agent key\n");
@@ -290,11 +289,9 @@ void InstallAuthKeys(char *msg)
             ErrorExit("%s: Invalid key received. Closing connection.", ARGV0);
 
         *tmpstr = '\0';
-        entry = OS_StrBreak(' ', key, 4);
-
-        if (!OS_IsValidID(entry[0]) || !OS_IsValidName(entry[1]) ||
-            !OS_IsValidName(entry[2]) || !OS_IsValidName(entry[3]))
+        if (!OS_IsValidAgentKey(key)) {
             ErrorExit("%s: Invalid key received (2). Closing connection.", ARGV0);
+        }
 
         fp = fopen(KEYSFILE_PATH, "w");
 

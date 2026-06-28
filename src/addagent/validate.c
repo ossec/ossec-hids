@@ -360,16 +360,107 @@ int OS_IsValidName(const char *u_name)
         return (0);
     }
 
-    /* Check if it contains any non-alphanumeric characters */
+    /* Agent names must not look like addresses; IPs are validated separately. */
     for (i = 0; i < uname_length; i++) {
-        if ( !( isalnum((int)u_name[i]) || (u_name[i] == '-') ||
-                (u_name[i] == '_') || (u_name[i] == '.') ||
-                (u_name[i] == ':') ) ) {
+        if (!isalnum((int)u_name[i]) && (u_name[i] != '-') &&
+                (u_name[i] != '_') && (u_name[i] != '.')) {
             return (0);
         }
     }
 
     return (1);
+}
+
+/* Validate the authentication hash portion of an agent key line. */
+static int OS_IsValidAgentKeyHash(const char *hash)
+{
+    size_t i;
+    size_t len;
+
+    if (!hash) {
+        return (0);
+    }
+
+    len = strlen(hash);
+    if (len != 64) {
+        return (0);
+    }
+
+    for (i = 0; i < len; i++) {
+        if (!isxdigit((int)hash[i])) {
+            return (0);
+        }
+    }
+
+    return (1);
+}
+
+/* Validate a full agent key line received from ossec-authd. */
+int OS_IsValidAgentKey(const char *key)
+{
+    char *copy = NULL;
+    char *name;
+    char *ip;
+    char *hash;
+    int rc = 0;
+
+    if (!key || !*key) {
+        return (0);
+    }
+
+    os_strdup(key, copy);
+    if (!copy) {
+        return (0);
+    }
+
+    name = strchr(copy, ' ');
+    if (!name) {
+        goto cleanup;
+    }
+    *name++ = '\0';
+    while (*name == ' ') {
+        name++;
+    }
+
+    ip = strchr(name, ' ');
+    if (!ip) {
+        goto cleanup;
+    }
+    *ip++ = '\0';
+    while (*ip == ' ') {
+        ip++;
+    }
+
+    hash = strchr(ip, ' ');
+    if (!hash) {
+        goto cleanup;
+    }
+    *hash++ = '\0';
+    while (*hash == ' ') {
+        hash++;
+    }
+
+    if (*hash == '\0' || strchr(hash, ' ') != NULL) {
+        goto cleanup;
+    }
+
+    if (!OS_IsValidID(copy) || !OS_IsValidName(name)) {
+        goto cleanup;
+    }
+
+    if (strcmp(ip, "any") != 0 && OS_IsValidIP(ip, NULL) != 1) {
+        goto cleanup;
+    }
+
+    if (!OS_IsValidAgentKeyHash(hash)) {
+        goto cleanup;
+    }
+
+    rc = 1;
+
+cleanup:
+    free(copy);
+    return (rc);
 }
 
 int NameExist(const char *u_name)
