@@ -1,9 +1,13 @@
 #!/bin/bash -x
 
-# Change these values!
-# APIKEY Your pagerduty api key
+# Set the PAGERDUTY_APIKEY environment variable before running this script.
+# Do NOT hardcode the API key here.
 
-APIKEY="xxxxxxx"
+APIKEY="${PAGERDUTY_APIKEY}"
+if [ -z "$APIKEY" ]; then
+    echo "ERROR: PAGERDUTY_APIKEY environment variable is not set." >&2
+    exit 1
+fi
 # Checking user arguments
 if [ "x$1" = "xdelete" ]; then
     exit 0;
