@@ -33,6 +33,7 @@
 static void help_authd(int status) __attribute((noreturn));
 static int ssl_error(const SSL *ssl, int ret);
 static void clean_exit(SSL_CTX *ctx, int sock) __attribute__((noreturn));
+static void authd_shutdown(int sig) __attribute__((noreturn));
 
 
 /* Print help statement */
@@ -288,7 +289,7 @@ int main(int argc, char **argv)
 
 
     /* Signal manipulation */
-    StartSIG(ARGV0);
+    StartSIG2(ARGV0, authd_shutdown);
 
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
@@ -610,4 +611,16 @@ int main(int argc, char **argv)
 /* Exit handler */
 static void cleanup() {
 	DeletePID(ARGV0);
+}
+
+/* Graceful shutdown on SIGINT/SIGTERM (issue #919) */
+static void authd_shutdown(int sig)
+{
+    if (sig == SIGINT || sig == SIGTERM || sig == SIGQUIT) {
+        merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
+        DeletePID(ARGV0);
+        exit(0);
+    }
+
+    HandleSIG(sig);
 }
