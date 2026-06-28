@@ -151,6 +151,7 @@ void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
     else
         rule = cJSON_GetObjectItem(root, "rule");
 
+    cJSON_AddStringToObject(rule, "group", lf->generated_rule->group);
     cJSON_AddItemToObject(rule, "groups", groups = cJSON_CreateArray());
     strncpy(buffer, lf->generated_rule->group, sizeof(buffer) - 1);
 
