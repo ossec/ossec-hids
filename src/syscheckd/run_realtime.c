@@ -396,7 +396,7 @@ int realtime_adddir(const char *dir)
     if (OSHash_Get(syscheck.realtime->dirtb, wdchar)) {
         merror("%s: ERROR: Entry already in the real time hash: %s",
                ARGV0, wdchar);
-        CloseHandle(rtlocald->overlap.hEvent);
+        CloseHandle(rtlocald->h);
         free(rtlocald);
         rtlocald = NULL;
         return (0);
