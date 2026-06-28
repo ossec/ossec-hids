@@ -9,6 +9,7 @@
 
 #include "shared.h"
 #include "maild.h"
+#include "sms_queue.h"
 #ifdef LIBGEOIP_ENABLED
 #include "config/config.h"
 #endif
@@ -56,8 +57,7 @@ static void mail_append(char *buf, size_t buf_size, size_t *space,
 
 
 /* Receive a Message on the Mail queue */
-MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
-                      MailConfig *Mail, MailMsg **msg_sms)
+MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
 {
     int i = 0, sms_set = 0, donotgroup = 0;
     size_t body_size = OS_MAXSTR - 3;
@@ -73,8 +73,6 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
 
     MailMsg *mail;
     alert_data *al_data;
-
-    Mail->priority = 0;
 
     /* Get message if available */
     al_data = Read_FileMon(fileq, p, mail_timeout);
@@ -218,6 +216,10 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
 #endif
     debug2("OS_RecvMailQ: mail->body[%s]", mail->body);
 
+    os_mutex_lock(&mail_send_mu);
+    Mail->priority = 0;
+
+    /* Live gran_set is batch-scoped until the main loop commits a send. */
     /* Check for granular email configs */
     if (Mail->gran_to) {
         i = 0;
@@ -302,20 +304,23 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
         }
     }
 
-
     /* If DONOTGROUP is set, we can't assign the new subject */
     if (!donotgroup) {
         /* Get highest level for alert */
         if (_g_subject[0] != '\0') {
             if (_g_subject_level < al_data->level) {
                 strncpy(_g_subject, mail->subject, SUBJECT_SIZE);
+                _g_subject[SUBJECT_SIZE] = '\0';
                 _g_subject_level = al_data->level;
             }
         } else {
             strncpy(_g_subject, mail->subject, SUBJECT_SIZE);
+            _g_subject[SUBJECT_SIZE] = '\0';
             _g_subject_level = al_data->level;
         }
     }
+
+    os_mutex_unlock(&mail_send_mu);
 
     /* If SMS is set, create the SMS output */
     if (sms_set) {
@@ -334,7 +339,7 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p,
 
         strncpy(msg_sms_tmp->body, logs, 128);
         msg_sms_tmp->body[127] = '\0';
-        *msg_sms = msg_sms_tmp;
+        OS_SmsEnqueue(msg_sms_tmp);
     }
 
     /* Clear the memory */

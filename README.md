@@ -25,7 +25,7 @@ The current stable releases are available on the ossec website.
 
 ## Development ##
 
-The development version is hosted on GitHub and just a simple git clone away. 
+The development version is hosted on GitHub and just a simple git clone away.
 
 [![Build Status](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml)
 [![CodeQL](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml)

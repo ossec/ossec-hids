@@ -22,18 +22,18 @@
  *
  */
 
-#include <sys/wait.h>
 #include "auth.h"
+#include "auth_conn.h"
 #include "os_crypto/md5/md5_op.h"
-
-/* TODO: Pulled this value out of the sky, may or may not be sane */
-#define POOL_SIZE 512
 
 /* Prototypes */
 static void help_authd(int status) __attribute((noreturn));
-static int ssl_error(const SSL *ssl, int ret);
-static void clean_exit(SSL_CTX *ctx, int sock) __attribute__((noreturn));
-static void authd_shutdown(int sig) __attribute__((noreturn));
+static void auth_shutdown(SSL_CTX *ctx, int sock) __attribute__((noreturn));
+static void authd_HandleSIG(int sig);
+
+static volatile sig_atomic_t authd_shutting_down = 0;
+static volatile sig_atomic_t authd_force_exit = 0;
+#define AUTHD_SHUTDOWN_POOL_TIMEOUT 60
 
 
 /* Print help statement */
@@ -107,32 +107,23 @@ char *__generatetmppass()
     return(fstring);
 }
 
-/* Function to use with SSL on non blocking socket,
- * to know if SSL operation failed for good
- */
-static int ssl_error(const SSL *ssl, int ret)
-{
-    if (ret <= 0) {
-        switch (SSL_get_error(ssl, ret)) {
-            case SSL_ERROR_WANT_READ:
-            case SSL_ERROR_WANT_WRITE:
-                usleep(100 * 1000);
-                return (0);
-            default:
-                merror("%s: ERROR: SSL Error (%d)", ARGV0, ret);
-                ERR_print_errors_fp(stderr);
-                return (1);
-        }
-    }
-
-    return (0);
-}
-
-static void clean_exit(SSL_CTX *ctx, int sock)
+static void auth_shutdown(SSL_CTX *ctx, int sock)
 {
     SSL_CTX_free(ctx);
     close(sock);
     exit(0);
+}
+
+static void authd_HandleSIG(int sig)
+{
+    (void)sig;
+
+    if (!authd_shutting_down) {
+        authd_shutting_down = 1;
+        return;
+    }
+
+    authd_force_exit = 1;
 }
 
 /* Exit handler */
@@ -144,15 +135,14 @@ int main(int argc, char **argv)
 {
     FILE *fp;
     char *authpass = NULL;
-    /* Bucket to keep pids in */
-    int process_pool[POOL_SIZE];
-    /* Count of pids we are wait()ing on */
-    int c = 0, test_config = 0, use_ip_address = 0, pid = 0, status, i = 0, active_processes = 0;
+    thread_pool *auth_pool = NULL;
+    int c = 0, test_config = 0, use_ip_address = 0;
     int use_pass = 1;
     int run_foreground = 0;
     gid_t uid;
     gid_t gid;
-    int client_sock = 0, sock = 0, portnum, ret = 0;
+    int client_sock = 0, sock = 0, portnum;
+    int debug_level = 0;
     char *port = DEFAULT_PORT;
     char *ciphers = DEFAULT_CIPHERS;
     const char *dir  = DEFAULTDIR;
@@ -163,18 +153,14 @@ int main(int argc, char **argv)
     const char *ca_cert = NULL;
     char buf[4096 + 1];
     SSL_CTX *ctx;
-    SSL *ssl;
     char srcip[IPSIZE + 1];
     struct sockaddr_storage _nc;
     socklen_t _ncl;
     fd_set fdsave, fdwork;		/* select() work areas */
     int fdmax;				/* max socket number + 1 */
     OSNetInfo *netinfo;			/* bound network sockets */
-    int esc = 0;			/* while() escape flag */
-
     /* Initialize some variables */
     memset(srcip, '\0', IPSIZE + 1);
-    memset(process_pool, 0x0, POOL_SIZE * sizeof(*process_pool));
     bio_err = 0;
 
     OS_PassEmptyKeyfile();
@@ -191,6 +177,7 @@ int main(int argc, char **argv)
                 help_authd(0);
                 break;
             case 'd':
+                debug_level = 1;
                 nowDebug();
                 break;
             case 'i':
@@ -267,6 +254,14 @@ int main(int argc, char **argv)
         ErrorExit(CHDIR_ERROR, ARGV0, dir, errno, strerror(errno));
     }
 
+    if (debug_level == 0) {
+        debug_level = getDefine_Int("authd", "debug", 0, 2);
+        while (debug_level != 0) {
+            nowDebug();
+            debug_level--;
+        }
+    }
+
     /* Exit here if test config is set */
     if (test_config) {
         exit(0);
@@ -289,7 +284,7 @@ int main(int argc, char **argv)
 
 
     /* Signal manipulation */
-    StartSIG2(ARGV0, authd_shutdown);
+    StartSIG2(ARGV0, authd_HandleSIG);
 
     /* Create PID files */
     if (CreatePID(ARGV0, getpid()) < 0) {
@@ -355,6 +350,7 @@ int main(int argc, char **argv)
     srandom_init();
 
     /* Start SSL */
+    os_ssl_thread_setup();
     /* Getting SSL cert. */
     ctx = os_ssl_keys(1, dir, ciphers, server_cert, server_key, ca_cert);
     if (!ctx) {
@@ -397,32 +393,35 @@ int main(int argc, char **argv)
     fdsave = netinfo->fdset;
     fdmax  = netinfo->fdmax;            /* value preset to max fd + 1 */
 
+    {
+        int worker_pool = getDefine_Int("authd", "worker_pool", 1, 128);
+        int max_connections = getDefine_Int("authd", "max_connections", 1, 512);
+
+        auth_pool = thread_pool_create_limited(worker_pool, max_connections);
+        if (!auth_pool) {
+            merror("%s: ERROR: Unable to create auth worker thread pool.", ARGV0);
+            exit(1);
+        }
+        thread_pool_set_drop_fn(auth_pool, auth_conn_drop_pending);
+    }
+
+    auth_keys_init();
+
     debug1("%s: DEBUG: Going into listening mode.", ARGV0);
 
-    while (1) {
-        /* No need to completely pin the cpu, 100ms should be fast enough */
-        usleep(100 * 1000);
+    while (!authd_shutting_down) {
+        struct timeval tv;
 
-        /* Only check process-pool if we have active processes */
-        if (active_processes > 0) {
-            for (i = 0; i < POOL_SIZE; i++) {
-                int rv = 0;
-                status = 0;
-                if (process_pool[i]) {
-                    rv = waitpid(process_pool[i], &status, WNOHANG);
-                    if (rv != 0) {
-                        debug1("%s: DEBUG: Process %d exited", ARGV0, process_pool[i]);
-                        process_pool[i] = 0;
-                        active_processes = active_processes - 1;
-                    }
-                }
-            }
-        }
         memset(&_nc, 0, sizeof(_nc));
         _ncl = sizeof(_nc);
 
         fdwork = fdsave;
-        if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        if (select (fdmax, &fdwork, NULL, NULL, &tv) < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             ErrorExit("ERROR: Call to os_auth select() failed, errno %d - %s",
                       errno, strerror (errno));
         }
@@ -431,179 +430,52 @@ int main(int argc, char **argv)
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
                 if ((client_sock = accept(sock, (struct sockaddr *) &_nc, &_ncl)) > 0) {
-                    if (active_processes >= POOL_SIZE) {
-                        merror("%s: Error: Max concurrency reached. Unable to fork", ARGV0);
-                        esc = 1; /* exit while(1) loop */
-                        break;
-                    }
-                    pid = fork();
-                    if (pid) {
-                        active_processes = active_processes + 1;
-                        close(client_sock);
-                        for (i = 0; i < POOL_SIZE; i++) {
-                            if (! process_pool[i]) {
-                                process_pool[i] = pid;
-                                break;
-                            }
-                        }
-                    } else {
-                        satop((struct sockaddr *) &_nc, srcip, IPSIZE);
-                        char *agentname = NULL;
-                        ssl = SSL_new(ctx);
-                        SSL_set_fd(ssl, client_sock);
-        
-                        do {
-                            ret = SSL_accept(ssl);
-        
-                            if (ssl_error(ssl, ret)) {
-                                clean_exit(ctx, client_sock);
-                            }
-        
-                        } while (ret <= 0);
-                        verbose("%s: INFO: New connection from %s", ARGV0, srcip);
-                        buf[0] = '\0';
-        
-                        do {
-                            ret = SSL_read(ssl, buf, sizeof(buf));
-        
-                            if (ssl_error(ssl, ret)) {
-                                clean_exit(ctx, client_sock);
-                            }
-        
-                        } while (ret <= 0);
-        
-                        int parseok = 0;
-                        char *tmpstr = buf;
-        
-                        /* Checking for shared password authentication. */
-                        if(authpass) {
-                            /* Format is pretty simple: OSSEC PASS: PASS WHATEVERACTION */
-                            if (strncmp(tmpstr, "OSSEC PASS: ", 12) == 0) {
-                                tmpstr = tmpstr + 12;
-        
-                                if (strlen(tmpstr) > strlen(authpass) && strncmp(tmpstr, authpass, strlen(authpass)) == 0) {
-                                    tmpstr += strlen(authpass);
-        
-                                    if (*tmpstr == ' ') {
-                                        tmpstr++;
-                                        parseok = 1;
-                                    }
-                                }
-                            }
-                            if (parseok == 0) {
-                                merror("%s: ERROR: Invalid password provided by %s. Closing connection.", ARGV0, srcip);
-                                SSL_CTX_free(ctx);
-                                close(client_sock);
-                                exit(0);
-                            }
-                        }
-        
-                        /* Checking for action A (add agent) */
-                        parseok = 0;
-                        if (strncmp(tmpstr, "OSSEC A:'", 9) == 0) {
-                            agentname = tmpstr + 9;
-                            tmpstr += 9;
-                            while (*tmpstr != '\0') {
-                                if (*tmpstr == '\'') {
-                                    *tmpstr = '\0';
-                                    verbose("%s: INFO: Received request for a new agent (%s) from: %s", ARGV0, agentname, srcip);
-                                    parseok = 1;
-                                    break;
-                                }
-                                tmpstr++;
-                            }
-                        }
-                        if (parseok == 0) {
-                            merror("%s: ERROR: Invalid request for new agent from: %s", ARGV0, srcip);
-                        } else {
-                            int acount = 2;
-                            char fname[2048 + 1];
-                            char response[2048 + 1];
-                            char *finalkey = NULL;
-                            response[2048] = '\0';
-                            fname[2048] = '\0';
-                            if (!OS_IsValidName(agentname)) {
-                                merror("%s: ERROR: Invalid agent name: %s from %s", ARGV0, agentname, srcip);
-                                snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
-                                SSL_write(ssl, response, strlen(response));
-                                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                                SSL_write(ssl, response, strlen(response));
-                                sleep(1);
-                                exit(0);
-                            }
-        
-                            /* Check for duplicate names */
-                            strncpy(fname, agentname, 2048);
-                            while (NameExist(fname)) {
-                                snprintf(fname, 2048, "%s%d", agentname, acount);
-                                acount++;
-                                if (acount > 256) {
-                                    merror("%s: ERROR: Invalid agent name %s (duplicated)", ARGV0, agentname);
-                                    snprintf(response, 2048, "ERROR: Invalid agent name: %s\n\n", agentname);
-                                    SSL_write(ssl, response, strlen(response));
-                                    snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                                    SSL_write(ssl, response, strlen(response));
-                                    sleep(1);
-                                    exit(0);
-                                }
-                            }
-                            agentname = fname;
+                    auth_conn_arg *conn;
 
-                            /* Check for duplicate IP addresses */
-                            char *check_ip_address = NULL;
-                            check_ip_address = IPExist(srcip);
-                            if(check_ip_address) {
-                                merror("%s: ERROR: Invalid IP address %s (duplicated)", ARGV0, check_ip_address);
-                                snprintf(response, 2048, "ERROR: Invalid IP address: %s\n\n", check_ip_address);
-                                SSL_write(ssl, response, strlen(response));
-                                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                                SSL_write(ssl, response, strlen(response));
-                                sleep(1);
-                                exit(0);
-                            }
-        
-                            /* Add the new agent */
-                            if (use_ip_address) {
-                                finalkey = OS_AddNewAgent(agentname, srcip, NULL);
-                            } else {
-                                finalkey = OS_AddNewAgent(agentname, NULL, NULL);
-                            }
-                            if (!finalkey) {
-                                merror("%s: ERROR: Unable to add agent: %s (internal error)", ARGV0, agentname);
-                                snprintf(response, 2048, "ERROR: Internal manager error adding agent: %s\n\n", agentname);
-                                SSL_write(ssl, response, strlen(response));
-                                snprintf(response, 2048, "ERROR: Unable to add agent.\n\n");
-                                SSL_write(ssl, response, strlen(response));
-                                sleep(1);
-                                exit(0);
-                            }
-        
-                            snprintf(response, 2048, "OSSEC K:'%s'\n\n", finalkey);
-                            verbose("%s: INFO: Agent key generated for %s (requested by %s)", ARGV0, agentname, srcip);
-                            ret = SSL_write(ssl, response, strlen(response));
-                            if (ret < 0) {
-                                merror("%s: ERROR: SSL write error (%d)", ARGV0, ret);
-                                merror("%s: ERROR: Agen key not saved for %s", ARGV0, agentname);
-                                ERR_print_errors_fp(stderr);
-                            } else {
-                                verbose("%s: INFO: Agent key created for %s (requested by %s)", ARGV0, agentname, srcip);
-                            }
-                        }
-        
-                        clean_exit(ctx, client_sock);
+                    satop((struct sockaddr *) &_nc, srcip, IPSIZE);
+                    os_calloc(1, sizeof(auth_conn_arg), conn);
+                    conn->client_sock = client_sock;
+                    strncpy(conn->srcip, srcip, IPSIZE);
+                    conn->srcip[IPSIZE] = '\0';
+                    conn->use_ip_address = use_ip_address;
+                    conn->authpass = authpass;
+                    conn->ctx = ctx;
+
+                    if (thread_pool_try_submit(auth_pool, auth_connection_worker, conn) != 0) {
+                        free(conn);
+                        close(client_sock);
+                        merror("%s: ERROR: Unable to queue auth connection from %s", ARGV0, srcip);
                     }
                 }
             } /* if active socket */
         } /* for() loop on available sockets */
 
-        /* check for while() escape flag */
-        if (esc == 1)
-            break;
+    } /* while listening */
 
-    } /* while(1) loop for messages */
+    if (!authd_force_exit) {
+        merror("%s: Shutdown requested; stopping new enrollments.", ARGV0);
+    }
+
+    {
+        int wait_rc;
+
+        verbose("%s: Waiting for auth worker threads to finish.", ARGV0);
+        if (!authd_force_exit) {
+            wait_rc = thread_pool_wait_idle(auth_pool, AUTHD_SHUTDOWN_POOL_TIMEOUT);
+            if (wait_rc == 1) {
+                merror("%s: Shutdown timeout (%d s) with auth workers still active.",
+                       ARGV0, AUTHD_SHUTDOWN_POOL_TIMEOUT);
+            } else if (wait_rc < 0) {
+                merror("%s: ERROR: Unable to wait for auth worker threads.", ARGV0);
+            }
+        } else {
+            merror("%s: Forced shutdown; dropping queued auth connections.", ARGV0);
+        }
+        thread_pool_destroy(auth_pool);
+    }
 
     /* Shut down the socket */
-    clean_exit(ctx, sock);
+    auth_shutdown(ctx, sock);
 
     return (0);
 }
@@ -611,16 +483,4 @@ int main(int argc, char **argv)
 /* Exit handler */
 static void cleanup() {
 	DeletePID(ARGV0);
-}
-
-/* Graceful shutdown on SIGINT/SIGTERM (issue #919) */
-static void authd_shutdown(int sig)
-{
-    if (sig == SIGINT || sig == SIGTERM || sig == SIGQUIT) {
-        merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
-        DeletePID(ARGV0);
-        exit(0);
-    }
-
-    HandleSIG(sig);
 }

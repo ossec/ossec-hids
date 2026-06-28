@@ -266,6 +266,9 @@ void OS_ReadKeys(keystore *keys)
 
     /* Add additional entry for sender == keysize */
     os_calloc(1, sizeof(keyentry), keys->keyentries[keys->keysize]);
+    keys->keyentries[keys->keysize]->fp = NULL;
+    keys->keyentries[keys->keysize]->inode = 0;
+    pthread_mutex_init(&keys->keyentries[keys->keysize]->mutex, NULL);
 
     return;
 }
@@ -317,6 +320,8 @@ void OS_FreeKeys(keystore *keys)
             if (keys->keyentries[i]->fp) {
                 fclose(keys->keyentries[i]->fp);
             }
+
+            pthread_mutex_destroy(&keys->keyentries[i]->mutex);
 
             free(keys->keyentries[i]);
             keys->keyentries[i] = NULL;

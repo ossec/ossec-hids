@@ -570,6 +570,7 @@ int Read_Global(XML_NODE node, void *configp, void *mailp)
                     merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                     return (OS_INVALID);
                 }
+                /* maild counts worker spawns per hour (batch + SMS), not SMTP completions. */
                 Mail->maxperhour = atoi(node[i]->content);
 
                 if ((Mail->maxperhour <= 0) || (Mail->maxperhour > 9999)) {

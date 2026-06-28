@@ -26,12 +26,13 @@ static ino_t File_Inode(const char *file) {
 /* Prototypes */
 static void StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local) __attribute((nonnull));
 static void StoreCounter(const keystore *keys, int id, unsigned int global, unsigned int local) __attribute((nonnull));
-static void ReloadCounter(const keystore *keys, unsigned int id, const char * cid) __attribute((nonnull));
+static void ReloadCounter(keystore *keys, unsigned int id, const char * cid) __attribute((nonnull));
 static char *CheckSum(char *msg, size_t length) __attribute((nonnull));
 
 /* Sending counts */
 static unsigned int global_count = 0;
 static unsigned int local_count  = 0;
+static pthread_mutex_t sender_counter_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Average compression rates */
 static unsigned int evt_count = 0;
@@ -202,7 +203,7 @@ static void StoreCounter(const keystore *keys, int id, unsigned int global, unsi
 }
 
 /* Reload the global and local count of events */
-static void ReloadCounter(const keystore *keys, unsigned int id, const char * cid)
+static void ReloadCounter(keystore *keys, unsigned int id, const char * cid)
 {
     ino_t new_inode;
     char rids_file[OS_FLSIZE + 1];
@@ -210,9 +211,8 @@ static void ReloadCounter(const keystore *keys, unsigned int id, const char * ci
     snprintf(rids_file, OS_FLSIZE, "%s/%s", RIDS_DIR, cid);
     new_inode = File_Inode(rids_file);
 
-    /* Use mutex from keys struct */
-    /* w_mutex_lock(&keys->keyentries[id]->mutex); */
-    
+    os_mutex_lock(&keys->keyentries[id]->mutex);
+
     if (keys->keyentries[id]->inode != new_inode) {
         if(keys->keyentries[id]->fp) fclose(keys->keyentries[id]->fp);
         keys->keyentries[id]->fp = fopen(rids_file, "r+");
@@ -253,11 +253,11 @@ static void ReloadCounter(const keystore *keys, unsigned int id, const char * ci
         keys->keyentries[id]->inode = new_inode;
     }
 
-    /* w_mutex_unlock(&keys->keyentries[id]->mutex); */
+    os_mutex_unlock(&keys->keyentries[id]->mutex);
     return;
 
 fail_open:
-    /* w_mutex_unlock(&keys->keyentries[id]->mutex); */
+    os_mutex_unlock(&keys->keyentries[id]->mutex);
     merror("Unable to reload counter '%s': %s (%d)", cid, strerror(errno), errno);
 }
 
@@ -510,6 +510,8 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
     size_t length;
     unsigned long int cmp_size;
     u_int16_t rand1;
+    unsigned int msg_global;
+    unsigned int msg_local;
     char _tmpmsg[OS_MAXSTR + 2];
     char _finmsg[OS_MAXSTR + 2];
     char crypto_token[6] = {0};
@@ -552,7 +554,8 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
     _finmsg[OS_MAXSTR + 1] = '\0';
     msg_encrypted[OS_MAXSTR] = '\0';
 
-    ReloadCounter(keys, keys->keysize, SENDER_COUNTER);
+    os_mutex_lock(&sender_counter_mutex);
+    ReloadCounter((keystore *)keys, keys->keysize, SENDER_COUNTER);
 
     /* Increase local and global counters */
     if (local_count >= 9997) {
@@ -560,8 +563,12 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
         global_count++;
     }
     local_count++;
+    msg_global = global_count;
+    msg_local = local_count;
+    StoreSenderCounter(keys, msg_global, msg_local);
+    os_mutex_unlock(&sender_counter_mutex);
 
-    length = snprintf(_tmpmsg, OS_MAXSTR, "%05hu%010u:%04u:", rand1, global_count, local_count);
+    length = snprintf(_tmpmsg, OS_MAXSTR, "%05hu%010u:%04u:", rand1, msg_global, msg_local);
     memcpy(_tmpmsg + length, msg, msg_length);
     length += msg_length;
 
@@ -635,9 +642,6 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
         keys->keyentries[id]->key,
         (long) cmp_size,
         OS_ENCRYPT,crypto_method);
-
-    /* Store before leaving */
-    StoreSenderCounter(keys, global_count, local_count);
 
     if(cmp_size < crypto_length)
         cmp_size = crypto_length;

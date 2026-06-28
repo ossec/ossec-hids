@@ -21,23 +21,49 @@ static MailNode *lastnode;
 
 static int _memoryused = 0;
 static int _memorymaxsize = 0;
+static pthread_mutex_t mail_list_mu;
+static int mail_list_mu_ready = 0;
 
 
 /* Create the Mail List */
 void OS_CreateMailList(int maxsize)
 {
-    n_node = NULL;
+    if (!mail_list_mu_ready) {
+        os_mutex_init(&mail_list_mu, NULL);
+        mail_list_mu_ready = 1;
+    }
 
+    os_mutex_lock(&mail_list_mu);
+    n_node = NULL;
+    lastnode = NULL;
     _memorymaxsize = maxsize;
     _memoryused = 0;
+    os_mutex_unlock(&mail_list_mu);
 
     return;
+}
+
+int OS_MailListPending(void)
+{
+    int pending;
+
+    os_mutex_lock(&mail_list_mu);
+    pending = _memoryused;
+    os_mutex_unlock(&mail_list_mu);
+
+    return pending;
 }
 
 /* Check last mail */
 MailNode *OS_CheckLastMail()
 {
-    return (lastnode);
+    MailNode *node;
+
+    os_mutex_lock(&mail_list_mu);
+    node = lastnode;
+    os_mutex_unlock(&mail_list_mu);
+
+    return (node);
 }
 
 /* Get the last Mail -- or first node */
@@ -45,17 +71,139 @@ MailNode *OS_PopLastMail()
 {
     MailNode *oldlast;
 
+    os_mutex_lock(&mail_list_mu);
     oldlast = lastnode;
     if (lastnode == NULL) {
         n_node = NULL;
+        os_mutex_unlock(&mail_list_mu);
         return (NULL);
     }
 
     _memoryused--;
     lastnode = lastnode->prev;
+    os_mutex_unlock(&mail_list_mu);
 
     /* Remove the last */
     return (oldlast);
+}
+
+static MailNode *drain_list_oldest_first(void)
+{
+    MailNode *head = NULL;
+    MailNode *tail = NULL;
+
+    while (lastnode) {
+        MailNode *n = lastnode;
+
+        lastnode = n->prev;
+        _memoryused--;
+        n->prev = NULL;
+        n->next = NULL;
+        if (!head) {
+            head = tail = n;
+        } else {
+            tail->next = n;
+            tail = n;
+        }
+    }
+    n_node = NULL;
+
+    return (head);
+}
+
+void OS_MailListLock(void)
+{
+    os_mutex_lock(&mail_list_mu);
+}
+
+void OS_MailListUnlock(void)
+{
+    os_mutex_unlock(&mail_list_mu);
+}
+
+/* Drain entire list; oldest node first, newer nodes via ->next */
+MailNode *OS_DrainMailList(void)
+{
+    MailNode *head;
+
+    os_mutex_lock(&mail_list_mu);
+    head = drain_list_oldest_first();
+    os_mutex_unlock(&mail_list_mu);
+
+    return (head);
+}
+
+MailNode *OS_DrainMailListUnlocked(void)
+{
+    return drain_list_oldest_first();
+}
+
+void OS_RequeueMailBatch(MailNode *batch)
+{
+    MailNode *n;
+    MailNode *cur;
+    MailNode *older;
+    MailNode *newest;
+    MailNode *prev_next;
+    int count = 0;
+
+    if (!batch) {
+        return;
+    }
+
+    /* Detached batch is oldest-first via ->next; live queue is newest-first. */
+    prev_next = NULL;
+    cur = batch;
+    while (cur) {
+        older = cur->next;
+        cur->next = prev_next;
+        prev_next = cur;
+        cur = older;
+        count++;
+    }
+    newest = prev_next;
+
+    if (n_node) {
+        MailNode *oldest = newest;
+
+        while (oldest->next) {
+            oldest = oldest->next;
+        }
+        oldest->next = n_node;
+        n_node->prev = oldest;
+        n_node = newest;
+    } else {
+        n_node = newest;
+    }
+
+    lastnode = newest;
+    while (lastnode->next) {
+        lastnode = lastnode->next;
+    }
+
+    n_node->prev = NULL;
+    for (n = n_node; n->next; n = n->next) {
+        n->next->prev = n;
+    }
+
+    _memoryused += count;
+
+    while (_memoryused > _memorymaxsize && lastnode) {
+        MailNode *oldlast = lastnode;
+
+        lastnode = oldlast->prev;
+        if (lastnode) {
+            lastnode->next = NULL;
+        }
+        if (n_node == oldlast) {
+            n_node = oldlast->next;
+            if (n_node) {
+                n_node->prev = NULL;
+            }
+        }
+        FreeMail(oldlast);
+        _memoryused--;
+    }
 }
 
 void FreeMailMsg(MailMsg *ml)
@@ -97,13 +245,17 @@ void FreeMail(MailNode *ml)
 /* Add an email to the list -- always to the beginning */
 void OS_AddMailtoList(MailMsg *ml)
 {
-    MailNode *tmp_node = n_node;
+    MailNode *tmp_node;
+
+    os_mutex_lock(&mail_list_mu);
+    tmp_node = n_node;
 
     if (tmp_node) {
         MailNode *new_node;
         new_node = (MailNode *)calloc(1, sizeof(MailNode));
 
         if (new_node == NULL) {
+            os_mutex_unlock(&mail_list_mu);
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
@@ -128,6 +280,15 @@ void OS_AddMailtoList(MailMsg *ml)
 
             oldlast = lastnode;
             lastnode = lastnode->prev;
+            if (lastnode) {
+                lastnode->next = NULL;
+            }
+            if (n_node == oldlast) {
+                n_node = oldlast->next;
+                if (n_node) {
+                    n_node->prev = NULL;
+                }
+            }
 
             /* Free last node */
             FreeMail(oldlast);
@@ -140,6 +301,7 @@ void OS_AddMailtoList(MailMsg *ml)
         /* Add first node */
         n_node = (MailNode *)calloc(1, sizeof(MailNode));
         if (n_node == NULL) {
+            os_mutex_unlock(&mail_list_mu);
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
@@ -148,8 +310,10 @@ void OS_AddMailtoList(MailMsg *ml)
         n_node->mail = ml;
 
         lastnode = n_node;
+        _memoryused = 1;
     }
+
+    os_mutex_unlock(&mail_list_mu);
 
     return;
 }
-

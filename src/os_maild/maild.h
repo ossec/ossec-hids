@@ -11,7 +11,8 @@
 #define _MAILD_H
 
 #define MAIL_LIST_SIZE      96   /* Max number of emails to be saved */
-#define MAXCHILDPROCESS     6    /* Maximum simultaneous children */
+#define MAX_MAIL_WORKERS    6    /* Maximum simultaneous mail send threads */
+#define MAXCHILDPROCESS     MAX_MAIL_WORKERS
 #define MAX_SEND_ERRORS     6    /* SMTP failures before backoff (issue #1890) */
 #define SMTP_BACKOFF_SEC    30   /* Pause after too many SMTP failures */
 
@@ -58,18 +59,35 @@ typedef struct _MailMsg {
     char *body;
 } MailMsg;
 
+typedef struct _MailNode MailNode;
+
 #include "shared.h"
 #include "config/mail-config.h"
 
 /* Config function */
 int MailConf(int test_config, const char *cfgfile, MailConfig *Mail) __attribute__((nonnull));
 
-/* Receive the e-mail message */
-MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *mail,
-                      MailMsg **msg_sms) __attribute__((nonnull));
+/* Receive the e-mail message (SMS alerts are enqueued via OS_SmsEnqueue). */
+MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *mail)
+    __attribute__((nonnull));
 
-/* Send an email */
-int OS_Sendmail(MailConfig *mail, struct tm *p) __attribute__((nonnull));
+/* Send SMS to granular recipients marked SMS_FORMAT (gran_override may be NULL). */
+int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
+               const int *gran_set_override) __attribute__((nonnull(1, 2, 3)));
+
+/* Send an email from a detached batch (oldest first via MailNode->next).
+ * gran_set_override may be NULL to use mail->gran_set.
+ * group_subject/group_subject_level: snapshotted grouped subject (level 0 or empty = per-message).
+ * Frees all batch nodes. */
+int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
+                const int *gran_set_override, const char *group_subject,
+                unsigned int group_subject_level) __attribute__((nonnull(1, 2, 3)));
+
+/* MailConfig is read by worker threads after startup; treat as immutable unless
+ * hot-reload is added (then snapshot smtp server and auth into worker args). */
+
+/* Held while updating live gran_set / _g_subject and during send */
+extern pthread_mutex_t mail_send_mu;
 int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *idsname, char *fname, const struct tm *p);
 
 /* Mail timeout used by the file-queue */

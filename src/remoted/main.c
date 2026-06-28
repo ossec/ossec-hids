@@ -10,8 +10,14 @@
 #include "shared.h"
 #include "remoted.h"
 
+typedef struct remoted_listener_arg {
+    int position;
+} remoted_listener_arg;
+
 /* Prototypes */
 static void help_remoted(int status) __attribute__((noreturn));
+static void *remoted_listener_thread(void *arg);
+static void remoted_HandleSIG(int sig);
 
 
 /* Print help statement */
@@ -32,6 +38,23 @@ static void help_remoted(int status)
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
     print_out(" ");
     exit(status);
+}
+
+static void remoted_HandleSIG(int sig)
+{
+    remoted_request_shutdown(sig);
+}
+
+static void *remoted_listener_thread(void *arg)
+{
+    remoted_listener_arg *la = (remoted_listener_arg *)arg;
+
+    os_block_worker_signals();
+
+    debug1("%s: DEBUG: Starting remoted listener: '%d'.", ARGV0, la->position);
+    HandleRemote(la->position);
+    free(la);
+    return NULL;
 }
 
 int main(int argc, char **argv)
@@ -127,6 +150,21 @@ int main(int argc, char **argv)
         exit(0);
     }
 
+    {
+        int secure_count = 0;
+        int j;
+
+        for (j = 0; logr.conn[j] != 0; j++) {
+            if (logr.conn[j] == SECURE_CONN) {
+                secure_count++;
+            }
+        }
+        if (secure_count > 1) {
+            ErrorExit("%s: ERROR: Only one secure remoted connection is supported.",
+                      ARGV0);
+        }
+    }
+
     /* Don't exit when client.keys empty (if set) */
     if (getDefine_Int("remoted", "pass_empty_keyfile", 0, 1)) {
         OS_PassEmptyKeyfile();
@@ -163,25 +201,52 @@ int main(int argc, char **argv)
     nowChroot();
 
     /* Start the signal manipulation */
-    StartSIG(ARGV0);
+    StartSIG2(ARGV0, remoted_HandleSIG);
 
     random();
+
+    if (CreatePID(ARGV0, getpid()) < 0) {
+        ErrorExit(PID_ERROR, ARGV0);
+    }
 
     /* Start up message */
     verbose(STARTUP_MSG, ARGV0, (int)getpid());
 
-    /* Really start the program */
+    /* Bind all listeners before dropping UID (setuid is process-wide) */
     i = 0;
     while (logr.conn[i] != 0) {
-        /* Fork for each connection handler */
-        if (fork() == 0) {
-            /* On the child */
-            debug1("%s: DEBUG: Forking remoted: '%d'.", ARGV0, i);
-            HandleRemote(i, uid);
-        } else {
-            i++;
-            continue;
+        if (i >= REMOTE_LISTENERS_MAX) {
+            ErrorExit("%s: ERROR: Too many remoted connections (max %d).",
+                      ARGV0, REMOTE_LISTENERS_MAX);
         }
+        remoted_bind_listener(i);
+        i++;
+    }
+
+    if (Privsep_SetUser(uid) < 0) {
+        ErrorExit(SETUID_ERROR, ARGV0, user, errno, strerror(errno));
+    }
+
+    /* Start one thread per configured listener */
+    i = 0;
+    while (logr.conn[i] != 0) {
+        remoted_listener_arg *la;
+
+        os_calloc(1, sizeof(remoted_listener_arg), la);
+        la->position = i;
+
+        if (CreateThread(remoted_listener_thread, la) != 0) {
+            free(la);
+            ErrorExit(THREAD_ERROR, ARGV0);
+        }
+        i++;
+    }
+
+    while (1) {
+        if (remoted_shutting_down) {
+            exit(remoted_wait_for_shutdown());
+        }
+        sleep(1);
     }
 
     return (0);

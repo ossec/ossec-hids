@@ -17,6 +17,9 @@
 #define W_ACCEPT_AES 1
 #define W_ACCEPT_ANY 2
 
+/* Must match remoted_listeners[] size in remoted.c */
+#define REMOTE_LISTENERS_MAX 16
+
 #include "shared.h"
 #include "os_net/os_net.h"
 

@@ -146,6 +146,7 @@ typedef int socklen_t;
 #define random(x) rand(x)
 #define lstat(x,y) stat(x,y)
 #define CloseSocket(x) closesocket(x)
+#define localtime_r(t, r) ((localtime_s((r), (t)) == 0) ? (r) : (struct tm *)NULL)
 void WinSetError();
 typedef unsigned short int u_int16_t;
 typedef unsigned char u_int8_t;
@@ -196,6 +197,7 @@ extern const char *__local_name;
 #include "mq_op.h"
 #include "privsep_op.h"
 #include "pthreads_op.h"
+#include "thread_pool.h"
 #include "regex_op.h"
 #include "sig_op.h"
 #include "list_op.h"

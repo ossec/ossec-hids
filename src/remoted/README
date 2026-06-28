@@ -1,15 +1,42 @@
 How Remoted works:
 
-Three daemons (forked):
+One process with one thread per configured listener (secure, syslog UDP, syslog TCP).
+All listener sockets are bound in the main thread before setuid/chroot so every listener
+can bind privileged ports in a single process.
 
--Secured (udp port 1514)
--Syslogd (udp port 514)
--Syslogd (tcp port 514)
+Threading model
+-----------------
 
+- Main thread: binds listeners, drops privileges, starts detached listener threads,
+  then waits on SIGTERM. On shutdown it closes listener FDs and waits for syslog TCP
+  pool work to finish (see Shutdown below).
+- One detached thread per <remote> block in ossec.conf (secure, syslog UDP, or syslog TCP).
+- Syslog TCP only: each listener runs an accept loop and submits each client connection
+  to a bounded thread pool on that listener (not a new process per remote).
 
--How secured works:
+Constraints
+-----------
 
--Three threads.
+- At most one secure <remote> listener per remoted process. Secure mode uses process-global
+  keystore state, sendmsg_mutex, and remoted_secure_listener (AR forward and manager threads).
+- UDP syslog and secure listeners do not use the syslog TCP worker pool; they handle I/O in
+  the listener thread (secure also spawns AR and manager helper threads inside that listener).
+
+Tuning (internal_options.conf)
+------------------------------
+
+- ossec.thread_stack_size — stack size (KiB) for worker and listener threads
+- remoted.syslog_tcp_worker_pool — syslog TCP pool worker count per TCP listener
+  (each worker serves one long-lived client connection; size this for your forwarder count)
+- remoted.syslog_tcp_max_tasks — max queued + active syslog TCP tasks per pool (backpressure)
+- remoted.syslog_tcp_read_timeout — socket read timeout (seconds) per syslog TCP client;
+  unblocks idle workers and allows shutdown drain when clients stay connected. Values above
+  the shutdown pool timeout (60 s) are clamped so workers can be joined during SIGTERM drain.
+
+How secured works
+-----------------
+
+Three threads in the secure listener:
 
 -Main thread (remote receiver).
   - Receives data from remote clients.
@@ -22,3 +49,32 @@ Three daemons (forked):
 -Manager (sends data to remote clients).
   - Waits for messages from the main thread (wait_for_msgs).
 
+peer_info and outbound sends are protected by sendmsg_mutex.
+
+How syslog TCP works
+--------------------
+
+A bounded thread pool handles each accepted TCP client connection. Each worker holds
+one client socket until disconnect. When the pool is at capacity (worker_pool or
+max_tasks), new connections are closed (backpressure). Tune syslog_tcp_worker_pool to
+match the number of concurrent persistent forwarders you expect.
+
+How syslog UDP works
+--------------------
+
+The listener thread receives datagrams and forwards them to analysisd (no worker pool).
+
+Shutdown
+--------
+
+On SIGTERM/SIGHUP, remoted closes all listener sockets. Listener threads (detached) exit
+when recv/accept fails on the closed FDs; they are not joined.
+
+Syslog TCP workers use a per-client read timeout (remoted.syslog_tcp_read_timeout) so
+blocked recv() calls return periodically. Workers exit when remoted_shutting_down is set
+or when the read times out on an idle connection.
+
+remoted_wait_for_shutdown() polls syslog TCP thread pools until no active or queued tasks
+remain, or until a 60 s timeout, then destroys pools via remoted_destroy_tcp_pools().
+Secure and UDP listener threads are not explicitly joined; process exit follows pool drain
+(or timeout).

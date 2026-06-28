@@ -7,8 +7,6 @@
  * Foundation
  */
 
-#include <pthread.h>
-
 #include "shared.h"
 #include "remoted.h"
 #include "os_net/os_net.h"
@@ -23,22 +21,17 @@ static pthread_mutex_t keyupdate_mutex;
 /* Initializes mutex */
 void keyupdate_init()
 {
-    /* Initialize mutex */
-    pthread_mutex_init(&keyupdate_mutex, NULL);
+    os_mutex_init(&keyupdate_mutex, NULL);
 }
 
 void key_lock()
 {
-    if (pthread_mutex_lock(&keyupdate_mutex) != 0) {
-        merror(MUTEX_ERROR, ARGV0);
-    }
+    os_mutex_lock(&keyupdate_mutex);
 }
 
 void key_unlock()
 {
-    if (pthread_mutex_unlock(&keyupdate_mutex) != 0) {
-        merror(MUTEX_ERROR, ARGV0);
-    }
+    os_mutex_unlock(&keyupdate_mutex);
 }
 
 /* Check for key updates */
@@ -52,23 +45,15 @@ int check_keyupdate()
     key_lock();
 
     /* Lock before using */
-    if (pthread_mutex_lock(&sendmsg_mutex) != 0) {
-        key_unlock();
-        merror(MUTEX_ERROR, ARGV0);
-        return (0);
-    }
+    os_mutex_lock(&sendmsg_mutex);
 
     if (OS_UpdateKeys(&keys)) {
-        if (pthread_mutex_unlock(&sendmsg_mutex) != 0) {
-            merror(MUTEX_ERROR, ARGV0);
-        }
+        os_mutex_unlock(&sendmsg_mutex);
         key_unlock();
         return (1);
     }
 
-    if (pthread_mutex_unlock(&sendmsg_mutex) != 0) {
-        merror(MUTEX_ERROR, ARGV0);
-    }
+    os_mutex_unlock(&sendmsg_mutex);
     key_unlock();
 
     return (0);
@@ -77,8 +62,17 @@ int check_keyupdate()
 /* Initialize send_msg */
 void send_msg_init()
 {
-    /* Initialize mutex */
-    pthread_mutex_init(&sendmsg_mutex, NULL);
+    os_mutex_init(&sendmsg_mutex, NULL);
+}
+
+void sendmsg_lock(void)
+{
+    os_mutex_lock(&sendmsg_mutex);
+}
+
+void sendmsg_unlock(void)
+{
+    os_mutex_unlock(&sendmsg_mutex);
 }
 
 
@@ -87,26 +81,29 @@ void send_msg_init()
  * Returns -1 on error
  */
 
-int send_msg(unsigned int agentid, const char *msg)
+int send_msg(remoted_listener *listener, unsigned int agentid, const char *msg)
 {
     size_t msg_size, sa_size;
     char crypt_msg[OS_MAXSTR + 1];
     struct sockaddr * dest_sa;
 
-    /* If we don't have the agent id, ignore it */
-    if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * NOTIFY_TIME))) {
+    if (!listener || !listener->netinfo) {
+        merror("%s: send_msg called without a bound listener.", ARGV0);
         return (-1);
     }
 
-    /* Lock before using */
-    if (pthread_mutex_lock(&sendmsg_mutex) != 0) {
-        merror(MUTEX_ERROR, ARGV0);
+    os_mutex_lock(&sendmsg_mutex);
+
+    /* If we don't have the agent id, ignore it */
+    if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * NOTIFY_TIME))) {
+        os_mutex_unlock(&sendmsg_mutex);
         return (-1);
     }
 
     msg_size = CreateSecMSG(&keys, msg, strlen(msg), crypt_msg, agentid);
     if (msg_size == 0) {
         merror(SEC_ERROR, ARGV0);
+        os_mutex_unlock(&sendmsg_mutex);
         return (-1);
     }
 
@@ -122,12 +119,12 @@ int send_msg(unsigned int agentid, const char *msg)
     * we have identified the working interface in secure.c. (dgs - 2/26/18)
     */
 
-    if (logr.sock == 0) {
+    if (listener->sock == 0) {
         int i, ok = 0;
 
         /* socket not established - try current sockets */
-        for (i = 0; i < logr.netinfo->fdcnt; i++) {
-            if (sendto(logr.netinfo->fds[i], crypt_msg, msg_size, 0,
+        for (i = 0; i < listener->netinfo->fdcnt; i++) {
+            if (sendto(listener->netinfo->fds[i], crypt_msg, msg_size, 0,
                        dest_sa, sa_size) < 0) {
                 continue;
             }
@@ -142,17 +139,12 @@ int send_msg(unsigned int agentid, const char *msg)
         }
     } else {
         /* working socket identified in secure.c */
-        if (sendto(logr.sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
+        if (sendto(listener->sock, crypt_msg, msg_size, 0, dest_sa, sa_size) < 0) {
             merror(SEND_ERROR, ARGV0, keys.keyentries[agentid]->id);
         }
     }
 
-    /* Unlock mutex */
-    if (pthread_mutex_unlock(&sendmsg_mutex) != 0) {
-        merror(MUTEX_ERROR, ARGV0);
-        return (-1);
-    }
+    os_mutex_unlock(&sendmsg_mutex);
 
     return (0);
 }
-

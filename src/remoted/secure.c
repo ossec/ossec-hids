@@ -15,6 +15,8 @@
 /* Handle secure connections */
 void HandleSecure()
 {
+    remoted_secure_listener = remoted_self;
+
     int agentid;
     char buffer[OS_MAXSTR + 1];
     char cleartext_msg[OS_MAXSTR + 1];
@@ -51,7 +53,7 @@ void HandleSecure()
     * Connect to the message queue
     * Exit if it fails.
     */
-    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
+    if ((remoted_self->m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
@@ -68,7 +70,7 @@ void HandleSecure()
 
     /* Set up peer size */
     peer_size = sizeof(peer_info);
-    logr.peer_size = sizeof(peer_info);
+    remoted_self->peer_size = sizeof(peer_info);
 
     /* Initialize some variables */
     memset(buffer, '\0', OS_MAXSTR + 1);
@@ -77,13 +79,23 @@ void HandleSecure()
     tmp_msg = NULL;
 
     /* initialize select() save area */
-    fdsave = logr.netinfo->fdset;
-    fdmax  = logr.netinfo->fdmax;	/* value preset to max fd + 1 */
+    fdsave = remoted_self->netinfo->fdset;
+    fdmax  = remoted_self->netinfo->fdmax;	/* value preset to max fd + 1 */
 
     while (1) {
+        if (remoted_shutting_down) {
+            return;
+        }
+
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            if (remoted_shutting_down) {
+                return;
+            }
+            if (errno == EINTR || errno == EBADF) {
+                return;
+            }
             ErrorExit("ERROR: Call to secure select() failed, errno %d - %s",
                       errno, strerror (errno));
         }
@@ -91,6 +103,9 @@ void HandleSecure()
         /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
+
+                /* peer_size must be reset before each recvfrom */
+                peer_size = sizeof(peer_info);
 
                 /* Receive message  */
                 recv_b = recvfrom(sock, buffer, OS_MAXSTR, 0,
@@ -107,7 +122,9 @@ void HandleSecure()
                 * This sets the socket for send_msg().
                 */
 
-                logr.sock = sock;
+                sendmsg_lock();
+                remoted_self->sock = sock;
+                sendmsg_unlock();
 
                 /* Set the source IP */
                 satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
@@ -233,9 +250,11 @@ void HandleSecure()
                 /* Check if it is a control message */
                 if (IsValidHeader(tmp_msg)) {
                     /* We need to save the peerinfo if it is a control msg */
+                    sendmsg_lock();
                     memcpy(&keys.keyentries[agentid]->peer_info,
                            &peer_info, peer_size);
                     keys.keyentries[agentid]->rcvd = time(0);
+                    sendmsg_unlock();
                     save_controlmsg((unsigned)agentid, tmp_msg);
                     continue;
                 }
@@ -249,19 +268,10 @@ void HandleSecure()
                 * If we can't send the message, try to connect to the
                 * socket again. If it fails exit.
                 */
-                if (SendMSG(logr.m_queue, tmp_msg, srcmsg,
-                            SECURE_MQ) < 0) {
-                    merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
-
-                    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
-                        ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
-                    }
-
-                    if (SendMSG(logr.m_queue, tmp_msg, srcmsg,
-                                SECURE_MQ) < 0) {
-                        merror("%s: ERROR: Message from agent '%s' was lost "
-                               "after queue reconnect.", ARGV0, srcmsg);
-                    }
+                if (remoted_send_mq_msg(remoted_self, tmp_msg, srcmsg,
+                                        SECURE_MQ) < 0) {
+                    merror("%s: WARN: Unable to send message to queue %s",
+                           ARGV0, DEFAULTQUEUE);
                 }
             } /* if socket active */
         } /* for() loop on sockets */

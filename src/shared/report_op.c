@@ -10,25 +10,26 @@
 #include "shared.h"
 
 /* Helper functions */
-static void l_print_out(const char *msg, ...) __attribute__((format(printf, 1, 2))) __attribute__((nonnull));
+static void l_print_out(FILE *out, const char *msg, ...)
+    __attribute__((format(printf, 2, 3))) __attribute__((nonnull(2)));
 static void *_os_report_sort_compare(void *d1, void *d2) __attribute__((nonnull));
-static void _os_header_print(int t, const char *hname) __attribute__((nonnull));
+static void _os_header_print(FILE *out, int t, const char *hname) __attribute__((nonnull(3)));
 static int _os_report_str_int_compare(const char *str, int id) __attribute__((nonnull));
 static int _os_report_check_filters(const alert_data *al_data, const report_filter *r_filter) __attribute__((nonnull));
 static int _report_filter_value(const char *filter_by, int prev_filter) __attribute__((nonnull));
-static int _os_report_print_related(int print_related, OSList *st_data) __attribute__((nonnull));
+static int _os_report_print_related(FILE *out, int print_related, OSList *st_data)
+    __attribute__((nonnull(3)));
 static int _os_report_add_tostore(const char *key, OSStore *top, void *data) __attribute__((nonnull(1, 2)));
-static FILE *__g_rtype = NULL;
 
 
-static void l_print_out(const char *msg, ...)
+static void l_print_out(FILE *out, const char *msg, ...)
 {
     va_list args;
     va_start(args, msg);
 
-    if (__g_rtype) {
-        (void)vfprintf(__g_rtype, msg, args);
-        (void)fprintf(__g_rtype, "\r\n");
+    if (out) {
+        (void)vfprintf(out, msg, args);
+        (void)fprintf(out, "\r\n");
     } else {
         (void)vfprintf(stderr, msg, args);
         (void)fprintf(stderr, "\r\n");
@@ -52,14 +53,14 @@ static void *_os_report_sort_compare(void *d1, void *d2)
 }
 
 /* Print output header */
-static void _os_header_print(int t, const char *hname)
+static void _os_header_print(FILE *out, int t, const char *hname)
 {
     if (!t) {
-        l_print_out("Top entries for '%s':", hname);
-        l_print_out("------------------------------------------------");
+        l_print_out(out, "Top entries for '%s':", hname);
+        l_print_out(out, "------------------------------------------------");
     } else {
-        l_print_out("Related entries for '%s':", hname);
-        l_print_out("------------------------------------------------");
+        l_print_out(out, "Related entries for '%s':", hname);
+        l_print_out(out, "------------------------------------------------");
     }
 }
 
@@ -187,7 +188,7 @@ static int _report_filter_value(const char *filter_by, int prev_filter)
 }
 
 /* Print related entries */
-static int _os_report_print_related(int print_related, OSList *st_data)
+static int _os_report_print_related(FILE *out, int print_related, OSList *st_data)
 {
     OSListNode *list_entry;
     alert_data *list_aldata;
@@ -254,19 +255,19 @@ static int _os_report_print_related(int print_related, OSList *st_data)
 
         if (!list_entry) {
             if (print_related & REPORT_REL_LOCATION) {
-                l_print_out("   location: '%s'", saved_aldata->location);
+                l_print_out(out, "   location: '%s'", saved_aldata->location);
             } else if (print_related & REPORT_REL_GROUP) {
-                l_print_out("   group: '%s'", saved_aldata->group);
+                l_print_out(out, "   group: '%s'", saved_aldata->group);
             } else if (print_related & REPORT_REL_RULE) {
-                l_print_out("   rule: '%d'", saved_aldata->rule);
+                l_print_out(out, "   rule: '%d'", saved_aldata->rule);
             } else if ((print_related & REPORT_REL_SRCIP) && saved_aldata->srcip) {
-                l_print_out("   srcip: '%s'", saved_aldata->srcip);
+                l_print_out(out, "   srcip: '%s'", saved_aldata->srcip);
             } else if ((print_related & REPORT_REL_USER) && saved_aldata->user) {
-                l_print_out("   user: '%s'", saved_aldata->user);
+                l_print_out(out, "   user: '%s'", saved_aldata->user);
             } else if (print_related & REPORT_REL_LEVEL) {
-                l_print_out("   level: '%d'", saved_aldata->level);
+                l_print_out(out, "   level: '%d'", saved_aldata->level);
             } else if ((print_related & REPORT_REL_FILE) && saved_aldata->filename) {
-                l_print_out("   filename: '%s'", saved_aldata->filename);
+                l_print_out(out, "   filename: '%s'", saved_aldata->filename);
             }
         }
 
@@ -299,7 +300,7 @@ static int _os_report_add_tostore(const char *key, OSStore *top, void *data)
     return (1);
 }
 
-void os_report_printtop(void *topstore_pt, const char *hname, int print_related)
+void os_report_printtop(FILE *out, void *topstore_pt, const char *hname, int print_related)
 {
     int dopdout = 0;
     OSStore *topstore = (OSStore *)topstore_pt;
@@ -319,40 +320,40 @@ void os_report_printtop(void *topstore_pt, const char *hname, int print_related)
             }
 
             if (!dopdout) {
-                _os_header_print(print_related, hname);
+                _os_header_print(out, print_related, hname);
                 dopdout = 1;
             }
-            l_print_out("%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
+            l_print_out(out, "%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
         }
 
         /* Print each destination */
         else {
             if (!dopdout) {
-                _os_header_print(print_related, hname);
+                _os_header_print(out, print_related, hname);
                 dopdout = 1;
             }
-            l_print_out("%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
+            l_print_out(out, "%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
 
             if (print_related & REPORT_REL_LOCATION) {
-                _os_report_print_related(REPORT_REL_LOCATION, st_data);
+                _os_report_print_related(out, REPORT_REL_LOCATION, st_data);
             }
             if (print_related & REPORT_REL_SRCIP) {
-                _os_report_print_related(REPORT_REL_SRCIP, st_data);
+                _os_report_print_related(out, REPORT_REL_SRCIP, st_data);
             }
             if (print_related & REPORT_REL_USER) {
-                _os_report_print_related(REPORT_REL_USER, st_data);
+                _os_report_print_related(out, REPORT_REL_USER, st_data);
             }
             if (print_related & REPORT_REL_RULE) {
-                _os_report_print_related(REPORT_REL_RULE, st_data);
+                _os_report_print_related(out, REPORT_REL_RULE, st_data);
             }
             if (print_related & REPORT_REL_GROUP) {
-                _os_report_print_related(REPORT_REL_GROUP, st_data);
+                _os_report_print_related(out, REPORT_REL_GROUP, st_data);
             }
             if (print_related & REPORT_REL_LEVEL) {
-                _os_report_print_related(REPORT_REL_LEVEL, st_data);
+                _os_report_print_related(out, REPORT_REL_LEVEL, st_data);
             }
             if (print_related & REPORT_REL_FILE) {
-                _os_report_print_related(REPORT_REL_FILE, st_data);
+                _os_report_print_related(out, REPORT_REL_FILE, st_data);
             }
         }
 
@@ -360,10 +361,46 @@ void os_report_printtop(void *topstore_pt, const char *hname, int print_related)
     }
 
     if (dopdout == 1) {
-        l_print_out(" ");
-        l_print_out(" ");
+        l_print_out(out, " ");
+        l_print_out(out, " ");
     }
     return;
+}
+
+static void _os_report_free_stores(report_filter *r_filter)
+{
+    if (!r_filter) {
+        return;
+    }
+
+    if (r_filter->top_user) {
+        OSStore_Free(r_filter->top_user);
+        r_filter->top_user = NULL;
+    }
+    if (r_filter->top_srcip) {
+        OSStore_Free(r_filter->top_srcip);
+        r_filter->top_srcip = NULL;
+    }
+    if (r_filter->top_level) {
+        OSStore_Free(r_filter->top_level);
+        r_filter->top_level = NULL;
+    }
+    if (r_filter->top_rule) {
+        OSStore_Free(r_filter->top_rule);
+        r_filter->top_rule = NULL;
+    }
+    if (r_filter->top_group) {
+        OSStore_Free(r_filter->top_group);
+        r_filter->top_group = NULL;
+    }
+    if (r_filter->top_location) {
+        OSStore_Free(r_filter->top_location);
+        r_filter->top_location = NULL;
+    }
+    if (r_filter->top_files) {
+        OSStore_Free(r_filter->top_files);
+        r_filter->top_files = NULL;
+    }
 }
 
 void os_ReportdStart(report_filter *r_filter)
@@ -373,16 +410,21 @@ void os_ReportdStart(report_filter *r_filter)
     char *first_alert = NULL;
     char *last_alert = NULL;
     alert_data **data_to_clean = NULL;
+    FILE *out;
 
     time_t tm;
+    struct tm tm_buf;
     struct tm *p;
 
     file_queue *fileq;
     alert_data *al_data;
 
+    out = r_filter->fp;
+
     /* Get current time before starting */
     tm = time(NULL);
-    p = localtime(&tm);
+    localtime_r(&tm, &tm_buf);
+    p = &tm_buf;
 
     /* Initiate file queue - to read the alerts */
     os_calloc(1, sizeof(file_queue), fileq);
@@ -392,9 +434,6 @@ void os_ReportdStart(report_filter *r_filter)
         if (!fileq->fp) {
             merror("%s: ERROR: Unable to open alerts file to generate report.", __local_name);
             goto cleanup;
-        }
-        if (r_filter->fp) {
-            __g_rtype = r_filter->fp;
         }
     } else {
         fileq->fp = stdin;
@@ -412,29 +451,6 @@ void os_ReportdStart(report_filter *r_filter)
     if (!r_filter->top_user || !r_filter->top_srcip || !r_filter->top_level || !r_filter->top_rule
             || !r_filter->top_group || !r_filter->top_location || !r_filter->top_files) {
         merror(MEM_ERROR, __local_name, errno, strerror((errno)));
-
-        if (r_filter->top_user) {
-            OSStore_Free(r_filter->top_user);
-        }
-        if (r_filter->top_srcip) {
-            OSStore_Free(r_filter->top_srcip);
-        }
-        if (r_filter->top_level) {
-            OSStore_Free(r_filter->top_level);
-        }
-        if (r_filter->top_rule) {
-            OSStore_Free(r_filter->top_rule);
-        }
-        if (r_filter->top_group) {
-            OSStore_Free(r_filter->top_group);
-        }
-        if (r_filter->top_location) {
-            OSStore_Free(r_filter->top_location);
-        }
-        if (r_filter->top_files) {
-            OSStore_Free(r_filter->top_files);
-        }
-
         goto cleanup;
     }
 
@@ -558,20 +574,20 @@ void os_ReportdStart(report_filter *r_filter)
         verbose("%s: INFO: Report completed. Creating output...", __local_name);
     }
 
-    l_print_out(" ");
+    l_print_out(out, " ");
     if (r_filter->report_name) {
-        l_print_out("Report '%s' completed.", r_filter->report_name);
+        l_print_out(out, "Report '%s' completed.", r_filter->report_name);
     } else {
-        l_print_out("Report completed. ==");
+        l_print_out(out, "Report completed. ==");
     }
-    l_print_out("------------------------------------------------");
+    l_print_out(out, "------------------------------------------------");
 
-    l_print_out("->Processed alerts: %d", alerts_processed);
-    l_print_out("->Post-filtering alerts: %d", alerts_filtered);
-    l_print_out("->First alert: %s", first_alert);
-    l_print_out("->Last alert: %s", last_alert);
-    l_print_out(" ");
-    l_print_out(" ");
+    l_print_out(out, "->Processed alerts: %d", alerts_processed);
+    l_print_out(out, "->Post-filtering alerts: %d", alerts_filtered);
+    l_print_out(out, "->First alert: %s", first_alert);
+    l_print_out(out, "->Last alert: %s", last_alert);
+    l_print_out(out, " ");
+    l_print_out(out, " ");
 
     OSStore_Sort(r_filter->top_srcip, _os_report_sort_compare);
     OSStore_Sort(r_filter->top_user,  _os_report_sort_compare);
@@ -581,41 +597,41 @@ void os_ReportdStart(report_filter *r_filter)
     OSStore_Sort(r_filter->top_rule, _os_report_sort_compare);
     OSStore_Sort(r_filter->top_files, _os_report_sort_compare);
 
-    os_report_printtop(r_filter->top_srcip, "Source ip", 0);
-    os_report_printtop(r_filter->top_user, "Username", 0);
-    os_report_printtop(r_filter->top_level, "Level", 0);
-    os_report_printtop(r_filter->top_group, "Group", 0);
-    os_report_printtop(r_filter->top_location, "Location", 0);
-    os_report_printtop(r_filter->top_rule, "Rule", 0);
-    os_report_printtop(r_filter->top_files, "Filenames", 0);
+    os_report_printtop(out, r_filter->top_srcip, "Source ip", 0);
+    os_report_printtop(out, r_filter->top_user, "Username", 0);
+    os_report_printtop(out, r_filter->top_level, "Level", 0);
+    os_report_printtop(out, r_filter->top_group, "Group", 0);
+    os_report_printtop(out, r_filter->top_location, "Location", 0);
+    os_report_printtop(out, r_filter->top_rule, "Rule", 0);
+    os_report_printtop(out, r_filter->top_files, "Filenames", 0);
 
     /* Print related events */
     if (r_filter->related_srcip)
-        os_report_printtop(r_filter->top_srcip, "Source ip",
+        os_report_printtop(out, r_filter->top_srcip, "Source ip",
                            r_filter->related_srcip);
 
     if (r_filter->related_user)
-        os_report_printtop(r_filter->top_user, "Username",
+        os_report_printtop(out, r_filter->top_user, "Username",
                            r_filter->related_user);
 
     if (r_filter->related_level)
-        os_report_printtop(r_filter->top_level, "Level",
+        os_report_printtop(out, r_filter->top_level, "Level",
                            r_filter->related_level);
 
     if (r_filter->related_group)
-        os_report_printtop(r_filter->top_group, "Group",
+        os_report_printtop(out, r_filter->top_group, "Group",
                            r_filter->related_group);
 
     if (r_filter->related_location)
-        os_report_printtop(r_filter->top_location, "Location",
+        os_report_printtop(out, r_filter->top_location, "Location",
                            r_filter->related_location);
 
     if (r_filter->related_rule)
-        os_report_printtop(r_filter->top_rule, "Rule",
+        os_report_printtop(out, r_filter->top_rule, "Rule",
                            r_filter->related_rule);
 
     if (r_filter->related_file)
-        os_report_printtop(r_filter->top_files, "Filename",
+        os_report_printtop(out, r_filter->top_files, "Filename",
                            r_filter->related_file);
 
     /* If we have to dump the alerts */
@@ -623,13 +639,13 @@ void os_ReportdStart(report_filter *r_filter)
         int i = 0;
 
         if (r_filter->show_alerts) {
-            l_print_out("Log dump:");
-            l_print_out("------------------------------------------------");
+            l_print_out(out, "Log dump:");
+            l_print_out(out, "------------------------------------------------");
         }
         while (data_to_clean[i]) {
             alert_data *md = data_to_clean[i];
             if (r_filter->show_alerts) {
-                l_print_out("%s %s\nRule: %d (level %d) -> '%s'\n%s\n\n", md->date, md->location, md->rule, md->level, md->comment, md->log[0]);
+                l_print_out(out, "%s %s\nRule: %d (level %d) -> '%s'\n%s\n\n", md->date, md->location, md->rule, md->level, md->comment, md->log[0]);
             }
             FreeAlertData(md);
             i++;
@@ -639,6 +655,8 @@ void os_ReportdStart(report_filter *r_filter)
     }
 
     cleanup:
+    _os_report_free_stores(r_filter);
+
     if (fileq->fp && fileq->fp != stdin) {
         fclose(fileq->fp);
     }

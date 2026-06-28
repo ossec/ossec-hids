@@ -53,21 +53,31 @@ void HandleSyslog()
     memset(buffer, '\0', OS_SIZE_1024 + 2);
 
     /* initialize select() save area */
-    fdsave = logr.netinfo->fdset;
-    fdmax  = logr.netinfo->fdmax;        /* value preset to max fd + 1 */
+    fdsave = remoted_self->netinfo->fdset;
+    fdmax  = remoted_self->netinfo->fdmax;        /* value preset to max fd + 1 */
 
     /* Connect to the message queue
      * Exit if it fails.
      */
-    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
+    if ((remoted_self->m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
         ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
     }
 
     /* Infinite loop */
     while (1) {
+        if (remoted_shutting_down) {
+            return;
+        }
+
         /* process connections through select() for multiple sockets */
         fdwork = fdsave;
         if (select (fdmax, &fdwork, NULL, NULL, NULL) < 0) {
+            if (remoted_shutting_down) {
+                return;
+            }
+            if (errno == EINTR || errno == EBADF) {
+                return;
+            }
             ErrorExit("ERROR: Call to syslog select() failed, errno %d - %s",
                       errno, strerror (errno));
         }
@@ -75,6 +85,8 @@ void HandleSyslog()
         /* read through socket list for active socket */
         for (sock = 0; sock <= fdmax; sock++) {
             if (FD_ISSET (sock, &fdwork)) {
+
+                peer_size = sizeof(peer_info);
 
                 /* Receive message */
                 recv_b = recvfrom(sock, buffer, OS_SIZE_1024, 0,
@@ -115,12 +127,9 @@ void HandleSyslog()
                     continue;
                 }
 
-                if (SendMSG(logr.m_queue, buffer_pt, srcip, SYSLOG_MQ) < 0) {
-                    merror(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
-
-                    if ((logr.m_queue = StartMQ(DEFAULTQUEUE, WRITE)) < 0) {
-                        ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQUEUE);
-                    }
+                if (remoted_send_syslog_msg(remoted_self, buffer_pt, srcip) < 0) {
+                    merror("%s: WARN: Unable to send message to queue %s",
+                           ARGV0, DEFAULTQUEUE);
                 }
             } /* if socket active */
         } /* for() loop on sockets */
