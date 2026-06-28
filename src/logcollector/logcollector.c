@@ -358,16 +358,21 @@ void LogCollectorStart()
         /* Check which file is available */
         for (i = 0; i <= max_file; i++) {
             if (!logff[i].fp) {
-                /* Run the command */
-                if (logff[i].read &&
-                    (logff[i].command || (logff[i].logformat && !strncmp(logff[i].logformat, "journald", 7))) &&
-                    (f_check % 2)) {
+                /* Run periodic commands on the configured frequency. */
+                if (logff[i].read && logff[i].command && (f_check % 2)) {
                     curr_time = time(0);
                     if ((curr_time - logff[i].size) >= logff[i].ign) {
                         logff[i].size = curr_time;
                         logff[i].read(i, &r, 0);
                     }
                 }
+#ifdef HAVE_SYSTEMD
+                /* Journald is polled every loop; it is not a file or command. */
+                else if (logff[i].read && logff[i].logformat &&
+                         strcmp(logff[i].logformat, "journald") == 0) {
+                    logff[i].read(i, &r, 0);
+                }
+#endif
                 continue;
             }
 
@@ -459,6 +464,14 @@ void LogCollectorStart()
             if (!logff[i].file) {
                 continue;
             }
+
+#ifdef HAVE_SYSTEMD
+            /* Journald locations are unit names, not filesystem paths. */
+            if (logff[i].logformat &&
+                strcmp(logff[i].logformat, "journald") == 0) {
+                continue;
+            }
+#endif
 
             /* Files with date -- check for day change */
             if (logff[i].ffile) {
