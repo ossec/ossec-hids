@@ -12,6 +12,8 @@
 
 /* Prototypes */
 int update_fname(int i);
+static int logformat_is_shared(int idx);
+static void clear_logreader_entry(int idx);
 
 /* Global variables */
 int loop_timeout;
@@ -35,6 +37,78 @@ static char *rand_keepalive_str(char *dst, int size)
     }
     dst[i] = '\0';
     return dst;
+}
+
+/* Return 1 if another logreader entry shares the same logformat pointer
+ * (glob expansion assigns one logformat to multiple entries). */
+static int logformat_is_shared(int idx)
+{
+    int j = 0;
+
+    if (!logff[idx].logformat) {
+        return 0;
+    }
+
+    while (logff[j].file || logff[j].command || logff[j].logformat ||
+           logff[j].alias) {
+        if (j != idx && logff[j].logformat == logff[idx].logformat) {
+            return 1;
+        }
+        j++;
+    }
+
+    return 0;
+}
+
+/* Free heap allocations for a logreader entry that will not be monitored. */
+static void clear_logreader_entry(int idx)
+{
+    char *file;
+    char *command;
+
+    if (logff[idx].fp) {
+        fclose(logff[idx].fp);
+#ifdef WIN32
+        CloseHandle(logff[idx].h);
+#endif
+        logff[idx].fp = NULL;
+    }
+
+    file = logff[idx].file;
+    command = logff[idx].command;
+
+    if (file) {
+        free(file);
+        if (command == file) {
+            command = NULL;
+        }
+    }
+
+    if (command) {
+        free(command);
+    }
+
+    if (logff[idx].ffile) {
+        free(logff[idx].ffile);
+    }
+
+    if (!logformat_is_shared(idx) && logff[idx].logformat) {
+        free(logff[idx].logformat);
+    }
+
+    if (logff[idx].alias) {
+        free(logff[idx].alias);
+    }
+
+    if (logff[idx].query) {
+        free(logff[idx].query);
+    }
+
+    if (logff[idx].djb_program_name) {
+        free(logff[idx].djb_program_name);
+    }
+
+    memset(&logff[idx], 0, sizeof(logreader));
 }
 
 /* Handle file management */
@@ -77,11 +151,7 @@ void LogCollectorStart()
             if (logff[r].file && strcmp(logff[i].file, logff[r].file) == 0) {
                 merror("%s: WARN: Duplicated log file given: '%s'.",
                        ARGV0, logff[i].file);
-                logff[i].file = NULL;
-                logff[i].command = NULL;
-                logff[i].fp = NULL;
-                logff[i].ptr = NULL;
-
+                clear_logreader_entry(i);
                 break;
             }
         }
