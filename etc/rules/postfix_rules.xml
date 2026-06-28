@@ -83,7 +83,7 @@
 
   <rule id="3331" level="10" ignore="120">
     <if_sid>3300</if_sid>
-    <id_pcre2>^452</id_pcre2>
+    <id_pcre2>^452$</id_pcre2>
     <description>Postfix insufficient disk space error.</description>
     <group>service_availability,</group>
   </rule>
