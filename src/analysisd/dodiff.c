@@ -10,6 +10,7 @@
 #include "dodiff.h"
 
 #include "shared.h"
+#include "eventinfo.h"
 
 static int _add2last(const char *str, size_t strsize, const char *file)
 {
@@ -76,7 +77,7 @@ int doDiff(RuleInfo *rule, const Eventinfo *lf)
     /* Clean up global */
     flastcontent[0] = '\0';
     flastcontent[OS_SIZE_8192] = '\0';
-    rule->last_events[0] = NULL;
+    OS_FreeRuleLastEvents(rule);
 
     if (lf->hostname[0] == '(') {
         htpt = strchr(lf->hostname, ')');

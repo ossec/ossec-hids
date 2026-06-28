@@ -96,6 +96,7 @@ typedef struct _RuleInfo {
 
     int __frequency;
     char **last_events;
+    int last_events_copied;
 
     /* Not an option in the rule */
     u_int16_t alert_opts;

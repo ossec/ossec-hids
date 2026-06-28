@@ -131,6 +131,10 @@ Eventinfo *Search_LastEvents(Eventinfo *lf, RuleInfo *currently_rule);
 Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *currently_rule);
 Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *currently_rule);
 
+/* Frequency rule context log samples (heap-owned copies) */
+void OS_SetRuleLastEvent(RuleInfo *rule, int idx, const char *log);
+void OS_FreeRuleLastEvents(RuleInfo *rule);
+
 /* Zero the eventinfo structure */
 void Zero_Eventinfo(Eventinfo *lf);
 

@@ -1716,6 +1716,7 @@ RuleInfo *zerorulemember(int id, int level,
     /* Zero last matched events */
     ruleinfo_pt->__frequency = 0;
     ruleinfo_pt->last_events = NULL;
+    ruleinfo_pt->last_events_copied = 0;
 
     /* Zeroing the list of previous matches */
     ruleinfo_pt->sid_prev_matched = NULL;
