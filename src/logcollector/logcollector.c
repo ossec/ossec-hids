@@ -195,7 +195,7 @@ void LogCollectorStart()
             logff[i].file = NULL;
             logff[i].fp = NULL;
             logff[i].ptr = NULL;
-            logff[i].size = 0;
+            logff[i].size = (off_t)time(0);
 
             if (logff[i].command) {
                 logff[i].read = read_command;
@@ -213,7 +213,7 @@ void LogCollectorStart()
             logff[i].file = NULL;
             logff[i].fp = NULL;
             logff[i].ptr = NULL;
-            logff[i].size = 0;
+            logff[i].size = (off_t)time(0);
             if (logff[i].command) {
                 logff[i].read = read_fullcommand;
 
