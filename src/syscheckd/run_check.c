@@ -28,9 +28,15 @@
 
 /* Prototypes */
 static void send_sk_db(void);
+static void syscheck_log_send_failures(void);
+
+/* Count of baseline/update messages that could not reach the agent queue. */
+static unsigned int syscheck_send_failures = 0;
 
 
-/* Send a message related to syscheck change/addition */
+/* Send a message related to syscheck change/addition.
+ * Returns 0 on success, -1 if the message could not be delivered.
+ */
 int send_syscheck_msg(const char *msg)
 {
     if (SendMSG(syscheck.queue, msg, SYSCHECK, SYSCHECK_MQ) < 0) {
@@ -41,9 +47,22 @@ int send_syscheck_msg(const char *msg)
         }
 
         /* Try to send it again */
-        SendMSG(syscheck.queue, msg, SYSCHECK, SYSCHECK_MQ);
+        if (SendMSG(syscheck.queue, msg, SYSCHECK, SYSCHECK_MQ) < 0) {
+            syscheck_send_failures++;
+            return (-1);
+        }
     }
     return (0);
+}
+
+static void syscheck_log_send_failures(void)
+{
+    if (syscheck_send_failures > 0) {
+        merror("%s: WARN: %u syscheck database entries were not delivered to "
+              "the manager and will be retried on the next scan.",
+              ARGV0, syscheck_send_failures);
+        syscheck_send_failures = 0;
+    }
 }
 
 /* Send a message related to rootcheck change/addition */
@@ -73,6 +92,7 @@ static void send_sk_db()
         return;
     }
 
+    syscheck_send_failures = 0;
     create_db();
 
     /* Send scan ending message */
@@ -143,6 +163,7 @@ void start_daemon()
         os_winreg_check();
 #endif
         /* Send database completed message */
+        syscheck_log_send_failures();
         send_syscheck_msg(HC_SK_DB_COMPLETED);
         debug2("%s: DEBUG: Sending database completed message.", ARGV0);
 
@@ -250,6 +271,7 @@ void start_daemon()
 
                 syscheck.scan_on_start = 1;
             } else {
+                syscheck_send_failures = 0;
                 /* Send scan start message */
                 if (syscheck.dir[0]) {
                     merror("%s: INFO: Starting syscheck scan.", ARGV0);
@@ -270,6 +292,7 @@ void start_daemon()
                 send_rootcheck_msg("Ending syscheck scan.");
             }
 
+            syscheck_log_send_failures();
             /* Send database completed message */
             send_syscheck_msg(HC_SK_DB_COMPLETED);
             debug2("%s: DEBUG: Sending database completed message.", ARGV0);

@@ -19,6 +19,11 @@
 #include <sqlite3.h>
 #endif
 
+typedef struct _sk_db_entry {
+    fpos_t pos;
+    char prefix_sum[OS_MAXSTR + 1];
+} sk_db_entry;
+
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
     char comment[OS_MAXSTR + 1];
@@ -34,6 +39,7 @@ typedef struct __sdb {
     char agent_cp[MAX_AGENTS + 1][1];
     char *agent_ips[MAX_AGENTS + 1];
     FILE *agent_fps[MAX_AGENTS + 1];
+    OSHash *agent_index[MAX_AGENTS + 1];
 
     int db_err;
 
@@ -97,6 +103,7 @@ void SyscheckInit()
     for (; i <= MAX_AGENTS; i++) {
         sdb.agent_ips[i] = NULL;
         sdb.agent_fps[i] = NULL;
+        sdb.agent_index[i] = NULL;
         sdb.agent_cp[i][0] = '0';
     }
 
@@ -246,15 +253,101 @@ static FILE *DB_File(const char *agent, int *agent_id)
     return (sdb.agent_fps[i]);
 }
 
+/* Parse a syscheck db line and return the filename within line_buf. */
+static int DB_ParseEntryFilename(char *line_buf, char **fname_out)
+{
+    char *saved_name;
+
+    if (line_buf[0] == '\n' || line_buf[0] == '#') {
+        return (-1);
+    }
+
+    saved_name = strchr(line_buf, ' ');
+    if (saved_name == NULL) {
+        return (-1);
+    }
+
+    *saved_name = '\0';
+    saved_name++;
+
+    if (*saved_name == '!') {
+        saved_name = strchr(saved_name, ' ');
+        if (saved_name == NULL) {
+            return (-1);
+        }
+        saved_name++;
+    }
+
+    if (saved_name[0] != '\0' && saved_name[strlen(saved_name) - 1] == '\n') {
+        saved_name[strlen(saved_name) - 1] = '\0';
+    }
+
+    *fname_out = saved_name;
+    return (0);
+}
+
+/* Build an in-memory index for O(1) syscheck db lookups per agent. */
+static void DB_BuildIndex(int agent_id, FILE *fp)
+{
+    fpos_t line_pos;
+    char line_copy[OS_MAXSTR + 1];
+
+    if (sdb.agent_index[agent_id] != NULL) {
+        return;
+    }
+
+    sdb.agent_index[agent_id] = OSHash_Create();
+    if (!sdb.agent_index[agent_id]) {
+        merror("%s: Unable to create syscheck index for agent.", ARGV0);
+        return;
+    }
+
+    if (!OSHash_setSize(sdb.agent_index[agent_id], 4096)) {
+        merror("%s: Unable to size syscheck index for agent.", ARGV0);
+    }
+
+    fseek(fp, 0, SEEK_SET);
+    while (fgetpos(fp, &line_pos) == 0 && fgets(sdb.buf, OS_MAXSTR, fp) != NULL) {
+        char *fname;
+        sk_db_entry *ent;
+
+        if (sdb.buf[0] == '\n' || sdb.buf[0] == '#') {
+            continue;
+        }
+
+        strncpy(line_copy, sdb.buf, OS_MAXSTR);
+        line_copy[OS_MAXSTR] = '\0';
+        if (DB_ParseEntryFilename(line_copy, &fname) != 0) {
+            continue;
+        }
+
+        ent = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], fname);
+        if (!ent) {
+            ent = (sk_db_entry *)calloc(1, sizeof(sk_db_entry));
+            if (!ent) {
+                continue;
+            }
+            if (OSHash_Add(sdb.agent_index[agent_id], fname, ent) != 2) {
+                free(ent);
+                continue;
+            }
+        }
+
+        ent->pos = line_pos;
+        strncpy(ent->prefix_sum, line_copy, OS_MAXSTR);
+        ent->prefix_sum[OS_MAXSTR] = '\0';
+    }
+
+    fseek(fp, 0, SEEK_SET);
+}
+
 /* Search the DB for any entry related to the file being received */
 static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 {
     int p = 0;
-    size_t sn_size;
     int agent_id;
 
     char *saved_sum;
-    char *saved_name;
 
     FILE *fp;
 
@@ -272,59 +365,20 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         return (0);
     }
 
-    /* Read the integrity file and search for a possible entry */
-    if (fgetpos(fp, &sdb.init_pos) == -1) {
-        merror("%s: Error handling integrity database (fgetpos).", ARGV0);
-        return (0);
-    }
+    DB_BuildIndex(agent_id, fp);
 
-    /* Loop over the file */
-    while (fgets(sdb.buf, OS_MAXSTR, fp) != NULL) {
-        /* Ignore blank lines and lines with a comment */
-        if (sdb.buf[0] == '\n' || sdb.buf[0] == '#') {
-            fgetpos(fp, &sdb.init_pos); /* Get next location */
-            continue;
+    {
+        sk_db_entry *db_entry = NULL;
+
+        if (sdb.agent_index[agent_id]) {
+            db_entry = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], f_name);
         }
 
-        /* Get name */
-        saved_name = strchr(sdb.buf, ' ');
-        if (saved_name == NULL) {
-            merror("%s: Invalid integrity message in the database.", ARGV0);
-            fgetpos(fp, &sdb.init_pos); /* Get next location */
-            continue;
-        }
-        *saved_name = '\0';
-        saved_name++;
-
-        /* New format - with a timestamp */
-        if (*saved_name == '!') {
-            saved_name = strchr(saved_name, ' ');
-            if (saved_name == NULL) {
-                merror("%s: Invalid integrity message in the database", ARGV0);
-                fgetpos(fp, &sdb.init_pos); /* Get next location */
-                continue;
-            }
-            saved_name++;
-        }
-
-        /* Remove newline from saved_name */
-        sn_size = strlen(saved_name);
-        sn_size -= 1;
-        if (saved_name[sn_size] == '\n') {
-            saved_name[sn_size] = '\0';
-        }
-
-        /* If name is different, go to next one */
-        if (strcmp(f_name, saved_name) != 0) {
-            /* Save current location */
-            fgetpos(fp, &sdb.init_pos);
-            continue;
-        }
-
-        saved_sum = sdb.buf;
-
-        /* First three bytes are for frequency check */
-        saved_sum += 3;
+        if (db_entry) {
+            strncpy(sdb.buf, db_entry->prefix_sum, OS_MAXSTR);
+            sdb.buf[OS_MAXSTR] = '\0';
+            sdb.init_pos = db_entry->pos;
+            saved_sum = sdb.buf + 3;
 
         /* Checksum match, we can just return and keep going */
         if (strcmp(saved_sum, c_sum) == 0) {
@@ -390,6 +444,14 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                 (long int)lf->time,
                 f_name);
         fflush(fp);
+
+        snprintf(db_entry->prefix_sum, OS_MAXSTR, "%c%c%c%s",
+                 '!',
+                 p >= 1 ? '!' : '+',
+                 p == 2 ? '!' : (p > 2) ? '?' : '+',
+                 c_sum);
+        fseek(fp, 0, SEEK_END);
+        fgetpos(fp, &db_entry->pos);
 
         /* File deleted */
         if (c_sum[0] == '-' && c_sum[1] == '1') {
@@ -630,10 +692,27 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 
         return (1);
 
-    } /* Continue */
+        }
+    }
 
     /* If we reach here, this file is not present in our database */
     fseek(fp, 0, SEEK_END);
+    if (sdb.agent_index[agent_id]) {
+        sk_db_entry *db_entry = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], f_name);
+
+        if (!db_entry) {
+            db_entry = (sk_db_entry *)calloc(1, sizeof(sk_db_entry));
+            if (db_entry && OSHash_Add(sdb.agent_index[agent_id], f_name, db_entry) != 2) {
+                free(db_entry);
+                db_entry = NULL;
+            }
+        }
+
+        if (db_entry && fgetpos(fp, &db_entry->pos) == 0) {
+            snprintf(db_entry->prefix_sum, OS_MAXSTR, "+++%s", c_sum);
+        }
+    }
+
     fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name);
     fflush(fp);
 
