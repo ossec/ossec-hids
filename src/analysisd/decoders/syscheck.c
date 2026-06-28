@@ -341,13 +341,409 @@ static void DB_BuildIndex(int agent_id, FILE *fp)
     fseek(fp, 0, SEEK_SET);
 }
 
+
+/* Return an existing index entry or allocate one when the index is available. */
+static sk_db_entry *DB_GetOrCreateIndexEntry(int agent_id, const char *f_name)
+{
+    sk_db_entry *ent;
+
+    if (!sdb.agent_index[agent_id]) {
+        return (NULL);
+    }
+
+    ent = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], f_name);
+    if (ent) {
+        return (ent);
+    }
+
+    ent = (sk_db_entry *)calloc(1, sizeof(sk_db_entry));
+    if (!ent) {
+        return (NULL);
+    }
+
+    if (OSHash_Add(sdb.agent_index[agent_id], f_name, ent) != 2) {
+        free(ent);
+        return (NULL);
+    }
+
+    return (ent);
+}
+
+/* Process a located syscheck db entry. sdb.buf holds the prefix sum and
+ * sdb.init_pos points at the line in fp. Returns 0 if checksum matched,
+ * 1 if a change alert was generated. */
+static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
+                                Eventinfo *lf, FILE *fp,
+                                sk_db_entry *db_entry)
+{
+    int p = 0;
+    char *saved_sum = sdb.buf + 3;
+
+    /* Checksum match, we can just return and keep going */
+    if (strcmp(saved_sum, c_sum) == 0) {
+        lf->data = NULL;
+        return (0);
+    }
+
+
+
+
+    /* If we reached here, the checksum of the file has changed */
+    if (saved_sum[-3] == '!') {
+        p++;
+        if (saved_sum[-2] == '!') {
+            p++;
+            if (saved_sum[-1] == '!') {
+                p++;
+            } else if (saved_sum[-1] == '?') {
+                p += 2;
+            }
+        }
+    }
+
+    /* Check the number of changes */
+    if (!Config.syscheck_auto_ignore) {
+        sdb.syscheck_dec->id = sdb.id1;
+    } else {
+        switch (p) {
+            case 0:
+                sdb.syscheck_dec->id = sdb.id1;
+                break;
+
+            case 1:
+                sdb.syscheck_dec->id = sdb.id2;
+                break;
+
+            case 2:
+                sdb.syscheck_dec->id = sdb.id3;
+                break;
+
+            default:
+                lf->data = NULL;
+                return (0);
+                break;
+        }
+    }
+
+    /* Add new checksum to the database */
+    /* Commenting the file entry and adding a new one later */
+    if (fsetpos(fp, &sdb.init_pos)) {
+        merror("%s: Error handling integrity database (fsetpos).", ARGV0);
+        return (0);
+    }
+    fputc('#', fp);
+
+    /* Add the new entry at the end of the file */
+    fseek(fp, 0, SEEK_END);
+    fprintf(fp, "%c%c%c%s !%ld %s\n",
+            '!',
+            p >= 1 ? '!' : '+',
+            p == 2 ? '!' : (p > 2) ? '?' : '+',
+            c_sum,
+            (long int)lf->time,
+            f_name);
+    fflush(fp);
+
+    if (db_entry) {
+        snprintf(db_entry->prefix_sum, OS_MAXSTR, "%c%c%c%s",
+                 '!',
+                 p >= 1 ? '!' : '+',
+                 p == 2 ? '!' : (p > 2) ? '?' : '+',
+                 c_sum);
+        fseek(fp, 0, SEEK_END);
+        fgetpos(fp, &db_entry->pos);
+    }
+
+    /* File deleted */
+    if (c_sum[0] == '-' && c_sum[1] == '1') {
+        sdb.syscheck_dec->id = sdb.idd;
+        snprintf(sdb.comment, OS_MAXSTR,
+                 "File '%.756s' was deleted. Unable to retrieve "
+                 "checksum.", f_name);
+    }
+
+    /* If file was re-added, do not compare changes */
+    else if (saved_sum[0] == '-' && saved_sum[1] == '1') {
+        sdb.syscheck_dec->id = sdb.idn;
+        snprintf(sdb.comment, OS_MAXSTR,
+                 "File '%.756s' was re-added.", f_name);
+    }
+
+    else {
+        int oldperm = 0, newperm = 0;
+
+        /* Provide more info about the file change */
+        const char *oldsize = NULL, *newsize = NULL;
+        char *olduid = NULL, *newuid = NULL;
+        char *c_oldperm = NULL, *c_newperm = NULL;
+        char *oldgid = NULL, *newgid = NULL;
+        char *oldmd5 = NULL, *newmd5 = NULL;
+        char *oldsha1 = NULL, *newsha1 = NULL;
+        char *oldsha256 = NULL, *newsha256 = NULL;
+
+        oldsize = saved_sum;
+        newsize = c_sum;
+
+        c_oldperm = strchr(saved_sum, ':');
+        c_newperm = strchr(c_sum, ':');
+
+        /* Get old/new permissions */
+        if (c_oldperm && c_newperm) {
+            *c_oldperm = '\0';
+            c_oldperm++;
+
+            *c_newperm = '\0';
+            c_newperm++;
+
+            /* Get old/new uid/gid */
+            olduid = strchr(c_oldperm, ':');
+            newuid = strchr(c_newperm, ':');
+
+            if (olduid && newuid) {
+                *olduid = '\0';
+                *newuid = '\0';
+                olduid++;
+                newuid++;
+
+                oldgid = strchr(olduid, ':');
+                newgid = strchr(newuid, ':');
+
+                if (oldgid && newgid) {
+                    *oldgid = '\0';
+                    *newgid = '\0';
+                    oldgid++;
+                    newgid++;
+
+                    /* Get MD5 */
+                    oldmd5 = strchr(oldgid, ':');
+                    newmd5 = strchr(newgid, ':');
+
+                    if (oldmd5 && newmd5) {
+                        *oldmd5 = '\0';
+                        *newmd5 = '\0';
+                        oldmd5++;
+                        newmd5++;
+
+                        /* Get SHA-1 */
+                        oldsha1 = strchr(oldmd5, ':');
+                        newsha1 = strchr(newmd5, ':');
+
+                        if (oldsha1 && newsha1) {
+                            *oldsha1 = '\0';
+                            *newsha1 = '\0';
+                            oldsha1++;
+                            newsha1++;
+
+                            /* Get SHA-256 */
+                            oldsha256 = strchr(oldsha1, ':');
+                            newsha256 = strchr(newsha1, ':');
+
+                            if (oldsha256 && newsha256) {
+                                *oldsha256 = '\0';
+                                *newsha256 = '\0';
+                                oldsha256++;
+                                newsha256++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /* Get integer values */
+        if (c_newperm && c_oldperm) {
+            newperm = atoi(c_newperm);
+            oldperm = atoi(c_oldperm);
+        }
+
+        /* Generate size message */
+        if (!oldsize || !newsize || strcmp(oldsize, newsize) == 0) {
+            sdb.size[0] = '\0';
+        } else {
+            snprintf(sdb.size, OS_FLSIZE,
+                     "Size changed from '%s' to '%s'\n",
+                     oldsize, newsize);
+
+            os_strdup(oldsize, lf->size_before);
+            os_strdup(newsize, lf->size_after);
+        }
+
+        /* Permission message */
+        if (oldperm == newperm) {
+            sdb.perm[0] = '\0';
+        } else if (oldperm > 0 && newperm > 0) {
+    char opstr[10];
+    char npstr[10];
+
+    strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr) - 1);
+    strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr) - 1);
+
+            snprintf(sdb.perm, OS_FLSIZE, "Permissions changed from "
+                     "'%9.9s' to '%9.9s'\n", opstr, npstr);
+
+            lf->perm_before = oldperm;
+            lf->perm_after = newperm;
+        }
+
+        /* Ownership message */
+        if (!newuid || !olduid || strcmp(newuid, olduid) == 0) {
+            sdb.owner[0] = '\0';
+        } else {
+            snprintf(sdb.owner, OS_FLSIZE, "Ownership was '%s', "
+                     "now it is '%s'\n",
+                     olduid, newuid);
+
+
+            os_strdup(olduid, lf->owner_before);
+            os_strdup(newuid, lf->owner_after);
+        }
+
+        /* Group ownership message */
+        if (!newgid || !oldgid || strcmp(newgid, oldgid) == 0) {
+            sdb.gowner[0] = '\0';
+        } else {
+            snprintf(sdb.gowner, OS_FLSIZE, "Group ownership was '%s', "
+                     "now it is '%s'\n",
+                     oldgid, newgid);
+            os_strdup(oldgid, lf->gowner_before);
+            os_strdup(newgid, lf->gowner_after);
+        }
+
+        /* MD5 message */
+        if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0) {
+            sdb.md5[0] = '\0';
+        } else {
+            snprintf(sdb.md5, OS_FLSIZE, "Old md5sum was: '%s'\n"
+                     "New md5sum is : '%s'\n",
+                     oldmd5, newmd5);
+            os_strdup(oldmd5, lf->md5_before);
+            os_strdup(newmd5, lf->md5_after);
+        }
+
+        /* SHA-1 message */
+        if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0) {
+            sdb.sha1[0] = '\0';
+        } else {
+            snprintf(sdb.sha1, OS_FLSIZE, "Old sha1sum was: '%s'\n"
+                     "New sha1sum is : '%s'\n",
+                     oldsha1, newsha1);
+            os_strdup(oldsha1, lf->sha1_before);
+            os_strdup(newsha1, lf->sha1_after);
+        }
+
+        /* SHA-256 message */
+        if (!newsha256 || !oldsha256 || strcmp(newsha256, oldsha256) == 0) {
+            sdb.sha256[0] = '\0';
+        } else {
+            snprintf(sdb.sha256, OS_FLSIZE, "Old sha256sum was: '%s'\n"
+                     "New sha256sum is : '%s'\n",
+                     oldsha256, newsha256);
+            os_strdup(oldsha256, lf->sha256_before);
+            os_strdup(newsha256, lf->sha256_after);
+        }
+
+        /* Provide information about the file */
+        snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changed for: "
+                 "'%.756s'\n"
+                 "%s"
+                 "%s"
+                 "%s"
+                 "%s"
+                 "%s"
+                 "%s"
+                 "%s"
+                 "%s%s",
+                 f_name,
+                 sdb.size,
+                 sdb.perm,
+                 sdb.owner,
+                 sdb.gowner,
+                 sdb.md5,
+                 sdb.sha1,
+                 sdb.sha256,
+                 lf->data == NULL ? "" : "What changed:\n",
+                 lf->data == NULL ? "" : lf->data
+                );
+    }
+
+    /* Preserve program_name and hostname before freeing full_log */
+    if (lf->program_name && !(lf->flags & EF_FREE_PNAME)) {
+        /* Only duplicate if we don't already own it */
+        char *tmp_pname = NULL;
+        os_strdup(lf->program_name, tmp_pname);
+        lf->program_name = tmp_pname;
+        lf->flags |= EF_FREE_PNAME;
+    }
+    if (lf->hostname && !(lf->flags & EF_FREE_HNAME)) {
+        /* Only duplicate if we don't already own it */
+        char *tmp_hname = NULL;
+        os_strdup(lf->hostname, tmp_hname);
+        lf->hostname = tmp_hname;
+        lf->flags |= EF_FREE_HNAME;
+    }
+
+    /* Create a new log message */
+    free(lf->full_log);
+    os_strdup(sdb.comment, lf->full_log);
+    lf->log = lf->full_log;
+    lf->data = NULL;
+
+    /* Set decoder */
+    lf->decoder_info = sdb.syscheck_dec;
+
+    return (1);
+}
+
+
+/* Fall back to a linear scan when the hash index is unavailable or incomplete. */
+static int DB_SearchLinear(const char *f_name, const char *c_sum, Eventinfo *lf,
+                           FILE *fp, int agent_id)
+{
+    size_t sn_size;
+    char *saved_name;
+
+    fseek(fp, 0, SEEK_SET);
+    while (fgetpos(fp, &sdb.init_pos) == 0 &&
+           fgets(sdb.buf, OS_MAXSTR, fp) != NULL) {
+        if (sdb.buf[0] == '\n' || sdb.buf[0] == '#') {
+            continue;
+        }
+
+        saved_name = strchr(sdb.buf, ' ');
+        if (saved_name == NULL) {
+            continue;
+        }
+        *saved_name = '\0';
+        saved_name++;
+
+        if (*saved_name == '!') {
+            saved_name = strchr(saved_name, ' ');
+            if (saved_name == NULL) {
+                continue;
+            }
+            saved_name++;
+        }
+
+        sn_size = strlen(saved_name);
+        if (sn_size > 0 && saved_name[sn_size - 1] == '\n') {
+            saved_name[sn_size - 1] = '\0';
+        }
+
+        if (strcmp(f_name, saved_name) != 0) {
+            continue;
+        }
+
+        return DB_ProcessFoundEntry(f_name, c_sum, lf, fp,
+                                    DB_GetOrCreateIndexEntry(agent_id, f_name));
+    }
+
+    return (-1);
+}
+
 /* Search the DB for any entry related to the file being received */
 static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 {
-    int p = 0;
     int agent_id;
-
-    char *saved_sum;
 
     FILE *fp;
 
@@ -369,6 +765,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 
     {
         sk_db_entry *db_entry = NULL;
+        int linear_rc;
 
         if (sdb.agent_index[agent_id]) {
             db_entry = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], f_name);
@@ -378,335 +775,19 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             strncpy(sdb.buf, db_entry->prefix_sum, OS_MAXSTR);
             sdb.buf[OS_MAXSTR] = '\0';
             sdb.init_pos = db_entry->pos;
-            saved_sum = sdb.buf + 3;
-
-        /* Checksum match, we can just return and keep going */
-        if (strcmp(saved_sum, c_sum) == 0) {
-            lf->data = NULL;
-            return (0);
+            return DB_ProcessFoundEntry(f_name, c_sum, lf, fp, db_entry);
         }
 
-
-
-
-        /* If we reached here, the checksum of the file has changed */
-        if (saved_sum[-3] == '!') {
-            p++;
-            if (saved_sum[-2] == '!') {
-                p++;
-                if (saved_sum[-1] == '!') {
-                    p++;
-                } else if (saved_sum[-1] == '?') {
-                    p += 2;
-                }
-            }
-        }
-
-        /* Check the number of changes */
-        if (!Config.syscheck_auto_ignore) {
-            sdb.syscheck_dec->id = sdb.id1;
-        } else {
-            switch (p) {
-                case 0:
-                    sdb.syscheck_dec->id = sdb.id1;
-                    break;
-
-                case 1:
-                    sdb.syscheck_dec->id = sdb.id2;
-                    break;
-
-                case 2:
-                    sdb.syscheck_dec->id = sdb.id3;
-                    break;
-
-                default:
-                    lf->data = NULL;
-                    return (0);
-                    break;
-            }
-        }
-
-        /* Add new checksum to the database */
-        /* Commenting the file entry and adding a new one later */
-        if (fsetpos(fp, &sdb.init_pos)) {
-            merror("%s: Error handling integrity database (fsetpos).", ARGV0);
-            return (0);
-        }
-        fputc('#', fp);
-
-        /* Add the new entry at the end of the file */
-        fseek(fp, 0, SEEK_END);
-        fprintf(fp, "%c%c%c%s !%ld %s\n",
-                '!',
-                p >= 1 ? '!' : '+',
-                p == 2 ? '!' : (p > 2) ? '?' : '+',
-                c_sum,
-                (long int)lf->time,
-                f_name);
-        fflush(fp);
-
-        snprintf(db_entry->prefix_sum, OS_MAXSTR, "%c%c%c%s",
-                 '!',
-                 p >= 1 ? '!' : '+',
-                 p == 2 ? '!' : (p > 2) ? '?' : '+',
-                 c_sum);
-        fseek(fp, 0, SEEK_END);
-        fgetpos(fp, &db_entry->pos);
-
-        /* File deleted */
-        if (c_sum[0] == '-' && c_sum[1] == '1') {
-            sdb.syscheck_dec->id = sdb.idd;
-            snprintf(sdb.comment, OS_MAXSTR,
-                     "File '%.756s' was deleted. Unable to retrieve "
-                     "checksum.", f_name);
-        }
-
-        /* If file was re-added, do not compare changes */
-        else if (saved_sum[0] == '-' && saved_sum[1] == '1') {
-            sdb.syscheck_dec->id = sdb.idn;
-            snprintf(sdb.comment, OS_MAXSTR,
-                     "File '%.756s' was re-added.", f_name);
-        }
-
-        else {
-            int oldperm = 0, newperm = 0;
-
-            /* Provide more info about the file change */
-            const char *oldsize = NULL, *newsize = NULL;
-            char *olduid = NULL, *newuid = NULL;
-            char *c_oldperm = NULL, *c_newperm = NULL;
-            char *oldgid = NULL, *newgid = NULL;
-            char *oldmd5 = NULL, *newmd5 = NULL;
-            char *oldsha1 = NULL, *newsha1 = NULL;
-            char *oldsha256 = NULL, *newsha256 = NULL;
-
-            oldsize = saved_sum;
-            newsize = c_sum;
-
-            c_oldperm = strchr(saved_sum, ':');
-            c_newperm = strchr(c_sum, ':');
-
-            /* Get old/new permissions */
-            if (c_oldperm && c_newperm) {
-                *c_oldperm = '\0';
-                c_oldperm++;
-
-                *c_newperm = '\0';
-                c_newperm++;
-
-                /* Get old/new uid/gid */
-                olduid = strchr(c_oldperm, ':');
-                newuid = strchr(c_newperm, ':');
-
-                if (olduid && newuid) {
-                    *olduid = '\0';
-                    *newuid = '\0';
-                    olduid++;
-                    newuid++;
-
-                    oldgid = strchr(olduid, ':');
-                    newgid = strchr(newuid, ':');
-
-                    if (oldgid && newgid) {
-                        *oldgid = '\0';
-                        *newgid = '\0';
-                        oldgid++;
-                        newgid++;
-
-                        /* Get MD5 */
-                        oldmd5 = strchr(oldgid, ':');
-                        newmd5 = strchr(newgid, ':');
-
-                        if (oldmd5 && newmd5) {
-                            *oldmd5 = '\0';
-                            *newmd5 = '\0';
-                            oldmd5++;
-                            newmd5++;
-
-                            /* Get SHA-1 */
-                            oldsha1 = strchr(oldmd5, ':');
-                            newsha1 = strchr(newmd5, ':');
-
-                            if (oldsha1 && newsha1) {
-                                *oldsha1 = '\0';
-                                *newsha1 = '\0';
-                                oldsha1++;
-                                newsha1++;
-
-                                /* Get SHA-256 */
-                                oldsha256 = strchr(oldsha1, ':');
-                                newsha256 = strchr(newsha1, ':');
-
-                                if (oldsha256 && newsha256) {
-                                    *oldsha256 = '\0';
-                                    *newsha256 = '\0';
-                                    oldsha256++;
-                                    newsha256++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            /* Get integer values */
-            if (c_newperm && c_oldperm) {
-                newperm = atoi(c_newperm);
-                oldperm = atoi(c_oldperm);
-            }
-
-            /* Generate size message */
-            if (!oldsize || !newsize || strcmp(oldsize, newsize) == 0) {
-                sdb.size[0] = '\0';
-            } else {
-                snprintf(sdb.size, OS_FLSIZE,
-                         "Size changed from '%s' to '%s'\n",
-                         oldsize, newsize);
-
-                os_strdup(oldsize, lf->size_before);
-                os_strdup(newsize, lf->size_after);
-            }
-
-            /* Permission message */
-            if (oldperm == newperm) {
-                sdb.perm[0] = '\0';
-            } else if (oldperm > 0 && newperm > 0) {
-        char opstr[10];
-        char npstr[10];
-
-        strncpy(opstr, agent_file_perm(c_oldperm), sizeof(opstr) - 1);
-        strncpy(npstr, agent_file_perm(c_newperm), sizeof(npstr) - 1);
-
-                snprintf(sdb.perm, OS_FLSIZE, "Permissions changed from "
-                         "'%9.9s' to '%9.9s'\n", opstr, npstr);
-
-                lf->perm_before = oldperm;
-                lf->perm_after = newperm;
-            }
-
-            /* Ownership message */
-            if (!newuid || !olduid || strcmp(newuid, olduid) == 0) {
-                sdb.owner[0] = '\0';
-            } else {
-                snprintf(sdb.owner, OS_FLSIZE, "Ownership was '%s', "
-                         "now it is '%s'\n",
-                         olduid, newuid);
-
-
-                os_strdup(olduid, lf->owner_before);
-                os_strdup(newuid, lf->owner_after);
-            }
-
-            /* Group ownership message */
-            if (!newgid || !oldgid || strcmp(newgid, oldgid) == 0) {
-                sdb.gowner[0] = '\0';
-            } else {
-                snprintf(sdb.gowner, OS_FLSIZE, "Group ownership was '%s', "
-                         "now it is '%s'\n",
-                         oldgid, newgid);
-                os_strdup(oldgid, lf->gowner_before);
-                os_strdup(newgid, lf->gowner_after);
-            }
-
-            /* MD5 message */
-            if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0) {
-                sdb.md5[0] = '\0';
-            } else {
-                snprintf(sdb.md5, OS_FLSIZE, "Old md5sum was: '%s'\n"
-                         "New md5sum is : '%s'\n",
-                         oldmd5, newmd5);
-                os_strdup(oldmd5, lf->md5_before);
-                os_strdup(newmd5, lf->md5_after);
-            }
-
-            /* SHA-1 message */
-            if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0) {
-                sdb.sha1[0] = '\0';
-            } else {
-                snprintf(sdb.sha1, OS_FLSIZE, "Old sha1sum was: '%s'\n"
-                         "New sha1sum is : '%s'\n",
-                         oldsha1, newsha1);
-                os_strdup(oldsha1, lf->sha1_before);
-                os_strdup(newsha1, lf->sha1_after);
-            }
-
-            /* SHA-256 message */
-            if (!newsha256 || !oldsha256 || strcmp(newsha256, oldsha256) == 0) {
-                sdb.sha256[0] = '\0';
-            } else {
-                snprintf(sdb.sha256, OS_FLSIZE, "Old sha256sum was: '%s'\n"
-                         "New sha256sum is : '%s'\n",
-                         oldsha256, newsha256);
-                os_strdup(oldsha256, lf->sha256_before);
-                os_strdup(newsha256, lf->sha256_after);
-            }
-
-            /* Provide information about the file */
-            snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changed for: "
-                     "'%.756s'\n"
-                     "%s"
-                     "%s"
-                     "%s"
-                     "%s"
-                     "%s"
-                     "%s"
-                     "%s"
-                     "%s%s",
-                     f_name,
-                     sdb.size,
-                     sdb.perm,
-                     sdb.owner,
-                     sdb.gowner,
-                     sdb.md5,
-                     sdb.sha1,
-                     sdb.sha256,
-                     lf->data == NULL ? "" : "What changed:\n",
-                     lf->data == NULL ? "" : lf->data
-                    );
-        }
-
-        /* Preserve program_name and hostname before freeing full_log */
-        if (lf->program_name && !(lf->flags & EF_FREE_PNAME)) {
-            /* Only duplicate if we don't already own it */
-            char *tmp_pname = NULL;
-            os_strdup(lf->program_name, tmp_pname);
-            lf->program_name = tmp_pname;
-            lf->flags |= EF_FREE_PNAME;
-        }
-        if (lf->hostname && !(lf->flags & EF_FREE_HNAME)) {
-            /* Only duplicate if we don't already own it */
-            char *tmp_hname = NULL;
-            os_strdup(lf->hostname, tmp_hname);
-            lf->hostname = tmp_hname;
-            lf->flags |= EF_FREE_HNAME;
-        }
-
-        /* Create a new log message */
-        free(lf->full_log);
-        os_strdup(sdb.comment, lf->full_log);
-        lf->log = lf->full_log;
-        lf->data = NULL;
-
-        /* Set decoder */
-        lf->decoder_info = sdb.syscheck_dec;
-
-        return (1);
-
+        linear_rc = DB_SearchLinear(f_name, c_sum, lf, fp, agent_id);
+        if (linear_rc >= 0) {
+            return (linear_rc);
         }
     }
 
     /* If we reach here, this file is not present in our database */
     fseek(fp, 0, SEEK_END);
     if (sdb.agent_index[agent_id]) {
-        sk_db_entry *db_entry = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], f_name);
-
-        if (!db_entry) {
-            db_entry = (sk_db_entry *)calloc(1, sizeof(sk_db_entry));
-            if (db_entry && OSHash_Add(sdb.agent_index[agent_id], f_name, db_entry) != 2) {
-                free(db_entry);
-                db_entry = NULL;
-            }
-        }
+        sk_db_entry *db_entry = DB_GetOrCreateIndexEntry(agent_id, f_name);
 
         if (db_entry && fgetpos(fp, &db_entry->pos) == 0) {
             snprintf(db_entry->prefix_sum, OS_MAXSTR, "+++%s", c_sum);
