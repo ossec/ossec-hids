@@ -8,7 +8,7 @@ rem Example of log to look: nc060215.log or ex060723.log
 echo.
 echo Looking for IIS log files to monitor.
 echo For more information visit:
-echo http://www.ossec.net/en/manual.html#iis
+echo https://www.ossec.net/docs/docs/manual/monitoring/file-log-monitoring.html#iis-logs-example
 echo.
 echo.
 
