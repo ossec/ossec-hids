@@ -14,7 +14,6 @@
 #include "manage_agents.h"
 #include "os_crypto/md5/md5_op.h"
 #include "external/cJSON/cJSON.h"
-#include <openssl/rand.h>
 #include <stdlib.h>
 
 /* Global variables */
@@ -366,7 +365,7 @@ int add_agent(int json_output)
             char rand_hex[129];
             
             /* Generate cryptographically secure random bytes */
-            if (!RAND_bytes(random_data, sizeof(random_data))) {
+            if (!randombytes_try(random_data, sizeof(random_data))) {
                 if (json_output) {
                     cJSON *json_root = cJSON_CreateObject();
                     cJSON_AddNumberToObject(json_root, "error", 75);

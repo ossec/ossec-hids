@@ -8,7 +8,6 @@
  */
 
 #include "manage_agents.h"
-#include <openssl/rand.h>
 #include "os_crypto/md5/md5_op.h"
 #include "external/cJSON/cJSON.h"
 #include <stdlib.h>
@@ -324,6 +323,7 @@ int k_extract(const char *cmdextract, int json_output)
 int k_bulkload(const char *cmdbulk)
 {
     int i = 1;
+    int status = 0;
     FILE *fp, *infp;
     char str1[STR_SIZE + 1];
     char str2[STR_SIZE + 1];
@@ -443,29 +443,31 @@ int k_bulkload(const char *cmdbulk)
         }
 #endif
 
-    /* Cryptographically secure random number generation */
-    unsigned char random_data[64];
-    char rand_hex[129];
-    
-    if (!RAND_bytes(random_data, sizeof(random_data))) {
-        merror("Failed to generate secure random data for agent key");
-        return 0;
-    }
+        /* Cryptographically secure random number generation */
+        unsigned char random_data[64];
+        char rand_hex[129];
 
-    /* Hex encode the random data */
-    for(i=0; i<64; i++) {
-        sprintf(&rand_hex[i*2], "%02x", random_data[i]);
-    }
+        if (!randombytes_try(random_data, sizeof(random_data))) {
+            merror("Failed to generate secure random data for agent key");
+            fclose(fp);
+            status = 1;
+            goto cleanup;
+        }
 
-    /* First key component: name + ID + random data */
-    snprintf(str1, STR_SIZE, "%s%s%s", name, id, rand_hex);
-    OS_MD5_Str(str1, md1);
+        /* Hex encode the random data */
+        for (i = 0; i < 64; i++) {
+            sprintf(&rand_hex[i * 2], "%02x", random_data[i]);
+        }
 
-    /* Second key component: IP + name + random data (offset) */
-    snprintf(str2, STR_SIZE, "%s%s%s", ip, name, rand_hex + 64);
-    OS_MD5_Str(str2, md2);
+        /* First key component: name + ID + random data */
+        snprintf(str1, STR_SIZE, "%s%s%s", name, id, rand_hex);
+        OS_MD5_Str(str1, md1);
 
-    fprintf(fp, "%s %s %s %s%s\n", id, name, ip, md1, md2);
+        /* Second key component: IP + name + random data (offset) */
+        snprintf(str2, STR_SIZE, "%s%s%s", ip, name, rand_hex + 64);
+        OS_MD5_Str(str2, md2);
+
+        fprintf(fp, "%s %s %s %s%s\n", id, name, ip, md1, md2);
         fclose(fp);
 
         printf(AGENT_ADD, id);
@@ -473,8 +475,11 @@ int k_bulkload(const char *cmdbulk)
 
 cleanup:
         free(c_ip.ip);
+        if (status != 0) {
+            break;
+        }
     };
 
     fclose(infp);
-    return (0);
+    return (status);
 }

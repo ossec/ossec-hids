@@ -13,7 +13,6 @@
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/blowfish/bf_op.h"
 #include "os_crypto/aes/aes_op.h"
-#include <openssl/rand.h>
 #include <sys/stat.h>
 
 /* Helper for File_Inode */
@@ -544,10 +543,15 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
             return 0; // OS_INVALID
     }
 
-    /* Random number, take only 5 chars ~= 2^16=65536*/
-    if (!RAND_bytes((unsigned char *)&rand1, sizeof(rand1))) {
-        merror("RAND_bytes failed");
-        return(0);
+    /* Random number, take only 5 chars ~= 2^16=65536.
+     * Entropy via randombytes_try: pre-chroot /dev/urandom FD on Unix,
+     * arc4random on OpenBSD, CryptoAPI (CRYPT_VERIFYCONTEXT) on Windows.
+     * Avoids OpenSSL RAND_bytes, which re-opens /dev/urandom by path after
+     * chroot and fails on AIX and similar platforms without getrandom().
+     */
+    if (!randombytes_try(&rand1, sizeof(rand1))) {
+        merror("randombytes failed");
+        return (0);
     }
 
     _tmpmsg[OS_MAXSTR + 1] = '\0';
@@ -642,6 +646,14 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
         keys->keyentries[id]->key,
         (long) cmp_size,
         OS_ENCRYPT,crypto_method);
+
+    /* Blowfish returns 1; AES returns ciphertext length. Zero means failure
+     * (e.g. AES IV entropy unavailable).
+     */
+    if (!crypto_length) {
+        merror("encryption failed");
+        return (0);
+    }
 
     if(cmp_size < crypto_length)
         cmp_size = crypto_length;

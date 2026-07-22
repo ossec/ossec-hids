@@ -18,11 +18,10 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include "aes_op.h"
+#include "randombytes.h"
 
 typedef unsigned char uchar;
 
-
-#include <openssl/rand.h>
 
 int OS_AES_Str(const char *input, char *output, const char *charkey,
               long size, short int action)
@@ -31,16 +30,23 @@ int OS_AES_Str(const char *input, char *output, const char *charkey,
 
     if(action == OS_ENCRYPT)
     {
-        /* Generate Random IV */
-        if (!RAND_bytes(iv, sizeof(iv))) {
-            return 0; // Error
+        /* Per-message random IV via OS entropy (FD kept across chroot). */
+        if (!randombytes_try(iv, sizeof(iv))) {
+            return 0;
         }
 
         /* Prepend IV to output */
         memcpy(output, iv, 16);
 
         /* Encrypt content after the IV */
-        return 16 + encrypt_AES((const uchar *)input, (int)size, (uchar *)charkey, iv, (uchar *)output + 16);
+        {
+            int aes_len = encrypt_AES((const uchar *)input, (int)size, (uchar *)charkey, iv,
+                                      (uchar *)output + 16);
+            if (aes_len == 0) {
+                return 0;
+            }
+            return 16 + aes_len;
+        }
     }
     else
     {
