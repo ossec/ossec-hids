@@ -150,6 +150,49 @@ static int test_block_push(void)
     return 0;
 }
 
+static int test_reject_null_push(void)
+{
+    os_queue *queue;
+    struct timespec ts;
+
+    queue = os_queue_init(4);
+    if (!queue) {
+        fprintf(stderr, "FAIL: os_queue_init null push\n");
+        return 1;
+    }
+
+    if (os_queue_push_ex(queue, NULL) == 0) {
+        fprintf(stderr, "FAIL: os_queue_push_ex accepted NULL\n");
+        os_queue_destroy(queue);
+        return 1;
+    }
+    if (os_queue_push_ex_block(queue, NULL) == 0) {
+        fprintf(stderr, "FAIL: os_queue_push_ex_block accepted NULL\n");
+        os_queue_destroy(queue);
+        return 1;
+    }
+    if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
+        fprintf(stderr, "FAIL: clock_gettime null push\n");
+        os_queue_destroy(queue);
+        return 1;
+    }
+    ts.tv_sec += 1;
+    if (os_queue_push_ex_timedwait(queue, NULL, &ts) == 0) {
+        fprintf(stderr, "FAIL: os_queue_push_ex_timedwait accepted NULL\n");
+        os_queue_destroy(queue);
+        return 1;
+    }
+    if (os_queue_elements(queue) != 0) {
+        fprintf(stderr, "FAIL: null push mutated queue\n");
+        os_queue_destroy(queue);
+        return 1;
+    }
+
+    os_queue_shutdown(queue);
+    os_queue_destroy(queue);
+    return 0;
+}
+
 #define STRESS_PRODUCERS 4
 #define STRESS_CONSUMERS 4
 #define STRESS_PER_PRODUCER 2000
@@ -283,11 +326,14 @@ int main(void)
     if (test_block_push() != 0) {
         return 1;
     }
+    if (test_reject_null_push() != 0) {
+        return 1;
+    }
     if (test_multithread_stress() != 0) {
         return 1;
     }
 
-    printf("PASS: os_queue tests (push/pop, timedwait, block, stress)\n");
+    printf("PASS: os_queue tests (push/pop, timedwait, block, null, stress)\n");
     return 0;
 }
 

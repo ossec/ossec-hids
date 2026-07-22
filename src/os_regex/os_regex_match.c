@@ -42,15 +42,30 @@ void regex_matching_free_match_data(regex_matching *match)
 
 pcre2_match_data *regex_matching_get_match_data(regex_matching *match, const pcre2_code *code)
 {
-    (void)code;
+    uint32_t capture_count;
+    uint32_t needed;
 
-    if (!match) {
+    if (!match || !code) {
         return NULL;
     }
 
-    /* Fixed ovector size so one thread-owned buffer works for any pattern. */
-    if (!match->match_data) {
-        match->match_data = pcre2_match_data_create(REGEX_MATCH_MAX_GROUPS + 1, NULL);
+    /*
+     * Size ovector from the pattern. Reuse the thread-owned buffer when it is
+     * already large enough; recreate when a larger pattern is used.
+     * REGEX_MATCH_MAX_GROUPS remains the limit for copying captures.
+     */
+    capture_count = 0;
+    if (pcre2_pattern_info(code, PCRE2_INFO_CAPTURECOUNT, &capture_count) != 0) {
+        return NULL;
+    }
+    needed = capture_count + 1;
+
+    if (!match->match_data || pcre2_get_ovector_count(match->match_data) < needed) {
+        if (match->match_data) {
+            pcre2_match_data_free(match->match_data);
+            match->match_data = NULL;
+        }
+        match->match_data = pcre2_match_data_create_from_pattern(code, NULL);
     }
 
     return match->match_data;

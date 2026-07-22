@@ -106,6 +106,9 @@ void analysisd_set_time_context(Eventinfo *lf)
 
     c_time = lf->time;
     p = localtime_r(&c_time, &tm_buf);
+    if (!p) {
+        return;
+    }
     __crt_hour = p->tm_hour;
     __crt_wday = p->tm_wday;
 }

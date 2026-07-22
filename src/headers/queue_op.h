@@ -31,10 +31,12 @@ os_queue *os_queue_init(size_t size);
 void os_queue_destroy(os_queue *queue);
 void os_queue_shutdown(os_queue *queue);
 
-/* Thread-safe API — always use these from outside queue_op.c. */
+/* Thread-safe API — always use these from outside queue_op.c.
+ * Push APIs require data != NULL (NULL is reserved for empty pop / free_data end).
+ */
 int os_queue_push_ex(os_queue *queue, void *data);
 int os_queue_push_ex_block(os_queue *queue, void *data);
-/* Timed wait for space; returns -1 on timeout, shutdown, or push failure. */
+/* Timed wait for space; returns -1 on timeout, shutdown, NULL data, or push failure. */
 int os_queue_push_ex_timedwait(os_queue *queue, void *data, const struct timespec *abstime);
 
 void *os_queue_pop_ex(os_queue *queue);

@@ -56,7 +56,7 @@ void DecodeEvent(Eventinfo *lf, regex_matching *decoder_match)
     node = OS_GetFirstOSDecoder(lf->program_name);
 
     if (!node) {
-        return;
+        goto out;
     }
 
 #ifdef TESTRULE
@@ -160,7 +160,7 @@ void DecodeEvent(Eventinfo *lf, regex_matching *decoder_match)
                     } while (child_node && child_node->osdecoder->get_next);
 
                     if (!child_node) {
-                        return;
+                        goto out;
                     }
 
                     child_node = child_node->next;
@@ -174,7 +174,7 @@ void DecodeEvent(Eventinfo *lf, regex_matching *decoder_match)
 
         /* Nothing matched */
         if (!nnode) {
-            return;
+            goto out;
         }
 
         /* If we have an external decoder, execute it */

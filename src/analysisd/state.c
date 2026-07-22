@@ -286,6 +286,14 @@ static unsigned int analysisd_sharded_queue_capacity(void)
     return capacity;
 }
 
+/* Unsigned wraparound preserves the modular delta across UINT_MAX. */
+static unsigned int analysisd_delta_since(unsigned int current, unsigned int *prev)
+{
+    unsigned int delta = current - *prev;
+    *prev = current;
+    return delta;
+}
+
 int analysisd_write_state(void)
 {
     FILE *fp;
@@ -314,35 +322,23 @@ int analysisd_write_state(void)
 
     dropped = analysisd_get_dropped_events();
     processed = analysisd_get_processed_events();
-    processed_delta = (processed >= s_prev_processed) ?
-                      (processed - s_prev_processed) : processed;
+    processed_delta = analysisd_delta_since(processed, &s_prev_processed);
     if (state_interval > 0) {
         s_epds = (double)processed_delta / (double)state_interval;
     } else {
         s_epds = 0.0;
     }
-    s_prev_processed = processed;
 
     {
         unsigned int shard_dropped = analysisd_get_shard_dropped();
         unsigned int alerts_dropped = analysisd_get_alerts_dropped();
         unsigned int archives_dropped = analysisd_get_archives_dropped();
 
-        s_dropped_delta = (dropped >= s_prev_dropped) ?
-                          (dropped - s_prev_dropped) : dropped;
-        s_shard_dropped_delta = (shard_dropped >= s_prev_shard_dropped) ?
-                                (shard_dropped - s_prev_shard_dropped) :
-                                shard_dropped;
-        s_alerts_dropped_delta = (alerts_dropped >= s_prev_alerts_dropped) ?
-                                 (alerts_dropped - s_prev_alerts_dropped) :
-                                 alerts_dropped;
-        s_archives_dropped_delta = (archives_dropped >= s_prev_archives_dropped) ?
-                                   (archives_dropped - s_prev_archives_dropped) :
-                                   archives_dropped;
-        s_prev_dropped = dropped;
-        s_prev_shard_dropped = shard_dropped;
-        s_prev_alerts_dropped = alerts_dropped;
-        s_prev_archives_dropped = archives_dropped;
+        s_dropped_delta = analysisd_delta_since(dropped, &s_prev_dropped);
+        s_shard_dropped_delta = analysisd_delta_since(shard_dropped, &s_prev_shard_dropped);
+        s_alerts_dropped_delta = analysisd_delta_since(alerts_dropped, &s_prev_alerts_dropped);
+        s_archives_dropped_delta = analysisd_delta_since(archives_dropped,
+                                                         &s_prev_archives_dropped);
     }
 
     alerts_depth = 0;

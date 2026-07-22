@@ -103,6 +103,10 @@ int os_queue_push_ex(os_queue *queue, void *data)
 {
     int result;
 
+    if (!queue || !data) {
+        return -1;
+    }
+
     os_mutex_lock(&queue->mutex);
 
     if (queue->shutdown) {
@@ -122,6 +126,10 @@ int os_queue_push_ex(os_queue *queue, void *data)
 int os_queue_push_ex_block(os_queue *queue, void *data)
 {
     int result;
+
+    if (!queue || !data) {
+        return -1;
+    }
 
     os_mutex_lock(&queue->mutex);
 
@@ -148,7 +156,7 @@ int os_queue_push_ex_timedwait(os_queue *queue, void *data, const struct timespe
 {
     int result;
 
-    if (!queue || !abstime) {
+    if (!queue || !abstime || !data) {
         return -1;
     }
 

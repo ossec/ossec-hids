@@ -116,6 +116,15 @@ void analysisd_inc_hourly_events(void)
 #endif
 }
 
+void analysisd_inc_hourly_alerts(void)
+{
+#ifndef WIN32
+    __sync_add_and_fetch(&hourly_alerts, 1);
+#else
+    hourly_alerts++;
+#endif
+}
+
 #ifndef WIN32
 void analysisd_inc_hourly_syscheck(void)
 {
@@ -1378,7 +1387,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
         return (NULL);
     }
 
-    hourly_alerts++;
+    analysisd_inc_hourly_alerts();
     os_mutex_lock(&rule->mutex);
     rule->firedtimes++;
     os_mutex_unlock(&rule->mutex);

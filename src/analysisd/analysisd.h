@@ -39,6 +39,7 @@ extern OSDecoderInfo *NULL_Decoder;
 #define MAX_DECODER_ORDER_SIZE  1024
 
 void analysisd_inc_hourly_events(void);
+void analysisd_inc_hourly_alerts(void);
 void analysisd_inc_hourly_syscheck(void);
 void analysisd_inc_hourly_firewall(void);
 
