@@ -88,11 +88,12 @@ static int read_sys_file(const char *file_name, int do_read)
                 if ((lstat(file_name, &statbuf2) == 0) &&
                         (total != statbuf2.st_size) &&
                         (statbuf.st_size == statbuf2.st_size)) {
-                    char op_msg[OS_SIZE_1024 + 1];
-                    snprintf(op_msg, OS_SIZE_1024, "Anomaly detected in file "
+                    char op_msg[OS_SIZE_2048 + 1];
+                    snprintf(op_msg, OS_SIZE_2048, "Anomaly detected in file "
                              "'%s'. File size doesn't match what we found. "
                              "Possible kernel level rootkit.",
                              file_name);
+                    rk_append_file_hash(file_name, op_msg, sizeof(op_msg));
                     notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
                     _sys_errors++;
                 }
@@ -275,13 +276,13 @@ static int read_sys_dir(const char *dir_name, int do_read)
             }
 
             if (strcmp(rk_sys_file[i], entry->d_name) == 0) {
-                char op_msg[OS_SIZE_1024 + 1];
+                char op_msg[OS_SIZE_2048 + 1];
 
                 _sys_errors++;
-                snprintf(op_msg, OS_SIZE_1024, "Rootkit '%s' detected "
-                         "by the presence of file '%s/%s'.",
-                         rk_sys_name[i], dir_name, rk_sys_file[i]);
-
+                snprintf(op_msg, OS_SIZE_2048, "Rootkit '%s' detected "
+                         "by the presence of file '%s'.",
+                         rk_sys_name[i], f_name);
+                rk_append_file_hash(f_name, op_msg, sizeof(op_msg));
                 notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
             }
         }

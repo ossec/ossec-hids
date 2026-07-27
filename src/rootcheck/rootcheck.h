@@ -79,6 +79,9 @@ int is_process(char *value, OSList *p_list);
 /*  Delete the process list */
 int del_plist(OSList *p_list);
 
+/* Append MD5/SHA1/SHA256 hashes of file_path to dest */
+void rk_append_file_hash(const char *file_path, char *dest, size_t dest_size);
+
 /* Used to report messages */
 int notify_rk(int rk_type, const char *msg);
 

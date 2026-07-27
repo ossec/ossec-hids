@@ -134,13 +134,19 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         if (lf->md5_before && lf->md5_after && strcmp(lf->md5_before, lf->md5_after) != 0  ) {
             cJSON_AddStringToObject(file_diff, "md5_before", lf->md5_before);
             cJSON_AddStringToObject(file_diff, "md5_after", lf->md5_after);
+        } else if (!lf->md5_before && lf->md5_after) {
+            cJSON_AddStringToObject(file_diff, "md5_after", lf->md5_after);
         }
         if(lf->sha1_before && lf->sha1_after && strcmp(lf->sha1_before, lf->sha1_after) != 0) {
             cJSON_AddStringToObject(file_diff, "sha1_before", lf->sha1_before);
             cJSON_AddStringToObject(file_diff, "sha1_after", lf->sha1_after);
+        } else if (!lf->sha1_before && lf->sha1_after) {
+            cJSON_AddStringToObject(file_diff, "sha1_after", lf->sha1_after);
         }
         if(lf->sha256_before && lf->sha256_after && strcmp(lf->sha256_before, lf->sha256_after) != 0) {
             cJSON_AddStringToObject(file_diff, "sha256_before", lf->sha256_before);
+            cJSON_AddStringToObject(file_diff, "sha256_after", lf->sha256_after);
+        } else if (!lf->sha256_before && lf->sha256_after) {
             cJSON_AddStringToObject(file_diff, "sha256_after", lf->sha256_after);
         }
         if(lf->owner_before && lf->owner_after && strcmp(lf->owner_before, lf->owner_after) != 0) {

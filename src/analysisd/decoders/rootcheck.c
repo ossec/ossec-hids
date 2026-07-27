@@ -112,6 +112,52 @@ static FILE *RK_File(const char *agent, int *agent_id)
     return (NULL);
 }
 
+/* Parse MD5/SHA1/SHA256 values appended by rk_append_file_hash into lf.
+ * Also extracts the detected file path into lf->filename.
+ * All rootcheck alert messages share the pattern: file 'PATH'
+ */
+static void rk_extract_hashes(Eventinfo *lf)
+{
+    const char *p;
+    char val[65];
+
+    /* Extract file path from message (pattern: file 'PATH') */
+    p = strstr(lf->log, " file '");
+    if (p) {
+        const char *start = p + 7;
+        const char *end = strchr(start, '\'');
+        if (end && end > start) {
+            size_t len = (size_t)(end - start);
+            lf->filename = (char *)malloc(len + 1);
+            if (lf->filename) {
+                memcpy(lf->filename, start, len);
+                lf->filename[len] = '\0';
+            }
+        }
+    }
+
+    p = strstr(lf->log, " MD5=");
+    if (p && sscanf(p + 5, "%64s", val) == 1 && strcmp(val, "n/a") != 0 && strlen(val) == 32) {
+        free(lf->md5_after);
+        lf->md5_after = NULL;
+        os_strdup(val, lf->md5_after);
+    }
+
+    p = strstr(lf->log, " SHA1=");
+    if (p && sscanf(p + 6, "%64s", val) == 1 && strcmp(val, "n/a") != 0 && strlen(val) == 40) {
+        free(lf->sha1_after);
+        lf->sha1_after = NULL;
+        os_strdup(val, lf->sha1_after);
+    }
+
+    p = strstr(lf->log, " SHA256=");
+    if (p && sscanf(p + 8, "%64s", val) == 1 && strcmp(val, "n/a") != 0 && strlen(val) == 64) {
+        free(lf->sha256_after);
+        lf->sha256_after = NULL;
+        os_strdup(val, lf->sha256_after);
+    }
+}
+
 /* Special decoder for rootcheck
  * Not using the default rendering tools for simplicity
  * and to be less resource intensive
@@ -121,7 +167,7 @@ int DecodeRootcheck(Eventinfo *lf)
     int agent_id;
 
     char *tmpstr;
-    char rk_buf[OS_SIZE_2048 + 1];
+    char rk_buf[OS_SIZE_4096 + 1];
 
     FILE *fp;
 
@@ -129,7 +175,7 @@ int DecodeRootcheck(Eventinfo *lf)
 
     /* Zero rk_buf */
     rk_buf[0] = '\0';
-    rk_buf[OS_SIZE_2048] = '\0';
+    rk_buf[OS_SIZE_4096] = '\0';
 
     fp = RK_File(lf->location, &agent_id);
 
@@ -148,7 +194,7 @@ int DecodeRootcheck(Eventinfo *lf)
 
 
     /* Reads the file and search for a possible entry */
-    while (fgets(rk_buf, OS_SIZE_2048 - 1, fp) != NULL) {
+    while (fgets(rk_buf, OS_SIZE_4096 - 1, fp) != NULL) {
         /* Ignore blank lines and lines with a comment */
         if (rk_buf[0] == '\n' || rk_buf[0] == '#') {
             if (fgetpos(fp, &fp_pos) == -1) {
@@ -171,6 +217,7 @@ int DecodeRootcheck(Eventinfo *lf)
             if (strcmp(lf->log, rk_buf) == 0) {
                 rootcheck_dec->fts = 0;
                 lf->decoder_info = rootcheck_dec;
+                rk_extract_hashes(lf);
                 return (1);
             }
         }
@@ -189,6 +236,7 @@ int DecodeRootcheck(Eventinfo *lf)
                 fprintf(fp, "!%ld", (long int)lf->time);
                 rootcheck_dec->fts = 0;
                 lf->decoder_info = rootcheck_dec;
+                rk_extract_hashes(lf);
                 return (1);
             }
         }
@@ -208,6 +256,7 @@ int DecodeRootcheck(Eventinfo *lf)
     rootcheck_dec->fts = 0;
     rootcheck_dec->fts |= FTS_DONE;
     lf->decoder_info = rootcheck_dec;
+    rk_extract_hashes(lf);
     return (1);
 }
 
