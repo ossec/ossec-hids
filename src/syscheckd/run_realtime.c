@@ -256,7 +256,6 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
 {
     int lcount;
     size_t offset = 0;
-    char *ptfile;
     char wdchar[32 + 1];
     char final_path[MAX_LINE + 1];
     win32rtfim *rtlocald;
@@ -297,17 +296,13 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
                                      finalfile, MAX_PATH - 1, NULL, NULL);
         finalfile[lcount] = TEXT('\0');
 
-        /* Change forward slashes to backslashes on finalfile */
-        ptfile = strchr(finalfile, '\\');
-        while (ptfile) {
-            *ptfile = '/';
-            ptfile++;
-
-            ptfile = strchr(ptfile, '\\');
-        }
-
+        /* Build a path that matches scheduled FIM (forward-slash form).
+         * Credit: Brad Lhotsky (@reyjrar) for identifying the realtime vs
+         * full-scan slash mismatch in PR #235.
+         */
         final_path[MAX_LINE] = '\0';
         snprintf(final_path, MAX_LINE, "%s/%s", rtlocald->dir, finalfile);
+        os_normalize_path(final_path);
 
         /* Check the change */
         realtime_checksumfile(final_path);

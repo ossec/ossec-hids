@@ -1738,6 +1738,23 @@ char *getuname()
 #endif /* WIN32 */
 
 
+#ifdef WIN32
+void os_normalize_path(char *path)
+{
+    char *p;
+
+    if (path == NULL) {
+        return;
+    }
+
+    for (p = path; *p != '\0'; p++) {
+        if (*p == '\\') {
+            *p = '/';
+        }
+    }
+}
+#endif /* WIN32 */
+
 int w_ref_parent_folder(const char * path) {
     const char * str;
     char * ptr;
