@@ -11,6 +11,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 - @atomicturtle
 - @reyjrar
 - @hyn172
+- @lazyp
 
 **Release Notes**
 
@@ -23,6 +24,7 @@ Work toward the next minor release after 4.2.0.
 **Bug Fixes**
 
 - @reyjrar / @atomicturtle - [PR 235](https://github.com/ossec/ossec-hids/pull/235) - Canonicalize Windows FIM paths so realtime and scheduled scans use the same slash form
+- @lazyp / @atomicturtle - [PR 564](https://github.com/ossec/ossec-hids/pull/564) - Skip leading XML declarations (and UTF-8 BOM) in OS_ReadXML
 
 
 **OSSEC changelog (4.2.0) <support@atomicorp.com>**

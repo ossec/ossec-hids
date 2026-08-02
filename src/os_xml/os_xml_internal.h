@@ -13,6 +13,7 @@
 #define _R_CONFS    '<'
 #define _R_CONFE    '>'
 #define _R_COM      '!'
+#define _R_HEADER   '?'
 
 #define LEOF        -2
 
