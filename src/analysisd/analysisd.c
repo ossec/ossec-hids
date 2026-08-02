@@ -801,7 +801,7 @@ void OS_ReadMSG_analysisd(int m_queue)
                 analysisd_finish_event(lf);
             }
         } else {
-            free(lf);
+            Free_Eventinfo(lf);
         }
     }
 #endif

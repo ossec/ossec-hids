@@ -42,7 +42,7 @@ int os_queue_push_ex_timedwait(os_queue *queue, void *data, const struct timespe
 void *os_queue_pop_ex(os_queue *queue);
 void *os_queue_pop_ex_timedwait(os_queue *queue, const struct timespec *abstime);
 
-unsigned int os_queue_elements(const os_queue *queue);
+unsigned int os_queue_elements(os_queue *queue);
 
 /* Pop and free every remaining element (caller supplies freefn). */
 void os_queue_free_data(os_queue *queue, void (*freefn)(void *));

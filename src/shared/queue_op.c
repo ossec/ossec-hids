@@ -68,9 +68,19 @@ static int os_queue_empty(const os_queue *queue)
     return queue->begin == queue->end;
 }
 
-unsigned int os_queue_elements(const os_queue *queue)
+unsigned int os_queue_elements(os_queue *queue)
 {
-    return queue->elements;
+    unsigned int elements;
+
+    if (!queue) {
+        return 0;
+    }
+
+    /* Public reader used by metrics/FTS flush — must not race push/pop. */
+    os_mutex_lock(&queue->mutex);
+    elements = queue->elements;
+    os_mutex_unlock(&queue->mutex);
+    return elements;
 }
 
 static int os_queue_push(os_queue *queue, void *data)

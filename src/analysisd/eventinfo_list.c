@@ -64,8 +64,16 @@ void OS_EventList_Destroy(EventList *list)
         return;
     }
 
+    /* Unlink under the list lock; Free_Eventinfo after unlock so we never
+     * nest rule->mutex under list->mutex (Search_LastEvents takes the
+     * opposite order). */
     os_mutex_lock(&list->mutex);
     node = list->first;
+    list->first = NULL;
+    list->last = NULL;
+    list->memoryused = 0;
+    os_mutex_unlock(&list->mutex);
+
     while (node) {
         next = node->next;
         if (node->event) {
@@ -74,10 +82,6 @@ void OS_EventList_Destroy(EventList *list)
         free(node);
         node = next;
     }
-    list->first = NULL;
-    list->last = NULL;
-    list->memoryused = 0;
-    os_mutex_unlock(&list->mutex);
     os_mutex_destroy(&list->mutex);
     free(list);
 }
@@ -99,6 +103,7 @@ EventNode *OS_GetLastEvent(void)
 void OS_AddEvent_List(Eventinfo *lf, EventList *list)
 {
     EventNode *tmp_node;
+    EventNode *victims = NULL;
 
     if (!list || !lf) {
         return;
@@ -139,8 +144,10 @@ void OS_AddEvent_List(Eventinfo *lf, EventList *list)
                     list->first = NULL;
                 }
 
-                Free_Eventinfo(oldlast->event);
-                free(oldlast);
+                /* Defer Free_Eventinfo: it may lock generated_rule->mutex. */
+                oldlast->prev = NULL;
+                oldlast->next = victims;
+                victims = oldlast;
 
                 list->memoryused--;
                 i++;
@@ -164,6 +171,15 @@ void OS_AddEvent_List(Eventinfo *lf, EventList *list)
     }
 
     os_mutex_unlock(&list->mutex);
+
+    while (victims) {
+        EventNode *node = victims;
+        victims = victims->next;
+        if (node->event) {
+            Free_Eventinfo(node->event);
+        }
+        free(node);
+    }
 }
 
 void OS_AddEvent(Eventinfo *lf)
