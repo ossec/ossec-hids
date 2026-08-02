@@ -7,7 +7,14 @@
  * Foundation.
  */
 
-/* Accumulator Functions which accumulate objects based on an ID */
+/* Accumulator Functions which accumulate objects based on an ID.
+ *
+ * Pipeline process workers bind a private OSHash via analysisd_set_acm_store()
+ * (TLS), so Accumulate runs lock-free per shard. Cross-shard accumulation for
+ * the same hostname+decoder+id key is intentional non-sharing (rare). The
+ * global store + accumulate_mutex remain for Accumulate_Init / serial paths
+ * (testrule, non-pipeline) when TLS is unset.
+ */
 
 #include <sys/time.h>
 
@@ -15,12 +22,16 @@
 #include "accumulator.h"
 #include "eventinfo.h"
 
-/* Local variables */
+/* Global fallback store (serial / testrule). */
 static OSHash *acm_store = NULL;
-
-/* Counters for Purging */
-static int    acm_lookups = 0;
+static pthread_mutex_t accumulate_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int acm_lookups = 0;
 static time_t acm_purge_ts = 0;
+
+/* Per-process-thread shard store (pipeline). */
+static __thread OSHash *tls_acm_store = NULL;
+static __thread int tls_acm_lookups = 0;
+static __thread time_t tls_acm_purge_ts = 0;
 
 /* Accumulator Constants */
 #define OS_ACM_EXPIRE_ELM      120
@@ -46,24 +57,73 @@ typedef struct _OS_ACM_Store {
 static int acm_str_replace(char **dst, const char *src);
 static OS_ACM_Store *InitACMStore(void);
 static void FreeACMStore(OS_ACM_Store *obj);
+static void Accumulate_CleanUp_Store(OSHash *store, int *lookups, time_t *purge_ts);
 
-/* Start the Accumulator module */
+void analysisd_set_acm_store(OSHash *store)
+{
+    tls_acm_store = store;
+    tls_acm_lookups = 0;
+    tls_acm_purge_ts = 0;
+}
+
+OSHash *analysisd_get_acm_store(void)
+{
+    return tls_acm_store ? tls_acm_store : acm_store;
+}
+
+OSHash *Accumulate_CreateStore(void)
+{
+    OSHash *store;
+
+    store = OSHash_Create();
+    if (!store) {
+        merror(LIST_ERROR, ARGV0);
+        return NULL;
+    }
+    if (!OSHash_setSize(store, 2048)) {
+        merror(LIST_ERROR, ARGV0);
+        OSHash_Free(store);
+        return NULL;
+    }
+    return store;
+}
+
+void Accumulate_DestroyStore(OSHash *store)
+{
+    unsigned int ti;
+    OSHashNode *curr;
+    OSHashNode *next;
+    OS_ACM_Store *stored_data;
+
+    if (!store) {
+        return;
+    }
+
+    /* Free payload before OSHash_Free (which frees keys/nodes only). */
+    for (ti = 0; ti <= store->rows; ti++) {
+        curr = store->table[ti];
+        while (curr != NULL) {
+            next = curr->next;
+            stored_data = (OS_ACM_Store *)curr->data;
+            FreeACMStore(stored_data);
+            curr->data = NULL;
+            curr = next;
+        }
+    }
+
+    OSHash_Free(store);
+}
+
+/* Start the Accumulator module (global fallback for serial paths). */
 int Accumulate_Init()
 {
     struct timeval tp;
 
-    /* Create store data */
-    acm_store = OSHash_Create();
+    acm_store = Accumulate_CreateStore();
     if (!acm_store) {
-        merror(LIST_ERROR, ARGV0);
-        return (0);
-    }
-    if (!OSHash_setSize(acm_store, 2048)) {
-        merror(LIST_ERROR, ARGV0);
         return (0);
     }
 
-    /* Default Expiry */
     gettimeofday(&tp, NULL);
     acm_purge_ts = tp.tv_sec;
 
@@ -76,61 +136,82 @@ Eventinfo *Accumulate(Eventinfo *lf)
 {
     int result;
     int do_update = 0;
+    int locked = 0;
 
     char _key[OS_ACM_MAXKEY];
     OS_ACM_Store *stored_data = 0;
+    OSHash *store;
+    int *lookups;
+    time_t *purge_ts;
 
-    time_t  current_ts;
+    time_t current_ts;
     struct timeval tp;
 
-    if ( lf == NULL ) {
+    if (lf == NULL) {
         debug1("accumulator: DEBUG: Received NULL EventInfo");
         return lf;
     }
-    if ( lf->id == NULL ) {
+    if (lf->id == NULL) {
         debug2("accumulator: DEBUG: No id available");
         return lf;
     }
-    if ( lf->decoder_info == NULL ) {
+    if (lf->decoder_info == NULL) {
         debug1("accumulator: DEBUG: No decoder_info available");
         return lf;
     }
-    if ( lf->decoder_info->name == NULL ) {
-        debug1("accumulator: DEBUG: No decoder name available");
+    if (lf->decoder_info->name == NULL) {
+        debug1("%s: DEBUG: No decoder name available", ARGV0);
         return lf;
     }
 
-    /* Purge the cache as needed */
-    Accumulate_CleanUp();
+    if (tls_acm_store) {
+        store = tls_acm_store;
+        lookups = &tls_acm_lookups;
+        purge_ts = &tls_acm_purge_ts;
+    } else {
+        store = acm_store;
+        lookups = &acm_lookups;
+        purge_ts = &acm_purge_ts;
+        os_mutex_lock(&accumulate_mutex);
+        locked = 1;
+    }
+
+    if (!store) {
+        if (locked) {
+            os_mutex_unlock(&accumulate_mutex);
+        }
+        return lf;
+    }
+
+    Accumulate_CleanUp_Store(store, lookups, purge_ts);
 
     gettimeofday(&tp, NULL);
     current_ts = tp.tv_sec;
 
-    /* Accumulator Key */
     result = snprintf(_key, OS_FLSIZE, "%s %s %s",
                       lf->hostname,
                       lf->decoder_info->name,
                       lf->id
                      );
-    if ( result < 0 || (unsigned) result >= sizeof(_key) ) {
-        debug1("accumulator: DEBUG: error setting accumulator key, id:%s,name:%s", lf->id, lf->decoder_info->name);
+    if (result < 0 || (unsigned)result >= sizeof(_key)) {
+        debug1("accumulator: DEBUG: error setting accumulator key, id:%s,name:%s",
+               lf->id, lf->decoder_info->name);
+        if (locked) {
+            os_mutex_unlock(&accumulate_mutex);
+        }
         return lf;
     }
 
-    /* Check if acm is already present */
-    if ((stored_data = (OS_ACM_Store *)OSHash_Get(acm_store, _key)) != NULL) {
+    if ((stored_data = (OS_ACM_Store *)OSHash_Get(store, _key)) != NULL) {
         debug2("accumulator: DEBUG: Lookup for '%s' found a stored value!", _key);
 
-        if ( stored_data->timestamp > 0 && stored_data->timestamp < current_ts - OS_ACM_EXPIRE_ELM ) {
-            if ( OSHash_Delete(acm_store, _key) != NULL ) {
+        if (stored_data->timestamp > 0 && stored_data->timestamp < current_ts - OS_ACM_EXPIRE_ELM) {
+            if (OSHash_Delete(store, _key) != NULL) {
                 debug1("accumulator: DEBUG: Deleted expired hash entry for '%s'", _key);
-                /* Clear this memory */
                 FreeACMStore(stored_data);
-                /* Reallocate what we need */
                 stored_data = InitACMStore();
             }
         } else {
-            /* Update the event */
             do_update = 1;
             if (acm_str_replace(&lf->dstuser, stored_data->dstuser) == 0) {
                 debug2("accumulator: DEBUG: (%s) updated lf->dstuser to %s", _key, lf->dstuser);
@@ -164,56 +245,79 @@ Eventinfo *Accumulate(Eventinfo *lf)
         stored_data = InitACMStore();
     }
 
-    /* Store the object in the cache */
     stored_data->timestamp = current_ts;
     if (acm_str_replace(&stored_data->dstuser, lf->dstuser) == 0) {
-        debug2("accumulator: DEBUG: (%s) updated stored_data->dstuser to %s", _key, stored_data->dstuser);
+        debug2("accumulator: DEBUG: (%s) updated stored_data->dstuser to %s",
+               _key, stored_data->dstuser);
     }
 
     if (acm_str_replace(&stored_data->srcuser, lf->srcuser) == 0) {
-        debug2("accumulator: DEBUG: (%s) updated stored_data->srcuser to %s", _key, stored_data->srcuser);
+        debug2("accumulator: DEBUG: (%s) updated stored_data->srcuser to %s",
+               _key, stored_data->srcuser);
     }
 
     if (acm_str_replace(&stored_data->dstip, lf->dstip) == 0) {
-        debug2("accumulator: DEBUG: (%s) updated stored_data->dstip to %s", _key, stored_data->dstip);
+        debug2("accumulator: DEBUG: (%s) updated stored_data->dstip to %s",
+               _key, stored_data->dstip);
     }
 
     if (acm_str_replace(&stored_data->srcip, lf->srcip) == 0) {
-        debug2("accumulator: DEBUG: (%s) updated stored_data->srcip to %s", _key, stored_data->srcip);
+        debug2("accumulator: DEBUG: (%s) updated stored_data->srcip to %s",
+               _key, stored_data->srcip);
     }
 
     if (acm_str_replace(&stored_data->dstport, lf->dstport) == 0) {
-        debug2("accumulator: DEBUG: (%s) updated stored_data->dstport to %s", _key, stored_data->dstport);
+        debug2("accumulator: DEBUG: (%s) updated stored_data->dstport to %s",
+               _key, stored_data->dstport);
     }
 
     if (acm_str_replace(&stored_data->srcport, lf->srcport) == 0) {
-        debug2("accumulator: DEBUG: (%s) updated stored_data->srcport to %s", _key, stored_data->srcport);
+        debug2("accumulator: DEBUG: (%s) updated stored_data->srcport to %s",
+               _key, stored_data->srcport);
     }
 
     if (acm_str_replace(&stored_data->data, lf->data) == 0) {
-        debug2("accumulator: DEBUG: (%s) updated stored_data->data to %s", _key, stored_data->data);
+        debug2("accumulator: DEBUG: (%s) updated stored_data->data to %s",
+               _key, stored_data->data);
     }
 
-    /* Update or Add to the hash */
-    if ( do_update == 1 ) {
-        /* Update the hash entry */
-        if ( (result = OSHash_Update(acm_store, _key, stored_data)) != 1) {
-            verbose("accumulator: ERROR: Update of stored data for %s failed (%d).", _key, result);
+    if (do_update == 1) {
+        if ((result = OSHash_Update(store, _key, stored_data)) != 1) {
+            verbose("accumulator: ERROR: Update of stored data for %s failed (%d).",
+                    _key, result);
         } else {
             debug1("accumulator: DEBUG: Updated stored data for %s", _key);
         }
     } else {
-        if ((result = OSHash_Add(acm_store, _key, stored_data)) != 2 ) {
-            verbose("accumulator: ERROR: Addition of stored data for %s failed (%d).", _key, result);
+        if ((result = OSHash_Add(store, _key, stored_data)) != 2) {
+            verbose("accumulator: ERROR: Addition of stored data for %s failed (%d).",
+                    _key, result);
         } else {
             debug1("accumulator: DEBUG: Added stored data for %s", _key);
         }
     }
 
+    if (locked) {
+        os_mutex_unlock(&accumulate_mutex);
+    }
     return lf;
 }
 
-void Accumulate_CleanUp()
+void Accumulate_CleanUp(void)
+{
+    if (tls_acm_store) {
+        Accumulate_CleanUp_Store(tls_acm_store, &tls_acm_lookups, &tls_acm_purge_ts);
+        return;
+    }
+
+    os_mutex_lock(&accumulate_mutex);
+    if (acm_store) {
+        Accumulate_CleanUp_Store(acm_store, &acm_lookups, &acm_purge_ts);
+    }
+    os_mutex_unlock(&accumulate_mutex);
+}
+
+static void Accumulate_CleanUp_Store(OSHash *store, int *lookups, time_t *purge_ts)
 {
     struct timeval tp;
     time_t current_ts = 0;
@@ -224,40 +328,33 @@ void Accumulate_CleanUp()
     char *key;
     unsigned int ti;
 
-    /* Keep track of how many times we're called */
-    acm_lookups++;
+    (*lookups)++;
 
     gettimeofday(&tp, NULL);
     current_ts = tp.tv_sec;
 
-    /* Do we really need to purge? */
-    if ( acm_lookups < OS_ACM_PURGE_COUNT && acm_purge_ts < current_ts + OS_ACM_PURGE_INTERVAL ) {
+    if (*lookups < OS_ACM_PURGE_COUNT && *purge_ts < current_ts + OS_ACM_PURGE_INTERVAL) {
         return;
     }
     debug1("accumulator: DEBUG: Accumulator_CleanUp() running .. ");
 
-    /* Yes, we do */
-    acm_lookups = 0;
-    acm_purge_ts = current_ts;
+    *lookups = 0;
+    *purge_ts = current_ts;
 
-    /* Loop through the hash */
-    for ( ti = 0; ti < acm_store->rows; ti++ ) {
-        curr = acm_store->table[ti];
-        while ( curr != NULL ) {
-            /* Get the Key and Data */
-            key  = (char *) curr->key;
-            stored_data = (OS_ACM_Store *) curr->data;
-            /* Increment to the next element */
+    for (ti = 0; ti < store->rows; ti++) {
+        curr = store->table[ti];
+        while (curr != NULL) {
+            key = (char *)curr->key;
+            stored_data = (OS_ACM_Store *)curr->data;
             curr = curr->next;
 
             debug2("accumulator: DEBUG: CleanUp() evaluating cached key: %s ", key);
-            /* Check for a valid element */
-            if ( stored_data != NULL ) {
-                /* Check for expiration */
-                debug2("accumulator: DEBUG: CleanUp() elm:%ld, curr:%ld", (long int)stored_data->timestamp, (long int)current_ts);
-                if ( stored_data->timestamp < current_ts - OS_ACM_EXPIRE_ELM ) {
+            if (stored_data != NULL) {
+                debug2("accumulator: DEBUG: CleanUp() elm:%ld, curr:%ld",
+                       (long int)stored_data->timestamp, (long int)current_ts);
+                if (stored_data->timestamp < current_ts - OS_ACM_EXPIRE_ELM) {
                     debug2("accumulator: DEBUG: CleanUp() Expiring '%s'", key);
-                    if ( OSHash_Delete(acm_store, key) != NULL ) {
+                    if (OSHash_Delete(store, key) != NULL) {
                         FreeACMStore(stored_data);
                         expired++;
                     } else {
@@ -271,7 +368,7 @@ void Accumulate_CleanUp()
 }
 
 /* Initialize a storage object */
-OS_ACM_Store *InitACMStore()
+static OS_ACM_Store *InitACMStore(void)
 {
     OS_ACM_Store *obj;
     os_calloc(1, sizeof(OS_ACM_Store), obj);
@@ -289,9 +386,9 @@ OS_ACM_Store *InitACMStore()
 }
 
 /* Free an accumulation store struct */
-void FreeACMStore(OS_ACM_Store *obj)
+static void FreeACMStore(OS_ACM_Store *obj)
 {
-    if ( obj != NULL ) {
+    if (obj != NULL) {
         debug2("accumulator: DEBUG: Freeing an accumulator struct.");
         free(obj->dstuser);
         free(obj->srcuser);
@@ -304,28 +401,24 @@ void FreeACMStore(OS_ACM_Store *obj)
     }
 }
 
-int acm_str_replace(char **dst, const char *src)
+static int acm_str_replace(char **dst, const char *src)
 {
     int result = 0;
 
-    /* Don't overwrite with a null str */
-    if ( src == NULL ) {
+    if (src == NULL) {
         return -1;
     }
 
-    /* Don't overwrite something we already know */
     if (*dst != NULL && **dst != '\0') {
         return -1;
     }
 
-    /* Make sure we have data to write */
     size_t slen = strlen(src);
-    if ( slen <= 0  || slen > OS_ACM_MAXELM - 1 ) {
+    if (slen <= 0 || slen > OS_ACM_MAXELM - 1) {
         return -1;
     }
 
-    /* Free dst, and malloc the memory we need! */
-    if ( *dst != NULL ) {
+    if (*dst != NULL) {
         free(*dst);
     }
     os_malloc(slen + 1, *dst);
@@ -336,4 +429,3 @@ int acm_str_replace(char **dst, const char *src)
     }
     return result;
 }
-

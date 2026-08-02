@@ -36,11 +36,6 @@ typedef struct __sdb {
     char sha1[OS_FLSIZE + 1];
     char sha256[OS_FLSIZE + 1];
 
-    char agent_cp[MAX_AGENTS + 1][1];
-    char *agent_ips[MAX_AGENTS + 1];
-    FILE *agent_fps[MAX_AGENTS + 1];
-    OSHash *agent_index[MAX_AGENTS + 1];
-
     int db_err;
 
     /* Ids for decoder */
@@ -56,10 +51,24 @@ typedef struct __sdb {
     /* File search variables */
     fpos_t init_pos;
 
-} _sdb; /* syscheck db information */
+} _sdb; /* per-thread working buffers / decoder ids */
 
-/* Local variables */
-static _sdb sdb;
+/* Per-thread comment/decode buffers (safe under parallel decode workers). */
+static __thread _sdb sdb;
+
+/*
+ * Shared agent integrity DB table — process-global so concurrent syscheck
+ * workers serialize FILE* / hash-index mutations for the same agent.
+ */
+static char sk_agent_cp[MAX_AGENTS + 1][1];
+static char *sk_agent_ips[MAX_AGENTS + 1];
+static FILE *sk_agent_fps[MAX_AGENTS + 1];
+static OSHash *sk_agent_index[MAX_AGENTS + 1];
+#ifndef WIN32
+static pthread_mutex_t sk_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t sk_agent_mutex[MAX_AGENTS + 1];
+static int sk_shared_ready = 0;
+#endif
 
 /* Extract a token from a string */
 char *extract_token(const char *s, char *delim, int position) {
@@ -100,14 +109,7 @@ void SyscheckInit()
 
     sdb.db_err = 0;
 
-    for (; i <= MAX_AGENTS; i++) {
-        sdb.agent_ips[i] = NULL;
-        sdb.agent_fps[i] = NULL;
-        sdb.agent_index[i] = NULL;
-        sdb.agent_cp[i][0] = '0';
-    }
-
-    /* Clear db memory */
+    /* Clear per-thread working buffers */
     memset(sdb.buf, '\0', OS_MAXSTR + 1);
     memset(sdb.comment, '\0', OS_MAXSTR + 1);
 
@@ -119,7 +121,7 @@ void SyscheckInit()
     memset(sdb.sha1, '\0', OS_FLSIZE + 1);
     memset(sdb.sha256, '\0', OS_FLSIZE + 1);
 
-    /* Create decoder */
+    /* Create decoder (TLS — each worker owns its own) */
     os_calloc(1, sizeof(OSDecoderInfo), sdb.syscheck_dec);
     sdb.syscheck_dec->id = getDecoderfromlist(SYSCHECK_MOD);
     sdb.syscheck_dec->name = SYSCHECK_MOD;
@@ -132,12 +134,35 @@ void SyscheckInit()
     sdb.idn = getDecoderfromlist(SYSCHECK_NEW);
     sdb.idd = getDecoderfromlist(SYSCHECK_DEL);
 
+#ifndef WIN32
+    /* Shared agent table + locks: once per process (workers each call Init). */
+    os_mutex_lock(&sk_table_mutex);
+    if (!sk_shared_ready) {
+        for (i = 0; i <= MAX_AGENTS; i++) {
+            sk_agent_ips[i] = NULL;
+            sk_agent_fps[i] = NULL;
+            sk_agent_index[i] = NULL;
+            sk_agent_cp[i][0] = '0';
+            os_mutex_init(&sk_agent_mutex[i], NULL);
+        }
+        sk_shared_ready = 1;
+    }
+    os_mutex_unlock(&sk_table_mutex);
+#else
+    for (i = 0; i <= MAX_AGENTS; i++) {
+        sk_agent_ips[i] = NULL;
+        sk_agent_fps[i] = NULL;
+        sk_agent_index[i] = NULL;
+        sk_agent_cp[i][0] = '0';
+    }
+#endif
+
     debug1("%s: SyscheckInit completed.", ARGV0);
     return;
 }
 
 /* Check if the db is completed for that specific agent */
-#define DB_IsCompleted(x) (sdb.agent_cp[x][0] == '1')?1:0
+#define DB_IsCompleted(x) (sk_agent_cp[x][0] == '1')?1:0
 
 static void __setcompleted(const char *agent)
 {
@@ -173,38 +198,67 @@ static void DB_SetCompleted(const Eventinfo *lf)
 {
     int i = 0;
 
+#ifndef WIN32
+    os_mutex_lock(&sk_table_mutex);
+#endif
+
     /* Find file pointer */
-    while (sdb.agent_ips[i] != NULL &&  i < MAX_AGENTS) {
-        if (strcmp(sdb.agent_ips[i], lf->location) == 0) {
+    while (sk_agent_ips[i] != NULL &&  i < MAX_AGENTS) {
+        if (strcmp(sk_agent_ips[i], lf->location) == 0) {
             /* Return if already set as completed */
             if (DB_IsCompleted(i)) {
+#ifndef WIN32
+                os_mutex_unlock(&sk_table_mutex);
+#endif
                 return;
             }
 
+#ifndef WIN32
+            os_mutex_lock(&sk_agent_mutex[i]);
+            os_mutex_unlock(&sk_table_mutex);
+#endif
             __setcompleted(lf->location);
 
             /* Set as completed in memory */
-            sdb.agent_cp[i][0] = '1';
+            sk_agent_cp[i][0] = '1';
+#ifndef WIN32
+            os_mutex_unlock(&sk_agent_mutex[i]);
+#endif
             return;
         }
 
         i++;
     }
+
+#ifndef WIN32
+    os_mutex_unlock(&sk_table_mutex);
+#endif
 }
 
 
-/* Return the file pointer to be used to verify the integrity */
+/* Return the file pointer to be used to verify the integrity.
+ * On success (non-WIN32), the matching sk_agent_mutex[agent_id] is held;
+ * caller must unlock it when finished with FILE I/O.
+ */
 static FILE *DB_File(const char *agent, int *agent_id)
 {
     int i = 0;
 
+#ifndef WIN32
+    os_mutex_lock(&sk_table_mutex);
+#endif
+
     /* Find file pointer */
-    while (sdb.agent_ips[i] != NULL  &&  i < MAX_AGENTS) {
-        if (strcmp(sdb.agent_ips[i], agent) == 0) {
+    while (sk_agent_ips[i] != NULL  &&  i < MAX_AGENTS) {
+        if (strcmp(sk_agent_ips[i], agent) == 0) {
+#ifndef WIN32
+            os_mutex_lock(&sk_agent_mutex[i]);
+            os_mutex_unlock(&sk_table_mutex);
+#endif
             /* Point to the beginning of the file */
-            fseek(sdb.agent_fps[i], 0, SEEK_SET);
+            fseek(sk_agent_fps[i], 0, SEEK_SET);
             *agent_id = i;
-            return (sdb.agent_fps[i]);
+            return (sk_agent_fps[i]);
         }
 
         i++;
@@ -212,45 +266,56 @@ static FILE *DB_File(const char *agent, int *agent_id)
 
     /* If here, our agent wasn't found */
     if (i == MAX_AGENTS) {
+#ifndef WIN32
+        os_mutex_unlock(&sk_table_mutex);
+#endif
         merror("%s: Unable to open integrity file. Increase MAX_AGENTS.", ARGV0);
         return (NULL);
     }
 
-    os_strdup(agent, sdb.agent_ips[i]);
+    os_strdup(agent, sk_agent_ips[i]);
 
     /* Get agent file */
     snprintf(sdb.buf, OS_FLSIZE , "%s/%s", SYSCHECK_DIR, agent);
 
     /* r+ to read and write. Do not truncate */
-    sdb.agent_fps[i] = fopen(sdb.buf, "r+");
-    if (!sdb.agent_fps[i]) {
+    sk_agent_fps[i] = fopen(sdb.buf, "r+");
+    if (!sk_agent_fps[i]) {
         /* Try opening with a w flag, file probably does not exist */
-        sdb.agent_fps[i] = fopen(sdb.buf, "w");
-        if (sdb.agent_fps[i]) {
-            fclose(sdb.agent_fps[i]);
-            sdb.agent_fps[i] = fopen(sdb.buf, "r+");
+        sk_agent_fps[i] = fopen(sdb.buf, "w");
+        if (sk_agent_fps[i]) {
+            fclose(sk_agent_fps[i]);
+            sk_agent_fps[i] = fopen(sdb.buf, "r+");
         }
     }
 
     /* Check again */
-    if (!sdb.agent_fps[i]) {
+    if (!sk_agent_fps[i]) {
         merror("%s: Unable to open '%s'", ARGV0, sdb.buf);
 
-        free(sdb.agent_ips[i]);
-        sdb.agent_ips[i] = NULL;
+        free(sk_agent_ips[i]);
+        sk_agent_ips[i] = NULL;
+#ifndef WIN32
+        os_mutex_unlock(&sk_table_mutex);
+#endif
         return (NULL);
     }
 
     /* Return the opened pointer (the beginning of it) */
-    fseek(sdb.agent_fps[i], 0, SEEK_SET);
+    fseek(sk_agent_fps[i], 0, SEEK_SET);
     *agent_id = i;
 
     /* Check if the agent was completed */
     if (__iscompleted(agent)) {
-        sdb.agent_cp[i][0] = '1';
+        sk_agent_cp[i][0] = '1';
     }
 
-    return (sdb.agent_fps[i]);
+#ifndef WIN32
+    os_mutex_lock(&sk_agent_mutex[i]);
+    os_mutex_unlock(&sk_table_mutex);
+#endif
+
+    return (sk_agent_fps[i]);
 }
 
 /* Parse a syscheck db line and return the filename within line_buf. */
@@ -292,17 +357,17 @@ static void DB_BuildIndex(int agent_id, FILE *fp)
     fpos_t line_pos;
     char line_copy[OS_MAXSTR + 1];
 
-    if (sdb.agent_index[agent_id] != NULL) {
+    if (sk_agent_index[agent_id] != NULL) {
         return;
     }
 
-    sdb.agent_index[agent_id] = OSHash_Create();
-    if (!sdb.agent_index[agent_id]) {
+    sk_agent_index[agent_id] = OSHash_Create();
+    if (!sk_agent_index[agent_id]) {
         merror("%s: Unable to create syscheck index for agent.", ARGV0);
         return;
     }
 
-    if (!OSHash_setSize(sdb.agent_index[agent_id], 4096)) {
+    if (!OSHash_setSize(sk_agent_index[agent_id], 4096)) {
         merror("%s: Unable to size syscheck index for agent.", ARGV0);
     }
 
@@ -321,13 +386,13 @@ static void DB_BuildIndex(int agent_id, FILE *fp)
             continue;
         }
 
-        ent = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], fname);
+        ent = (sk_db_entry *)OSHash_Get(sk_agent_index[agent_id], fname);
         if (!ent) {
             ent = (sk_db_entry *)calloc(1, sizeof(sk_db_entry));
             if (!ent) {
                 continue;
             }
-            if (OSHash_Add(sdb.agent_index[agent_id], fname, ent) != 2) {
+            if (OSHash_Add(sk_agent_index[agent_id], fname, ent) != 2) {
                 free(ent);
                 continue;
             }
@@ -347,11 +412,11 @@ static sk_db_entry *DB_GetOrCreateIndexEntry(int agent_id, const char *f_name)
 {
     sk_db_entry *ent;
 
-    if (!sdb.agent_index[agent_id]) {
+    if (!sk_agent_index[agent_id]) {
         return (NULL);
     }
 
-    ent = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], f_name);
+    ent = (sk_db_entry *)OSHash_Get(sk_agent_index[agent_id], f_name);
     if (ent) {
         return (ent);
     }
@@ -361,7 +426,7 @@ static sk_db_entry *DB_GetOrCreateIndexEntry(int agent_id, const char *f_name)
         return (NULL);
     }
 
-    if (OSHash_Add(sdb.agent_index[agent_id], f_name, ent) != 2) {
+    if (OSHash_Add(sk_agent_index[agent_id], f_name, ent) != 2) {
         free(ent);
         return (NULL);
     }
@@ -744,15 +809,13 @@ static int DB_SearchLinear(const char *f_name, const char *c_sum, Eventinfo *lf,
 static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 {
     int agent_id;
-
+    int result = 0;
     FILE *fp;
 
     /* Expose filename variable for active response */
     os_strdup(f_name, lf->filename);
 
-
-
-    /* Get db pointer */
+    /* Get db pointer (holds sk_agent_mutex[agent_id] on success) */
     fp = DB_File(lf->location, &agent_id);
     if (!fp) {
         merror("%s: Error handling integrity database.", ARGV0);
@@ -767,26 +830,28 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         sk_db_entry *db_entry = NULL;
         int linear_rc;
 
-        if (sdb.agent_index[agent_id]) {
-            db_entry = (sk_db_entry *)OSHash_Get(sdb.agent_index[agent_id], f_name);
+        if (sk_agent_index[agent_id]) {
+            db_entry = (sk_db_entry *)OSHash_Get(sk_agent_index[agent_id], f_name);
         }
 
         if (db_entry) {
             strncpy(sdb.buf, db_entry->prefix_sum, OS_MAXSTR);
             sdb.buf[OS_MAXSTR] = '\0';
             sdb.init_pos = db_entry->pos;
-            return DB_ProcessFoundEntry(f_name, c_sum, lf, fp, db_entry);
+            result = DB_ProcessFoundEntry(f_name, c_sum, lf, fp, db_entry);
+            goto out;
         }
 
         linear_rc = DB_SearchLinear(f_name, c_sum, lf, fp, agent_id);
         if (linear_rc >= 0) {
-            return (linear_rc);
+            result = linear_rc;
+            goto out;
         }
     }
 
     /* If we reach here, this file is not present in our database */
     fseek(fp, 0, SEEK_END);
-    if (sdb.agent_index[agent_id]) {
+    if (sk_agent_index[agent_id]) {
         sk_db_entry *db_entry = DB_GetOrCreateIndexEntry(agent_id, f_name);
 
         if (db_entry && fgetpos(fp, &db_entry->pos) == 0) {
@@ -899,11 +964,19 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         lf->decoder_info = sdb.syscheck_dec;
         lf->data = NULL;
 
-        return (1);
+        free(newfilec_sum);
+        result = 1;
+        goto out;
     }
 
     lf->data = NULL;
-    return (0);
+    result = 0;
+
+out:
+#ifndef WIN32
+    os_mutex_unlock(&sk_agent_mutex[agent_id]);
+#endif
+    return (result);
 }
 
 /* Special decoder for syscheck

@@ -16,7 +16,8 @@ int LastMsg_Stats(const char *log);
 extern char __stats_comment[192];
 
 void Update_Hour(void);
-int Check_Hour(void);
+/* On alert (return 1), copies the message into comment_out under the stats lock. */
+int Check_Hour(char *comment_out, size_t comment_sz);
 int Start_Hour(void);
 
 #endif /* _STAT__H */

@@ -11,11 +11,17 @@
 #define __ACCUMULATOR_H
 
 #include "eventinfo.h"
+#include "hash_op.h"
 
 /* Accumulator Functions */
 int Accumulate_Init(void);
 Eventinfo *Accumulate(Eventinfo *lf);
 void Accumulate_CleanUp(void);
 
-#endif /* __ACCUMULATOR_H */
+/* Per-shard / TLS accumulate store (pipeline process workers). */
+OSHash *Accumulate_CreateStore(void);
+void Accumulate_DestroyStore(OSHash *store);
+void analysisd_set_acm_store(OSHash *store);
+OSHash *analysisd_get_acm_store(void);
 
+#endif /* __ACCUMULATOR_H */

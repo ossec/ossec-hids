@@ -38,15 +38,29 @@ static int _CHour[25];
 
 static int _cignorehour = 0;
 static int _fired = 0;
+#ifndef WIN32
+static pthread_mutex_t stats_hour_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 static int _daily_errors = 0;
 static int maxdiff = 0;
 static int mindiff = 0;
 static int percent_diff = 20;
 
-/* Last msgs, to avoid floods */
-static char *_lastmsg;
-static char *_prevlast;
-static char *_pprevlast;
+/* Last msgs flood window. TLS so each process/match shard owns private state
+ * (LastMsg runs only on the analyze path; one process thread owns each shard). */
+static __thread char *_lastmsg;
+static __thread char *_prevlast;
+static __thread char *_pprevlast;
+
+static void lastmsg_ensure_init(void)
+{
+    if (_lastmsg) {
+        return;
+    }
+    os_strdup(" ", _lastmsg);
+    os_strdup(" ", _prevlast);
+    os_strdup(" ", _pprevlast);
+}
 
 
 static void print_totals(void)
@@ -222,70 +236,94 @@ void Update_Hour()
 }
 
 /* Check Hourly stats */
-int Check_Hour()
+int Check_Hour(char *comment_out, size_t comment_sz)
 {
-    _CHour[__crt_hour]++;
-    _CWHour[__crt_wday][__crt_hour]++;
+    int result = 0;
+    int hour;
+    int wday;
+
+    hour = __crt_hour;
+    wday = __crt_wday;
+
+    if (hour < 0 || hour > 23 || wday < 0 || wday > 6) {
+        return 0;
+    }
+
+#ifndef WIN32
+    os_mutex_lock(&stats_hour_mutex);
+#endif
+    _CHour[hour]++;
+    _CWHour[wday][hour]++;
 
     if (_RHour[24] <= 2) {
-        return (0);
+        goto out;
     }
 
     /* Checking if any message was already fired for this hour */
-    if ((_daily_errors >= 3) || ((_fired == 1) && (_cignorehour == __crt_hour))) {
-        return (0);
+    if ((_daily_errors >= 3) || ((_fired == 1) && (_cignorehour == hour))) {
+        goto out;
     }
 
-    else if (_cignorehour != __crt_hour) {
-        _cignorehour = __crt_hour;
+    else if (_cignorehour != hour) {
+        _cignorehour = hour;
         _fired = 0;
     }
 
     /* Check if passed the threshold */
-    if (_RHour[__crt_hour] != 0) {
-        if (_CHour[__crt_hour] > (_RHour[__crt_hour])) {
-            if (_CHour[__crt_hour] > (gethour(_RHour[__crt_hour]))) {
+    if (_RHour[hour] != 0) {
+        if (_CHour[hour] > (_RHour[hour])) {
+            if (_CHour[hour] > (gethour(_RHour[hour]))) {
                 /* snprintf will null terminate */
                 snprintf(__stats_comment, 191,
                          "The average number of logs"
                          " between %d:00 and %d:00 is %d. We "
-                         "reached %d.", __crt_hour, __crt_hour + 1,
-                         _RHour[__crt_hour], _CHour[__crt_hour]);
+                         "reached %d.", hour, hour + 1,
+                         _RHour[hour], _CHour[hour]);
 
 
                 _fired = 1;
                 _daily_errors++;
-                return (1);
+                result = 1;
+                goto out;
             }
         }
     }
 
     /* We need to have at least 3 days of stats */
-    if (_RWHour[__crt_wday][24] <= 2) {
-        return (0);
+    if (_RWHour[wday][24] <= 2) {
+        goto out;
     }
 
     /* Check for the hour during a specific day of the week */
-    if (_RWHour[__crt_wday][__crt_hour] != 0) {
-        if (_CWHour[__crt_wday][__crt_hour] > _RWHour[__crt_wday][__crt_hour]) {
-            if (_CWHour[__crt_wday][__crt_hour] >
-                    gethour(_RWHour[__crt_wday][__crt_hour])) {
+    if (_RWHour[wday][hour] != 0) {
+        if (_CWHour[wday][hour] > _RWHour[wday][hour]) {
+            if (_CWHour[wday][hour] >
+                    gethour(_RWHour[wday][hour])) {
                 snprintf(__stats_comment, 191,
                          "The average number of logs"
                          " between %d:00 and %d:00 on %s is %d. We"
-                         " reached %d.", __crt_hour, __crt_hour + 1,
-                         weekdays[__crt_wday],
-                         _RWHour[__crt_wday][__crt_hour],
-                         _CWHour[__crt_wday][__crt_hour]);
+                         " reached %d.", hour, hour + 1,
+                         weekdays[wday],
+                         _RWHour[wday][hour],
+                         _CWHour[wday][hour]);
 
 
                 _fired = 1;
                 _daily_errors++;
-                return (1);
+                result = 1;
+                goto out;
             }
         }
     }
-    return (0);
+
+out:
+    if (result && comment_out && comment_sz > 0) {
+        snprintf(comment_out, comment_sz, "%s", __stats_comment);
+    }
+#ifndef WIN32
+    os_mutex_unlock(&stats_hour_mutex);
+#endif
+    return result;
 }
 
 /* Start hourly stats and other necessary variables */
@@ -323,18 +361,8 @@ int Start_Hour()
                                  "stats_percent_diff",
                                  5, 9999);
 
-    /* Last three messages
-     * They are used to keep track of the last
-     * messages received to avoid floods
-     */
-    _lastmsg = NULL;
-    _prevlast = NULL;
-    _pprevlast = NULL;
-
-    /* They should not be null */
-    os_strdup(" ", _lastmsg);
-    os_strdup(" ", _prevlast);
-    os_strdup(" ", _pprevlast);
+    /* Last three messages — TLS; init this thread (main/startup). */
+    lastmsg_ensure_init();
 
     /* Create the stat queue directories */
     if (IsDir(STATWQUEUE) == -1) {
@@ -432,19 +460,18 @@ int Start_Hour()
  */
 int LastMsg_Stats(const char *log)
 {
+    lastmsg_ensure_init();
+
     if (strcmp(log, _lastmsg) == 0) {
-        return (1);
+        return 1;
     }
-
-    else if (strcmp(log, _prevlast) == 0) {
-        return (1);
+    if (strcmp(log, _prevlast) == 0) {
+        return 1;
     }
-
-    else if (strcmp(log, _pprevlast) == 0) {
-        return (1);
+    if (strcmp(log, _pprevlast) == 0) {
+        return 1;
     }
-
-    return (0);
+    return 0;
 }
 
 /* If the message is not repeated, rearrange the last
@@ -452,14 +479,11 @@ int LastMsg_Stats(const char *log)
  */
 void LastMsg_Change(const char *log)
 {
-    /* Remove the last one */
-    free(_pprevlast);
+    lastmsg_ensure_init();
 
-    /* Move the second to third and the last to second */
+    free(_pprevlast);
     _pprevlast = _prevlast;
     _prevlast = _lastmsg;
-
     os_strdup(log, _lastmsg);
-    return;
 }
 

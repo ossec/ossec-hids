@@ -24,8 +24,14 @@ static const char *(month[]) = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 /* Format a received message in the Eventinfo structure */
 int OS_CleanMSG(char *msg, Eventinfo *lf)
 {
+    return OS_CleanMSG_ex(msg, lf, c_time, 1);
+}
+
+int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_globals)
+{
     size_t loglen;
     char *pieces;
+    struct tm tm_buf;
     struct tm *p;
 
     /* The message is formatted in the following way:
@@ -551,8 +557,8 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
     }
 
     /* Set up the event data */
-    lf->time = c_time;
-    p = localtime(&c_time);
+    lf->time = recv_time;
+    p = localtime_r(&recv_time, &tm_buf);
 
     /* Assign hour, day, year and month values */
     lf->day = p->tm_mday;
@@ -563,9 +569,11 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
              p->tm_min,
              p->tm_sec);
 
-    /* Set the global hour/weekday */
-    __crt_hour = p->tm_hour;
-    __crt_wday = p->tm_wday;
+    if (update_time_globals) {
+        c_time = recv_time;
+        __crt_hour = p->tm_hour;
+        __crt_wday = p->tm_wday;
+    }
 
 #ifdef TESTRULE
     if (!alert_only) {

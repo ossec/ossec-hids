@@ -40,6 +40,19 @@
 #define OS_CONVERT_REGEX        1
 #define OS_CONVERT_MATCH        2
 
+#define REGEX_MATCH_MAX_GROUPS  64
+
+typedef struct regex_matching {
+    char *sub_strings[REGEX_MATCH_MAX_GROUPS + 1];
+    pcre2_match_data *match_data;
+} regex_matching;
+
+void regex_matching_clear(regex_matching *match);
+void regex_matching_free_match_data(regex_matching *match);
+pcre2_match_data *regex_matching_get_match_data(regex_matching *match, const pcre2_code *code);
+regex_matching *os_regex_get_thread_match(void);
+void os_regex_set_thread_match(regex_matching *match);
+
 /* OSRegex structure */
 typedef struct _OSRegex {
     int error;
@@ -71,6 +84,9 @@ typedef struct _OSPcre2 {
     char *pattern;
     const char *(*exec_function)(const char *, struct _OSPcre2 *);
 } OSPcre2;
+
+char **os_regex_get_substring_buffer(OSRegex *reg);
+char **ospcre2_get_substring_buffer(OSPcre2 *reg);
 
 /*** Prototypes ***/
 

@@ -10,6 +10,7 @@
 /* Rootcheck decoder */
 
 #include "config.h"
+#include "shared.h"
 #include "os_regex/os_regex.h"
 #include "eventinfo.h"
 #include "alerts/alerts.h"
@@ -21,10 +22,32 @@
 static char *rk_agent_ips[MAX_AGENTS];
 static FILE *rk_agent_fps[MAX_AGENTS];
 static int rk_err;
+#ifndef WIN32
+/* Table mutex: agent slot alloc / lookup. Per-agent mutex: FILE* I/O. */
+static pthread_mutex_t rk_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t rk_agent_mutex[MAX_AGENTS];
+static int rk_agent_mutex_ready = 0;
+#endif
 
-/* Rootcheck decoder */
-static OSDecoderInfo *rootcheck_dec = NULL;
+/* Rootcheck decoder template (shared id/name/type). Per-thread copy holds fts. */
+static OSDecoderInfo *rootcheck_dec_tmpl = NULL;
+#ifndef WIN32
+static __thread OSDecoderInfo rk_dec_tls;
+static __thread int rk_dec_tls_ready = 0;
+#endif
 
+static OSDecoderInfo *rootcheck_decoder_for_event(void)
+{
+#ifndef WIN32
+    if (!rk_dec_tls_ready && rootcheck_dec_tmpl) {
+        rk_dec_tls = *rootcheck_dec_tmpl;
+        rk_dec_tls_ready = 1;
+    }
+    return &rk_dec_tls;
+#else
+    return rootcheck_dec_tmpl;
+#endif
+}
 
 /* Initialize the necessary information to process the rootcheck information */
 void RootcheckInit()
@@ -36,14 +59,20 @@ void RootcheckInit()
     for (; i < MAX_AGENTS; i++) {
         rk_agent_ips[i] = NULL;
         rk_agent_fps[i] = NULL;
+#ifndef WIN32
+        os_mutex_init(&rk_agent_mutex[i], NULL);
+#endif
     }
+#ifndef WIN32
+    rk_agent_mutex_ready = 1;
+#endif
 
-    /* Zero decoder */
-    os_calloc(1, sizeof(OSDecoderInfo), rootcheck_dec);
-    rootcheck_dec->id = getDecoderfromlist(ROOTCHECK_MOD);
-    rootcheck_dec->type = OSSEC_RL;
-    rootcheck_dec->name = ROOTCHECK_MOD;
-    rootcheck_dec->fts = 0;
+    /* Template decoder — workers use a TLS copy so fts is not shared. */
+    os_calloc(1, sizeof(OSDecoderInfo), rootcheck_dec_tmpl);
+    rootcheck_dec_tmpl->id = getDecoderfromlist(ROOTCHECK_MOD);
+    rootcheck_dec_tmpl->type = OSSEC_RL;
+    rootcheck_dec_tmpl->name = ROOTCHECK_MOD;
+    rootcheck_dec_tmpl->fts = 0;
 
     debug1("%s: RootcheckInit completed.", ARGV0);
 
@@ -162,29 +191,16 @@ static void rk_extract_hashes(Eventinfo *lf)
  * Not using the default rendering tools for simplicity
  * and to be less resource intensive
  */
-int DecodeRootcheck(Eventinfo *lf)
+static int DecodeRootcheck_with_fp(Eventinfo *lf, FILE *fp)
 {
-    int agent_id;
-
     char *tmpstr;
     char rk_buf[OS_SIZE_4096 + 1];
-
-    FILE *fp;
-
     fpos_t fp_pos;
+    OSDecoderInfo *rk_dec = rootcheck_decoder_for_event();
 
     /* Zero rk_buf */
     rk_buf[0] = '\0';
     rk_buf[OS_SIZE_4096] = '\0';
-
-    fp = RK_File(lf->location, &agent_id);
-
-    if (!fp) {
-        merror("%s: Error handling rootcheck database.", ARGV0);
-        rk_err++;
-
-        return (0);
-    }
 
     /* Get initial position */
     if (fgetpos(fp, &fp_pos) == -1) {
@@ -215,8 +231,8 @@ int DecodeRootcheck(Eventinfo *lf)
         if (rk_buf[0] != '!') {
             /* Cannot use strncmp to avoid errors with crafted files */
             if (strcmp(lf->log, rk_buf) == 0) {
-                rootcheck_dec->fts = 0;
-                lf->decoder_info = rootcheck_dec;
+                rk_dec->fts = 0;
+                lf->decoder_info = rk_dec;
                 rk_extract_hashes(lf);
                 return (1);
             }
@@ -234,8 +250,8 @@ int DecodeRootcheck(Eventinfo *lf)
                     return (0);
                 }
                 fprintf(fp, "!%ld", (long int)lf->time);
-                rootcheck_dec->fts = 0;
-                lf->decoder_info = rootcheck_dec;
+                rk_dec->fts = 0;
+                lf->decoder_info = rk_dec;
                 rk_extract_hashes(lf);
                 return (1);
             }
@@ -253,10 +269,43 @@ int DecodeRootcheck(Eventinfo *lf)
     fprintf(fp, "!%ld!%ld %s\n", (long int)lf->time, (long int)lf->time, lf->log);
     fflush(fp);
 
-    rootcheck_dec->fts = 0;
-    rootcheck_dec->fts |= FTS_DONE;
-    lf->decoder_info = rootcheck_dec;
+    rk_dec->fts = 0;
+    rk_dec->fts |= FTS_DONE;
+    lf->decoder_info = rk_dec;
     rk_extract_hashes(lf);
     return (1);
+}
+
+int DecodeRootcheck(Eventinfo *lf)
+{
+    int result;
+    int agent_id = -1;
+    FILE *fp;
+
+#ifndef WIN32
+    os_mutex_lock(&rk_table_mutex);
+#endif
+    fp = RK_File(lf->location, &agent_id);
+    if (!fp) {
+#ifndef WIN32
+        os_mutex_unlock(&rk_table_mutex);
+#endif
+        merror("%s: Error handling rootcheck database.", ARGV0);
+        rk_err++;
+        return (0);
+    }
+
+#ifndef WIN32
+    /* Lock the agent FILE before releasing the table (finer than global lock). */
+    os_mutex_lock(&rk_agent_mutex[agent_id]);
+    os_mutex_unlock(&rk_table_mutex);
+#endif
+
+    result = DecodeRootcheck_with_fp(lf, fp);
+
+#ifndef WIN32
+    os_mutex_unlock(&rk_agent_mutex[agent_id]);
+#endif
+    return result;
 }
 

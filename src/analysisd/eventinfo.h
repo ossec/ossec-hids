@@ -10,8 +10,12 @@
 #ifndef _EVTINFO__H
 #define _EVTINFO__H
 
+#include <pthread.h>
+
 #include "rules.h"
 #include "decoders/decoder.h"
+
+#include <time.h>
 
 /* Event Information structure */
 typedef struct _Eventinfo {
@@ -46,6 +50,14 @@ typedef struct _Eventinfo {
     /* Pointer to the rule that generated it */
     RuleInfo *generated_rule;
 
+    /* Async alert writer: snapshot of rule->last_events (owned by this event). */
+    char **alert_last_events;
+    /* Ticket-based alert id (0 = use ftell under writer lock). */
+    long alert_id;
+
+    /* Match-shard / process-thread index */
+    int tid;
+
     /* Pointer to the decoder that matched */
     OSDecoderInfo *decoder_info;
 
@@ -60,6 +72,10 @@ typedef struct _Eventinfo {
     unsigned int flags;
     #define EF_FREE_PNAME 0x001
     #define EF_FREE_HNAME 0x002
+    /* log was separately allocated (not an alias into full_log). */
+    #define EF_SEPARATE_LOG 0x004
+    /* Async alert/archive/fw copy — skip sid/group list maintenance on free. */
+    #define EF_ASYNC_COPY 0x008
 
     /* Other internal variables */
     int matched;
@@ -69,6 +85,9 @@ typedef struct _Eventinfo {
     int year;
     char hour[10];
     char mon[4];
+
+    /* Enqueue timestamp for queue-wait sampling (CLOCK_MONOTONIC). */
+    struct timespec queue_in_time;
 
     /* SYSCHECK Results variables */
     char *filename;
@@ -94,6 +113,15 @@ typedef struct _EventNode {
     struct _EventNode *next;
     struct _EventNode *prev;
 } EventNode;
+
+/* Frequency / correlation ring (one per match shard). */
+typedef struct _EventList {
+    EventNode *first;
+    EventNode *last;
+    int memoryused;
+    int memorymaxsize;
+    pthread_mutex_t mutex;
+} EventList;
 
 #ifdef TESTRULE
 extern int full_output;
@@ -134,6 +162,9 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *currently_rule);
 /* Frequency rule context log samples (heap-owned copies) */
 void OS_SetRuleLastEvent(RuleInfo *rule, int idx, const char *log);
 void OS_FreeRuleLastEvents(RuleInfo *rule);
+/* Transfer rule->last_events ownership onto lf->alert_last_events.
+ * Caller must already hold rule->mutex. */
+void OS_MoveRuleLastEvents(RuleInfo *rule, Eventinfo *lf);
 
 /* Zero the eventinfo structure */
 void Zero_Eventinfo(Eventinfo *lf);
@@ -143,12 +174,16 @@ void Free_Eventinfo(Eventinfo *lf);
 
 /* Add and event to the list of previous events */
 void OS_AddEvent(Eventinfo *lf);
+void OS_AddEvent_List(Eventinfo *lf, EventList *list);
 
 /* Return the last event from the Event list */
 EventNode *OS_GetLastEvent(void);
+EventNode *OS_GetLastEvent_List(EventList *list);
 
 /* Create the event list. Maxsize must be specified */
 void OS_CreateEventList(int maxsize);
+EventList *OS_EventList_Create(int maxsize);
+void OS_EventList_Destroy(EventList *list);
 
 /* Pointers to the event decoders */
 void *SrcUser_FP(Eventinfo *lf, char *field, int order);

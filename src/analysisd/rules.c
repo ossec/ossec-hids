@@ -13,7 +13,11 @@
 #include "compiled_rules/compiled_rules.h"
 
 /* Global definition */
+#ifndef WIN32
+__thread RuleInfo *currently_rule;
+#else
 RuleInfo *currently_rule;
+#endif
 
 /* Change path for test rule */
 #ifdef TESTRULE
@@ -1649,6 +1653,7 @@ RuleInfo *zerorulemember(int id, int level,
 
     ruleinfo_pt->sigid = id;
     ruleinfo_pt->firedtimes = 0;
+    os_mutex_init(&ruleinfo_pt->mutex, NULL);
     ruleinfo_pt->maxsize = maxsize;
     ruleinfo_pt->frequency = frequency;
     if (ruleinfo_pt->frequency > _max_freq) {

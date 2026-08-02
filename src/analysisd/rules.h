@@ -10,6 +10,8 @@
 #ifndef _OS_RULES
 #define _OS_RULES
 
+#include <pthread.h>
+
 #define MAX_LAST_EVENTS 11
 
 #define MAX_TIMEFRAME 604800
@@ -97,6 +99,9 @@ typedef struct _RuleInfo {
     int __frequency;
     char **last_events;
     int last_events_copied;
+
+    /* Protects firedtimes / last_events / prev_matched inserts under parallel matching. */
+    pthread_mutex_t mutex;
 
     /* Not an option in the rule */
     u_int16_t alert_opts;
@@ -195,7 +200,11 @@ typedef struct _RuleNode {
 } RuleNode;
 
 
+#ifndef WIN32
+extern __thread RuleInfo *currently_rule;
+#else
 extern RuleInfo *currently_rule;
+#endif
 
 RuleInfoDetail *zeroinfodetails(int type, const char *data);
 int get_info_attributes(char **attributes, char **values);

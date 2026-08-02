@@ -34,7 +34,7 @@ void OS_ReadMSG(char *ut_str);
 /* Analysisd function */
 RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node);
 
-void DecodeEvent(Eventinfo *lf);
+void DecodeEvent(Eventinfo *lf, regex_matching *decoder_match);
 
 /* Print help statement */
 __attribute__((noreturn))
@@ -446,7 +446,7 @@ void OS_ReadMSG(char *ut_str)
             lf->size = strlen(lf->log);
 
             /* Decode event */
-            DecodeEvent(lf);
+            DecodeEvent(lf, NULL);
 
             /* Run accumulator */
             if ( lf->decoder_info->accumulate == 1 ) {

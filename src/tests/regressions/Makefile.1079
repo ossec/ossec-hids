@@ -1,0 +1,6 @@
+# Thin wrappers kept for historic docs; prefer:
+#   make -f tests/regressions/Makefile
+# or from src/:
+#   make regression
+
+include tests/regressions/Makefile

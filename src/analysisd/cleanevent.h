@@ -13,6 +13,7 @@
 #include "eventinfo.h"
 
 int OS_CleanMSG(char *msg, Eventinfo *lf);
+int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_globals);
 
 
 #endif /* _CLEANEVENT_H_ */

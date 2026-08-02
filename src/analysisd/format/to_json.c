@@ -36,9 +36,10 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
 
         char alert_id[23];
         double timestamp_ms;
+        long id_part = lf->alert_id ? lf->alert_id : __crt_ftell;
         timestamp_ms = ((double)lf->time)*1000;
         alert_id[22] = '\0';
-        if((snprintf(alert_id, 22, "%ld.%ld", (long int)lf->time, __crt_ftell)) < 0) {
+        if((snprintf(alert_id, 22, "%ld.%ld", (long int)lf->time, id_part)) < 0) {
             merror("snprintf failed");
         }
 
@@ -121,8 +122,13 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->full_log) {
         cJSON_AddStringToObject(root, "full_log", lf->full_log);
     }
-    if (lf->generated_rule->last_events && lf->generated_rule->last_events[1] && lf->generated_rule->last_events[1][0]) {
-        cJSON_AddStringToObject(root, "previous_output", lf->generated_rule->last_events[1]);
+    {
+        char **lasts = lf->alert_last_events ? lf->alert_last_events :
+                       (lf->generated_rule ? lf->generated_rule->last_events : NULL);
+
+        if (lasts && lasts[1] && lasts[1][0]) {
+            cJSON_AddStringToObject(root, "previous_output", lasts[1]);
+        }
     }
 
     if (lf->filename) {

@@ -15,11 +15,13 @@ void jsonout_output_event(const Eventinfo *lf)
 {
     char *json_alert = Eventinfo_to_jsonstr(lf);
 
+    analysisd_log_io_lock();
     fprintf(_jflog,
             "%s\n",
             json_alert);
 
     fflush(_jflog);
+    analysisd_log_io_unlock();
     free(json_alert);
     return;
 }
@@ -27,11 +29,13 @@ void jsonout_output_archive(const Eventinfo *lf)
 {
     char *json_alert = Archiveinfo_to_jsonstr(lf);
 
+    analysisd_log_io_lock();
     fprintf(_ejflog,
             "%s\n",
             json_alert);
 
     fflush(_ejflog);
+    analysisd_log_io_unlock();
     free(json_alert);
     return;
 }

@@ -38,11 +38,8 @@
 
 /* Global mocks */
 _Config Config;
-time_t c_time;
+__thread time_t c_time;
 OSDecoderInfo *NULL_Decoder = NULL;
-
-/* Mock functions */
-EventNode *OS_GetLastEvent(void) { return NULL; }
 
 /* Callback function to clear sid_node_to_delete before auto-deletion
  * This is the FIX for issue #1748
@@ -69,7 +66,9 @@ int main(void) {
     test_rule->sigid = 12345;
     test_rule->level = 5;
     test_rule->comment = "Test rule for issue 1748";
-    
+#ifndef WIN32
+    os_mutex_init(&test_rule->mutex, NULL);
+#endif
     /* Create and configure the sid_prev_matched list */
     test_rule->sid_prev_matched = OSList_Create();
     if (!test_rule->sid_prev_matched) {

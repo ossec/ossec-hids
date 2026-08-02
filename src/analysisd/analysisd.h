@@ -20,10 +20,15 @@ extern int thishour;
 extern int prev_year;
 extern char prev_month[4];
 
+#ifndef WIN32
+extern __thread int __crt_hour;
+extern __thread int __crt_wday;
+extern __thread time_t c_time; /* Current time of event (TLS per match/decode worker). */
+#else
 extern int __crt_hour;
 extern int __crt_wday;
-
 extern time_t c_time; /* Current time of event. Used everywhere */
+#endif
 
 /* Local host name */
 extern char __shost[512];
@@ -32,6 +37,11 @@ extern OSDecoderInfo *NULL_Decoder;
 
 #define OSSEC_SERVER    "ossec-server"
 #define MAX_DECODER_ORDER_SIZE  1024
+
+void analysisd_inc_hourly_events(void);
+void analysisd_inc_hourly_alerts(void);
+void analysisd_inc_hourly_syscheck(void);
+void analysisd_inc_hourly_firewall(void);
 
 
 #endif /* _LOGAUDIT__H */

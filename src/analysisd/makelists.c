@@ -26,9 +26,15 @@ int today;
 int thishour;
 int prev_year;
 char prev_month[4];
+#ifndef WIN32
+__thread int __crt_hour;
+__thread int __crt_wday;
+__thread time_t c_time;
+#else
 int __crt_hour;
 int __crt_wday;
 time_t c_time;
+#endif
 char __shost[512];
 OSDecoderInfo *NULL_Decoder;
 

@@ -33,11 +33,20 @@ int OSMatch_Execute_true(const char *subject, size_t len, OSMatch *match)
 int OSMatch_Execute_pcre2_match(const char *str, size_t str_len, OSMatch * reg)
 {
     int rc = 0;
+    pcre2_match_data *match_data = reg->match_data;
+    regex_matching *thread_match = os_regex_get_thread_match();
+
+    if (thread_match) {
+        match_data = regex_matching_get_match_data(thread_match, reg->regex);
+        if (!match_data) {
+            return 0;
+        }
+    }
 
 #ifdef USE_PCRE2_JIT
-    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, reg->match_data, NULL);
+    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, match_data, NULL);
 #else
-    rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, reg->match_data, NULL);
+    rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, match_data, NULL);
 #endif
 
     return (rc >= 0);

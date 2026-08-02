@@ -10,101 +10,179 @@
 #include "shared.h"
 #include "eventinfo.h"
 #include "rules.h"
+#include "correlation_shard.h"
 
-/* Local variables */
-static EventNode *eventnode;
-static EventNode *lastnode;
+/* Global default list (legacy / single-thread). Match workers may install a
+ * private shard list via analysisd_set_event_list(). */
+static EventList g_event_list;
+static __thread EventList *tls_event_list = NULL;
 
-static int _memoryused = 0;
-static int _memorymaxsize = 0;
 int _max_freq = 0;
 
+EventList *analysisd_get_event_list(void)
+{
+    return tls_event_list ? tls_event_list : &g_event_list;
+}
+
+void analysisd_set_event_list(EventList *list)
+{
+    tls_event_list = list;
+}
+
+static void os_eventlist_init(EventList *list, int maxsize)
+{
+    list->first = NULL;
+    list->last = NULL;
+    list->memoryused = 0;
+    list->memorymaxsize = maxsize;
+    os_mutex_init(&list->mutex, NULL);
+}
 
 /* Create the Event List */
 void OS_CreateEventList(int maxsize)
 {
-    eventnode = NULL;
-    _memorymaxsize = maxsize;
-    _memoryused = 0;
-
+    os_eventlist_init(&g_event_list, maxsize);
+    tls_event_list = NULL;
     debug1("%s: OS_CreateEventList completed.", ARGV0);
-    return;
+}
+
+EventList *OS_EventList_Create(int maxsize)
+{
+    EventList *list;
+
+    os_calloc(1, sizeof(EventList), list);
+    os_eventlist_init(list, maxsize);
+    return list;
+}
+
+void OS_EventList_Destroy(EventList *list)
+{
+    EventNode *node;
+    EventNode *next;
+
+    if (!list) {
+        return;
+    }
+
+    /* Unlink under the list lock; Free_Eventinfo after unlock so we never
+     * nest rule->mutex under list->mutex (Search_LastEvents takes the
+     * opposite order). */
+    os_mutex_lock(&list->mutex);
+    node = list->first;
+    list->first = NULL;
+    list->last = NULL;
+    list->memoryused = 0;
+    os_mutex_unlock(&list->mutex);
+
+    while (node) {
+        next = node->next;
+        if (node->event) {
+            Free_Eventinfo(node->event);
+        }
+        free(node);
+        node = next;
+    }
+    os_mutex_destroy(&list->mutex);
+    free(list);
 }
 
 /* Get the last event -- or first node */
-EventNode *OS_GetLastEvent()
+EventNode *OS_GetLastEvent_List(EventList *list)
 {
-    EventNode *eventnode_pt = eventnode;
-
-    return (eventnode_pt);
+    if (!list) {
+        return NULL;
+    }
+    return list->first;
 }
 
-/* Add an event to the list -- always to the beginning */
-void OS_AddEvent(Eventinfo *lf)
+EventNode *OS_GetLastEvent(void)
 {
-    EventNode *tmp_node = eventnode;
+    return OS_GetLastEvent_List(analysisd_get_event_list());
+}
+
+void OS_AddEvent_List(Eventinfo *lf, EventList *list)
+{
+    EventNode *tmp_node;
+    EventNode *victims = NULL;
+
+    if (!list || !lf) {
+        return;
+    }
+
+    os_mutex_lock(&list->mutex);
+    tmp_node = list->first;
 
     if (tmp_node) {
         EventNode *new_node;
         new_node = (EventNode *)calloc(1, sizeof(EventNode));
 
         if (new_node == NULL) {
+            os_mutex_unlock(&list->mutex);
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
-        /* Always add to the beginning of the list
-         * The new node will become the first node and
-         * new_node->next will be the previous first node
-         */
         new_node->next = tmp_node;
         new_node->prev = NULL;
         tmp_node->prev = new_node;
 
-        eventnode = new_node;
-
-        /* Add the event to the node */
+        list->first = new_node;
         new_node->event = lf;
 
-        _memoryused++;
+        list->memoryused++;
 
-        /* Need to remove the last nodes */
-        if (_memoryused > _memorymaxsize) {
+        if (list->memoryused > list->memorymaxsize) {
             int i = 0;
             EventNode *oldlast;
 
-            /* Remove at least the last 10 events
-             * or the events that will not match anymore
-             * (higher than max frequency)
-             */
-            while ((i < 10) || ((lf->time - lastnode->event->time) > _max_freq)) {
-                oldlast = lastnode;
-                lastnode = lastnode->prev;
-                lastnode->next = NULL;
+            while (list->last &&
+                   ((i < 10) || ((lf->time - list->last->event->time) > _max_freq))) {
+                oldlast = list->last;
+                list->last = list->last->prev;
+                if (list->last) {
+                    list->last->next = NULL;
+                } else {
+                    list->first = NULL;
+                }
 
-                /* Free event info */
-                Free_Eventinfo(oldlast->event);
-                free(oldlast);
+                /* Defer Free_Eventinfo: it may lock generated_rule->mutex. */
+                oldlast->prev = NULL;
+                oldlast->next = victims;
+                victims = oldlast;
 
-                _memoryused--;
+                list->memoryused--;
                 i++;
+                if (!list->last) {
+                    break;
+                }
             }
         }
-    }
-
-    else {
-        /* Add first node */
-        eventnode = (EventNode *)calloc(1, sizeof(EventNode));
-        if (eventnode == NULL) {
+    } else {
+        list->first = (EventNode *)calloc(1, sizeof(EventNode));
+        if (list->first == NULL) {
+            os_mutex_unlock(&list->mutex);
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
-        eventnode->prev = NULL;
-        eventnode->next = NULL;
-        eventnode->event = lf;
-
-        lastnode = eventnode;
+        list->first->prev = NULL;
+        list->first->next = NULL;
+        list->first->event = lf;
+        list->last = list->first;
+        list->memoryused = 1;
     }
 
-    return;
+    os_mutex_unlock(&list->mutex);
+
+    while (victims) {
+        EventNode *node = victims;
+        victims = victims->next;
+        if (node->event) {
+            Free_Eventinfo(node->event);
+        }
+        free(node);
+    }
 }
 
+void OS_AddEvent(Eventinfo *lf)
+{
+    OS_AddEvent_List(lf, analysisd_get_event_list());
+}

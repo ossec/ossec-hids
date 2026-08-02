@@ -1,0 +1,2 @@
+# Thin wrapper; prefer make -f tests/regressions/Makefile
+include tests/regressions/Makefile

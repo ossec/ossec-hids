@@ -1280,7 +1280,12 @@ ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-te
 ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} ${ANALYSISD_FLAGS} -o $@
 
-ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+# makelists only rebuilds CDB lists; do not pull in the threaded pipeline
+# (pipeline/stages/state/fts/...) which references analysisd.c-only symbols.
+makelists_live_o := analysisd/config-live.o analysisd/lists-live.o \
+	analysisd/lists_list-live.o analysisd/lists_make-live.o
+
+ossec-makelists: analysisd/makelists-live.o ${makelists_live_o} cdb.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} -o $@
 
 
@@ -1356,6 +1361,22 @@ test_coverage: build_tests
 
 	rm -rf coverage-report/
 	genhtml --branch-coverage --output-directory coverage-report/ --title "ossec test coverage" --show-details --legend --num-spaces 4 --quiet ossec.test
+
+####################
+#### regression ####
+####################
+
+# Pipeline / analysisd regressions + shared queue/thread tests.
+# Requires a prior server (or hybrid) build so *-live.o and libs exist.
+.PHONY: regression regression-clean
+
+regression:
+	${MAKE} -C shared/tests check
+	${MAKE} -f tests/regressions/Makefile check
+
+regression-clean:
+	${MAKE} -C shared/tests clean
+	${MAKE} -f tests/regressions/Makefile clean
 
 ####################
 #### RUule Tests ###

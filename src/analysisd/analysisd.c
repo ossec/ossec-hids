@@ -33,6 +33,12 @@
 #include "dodiff.h"
 #include "output/jsonout.h"
 
+#ifndef WIN32
+#include "pipeline.h"
+#include "state.h"
+#include "sig_op.h"
+#endif
+
 #ifdef PRELUDE_OUTPUT_ENABLED
 #include "output/prelude.h"
 #endif
@@ -56,36 +62,99 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node);
 static void LoopRule(RuleNode *curr_node, FILE *flog);
 
 /* For decoders */
-void DecodeEvent(Eventinfo *lf);
+void DecodeEvent(Eventinfo *lf, regex_matching *decoder_match);
 int DecodeSyscheck(Eventinfo *lf);
 int DecodeRootcheck(Eventinfo *lf);
 int DecodeHostinfo(Eventinfo *lf);
 
+Eventinfo *analysisd_event_alloc(void);
+void analysisd_set_time_context(Eventinfo *lf);
+int analysisd_handle_hour_rollover(Eventinfo *lf);
+Eventinfo *analysisd_decode_event(Eventinfo *lf, char mq_prefix, regex_matching *decoder_match);
+int analysisd_analyze_event(Eventinfo *lf);
+void analysisd_finish_event(Eventinfo *lf);
+
 /* For stats */
-static void DumpLogstats(void);
+void DumpLogstats(void);
 
 /** Global definitions **/
 int today;
 int thishour;
 int prev_year;
 char prev_month[4];
+#ifndef WIN32
+__thread int __crt_hour;
+__thread int __crt_wday;
+__thread time_t c_time;
+#else
 int __crt_hour;
 int __crt_wday;
 time_t c_time;
+#endif
 char __shost[512];
 OSDecoderInfo *NULL_Decoder;
 
 /* execd queue */
-static int execdq = 0;
+int analysisd_execdq = 0;
 
 /* Active response queue */
-static int arq = 0;
+int analysisd_arq = 0;
 
-static int hourly_alerts;
-static int hourly_events;
-static int hourly_syscheck;
-static int hourly_firewall;
+int hourly_alerts;
+int hourly_events;
+int hourly_syscheck;
+int hourly_firewall;
 
+RuleInfo *analysisd_stats_rule = NULL;
+
+void analysisd_inc_hourly_events(void)
+{
+#ifndef WIN32
+    __sync_add_and_fetch(&hourly_events, 1);
+#else
+    hourly_events++;
+#endif
+}
+
+void analysisd_inc_hourly_alerts(void)
+{
+#ifndef WIN32
+    __sync_add_and_fetch(&hourly_alerts, 1);
+#else
+    hourly_alerts++;
+#endif
+}
+
+#ifndef WIN32
+void analysisd_inc_hourly_syscheck(void)
+{
+    __sync_add_and_fetch(&hourly_syscheck, 1);
+}
+
+void analysisd_inc_hourly_firewall(void)
+{
+    __sync_add_and_fetch(&hourly_firewall, 1);
+}
+#else
+void analysisd_inc_hourly_syscheck(void)
+{
+    hourly_syscheck++;
+}
+
+void analysisd_inc_hourly_firewall(void)
+{
+    hourly_firewall++;
+}
+#endif
+
+
+#ifndef WIN32
+static void analysisd_HandleSIG(int sig)
+{
+    merror(SIGNAL_RECV, ARGV0, sig, strsignal(sig));
+    analysisd_pipeline_request_shutdown();
+}
+#endif
 
 /* Print help statement */
 __attribute__((noreturn))
@@ -460,7 +529,11 @@ int main_analysisd(int argc, char **argv)
     debug1(PRIVSEP_MSG, ARGV0, user);
 
     /* Signal manipulation */
+#ifndef WIN32
+    StartSIG2(ARGV0, analysisd_HandleSIG);
+#else
     StartSIG(ARGV0);
+#endif
 
     /* Set the user */
     if (Privsep_SetUser(uid) < 0) {
@@ -536,7 +609,6 @@ __attribute__((noreturn))
 void OS_ReadMSG_analysisd(int m_queue)
 #endif
 {
-    int i;
     char msg[OS_MAXSTR + 1];
     Eventinfo *lf;
 
@@ -578,7 +650,7 @@ void OS_ReadMSG_analysisd(int m_queue)
 
 #ifndef LOCAL
         if (Config.ar & REMOTE_AR) {
-            if ((arq = StartMQ(ARQUEUE, WRITE)) < 0) {
+            if ((analysisd_arq = StartMQ(ARQUEUE, WRITE)) < 0) {
                 merror(ARQ_ERROR, ARGV0);
 
                 /* If LOCAL_AR is set, keep it there */
@@ -605,7 +677,7 @@ void OS_ReadMSG_analysisd(int m_queue)
 #endif
 
         if (Config.ar & LOCAL_AR) {
-            if ((execdq = StartMQ(EXECQUEUE, WRITE)) < 0) {
+            if ((analysisd_execdq = StartMQ(EXECQUEUE, WRITE)) < 0) {
                 merror(ARQ_ERROR, ARGV0);
 
                 /* If REMOTE_AR is set, keep it there */
@@ -640,6 +712,7 @@ void OS_ReadMSG_analysisd(int m_queue)
         }
         stats_rule->group = "stats,";
         stats_rule->comment = "Excessive number of events (above normal).";
+        analysisd_stats_rule = stats_rule;
     }
 
     /* Do some cleanup */
@@ -682,377 +755,56 @@ void OS_ReadMSG_analysisd(int m_queue)
         debug1("%s: INFO: Custom output found.!", ARGV0);
     }
 
-    /* Daemon loop */
+#ifndef WIN32
+    /* Always-on multi-threaded pipeline (Linux). Does not return until shutdown. */
+    analysisd_pipeline_run(m_queue);
+    DeletePID(ARGV0);
+    exit(0);
+#else
+    /* WIN32: legacy single-threaded recv loop. */
     while (1) {
-        lf = (Eventinfo *)calloc(1, sizeof(Eventinfo));
-        os_calloc(Config.decoder_order_size, sizeof(char*), lf->fields);
+        int recv_len;
 
-        /* This shouldn't happen */
-        if (lf == NULL) {
-            ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
-        }
+        lf = analysisd_event_alloc();
 
         DEBUG_MSG("%s: DEBUG: Waiting for msgs - %d ", ARGV0, (int)time(0));
 
-        /* Receive message from queue */
-        if ((i = OS_RecvUnix(m_queue, OS_MAXSTR, msg))) {
-            RuleNode *rulenode_pt;
-
-            /* Get the time we received the event */
+        if ((recv_len = OS_RecvUnix(m_queue, OS_MAXSTR, msg))) {
             c_time = time(NULL);
-
-            /* Default values for the log info */
             Zero_Eventinfo(lf);
 
-            /* Check for a valid message */
-            if (i < 4) {
+            if (recv_len < 4) {
                 merror(IMSG_ERROR, ARGV0, msg);
                 Free_Eventinfo(lf);
                 continue;
             }
 
-            /* Message before extracting header */
             DEBUG_MSG("%s: DEBUG: Received msg: %s ", ARGV0, msg);
 
-            /* Clean the msg appropriately */
-            if (OS_CleanMSG(msg, lf) < 0) {
+            if (OS_CleanMSG_ex(msg, lf, c_time, 1) < 0) {
                 merror(IMSG_ERROR, ARGV0, msg);
                 Free_Eventinfo(lf);
                 continue;
             }
 
-            /* Msg cleaned */
             DEBUG_MSG("%s: DEBUG: Msg cleanup: %s ", ARGV0, lf->log);
 
-            /* Current rule must be null in here */
             currently_rule = NULL;
+            analysisd_inc_hourly_events();
 
-            /** Check the date/hour changes **/
-
-            /* Update the hour */
-            if (thishour != __crt_hour) {
-                /* Search all the rules and print the number
-                 * of alerts that each one fired
-                 */
-                DumpLogstats();
-                thishour = __crt_hour;
-
-                /* Check if the date has changed */
-                if (today != lf->day) {
-                    if (Config.stats) {
-                        /* Update the hourly stats (done daily) */
-                        Update_Hour();
-                    }
-
-                    if (OS_GetLogLocation(lf) < 0) {
-                        ErrorExit("%s: Error allocating log files", ARGV0);
-                    }
-
-                    today = lf->day;
-                    strncpy(prev_month, lf->mon, 3);
-                    prev_year = lf->year;
-                }
+            lf = analysisd_decode_event(lf, msg[0], NULL);
+            if (!lf) {
+                continue;
             }
 
-
-            /* Increment number of events received */
-            hourly_events++;
-
-            /***  Run decoders ***/
-
-            /* Integrity check from syscheck */
-            if (msg[0] == SYSCHECK_MQ) {
-                hourly_syscheck++;
-
-                if (!DecodeSyscheck(lf)) {
-                    /* We don't process syscheck events further */
-                    goto CLMEM;
-                }
-
-                /* Get log size */
-                lf->size = strlen(lf->log);
-            }
-
-            /* Rootcheck decoding */
-            else if (msg[0] == ROOTCHECK_MQ) {
-                if (!DecodeRootcheck(lf)) {
-                    /* We don't process rootcheck events further */
-                    goto CLMEM;
-                }
-                lf->size = strlen(lf->log);
-            }
-
-            /* Host information special decoder */
-            else if (msg[0] == HOSTINFO_MQ) {
-                if (!DecodeHostinfo(lf)) {
-                    /* We don't process hostinfo events further */
-                    goto CLMEM;
-                }
-                lf->size = strlen(lf->log);
-            }
-
-            /* Run the general Decoders */
-            else {
-                /* Get log size */
-                lf->size = strlen(lf->log);
-
-                DecodeEvent(lf);
-            }
-
-            /* Run accumulator */
-            if ( lf->decoder_info->accumulate == 1 ) {
-                lf = Accumulate(lf);
-            }
-
-            /* Firewall event */
-            if (lf->decoder_info->type == FIREWALL) {
-                /* If we could not get any information from
-                 * the log, just ignore it
-                 */
-                hourly_firewall++;
-                if (Config.logfw) {
-                    if (!FW_Log(lf)) {
-                        goto CLMEM;
-                    }
-                }
-            }
-
-            /* We only check if the last message is
-             * duplicated on syslog
-             */
-            else if (lf->decoder_info->type == SYSLOG) {
-                /* Check if the message is duplicated */
-                if (LastMsg_Stats(lf->full_log) == 1) {
-                    goto CLMEM;
-                } else {
-                    LastMsg_Change(lf->full_log);
-                }
-            }
-
-            /* Stats checking */
-            if (Config.stats) {
-                if (Check_Hour() == 1) {
-                    RuleInfo *saved_rule = lf->generated_rule;
-                    char *saved_log;
-
-                    /* Save previous log */
-                    saved_log = lf->full_log;
-
-                    lf->generated_rule = stats_rule;
-                    lf->full_log = __stats_comment;
-
-                    /* Alert for statistical analysis */
-                    if (stats_rule->alert_opts & DO_LOGALERT) {
-                        __crt_ftell = ftell(_aflog);
-                        if (Config.custom_alert_output) {
-                            OS_CustomLog(lf, Config.custom_alert_output_format);
-                        } else {
-                            OS_Log(lf);
-                        }
-                        /* Log to json file */
-                        if (Config.jsonout_output) {
-                            jsonout_output_event(lf);
-                        }
-
-                    }
-
-                    /* Set lf to the old values */
-                    lf->generated_rule = saved_rule;
-                    lf->full_log = saved_log;
-                }
-            }
-
-            /* Check the rules */
-            DEBUG_MSG("%s: DEBUG: Checking the rules - %d ",
-                      ARGV0, lf->decoder_info->type);
-
-            /* Loop over all the rules */
-            rulenode_pt = OS_GetFirstRule();
-            if (!rulenode_pt) {
-                ErrorExit("%s: Rules in an inconsistent state. Exiting.",
-                          ARGV0);
-            }
-
-            do {
-                if (lf->decoder_info->type == OSSEC_ALERT) {
-                    if (!lf->generated_rule) {
-                        goto CLMEM;
-                    }
-
-                    /* Process the alert */
-                    currently_rule = lf->generated_rule;
-                }
-
-                /* Categories must match */
-                else if (rulenode_pt->ruleinfo->category !=
-                         lf->decoder_info->type) {
-                    continue;
-                }
-
-                /* Check each rule */
-                else if ((currently_rule = OS_CheckIfRuleMatch(lf, rulenode_pt))
-                         == NULL) {
-                    continue;
-                }
-
-                /* Ignore level 0 */
-                if (currently_rule->level == 0) {
-                    break;
-                }
-
-                /* Check ignore time */
-                if (currently_rule->ignore_time) {
-                    if (currently_rule->time_ignored == 0) {
-                        currently_rule->time_ignored = lf->time;
-                    }
-                    /* If the current time - the time the rule was ignored
-                     * is less than the time it should be ignored,
-                     * leave (do not alert again)
-                     */
-                    else if ((lf->time - currently_rule->time_ignored)
-                             < currently_rule->ignore_time) {
-                        break;
-                    } else {
-                        currently_rule->time_ignored = lf->time;
-                    }
-                }
-
-                /* Pointer to the rule that generated it */
-                lf->generated_rule = currently_rule;
-
-                /* Check if we should ignore it */
-                if (currently_rule->ckignore && IGnore(lf)) {
-                    /* Ignore rule */
-                    lf->generated_rule = NULL;
-                    break;
-                }
-
-                /* Check if we need to add to ignore list */
-                if (currently_rule->ignore) {
-                    AddtoIGnore(lf);
-                }
-
-                /* Log the alert if configured to */
-                if (currently_rule->alert_opts & DO_LOGALERT) {
-                    __crt_ftell = ftell(_aflog);
-
-                    if (Config.custom_alert_output) {
-                        OS_CustomLog(lf, Config.custom_alert_output_format);
-                    } else {
-                        OS_Log(lf);
-                    }
-                    /* Log to json file */
-                    if (Config.jsonout_output) {
-                        jsonout_output_event(lf);
-                    }
-                }
-
-#ifdef PRELUDE_OUTPUT_ENABLED
-                /* Log to prelude */
-                if (Config.prelude) {
-                    if (Config.prelude_log_level <= currently_rule->level) {
-                        OS_PreludeLog(lf);
-                    }
-                }
-#endif
-
-#ifdef ZEROMQ_OUTPUT_ENABLED
-                /* Log to zeromq */
-                if (Config.zeromq_output) {
-                    zeromq_output_event(lf);
-                }
-#endif
-
-
-                /* Execute an active response */
-                if (currently_rule->ar) {
-                    int do_ar;
-                    active_response **rule_ar;
-
-                    rule_ar = currently_rule->ar;
-
-                    while (*rule_ar) {
-                        do_ar = 1;
-                        if ((*rule_ar)->ar_cmd->expect & USERNAME) {
-                            if (!lf->dstuser ||
-                                    !OS_PRegex(lf->dstuser, "^[a-zA-Z._0-9@?-]*$")) {
-                                if (lf->dstuser) {
-                                    merror(CRAFTED_USER, ARGV0, lf->dstuser);
-                                }
-                                do_ar = 0;
-                            }
-                        }
-                        if ((*rule_ar)->ar_cmd->expect & SRCIP) {
-                            if (!lf->srcip ||
-                                    !OS_PRegex(lf->srcip, "^[a-zA-Z.:_0-9-]*$")) {
-                                if (lf->srcip) {
-                                    merror(CRAFTED_IP, ARGV0, lf->srcip);
-                                }
-                                do_ar = 0;
-                            }
-                        }
-                        if ((*rule_ar)->ar_cmd->expect & FILENAME) {
-                            if (!lf->filename) {
-                                do_ar = 0;
-                            }
-                        }
-
-                        if (do_ar && execdq > 0) {
-                            OS_Exec(execdq, arq, lf, *rule_ar);
-                        }
-                        rule_ar++;
-                    }
-                }
-
-                /* Copy the structure to the state memory of if_matched_sid */
-                if (currently_rule->sid_prev_matched) {
-                    if (!OSList_AddData(currently_rule->sid_prev_matched, lf)) {
-                        merror("%s: Unable to add data to sig list.", ARGV0);
-                    } else {
-                        lf->sid_node_to_delete =
-                            currently_rule->sid_prev_matched->last_node;
-                    }
-                }
-                /* Group list */
-                else if (currently_rule->group_prev_matched) {
-                    unsigned int j = 0;
-
-                    while (j < currently_rule->group_prev_matched_sz) {
-                        if (!OSList_AddData(
-                                    currently_rule->group_prev_matched[j],
-                                    lf)) {
-                            merror("%s: Unable to add data to grp list.", ARGV0);
-                        }
-                        j++;
-                    }
-                }
-
-                OS_AddEvent(lf);
-
-                break;
-
-            } while ((rulenode_pt = rulenode_pt->next) != NULL);
-
-            /* If configured to log all, do it */
-            if (Config.logall)
-                OS_Store(lf);
-            if (Config.logall_json)
-                jsonout_output_archive(lf);
-
-CLMEM:
-            /** Cleaning the memory **/
-
-            /* Only clear the memory if the eventinfo was not
-             * added to the stateful memory
-             * -- message is free inside clean event --
-             */
-            if (lf->generated_rule == NULL) {
-                Free_Eventinfo(lf);
+            if (!analysisd_analyze_event(lf)) {
+                analysisd_finish_event(lf);
             }
         } else {
-            free(lf);
+            Free_Eventinfo(lf);
         }
     }
+#endif
 }
 
 /* Checks if the current_rule matches the event information */
@@ -1635,8 +1387,10 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
         return (NULL);
     }
 
-    hourly_alerts++;
+    analysisd_inc_hourly_alerts();
+    os_mutex_lock(&rule->mutex);
     rule->firedtimes++;
+    os_mutex_unlock(&rule->mutex);
 
     return (rule); /* Matched */
 }
@@ -1645,12 +1399,14 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 static void LoopRule(RuleNode *curr_node, FILE *flog)
 {
     if (curr_node->ruleinfo->firedtimes) {
+        os_mutex_lock(&curr_node->ruleinfo->mutex);
         fprintf(flog, "%d-%d-%d-%d\n",
                 thishour,
                 curr_node->ruleinfo->sigid,
                 curr_node->ruleinfo->level,
                 curr_node->ruleinfo->firedtimes);
         curr_node->ruleinfo->firedtimes = 0;
+        os_mutex_unlock(&curr_node->ruleinfo->mutex);
     }
 
     if (curr_node->child) {
@@ -1665,7 +1421,7 @@ static void LoopRule(RuleNode *curr_node, FILE *flog)
 }
 
 /* Dump the hourly stats about each rule */
-static void DumpLogstats()
+void DumpLogstats()
 {
     RuleNode *rulenode_pt;
     char logfile[OS_FLSIZE + 1];

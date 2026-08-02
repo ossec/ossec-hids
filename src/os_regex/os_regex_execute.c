@@ -32,12 +32,21 @@ const char *OSRegex_Execute_pcre2_match(const char *str, OSRegex *reg)
 {
     int rc = 0, nbs = 0, i = 0;
     PCRE2_SIZE *ov = NULL;
+    pcre2_match_data *match_data = reg->match_data;
+    regex_matching *thread_match = os_regex_get_thread_match();
+
+    if (thread_match) {
+        match_data = regex_matching_get_match_data(thread_match, reg->regex);
+        if (!match_data) {
+            return NULL;
+        }
+    }
 
     /* Execute the reg */
 #ifdef USE_PCRE2_JIT
-    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, reg->match_data, NULL);
+    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, match_data, NULL);
 #else
-    rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, reg->match_data, NULL);
+    rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, match_data, NULL);
 #endif
 
     /* Check execution result */
@@ -46,21 +55,23 @@ const char *OSRegex_Execute_pcre2_match(const char *str, OSRegex *reg)
     }
 
     /* get the offsets informations for the match */
-    ov = pcre2_get_ovector_pointer(reg->match_data);
+    ov = pcre2_get_ovector_pointer(match_data);
 
-    if (reg->sub_strings) {
+    if (reg->sub_strings || thread_match) {
+        char **target = os_regex_get_substring_buffer(reg);
+
         /* get the substrings if required */
-        for (i = 1; i < rc; i++) {
+        for (i = 1; i < rc && nbs < REGEX_MATCH_MAX_GROUPS; i++) {
             PCRE2_SIZE sub_string_start = ov[2 * i];
             PCRE2_SIZE sub_string_end = ov[2 * i + 1];
             PCRE2_SIZE sub_string_len = sub_string_end - sub_string_start;
-            if (sub_string_start != -1) {
-                reg->sub_strings[nbs] = (char *)calloc(sub_string_len + 1, sizeof(char));
-                strncpy(reg->sub_strings[nbs], &str[sub_string_start], sub_string_len);
+            if (sub_string_start != (PCRE2_SIZE)-1) {
+                target[nbs] = (char *)calloc(sub_string_len + 1, sizeof(char));
+                strncpy(target[nbs], &str[sub_string_start], sub_string_len);
                 nbs++;
             }
         }
-        reg->sub_strings[nbs] = NULL;
+        target[nbs] = NULL;
     }
 
     return &str[ov[1]];

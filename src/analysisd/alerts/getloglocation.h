@@ -21,6 +21,10 @@ void OS_InitFwLog(void);
  */
 int OS_GetLogLocation(const Eventinfo *lf);
 
+/* Serialize all alert/archive/firewall/json FILE* access (rollover + writers). */
+void analysisd_log_io_lock(void);
+void analysisd_log_io_unlock(void);
+
 /* Global declarations */
 extern FILE *_eflog;
 extern FILE *_ejflog;

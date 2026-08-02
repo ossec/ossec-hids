@@ -28,12 +28,12 @@
 
 /* Mocks */
 _Config Config;
-time_t c_time;
+__thread time_t c_time;
 OSDecoderInfo *NULL_Decoder = NULL;
 char *__shost = "localhost";
 char *__stats_comment = "stats";
-int __crt_hour = 0;
-int __crt_wday = 0;
+__thread int __crt_hour = 0;
+__thread int __crt_wday = 0;
 int one = 1;
 
 EventNode *OS_GetLastEvent(void) { return NULL; }

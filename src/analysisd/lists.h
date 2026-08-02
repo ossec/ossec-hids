@@ -14,6 +14,9 @@
 
 #include "cdb/cdb.h"
 #include "cdb/uint32.h"
+#ifndef WIN32
+#include <pthread.h>
+#endif
 
 #define LR_STRING_MATCH 0
 #define LR_STRING_NOT_MATCH 1
@@ -28,6 +31,9 @@ typedef struct ListNode {
     char *cdb_filename;
     char *txt_filename;
     struct cdb cdb;
+#ifndef WIN32
+    pthread_mutex_t mutex; /* Protects cdb cursor + open against match workers */
+#endif
     struct ListNode *next;
 } ListNode;
 

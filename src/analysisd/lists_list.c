@@ -52,6 +52,10 @@ void OS_ListLoadRules()
 /* External AddList */
 int OS_AddList(ListNode *new_listnode)
 {
+#ifndef WIN32
+    os_mutex_init(&new_listnode->mutex, NULL);
+#endif
+
     if (global_listnode == NULL) {
         /* First list */
         global_listnode = new_listnode;
@@ -258,47 +262,46 @@ static int OS_DBSearchKeyAddressValue(ListRule *lrule, char *key)
 
 int OS_DBSearch(ListRule *lrule, char *key)
 {
+    int result = 0;
+
     //XXX - god damn hack!!! Jeremy Rossi
     if (lrule->loaded == 0) {
         lrule->db = OS_FindList(lrule->filename);
         lrule->loaded = 1;
     }
+    if (lrule->db == NULL) {
+        return 0;
+    }
+
+#ifndef WIN32
+    os_mutex_lock(&lrule->db->mutex);
+#endif
     switch (lrule->lookup_type) {
         case LR_STRING_MATCH:
-            //debug1("LR_STRING_MATCH");
-            if (OS_DBSeachKey(lrule, key) == 1) {
-                return 1;
-            }
-            return 0;
+            result = (OS_DBSeachKey(lrule, key) == 1) ? 1 : 0;
+            break;
         case LR_STRING_NOT_MATCH:
-            //debug1("LR_STRING_NOT_MATCH");
-            if (OS_DBSeachKey(lrule, key) == 1) {
-                return 0;
-            }
-            return 1;
+            result = (OS_DBSeachKey(lrule, key) == 1) ? 0 : 1;
+            break;
         case LR_STRING_MATCH_VALUE:
-            //debug1("LR_STRING_MATCH_VALUE");
-            if (OS_DBSearchKeyValue(lrule, key) == 1) {
-                return 1;
-            }
-            return 0;
+            result = (OS_DBSearchKeyValue(lrule, key) == 1) ? 1 : 0;
+            break;
         case LR_ADDRESS_MATCH:
-            //debug1("LR_ADDRESS_MATCH");
-            return OS_DBSeachKeyAddress(lrule, key);
+            result = OS_DBSeachKeyAddress(lrule, key);
+            break;
         case LR_ADDRESS_NOT_MATCH:
-            //debug1("LR_ADDRESS_NOT_MATCH");
-            if (OS_DBSeachKeyAddress(lrule, key) == 0) {
-                return 1;
-            }
-            return 0;
+            result = (OS_DBSeachKeyAddress(lrule, key) == 0) ? 1 : 0;
+            break;
         case LR_ADDRESS_MATCH_VALUE:
-            //debug1("LR_ADDRESS_MATCH_VALUE");
-            if (OS_DBSearchKeyAddressValue(lrule, key) == 0) {
-                return 1;
-            }
-            return 0;
+            result = (OS_DBSearchKeyAddressValue(lrule, key) == 0) ? 1 : 0;
+            break;
         default:
             debug1("lists_list.c::OS_DBSearch should never hit default");
-            return 0;
+            result = 0;
+            break;
     }
+#ifndef WIN32
+    os_mutex_unlock(&lrule->db->mutex);
+#endif
+    return result;
 }

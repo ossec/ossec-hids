@@ -11,6 +11,7 @@
 #include "analysisd.h"
 #include "eventinfo.h"
 #include "os_regex/os_regex.h"
+#include "correlation_shard.h"
 
 /* Global definitions */
 #ifdef TESTRULE
@@ -62,6 +63,31 @@ void OS_SetRuleLastEvent(RuleInfo *rule, int idx, const char *log)
     }
 }
 
+/* Move rule frequency/diff context onto the firing event (caller holds mutex). */
+void OS_MoveRuleLastEvents(RuleInfo *rule, Eventinfo *lf)
+{
+    int i;
+
+    if (!rule || !lf || !rule->last_events || !rule->last_events_copied) {
+        return;
+    }
+
+    if (lf->alert_last_events) {
+        for (i = 0; lf->alert_last_events[i]; i++) {
+            free(lf->alert_last_events[i]);
+        }
+        free(lf->alert_last_events);
+        lf->alert_last_events = NULL;
+    }
+
+    os_calloc(MAX_LAST_EVENTS + 1, sizeof(char *), lf->alert_last_events);
+    for (i = 0; i <= MAX_LAST_EVENTS; i++) {
+        lf->alert_last_events[i] = rule->last_events[i];
+        rule->last_events[i] = NULL;
+    }
+    rule->last_events_copied = 0;
+}
+
 
 /* Search last times a signature fired
  * Will look for only that specific signature.
@@ -70,7 +96,10 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
 {
     Eventinfo *lf;
     Eventinfo *first_lf;
+    Eventinfo *ret = NULL;
     OSListNode *lf_node;
+
+    os_mutex_lock(&rule->mutex);
 
     /* Set frequency to 0 */
     rule->__frequency = 0;
@@ -79,13 +108,13 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
     /* Checking if sid search is valid */
     if (!rule->sid_search) {
         merror("%s: ERROR: No sid search.", ARGV0);
-        return (NULL);
+        goto out;
     }
 
     /* Get last node */
     lf_node = OSList_GetLastNode(rule->sid_search);
     if (!lf_node) {
-        return (NULL);
+        goto out;
     }
     first_lf = (Eventinfo *)lf_node->data;
 
@@ -93,15 +122,15 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
         lf = (Eventinfo *)lf_node->data;
 
         /* If time is outside the timeframe, return */
-        if ((c_time - lf->time) > rule->timeframe) {
-            return (NULL);
+        if ((my_lf->time - lf->time) > rule->timeframe) {
+            goto out;
         }
 
         /* We avoid multiple triggers for the same rule
          * or rules with a lower level.
          */
         else if (lf->matched >= rule->level) {
-            return (NULL);
+            goto out;
         }
 
         /* Check for same ID */
@@ -197,7 +226,7 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
          * or rules with a lower level.
          */
         else if (lf->matched >= rule->level) {
-            return (NULL);
+            goto out;
         }
 
 
@@ -219,11 +248,17 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
         lf->matched = rule->level;
         first_lf->matched = rule->level;
 
-        return (lf);
+        ret = lf;
+        goto out;
 
     } while ((lf_node = lf_node->prev) != NULL);
 
-    return (NULL);
+out:
+    if (ret) {
+        OS_MoveRuleLastEvents(rule, my_lf);
+    }
+    os_mutex_unlock(&rule->mutex);
+    return ret;
 }
 
 /* Search last times a group fired
@@ -233,7 +268,10 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
 {
     Eventinfo *lf;
     Eventinfo *first_lf;
+    Eventinfo *ret = NULL;
     OSListNode *lf_node;
+
+    os_mutex_lock(&rule->mutex);
 
     /* Set frequency to 0 */
     rule->__frequency = 0;
@@ -242,13 +280,13 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
     /* Check if sid search is valid */
     if (!rule->group_search) {
         merror("%s: No group search!", ARGV0);
-        return (NULL);
+        goto out;
     }
 
     /* Get last node */
     lf_node = OSList_GetLastNode(rule->group_search);
     if (!lf_node) {
-        return (NULL);
+        goto out;
     }
     first_lf = (Eventinfo *)lf_node->data;
 
@@ -256,15 +294,15 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
         lf = (Eventinfo *)lf_node->data;
 
         /* If time is outside the timeframe, return */
-        if ((c_time - lf->time) > rule->timeframe) {
-            return (NULL);
+        if ((my_lf->time - lf->time) > rule->timeframe) {
+            goto out;
         }
 
         /* We avoid multiple triggers for the same rule
          * or rules with a lower level.
          */
         else if (lf->matched >= rule->level) {
-            return (NULL);
+            goto out;
         }
 
         /* Check for same ID */
@@ -362,7 +400,7 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
          * or rules with a lower level.
          */
         else if (lf->matched >= rule->level) {
-            return (NULL);
+            goto out;
         }
 
 
@@ -382,12 +420,18 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
         lf->matched = rule->level;
         first_lf->matched = rule->level;
 
-        return (lf);
+        ret = lf;
+        goto out;
 
 
     } while ((lf_node = lf_node->prev) != NULL);
 
-    return (NULL);
+out:
+    if (ret) {
+        OS_MoveRuleLastEvents(rule, my_lf);
+    }
+    os_mutex_unlock(&rule->mutex);
+    return ret;
 }
 
 
@@ -399,14 +443,19 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
     EventNode *eventnode_pt;
     Eventinfo *lf;
     Eventinfo *first_lf;
+    EventList *elist;
 
+    os_mutex_lock(&rule->mutex);
     rule->__frequency = 0;
     OS_FreeRuleLastEvents(rule);
 
     /* Last events */
-    eventnode_pt = OS_GetLastEvent();
+    elist = analysisd_get_event_list();
+    os_mutex_lock(&elist->mutex);
+    eventnode_pt = OS_GetLastEvent_List(elist);
     if (!eventnode_pt) {
-        /* Nothing found */
+        os_mutex_unlock(&elist->mutex);
+        os_mutex_unlock(&rule->mutex);
         return (NULL);
     }
 
@@ -417,7 +466,9 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
         lf = eventnode_pt->event;
 
         /* If time is outside the timeframe, return */
-        if ((c_time - lf->time) > rule->timeframe) {
+        if ((my_lf->time - lf->time) > rule->timeframe) {
+            os_mutex_unlock(&elist->mutex);
+            os_mutex_unlock(&rule->mutex);
             return (NULL);
         }
 
@@ -425,6 +476,8 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
          * or rules with a lower level.
          */
         else if (lf->matched >= rule->level) {
+            os_mutex_unlock(&elist->mutex);
+            os_mutex_unlock(&rule->mutex);
             return (NULL);
         }
 
@@ -501,6 +554,8 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
          * or rules with a lower level.
          */
         else if (lf->matched >= rule->level) {
+            os_mutex_unlock(&elist->mutex);
+            os_mutex_unlock(&rule->mutex);
             return (NULL);
         }
 
@@ -522,10 +577,15 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
         lf->matched = rule->level;
         first_lf->matched = rule->level;
 
+        OS_MoveRuleLastEvents(rule, my_lf);
+        os_mutex_unlock(&elist->mutex);
+        os_mutex_unlock(&rule->mutex);
         return (lf);
 
     } while ((eventnode_pt = eventnode_pt->next) != NULL);
 
+    os_mutex_unlock(&elist->mutex);
+    os_mutex_unlock(&rule->mutex);
     return (NULL);
 }
 
@@ -583,6 +643,10 @@ void Zero_Eventinfo(Eventinfo *lf)
     lf->generated_rule = NULL;
     lf->sid_node_to_delete = NULL;
     lf->decoder_info = NULL_Decoder;
+    lf->alert_last_events = NULL;
+    lf->alert_id = 0;
+    lf->tid = 0;
+    memset(&lf->queue_in_time, 0, sizeof(lf->queue_in_time));
 
     lf->filename = NULL;
     lf->perm_before = 0;
@@ -611,9 +675,18 @@ void Free_Eventinfo(Eventinfo *lf)
         return;
     }
 
+    /* full_log is the owned allocation. log usually aliases into it
+     * (CleanMSG dual buffer or syscheck log==full_log). Only free log when
+     * EF_SEPARATE_LOG marks a distinct malloc. */
+    if (lf->log && (lf->flags & EF_SEPARATE_LOG)) {
+        free(lf->log);
+        lf->flags &= ~EF_SEPARATE_LOG;
+    }
     if (lf->full_log) {
         free(lf->full_log);
     }
+    lf->full_log = NULL;
+    lf->log = NULL;
     if (lf->location) {
         free(lf->location);
     }
@@ -722,16 +795,44 @@ void Free_Eventinfo(Eventinfo *lf)
         free(lf->gowner_after);
     }
 
-    /* Free node to delete */
-    if (lf->sid_node_to_delete) {
-        OSList_DeleteThisNode(lf->generated_rule->sid_prev_matched,
-                              lf->sid_node_to_delete);
-    } else if (lf->generated_rule && lf->generated_rule->group_prev_matched) {
-        unsigned int i = 0;
+    if (lf->alert_last_events) {
+        int i;
+        for (i = 0; lf->alert_last_events[i]; i++) {
+            free(lf->alert_last_events[i]);
+        }
+        free(lf->alert_last_events);
+        lf->alert_last_events = NULL;
+    }
 
-        while (i < lf->generated_rule->group_prev_matched_sz) {
-            OSList_DeleteOldestNode(lf->generated_rule->group_prev_matched[i]);
-            i++;
+    /* Correlation list maintenance belongs to the live event only — async
+     * alert/archive/fw copies must not prune shared group/sid lists. */
+    if (!(lf->flags & EF_ASYNC_COPY)) {
+        /* Free node to delete */
+        if (lf->sid_node_to_delete) {
+            if (lf->generated_rule) {
+#ifndef WIN32
+                os_mutex_lock(&lf->generated_rule->mutex);
+#endif
+                OSList_DeleteThisNode(lf->generated_rule->sid_prev_matched,
+                                      lf->sid_node_to_delete);
+#ifndef WIN32
+                os_mutex_unlock(&lf->generated_rule->mutex);
+#endif
+            }
+            lf->sid_node_to_delete = NULL;
+        } else if (lf->generated_rule && lf->generated_rule->group_prev_matched) {
+            unsigned int i = 0;
+
+#ifndef WIN32
+            os_mutex_lock(&lf->generated_rule->mutex);
+#endif
+            while (i < lf->generated_rule->group_prev_matched_sz) {
+                OSList_DeleteOldestNode(lf->generated_rule->group_prev_matched[i]);
+                i++;
+            }
+#ifndef WIN32
+            os_mutex_unlock(&lf->generated_rule->mutex);
+#endif
         }
     }
 

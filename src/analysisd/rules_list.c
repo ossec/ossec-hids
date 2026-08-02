@@ -375,6 +375,11 @@ int OS_MarkID(RuleNode *r_node, RuleInfo *orig_rule)
                                                 Mark_EventNodeDelete)) {
                     ErrorExit("%s: ERROR: Unable to set free data pointer for sid list", ARGV0);
                 }
+
+                if (!OSList_SetMaxSize(r_node->ruleinfo->sid_prev_matched,
+                        getDefine_Int("analysisd", "sid_prev_matched_max", 16, 65536))) {
+                    ErrorExit("%s: ERROR: Unable to set sid_prev_matched max size", ARGV0);
+                }
             }
 
             /* Assign the parent pointer to it */

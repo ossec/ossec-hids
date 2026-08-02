@@ -65,6 +65,7 @@ void OS_Store(const Eventinfo *lf)
         return;
     }
 
+    analysisd_log_io_lock();
     fprintf(_eflog,
             "%d %s %02d %s %s%s%s %s\n",
             lf->year,
@@ -77,6 +78,7 @@ void OS_Store(const Eventinfo *lf)
             lf->full_log);
 
     fflush(_eflog);
+    analysisd_log_io_unlock();
     return;
 }
 
@@ -98,7 +100,7 @@ void OS_LogOutput(Eventinfo *lf)
         "%d %s %02d %s %s%s%s\nRule: %d (level %d) -> '%s'"
         "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%.1256s\n",
         (long int)lf->time,
-        __crt_ftell,
+        lf->alert_id ? lf->alert_id : __crt_ftell,
         lf->generated_rule->alert_opts & DO_MAILALERT ? " mail " : "",
         lf->generated_rule->group,
         lf->year,
@@ -150,17 +152,24 @@ void OS_LogOutput(Eventinfo *lf)
         lf->full_log);
 
     /* Print the last events if present */
-    if (lf->generated_rule->last_events) {
-        char **lasts = lf->generated_rule->last_events;
-        while (*lasts) {
-            printf("%.1256s\n", *lasts);
-            lasts++;
+    {
+        char **lasts = lf->alert_last_events ? lf->alert_last_events :
+                       (lf->generated_rule ? lf->generated_rule->last_events : NULL);
+
+        if (lasts) {
+            while (*lasts) {
+                printf("%.1256s\n", *lasts);
+                lasts++;
+            }
+            if (!lf->alert_last_events && lf->generated_rule) {
+                os_mutex_lock(&lf->generated_rule->mutex);
+                OS_FreeRuleLastEvents(lf->generated_rule);
+                os_mutex_unlock(&lf->generated_rule->mutex);
+            }
         }
-        OS_FreeRuleLastEvents(lf->generated_rule);
     }
 
     printf("\n");
-
     fflush(stdout);
     return;
 }
@@ -179,73 +188,90 @@ void OS_Log(Eventinfo *lf)
 #endif
 
     /* Writing to the alert log file */
-    fprintf(_aflog,
-            "** Alert %ld.%ld:%s - %s\n"
-            "%d %s %02d %s %s%s%s\nRule: %d (level %d) -> '%s'"
-            "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%.1256s\n",
-            (long int)lf->time,
-            __crt_ftell,
-            lf->generated_rule->alert_opts & DO_MAILALERT ? " mail " : "",
-            lf->generated_rule->group,
-            lf->year,
-            lf->mon,
-            lf->day,
-            lf->hour,
-            lf->hostname != lf->location ? lf->hostname : "",
-            lf->hostname != lf->location ? "->" : "",
-            lf->location,
-            lf->generated_rule->sigid,
-            lf->generated_rule->level,
-            lf->generated_rule->comment,
+    {
+        long alert_id = lf->alert_id ? lf->alert_id : __crt_ftell;
+        char **lasts = lf->alert_last_events ? lf->alert_last_events :
+                       (lf->generated_rule ? lf->generated_rule->last_events : NULL);
+        int clear_shared_last_events = 0;
 
-            lf->srcip == NULL ? "" : "\nSrc IP: ",
-            lf->srcip == NULL ? "" : lf->srcip,
+        analysisd_log_io_lock();
+        fprintf(_aflog,
+                "** Alert %ld.%ld:%s - %s\n"
+                "%d %s %02d %s %s%s%s\nRule: %d (level %d) -> '%s'"
+                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%.1256s\n",
+                (long int)lf->time,
+                alert_id,
+                lf->generated_rule->alert_opts & DO_MAILALERT ? " mail " : "",
+                lf->generated_rule->group,
+                lf->year,
+                lf->mon,
+                lf->day,
+                lf->hour,
+                lf->hostname != lf->location ? lf->hostname : "",
+                lf->hostname != lf->location ? "->" : "",
+                lf->location,
+                lf->generated_rule->sigid,
+                lf->generated_rule->level,
+                lf->generated_rule->comment,
+
+                lf->srcip == NULL ? "" : "\nSrc IP: ",
+                lf->srcip == NULL ? "" : lf->srcip,
 
 #ifdef LIBGEOIP_ENABLED
-            lf->srcgeoip == NULL ? "" : "\nSrc Location: ",
-            lf->srcgeoip == NULL ? "" : lf->srcgeoip,
+                lf->srcgeoip == NULL ? "" : "\nSrc Location: ",
+                lf->srcgeoip == NULL ? "" : lf->srcgeoip,
 #else
-            "",
-            "",
+                "",
+                "",
 #endif
 
 
-            lf->srcport == NULL ? "" : "\nSrc Port: ",
-            lf->srcport == NULL ? "" : lf->srcport,
+                lf->srcport == NULL ? "" : "\nSrc Port: ",
+                lf->srcport == NULL ? "" : lf->srcport,
 
-            lf->dstip == NULL ? "" : "\nDst IP: ",
-            lf->dstip == NULL ? "" : lf->dstip,
+                lf->dstip == NULL ? "" : "\nDst IP: ",
+                lf->dstip == NULL ? "" : lf->dstip,
 
 #ifdef LIBGEOIP_ENABLED
-            lf->dstgeoip == NULL ? "" : "\nDst Location: ",
-            lf->dstgeoip == NULL ? "" : lf->dstgeoip,
+                lf->dstgeoip == NULL ? "" : "\nDst Location: ",
+                lf->dstgeoip == NULL ? "" : lf->dstgeoip,
 #else
-            "",
-            "",
+                "",
+                "",
 #endif
 
 
 
-            lf->dstport == NULL ? "" : "\nDst Port: ",
-            lf->dstport == NULL ? "" : lf->dstport,
+                lf->dstport == NULL ? "" : "\nDst Port: ",
+                lf->dstport == NULL ? "" : lf->dstport,
 
-            lf->dstuser == NULL ? "" : "\nUser: ",
-            lf->dstuser == NULL ? "" : lf->dstuser,
+                lf->dstuser == NULL ? "" : "\nUser: ",
+                lf->dstuser == NULL ? "" : lf->dstuser,
 
-            lf->full_log);
+                lf->full_log);
 
-    /* Print the last events if present */
-    if (lf->generated_rule->last_events) {
-        char **lasts = lf->generated_rule->last_events;
-        while (*lasts) {
-            fprintf(_aflog, "%.1256s\n", *lasts);
-            lasts++;
+        /* Print the last events if present */
+        if (lasts) {
+            while (*lasts) {
+                fprintf(_aflog, "%.1256s\n", *lasts);
+                lasts++;
+            }
+            if (!lf->alert_last_events && lf->generated_rule) {
+                clear_shared_last_events = 1;
+            }
         }
-        OS_FreeRuleLastEvents(lf->generated_rule);
-    }
 
-    fprintf(_aflog, "\n");
-    fflush(_aflog);
+        fprintf(_aflog, "\n");
+        fflush(_aflog);
+        analysisd_log_io_unlock();
+
+        /* Free shared rule buffers only after releasing log_io (lock order). */
+        if (clear_shared_last_events) {
+            os_mutex_lock(&lf->generated_rule->mutex);
+            OS_FreeRuleLastEvents(lf->generated_rule);
+            os_mutex_unlock(&lf->generated_rule->mutex);
+        }
+    }
 
     return;
 }
@@ -255,6 +281,7 @@ void OS_CustomLog(const Eventinfo *lf, const char *format)
     char *log;
     char *tmp_log;
     char tmp_buffer[1024];
+    long alert_id = lf->alert_id ? lf->alert_id : __crt_ftell;
 
     /* Replace all the tokens */
     os_strdup(format, log);
@@ -265,7 +292,7 @@ void OS_CustomLog(const Eventinfo *lf, const char *format)
         os_free(log);
         log = NULL;
     }
-    snprintf(tmp_buffer, 1024, "%ld", __crt_ftell);
+    snprintf(tmp_buffer, 1024, "%ld", alert_id);
     log = searchAndReplace(tmp_log, CustomAlertTokenName[CUSTOM_ALERT_TOKEN_FTELL], tmp_buffer);
     if (tmp_log) {
         os_free(tmp_log);
@@ -349,9 +376,11 @@ void OS_CustomLog(const Eventinfo *lf, const char *format)
         tmp_log = NULL;
     }
 
+    analysisd_log_io_lock();
     fprintf(_aflog, "%s", log);
     fprintf(_aflog, "\n");
     fflush(_aflog);
+    analysisd_log_io_unlock();
 
     if (log) {
         os_free(log);
@@ -375,14 +404,10 @@ void OS_InitFwLog()
     }
 }
 
-int FW_Log(Eventinfo *lf)
+void FW_NormalizeAction(Eventinfo *lf)
 {
-    /* If we don't have the srcip or the
-     * action, there is no point in going
-     * forward over here
-     */
-    if (!lf->action || !lf->srcip || !lf->dstip || !lf->protocol) {
-        return (0);
+    if (!lf || !lf->action) {
+        return;
     }
 
     /* Set the actions */
@@ -424,8 +449,7 @@ int FW_Log(Eventinfo *lf)
             if (OSMatch_Execute(lf->action, strlen(lf->action), &FWDROPpm)) {
                 os_free(lf->action);
                 os_strdup("DROP", lf->action);
-            }
-            if (OSMatch_Execute(lf->action, strlen(lf->action), &FWALLOWpm)) {
+            } else if (OSMatch_Execute(lf->action, strlen(lf->action), &FWALLOWpm)) {
                 os_free(lf->action);
                 os_strdup("ALLOW", lf->action);
             } else {
@@ -434,8 +458,22 @@ int FW_Log(Eventinfo *lf)
             }
             break;
     }
+}
+
+int FW_Log(Eventinfo *lf)
+{
+    /* If we don't have the srcip or the
+     * action, there is no point in going
+     * forward over here
+     */
+    if (!lf->action || !lf->srcip || !lf->dstip || !lf->protocol) {
+        return (0);
+    }
+
+    FW_NormalizeAction(lf);
 
     /* Log to file */
+    analysisd_log_io_lock();
     fprintf(_fflog,
             "%d %s %02d %s %s%s%s %s %s %s:%s->%s:%s\n",
             lf->year,
@@ -453,6 +491,7 @@ int FW_Log(Eventinfo *lf)
             lf->dstport ? lf->dstport : "0");
 
     fflush(_fflog);
+    analysisd_log_io_unlock();
 
     return (1);
 }

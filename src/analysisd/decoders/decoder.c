@@ -17,7 +17,29 @@
 
 
 /* Use the osdecoders to decode the received event */
-void DecodeEvent(Eventinfo *lf)
+static char **decoder_regex_substrings(OSRegex *regex)
+{
+    regex_matching *match = os_regex_get_thread_match();
+
+    if (match) {
+        return match->sub_strings;
+    }
+
+    return regex->sub_strings;
+}
+
+static char **decoder_pcre2_substrings(OSPcre2 *pcre2)
+{
+    regex_matching *match = os_regex_get_thread_match();
+
+    if (match) {
+        return match->sub_strings;
+    }
+
+    return pcre2->sub_strings;
+}
+
+void DecodeEvent(Eventinfo *lf, regex_matching *decoder_match)
 {
     OSDecoderNode *node;
     OSDecoderNode *child_node;
@@ -27,11 +49,14 @@ void DecodeEvent(Eventinfo *lf)
     const char *pmatch = NULL;
     const char *cmatch = NULL;
     const char *regex_prev = NULL;
+    char **capture_strings;
+
+    os_regex_set_thread_match(decoder_match);
 
     node = OS_GetFirstOSDecoder(lf->program_name);
 
     if (!node) {
-        return;
+        goto out;
     }
 
 #ifdef TESTRULE
@@ -135,7 +160,7 @@ void DecodeEvent(Eventinfo *lf)
                     } while (child_node && child_node->osdecoder->get_next);
 
                     if (!child_node) {
-                        return;
+                        goto out;
                     }
 
                     child_node = child_node->next;
@@ -149,7 +174,7 @@ void DecodeEvent(Eventinfo *lf)
 
         /* Nothing matched */
         if (!nnode) {
-            return;
+            goto out;
         }
 
         /* If we have an external decoder, execute it */
@@ -198,18 +223,19 @@ void DecodeEvent(Eventinfo *lf)
 
                 lf->decoder_info = nnode;
 
-                for (i = 0; nnode->regex->sub_strings[i]; i++) {
+                capture_strings = decoder_regex_substrings(nnode->regex);
+                for (i = 0; capture_strings && capture_strings[i]; i++) {
                     if (i >= Config.decoder_order_size) {
                         ErrorExit("%s: ERROR: Regex has too many groups.", ARGV0);
                     }
 
                     if (nnode->order[i])
-                        nnode->order[i](lf, nnode->regex->sub_strings[i], i);
+                        nnode->order[i](lf, capture_strings[i], i);
                     else
                         /* We do not free any memory used above */
-                        os_free(nnode->regex->sub_strings[i]);
+                        os_free(capture_strings[i]);
 
-                    nnode->regex->sub_strings[i] = NULL;
+                    capture_strings[i] = NULL;
                 }
 
                 /* If we have a next regex, try getting it */
@@ -260,18 +286,19 @@ void DecodeEvent(Eventinfo *lf)
 
                 lf->decoder_info = nnode;
 
-                for (i = 0; nnode->pcre2->sub_strings[i]; i++) {
+                capture_strings = decoder_pcre2_substrings(nnode->pcre2);
+                for (i = 0; capture_strings && capture_strings[i]; i++) {
                     if (i >= Config.decoder_order_size) {
                         ErrorExit("%s: ERROR: Regex has too many groups.", ARGV0);
                     }
 
                     if (nnode->order[i])
-                        nnode->order[i](lf, nnode->pcre2->sub_strings[i], i);
+                        nnode->order[i](lf, capture_strings[i], i);
                     else
                         /* We do not free any memory used above */
-                        os_free(nnode->pcre2->sub_strings[i]);
+                        os_free(capture_strings[i]);
 
-                    nnode->pcre2->sub_strings[i] = NULL;
+                    capture_strings[i] = NULL;
                 }
 
                 /* If we have a next regex, try getting it */
@@ -299,9 +326,10 @@ void DecodeEvent(Eventinfo *lf)
         print_out("       No decoder matched.");
     }
 #endif
-    return;
+    goto out;
 
 out:
+    os_regex_set_thread_match(NULL);
 #ifdef TESTRULE
     if (!alert_only && lf->decoder_info) {
         print_out("       decoder: '%s'", lf->decoder_info->name);

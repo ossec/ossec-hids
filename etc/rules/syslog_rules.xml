@@ -605,7 +605,7 @@
 
  <rule id="2902" level="7">
     <if_sid>2900</if_sid>
-    <pcre2>^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (install|upgrade|configure)</pcre2>
+    <pcre2>^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} status installed</pcre2>
     <description>New dpkg (Debian Package) installed.</description>
     <group>config_changed,</group>
   </rule>

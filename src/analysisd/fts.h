@@ -26,5 +26,8 @@ void AddtoIGnore(Eventinfo *lf);
 int IGnore(Eventinfo *lf);
 int FTS(Eventinfo *lf);
 
-#endif /* __FTS_H */
+/* Disk I/O under fts_write_lock (separate from in-memory fts_mutex). */
+void FTS_Fprintf(char *_line);
+void FTS_Flush(void);
 
+#endif /* __FTS_H */

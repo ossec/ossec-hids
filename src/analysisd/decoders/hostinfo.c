@@ -11,6 +11,7 @@
 #include "decoder.h"
 
 #include "config.h"
+#include "shared.h"
 #include "os_regex/os_regex.h"
 #include "eventinfo.h"
 #include "alerts/alerts.h"
@@ -28,6 +29,9 @@ static int id_new = 0;
 static int id_mod = 0;
 static char _hi_buf[OS_MAXSTR + 1];
 static FILE *_hi_fp = NULL;
+#ifndef WIN32
+static pthread_mutex_t hostinfo_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /* Hostinfo decoder */
 static OSDecoderInfo *hostinfo_dec = NULL;
@@ -114,7 +118,7 @@ static FILE *HI_File(void)
  * Not using the default rendering tools for simplicity
  * and to be less resource intensive
  */
-int DecodeHostinfo(Eventinfo *lf)
+static int DecodeHostinfo_unlocked(Eventinfo *lf)
 {
     int changed = 0;
     size_t bf_size;
@@ -220,5 +224,19 @@ int DecodeHostinfo(Eventinfo *lf)
     }
 
     return (1);
+}
+
+int DecodeHostinfo(Eventinfo *lf)
+{
+    int result;
+
+#ifndef WIN32
+    os_mutex_lock(&hostinfo_mutex);
+#endif
+    result = DecodeHostinfo_unlocked(lf);
+#ifndef WIN32
+    os_mutex_unlock(&hostinfo_mutex);
+#endif
+    return result;
 }
 
