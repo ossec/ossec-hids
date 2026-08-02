@@ -1,3 +1,24 @@
+**OSSEC changelog (4.2.0) <support@atomicorp.com>**
+
+**Release Maintainers**
+
+Dan Parriott
+
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+
+**Release Notes**
+
+This release adds a multi-threaded analysisd pipeline for Linux servers, packages MinGW/OpenSSL runtime DLLs with the Windows agent installer, and includes assorted stability and packaging fixes since 4.1.0.
+
+**General**
+
+- Multi-threaded analysisd event pipeline (Linux)
+- Windows agent NSIS installer bundles required runtime DLLs (#2241 / #2247)
+
 **OSSEC changelog (4.1.0) <support@atomicorp.com>**
 
 **Release Maintainers**
