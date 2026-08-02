@@ -10,6 +10,8 @@
 #include "shared.h"
 #include "rootcheck.h"
 #include "os_regex/os_regex.h"
+#include "os_crypto/md5_sha1/md5_sha1_op.h"
+#include "os_crypto/sha256/sha256_op.h"
 
 /* Prototypes */
 static int _is_str_in_array(char *const *ar, const char *str);
@@ -238,6 +240,39 @@ int rk_check_file(char *file, char *pattern)
     } while (split_file);
 
     return (0);
+}
+
+/* Calculate file hash md5, sha1, sha256*/
+void rk_append_file_hash(const char *file_path, char *dest, size_t dest_size)
+{
+    os_md5 md5;
+    os_sha1 sha1;
+    os_sha256 sha256;
+
+    struct stat statbuf;
+    size_t used;
+
+    /* strnlen scans at most dest_size bytes; if it returns dest_size there
+     * is no NUL terminator within the buffer (or the buffer is already full),
+     * so there is nowhere safe to append. */
+    used = strnlen(dest, dest_size);
+    if (used >= dest_size) {
+        return;
+    }
+
+    if (stat(file_path, &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
+        int md5sha1_ok = (OS_MD5_SHA1_File(file_path, NULL, md5, sha1, OS_BINARY) == 0);
+        int sha256_ok  = (OS_SHA256_File(file_path, sha256, OS_BINARY) == 0);
+
+        snprintf(dest + used, dest_size - used,
+                 " MD5=%s SHA1=%s SHA256=%s",
+                 md5sha1_ok ? md5    : "n/a",
+                 md5sha1_ok ? sha1   : "n/a",
+                 sha256_ok  ? sha256 : "n/a");
+    } else {
+        snprintf(dest + used, dest_size - used,
+                 " MD5=n/a SHA1=n/a SHA256=n/a");
+    }
 }
 
 /* Check if the pattern is all negate values */
@@ -636,4 +671,5 @@ int is_process(char *value, OSList *p_list)
 
     return (0);
 }
+
 

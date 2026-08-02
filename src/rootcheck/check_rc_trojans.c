@@ -88,16 +88,17 @@ void check_rc_trojans(const char *basedir, FILE *fp)
 
             /* Check if entry is found */
             if (is_file(file_path) && os_string(file_path, string_to_look)) {
-                char op_msg[OS_SIZE_1024 + 1];
+                char op_msg[OS_SIZE_2048 + 1];
                 _errors = 1;
 
-                snprintf(op_msg, OS_SIZE_1024, "Trojaned version of file "
+                snprintf(op_msg, OS_SIZE_2048, "Trojaned version of file "
                          "'%s' detected. Signature used: '%s' (%s).",
                          file_path,
                          string_to_look,
                          *message == '\0' ?
                          "Generic" : message);
 
+                rk_append_file_hash(file_path, op_msg, sizeof(op_msg));
                 notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
             }
 
