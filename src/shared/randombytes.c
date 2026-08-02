@@ -22,9 +22,77 @@
 #define RANDOMBYTES_READ_TIMEOUT_MS 5000
 #endif
 
+#if !defined(WIN32) && !defined(__OpenBSD__)
+#ifndef O_CLOEXEC
+#define RB_O_CLOEXEC 0
+#else
+#define RB_O_CLOEXEC O_CLOEXEC
+#endif
+
+/* Process-wide entropy FD + mutex (must outlive randombytes_try frames for
+ * pthread_atfork handlers). Kept open across chroot; never closed on transient
+ * read failures so post-chroot reopen-by-path is not required.
+ */
+static int rb_fh = -1;
+static pthread_mutex_t rb_fh_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_once_t rb_atfork_once = PTHREAD_ONCE_INIT;
+
+static void rb_atfork_prepare(void)
+{
+    pthread_mutex_lock(&rb_fh_mutex);
+}
+
+static void rb_atfork_parent(void)
+{
+    pthread_mutex_unlock(&rb_fh_mutex);
+}
+
+static void rb_atfork_child(void)
+{
+    /* prepare() held the lock across fork; drop it in the child copy. */
+    pthread_mutex_unlock(&rb_fh_mutex);
+}
+
+static void rb_register_atfork(void)
+{
+    (void)pthread_atfork(rb_atfork_prepare, rb_atfork_parent, rb_atfork_child);
+}
+
+static void rb_atfork_setup(void)
+{
+    (void)pthread_once(&rb_atfork_once, rb_register_atfork);
+}
+
+static int rb_open_entropy(void)
+{
+    int fd;
+
+    fd = open("/dev/urandom", O_RDONLY | RB_O_CLOEXEC);
+    if (fd < 0) {
+        fd = open("/dev/random", O_RDONLY | RB_O_CLOEXEC);
+    }
+#ifndef O_CLOEXEC
+    if (fd >= 0) {
+        int flags = fcntl(fd, F_GETFD);
+        if (flags >= 0) {
+            (void)fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+        }
+    }
+#endif
+    return fd;
+}
+#endif /* !WIN32 && !__OpenBSD__ */
+
 
 int randombytes_try(void *ptr, size_t length)
 {
+    if (length == 0) {
+        return 1;
+    }
+    if (ptr == NULL) {
+        return 0;
+    }
+
 #ifdef WIN32
     static HCRYPTPROV prov = 0;
     static CRITICAL_SECTION prov_lock;
@@ -55,40 +123,44 @@ int randombytes_try(void *ptr, size_t length)
         }
     }
 
-    ok = CryptGenRandom(prov, (DWORD)length, ptr) ? 1 : 0;
+    /* CryptGenRandom takes a DWORD length; reject oversized requests so a
+     * truncated cast cannot report success after a partial fill.
+     */
+    if (length > (size_t)MAXDWORD) {
+        LeaveCriticalSection(&prov_lock);
+        return 0;
+    }
+
+    ok = CryptGenRandom(prov, (DWORD)length, (BYTE *)ptr) ? 1 : 0;
     LeaveCriticalSection(&prov_lock);
     return ok;
 #elif defined(__OpenBSD__)
     /* LibreSSL RAND_bytes used arc4random; keep that path so chroot never
      * depends on /dev/urandom device nodes inside the jail.
      */
-    if (length > 0 && ptr != NULL) {
-        arc4random_buf(ptr, length);
-    }
+    arc4random_buf(ptr, length);
     return 1;
 #else
-    static int fh = -1;
-    static pthread_mutex_t rb_fh_mutex = PTHREAD_MUTEX_INITIALIZER;
     unsigned char *p = (unsigned char *)ptr;
     size_t remaining = length;
 
     /* Keep the entropy FD open across chroot: open once before Privsep_Chroot
      * (via srandom_init), then reuse the FD after jail. Re-opening /dev/urandom
      * by path after chroot fails on platforms without getrandom() (e.g. AIX).
-     * Mutex covers open/read/close so remoted/agent worker threads cannot race
-     * error-recovery close/reset against concurrent readers. poll() bounds how
-     * long a starved /dev/random can hold that lock.
+     * Once open succeeds, keep the FD even on transient poll/read failures so
+     * post-chroot callers are not forced to reopen by path. Mutex covers
+     * open/read so remoted/agent worker threads cannot race. poll() bounds how
+     * long a starved /dev/random can hold that lock. pthread_atfork avoids a
+     * permanently locked mutex in a forked child.
      */
+    rb_atfork_setup();
     pthread_mutex_lock(&rb_fh_mutex);
 
-    if (fh < 0) {
-        fh = open("/dev/urandom", O_RDONLY);
-        if (fh < 0) {
-            fh = open("/dev/random", O_RDONLY);
-        }
+    if (rb_fh < 0) {
+        rb_fh = rb_open_entropy();
     }
 
-    if (fh < 0) {
+    if (rb_fh < 0) {
         pthread_mutex_unlock(&rb_fh_mutex);
         return 0;
     }
@@ -98,12 +170,10 @@ int randombytes_try(void *ptr, size_t length)
         int pret;
         ssize_t ret;
 
-        pfd.fd = fh;
+        pfd.fd = rb_fh;
         pfd.events = POLLIN;
         pret = poll(&pfd, 1, RANDOMBYTES_READ_TIMEOUT_MS);
         if (pret == 0) {
-            close(fh);
-            fh = -1;
             pthread_mutex_unlock(&rb_fh_mutex);
             return 0;
         }
@@ -111,27 +181,21 @@ int randombytes_try(void *ptr, size_t length)
             if (errno == EINTR) {
                 continue;
             }
-            close(fh);
-            fh = -1;
             pthread_mutex_unlock(&rb_fh_mutex);
             return 0;
         }
 
-        ret = read(fh, p, remaining);
+        ret = read(rb_fh, p, remaining);
 
         if (ret < 0) {
             if (errno == EINTR) {
                 continue;
             }
-            close(fh);
-            fh = -1;
             pthread_mutex_unlock(&rb_fh_mutex);
             return 0;
         }
         if (ret == 0) {
-            /* Unexpected EOF on a random device. */
-            close(fh);
-            fh = -1;
+            /* Unexpected EOF on a random device; keep FD for later retries. */
             pthread_mutex_unlock(&rb_fh_mutex);
             return 0;
         }
@@ -155,6 +219,9 @@ void randombytes(void *ptr, size_t length)
 void srandom_init(void)
 {
 #ifndef WIN32
+#if !defined(__OpenBSD__)
+    rb_atfork_setup();
+#endif
 #ifdef __OpenBSD__
     srandomdev();
 #else
@@ -166,7 +233,7 @@ void srandom_init(void)
     /* Seed OpenSSL before chroot so TLS/authd do not re-open /dev/urandom
      * by path inside the jail. Keep device FDs open across reseed on 1.1.1+.
      */
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
     RAND_keep_random_devices_open(1);
 #endif
     if (RAND_poll() != 1 || RAND_status() != 1) {
