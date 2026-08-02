@@ -374,12 +374,12 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 #ifdef WIN32
         int di = 0;
         char *(defaultfilesn[]) = {
-            "C:\\autoexec.bat",
-            "C:\\config.sys",
-            "C:\\WINDOWS/System32/eventcreate.exe",
-            "C:\\WINDOWS/System32/eventtriggers.exe",
-            "C:\\WINDOWS/System32/tlntsvr.exe",
-            "C:\\WINDOWS/System32/Tasks",
+            "C:/autoexec.bat",
+            "C:/config.sys",
+            "C:/WINDOWS/System32/eventcreate.exe",
+            "C:/WINDOWS/System32/eventtriggers.exe",
+            "C:/WINDOWS/System32/tlntsvr.exe",
+            "C:/WINDOWS/System32/Tasks",
             NULL
         };
         while (defaultfilesn[di] != NULL) {

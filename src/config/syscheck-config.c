@@ -211,6 +211,11 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             }
         }
 
+#ifdef WIN32
+        /* Canonicalize so realtime and scheduled scans share one path form. */
+        os_normalize_path(tmp_dir);
+#endif
+
         /* Get the options */
         if (!g_attrs || !g_values) {
             merror(SYSCHECK_NO_OPT, __local_name, dirs);
@@ -508,6 +513,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
 
 #ifdef WIN32
             ExpandEnvironmentStrings(node[i]->content, dirs, sizeof(dirs) - 1);
+            os_normalize_path(dirs);
 #else
             strncpy(dirs, node[i]->content, sizeof(dirs) - 1);
 #endif
@@ -603,6 +609,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             os_calloc(2048, sizeof(char), new_ig);
 
             ExpandEnvironmentStrings(node[i]->content, new_ig, 2047);
+            os_normalize_path(new_ig);
 
             free(node[i]->content);
             node[i]->content = new_ig;
@@ -738,6 +745,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             os_calloc(2048, sizeof(char), new_nodiff);
 
             ExpandEnvironmentStrings(node[i]->content, new_nodiff, 2047);
+            os_normalize_path(new_nodiff);
 
             free(node[i]->content);
             node[i]->content = new_nodiff;

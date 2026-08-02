@@ -1,3 +1,25 @@
+**OSSEC changelog (4.3.0) <support@atomicorp.com>**
+
+**Release Maintainers**
+
+Dan Parriott
+
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+- @reyjrar
+
+**Release Notes**
+
+Work toward the next minor release after 4.2.0.
+
+**Bug Fixes**
+
+- @reyjrar / @atomicturtle - [PR 235](https://github.com/ossec/ossec-hids/pull/235) - Canonicalize Windows FIM paths so realtime and scheduled scans use the same slash form
+
+
 **OSSEC changelog (4.2.0) <support@atomicorp.com>**
 
 **Release Maintainers**

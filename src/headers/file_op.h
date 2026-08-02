@@ -57,6 +57,9 @@ int mkstemp_ex(char *tmp_path) __attribute__((nonnull));
 #ifdef WIN32
 int checkVista();
 extern int isVista;
+
+/* Rewrite '\\' to '/' in place so FIM paths, ignores, and alerts share one form. */
+void os_normalize_path(char *path);
 #endif
 
 int w_ref_parent_folder(const char *path);
