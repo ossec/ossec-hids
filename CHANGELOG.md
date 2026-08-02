@@ -12,6 +12,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 - @reyjrar
 - @hyn172
 - @lazyp
+- @awiddersheim
 
 **Release Notes**
 
@@ -20,6 +21,7 @@ Work toward the next minor release after 4.2.0.
 **General**
 
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
+- @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
 
 **Bug Fixes**
 
