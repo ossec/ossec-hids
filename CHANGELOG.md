@@ -9,15 +9,48 @@ Scott R. Shinn (https://www.atomicorp.com)
 **Contributors on this release**
 
 - @atomicturtle
+- @Hu6li
 
 **Release Notes**
 
-This release adds a multi-threaded analysisd pipeline for Linux servers, packages MinGW/OpenSSL runtime DLLs with the Windows agent installer, and includes assorted stability and packaging fixes since 4.1.0.
+This release focuses on analysisd scalability and broader stability. Key enhancements include an always-on multi-threaded analysisd pipeline for Linux servers, pthread migration for manager daemons, rootcheck file-hash enrichment in alerts, and a self-contained Windows agent installer that ships required MinGW/OpenSSL runtime DLLs. It also includes numerous fixes across authd, maild, syscheck, logcollector, and rules.
+
+**Security Fixes**
+
+- @atomicturtle - [PR 2216](https://github.com/ossec/ossec-hids/pull/2216) - Fix ossec-authd failure under modern Linux crypto policies (RHEL 8+)
+- @atomicturtle - [PR 2219](https://github.com/ossec/ossec-hids/pull/2219) - Fix ossec-maild heap corruption when building alert email bodies
 
 **General**
 
-- Multi-threaded analysisd event pipeline (Linux)
-- Windows agent NSIS installer bundles required runtime DLLs (#2241 / #2247)
+- @atomicturtle - [PR 2214](https://github.com/ossec/ossec-hids/pull/2214) - Migrate manager daemons to pthreads and add shared thread pool support
+- @atomicturtle - [PR 2220](https://github.com/ossec/ossec-hids/pull/2220) - Keep ossec-maild running when SMTP is temporarily unavailable
+- @atomicturtle - [PR 2228](https://github.com/ossec/ossec-hids/pull/2228) - Validate agent keys with OS_IsValidIP for IPv6 authd -i keys
+- @atomicturtle - [PR 2232](https://github.com/ossec/ossec-hids/pull/2232) - Indicate when report_changes diffs are truncated (#455)
+- @atomicturtle - [PR 2236](https://github.com/ossec/ossec-hids/pull/2236) - Update stale IIS and Windows doc URLs in setup helpers (#1975)
+- @Hu6li - [PR 2244](https://github.com/ossec/ossec-hids/pull/2244) - Append MD5/SHA1/SHA256 hashes of detected rootcheck files to alerts
+- @atomicturtle - [PR 2246](https://github.com/ossec/ossec-hids/pull/2246) - Multi-threaded analysisd event pipeline for Linux servers
+- @atomicturtle - [PR 2247](https://github.com/ossec/ossec-hids/pull/2247) - Bundle MinGW/OpenSSL runtime DLLs in the Windows agent installer (#2241)
+
+**Bug Fixes**
+
+- @atomicturtle - [PR 2217](https://github.com/ossec/ossec-hids/pull/2217) - Fix memory leak in analysisd OS_IsValidIP path (#2108)
+- @atomicturtle - [PR 2218](https://github.com/ossec/ossec-hids/pull/2218) - Fix agent getaddrinfo failures on RHEL 8+ by retrying with IPv4
+- @atomicturtle - [PR 2221](https://github.com/ossec/ossec-hids/pull/2221) - Fix Windows agent ignoring configured notify_time for keep-alives
+- @atomicturtle - [PR 2223](https://github.com/ossec/ossec-hids/pull/2223) - Fix logcollector memory leak when duplicate localfiles are configured
+- @atomicturtle - [PR 2225](https://github.com/ossec/ossec-hids/pull/2225) - Fix wrong CloseHandle on Windows realtime duplicate hash path
+- @atomicturtle - [PR 2226](https://github.com/ossec/ossec-hids/pull/2226) - Fix frequency rule alert context showing unrelated log lines (#1079)
+- @atomicturtle - [PR 2227](https://github.com/ossec/ossec-hids/pull/2227) - Fix incomplete syscheck baseline database population (#1248)
+- @atomicturtle - [PR 2229](https://github.com/ossec/ossec-hids/pull/2229) - Fix syscheck diff false errors and snapshot handling (#1296)
+- @atomicturtle - [PR 2230](https://github.com/ossec/ossec-hids/pull/2230) - Restore rule.group in JSON alert output (#1838)
+- @atomicturtle - [PR 2231](https://github.com/ossec/ossec-hids/pull/2231) - Fix authd graceful SIGINT/SIGTERM shutdown (#919)
+- @atomicturtle - [PR 2233](https://github.com/ossec/ossec-hids/pull/2233) - Honor localfile command frequency after logcollector restart (#1415)
+- @atomicturtle - [PR 2234](https://github.com/ossec/ossec-hids/pull/2234) - Restore linear scan fallback for syscheck db lookups (#1248)
+- @atomicturtle - [PR 2235](https://github.com/ossec/ossec-hids/pull/2235) - Poll journald continuously instead of on command frequency (#2110)
+- @atomicturtle - [PR 2237](https://github.com/ossec/ossec-hids/pull/2237) - Fix false CIS apt sources alert on Ubuntu 24.04
+- @atomicturtle - [PR 2238](https://github.com/ossec/ossec-hids/pull/2238) - Fix false dpkg install alert when removing packages
+- @atomicturtle - [PR 2239](https://github.com/ossec/ossec-hids/pull/2239) - Fix msauth Enterprise Admins false positives and negatives
+- @atomicturtle - [PR 2240](https://github.com/ossec/ossec-hids/pull/2240) - Fix Postfix rule 3331 false positive on postscreen client ports
+
 
 **OSSEC changelog (4.1.0) <support@atomicorp.com>**
 
