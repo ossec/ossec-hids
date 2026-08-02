@@ -718,6 +718,8 @@ winagent:
 	cd win32/ && ./unix2dos.pl ../../LICENSE > LICENSE.txt
 	cd win32/ && ./unix2dos.pl ../../active-response/win/route-null.cmd > route-null.cmd
 	cd win32/ && ./unix2dos.pl ../../active-response/win/restart-ossec.cmd > restart-ossec.cmd
+	# Ship OpenSSL/MinGW runtime DLLs with the installer (issue #2241)
+	sh win32/bundle_runtime_dlls.sh "${MING_BASE}" win32
 	cd win32/ && makensis ossec-installer.nsi
 
 
