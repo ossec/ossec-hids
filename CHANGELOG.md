@@ -50,6 +50,7 @@ This release focuses on analysisd scalability and broader stability. Key enhance
 - @atomicturtle - [PR 2238](https://github.com/ossec/ossec-hids/pull/2238) - Fix false dpkg install alert when removing packages
 - @atomicturtle - [PR 2239](https://github.com/ossec/ossec-hids/pull/2239) - Fix msauth Enterprise Admins false positives and negatives
 - @atomicturtle - [PR 2240](https://github.com/ossec/ossec-hids/pull/2240) - Fix Postfix rule 3331 false positive on postscreen client ports
+- @atomicturtle - [PR 2243](https://github.com/ossec/ossec-hids/pull/2243) - Fix AIX agent entropy failure after chroot by keeping OS RNG usable
 
 
 **OSSEC changelog (4.1.0) <support@atomicorp.com>**
