@@ -236,7 +236,7 @@ void Update_Hour()
 }
 
 /* Check Hourly stats */
-int Check_Hour()
+int Check_Hour(char *comment_out, size_t comment_sz)
 {
     int result = 0;
     int hour;
@@ -244,6 +244,10 @@ int Check_Hour()
 
     hour = __crt_hour;
     wday = __crt_wday;
+
+    if (hour < 0 || hour > 23 || wday < 0 || wday > 6) {
+        return 0;
+    }
 
 #ifndef WIN32
     os_mutex_lock(&stats_hour_mutex);
@@ -313,6 +317,9 @@ int Check_Hour()
     }
 
 out:
+    if (result && comment_out && comment_sz > 0) {
+        snprintf(comment_out, comment_sz, "%s", __stats_comment);
+    }
 #ifndef WIN32
     os_mutex_unlock(&stats_hour_mutex);
 #endif

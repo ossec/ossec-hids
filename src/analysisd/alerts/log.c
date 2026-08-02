@@ -65,6 +65,7 @@ void OS_Store(const Eventinfo *lf)
         return;
     }
 
+    analysisd_log_io_lock();
     fprintf(_eflog,
             "%d %s %02d %s %s%s%s %s\n",
             lf->year,
@@ -77,6 +78,7 @@ void OS_Store(const Eventinfo *lf)
             lf->full_log);
 
     fflush(_eflog);
+    analysisd_log_io_unlock();
     return;
 }
 
@@ -98,7 +100,7 @@ void OS_LogOutput(Eventinfo *lf)
         "%d %s %02d %s %s%s%s\nRule: %d (level %d) -> '%s'"
         "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%.1256s\n",
         (long int)lf->time,
-        __crt_ftell,
+        lf->alert_id ? lf->alert_id : __crt_ftell,
         lf->generated_rule->alert_opts & DO_MAILALERT ? " mail " : "",
         lf->generated_rule->group,
         lf->year,
@@ -160,13 +162,14 @@ void OS_LogOutput(Eventinfo *lf)
                 lasts++;
             }
             if (!lf->alert_last_events && lf->generated_rule) {
+                os_mutex_lock(&lf->generated_rule->mutex);
                 OS_FreeRuleLastEvents(lf->generated_rule);
+                os_mutex_unlock(&lf->generated_rule->mutex);
             }
         }
     }
 
     printf("\n");
-
     fflush(stdout);
     return;
 }
@@ -189,7 +192,9 @@ void OS_Log(Eventinfo *lf)
         long alert_id = lf->alert_id ? lf->alert_id : __crt_ftell;
         char **lasts = lf->alert_last_events ? lf->alert_last_events :
                        (lf->generated_rule ? lf->generated_rule->last_events : NULL);
+        int clear_shared_last_events = 0;
 
+        analysisd_log_io_lock();
         fprintf(_aflog,
                 "** Alert %ld.%ld:%s - %s\n"
                 "%d %s %02d %s %s%s%s\nRule: %d (level %d) -> '%s'"
@@ -252,13 +257,21 @@ void OS_Log(Eventinfo *lf)
                 lasts++;
             }
             if (!lf->alert_last_events && lf->generated_rule) {
-                OS_FreeRuleLastEvents(lf->generated_rule);
+                clear_shared_last_events = 1;
             }
         }
-    }
 
-    fprintf(_aflog, "\n");
-    fflush(_aflog);
+        fprintf(_aflog, "\n");
+        fflush(_aflog);
+        analysisd_log_io_unlock();
+
+        /* Free shared rule buffers only after releasing log_io (lock order). */
+        if (clear_shared_last_events) {
+            os_mutex_lock(&lf->generated_rule->mutex);
+            OS_FreeRuleLastEvents(lf->generated_rule);
+            os_mutex_unlock(&lf->generated_rule->mutex);
+        }
+    }
 
     return;
 }
@@ -268,6 +281,7 @@ void OS_CustomLog(const Eventinfo *lf, const char *format)
     char *log;
     char *tmp_log;
     char tmp_buffer[1024];
+    long alert_id = lf->alert_id ? lf->alert_id : __crt_ftell;
 
     /* Replace all the tokens */
     os_strdup(format, log);
@@ -278,7 +292,7 @@ void OS_CustomLog(const Eventinfo *lf, const char *format)
         os_free(log);
         log = NULL;
     }
-    snprintf(tmp_buffer, 1024, "%ld", __crt_ftell);
+    snprintf(tmp_buffer, 1024, "%ld", alert_id);
     log = searchAndReplace(tmp_log, CustomAlertTokenName[CUSTOM_ALERT_TOKEN_FTELL], tmp_buffer);
     if (tmp_log) {
         os_free(tmp_log);
@@ -362,9 +376,11 @@ void OS_CustomLog(const Eventinfo *lf, const char *format)
         tmp_log = NULL;
     }
 
+    analysisd_log_io_lock();
     fprintf(_aflog, "%s", log);
     fprintf(_aflog, "\n");
     fflush(_aflog);
+    analysisd_log_io_unlock();
 
     if (log) {
         os_free(log);
@@ -457,6 +473,7 @@ int FW_Log(Eventinfo *lf)
     FW_NormalizeAction(lf);
 
     /* Log to file */
+    analysisd_log_io_lock();
     fprintf(_fflog,
             "%d %s %02d %s %s%s%s %s %s %s:%s->%s:%s\n",
             lf->year,
@@ -474,6 +491,7 @@ int FW_Log(Eventinfo *lf)
             lf->dstport ? lf->dstport : "0");
 
     fflush(_fflog);
+    analysisd_log_io_unlock();
 
     return (1);
 }

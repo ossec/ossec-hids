@@ -122,8 +122,13 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     if (lf->full_log) {
         cJSON_AddStringToObject(root, "full_log", lf->full_log);
     }
-    if (lf->generated_rule->last_events && lf->generated_rule->last_events[1] && lf->generated_rule->last_events[1][0]) {
-        cJSON_AddStringToObject(root, "previous_output", lf->generated_rule->last_events[1]);
+    {
+        char **lasts = lf->alert_last_events ? lf->alert_last_events :
+                       (lf->generated_rule ? lf->generated_rule->last_events : NULL);
+
+        if (lasts && lasts[1] && lasts[1][0]) {
+            cJSON_AddStringToObject(root, "previous_output", lasts[1]);
+        }
     }
 
     if (lf->filename) {

@@ -24,8 +24,10 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
     const char *ip;
     const char *user;
     char *filename = NULL;
+    long alert_id;
 
     ip = user = "-";
+    alert_id = lf->alert_id ? lf->alert_id : __crt_ftell;
 
     /* Clean the IP */
     if (lf->srcip && (ar->ar_cmd->expect & SRCIP)) {
@@ -86,7 +88,7 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
                  user,
                  ip,
                  (long int)lf->time,
-                 __crt_ftell,
+                 alert_id,
                  lf->generated_rule->sigid,
                  lf->location,
                  filename ? filename : "-");
@@ -117,7 +119,7 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
                      user,
                      ip,
                      (long int)lf->time,
-                     __crt_ftell,
+                     alert_id,
                      lf->generated_rule->sigid,
                      lf->location,
                      filename);
@@ -133,7 +135,7 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
                      user,
                      ip,
                      (long int)lf->time,
-                     __crt_ftell,
+                     alert_id,
                      lf->generated_rule->sigid,
                      lf->location,
                      filename);

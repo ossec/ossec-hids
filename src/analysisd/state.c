@@ -287,11 +287,9 @@ static unsigned int analysisd_sharded_queue_capacity(void)
 }
 
 /* Unsigned wraparound preserves the modular delta across UINT_MAX. */
-static unsigned int analysisd_delta_since(unsigned int current, unsigned int *prev)
+static unsigned int analysisd_delta_since(unsigned int current, unsigned int prev)
 {
-    unsigned int delta = current - *prev;
-    *prev = current;
-    return delta;
+    return current - prev;
 }
 
 int analysisd_write_state(void)
@@ -302,6 +300,9 @@ int analysisd_write_state(void)
     unsigned int dropped;
     unsigned int processed;
     unsigned int processed_delta;
+    unsigned int shard_dropped;
+    unsigned int alerts_dropped;
+    unsigned int archives_dropped;
     unsigned int alerts_depth;
     unsigned int shard_n;
     unsigned int alerts_n;
@@ -322,23 +323,22 @@ int analysisd_write_state(void)
 
     dropped = analysisd_get_dropped_events();
     processed = analysisd_get_processed_events();
-    processed_delta = analysisd_delta_since(processed, &s_prev_processed);
+    shard_dropped = analysisd_get_shard_dropped();
+    alerts_dropped = analysisd_get_alerts_dropped();
+    archives_dropped = analysisd_get_archives_dropped();
+
+    /* Compute deltas from committed baselines; update baselines only after
+     * the state file is persisted successfully below. */
+    processed_delta = analysisd_delta_since(processed, s_prev_processed);
+    s_dropped_delta = analysisd_delta_since(dropped, s_prev_dropped);
+    s_shard_dropped_delta = analysisd_delta_since(shard_dropped, s_prev_shard_dropped);
+    s_alerts_dropped_delta = analysisd_delta_since(alerts_dropped, s_prev_alerts_dropped);
+    s_archives_dropped_delta = analysisd_delta_since(archives_dropped,
+                                                     s_prev_archives_dropped);
     if (state_interval > 0) {
         s_epds = (double)processed_delta / (double)state_interval;
     } else {
         s_epds = 0.0;
-    }
-
-    {
-        unsigned int shard_dropped = analysisd_get_shard_dropped();
-        unsigned int alerts_dropped = analysisd_get_alerts_dropped();
-        unsigned int archives_dropped = analysisd_get_archives_dropped();
-
-        s_dropped_delta = analysisd_delta_since(dropped, &s_prev_dropped);
-        s_shard_dropped_delta = analysisd_delta_since(shard_dropped, &s_prev_shard_dropped);
-        s_alerts_dropped_delta = analysisd_delta_since(alerts_dropped, &s_prev_alerts_dropped);
-        s_archives_dropped_delta = analysisd_delta_since(archives_dropped,
-                                                         &s_prev_archives_dropped);
     }
 
     alerts_depth = 0;
@@ -522,6 +522,12 @@ int analysisd_write_state(void)
         unlink(path_temp);
         return -1;
     }
+
+    s_prev_processed = processed;
+    s_prev_dropped = dropped;
+    s_prev_shard_dropped = shard_dropped;
+    s_prev_alerts_dropped = alerts_dropped;
+    s_prev_archives_dropped = archives_dropped;
 
     analysisd_log_pipeline_metrics(analysisd_get_decoded_events(),
                                    analysisd_get_processed_events(),

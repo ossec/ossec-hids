@@ -9,6 +9,7 @@
 
 /* Get the log directory/file based on the day/month/year */
 
+#include "shared.h"
 #include "getloglocation.h"
 #include "config.h"
 
@@ -26,6 +27,24 @@ static char __alogfile[OS_FLSIZE + 1];
 static char __flogfile[OS_FLSIZE + 1];
 static char __jlogfile[OS_FLSIZE + 1];
 static char __ejlogfile[OS_FLSIZE + 1];
+
+#ifndef WIN32
+static pthread_mutex_t log_io_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+void analysisd_log_io_lock(void)
+{
+#ifndef WIN32
+    os_mutex_lock(&log_io_mutex);
+#endif
+}
+
+void analysisd_log_io_unlock(void)
+{
+#ifndef WIN32
+    os_mutex_unlock(&log_io_mutex);
+#endif
+}
 
 void OS_InitLog()
 {
@@ -56,8 +75,8 @@ int OS_GetLogLocation(const Eventinfo *lf)
      * Check if the year directory is there
      * If not, create it. Same for the month directory.
      */
-    
-     
+    analysisd_log_io_lock();
+
     /* For the events */
     if (_eflog) {
         if (ftell(_eflog) == 0) {
@@ -303,6 +322,7 @@ int OS_GetLogLocation(const Eventinfo *lf)
     /* Setting the new day */
     __crt_day = lf->day;
 
+    analysisd_log_io_unlock();
     return (0);
 }
 

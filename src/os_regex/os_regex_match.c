@@ -8,13 +8,107 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
+
 #include "os_regex.h"
+#include "os_regex_internal.h"
 
 #ifndef WIN32
 static __thread regex_matching *os_regex_tls_match = NULL;
 #else
 static regex_matching *os_regex_tls_match = NULL;
 #endif
+
+/* Prototypes */
+static int _InternalMatch(const char *pattern, const char *str, size_t count) __attribute__((nonnull));
+
+/*
+ * Search for pattern in the string.
+ * Supports '|' (OR) and '^' (match beginning).
+ */
+int OS_WordMatch(const char *pattern, const char *str)
+{
+    size_t count = 0;
+
+    if (*pattern == '\0') {
+        return (FALSE);
+    }
+
+    do {
+        if (pattern[count] == '|') {
+            if (_InternalMatch(pattern, str, count)) {
+                return (TRUE);
+            } else {
+                pattern += count + 1;
+                count = 0;
+                continue;
+            }
+        }
+
+        count++;
+
+    } while (pattern[count] != '\0');
+
+    return (_InternalMatch(pattern, str, count));
+}
+
+static int _InternalMatch(const char *pattern, const char *str, size_t pattern_size)
+{
+    const uchar *pt = (const uchar *)pattern;
+    const uchar *st = (const uchar *)str;
+    const uchar last_char = (const uchar) pattern[pattern_size];
+
+    if (pattern_size == 0) {
+        return (TRUE);
+    }
+
+    /* If '^' specified, just do a strncasecmp */
+    else if (*pattern == '^') {
+        pattern++;
+        pattern_size--;
+
+        if (strncasecmp(pattern, str, pattern_size) == 0) {
+            return (TRUE);
+        }
+        return (FALSE);
+    }
+
+    /* Null line */
+    else if (*st == '\0') {
+        return (FALSE);
+    }
+
+    /* Look to match the first pattern */
+    do {
+        if (charmap[*st] == charmap[*pt]) {
+            str = (const char *)st++;
+            pt++;
+
+            while (*pt != last_char) {
+                if (*st == '\0') {
+                    return (FALSE);
+                }
+
+                else if (charmap[*pt] != charmap[*st]) {
+                    goto error;
+                }
+
+                st++;
+                pt++;
+            }
+
+            return (TRUE);
+
+error:
+            st = (const uchar *)str;
+            pt = (const uchar *)pattern;
+        }
+
+        st++;
+    } while (*st != '\0');
+
+    return (FALSE);
+}
 
 void regex_matching_clear(regex_matching *match)
 {

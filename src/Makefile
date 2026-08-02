@@ -1280,7 +1280,12 @@ ossec-logtest: ${analysisd_test_o} ${output_o} ${format_o} analysisd/testrule-te
 ossec-analysisd: ${analysisd_live_o} analysisd/analysisd-live.o ${output_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} ${ANALYSISD_FLAGS} -o $@
 
-ossec-makelists: analysisd/makelists-live.o ${analysisd_live_o} ${format_o} alerts.a cdb.a decoders-live.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
+# makelists only rebuilds CDB lists; do not pull in the threaded pipeline
+# (pipeline/stages/state/fts/...) which references analysisd.c-only symbols.
+makelists_live_o := analysisd/config-live.o analysisd/lists-live.o \
+	analysisd/lists_list-live.o analysisd/lists_make-live.o
+
+ossec-makelists: analysisd/makelists-live.o ${makelists_live_o} cdb.a ${ossec_libs} ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS}  $^ ${OSSEC_LDFLAGS} -o $@
 
 

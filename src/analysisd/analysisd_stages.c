@@ -48,8 +48,23 @@ extern os_queue *writer_queue_log;
 extern os_queue *writer_queue_statistical;
 extern os_queue *writer_queue_archive;
 extern os_queue *writer_queue_firewall;
-static int archive_drop_warned = 0;
+static time_t archive_drop_last_warn = 0;
 static pthread_mutex_t hour_rollover_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#define ANALYSISD_ARCHIVE_DROP_WARN_INTERVAL_SEC 30
+
+static void analysisd_warn_archive_dropped(void)
+{
+    time_t now = time(NULL);
+
+    if (archive_drop_last_warn != 0 &&
+        (now - archive_drop_last_warn) < ANALYSISD_ARCHIVE_DROP_WARN_INTERVAL_SEC) {
+        return;
+    }
+    archive_drop_last_warn = now;
+    merror("%s: WARN: Dropping archive events: archive queue full "
+           "(logall best-effort under backlog).", ARGV0);
+}
 
 /* Snapshot leftover rule->last_events onto the async alert copy (fallback if
  * Search/doDiff already moved context onto the live event). Then clear the
@@ -107,6 +122,9 @@ void analysisd_set_time_context(Eventinfo *lf)
     c_time = lf->time;
     p = localtime_r(&c_time, &tm_buf);
     if (!p) {
+        /* Invalid sentinels so callers do not reuse a prior event's time. */
+        __crt_hour = -1;
+        __crt_wday = -1;
         return;
     }
     __crt_hour = p->tm_hour;
@@ -234,44 +252,61 @@ int analysisd_analyze_event(Eventinfo *lf)
 
     /* Check_Hour excessive-events alerts use a dedicated statistical writer so
      * they do not contend with the normal alerts queue (Nested parity). */
-    if (Config.stats && Check_Hour() == 1 && analysisd_stats_rule) {
-        RuleInfo *saved_rule = lf->generated_rule;
-        char *saved_log = lf->full_log;
+    {
+        char stats_comment[192];
 
-        lf->generated_rule = analysisd_stats_rule;
-        lf->full_log = __stats_comment;
+        if (Config.stats && Check_Hour(stats_comment, sizeof(stats_comment)) == 1 &&
+            analysisd_stats_rule) {
+            RuleInfo *saved_rule = lf->generated_rule;
+            char *saved_log = lf->full_log;
 
-        if (analysisd_stats_rule->alert_opts & DO_LOGALERT) {
+            lf->generated_rule = analysisd_stats_rule;
+            lf->full_log = stats_comment;
+
+            if (analysisd_stats_rule->alert_opts & DO_LOGALERT) {
 #ifndef WIN32
-            if (writer_queue_statistical) {
-                Eventinfo *alert_copy;
+                if (writer_queue_statistical) {
+                    Eventinfo *alert_copy;
 
-                lf->alert_id = analysisd_claim_alert_id();
-                alert_copy = analysisd_copy_event_for_log(lf);
-                if (alert_copy) {
-                    analysisd_snapshot_rule_last_events(alert_copy, analysisd_stats_rule);
-                    if (analysisd_enqueue_statistical(alert_copy) != 0) {
-                        Free_Eventinfo(alert_copy);
+                    lf->alert_id = analysisd_claim_alert_id();
+                    alert_copy = analysisd_copy_event_for_log(lf);
+                    if (alert_copy) {
+                        analysisd_snapshot_rule_last_events(alert_copy, analysisd_stats_rule);
+                        if (analysisd_enqueue_statistical(alert_copy) != 0) {
+                            Free_Eventinfo(alert_copy);
+                            analysisd_inc_alerts_dropped();
+                        }
+                    } else {
                         analysisd_inc_alerts_dropped();
                     }
-                }
-            } else
+                } else
 #endif
-            {
-                __crt_ftell = _aflog ? ftell(_aflog) : 0;
-                if (Config.custom_alert_output) {
-                    OS_CustomLog(lf, Config.custom_alert_output_format);
-                } else {
-                    OS_Log(lf);
-                }
-                if (Config.jsonout_output) {
-                    jsonout_output_event(lf);
+                {
+#ifndef WIN32
+                    if (!lf->alert_id) {
+                        lf->alert_id = analysisd_claim_alert_id();
+                    }
+                    __crt_ftell = lf->alert_id;
+#else
+                    analysisd_log_io_lock();
+                    __crt_ftell = _aflog ? ftell(_aflog) : 0;
+                    lf->alert_id = __crt_ftell;
+                    analysisd_log_io_unlock();
+#endif
+                    if (Config.custom_alert_output) {
+                        OS_CustomLog(lf, Config.custom_alert_output_format);
+                    } else {
+                        OS_Log(lf);
+                    }
+                    if (Config.jsonout_output) {
+                        jsonout_output_event(lf);
+                    }
                 }
             }
-        }
 
-        lf->generated_rule = saved_rule;
-        lf->full_log = saved_log;
+            lf->generated_rule = saved_rule;
+            lf->full_log = saved_log;
+        }
     }
 
     DEBUG_MSG("%s: DEBUG: Checking the rules - %d ", ARGV0, lf->decoder_info->type);
@@ -338,11 +373,25 @@ int analysisd_analyze_event(Eventinfo *lf)
                         Free_Eventinfo(alert_copy);
                         analysisd_inc_alerts_dropped();
                     }
+                } else {
+                    analysisd_inc_alerts_dropped();
+                    merror("%s: WARN: Dropping alert: failed to copy event for async write.",
+                           ARGV0);
                 }
             } else
 #endif
             {
+#ifndef WIN32
+                if (!lf->alert_id) {
+                    lf->alert_id = analysisd_claim_alert_id();
+                }
+                __crt_ftell = lf->alert_id;
+#else
+                analysisd_log_io_lock();
                 __crt_ftell = _aflog ? ftell(_aflog) : 0;
+                lf->alert_id = __crt_ftell;
+                analysisd_log_io_unlock();
+#endif
                 if (Config.custom_alert_output) {
                     OS_CustomLog(lf, Config.custom_alert_output_format);
                 } else {
@@ -371,6 +420,13 @@ int analysisd_analyze_event(Eventinfo *lf)
 
         if (currently_rule->ar) {
             active_response **rule_ar = currently_rule->ar;
+
+#ifndef WIN32
+            /* AR-only rules never claimed an ID on the log path. */
+            if (!lf->alert_id) {
+                lf->alert_id = analysisd_claim_alert_id();
+            }
+#endif
 
             while (*rule_ar) {
                 int do_ar = 1;
@@ -440,11 +496,7 @@ int analysisd_analyze_event(Eventinfo *lf)
                     owned_by_writer = 1;
                 } else {
                     analysisd_inc_archives_dropped();
-                    if (!archive_drop_warned) {
-                        merror("%s: WARN: Dropping archive events: archive queue full "
-                               "(logall best-effort under backlog).", ARGV0);
-                        archive_drop_warned = 1;
-                    }
+                    analysisd_warn_archive_dropped();
                 }
             } else {
                 Eventinfo *arch_copy = analysisd_copy_event_for_log(lf);
@@ -452,11 +504,10 @@ int analysisd_analyze_event(Eventinfo *lf)
                 if (arch_copy && os_queue_push_ex(writer_queue_archive, arch_copy) != 0) {
                     Free_Eventinfo(arch_copy);
                     analysisd_inc_archives_dropped();
-                    if (!archive_drop_warned) {
-                        merror("%s: WARN: Dropping archive events: archive queue full "
-                               "(logall best-effort under backlog).", ARGV0);
-                        archive_drop_warned = 1;
-                    }
+                    analysisd_warn_archive_dropped();
+                } else if (!arch_copy) {
+                    analysisd_inc_archives_dropped();
+                    analysisd_warn_archive_dropped();
                 }
             }
         } else

@@ -220,10 +220,9 @@ static int analysisd_queue_push_wait(os_queue *queue, void *data, int wait_ms)
 
 static void analysisd_writer_sync_alert(Eventinfo *lf)
 {
+    /* Prefer ticketed IDs; never ftell(_aflog) here — that races log rollover. */
     if (lf && lf->alert_id) {
         __crt_ftell = lf->alert_id;
-    } else if (_aflog) {
-        __crt_ftell = ftell(_aflog);
     } else {
         __crt_ftell = 0;
     }
