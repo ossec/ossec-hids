@@ -915,6 +915,65 @@ START_TEST(test_stringoverflow4)
 }
 END_TEST
 
+START_TEST(test_skip_xml_declaration)
+{
+    /* Leading XML declaration must be skipped; content still parses. */
+    assert_os_xml_eq(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<root attr1=\"1\" attr2=\"2\">value</root>",
+        "<root attr1=\"1\" attr2=\"2\">value</root>");
+
+    assert_os_xml_eq(
+        "<?xml version=\"1.0\"?>\n<root/>",
+        "<root></root>");
+
+    /* Files without a declaration still work. */
+    assert_os_xml_eq("<root>ok</root>", "<root>ok</root>");
+}
+END_TEST
+
+START_TEST(test_skip_xml_declaration_bom)
+{
+    char xml_file_name[256];
+    const unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
+    const char *body = "<?xml version=\"1.0\"?><root>bom</root>";
+    FILE *fp;
+    OS_XML xml;
+
+    strncpy(xml_file_name, "/tmp/tmp_file-XXXXXX", sizeof(xml_file_name));
+    {
+        int fd = mkstemp(xml_file_name);
+        ck_assert_int_ne(fd, -1);
+        close(fd);
+    }
+
+    fp = fopen(xml_file_name, "wb");
+    ck_assert_ptr_ne(fp, NULL);
+    ck_assert_int_eq((int)fwrite(bom, 1, sizeof(bom), fp), 3);
+    ck_assert_int_eq((int)fwrite(body, 1, strlen(body), fp), (int)strlen(body));
+    fclose(fp);
+
+    ck_assert_int_eq(OS_ReadXML(xml_file_name, &xml), 0);
+    assert_os_xml_eq_str(&xml, "<root>bom</root>");
+    OS_ClearXML(&xml);
+    unlink(xml_file_name);
+}
+END_TEST
+
+START_TEST(test_unclosed_xml_declaration)
+{
+    char xml_file_name[256];
+    OS_XML xml;
+
+    create_xml_file("<?xml version=\"1.0\" encoding=\"UTF-8\"\n<root/>",
+                    xml_file_name, 256);
+    ck_assert_int_ne(OS_ReadXML(xml_file_name, &xml), 0);
+    ck_assert_str_eq(xml.err, "XMLERR: XML declaration not closed.");
+    OS_ClearXML(&xml);
+    unlink(xml_file_name);
+}
+END_TEST
+
 Suite *test_suite(void)
 {
     Suite *s = suite_create("os_xml");
@@ -965,6 +1024,9 @@ Suite *test_suite(void)
     tcase_add_test(tc_core, test_stringoverflow2);
     tcase_add_test(tc_core, test_stringoverflow3);
     tcase_add_test(tc_core, test_stringoverflow4);
+    tcase_add_test(tc_core, test_skip_xml_declaration);
+    tcase_add_test(tc_core, test_skip_xml_declaration_bom);
+    tcase_add_test(tc_core, test_unclosed_xml_declaration);
     suite_add_tcase(s, tc_core);
 
     return (s);

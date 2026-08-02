@@ -19,6 +19,7 @@
 #include "os_xml_internal.h"
 
 /* Prototypes */
+static int _skip_xml_declaration(FILE *fp) __attribute__((nonnull));
 static int _oscomment(FILE *fp) __attribute__((nonnull));
 static int _writecontent(const char *str, size_t size, unsigned int parent, OS_XML *_lxml) __attribute__((nonnull));
 static int _writememory(const char *str, XML_TYPE type, size_t size,
@@ -118,6 +119,13 @@ int OS_ReadXML(const char *file, OS_XML *_lxml)
     /* Zero the line */
     _line = 1;
 
+    /* Skip a leading <?xml ...?> prolog when present (PR #564 / @lazyp). */
+    if (_skip_xml_declaration(fp) < 0) {
+        xml_error(_lxml, "XMLERR: XML declaration not closed.");
+        fclose(fp);
+        return (-1);
+    }
+
     if ((r = _ReadElem(fp, 0, _lxml, 0)) < 0) { /* First position */
         if (r != LEOF) {
             fclose(fp);
@@ -134,6 +142,61 @@ int OS_ReadXML(const char *file, OS_XML *_lxml)
     }
 
     fclose(fp);
+    return (0);
+}
+
+/* Skip a leading XML declaration. Leaves the stream unchanged when the file
+ * does not start with <?xml. Returns -1 if <?xml is present but never closed.
+ */
+static int _skip_xml_declaration(FILE *fp)
+{
+    long start;
+    unsigned char sig[5];
+    size_t n;
+    int c;
+    int prev = 0;
+    size_t i;
+
+    start = ftell(fp);
+    if (start < 0) {
+        return (0);
+    }
+
+    /* Optional UTF-8 BOM */
+    n = fread(sig, 1, 3, fp);
+    if (n == 3 && sig[0] == 0xEF && sig[1] == 0xBB && sig[2] == 0xBF) {
+        start = ftell(fp);
+    } else {
+        clearerr(fp);
+        if (fseek(fp, start, SEEK_SET) != 0) {
+            return (0);
+        }
+    }
+
+    n = fread(sig, 1, 5, fp);
+    if (n == 5 &&
+            sig[0] == (unsigned char)_R_CONFS &&
+            sig[1] == (unsigned char)_R_HEADER &&
+            sig[2] == 'x' && sig[3] == 'm' && sig[4] == 'l') {
+        for (i = 0; i < n; i++) {
+            if (sig[i] == '\n') {
+                _line++;
+            }
+        }
+        prev = 'l';
+        while ((c = _xml_fgetc(fp)) != EOF) {
+            if (prev == _R_HEADER && c == _R_CONFE) {
+                return (0);
+            }
+            prev = c;
+        }
+        return (-1);
+    }
+
+    clearerr(fp);
+    if (fseek(fp, start, SEEK_SET) != 0) {
+        return (0);
+    }
     return (0);
 }
 
