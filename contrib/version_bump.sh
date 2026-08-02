@@ -29,6 +29,7 @@ sed -i -e "s/VERSION=\"v${OLDVERSION}/VERSION=\"v${NEWVERSION}/" src/init/ossec-
 # Win32 files
 sed -i -e "s/VERSION \"${OLDVERSION}/VERSION \"${NEWVERSION}/" src/win32/ossec-installer.nsi
 sed -i -e "s/Agent v${OLDVERSION}/Agent v${NEWVERSION}/" src/win32/help.txt
+sed -i -e "s/Agent v${OLDVERSION}/Agent v${NEWVERSION}/" src/win32/help_win.txt
 
 # misc
 sed -i -e "s/OSSEC v${OLDVERSION}/OSSEC v${NEWVERSION}/" INSTALL
