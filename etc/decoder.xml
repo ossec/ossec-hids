@@ -802,9 +802,10 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - Examples:
   - [2007-08-31 18:37:09.454 ADT] 192.168.2.99: LOG:  connection authorized: user=ossec_user database=ossecdb
   - [2007-08-31 18:37:15.525 ADT] 192.168.2.99: ERROR:  relation "alert2" does not exist
+  - Timezone token must start with a letter so cPanel numeric offsets (+/-0400) are not stolen.
   -->
 <decoder name="postgresql_log">
-  <prematch_pcre2>^\[\d{4}-\d{2}-\d{2} \S+ [A-Za-z0-9@_-]+?\] </prematch_pcre2>
+  <prematch_pcre2>^\[\d{4}-\d{2}-\d{2} \S+ [A-Za-z][A-Za-z0-9@_+-]*\] </prematch_pcre2>
   <pcre2 offset="after_prematch">^\S+ ([A-Za-z0-9@_-]+?): </pcre2>
   <order>status</order>
 </decoder>
@@ -3268,8 +3269,9 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 
 <!-- OpenBSD httpd -->
 <decoder name="openbsd-httpd">
-  <prematch_pcre2> \[\d+/[A-Za-z0-9@_-]+/\d+:\d+:\d+:\d+ -\d+\] "</prematch_pcre2>
-  <pcre2>^(\S+) (\S+) \S+ \S+ \[\d+/[A-Za-z0-9@_-]+/\d+:\d+:\d+:\d+ -\d+\] "(\S+) (\S+) HTTP/\d\.\d" (\d+?) \d$</pcre2>
+  <!-- Month must be alphabetic (e.g. Nov) so numeric cPanel dates like 11/18/2016 are not stolen. -->
+  <prematch_pcre2> \[\d+/[A-Za-z]+/\d+:\d+:\d+:\d+ -\d+\] "</prematch_pcre2>
+  <pcre2>^(\S+) (\S+) \S+ \S+ \[\d+/[A-Za-z]+/\d+:\d+:\d+:\d+ -\d+\] "(\S+) (\S+) HTTP/\d\.\d" (\d+?) \d$</pcre2>
   <order>url, srcip, protocol, url, status</order>
   <type>web-log</type>
 </decoder>
@@ -3363,6 +3365,59 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   <prematch_pcre2>"command attempted on cowrie honeypot</prematch_pcre2>
   <pcre2>^\{"direction": "\S+", "protocol": "(\S+)", "ids_type": "(\S+)", "timestamp": "\d{4}-\d{2}-\d{2}\w\d{2}:\d{2}:\d{2}.\d+", "app": "cowrie", "transport": "\S+", "dest_port": (\d+?), "src_port": (\d+?), "severity": "\S+", "vendor_product": "Cowrie", "sensor": \S+, "src_ip": "(\S+)", "command": "\S+", "signature": "(.+)", "ssh_version": .+, "type": "cowrie\.sessions", "dest_ip": "(\S+)"\}</pcre2>
   <order>protocol, extra_data, dstport, srcport, srcip, action, dstip</order>
+</decoder>
+
+
+<!-- cPanel / cpsrvd (login_log, session_log, access_log).
+  - Examples:
+  - [2016-11-18 09:32:19 +0000] info [cpsrvd] 10.1.5.19 - admin "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password hash is missing from system (user probably does not exist)
+  - [2017-01-25 06:01:10 -0500] info [cpsrvd] 10.1.5.19 - test "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: invalid cpanel user test (loadcpdata failed)
+  - [2016-04-18 13:07:02 -0400] info [cpsrvd] 10.1.5.19 - root - SUCCESS LOGIN whostmgrd
+  - [2016-04-18 13:07:15 -0400] info [cpsrvd] 10.1.5.19 - reseller (possessor: root) - SUCCESS LOGIN cpaneld
+  - [2017-02-03 01:21:31 -0500] info [cpsrvd] 10.101.1.18 NEW testuser:XImQi9d3anWMNSc9 address=10.101.1.18,app=cpaneld,creator=pupkin,method=handle_form_login,path=form,possessed=0
+  - [2017-01-25 06:15:38 -0500] info [cpsrvd] 10.1.5.19 PURGE root:Nmm4xzhSpA2Sddv3 logout
+  - 46.118.10.79 - paul [11/18/2016:09:35:43 -0000] "GET" FAILED LOGIN cpdavd: Could not fetch system home directory for paul
+  -->
+<decoder name="cpanel">
+  <prematch_pcre2>^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4}\] info \[cpsrvd\] </prematch_pcre2>
+</decoder>
+
+<decoder name="cpanel-login-failed">
+  <parent>cpanel</parent>
+  <use_own_name>true</use_own_name>
+  <prematch_pcre2 offset="after_parent">FAILED LOGIN</prematch_pcre2>
+  <pcre2 offset="after_parent">^(\S+) - (\S+)</pcre2>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="cpanel-login-success">
+  <parent>cpanel</parent>
+  <use_own_name>true</use_own_name>
+  <prematch_pcre2 offset="after_parent">SUCCESS LOGIN</prematch_pcre2>
+  <pcre2 offset="after_parent">^(\S+) - (.+?) - SUCCESS LOGIN</pcre2>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="cpanel-session-new">
+  <parent>cpanel</parent>
+  <use_own_name>true</use_own_name>
+  <prematch_pcre2 offset="after_parent"> NEW </prematch_pcre2>
+  <pcre2 offset="after_parent">^(\S+) NEW (\w+):</pcre2>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="cpanel-session-logout">
+  <parent>cpanel</parent>
+  <use_own_name>true</use_own_name>
+  <prematch_pcre2 offset="after_parent"> PURGE .+ logout</prematch_pcre2>
+  <pcre2 offset="after_parent">^(\S+) PURGE (\w+):</pcre2>
+  <order>srcip,user</order>
+</decoder>
+
+<decoder name="cpanel-access-failed">
+  <prematch_pcre2>^\S+ \S+ \S+ \[\d+/\d+/\d+:\d+:\d+:\d+ [+-]\d+\] "\w+" FAILED LOGIN</prematch_pcre2>
+  <pcre2>^(\S+) \S+ (\S+)</pcre2>
+  <order>srcip,user</order>
 </decoder>
 
 <!-- EOF -->
