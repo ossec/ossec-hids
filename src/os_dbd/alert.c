@@ -16,6 +16,25 @@
 static int __DBSelectLocation(const char *location, const DBConfig *db_config) __attribute__((nonnull));
 static int __DBInsertLocation(const char *location, const DBConfig *db_config) __attribute__((nonnull));
 
+/*
+ * Build a SQL token for a nullable string column: unquoted NULL, or a
+ * single-quoted literal. Escapes the field in place when present (same
+ * allow-list path as other os_dbd inserts).
+ *
+ * out must hold at least strlen(field) + 3 bytes when field is non-NULL
+ * (quotes + NUL). IP fields use INET6_ADDRSTRLEN-scale buffers.
+ */
+static void sql_nullable_str(char *out, size_t outlen, char *field)
+{
+    if (!field) {
+        snprintf(out, outlen, "NULL");
+        return;
+    }
+
+    osdb_escapestr(field);
+    snprintf(out, outlen, "'%s'", field);
+}
+
 
 /* Select the maximum ID from the alert table
  * Returns 0 if not found
@@ -93,6 +112,9 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     int *loc_id;
     char sql_query[OS_SIZE_8192 + 1];
     char *fulllog = NULL;
+    /* Quoted IP or SQL NULL (max IPv6 textual form + quotes). */
+    char srcip_sql[46 + 2 + 1];
+    char dstip_sql[46 + 2 + 1];
 
     /* Clear the memory before insert */
     sql_query[0] = '\0';
@@ -107,6 +129,10 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     /* Escape strings */
     osdb_escapestr(al_data->user);
     osdb_escapestr(al_data->location);
+
+    /* Nullable IP columns: true SQL NULL when absent (not the string 'NULL'). */
+    sql_nullable_str(srcip_sql, sizeof(srcip_sql), (char *)al_data->srcip);
+    sql_nullable_str(dstip_sql, sizeof(dstip_sql), (char *)al_data->dstip);
     
     /* We first need to insert the location */
     loc_id = (int *) OSHash_Get(db_config->location_hash, al_data->location);
@@ -163,34 +189,37 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
         snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,user,full_log,tld) "
-                 "VALUES ('%u', '%u','%u','%u', '%u', '%s', '%u', '%s', '%u', '%s', '%s', '%s','%.2s')",
+                 "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s','%.2s')",
                  db_config->server_id, al_data->rule,
                  al_data->level,
                  (unsigned int)time(0), *loc_id,
-                 al_data->srcip,
+                 srcip_sql,
                  (unsigned short)s_port,
-                 al_data->dstip,
+                 dstip_sql,
                  (unsigned short)d_port,
                  al_data->alertid,
-                 al_data->user, fulllog, al_data->srcgeoip);
-	break;
+                 al_data->user ? al_data->user : "",
+                 fulllog,
+                 al_data->srcgeoip ? al_data->srcgeoip : "");
+        break;
 
       case POSTGDB:
         snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,\"user\",full_log) "
-                 "VALUES ('%u', '%u','%u','%u', '%u', '%s', '%u', '%s', '%u', '%s', '%s', '%s')",
+                 "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s')",
                  db_config->server_id, al_data->rule,
                  al_data->level,
                  (unsigned int)time(0), *loc_id,
-                 al_data->srcip != NULL ? al_data->srcip : "NULL",
+                 srcip_sql,
                  (unsigned short)s_port,
-                 al_data->dstip != NULL ? al_data->dstip : "NULL",
+                 dstip_sql,
                  (unsigned short)d_port,
                  al_data->alertid,
-                 al_data->user != NULL ? al_data->user : "NULL",
+                 /* user is NOT NULL in schema — empty string, not SQL NULL */
+                 al_data->user ? al_data->user : "",
                  fulllog);
-	break;
+        break;
     }
 
     free(fulllog);
