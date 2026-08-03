@@ -41,6 +41,8 @@ char *getFullnameById(const char *id);
 char *OS_AddNewAgent(const char *name, const char *ip, const char *id);
 int  OS_RemoveAgent(const char *id);
 double OS_AgentAntiquity(const char *id);
+void OS_BackupAgentInfo(const char *id);
+void OS_NotifyDuplicatedIP(const char *ip);
 void FormatID(char *id);
 
 /* Print available agents */

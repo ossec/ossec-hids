@@ -220,13 +220,13 @@ int add_agent(int json_output)
             }
 
             if (env_remove_dup && (antiquity >= force_antiquity || antiquity < 0)) {
-                /* TODO: Save backup */
+                OS_BackupAgentInfo(id_exist);
 #ifdef REUSE_ID
                 strncpy(id, id_exist, FILE_SIZE);
 #endif
                 OS_RemoveAgent(id_exist);
             } else {
-                /* TODO: Send alert */
+                OS_NotifyDuplicatedIP(ip);
 
                 if (json_output) {
                     cJSON *json_root = cJSON_CreateObject();
@@ -537,6 +537,9 @@ int remove_agent(int json_output)
 #endif
 
             fclose(fp);
+
+            /* Preserve agent state before wiping queue files */
+            OS_BackupAgentInfo(u_id);
 
             /* Remove counter for ID */
             delete_agentinfo(full_name);
