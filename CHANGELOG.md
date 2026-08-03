@@ -14,6 +14,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 - @lazyp
 - @awiddersheim
 - @doke2
+- @bchurchill
 - @alex-front
 
 **Release Notes**
@@ -24,6 +25,7 @@ Work toward the next minor release after 4.2.0.
 
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
 - @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
+- @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
 - @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules (login, session, access)
 
 **Bug Fixes**
