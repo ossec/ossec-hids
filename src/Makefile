@@ -31,6 +31,9 @@ USE_CURL?=no
 USE_INOTIFY=no
 USE_PCRE2_JIT=yes
 USE_SYSTEMD?=yes
+# Default-on Linux ELF hardening (PIE, stack protector, FORTIFY, full RELRO).
+# Set USE_HARDENING=no to disable. See PR #633 / @bchurchill.
+USE_HARDENING?=yes
 
 ifneq (${TARGET},winagent)
 	USE_OPENSSL?=auto
@@ -160,6 +163,22 @@ OSSEC_CFLAGS=${CFLAGS}
 ifdef DEBUG
 	OSSEC_CFLAGS+=-g
 endif #DEBUG
+
+# Compile-time hardening for Linux ELF builds. Linker options belong in
+# LDFLAGS so compile-only steps do not emit "linker input unused" noise.
+# Supersedes PR #633 (@bchurchill); packaging already injects similar flags.
+ifneq (${TARGET},winagent)
+ifeq (${uname_S},Linux)
+ifneq (,$(filter ${USE_HARDENING},yes y Y 1))
+	OSSEC_CFLAGS+=-fPIE -Wformat -Wformat-security -fstack-protector-strong
+	OSSEC_LDFLAGS+=-pie -Wl,-z,relro -Wl,-z,now
+ifndef DEBUG
+	# _FORTIFY_SOURCE requires optimization
+	OSSEC_CFLAGS+=-O2 -D_FORTIFY_SOURCE=2
+endif #DEBUG
+endif # USE_HARDENING
+endif # Linux
+endif # winagent
 
 ifneq (,$(filter ${CLEANFULL},yes y Y 1))
 	DEFINES+=-DCLEANFULL
@@ -575,6 +594,7 @@ help: failtarget
 	@echo "   make PREFIX=/path     Install OSSEC to '/path'. Defaults to /var/ossec"
 	@echo "   make MAXAGENTS=NUMBER Set the number of maximum agents to NUMBER. Defaults to 2048"
 	@echo "   make REUSE_ID=yes     Enables agent ID re-use"
+	@echo "   make USE_HARDENING=no Disable PIE/FORTIFY/RELRO (Linux default: yes)"
 	@echo
 	@echo "Database options: "
 	@echo "   make DATABASE=mysql   Build with MYSQL Support"
@@ -632,6 +652,7 @@ settings:
 	@echo "    USE_SQLITE:       ${USE_SQLITE}"
 	@echo "    USE_PCRE2_JIT:    ${USE_PCRE2_JIT}"
 	@echo "    USE_SYSTEMD:      ${USE_SYSTEMD}"
+	@echo "    USE_HARDENING:    ${USE_HARDENING}"
 	@echo "Mysql settings:"
 	@echo "    includes:         ${MI}"
 	@echo "    libs:             ${ML}"
