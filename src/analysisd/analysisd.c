@@ -53,7 +53,8 @@ sqlite3 *conn;
 #endif
 
 #ifdef LIBGEOIP_ENABLED
-GeoIP *geoipdb;
+MMDB_s geoipdb;
+int geoipdb_ready = 0;
 #endif
 
 /** Prototypes **/
@@ -207,7 +208,7 @@ int main_analysisd(int argc, char **argv)
     hourly_firewall = 0;
 
 #ifdef LIBGEOIP_ENABLED
-    geoipdb = NULL;
+    geoipdb_ready = 0;
 #endif
 
 
@@ -302,14 +303,17 @@ int main_analysisd(int argc, char **argv)
 
 
 #ifdef LIBGEOIP_ENABLED
-     Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
+    Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
 
-    /* Opening GeoIP DB */
-    if(Config.geoipdb_file) {
-        geoipdb = GeoIP_open(Config.geoipdb_file, GEOIP_INDEX_CACHE);
-        if (geoipdb == NULL)
-        {
-            merror("%s: ERROR: Unable to open GeoIP database from: %s (disabling GeoIP).", ARGV0, Config.geoipdb_file);
+    /* Opening MaxMind MMDB (GeoLite2 Country/City, etc.) */
+    geoipdb_ready = 0;
+    if (Config.geoipdb_file) {
+        int status = MMDB_open(Config.geoipdb_file, MMDB_MODE_MMAP, &geoipdb);
+        if (status != MMDB_SUCCESS) {
+            merror("%s: ERROR: Unable to open GeoIP database from: %s (%s) (disabling GeoIP).",
+                   ARGV0, Config.geoipdb_file, MMDB_strerror(status));
+        } else {
+            geoipdb_ready = 1;
         }
     }
 #endif

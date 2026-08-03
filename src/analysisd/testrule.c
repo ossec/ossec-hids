@@ -83,8 +83,7 @@ int main(int argc, char **argv)
     memset(prev_month, '\0', 4);
 
 #ifdef LIBGEOIP_ENABLED
-    extern GeoIP *geoipdb;
-    geoipdb = NULL;
+    geoipdb_ready = 0;
 #endif
 
     while ((c = getopt(argc, argv, "VatvdhU:D:c:q")) != -1) {
@@ -144,12 +143,15 @@ int main(int argc, char **argv)
 #ifdef LIBGEOIP_ENABLED
     Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
 
-    /* Opening GeoIP DB */
-    if(Config.geoipdb_file) {
-        geoipdb = GeoIP_open(Config.geoipdb_file, GEOIP_INDEX_CACHE);
-        if (geoipdb == NULL)
-        {
-            merror("%s: Unable to open GeoIP database from: %s (disabling GeoIP).", ARGV0, Config.geoipdb_file);
+    /* Opening MaxMind MMDB (GeoLite2 Country/City, etc.) */
+    geoipdb_ready = 0;
+    if (Config.geoipdb_file) {
+        int status = MMDB_open(Config.geoipdb_file, MMDB_MODE_MMAP, &geoipdb);
+        if (status != MMDB_SUCCESS) {
+            merror("%s: Unable to open GeoIP database from: %s (%s) (disabling GeoIP).",
+                   ARGV0, Config.geoipdb_file, MMDB_strerror(status));
+        } else {
+            geoipdb_ready = 1;
         }
     }
 #endif

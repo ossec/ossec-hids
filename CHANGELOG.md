@@ -9,6 +9,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 **Contributors on this release**
 
 - @atomicturtle
+- @ddpbsd
 - @reyjrar
 - @hyn172
 - @lazyp
@@ -30,6 +31,7 @@ Work toward the next minor release after 4.2.0.
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
 - @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules (login, session, access)
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
+- @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
 
 **Bug Fixes**
 

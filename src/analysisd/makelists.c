@@ -39,7 +39,8 @@ char __shost[512];
 OSDecoderInfo *NULL_Decoder;
 
 #ifdef LIBGEOIP_ENABLED
-GeoIP *geoipdb;
+MMDB_s geoipdb;
+int geoipdb_ready = 0;
 #endif
 
 /* print help statement */
