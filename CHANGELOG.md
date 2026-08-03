@@ -13,6 +13,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 - @hyn172
 - @lazyp
 - @awiddersheim
+- @doke2
 
 **Release Notes**
 
@@ -27,6 +28,7 @@ Work toward the next minor release after 4.2.0.
 
 - @reyjrar / @atomicturtle - [PR 235](https://github.com/ossec/ossec-hids/pull/235) - Canonicalize Windows FIM paths so realtime and scheduled scans use the same slash form
 - @lazyp / @atomicturtle - [PR 564](https://github.com/ossec/ossec-hids/pull/564) - Skip leading XML declarations (and UTF-8 BOM) in OS_ReadXML
+- @doke2 / @atomicturtle - [PR 663](https://github.com/ossec/ossec-hids/pull/663) - Log AGENTCONFIG path when reading shared agent.conf in syscheckd
 
 
 **OSSEC changelog (4.2.0) <support@atomicorp.com>**
