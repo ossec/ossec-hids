@@ -376,13 +376,19 @@ void *SrcIP_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
 
 #ifdef LIBGEOIP_ENABLED
 
-    if(!lf->srcgeoip) { 
-        lf->srcgeoip = GetGeoInfobyIP(lf->srcip);
-    }
+    OS_GeoIP_Enrich(lf, 1);
 
     #ifdef TESTRULE
-        if (lf->srcgeoip && !alert_only)
-            print_out("       srcgeoip: '%s'", lf->srcgeoip);
+        if (!alert_only) {
+            if (lf->srcgeoip)
+                print_out("       srcgeoip: '%s'", lf->srcgeoip);
+            if (lf->src_country)
+                print_out("       src_country: '%s'", lf->src_country);
+            if (lf->srcasn)
+                print_out("       srcasn: '%s'", lf->srcasn);
+            if (lf->srcas_org)
+                print_out("       srcas_org: '%s'", lf->srcas_org);
+        }
     #endif
 
 #endif
@@ -401,12 +407,17 @@ void *DstIP_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
     lf->dstip = field;
 #ifdef LIBGEOIP_ENABLED
 
-    if(!lf->dstgeoip) { 
-        lf->dstgeoip = GetGeoInfobyIP(lf->dstip);
-    }
+    OS_GeoIP_Enrich(lf, 0);
+
     #ifdef TESTRULE
-        if (lf->dstgeoip && !alert_only)
-            print_out("       dstgeoip: '%s'", lf->dstgeoip);
+        if (!alert_only) {
+            if (lf->dstgeoip)
+                print_out("       dstgeoip: '%s'", lf->dstgeoip);
+            if (lf->dst_country)
+                print_out("       dst_country: '%s'", lf->dst_country);
+            if (lf->dstasn)
+                print_out("       dstasn: '%s'", lf->dstasn);
+        }
     #endif
 
 #endif

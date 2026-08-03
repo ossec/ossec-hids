@@ -29,8 +29,18 @@ typedef struct _Eventinfo {
     /* Extracted from the decoders */
     char *srcip;
     char *srcgeoip;
+    char *src_country;
+    char *src_region;
+    char *src_city;
+    char *srcasn;
+    char *srcas_org;
     char *dstip;
     char *dstgeoip;
+    char *dst_country;
+    char *dst_region;
+    char *dst_city;
+    char *dstasn;
+    char *dstas_org;
     char *srcport;
     char *dstport;
     char *protocol;

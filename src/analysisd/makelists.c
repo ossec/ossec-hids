@@ -41,6 +41,8 @@ OSDecoderInfo *NULL_Decoder;
 #ifdef LIBGEOIP_ENABLED
 MMDB_s geoipdb;
 int geoipdb_ready = 0;
+MMDB_s geoipasn;
+int geoipasn_ready = 0;
 #endif
 
 /* print help statement */

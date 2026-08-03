@@ -612,6 +612,7 @@ help: failtarget
 	@echo
 	@echo "Geoip support: "
 	@echo "   make USE_GEOIP=1      Build with MaxMind libmaxminddb (MMDB) GeoIP support"
+	@echo "                         (needs libmaxminddb headers/pkg-config, e.g. libmaxminddb-devel)"
 	@echo
 	@echo "External source options: "
 	@echo "   make LUA_ENABLE=no    Disable LUA build"

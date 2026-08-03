@@ -32,6 +32,7 @@ Work toward the next minor release after 4.2.0.
 - @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules (login, session, access)
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
 - @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
+- @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
 
 **Bug Fixes**
 

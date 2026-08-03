@@ -184,8 +184,8 @@
 <decoder name="ssh-invfailed">
   <parent>sshd</parent>
   <prematch_pcre2>^Failed \S+ for invalid user|^Failed \S+ for illegal user</prematch_pcre2>
-  <pcre2 offset="after_prematch">from (\S+) port \d+ \w+$</pcre2>
-  <order>srcip</order>
+  <pcre2 offset="after_prematch">^ (\S+) from (\S+) port \d+</pcre2>
+  <order>user, srcip</order>
 </decoder>
 
 <decoder name="ssh-failed">
@@ -219,8 +219,8 @@
 <decoder name="ssh-invalid-user">
   <parent>sshd</parent>
   <prematch_pcre2>^Invalid user|^Illegal user</prematch_pcre2>
-  <pcre2 offset="after_prematch"> from (\S+)</pcre2>
-  <order>srcip</order>
+  <pcre2 offset="after_prematch">^ (\S+) from (\S+)$</pcre2>
+  <order>user, srcip</order>
 </decoder>
 
 <decoder name="ssh-scan">
@@ -240,8 +240,8 @@
 <decoder name="ssh-disconnected">
   <parent>sshd</parent>
   <prematch_pcre2>^Disconnected from invalid user</prematch_pcre2>
-  <pcre2 offset="after_prematch">\S+ (\S+) </pcre2>
-  <order>srcip</order>
+  <pcre2 offset="after_prematch">^ (\S+) (\S+) </pcre2>
+  <order>user, srcip</order>
 </decoder>
 
 <decoder name="ssh-connection">

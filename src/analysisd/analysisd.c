@@ -55,6 +55,8 @@ sqlite3 *conn;
 #ifdef LIBGEOIP_ENABLED
 MMDB_s geoipdb;
 int geoipdb_ready = 0;
+MMDB_s geoipasn;
+int geoipasn_ready = 0;
 #endif
 
 /** Prototypes **/
@@ -209,6 +211,7 @@ int main_analysisd(int argc, char **argv)
 
 #ifdef LIBGEOIP_ENABLED
     geoipdb_ready = 0;
+    geoipasn_ready = 0;
 #endif
 
 
@@ -305,7 +308,7 @@ int main_analysisd(int argc, char **argv)
 #ifdef LIBGEOIP_ENABLED
     Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
 
-    /* Opening MaxMind MMDB (GeoLite2 Country/City, etc.) */
+    /* Opening MaxMind City/Country MMDB */
     geoipdb_ready = 0;
     if (Config.geoipdb_file) {
         int status = MMDB_open(Config.geoipdb_file, MMDB_MODE_MMAP, &geoipdb);
@@ -314,6 +317,18 @@ int main_analysisd(int argc, char **argv)
                    ARGV0, Config.geoipdb_file, MMDB_strerror(status));
         } else {
             geoipdb_ready = 1;
+        }
+    }
+
+    /* Optional ASN MMDB */
+    geoipasn_ready = 0;
+    if (Config.geoipasn_file) {
+        int status = MMDB_open(Config.geoipasn_file, MMDB_MODE_MMAP, &geoipasn);
+        if (status != MMDB_SUCCESS) {
+            merror("%s: ERROR: Unable to open GeoIP ASN database from: %s (%s) (disabling ASN enrichment).",
+                   ARGV0, Config.geoipasn_file, MMDB_strerror(status));
+        } else {
+            geoipasn_ready = 1;
         }
     }
 #endif
@@ -1104,6 +1119,44 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                     return(NULL);
             } else {
                 return(NULL);
+            }
+        }
+
+        if (rule->src_country) {
+            if (lf->src_country) {
+                if (!OSMatch_Execute(lf->src_country,
+                                     strlen(lf->src_country),
+                                     rule->src_country))
+                    return (NULL);
+            } else {
+                return (NULL);
+            }
+        } else if (rule->src_country_pcre2) {
+            if (lf->src_country) {
+                if (!OSPcre2_Execute(lf->src_country,
+                                     rule->src_country_pcre2))
+                    return (NULL);
+            } else {
+                return (NULL);
+            }
+        }
+
+        if (rule->srcasn) {
+            if (lf->srcasn) {
+                if (!OSMatch_Execute(lf->srcasn,
+                                     strlen(lf->srcasn),
+                                     rule->srcasn))
+                    return (NULL);
+            } else {
+                return (NULL);
+            }
+        } else if (rule->srcasn_pcre2) {
+            if (lf->srcasn) {
+                if (!OSPcre2_Execute(lf->srcasn,
+                                     rule->srcasn_pcre2))
+                    return (NULL);
+            } else {
+                return (NULL);
             }
         }
 

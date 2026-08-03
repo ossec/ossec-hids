@@ -67,6 +67,7 @@ int OS_AddOSDecoder(OSDecoderInfo *pi);
 OSDecoderNode *OS_GetFirstOSDecoder(const char *pname);
 int getDecoderfromlist(const char *name);
 char *GetGeoInfobyIP(char *ip_addr);
+void OS_GeoIP_Enrich(struct _Eventinfo *lf, int is_src);
 int SetDecodeXML(void);
 void HostinfoInit(void);
 void SyscheckInit(void);

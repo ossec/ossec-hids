@@ -17,6 +17,8 @@
 #include <maxminddb.h>
 extern MMDB_s geoipdb;
 extern int geoipdb_ready;
+extern MMDB_s geoipasn;
+extern int geoipasn_ready;
 #endif
 
 

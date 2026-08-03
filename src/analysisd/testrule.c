@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 
 #ifdef LIBGEOIP_ENABLED
     geoipdb_ready = 0;
+    geoipasn_ready = 0;
 #endif
 
     while ((c = getopt(argc, argv, "VatvdhU:D:c:q")) != -1) {
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
 #ifdef LIBGEOIP_ENABLED
     Config.geoip_jsonout = getDefine_Int("analysisd", "geoip_jsonout", 0, 1);
 
-    /* Opening MaxMind MMDB (GeoLite2 Country/City, etc.) */
+    /* Opening MaxMind City/Country MMDB */
     geoipdb_ready = 0;
     if (Config.geoipdb_file) {
         int status = MMDB_open(Config.geoipdb_file, MMDB_MODE_MMAP, &geoipdb);
@@ -152,6 +153,17 @@ int main(int argc, char **argv)
                    ARGV0, Config.geoipdb_file, MMDB_strerror(status));
         } else {
             geoipdb_ready = 1;
+        }
+    }
+
+    geoipasn_ready = 0;
+    if (Config.geoipasn_file) {
+        int status = MMDB_open(Config.geoipasn_file, MMDB_MODE_MMAP, &geoipasn);
+        if (status != MMDB_SUCCESS) {
+            merror("%s: Unable to open GeoIP ASN database from: %s (%s) (disabling ASN enrichment).",
+                   ARGV0, Config.geoipasn_file, MMDB_strerror(status));
+        } else {
+            geoipasn_ready = 1;
         }
     }
 #endif
@@ -561,8 +573,8 @@ void OS_ReadMSG(char *ut_str)
                     }
                 }
 
-                /* Group list */
-                else if (currently_rule->group_prev_matched) {
+                /* Group list — also when sid_prev_matched is set (not else-if) */
+                if (currently_rule->group_prev_matched) {
                     unsigned int i = 0;
 
                     while (i < currently_rule->group_prev_matched_sz) {
