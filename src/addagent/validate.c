@@ -10,6 +10,7 @@
 #include <time.h>
 #include "manage_agents.h"
 #include "os_crypto/md5/md5_op.h"
+#include "os_net/os_net.h"
 
 /* Global variables */
 fpos_t fp_pos;
@@ -603,6 +604,159 @@ double OS_AgentAntiquity(const char *id)
 
     return difftime(time(NULL), file_stat.st_mtime);
 }
+
+#ifndef WIN32
+/* Build a path relative to chroot or under DEFAULTDIR when not chrooted. */
+static void ossec_relpath(char *out, size_t outlen, const char *rel, const char *suffix)
+{
+    if (isChroot()) {
+        if (suffix && *suffix) {
+            snprintf(out, outlen, "%s/%s", rel, suffix);
+        } else {
+            snprintf(out, outlen, "%s", rel);
+        }
+    } else if (suffix && *suffix) {
+        snprintf(out, outlen, "%s%s/%s", DEFAULTDIR, rel, suffix);
+    } else {
+        snprintf(out, outlen, "%s%s", DEFAULTDIR, rel);
+    }
+}
+
+static void backup_link(const char *src, const char *dst)
+{
+    if (link(src, dst) < 0) {
+        debug1("%s: DEBUG: Unable to backup '%s' -> '%s': %s",
+               ARGV0, src, dst, strerror(errno));
+    }
+}
+
+/* Backup agent-info / syscheck / rootcheck before removing an agent. */
+void OS_BackupAgentInfo(const char *id)
+{
+    char path_backup[OS_SIZE_1024];
+    char path_src[OS_SIZE_1024];
+    char path_dst[OS_SIZE_1024];
+    char base[OS_SIZE_1024];
+    char timestamp[32];
+    char *full_name;
+    char *name_copy;
+    char *ip;
+    const char *syscheck_dir;
+    const char *rootcheck_dir;
+    time_t timer = time(NULL);
+    struct tm *tm_info;
+
+    full_name = getFullnameById(id);
+    if (!full_name) {
+        merror("%s: ERROR: Agent id '%s' not found for backup.", ARGV0, id);
+        return;
+    }
+
+    name_copy = strdup(full_name);
+    if (!name_copy) {
+        free(full_name);
+        return;
+    }
+
+    ip = strrchr(name_copy, '-');
+    if (!ip || !*(ip + 1)) {
+        free(name_copy);
+        free(full_name);
+        return;
+    }
+    *ip = '\0';
+    ip++;
+
+    tm_info = localtime(&timer);
+    if (!tm_info) {
+        free(name_copy);
+        free(full_name);
+        return;
+    }
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d-%H%M%S", tm_info);
+
+    ossec_relpath(base, sizeof(base), AGNBACKUP_DIR, NULL);
+    mkdir(base, 0750);
+
+    snprintf(path_backup, sizeof(path_backup), "%s/%s-%s-%s",
+             base, name_copy, ip, timestamp);
+    if (mkdir(path_backup, 0750) < 0) {
+        merror("%s: ERROR: Couldn't create backup directory '%s': %s",
+               ARGV0, path_backup, strerror(errno));
+        free(name_copy);
+        free(full_name);
+        return;
+    }
+
+    syscheck_dir = isChroot() ? SYSCHECK_DIR : DEFAULTDIR SYSCHECK_DIR;
+    rootcheck_dir = isChroot() ? ROOTCHECK_DIR : DEFAULTDIR ROOTCHECK_DIR;
+
+    ossec_relpath(path_src, sizeof(path_src), AGENTINFO_DIR, full_name);
+    snprintf(path_dst, sizeof(path_dst), "%s/agent-info", path_backup);
+    backup_link(path_src, path_dst);
+
+    snprintf(path_src, sizeof(path_src), "%s/(%s) %s->syscheck",
+             syscheck_dir, name_copy, ip);
+    snprintf(path_dst, sizeof(path_dst), "%s/syscheck", path_backup);
+    backup_link(path_src, path_dst);
+
+    snprintf(path_src, sizeof(path_src), "%s/.(%s) %s->syscheck.cpt",
+             syscheck_dir, name_copy, ip);
+    snprintf(path_dst, sizeof(path_dst), "%s/syscheck.cpt", path_backup);
+    backup_link(path_src, path_dst);
+
+    snprintf(path_src, sizeof(path_src), "%s/(%s) %s->syscheck-registry",
+             syscheck_dir, name_copy, ip);
+    snprintf(path_dst, sizeof(path_dst), "%s/syscheck-registry", path_backup);
+    backup_link(path_src, path_dst);
+
+    snprintf(path_src, sizeof(path_src), "%s/.(%s) %s->syscheck-registry.cpt",
+             syscheck_dir, name_copy, ip);
+    snprintf(path_dst, sizeof(path_dst), "%s/syscheck-registry.cpt", path_backup);
+    backup_link(path_src, path_dst);
+
+    snprintf(path_src, sizeof(path_src), "%s/(%s) %s->rootcheck",
+             rootcheck_dir, name_copy, ip);
+    snprintf(path_dst, sizeof(path_dst), "%s/rootcheck", path_backup);
+    backup_link(path_src, path_dst);
+
+    free(name_copy);
+    free(full_name);
+}
+
+/* Best-effort alert when a duplicate agent IP is refused.
+ * Skips the long StartMQ wait if analysisd is not running.
+ */
+void OS_NotifyDuplicatedIP(const char *ip)
+{
+    int queue;
+    char msg[OS_SIZE_256];
+    const char *qpath;
+
+    if (!ip || !*ip) {
+        return;
+    }
+
+    qpath = isChroot() ? DEFAULTQUEUE : DEFAULTQPATH;
+    if (File_DateofChange(qpath) < 0) {
+        return;
+    }
+
+    queue = OS_ConnectUnixDomain(qpath, OS_MAXSTR + 256);
+    if (queue < 0) {
+        return;
+    }
+
+    snprintf(msg, sizeof(msg), "ossec: Duplicated IP %s", ip);
+    if (SendMSG(queue, msg, "manage_agents", LOCALFILE_MQ) < 0) {
+        merror("%s: ERROR: Unable to send duplicated IP alert.", ARGV0);
+    }
+    close(queue);
+}
+#else
+void OS_BackupAgentInfo(__attribute__((unused)) const char *id) {}
+void OS_NotifyDuplicatedIP(__attribute__((unused)) const char *ip) {}
+#endif
 
 /* Print available agents */
 int print_agents(int print_status, int active_only, int csv_output, cJSON *json_output)
