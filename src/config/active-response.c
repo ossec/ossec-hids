@@ -394,7 +394,7 @@ int ReadActiveCommands(XML_NODE node, void *d1, __attribute__((unused)) void *d2
         return (-1);
     }
 
-    /* Parse expect: comma-separated user|username, srcip, filename (#2104) */
+    /* Parse expect: comma/whitespace-separated user|username, srcip, filename (#2104) */
     tmp_command->expect = ar_parse_expect(tmp_str);
 
     free(tmp_str);

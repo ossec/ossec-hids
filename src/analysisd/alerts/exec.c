@@ -24,17 +24,7 @@ const char *OS_ARUsername(const Eventinfo *lf)
         return NULL;
     }
 
-    /* Decoder "user" / "dstuser" maps here */
-    if (lf->dstuser && lf->dstuser[0] && strcmp(lf->dstuser, "-") != 0) {
-        return lf->dstuser;
-    }
-
-    /* Many custom/web decoders only populate srcuser */
-    if (lf->srcuser && lf->srcuser[0] && strcmp(lf->srcuser, "-") != 0) {
-        return lf->srcuser;
-    }
-
-    return NULL;
+    return ar_pick_username(lf->dstuser, lf->srcuser);
 }
 
 void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2026 Atomicorp LLC
+/* Copyright (C) 2026 Atomicorp, Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -13,31 +13,6 @@
 
 #include "ar.h"
 
-/* Trim leading/trailing whitespace in place; return start of token. */
-static char *ar_trim_token(char *tok)
-{
-    char *end;
-
-    if (!tok) {
-        return tok;
-    }
-
-    while (*tok && isspace((unsigned char)*tok)) {
-        tok++;
-    }
-
-    if (!*tok) {
-        return tok;
-    }
-
-    end = tok + strlen(tok);
-    while (end > tok && isspace((unsigned char)end[-1])) {
-        *--end = '\0';
-    }
-
-    return tok;
-}
-
 /* Case-insensitive compare without relying on strcasecmp (Windows). */
 static int ar_token_eq(const char *a, const char *b)
 {
@@ -49,6 +24,24 @@ static int ar_token_eq(const char *a, const char *b)
         b++;
     }
     return (*a == '\0' && *b == '\0');
+}
+
+static int ar_is_separator(char c)
+{
+    return (c == ',' || isspace((unsigned char)c));
+}
+
+const char *ar_pick_username(const char *dstuser, const char *srcuser)
+{
+    if (dstuser && dstuser[0] && strcmp(dstuser, "-") != 0) {
+        return dstuser;
+    }
+
+    if (srcuser && srcuser[0] && strcmp(srcuser, "-") != 0) {
+        return srcuser;
+    }
+
+    return NULL;
 }
 
 int ar_parse_expect(const char *expect_str)
@@ -70,21 +63,23 @@ int ar_parse_expect(const char *expect_str)
     }
     memcpy(copy, expect_str, len + 1);
 
+    /* Split on commas and/or whitespace so both
+     * "srcip, username" and "srcip username" work. */
     cursor = copy;
-    while (cursor && *cursor) {
-        char *comma = strchr(cursor, ',');
-        if (comma) {
-            *comma = '\0';
-            tok = cursor;
-            cursor = comma + 1;
-        } else {
-            tok = cursor;
-            cursor = NULL;
+    while (*cursor) {
+        while (*cursor && ar_is_separator(*cursor)) {
+            cursor++;
+        }
+        if (!*cursor) {
+            break;
         }
 
-        tok = ar_trim_token(tok);
-        if (!*tok) {
-            continue;
+        tok = cursor;
+        while (*cursor && !ar_is_separator(*cursor)) {
+            cursor++;
+        }
+        if (*cursor) {
+            *cursor++ = '\0';
         }
 
         if (ar_token_eq(tok, "user") || ar_token_eq(tok, "username")) {

@@ -1,4 +1,4 @@
-/* Unit tests for ar_parse_expect (#2104). */
+/* Unit tests for ar_parse_expect / ar_pick_username (#2104). */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +12,19 @@ static void expect_eq(const char *label, int got, int want)
         fprintf(stderr, "FAIL: %s: got 0%o want 0%o\n", label, got, want);
         failures++;
     }
+}
+
+static void expect_str(const char *label, const char *got, const char *want)
+{
+    if (got == want) {
+        return;
+    }
+    if (got && want && strcmp(got, want) == 0) {
+        return;
+    }
+    fprintf(stderr, "FAIL: %s: got '%s' want '%s'\n",
+            label, got ? got : "(null)", want ? want : "(null)");
+    failures++;
 }
 
 int main(void)
@@ -38,6 +51,14 @@ int main(void)
               ar_parse_expect(" user , srcip , filename "),
               USERNAME | SRCIP | FILENAME);
 
+    /* Whitespace-separated (no commas) — compatible with older substring match */
+    expect_eq("srcip username",
+              ar_parse_expect("srcip username"),
+              SRCIP | USERNAME);
+    expect_eq("srcip\tusername filename",
+              ar_parse_expect("srcip\tusername filename"),
+              SRCIP | USERNAME | FILENAME);
+
     /* Unknown tokens ignored; known ones still applied */
     expect_eq("srcip, hostname",
               ar_parse_expect("srcip, hostname"),
@@ -47,6 +68,22 @@ int main(void)
     expect_eq("userextra alone unknown",
               ar_parse_expect("userextra"),
               0);
+
+    /* ar_pick_username */
+    expect_str("prefer dstuser",
+               ar_pick_username("alice", "bob"), "alice");
+    expect_str("fallback srcuser",
+               ar_pick_username(NULL, "bob"), "bob");
+    expect_str("skip empty dstuser",
+               ar_pick_username("", "bob"), "bob");
+    expect_str("skip dash dstuser",
+               ar_pick_username("-", "bob"), "bob");
+    expect_str("skip dash srcuser",
+               ar_pick_username(NULL, "-"), NULL);
+    expect_str("both absent",
+               ar_pick_username(NULL, NULL), NULL);
+    expect_str("both dash",
+               ar_pick_username("-", "-"), NULL);
 
     if (failures) {
         fprintf(stderr, "FAIL: ar_expect_test (%d)\n", failures);
