@@ -35,6 +35,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Stop treating MJ12bot as a malicious user agent in rule 31508 (#1317)
 - @atomicturtle - Ignore snap and /dev/loop df 100% alerts under rule 532 (#1418)
 - @atomicturtle - Label /var/ossec/logs as var_log_t for logrotate and allow logrotate_t on ossec_log_t (#1948)
 - @atomicturtle - Pass CFLAGS/LDFLAGS into bundled ossec-lua/ossec-luac via MYCFLAGS/MYLDFLAGS (#1568)
