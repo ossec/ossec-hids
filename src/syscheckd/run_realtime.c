@@ -23,13 +23,8 @@
 
 #ifdef INOTIFY_ENABLED
 #include <sys/inotify.h>
-#else
-/* shared.h already included above */
 #endif
 
-#include "fs_op.h"
-#include "hash_op.h"
-#include "debug_op.h"
 #include "syscheck.h"
 #include "error_messages/error_messages.h"
 
@@ -60,19 +55,6 @@ int realtime_checksumfile(const char *file_name)
             if (strcmp(c_sum, buf + sum_off) != 0) {
                 char alert_msg[OS_MAXSTR + 1];
                 int real_change = fim_sum_has_real_change(buf + sum_off, c_sum);
-                char *updated;
-                char *old_data = buf;
-
-                os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
-                memcpy(updated, buf, (size_t)sum_off);
-                updated[sum_off] = '\0';
-                memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
-                if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
-                    free(old_data);
-                    buf = updated;
-                } else {
-                    free(updated);
-                }
 
                 alert_msg[OS_MAXSTR] = '\0';
 
@@ -94,7 +76,26 @@ int realtime_checksumfile(const char *file_name)
                     snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
                 }
                 #endif
-                send_syscheck_msg(alert_msg);
+                if (send_syscheck_msg(alert_msg) != 0) {
+                    merror("%s: WARN: Failed to send syscheck update for '%s'. "
+                          "Change will be retried on the next event/scan.", ARGV0, file_name);
+                    return (0);
+                }
+
+                /* Only refresh local cache after a successful send. */
+                {
+                    char *updated;
+                    char *old_data = buf;
+
+                    os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
+                    memcpy(updated, buf, (size_t)sum_off);
+                    memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
+                    if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
+                        free(old_data);
+                    } else {
+                        free(updated);
+                    }
+                }
 
                 return (1);
             }

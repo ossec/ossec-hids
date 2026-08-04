@@ -308,20 +308,6 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 
                 if (strcmp(c_sum, buf + sum_off) != 0) {
                     int real_change = fim_sum_has_real_change(buf + sum_off, c_sum);
-                    char *updated;
-                    char *old_data = buf;
-
-                    /* Refresh local cache so we do not resend forever. */
-                    os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
-                    memcpy(updated, buf, (size_t)sum_off);
-                    updated[sum_off] = '\0';
-                    memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
-                    if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
-                        free(old_data);
-                        buf = updated;
-                    } else {
-                        free(updated);
-                    }
 
                     /* Placeholder-only diffs still go to the manager so its DB
                      * can heal, but analysisd will not raise an alert. */
@@ -346,6 +332,20 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     if (send_syscheck_msg(alert_msg) != 0) {
                         merror("%s: WARN: Failed to send syscheck update for '%s'. "
                               "Change will be retried on the next scan.", ARGV0, file_name);
+                    } else {
+                        /* Only refresh local cache after a successful send so a
+                         * failed delivery is retried on the next scan. */
+                        char *updated;
+                        char *old_data = buf;
+
+                        os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
+                        memcpy(updated, buf, (size_t)sum_off);
+                        memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
+                        if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
+                            free(old_data);
+                        } else {
+                            free(updated);
+                        }
                     }
                 }
             }

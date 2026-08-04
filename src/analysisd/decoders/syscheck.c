@@ -461,13 +461,13 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         }
         fputc('#', fp);
         fseek(fp, 0, SEEK_END);
+        if (db_entry) {
+            /* Record the start of the new line before writing it. */
+            fgetpos(fp, &db_entry->pos);
+            snprintf(db_entry->prefix_sum, OS_MAXSTR, "+++%s", c_sum);
+        }
         fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name);
         fflush(fp);
-        if (db_entry) {
-            snprintf(db_entry->prefix_sum, OS_MAXSTR, "+++%s", c_sum);
-            fseek(fp, 0, SEEK_END);
-            fgetpos(fp, &db_entry->pos);
-        }
         lf->data = NULL;
         return (0);
     }
@@ -522,6 +522,15 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
 
     /* Add the new entry at the end of the file */
     fseek(fp, 0, SEEK_END);
+    if (db_entry) {
+        /* Record the start of the new line before writing it. */
+        fgetpos(fp, &db_entry->pos);
+        snprintf(db_entry->prefix_sum, OS_MAXSTR, "%c%c%c%s",
+                 '!',
+                 p >= 1 ? '!' : '+',
+                 p == 2 ? '!' : (p > 2) ? '?' : '+',
+                 c_sum);
+    }
     fprintf(fp, "%c%c%c%s !%ld %s\n",
             '!',
             p >= 1 ? '!' : '+',
@@ -530,16 +539,6 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
             (long int)lf->time,
             f_name);
     fflush(fp);
-
-    if (db_entry) {
-        snprintf(db_entry->prefix_sum, OS_MAXSTR, "%c%c%c%s",
-                 '!',
-                 p >= 1 ? '!' : '+',
-                 p == 2 ? '!' : (p > 2) ? '?' : '+',
-                 c_sum);
-        fseek(fp, 0, SEEK_END);
-        fgetpos(fp, &db_entry->pos);
-    }
 
     /* File deleted */
     if (c_sum[0] == '-' && c_sum[1] == '1') {

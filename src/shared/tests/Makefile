@@ -8,7 +8,7 @@ TOP = ../..
 CFLAGS_COMMON = -g -Wall -I$(TOP)/headers -I$(TOP) -I$(TOP)/analysisd
 
 # Headless tests run by `check`. Interactive helpers stay under `legacy_helpers`.
-AUTO_TEST_BINS = thread_pool_test queue_op_test string_test
+AUTO_TEST_BINS = thread_pool_test queue_op_test string_test fim_sum_test
 LEGACY_HELPER_BINS = prime_test hash_test merge_test ip_test
 
 .PHONY: maketest check clean legacy_helpers
@@ -25,6 +25,9 @@ queue_op_test: queue_op_test.c $(TOP)/shared.a
 
 string_test: string_test.c
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"string_test\" -o $@ string_test.c ../string_op.c
+
+fim_sum_test: fim_sum_test.c
+	$(CC) $(CFLAGS_COMMON) -DARGV0=\"fim_sum_test\" -o $@ fim_sum_test.c ../fim_sum_op.c
 
 # Interactive / argv-driven helpers (not part of automated check).
 legacy_helpers:
