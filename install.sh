@@ -348,7 +348,8 @@ SetupLogs()
       echo "" >> $NEWCONFIG
       echo "  <localfile>" >> $NEWCONFIG
       echo "    <log_format>full_command</log_format>" >> $NEWCONFIG
-      echo "    <command>netstat -tan |grep LISTEN |egrep -v '(127.0.0.1| ::1)' | sort</command>" >> $NEWCONFIG
+      # Print proto/local/foreign/state only — Recv-Q/Send-Q churn causes rule 533 FPs (#495/#2063)
+      echo "    <command>netstat -tan |grep LISTEN |egrep -v '(127.0.0.1| ::1)' | awk '{print \$1,\$4,\$5,\$6}' | sort</command>" >> $NEWCONFIG
       echo "  </localfile>" >> $NEWCONFIG
       echo "" >> $NEWCONFIG
       echo "  <localfile>" >> $NEWCONFIG
