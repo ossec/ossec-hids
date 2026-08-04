@@ -158,9 +158,10 @@ static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
         }
 
         if (mail_append_address(addr_list, sizeof(addr_list), safe_addr) != 0) {
-            merror("%s: SMS To header buffer full; remaining recipients omitted.",
+            merror("%s: SMS To header buffer full; refusing truncated recipient set.",
                    ARGV0);
-            break;
+            final_to[0] = '\0';
+            return (0);
         }
 
         i++;
@@ -288,7 +289,12 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
         }
         free(msg);
 
-        final_to[0] = '\0';
+        /* Build the To: set first so RCPT TO cannot include omitted recipients. */
+        if (!sms_build_to_headers(mail, gran_override, final_to, sizeof(final_to),
+                                  &crlf_warned)) {
+            close(socket);
+            return (OS_INVALID);
+        }
 
         if (mail->gran_to) {
             i = 0;
@@ -319,12 +325,6 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
 
                 i++;
             }
-        }
-
-        if (!sms_build_to_headers(mail, gran_override, final_to, sizeof(final_to),
-                                  &crlf_warned)) {
-            close(socket);
-            return (OS_INVALID);
         }
 
         OS_SendTCP(socket, DATAMSG);
@@ -432,6 +432,72 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
     return (0);
 }
 
+static int mail_build_full_cc(MailConfig *mail, const int *gran_override,
+                              char *cc_addrs, size_t cc_cap, int *crlf_warned)
+{
+    char safe_addr[256];
+    unsigned int i;
+
+    if (!cc_addrs || cc_cap == 0) {
+        return (-1);
+    }
+
+    cc_addrs[0] = '\0';
+
+    if (mail_has_cc_recipients(mail->to, 0)) {
+        i = 1;
+        while (mail->to[i] != NULL) {
+            if (mail_skip_unsafe_recipient(mail->to[i], crlf_warned)) {
+                i++;
+                continue;
+            }
+
+            mail_safe_header_addr(mail->to[i], safe_addr, sizeof(safe_addr));
+            if (safe_addr[0] == '\0') {
+                i++;
+                continue;
+            }
+
+            if (mail_append_address(cc_addrs, cc_cap, safe_addr) != 0) {
+                merror("%s: Cc header buffer full; refusing truncated recipient set.",
+                       ARGV0);
+                return (-1);
+            }
+            i++;
+        }
+    }
+
+    if (mail->gran_to) {
+        i = 0;
+        while (mail->gran_to[i] != NULL) {
+            if (mail_gran_format(mail, gran_override, i) != FULL_FORMAT) {
+                i++;
+                continue;
+            }
+
+            if (mail_skip_unsafe_recipient(mail->gran_to[i], crlf_warned)) {
+                i++;
+                continue;
+            }
+
+            mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
+            if (safe_addr[0] == '\0') {
+                i++;
+                continue;
+            }
+
+            if (mail_append_address(cc_addrs, cc_cap, safe_addr) != 0) {
+                merror("%s: Cc header buffer full; refusing truncated recipient set.",
+                       ARGV0);
+                return (-1);
+            }
+            i++;
+        }
+    }
+
+    return (0);
+}
+
 int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
                 const int *gran_override, const char *group_subject,
                 unsigned int group_subject_level)
@@ -442,6 +508,8 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
     char *msg;
     char snd_msg[128];
     char safe_addr[256];
+    char cc_addrs[MAIL_CC_VALUE_MAX + 1];
+    char cc_hdr[MAIL_HEADER_LINE_MAX + 3];
     int crlf_warned = 0;
     int valid_rcpt = 0;
 
@@ -459,6 +527,11 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
 
 #define mail_send_fail(code) do { free_mail_batch(batch); return (code); } while (0)
 
+    /* Finalize Cc set before any RCPT TO so envelope and headers stay aligned. */
+    if (mail_build_full_cc(mail, gran_override, cc_addrs, sizeof(cc_addrs),
+                           &crlf_warned) != 0) {
+        mail_send_fail(OS_INVALID);
+    }
     if (mail->smtpserver[0] == '/') {
         sendmail = popen(mail->smtpserver, "w");
         if (!sendmail) {
@@ -686,66 +759,21 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
         }
     }
 
-    /* Add one Cc: header for extra global + granular recipients (RFC 5322).
-     * Multiple To: fields cause rejects (Gmail 550 duplicate To, etc.). */
-    {
-        char cc_addrs[2048];
-        char cc_hdr[2200];
-
-        cc_addrs[0] = '\0';
-
-        if (mail_has_cc_recipients(mail->to, 0)) {
-            i = 1;
-            while (mail->to[i] != NULL) {
-                if (mail_skip_unsafe_recipient(mail->to[i], &crlf_warned)) {
-                    i++;
-                    continue;
-                }
-
-                mail_safe_header_addr(mail->to[i], safe_addr, sizeof(safe_addr));
-                if (safe_addr[0] != '\0' &&
-                    mail_append_address(cc_addrs, sizeof(cc_addrs), safe_addr) != 0) {
-                    merror("%s: Cc header buffer full; remaining recipients omitted.",
-                           ARGV0);
-                    break;
-                }
-                i++;
+    /* Emit the Cc: set finalized before RCPT TO (RFC 5322 single header). */
+    if (cc_addrs[0] != '\0') {
+        int n = snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
+        if (n < 0 || (size_t)n >= sizeof(cc_hdr) || n > MAIL_HEADER_LINE_MAX + 2) {
+            merror("%s: Cc header truncated; refusing send.", ARGV0);
+            if (sendmail) {
+                pclose(sendmail);
+            } else if (socket >= 0) {
+                close(socket);
             }
-        }
-
-        if (mail->gran_to) {
-            i = 0;
-            while (mail->gran_to[i] != NULL) {
-                if (mail_gran_format(mail, gran_override, i) != FULL_FORMAT) {
-                    i++;
-                    continue;
-                }
-
-                if (mail_skip_unsafe_recipient(mail->gran_to[i], &crlf_warned)) {
-                    i++;
-                    continue;
-                }
-
-                mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
-                if (safe_addr[0] != '\0' &&
-                    mail_append_address(cc_addrs, sizeof(cc_addrs), safe_addr) != 0) {
-                    merror("%s: Cc header buffer full; remaining recipients omitted.",
-                           ARGV0);
-                    break;
-                }
-                i++;
-            }
-        }
-
-        if (cc_addrs[0] != '\0') {
-            int n = snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
-            if (n < 0 || (size_t)n >= sizeof(cc_hdr)) {
-                merror("%s: Cc header truncated; omitting Cc recipients.", ARGV0);
-            } else if (sendmail) {
-                fprintf(sendmail, "%s", cc_hdr);
-            } else {
-                OS_SendTCP(socket, cc_hdr);
-            }
+            mail_send_fail(OS_INVALID);
+        } else if (sendmail) {
+            fprintf(sendmail, "%s", cc_hdr);
+        } else {
+            OS_SendTCP(socket, cc_hdr);
         }
     }
 

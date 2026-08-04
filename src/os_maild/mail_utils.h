@@ -12,6 +12,11 @@
 
 #include <stddef.h>
 
+/* RFC 5322: header lines must be at most 998 octets excluding CRLF. */
+#define MAIL_HEADER_LINE_MAX 998
+#define MAIL_CC_PREFIX_LEN   4 /* "Cc: " */
+#define MAIL_CC_VALUE_MAX    (MAIL_HEADER_LINE_MAX - MAIL_CC_PREFIX_LEN)
+
 /* True if address contains CR or LF (SMTP command injection risk). */
 int mail_address_has_crlf(const char *addr);
 

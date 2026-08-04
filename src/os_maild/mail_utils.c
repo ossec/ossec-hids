@@ -47,7 +47,7 @@ int mail_append_header_line(char *buf, size_t cap, const char *line)
 {
     size_t used;
     size_t room;
-    int n;
+    size_t line_len;
 
     if (!buf || cap == 0 || !line) {
         return (-1);
@@ -58,13 +58,14 @@ int mail_append_header_line(char *buf, size_t cap, const char *line)
         return (-1);
     }
 
+    line_len = strlen(line);
     room = cap - used - 1;
-    n = snprintf(buf + used, room + 1, "%s", line);
-    if (n < 0 || (size_t)n > room) {
-        buf[cap - 1] = '\0';
+    if (line_len > room) {
+        /* Do not partially write; leave existing contents intact. */
         return (-1);
     }
 
+    memcpy(buf + used, line, line_len + 1);
     return (0);
 }
 
@@ -82,7 +83,8 @@ int mail_append_address(char *buf, size_t cap, const char *addr)
     char piece[320];
     int n;
 
-    if (!buf || cap == 0 || !addr || addr[0] == '\0') {
+    if (!buf || cap == 0 || !addr || addr[0] == '\0' ||
+        mail_address_has_crlf(addr)) {
         return (-1);
     }
 

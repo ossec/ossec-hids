@@ -446,6 +446,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
                 for (i = 1; mail->to[i] != NULL; ++i) {
                     char sanitized_cc[HEADER_MAX];
                     size_t addr_len;
+                    size_t need;
 
                     mail_sanitize_header_value(mail->to[i], sanitized_cc, sizeof(sanitized_cc));
                     addr_len = strlen(sanitized_cc);
@@ -454,16 +455,17 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
                         continue;
                     }
 
-                    if (cc_len > 0) {
-                        if (cc_len + 2 >= sizeof(cc_value)) {
-                            break;
-                        }
-                        cc_value[cc_len++] = ',';
-                        cc_value[cc_len++] = ' ';
+                    need = addr_len + (cc_len > 0 ? 2 : 0);
+                    if (cc_len + need >= sizeof(cc_value) ||
+                        cc_len + need > MAIL_CC_VALUE_MAX) {
+                        merror("%s: Cc header buffer full; refusing truncated recipient set.",
+                               ARGV0);
+                        goto done;
                     }
 
-                    if (cc_len + addr_len >= sizeof(cc_value)) {
-                        break;
+                    if (cc_len > 0) {
+                        cc_value[cc_len++] = ',';
+                        cc_value[cc_len++] = ' ';
                     }
 
                     memcpy(cc_value + cc_len, sanitized_cc, addr_len);
@@ -476,6 +478,7 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
                 for (i = 0; mail->gran_to[i] != NULL; ++i) {
                     char sanitized_cc[HEADER_MAX];
                     size_t addr_len;
+                    size_t need;
 
                     if (mail_gran_format(mail, gran_override, i) != FULL_FORMAT) {
                         continue;
@@ -488,16 +491,17 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
                         continue;
                     }
 
-                    if (cc_len > 0) {
-                        if (cc_len + 2 >= sizeof(cc_value)) {
-                            break;
-                        }
-                        cc_value[cc_len++] = ',';
-                        cc_value[cc_len++] = ' ';
+                    need = addr_len + (cc_len > 0 ? 2 : 0);
+                    if (cc_len + need >= sizeof(cc_value) ||
+                        cc_len + need > MAIL_CC_VALUE_MAX) {
+                        merror("%s: Cc header buffer full; refusing truncated recipient set.",
+                               ARGV0);
+                        goto done;
                     }
 
-                    if (cc_len + addr_len >= sizeof(cc_value)) {
-                        break;
+                    if (cc_len > 0) {
+                        cc_value[cc_len++] = ',';
+                        cc_value[cc_len++] = ' ';
                     }
 
                     memcpy(cc_value + cc_len, sanitized_cc, addr_len);
@@ -509,10 +513,10 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
             if (cc_len > 0) {
                 n = snprintf(cc_header_line, sizeof(cc_header_line),
                              "Cc: %s\r\n", cc_value);
-                if (n < 0 || (size_t)n >= sizeof(cc_header_line)) {
-                    merror("%s: Cc header truncated; omitting Cc recipients.",
-                           ARGV0);
-                    cc_header_line[0] = '\0';
+                if (n < 0 || (size_t)n >= sizeof(cc_header_line) ||
+                    n > MAIL_HEADER_LINE_MAX + 2) {
+                    merror("%s: Cc header truncated; refusing send.", ARGV0);
+                    goto done;
                 }
             }
         }
