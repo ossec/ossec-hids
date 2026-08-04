@@ -30,11 +30,12 @@ Work toward the next minor release after 4.2.0.
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
 - @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
-- @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules (login, session, access)
+- @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules; tighten postgresql_log so it does not steal cPanel logs (#1132)
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
 
 **Bug Fixes**
 
+- @atomicturtle - Require more attack-group context and same_location for rule 40501 (#1082)
 - @atomicturtle - Stop treating MJ12bot as a malicious user agent in rule 31508 (#1317)
 - @atomicturtle - Ignore snap and /dev/loop df 100% alerts under rule 532 (#1418)
 - @atomicturtle - Label /var/ossec/logs as var_log_t for logrotate and allow logrotate_t on ossec_log_t (#1948)

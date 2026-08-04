@@ -98,9 +98,12 @@
 
 <!-- Privilege escalation messages -->
 <group name="syslog,elevation_of_privilege,">
-  <rule id="40501" level="15" timeframe="300" frequency="2">
+  <!-- Require several prior attack-group hits on the same host so routine
+       admin SSH + useradd (and residual scanner noise) do not fire level 15. -->
+  <rule id="40501" level="15" timeframe="300" frequency="4">
     <if_group>adduser</if_group>
     <if_matched_group>attacks</if_matched_group>
+    <same_location />
     <description>Attacks followed by the addition </description>
     <description>of an user.</description>
   </rule>
