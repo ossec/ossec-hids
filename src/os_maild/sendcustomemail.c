@@ -11,6 +11,7 @@
 
 #include "shared.h"
 #include "os_net/os_net.h"
+#include "mail_utils.h"
 
 /* Return codes (from SMTP server) */
 #define VALIDBANNER     "220"
@@ -53,8 +54,44 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     char *msg;
     char snd_msg[128];
     char buffer[2049];
+    char cc_addrs[MAIL_CC_VALUE_MAX + 1];
+    char cc_hdr[MAIL_HEADER_LINE_MAX + 3];
+    char safe_addr[256];
 
     buffer[2048] = '\0';
+    cc_addrs[0] = '\0';
+
+    if (!to || !to[0] || !smtpserver || !from) {
+        return (OS_INVALID);
+    }
+
+    /* Finalize Cc before any RCPT TO (envelope/header must match). */
+    if (to[1]) {
+        i = 1;
+        while (to[i] != NULL) {
+            if (mail_address_has_crlf(to[i])) {
+                merror("%s: Skipping recipient with CR/LF in address (SMTP injection risk).",
+                       ARGV0);
+                i++;
+                continue;
+            }
+
+            mail_sanitize_header_value(to[i], safe_addr, sizeof(safe_addr));
+            if (safe_addr[0] == '\0') {
+                i++;
+                continue;
+            }
+
+            if (mail_append_address(cc_addrs, sizeof(cc_addrs), safe_addr) != 0) {
+                merror("%s: Cc header buffer full; refusing truncated recipient set.",
+                       ARGV0);
+                return (OS_INVALID);
+            }
+            i++;
+        }
+    }
+
+    i = 0;
 
     if (smtpserver[0] == '/') {
         sendmail = popen(smtpserver, "w");
@@ -134,8 +171,12 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         MAIL_DEBUG("DEBUG: Sent '%s', received: '%s'", snd_msg, msg);
         free(msg);
 
-        /* Build "RCPT TO" msg */
+        /* Build "RCPT TO" msg — skip CR/LF addresses already excluded from Cc. */
         while (to[i]) {
+            if (mail_address_has_crlf(to[i])) {
+                i++;
+                continue;
+            }
             memset(snd_msg, '\0', 128);
             snprintf(snd_msg, 127, RCPTTO, to[i]);
             OS_SendTCP(socket, snd_msg);
@@ -198,24 +239,21 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         }
     }
 
-    /* Add CCs */
-    if (to[1]) {
-        i = 1;
-        while (1) {
-            if (to[i] == NULL) {
-                break;
-            }
-
-            memset(snd_msg, '\0', 128);
-            snprintf(snd_msg, 127, TO, to[i]);
-
+    /* Emit the Cc: set finalized before RCPT TO. */
+    if (cc_addrs[0] != '\0') {
+        int n = snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
+        if (n < 0 || (size_t)n >= sizeof(cc_hdr) || n > MAIL_HEADER_LINE_MAX + 2) {
+            merror("%s: Cc header truncated; refusing send.", ARGV0);
             if (sendmail) {
-                fprintf(sendmail, "%s", snd_msg);
-            } else {
-                OS_SendTCP(socket, snd_msg);
+                pclose(sendmail);
+            } else if (socket >= 0) {
+                close(socket);
             }
-
-            i++;
+            return (OS_INVALID);
+        } else if (sendmail) {
+            fprintf(sendmail, "%s", cc_hdr);
+        } else {
+            OS_SendTCP(socket, cc_hdr);
         }
     }
 

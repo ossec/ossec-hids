@@ -84,6 +84,41 @@ static void test_append_header_line_no_underflow(void)
     assert(strlen(buf) < sizeof(buf));
 }
 
+static void test_append_address_comma_list(void)
+{
+    char buf[128];
+
+    buf[0] = '\0';
+    assert(mail_append_address(buf, sizeof(buf), "a@example.com") == 0);
+    assert(strcmp(buf, "<a@example.com>") == 0);
+    assert(mail_append_address(buf, sizeof(buf), "b@example.com") == 0);
+    assert(strcmp(buf, "<a@example.com>, <b@example.com>") == 0);
+    assert(mail_append_address(buf, sizeof(buf), "") == -1);
+    assert(mail_append_address(buf, sizeof(buf), NULL) == -1);
+}
+
+static void test_append_address_bounds(void)
+{
+    char buf[24];
+
+    buf[0] = '\0';
+    assert(mail_append_address(buf, sizeof(buf), "a@b.co") == 0);
+    /* Second address will not fit in 24 bytes once ", <...>" is added. */
+    assert(mail_append_address(buf, sizeof(buf), "longer@example.com") == -1);
+    assert(strcmp(buf, "<a@b.co>") == 0);
+}
+
+static void test_append_address_rejects_crlf(void)
+{
+    char buf[64];
+
+    buf[0] = '\0';
+    assert(mail_append_address(buf, sizeof(buf), "bad\r@ex.com") == -1);
+    assert(buf[0] == '\0');
+    assert(mail_append_address(buf, sizeof(buf), "bad\n@ex.com") == -1);
+    assert(buf[0] == '\0');
+}
+
 int main(void)
 {
     test_cc_guard_sms_only_null_to();
@@ -91,6 +126,9 @@ int main(void)
     test_append_header_line_bounds();
     test_safe_envelope_value();
     test_append_header_line_no_underflow();
+    test_append_address_comma_list();
+    test_append_address_bounds();
+    test_append_address_rejects_crlf();
 
     printf("mail_utils_test: OK\n");
     return (0);
