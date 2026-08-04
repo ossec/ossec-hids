@@ -11,6 +11,7 @@
 
 #include "shared.h"
 #include "os_net/os_net.h"
+#include "mail_utils.h"
 
 /* Return codes (from SMTP server) */
 #define VALIDBANNER     "220"
@@ -202,30 +203,37 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
     if (to[1]) {
         char cc_addrs[2048];
         char cc_hdr[2200];
+        char safe_addr[256];
 
         cc_addrs[0] = '\0';
         i = 1;
         while (to[i] != NULL) {
-            char piece[320];
-            int n;
-
-            if (cc_addrs[0] != '\0') {
-                n = snprintf(piece, sizeof(piece), ", <%s>", to[i]);
-            } else {
-                n = snprintf(piece, sizeof(piece), "<%s>", to[i]);
+            if (mail_address_has_crlf(to[i])) {
+                merror("%s: Skipping recipient with CR/LF in address (SMTP injection risk).",
+                       ARGV0);
+                i++;
+                continue;
             }
-            if (n > 0 && (size_t)n < sizeof(piece)) {
-                size_t used = strlen(cc_addrs);
-                if (used + strlen(piece) + 1 < sizeof(cc_addrs)) {
-                    memcpy(cc_addrs + used, piece, strlen(piece) + 1);
-                }
+
+            mail_sanitize_header_value(to[i], safe_addr, sizeof(safe_addr));
+            if (safe_addr[0] == '\0') {
+                i++;
+                continue;
+            }
+
+            if (mail_append_address(cc_addrs, sizeof(cc_addrs), safe_addr) != 0) {
+                merror("%s: Cc header buffer full; remaining recipients omitted.",
+                       ARGV0);
+                break;
             }
             i++;
         }
 
         if (cc_addrs[0] != '\0') {
-            snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
-            if (sendmail) {
+            int n = snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
+            if (n < 0 || (size_t)n >= sizeof(cc_hdr)) {
+                merror("%s: Cc header truncated; omitting Cc recipients.", ARGV0);
+            } else if (sendmail) {
                 fprintf(sendmail, "%s", cc_hdr);
             } else {
                 OS_SendTCP(socket, cc_hdr);

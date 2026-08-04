@@ -171,9 +171,13 @@ static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
     }
 
     /* One To: header with comma-separated addresses (RFC 5322). */
-    if (snprintf(final_to, final_to_cap, "To: %s\r\n", addr_list) < 0 ||
-        final_to[0] == '\0') {
-        return (0);
+    {
+        int n = snprintf(final_to, final_to_cap, "To: %s\r\n", addr_list);
+        if (n < 0 || (size_t)n >= final_to_cap) {
+            merror("%s: SMS To header truncated; recipients omitted.", ARGV0);
+            final_to[0] = '\0';
+            return (0);
+        }
     }
 
     return (1);
@@ -734,8 +738,10 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
         }
 
         if (cc_addrs[0] != '\0') {
-            snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
-            if (sendmail) {
+            int n = snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
+            if (n < 0 || (size_t)n >= sizeof(cc_hdr)) {
+                merror("%s: Cc header truncated; omitting Cc recipients.", ARGV0);
+            } else if (sendmail) {
                 fprintf(sendmail, "%s", cc_hdr);
             } else {
                 OS_SendTCP(socket, cc_hdr);

@@ -507,8 +507,13 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
             }
 
             if (cc_len > 0) {
-                (void)snprintf(cc_header_line, sizeof(cc_header_line),
-                               "Cc: %s\r\n", cc_value);
+                n = snprintf(cc_header_line, sizeof(cc_header_line),
+                             "Cc: %s\r\n", cc_value);
+                if (n < 0 || (size_t)n >= sizeof(cc_header_line)) {
+                    merror("%s: Cc header truncated; omitting Cc recipients.",
+                           ARGV0);
+                    cc_header_line[0] = '\0';
+                }
             }
         }
 

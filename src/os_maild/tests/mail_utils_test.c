@@ -99,16 +99,12 @@ static void test_append_address_comma_list(void)
 
 static void test_append_address_bounds(void)
 {
-    char buf[40];
-    char long_addr[64];
-
-    memset(long_addr, 'x', sizeof(long_addr) - 1);
-    long_addr[sizeof(long_addr) - 1] = '\0';
-    memcpy(long_addr + sizeof(long_addr) - 12, "@example.com", 12);
+    char buf[24];
 
     buf[0] = '\0';
     assert(mail_append_address(buf, sizeof(buf), "a@b.co") == 0);
-    assert(mail_append_address(buf, sizeof(buf), long_addr) == -1);
+    /* Second address will not fit in 24 bytes once ", <...>" is added. */
+    assert(mail_append_address(buf, sizeof(buf), "longer@example.com") == -1);
 }
 
 int main(void)
