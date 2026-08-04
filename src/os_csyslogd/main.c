@@ -137,19 +137,27 @@ int main(int argc, char **argv)
 
         while (syslog_config[s]) {
             char *resolved;
+            int ip_check;
 
-            if (!syslog_config[s]->server) {
+            if (!syslog_config[s]->server || syslog_config[s]->server[0] == '\0') {
+                ErrorExit("%s: ERROR: syslog_output server is empty.", ARGV0);
+            }
+
+            /* OS_IsValidIP: 1 = host IP, 2 = IP/CIDR (not a valid syslog target). */
+            ip_check = OS_IsValidIP(syslog_config[s]->server, NULL);
+            if (ip_check == 1) {
                 s++;
                 continue;
             }
-
-            if (OS_IsValidIP(syslog_config[s]->server, NULL) == 1) {
-                s++;
-                continue;
+            if (ip_check == 2) {
+                ErrorExit("%s: ERROR: syslog_output server '%s' must be a "
+                          "hostname or IP address, not a network/CIDR.",
+                          ARGV0, syslog_config[s]->server);
             }
 
             resolved = OS_GetHost(syslog_config[s]->server, 5);
-            if (!resolved) {
+            if (!resolved || resolved[0] == '\0') {
+                free(resolved);
                 ErrorExit("%s: ERROR: Unable to resolve syslog_output server "
                           "hostname '%s'.", ARGV0, syslog_config[s]->server);
             }
