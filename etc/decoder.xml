@@ -1069,6 +1069,17 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<!-- Extract srcip from smtpd TLS/connect aborts, e.g.:
+  - postfix/smtpd[29322]: SSL_accept error from unknown[203.0.113.10]: lost connection
+  - postfix/smtpd[29322]: lost connection after CONNECT from unknown[203.0.113.10]
+ -->
+<decoder name="postfix-connect-abort">
+  <parent>postfix</parent>
+  <prematch_pcre2>^SSL_accept error from |^lost connection after \S+ from </prematch_pcre2>
+  <pcre2 offset="after_prematch">\[(\S+)\]</pcre2>
+  <order>srcip</order>
+</decoder>
+
 
 <!-- Sendmail decoder.
   - Will extract the srcip
