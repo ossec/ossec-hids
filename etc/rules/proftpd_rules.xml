@@ -142,10 +142,10 @@
     <group>service_availability,</group>
   </rule>
 
-  <rule id="11219" level="12">
+  <rule id="11219" level="0">
     <if_sid>11200</if_sid>
     <pcre2>Reallocating sreaddir buffer</pcre2>
-    <description>FTP server Buffer overflow attempt.</description>
+    <description>ProFTPD directory listing buffer growth (ignored).</description>
   </rule>
 
   <rule id="11220" level="4">
