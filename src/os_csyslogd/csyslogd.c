@@ -9,7 +9,6 @@
 
 #include "shared.h"
 #include "csyslogd.h"
-#include "os_net/os_net.h"
 
 /* Global variables */
 char __shost[512];
@@ -46,20 +45,7 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
     }
     debug1("%s: INFO: File queue connected.", ARGV0 );
 
-    /* Connect to syslog */
-    s = 0;
-    while (syslog_config[s]) {
-        syslog_config[s]->socket = OS_ConnectUDP(syslog_config[s]->port,
-                                                 syslog_config[s]->server);
-        if (syslog_config[s]->socket < 0) {
-            merror(CONNS_ERROR, ARGV0, syslog_config[s]->server);
-        } else {
-            merror("%s: INFO: Forwarding alerts via syslog to: '%s:%s'.",
-                   ARGV0, syslog_config[s]->server, syslog_config[s]->port);
-        }
-
-        s++;
-    }
+    /* UDP sockets were opened in main() before chroot (#1744). */
 
     /* Infinite loop reading the alerts and inserting them */
     while (1) {
