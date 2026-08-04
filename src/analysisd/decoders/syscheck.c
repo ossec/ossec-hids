@@ -14,6 +14,7 @@
 #include "config.h"
 #include "alerts/alerts.h"
 #include "decoder.h"
+#include "fim_sum_op.h"
 
 #ifdef SQLITE_ENABLED
 #include <sqlite3.h>
@@ -450,6 +451,49 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         return (0);
     }
 
+    /* Placeholder-only hash transitions (xxx <-> real) are not integrity
+     * events; update the DB quietly so future scans stay clean (#1590/#1704). */
+    if (!fim_sum_has_real_change(saved_sum, c_sum)) {
+        char new_prefix[OS_MAXSTR + 1];
+        fpos_t new_pos;
+
+        if (fsetpos(fp, &sdb.init_pos) != 0) {
+            merror("%s: Error handling integrity database (fsetpos).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (fputc('#', fp) == EOF) {
+            merror("%s: Error handling integrity database (fputc).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (fseek(fp, 0, SEEK_END) != 0) {
+            merror("%s: Error handling integrity database (fseek).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (fgetpos(fp, &new_pos) != 0) {
+            merror("%s: Error handling integrity database (fgetpos).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        snprintf(new_prefix, sizeof(new_prefix), "+++%s", c_sum);
+        if (fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name) < 0 ||
+                fflush(fp) != 0) {
+            merror("%s: Error handling integrity database (write).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        /* Publish index metadata only after a successful append. */
+        if (db_entry) {
+            db_entry->pos = new_pos;
+            memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
+            db_entry->prefix_sum[OS_MAXSTR] = '\0';
+        }
+        lf->data = NULL;
+        return (0);
+    }
+
 
 
 
@@ -499,24 +543,42 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
     fputc('#', fp);
 
     /* Add the new entry at the end of the file */
-    fseek(fp, 0, SEEK_END);
-    fprintf(fp, "%c%c%c%s !%ld %s\n",
-            '!',
-            p >= 1 ? '!' : '+',
-            p == 2 ? '!' : (p > 2) ? '?' : '+',
-            c_sum,
-            (long int)lf->time,
-            f_name);
-    fflush(fp);
+    {
+        char new_prefix[OS_MAXSTR + 1];
+        fpos_t new_pos;
 
-    if (db_entry) {
-        snprintf(db_entry->prefix_sum, OS_MAXSTR, "%c%c%c%s",
+        if (fseek(fp, 0, SEEK_END) != 0) {
+            merror("%s: Error handling integrity database (fseek).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (fgetpos(fp, &new_pos) != 0) {
+            merror("%s: Error handling integrity database (fgetpos).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        snprintf(new_prefix, sizeof(new_prefix), "%c%c%c%s",
                  '!',
                  p >= 1 ? '!' : '+',
                  p == 2 ? '!' : (p > 2) ? '?' : '+',
                  c_sum);
-        fseek(fp, 0, SEEK_END);
-        fgetpos(fp, &db_entry->pos);
+        if (fprintf(fp, "%c%c%c%s !%ld %s\n",
+                    '!',
+                    p >= 1 ? '!' : '+',
+                    p == 2 ? '!' : (p > 2) ? '?' : '+',
+                    c_sum,
+                    (long int)lf->time,
+                    f_name) < 0 ||
+                fflush(fp) != 0) {
+            merror("%s: Error handling integrity database (write).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (db_entry) {
+            db_entry->pos = new_pos;
+            memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
+            db_entry->prefix_sum[OS_MAXSTR] = '\0';
+        }
     }
 
     /* File deleted */
@@ -674,8 +736,9 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
             os_strdup(newgid, lf->gowner_after);
         }
 
-        /* MD5 message */
-        if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0) {
+        /* MD5 message — ignore xxx placeholder transitions */
+        if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0 ||
+                fim_hash_is_placeholder(oldmd5) || fim_hash_is_placeholder(newmd5)) {
             sdb.md5[0] = '\0';
         } else {
             snprintf(sdb.md5, OS_FLSIZE, "Old md5sum was: '%s'\n"
@@ -686,7 +749,8 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         }
 
         /* SHA-1 message */
-        if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0) {
+        if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0 ||
+                fim_hash_is_placeholder(oldsha1) || fim_hash_is_placeholder(newsha1)) {
             sdb.sha1[0] = '\0';
         } else {
             snprintf(sdb.sha1, OS_FLSIZE, "Old sha1sum was: '%s'\n"
@@ -697,7 +761,8 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         }
 
         /* SHA-256 message */
-        if (!newsha256 || !oldsha256 || strcmp(newsha256, oldsha256) == 0) {
+        if (!newsha256 || !oldsha256 || strcmp(newsha256, oldsha256) == 0 ||
+                fim_hash_is_placeholder(oldsha256) || fim_hash_is_placeholder(newsha256)) {
             sdb.sha256[0] = '\0';
         } else {
             snprintf(sdb.sha256, OS_FLSIZE, "Old sha256sum was: '%s'\n"
