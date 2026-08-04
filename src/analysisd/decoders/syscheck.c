@@ -14,6 +14,7 @@
 #include "config.h"
 #include "alerts/alerts.h"
 #include "decoder.h"
+#include "fim_sum_op.h"
 
 #ifdef SQLITE_ENABLED
 #include <sqlite3.h>
@@ -450,6 +451,27 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         return (0);
     }
 
+    /* Placeholder-only hash transitions (xxx <-> real) are not integrity
+     * events; update the DB quietly so future scans stay clean (#1590/#1704). */
+    if (!fim_sum_has_real_change(saved_sum, c_sum)) {
+        if (fsetpos(fp, &sdb.init_pos)) {
+            merror("%s: Error handling integrity database (fsetpos).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        fputc('#', fp);
+        fseek(fp, 0, SEEK_END);
+        fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name);
+        fflush(fp);
+        if (db_entry) {
+            snprintf(db_entry->prefix_sum, OS_MAXSTR, "+++%s", c_sum);
+            fseek(fp, 0, SEEK_END);
+            fgetpos(fp, &db_entry->pos);
+        }
+        lf->data = NULL;
+        return (0);
+    }
+
 
 
 
@@ -674,8 +696,9 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
             os_strdup(newgid, lf->gowner_after);
         }
 
-        /* MD5 message */
-        if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0) {
+        /* MD5 message — ignore xxx placeholder transitions */
+        if (!newmd5 || !oldmd5 || strcmp(newmd5, oldmd5) == 0 ||
+                fim_hash_is_placeholder(oldmd5) || fim_hash_is_placeholder(newmd5)) {
             sdb.md5[0] = '\0';
         } else {
             snprintf(sdb.md5, OS_FLSIZE, "Old md5sum was: '%s'\n"
@@ -686,7 +709,8 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         }
 
         /* SHA-1 message */
-        if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0) {
+        if (!newsha1 || !oldsha1 || strcmp(newsha1, oldsha1) == 0 ||
+                fim_hash_is_placeholder(oldsha1) || fim_hash_is_placeholder(newsha1)) {
             sdb.sha1[0] = '\0';
         } else {
             snprintf(sdb.sha1, OS_FLSIZE, "Old sha1sum was: '%s'\n"
@@ -697,7 +721,8 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         }
 
         /* SHA-256 message */
-        if (!newsha256 || !oldsha256 || strcmp(newsha256, oldsha256) == 0) {
+        if (!newsha256 || !oldsha256 || strcmp(newsha256, oldsha256) == 0 ||
+                fim_hash_is_placeholder(oldsha256) || fim_hash_is_placeholder(newsha256)) {
             sdb.sha256[0] = '\0';
         } else {
             snprintf(sdb.sha256, OS_FLSIZE, "Old sha256sum was: '%s'\n"

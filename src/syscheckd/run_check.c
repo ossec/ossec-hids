@@ -339,11 +339,16 @@ void start_daemon()
     }
 }
 
-/* Read file information and return a pointer to the checksum */
+/* Read file information and return a pointer to the checksum.
+ * Returns 0 on success, -1 if the file is missing (delete alert already
+ * sent), -2 if checksumming failed (e.g. EMFILE) so the caller should skip
+ * without treating it as an integrity change (#1704).
+ */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 {
     int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0, sha256sum = 0;
     int return_error = 0;
+    int checksum_failed = 0;
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
@@ -398,12 +403,11 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         md5sum = 1;
     }
 
-    /* sha1 sum */
-    if (oldsum[5] == '+') {
+    /* sha1 sum: '+' or 's' means enabled; '-' or 'n' means disabled.
+     * ('s'/'n' also encode report_changes / seechanges.) */
+    if (oldsum[5] == '+' || oldsum[5] == 's') {
         sha1sum = 1;
-    } else if (oldsum[5] == 's') {
-        sha1sum = 1;
-    } else if (oldsum[5] == 'n') {
+    } else {
         sha1sum = 0;
     }
 
@@ -422,12 +426,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             /* Generate checksums of the file */
             if (sha1sum || md5sum) {
                 if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                    merror("%s: WARN: Unable to read file '%s' for checksum: %s",
+                           ARGV0, file_name, strerror(errno));
+                    checksum_failed = 1;
                     strncpy(sf_sum, "xxx", 4);
                     strncpy(mf_sum, "xxx", 4);
                 }
             }
             if (sha256sum) {
                 if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                    merror("%s: WARN: Unable to read file '%s' for sha256: %s",
+                           ARGV0, file_name, strerror(errno));
+                    checksum_failed = 1;
                     strncpy(sha256_sum, "xxx", 4);
                 }
             }
@@ -443,12 +453,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     /* Generate checksums of the file */
                     if (sha1sum || md5sum) {
                         if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                            merror("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                   ARGV0, file_name, strerror(errno));
+                            checksum_failed = 1;
                             strncpy(sf_sum, "xxx", 4);
                             strncpy(mf_sum, "xxx", 4);
                         }
                     }
                     if (sha256sum) {
                         if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                            merror("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                   ARGV0, file_name, strerror(errno));
+                            checksum_failed = 1;
                             strncpy(sha256_sum, "xxx", 4);
                         }
                     }
@@ -457,6 +473,10 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         }
     }
 #endif
+
+    if (checksum_failed) {
+        return (-2);
+    }
 
     newsum[0] = '\0';
     /* Caller is expected to provide a buffer of at least 

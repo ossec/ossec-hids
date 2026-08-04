@@ -19,12 +19,12 @@
 #define sleep(x) Sleep(x * 1000)
 #endif
 
+#include "shared.h"
+
 #ifdef INOTIFY_ENABLED
 #include <sys/inotify.h>
-#define OS_SIZE_6144    6144
-#define OS_MAXSTR       OS_SIZE_6144    /* Size for logs, sockets, etc */
 #else
-#include "shared.h"
+/* shared.h already included above */
 #endif
 
 #include "fs_op.h"
@@ -49,37 +49,55 @@ int realtime_checksumfile(const char *file_name)
         c_sum[0] = '\0';
         c_sum[OS_MAXSTR] = '\0';
 
-        /* If it returns < 0, we have already alerted */
+        /* If it returns < 0, missing file alerted or checksum read failed */
         if (c_read_file(file_name, buf, c_sum) < 0) {
             return (0);
         }
 
-        if (strcmp(c_sum, buf + 6) != 0) {
-            char alert_msg[OS_MAXSTR + 1];
+        {
+            int sum_off = fim_sum_data_offset(buf);
 
-            alert_msg[OS_MAXSTR] = '\0';
+            if (strcmp(c_sum, buf + sum_off) != 0) {
+                char alert_msg[OS_MAXSTR + 1];
+                int real_change = fim_sum_has_real_change(buf + sum_off, c_sum);
+                char *updated;
+                char *old_data = buf;
 
-            #ifdef WIN32
-            snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
-            #else
-            char *fullalert = NULL;
+                os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
+                memcpy(updated, buf, (size_t)sum_off);
+                updated[sum_off] = '\0';
+                memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
+                if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
+                    free(old_data);
+                    buf = updated;
+                } else {
+                    free(updated);
+                }
 
-            if (buf[5] == 's' || buf[5] == 'n') {
-                fullalert = seechanges_addfile(file_name);
-                if (fullalert) {
-                    snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s", c_sum, file_name, fullalert);
-                    free(fullalert);
-                    fullalert = NULL;
+                alert_msg[OS_MAXSTR] = '\0';
+
+                #ifdef WIN32
+                snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                #else
+                char *fullalert = NULL;
+
+                if (real_change && (buf[5] == 's' || buf[5] == 'n')) {
+                    fullalert = seechanges_addfile(file_name);
+                    if (fullalert) {
+                        snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s", c_sum, file_name, fullalert);
+                        free(fullalert);
+                        fullalert = NULL;
+                    } else {
+                        snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                    }
                 } else {
                     snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
                 }
-            } else {
-                snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
-            }
-            #endif
-            send_syscheck_msg(alert_msg);
+                #endif
+                send_syscheck_msg(alert_msg);
 
-            return (1);
+                return (1);
+            }
         }
         return (0);
     } else {

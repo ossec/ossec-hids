@@ -29,7 +29,7 @@ static int __counter = 0;
 static int read_file(const char *file_name, int opts, OSMatch *restriction)
 {
     char *buf;
-    char sha1s = '+';
+    char sha1s;
     struct stat statbuf;
 
     /* Check if the file should be ignored */
@@ -128,11 +128,15 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
                         if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                            merror("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                   ARGV0, file_name, strerror(errno));
                             strncpy(mf_sum, "xxx", 4);
                             strncpy(sf_sum, "xxx", 4);
                         }
                         if (opts & CHECK_SHA256SUM) {
                             if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                                merror("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                       ARGV0, file_name, strerror(errno));
                                 strncpy(sha256_sum, "xxx", 4);
                             }
                         }
@@ -140,11 +144,15 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 }
             } else {
                  if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                    merror("%s: WARN: Unable to read file '%s' for checksum: %s",
+                           ARGV0, file_name, strerror(errno));
                     strncpy(mf_sum, "xxx", 4);
                     strncpy(sf_sum, "xxx", 4);
                  }
                  if (opts & CHECK_SHA256SUM) {
                     if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                        merror("%s: WARN: Unable to read file '%s' for sha256: %s",
+                               ARGV0, file_name, strerror(errno));
                         strncpy(sha256_sum, "xxx", 4);
                     }
                  }
@@ -152,18 +160,25 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 #else
             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
             {
+                merror("%s: WARN: Unable to read file '%s' for checksum: %s",
+                       ARGV0, file_name, strerror(errno));
                 strncpy(mf_sum, "xxx", 4);
                 strncpy(sf_sum, "xxx", 4);
             }
             if (opts & CHECK_SHA256SUM) {
                 if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                    merror("%s: WARN: Unable to read file '%s' for sha256: %s",
+                           ARGV0, file_name, strerror(errno));
                     strncpy(sha256_sum, "xxx", 4);
                 }
             }
 #endif
 
             if (opts & CHECK_SEECHANGES) {
-                sha1s = 's';
+                /* 's' = seechanges + sha1 on; 'n' = seechanges + sha1 off */
+                sha1s = (opts & CHECK_SHA1SUM) ? 's' : 'n';
+            } else {
+                sha1s = (opts & CHECK_SHA1SUM) ? '+' : '-';
             }
         } else {
             if (opts & CHECK_SEECHANGES) {
@@ -282,34 +297,56 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             alert_msg[0] = '\0';
             alert_msg[OS_MAXSTR] = '\0';
 
-            /* If it returns < 0, we have already alerted */
+            /* If it returns < 0, we have already alerted (missing file) or
+             * skipped (checksum read failure). */
             if (c_read_file(file_name, buf, c_sum) < 0) {
                 return (0);
             }
 
-            if (strcmp(c_sum, buf + 6) != 0) {
-                /* Send the new checksum to the analysis server */
-                alert_msg[OS_MAXSTR] = '\0';
-                #ifdef WIN32
-                snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
-                #else
-                char *fullalert = NULL;
-                if (buf[5] == 's' || buf[5] == 'n') {
-                    fullalert = seechanges_addfile(file_name);
-                    if (fullalert) {
-                        snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s", c_sum, file_name, fullalert);
-                        free(fullalert);
-                        fullalert = NULL;
+            {
+                int sum_off = fim_sum_data_offset(buf);
+
+                if (strcmp(c_sum, buf + sum_off) != 0) {
+                    int real_change = fim_sum_has_real_change(buf + sum_off, c_sum);
+                    char *updated;
+                    char *old_data = buf;
+
+                    /* Refresh local cache so we do not resend forever. */
+                    os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
+                    memcpy(updated, buf, (size_t)sum_off);
+                    updated[sum_off] = '\0';
+                    memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
+                    if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
+                        free(old_data);
+                        buf = updated;
+                    } else {
+                        free(updated);
+                    }
+
+                    /* Placeholder-only diffs still go to the manager so its DB
+                     * can heal, but analysisd will not raise an alert. */
+                    alert_msg[OS_MAXSTR] = '\0';
+                    #ifdef WIN32
+                    snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
+                    #else
+                    char *fullalert = NULL;
+                    if (real_change && (buf[5] == 's' || buf[5] == 'n')) {
+                        fullalert = seechanges_addfile(file_name);
+                        if (fullalert) {
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s", c_sum, file_name, fullalert);
+                            free(fullalert);
+                            fullalert = NULL;
+                        } else {
+                            snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
+                        }
                     } else {
                         snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
                     }
-                } else {
-                    snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
-                }
-                #endif
-                if (send_syscheck_msg(alert_msg) != 0) {
-                    merror("%s: WARN: Failed to send syscheck update for '%s'. "
-                          "Change will be retried on the next scan.", ARGV0, file_name);
+                    #endif
+                    if (send_syscheck_msg(alert_msg) != 0) {
+                        merror("%s: WARN: Failed to send syscheck update for '%s'. "
+                              "Change will be retried on the next scan.", ARGV0, file_name);
+                    }
                 }
             }
         }
