@@ -101,6 +101,13 @@
     <group>service_availability,</group>
   </rule>
 
+  <rule id="3335" level="3">
+    <if_sid>3320</if_sid>
+    <pcre2>^SSL_accept error from |^lost connection after CONNECT from </pcre2>
+    <description>Postfix SMTP connection aborted by remote client.</description>
+    <group>spam,</group>
+  </rule>
+
   <rule id="3351" level="6" frequency="$POSTFIX_FREQ" timeframe="90">
     <if_matched_sid>3301</if_matched_sid>
     <same_source_ip />
@@ -153,6 +160,13 @@
     <same_source_ip />
     <description>Multiple SASL authentication failures.</description>
     <group>authentication_failures,</group>
+  </rule>
+
+  <rule id="3358" level="10" frequency="$POSTFIX_FREQ" timeframe="120" ignore="60">
+    <if_matched_sid>3335</if_matched_sid>
+    <same_source_ip />
+    <description>Multiple Postfix SMTP connection aborts from same source.</description>
+    <group>multiple_spam,</group>
   </rule>
 
   <rule id="3390" level="0">
