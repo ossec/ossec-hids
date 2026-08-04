@@ -45,18 +45,7 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
     }
     debug1("%s: INFO: File queue connected.", ARGV0 );
 
-    /* Sockets are opened in main() before chroot so hostname DNS and
-     * OS_Connect() multi-address / IPv4 fallback still work (#1744). */
-    s = 0;
-    while (syslog_config[s]) {
-        if (syslog_config[s]->socket < 0) {
-            merror(CONNS_ERROR, ARGV0, syslog_config[s]->server);
-        } else {
-            merror("%s: INFO: Forwarding alerts via syslog to: '%s:%s'.",
-                   ARGV0, syslog_config[s]->server, syslog_config[s]->port);
-        }
-        s++;
-    }
+    /* UDP sockets were opened in main() before chroot (#1744). */
 
     /* Infinite loop reading the alerts and inserting them */
     while (1) {

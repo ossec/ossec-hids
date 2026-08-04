@@ -194,8 +194,9 @@ int main(int argc, char **argv)
             if (syslog_config[s]->socket < 0) {
                 merror(CONNS_ERROR, ARGV0, syslog_config[s]->server);
             } else {
-                verbose("%s: INFO: Connected syslog_output to '%s:%s'.",
-                        ARGV0, syslog_config[s]->server, syslog_config[s]->port);
+                /* Use merror for visibility at default log level (historical). */
+                merror("%s: INFO: Forwarding alerts via syslog to: '%s:%s'.",
+                       ARGV0, syslog_config[s]->server, syslog_config[s]->port);
             }
             s++;
         }
