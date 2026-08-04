@@ -999,6 +999,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - Examples:
   -  valhalla named[7885]: client 192.168.1.231#1142: update 'hayaletgemi.edu/IN' denied
   - named[12637]: client 1.2.3.4#32769: query (cache) 'somedomain.com/MX/IN' denied
+  - Oct 26 00:00:53 valhalla named[43400]: client @0x7f2b78046e40 76.188.251.143#80 (sl): query (cache) 'sl/ANY/IN' denied
+  - Nov 25 13:27:03 tiny named[478]: client @0xb464d6a2d0 127.0.0.1#25298 (www.slashdot.org): query: www.slashdot.org IN A + (127.0.0.1)
   -  Oct 22 10:12:33 junction named[31687]: /etc/blocked.slave:9892: syntax error near ';'
   -  Oct 22 10:12:33 junction named[31687]: reloading configuration failed: unexpected token
  -->
@@ -1009,7 +1011,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="named-query">
   <parent>named</parent>
   <prematch_pcre2>: query:? </prematch_pcre2>
-  <pcre2>client @\S+ (\S+)#\d+[ ]*?\S*: </pcre2>
+  <pcre2>client (?:@\S+ )?(\S+)#\d+[ ]*?\S*: </pcre2>
   <order>srcip,url</order>
 </decoder>
 
@@ -1022,7 +1024,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="named_client">
   <parent>named</parent>
   <prematch_pcre2>^client </prematch_pcre2>
-  <pcre2 offset="after_prematch">^(\S+)#</pcre2>
+  <pcre2 offset="after_prematch">^(?:@\S+ )?(\S+)#</pcre2>
   <order>srcip</order>
 </decoder>
 
