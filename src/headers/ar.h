@@ -37,5 +37,12 @@
 #define DSTIP       0000002
 #define USERNAME    0000001
 
+/**
+ * Parse a comma-separated active-response <expect> string into a bitmask of
+ * USERNAME / SRCIP / FILENAME. Accepts "user" and "username" as aliases.
+ * Unknown tokens are ignored (with a warning). Empty / NULL → 0.
+ */
+int ar_parse_expect(const char *expect_str);
+
 #endif /* __AR_H */
 
