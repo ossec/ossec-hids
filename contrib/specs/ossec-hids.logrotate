@@ -1,8 +1,15 @@
-# Logrotate config for OSSEC HIDS
-/var/ossec/logs/ossec.log {
+# Logrotate config for OSSEC HIDS (#1948)
+# Paths stay under /var/ossec/logs so one SELinux fcontext covers them.
+
+/var/ossec/logs/ossec.log
+/var/ossec/logs/active-responses.log
+/var/ossec/logs/alerts/alerts.log
+/var/ossec/logs/firewall/firewall.log
+{
     missingok
     notifempty
     copytruncate
+    sharedscripts
     rotate 4
     weekly
 }

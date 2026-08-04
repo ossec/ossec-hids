@@ -35,6 +35,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Label /var/ossec/logs as var_log_t for logrotate and allow logrotate_t on ossec_log_t (#1948)
 - @atomicturtle - Pass CFLAGS/LDFLAGS into bundled ossec-lua/ossec-luac via MYCFLAGS/MYLDFLAGS (#1568)
 - @atomicturtle - Open csyslogd syslog_output sockets before chroot so hostnames work without losing OS_Connect multi-address fallback (#1744)
 - @atomicturtle - Emit a single To: plus one comma-separated Cc: for granular/extra recipients so ISPs stop rejecting duplicate To headers (#1901)
