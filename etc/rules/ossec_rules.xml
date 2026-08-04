@@ -145,8 +145,8 @@
 
  <rule id="532" level="0">
     <if_sid>531</if_sid>
-    <pcre2>cdrom|/media|usb|/mount|floppy|dvd</pcre2>
-    <description>Ignoring external medias.</description> 
+    <pcre2>cdrom|/media|usb|/mount|floppy|dvd|/dev/loop|/snap/</pcre2>
+    <description>Ignoring removable media and snap/loop filesystems.</description>
   </rule>
 
   <!-- Default install command strips Recv-Q/Send-Q via awk (see install.sh).
