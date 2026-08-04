@@ -35,6 +35,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Match web-accesslog URLs that contain spaces; do not treat POST as a simple ignored request (#914, #922)
 - @atomicturtle - Require more attack-group context and same_location for rule 40501 (#1082)
 - @atomicturtle - Stop treating MJ12bot as a malicious user agent in rule 31508 (#1317)
 - @atomicturtle - Ignore snap and /dev/loop df 100% alerts under rule 532 (#1418)
