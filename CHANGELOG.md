@@ -35,6 +35,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Accept AR expect ``username`` (alias of ``user``), fall back to srcuser, and document fixed script argv (#2104)
 - @atomicturtle - Avoid FIM false positives from xxx hash placeholders and checksum read failures (#1590, #1704)
 - @atomicturtle - Match web-accesslog URLs that contain spaces; do not treat POST as a simple ignored request (#914, #922)
 - @atomicturtle - Require more attack-group context and same_location for rule 40501 (#1082)

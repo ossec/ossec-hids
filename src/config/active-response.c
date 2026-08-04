@@ -394,18 +394,8 @@ int ReadActiveCommands(XML_NODE node, void *d1, __attribute__((unused)) void *d2
         return (-1);
     }
 
-    /* Get the expect */
-    if (strlen(tmp_str) >= 4) {
-        if (OS_Regex("user", tmp_str)) {
-            tmp_command->expect |= USERNAME;
-        }
-        if (OS_Regex("srcip", tmp_str)) {
-            tmp_command->expect |= SRCIP;
-        }
-        if (OS_Regex("filename", tmp_str)) {
-            tmp_command->expect |= FILENAME;
-        }
-    }
+    /* Parse expect: comma/whitespace-separated user|username, srcip, filename (#2104) */
+    tmp_command->expect = ar_parse_expect(tmp_str);
 
     free(tmp_str);
     tmp_str = NULL;
