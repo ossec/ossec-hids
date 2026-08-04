@@ -48,6 +48,7 @@ int Read_CSyslog(XML_NODE node, void *config, __attribute__((unused)) void *conf
     syslog_config[s]->port = "514";
     syslog_config[s]->format = DEFAULT_CSYSLOG;
     syslog_config[s]->use_fqdn = 0;
+    syslog_config[s]->socket = -1;
     /* local 0 facility (16) + severity 4 - warning. --default */
     syslog_config[s]->priority = (16 * 8) + 4;
 

@@ -129,14 +129,12 @@ int main(int argc, char **argv)
         }
     }
 
-    /* Resolve hostnames to IPs before chroot — DNS is unavailable afterwards
-     * and historically caused crashes when <server> was not a numeric IP (#1744).
-     * Also run under -t so misconfigured hostnames fail config test. */
+    /* Validate syslog_output servers. Hostnames are connected before chroot
+     * below so OS_Connect() keeps multi-address / IPv4 fallback (#1744). */
     if (syslog_config) {
         unsigned int s = 0;
 
         while (syslog_config[s]) {
-            char *resolved;
             int ip_check;
 
             if (!syslog_config[s]->server || syslog_config[s]->server[0] == '\0') {
@@ -145,27 +143,24 @@ int main(int argc, char **argv)
 
             /* OS_IsValidIP: 1 = host IP, 2 = IP/CIDR (not a valid syslog target). */
             ip_check = OS_IsValidIP(syslog_config[s]->server, NULL);
-            if (ip_check == 1) {
-                s++;
-                continue;
-            }
             if (ip_check == 2) {
                 ErrorExit("%s: ERROR: syslog_output server '%s' must be a "
                           "hostname or IP address, not a network/CIDR.",
                           ARGV0, syslog_config[s]->server);
             }
 
-            resolved = OS_GetHost(syslog_config[s]->server, 5);
-            if (!resolved || resolved[0] == '\0') {
-                free(resolved);
-                ErrorExit("%s: ERROR: Unable to resolve syslog_output server "
-                          "hostname '%s'.", ARGV0, syslog_config[s]->server);
+            /* Under -t, probe hostname resolution without collapsing to one IP. */
+            if (test_config && ip_check == 0) {
+                char *probe = OS_GetHost(syslog_config[s]->server, 5);
+
+                if (!probe || probe[0] == '\0') {
+                    free(probe);
+                    ErrorExit("%s: ERROR: Unable to resolve syslog_output server "
+                              "hostname '%s'.", ARGV0, syslog_config[s]->server);
+                }
+                free(probe);
             }
 
-            verbose("%s: INFO: Resolved syslog_output server '%s' to '%s'.",
-                    ARGV0, syslog_config[s]->server, resolved);
-            free(syslog_config[s]->server);
-            syslog_config[s]->server = resolved;
             s++;
         }
     }
@@ -186,6 +181,24 @@ int main(int argc, char **argv)
         verbose("%s: INFO: Remote syslog server not configured. "
                 "Clean exit.", ARGV0);
         exit(0);
+    }
+
+    /* Connect before chroot: DNS works here and OS_ConnectUDP can walk the
+     * full addrinfo list (IPv6 then IPv4 fallback). FDs survive chroot. */
+    {
+        unsigned int s = 0;
+
+        while (syslog_config[s]) {
+            syslog_config[s]->socket = OS_ConnectUDP(syslog_config[s]->port,
+                                                     syslog_config[s]->server);
+            if (syslog_config[s]->socket < 0) {
+                merror(CONNS_ERROR, ARGV0, syslog_config[s]->server);
+            } else {
+                verbose("%s: INFO: Connected syslog_output to '%s:%s'.",
+                        ARGV0, syslog_config[s]->server, syslog_config[s]->port);
+            }
+            s++;
+        }
     }
 
     /* Privilege separation */
