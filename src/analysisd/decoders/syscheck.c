@@ -454,20 +454,42 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
     /* Placeholder-only hash transitions (xxx <-> real) are not integrity
      * events; update the DB quietly so future scans stay clean (#1590/#1704). */
     if (!fim_sum_has_real_change(saved_sum, c_sum)) {
-        if (fsetpos(fp, &sdb.init_pos)) {
+        char new_prefix[OS_MAXSTR + 1];
+        fpos_t new_pos;
+
+        if (fsetpos(fp, &sdb.init_pos) != 0) {
             merror("%s: Error handling integrity database (fsetpos).", ARGV0);
             lf->data = NULL;
             return (0);
         }
-        fputc('#', fp);
-        fseek(fp, 0, SEEK_END);
-        if (db_entry) {
-            /* Record the start of the new line before writing it. */
-            fgetpos(fp, &db_entry->pos);
-            snprintf(db_entry->prefix_sum, OS_MAXSTR, "+++%s", c_sum);
+        if (fputc('#', fp) == EOF) {
+            merror("%s: Error handling integrity database (fputc).", ARGV0);
+            lf->data = NULL;
+            return (0);
         }
-        fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name);
-        fflush(fp);
+        if (fseek(fp, 0, SEEK_END) != 0) {
+            merror("%s: Error handling integrity database (fseek).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (fgetpos(fp, &new_pos) != 0) {
+            merror("%s: Error handling integrity database (fgetpos).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        snprintf(new_prefix, sizeof(new_prefix), "+++%s", c_sum);
+        if (fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name) < 0 ||
+                fflush(fp) != 0) {
+            merror("%s: Error handling integrity database (write).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        /* Publish index metadata only after a successful append. */
+        if (db_entry) {
+            db_entry->pos = new_pos;
+            memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
+            db_entry->prefix_sum[OS_MAXSTR] = '\0';
+        }
         lf->data = NULL;
         return (0);
     }
@@ -521,24 +543,43 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
     fputc('#', fp);
 
     /* Add the new entry at the end of the file */
-    fseek(fp, 0, SEEK_END);
-    if (db_entry) {
-        /* Record the start of the new line before writing it. */
-        fgetpos(fp, &db_entry->pos);
-        snprintf(db_entry->prefix_sum, OS_MAXSTR, "%c%c%c%s",
+    {
+        char new_prefix[OS_MAXSTR + 1];
+        fpos_t new_pos;
+
+        if (fseek(fp, 0, SEEK_END) != 0) {
+            merror("%s: Error handling integrity database (fseek).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (fgetpos(fp, &new_pos) != 0) {
+            merror("%s: Error handling integrity database (fgetpos).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        snprintf(new_prefix, sizeof(new_prefix), "%c%c%c%s",
                  '!',
                  p >= 1 ? '!' : '+',
                  p == 2 ? '!' : (p > 2) ? '?' : '+',
                  c_sum);
+        if (fprintf(fp, "%c%c%c%s !%ld %s\n",
+                    '!',
+                    p >= 1 ? '!' : '+',
+                    p == 2 ? '!' : (p > 2) ? '?' : '+',
+                    c_sum,
+                    (long int)lf->time,
+                    f_name) < 0 ||
+                fflush(fp) != 0) {
+            merror("%s: Error handling integrity database (write).", ARGV0);
+            lf->data = NULL;
+            return (0);
+        }
+        if (db_entry) {
+            db_entry->pos = new_pos;
+            memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
+            db_entry->prefix_sum[OS_MAXSTR] = '\0';
+        }
     }
-    fprintf(fp, "%c%c%c%s !%ld %s\n",
-            '!',
-            p >= 1 ? '!' : '+',
-            p == 2 ? '!' : (p > 2) ? '?' : '+',
-            c_sum,
-            (long int)lf->time,
-            f_name);
-    fflush(fp);
 
     /* File deleted */
     if (c_sum[0] == '-' && c_sum[1] == '1') {

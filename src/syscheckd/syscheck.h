@@ -56,8 +56,8 @@ int realtime_process(void);
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));
 
 /* Get checksum changes.
- * Returns 0 on success, -1 if missing (delete alerted), -2 if checksum
- * read failed (caller should skip without alerting).
+ * Returns 0 on success, -1 if missing (delete alerted), -2 if metadata
+ * or checksum read failed (caller should skip without alerting).
  */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum) __attribute__((nonnull));
 

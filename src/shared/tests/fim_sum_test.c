@@ -19,6 +19,8 @@ int main(void)
 {
     expect_int("placeholder xxx", fim_hash_is_placeholder("xxx"), 1);
     expect_int("placeholder xxx:", fim_hash_is_placeholder("xxx:rest"), 1);
+    expect_int("short x not placeholder", fim_hash_is_placeholder("x"), 0);
+    expect_int("short xx not placeholder", fim_hash_is_placeholder("xx"), 0);
     expect_int("not placeholder", fim_hash_is_placeholder("abc"), 0);
     expect_int("null is placeholder", fim_hash_is_placeholder(NULL), 1);
 
@@ -36,6 +38,9 @@ int main(void)
     expect_int("real to xxx sha1",
                fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx",
                                        "0:0:0:0:aaa:xxx:xxx"), 0);
+    expect_int("malformed short hash field",
+               fim_sum_has_real_change("0:0:0:0:x:xx:xxx",
+                                       "0:0:0:0:x:yy:xxx"), 1);
     expect_int("real sha1 change",
                fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx",
                                        "0:0:0:0:aaa:ccc:xxx"), 1);

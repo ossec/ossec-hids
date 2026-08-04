@@ -14,13 +14,16 @@
 
 int fim_hash_is_placeholder(const char *hash)
 {
+    size_t len;
+
     if (!hash || !*hash) {
         return (1);
     }
 
-    /* Placeholder is exactly "xxx" (optionally ending the field at ':' or NUL). */
-    if (hash[0] == 'x' && hash[1] == 'x' && hash[2] == 'x' &&
-            (hash[3] == '\0' || hash[3] == ':')) {
+    /* Placeholder is exactly "xxx" (field may continue with ':' in a sum). */
+    len = strlen(hash);
+    if (len >= 3 && hash[0] == 'x' && hash[1] == 'x' && hash[2] == 'x' &&
+            (len == 3 || hash[3] == ':')) {
         return (1);
     }
 

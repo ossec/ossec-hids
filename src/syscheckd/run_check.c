@@ -341,8 +341,8 @@ void start_daemon()
 
 /* Read file information and return a pointer to the checksum.
  * Returns 0 on success, -1 if the file is missing (delete alert already
- * sent), -2 if checksumming failed (e.g. EMFILE) so the caller should skip
- * without treating it as an integrity change (#1704).
+ * sent), -2 if metadata/checksum read failed (e.g. EACCES, EMFILE) so
+ * the caller should skip without treating it as an integrity change.
  */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 {
@@ -367,13 +367,20 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #endif
     if (return_error)
     {
-        char alert_msg[PATH_MAX+4];
+        /* Only treat missing paths as deletions; other metadata errors
+         * (EACCES, etc.) must not look like "file deleted". */
+        if (errno == ENOENT || errno == ENOTDIR) {
+            char alert_msg[PATH_MAX+4];
 
-        alert_msg[PATH_MAX + 3] = '\0';
-        snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-        send_syscheck_msg(alert_msg);
+            alert_msg[PATH_MAX + 3] = '\0';
+            snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+            send_syscheck_msg(alert_msg);
+            return (-1);
+        }
 
-        return (-1);
+        merror("%s: WARN: Unable to stat file '%s': %s",
+               ARGV0, file_name, strerror(errno));
+        return (-2);
     }
 
     /* Get the old sum values */

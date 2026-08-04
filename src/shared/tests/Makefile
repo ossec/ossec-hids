@@ -26,7 +26,7 @@ queue_op_test: queue_op_test.c $(TOP)/shared.a
 string_test: string_test.c
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"string_test\" -o $@ string_test.c ../string_op.c
 
-fim_sum_test: fim_sum_test.c
+fim_sum_test: fim_sum_test.c ../fim_sum_op.c ../../headers/fim_sum_op.h
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"fim_sum_test\" -o $@ fim_sum_test.c ../fim_sum_op.c
 
 # Interactive / argv-driven helpers (not part of automated check).

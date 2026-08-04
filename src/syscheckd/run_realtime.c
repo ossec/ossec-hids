@@ -56,33 +56,36 @@ int realtime_checksumfile(const char *file_name)
                 char alert_msg[OS_MAXSTR + 1];
                 int real_change = fim_sum_has_real_change(buf + sum_off, c_sum);
 
-                alert_msg[OS_MAXSTR] = '\0';
+                if (real_change) {
+                    alert_msg[OS_MAXSTR] = '\0';
 
-                #ifdef WIN32
-                snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
-                #else
-                char *fullalert = NULL;
+                    #ifdef WIN32
+                    snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                    #else
+                    char *fullalert = NULL;
 
-                if (real_change && (buf[5] == 's' || buf[5] == 'n')) {
-                    fullalert = seechanges_addfile(file_name);
-                    if (fullalert) {
-                        snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s", c_sum, file_name, fullalert);
-                        free(fullalert);
-                        fullalert = NULL;
+                    if (buf[5] == 's' || buf[5] == 'n') {
+                        fullalert = seechanges_addfile(file_name);
+                        if (fullalert) {
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s", c_sum, file_name, fullalert);
+                            free(fullalert);
+                            fullalert = NULL;
+                        } else {
+                            snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                        }
                     } else {
                         snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
                     }
-                } else {
-                    snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
-                }
-                #endif
-                if (send_syscheck_msg(alert_msg) != 0) {
-                    merror("%s: WARN: Failed to send syscheck update for '%s'. "
-                          "Change will be retried on the next event/scan.", ARGV0, file_name);
-                    return (0);
+                    #endif
+                    if (send_syscheck_msg(alert_msg) != 0) {
+                        merror("%s: WARN: Failed to send syscheck update for '%s'. "
+                              "Change will be retried on the next event/scan.", ARGV0, file_name);
+                        return (0);
+                    }
                 }
 
-                /* Only refresh local cache after a successful send. */
+                /* Heal/refresh local cache after a successful send, or for
+                 * placeholder-only transitions that need no manager alert. */
                 {
                     char *updated;
                     char *old_data = buf;
@@ -97,7 +100,7 @@ int realtime_checksumfile(const char *file_name)
                     }
                 }
 
-                return (1);
+                return (real_change ? 1 : 0);
             }
         }
         return (0);
