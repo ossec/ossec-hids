@@ -24,6 +24,9 @@ int mail_append_header_line(char *buf, size_t cap, const char *line);
 /* True when additional email_to CC recipients exist (not for SMS-only sends). */
 int mail_has_cc_recipients(char **to, int sms_only);
 
+/* Append "<addr>" or ", <addr>" to a comma-separated address list. */
+int mail_append_address(char *buf, size_t cap, const char *addr);
+
 /* Copy envelope field into dst; returns 0 on success, -1 if CRLF or empty. */
 int mail_safe_envelope_value(const char *src, char *dst, size_t dst_size);
 

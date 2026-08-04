@@ -435,40 +435,75 @@ static int send_one_mail(CURL *curl, MailConfig *mail, struct tm *p,
         cc_header_line[0] = '\0';
         replyto_header_line[0] = '\0';
 
-        /* Build CC header from additional recipients (mail->to[1..]). */
-        if (mail_has_cc_recipients(mail->to, sms_only)) {
+        /* Build one Cc: from additional global recipients and granular FULL_FORMAT. */
+        if (!sms_only) {
             char cc_value[HEADER_MAX];
             size_t cc_len = 0;
 
             cc_value[0] = '\0';
 
-            for (i = 1; mail->to[i] != NULL; ++i) {
-                char sanitized_cc[HEADER_MAX];
-                size_t addr_len;
+            if (mail_has_cc_recipients(mail->to, 0)) {
+                for (i = 1; mail->to[i] != NULL; ++i) {
+                    char sanitized_cc[HEADER_MAX];
+                    size_t addr_len;
 
-                mail_sanitize_header_value(mail->to[i], sanitized_cc, sizeof(sanitized_cc));
-                addr_len = strlen(sanitized_cc);
+                    mail_sanitize_header_value(mail->to[i], sanitized_cc, sizeof(sanitized_cc));
+                    addr_len = strlen(sanitized_cc);
 
-                if (addr_len == 0) {
-                    continue;
-                }
+                    if (addr_len == 0) {
+                        continue;
+                    }
 
-                /* Add comma+space between multiple CC addresses. */
-                if (cc_len > 0) {
-                    if (cc_len + 2 >= sizeof(cc_value)) {
+                    if (cc_len > 0) {
+                        if (cc_len + 2 >= sizeof(cc_value)) {
+                            break;
+                        }
+                        cc_value[cc_len++] = ',';
+                        cc_value[cc_len++] = ' ';
+                    }
+
+                    if (cc_len + addr_len >= sizeof(cc_value)) {
                         break;
                     }
-                    cc_value[cc_len++] = ',';
-                    cc_value[cc_len++] = ' ';
-                }
 
-                if (cc_len + addr_len >= sizeof(cc_value)) {
-                    break;
+                    memcpy(cc_value + cc_len, sanitized_cc, addr_len);
+                    cc_len += addr_len;
+                    cc_value[cc_len] = '\0';
                 }
+            }
 
-                memcpy(cc_value + cc_len, sanitized_cc, addr_len);
-                cc_len += addr_len;
-                cc_value[cc_len] = '\0';
+            if (mail->gran_to) {
+                for (i = 0; mail->gran_to[i] != NULL; ++i) {
+                    char sanitized_cc[HEADER_MAX];
+                    size_t addr_len;
+
+                    if (mail_gran_format(mail, gran_override, i) != FULL_FORMAT) {
+                        continue;
+                    }
+
+                    mail_sanitize_header_value(mail->gran_to[i], sanitized_cc,
+                                               sizeof(sanitized_cc));
+                    addr_len = strlen(sanitized_cc);
+                    if (addr_len == 0) {
+                        continue;
+                    }
+
+                    if (cc_len > 0) {
+                        if (cc_len + 2 >= sizeof(cc_value)) {
+                            break;
+                        }
+                        cc_value[cc_len++] = ',';
+                        cc_value[cc_len++] = ' ';
+                    }
+
+                    if (cc_len + addr_len >= sizeof(cc_value)) {
+                        break;
+                    }
+
+                    memcpy(cc_value + cc_len, sanitized_cc, addr_len);
+                    cc_len += addr_len;
+                    cc_value[cc_len] = '\0';
+                }
             }
 
             if (cc_len > 0) {

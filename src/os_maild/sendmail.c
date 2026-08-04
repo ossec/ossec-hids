@@ -128,8 +128,8 @@ static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
                                 char *final_to, size_t final_to_cap,
                                 int *crlf_warned)
 {
-    char snd_msg[128];
     char safe_addr[256];
+    char addr_list[480];
     int i;
 
     if (!mail->gran_to) {
@@ -137,6 +137,7 @@ static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
     }
 
     final_to[0] = '\0';
+    addr_list[0] = '\0';
 
     i = 0;
     while (mail->gran_to[i] != NULL) {
@@ -150,10 +151,13 @@ static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
             continue;
         }
 
-        memset(snd_msg, '\0', 128);
         mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
-        snprintf(snd_msg, 127, TO, safe_addr);
-        if (mail_append_header_line(final_to, final_to_cap, snd_msg) != 0) {
+        if (safe_addr[0] == '\0') {
+            i++;
+            continue;
+        }
+
+        if (mail_append_address(addr_list, sizeof(addr_list), safe_addr) != 0) {
             merror("%s: SMS To header buffer full; remaining recipients omitted.",
                    ARGV0);
             break;
@@ -162,7 +166,17 @@ static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
         i++;
     }
 
-    return (final_to[0] != '\0');
+    if (addr_list[0] == '\0') {
+        return (0);
+    }
+
+    /* One To: header with comma-separated addresses (RFC 5322). */
+    if (snprintf(final_to, final_to_cap, "To: %s\r\n", addr_list) < 0 ||
+        final_to[0] == '\0') {
+        return (0);
+    }
+
+    return (1);
 }
 
 int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
@@ -299,20 +313,12 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
                 }
                 free(msg);
 
-                memset(snd_msg, '\0', 128);
-                mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
-                snprintf(snd_msg, 127, TO, safe_addr);
-                if (mail_append_header_line(final_to, sizeof(final_to), snd_msg) != 0) {
-                    merror("%s: SMS To header buffer full; remaining recipients omitted.",
-                           ARGV0);
-                    break;
-                }
-
                 i++;
             }
         }
 
-        if (final_to[0] == '\0') {
+        if (!sms_build_to_headers(mail, gran_override, final_to, sizeof(final_to),
+                                  &crlf_warned)) {
             close(socket);
             return (OS_INVALID);
         }
@@ -676,59 +682,64 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
         }
     }
 
-    /* Add CCs */
-    if (mail_has_cc_recipients(mail->to, 0)) {
-        i = 1;
-        while (1) {
-            if (mail->to[i] == NULL) {
-                break;
-            }
+    /* Add one Cc: header for extra global + granular recipients (RFC 5322).
+     * Multiple To: fields cause rejects (Gmail 550 duplicate To, etc.). */
+    {
+        char cc_addrs[2048];
+        char cc_hdr[2200];
 
-            if (mail_skip_unsafe_recipient(mail->to[i], &crlf_warned)) {
+        cc_addrs[0] = '\0';
+
+        if (mail_has_cc_recipients(mail->to, 0)) {
+            i = 1;
+            while (mail->to[i] != NULL) {
+                if (mail_skip_unsafe_recipient(mail->to[i], &crlf_warned)) {
+                    i++;
+                    continue;
+                }
+
+                mail_safe_header_addr(mail->to[i], safe_addr, sizeof(safe_addr));
+                if (safe_addr[0] != '\0' &&
+                    mail_append_address(cc_addrs, sizeof(cc_addrs), safe_addr) != 0) {
+                    merror("%s: Cc header buffer full; remaining recipients omitted.",
+                           ARGV0);
+                    break;
+                }
                 i++;
-                continue;
             }
-
-            memset(snd_msg, '\0', 128);
-            mail_safe_header_addr(mail->to[i], safe_addr, sizeof(safe_addr));
-            snprintf(snd_msg, 127, TO, safe_addr);
-
-            if (sendmail) {
-                fprintf(sendmail, "%s", snd_msg);
-            } else {
-                OS_SendTCP(socket, snd_msg);
-            }
-
-            i++;
         }
-    }
 
-    /* More CCs - from granular options */
-    if (mail->gran_to) {
-        i = 0;
-        while (mail->gran_to[i] != NULL) {
-            if (mail_gran_format(mail, gran_override, i) != FULL_FORMAT) {
+        if (mail->gran_to) {
+            i = 0;
+            while (mail->gran_to[i] != NULL) {
+                if (mail_gran_format(mail, gran_override, i) != FULL_FORMAT) {
+                    i++;
+                    continue;
+                }
+
+                if (mail_skip_unsafe_recipient(mail->gran_to[i], &crlf_warned)) {
+                    i++;
+                    continue;
+                }
+
+                mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
+                if (safe_addr[0] != '\0' &&
+                    mail_append_address(cc_addrs, sizeof(cc_addrs), safe_addr) != 0) {
+                    merror("%s: Cc header buffer full; remaining recipients omitted.",
+                           ARGV0);
+                    break;
+                }
                 i++;
-                continue;
             }
+        }
 
-            if (mail_skip_unsafe_recipient(mail->gran_to[i], &crlf_warned)) {
-                i++;
-                continue;
-            }
-
-            memset(snd_msg, '\0', 128);
-            mail_safe_header_addr(mail->gran_to[i], safe_addr, sizeof(safe_addr));
-            snprintf(snd_msg, 127, TO, safe_addr);
-
+        if (cc_addrs[0] != '\0') {
+            snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
             if (sendmail) {
-                fprintf(sendmail, "%s", snd_msg);
+                fprintf(sendmail, "%s", cc_hdr);
             } else {
-                OS_SendTCP(socket, snd_msg);
+                OS_SendTCP(socket, cc_hdr);
             }
-
-            i++;
-            continue;
         }
     }
 

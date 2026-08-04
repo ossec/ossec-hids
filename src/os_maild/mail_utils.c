@@ -77,6 +77,28 @@ int mail_has_cc_recipients(char **to, int sms_only)
     return (to[1] != NULL);
 }
 
+int mail_append_address(char *buf, size_t cap, const char *addr)
+{
+    char piece[320];
+    int n;
+
+    if (!buf || cap == 0 || !addr || addr[0] == '\0') {
+        return (-1);
+    }
+
+    if (buf[0] != '\0') {
+        n = snprintf(piece, sizeof(piece), ", <%s>", addr);
+    } else {
+        n = snprintf(piece, sizeof(piece), "<%s>", addr);
+    }
+
+    if (n < 0 || (size_t)n >= sizeof(piece)) {
+        return (-1);
+    }
+
+    return mail_append_header_line(buf, cap, piece);
+}
+
 int mail_safe_envelope_value(const char *src, char *dst, size_t dst_size)
 {
     if (!dst || dst_size == 0) {

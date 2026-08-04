@@ -198,24 +198,38 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         }
     }
 
-    /* Add CCs */
+    /* Add one Cc: header for remaining recipients (RFC 5322; no duplicate To:). */
     if (to[1]) {
+        char cc_addrs[2048];
+        char cc_hdr[2200];
+
+        cc_addrs[0] = '\0';
         i = 1;
-        while (1) {
-            if (to[i] == NULL) {
-                break;
-            }
+        while (to[i] != NULL) {
+            char piece[320];
+            int n;
 
-            memset(snd_msg, '\0', 128);
-            snprintf(snd_msg, 127, TO, to[i]);
-
-            if (sendmail) {
-                fprintf(sendmail, "%s", snd_msg);
+            if (cc_addrs[0] != '\0') {
+                n = snprintf(piece, sizeof(piece), ", <%s>", to[i]);
             } else {
-                OS_SendTCP(socket, snd_msg);
+                n = snprintf(piece, sizeof(piece), "<%s>", to[i]);
             }
-
+            if (n > 0 && (size_t)n < sizeof(piece)) {
+                size_t used = strlen(cc_addrs);
+                if (used + strlen(piece) + 1 < sizeof(cc_addrs)) {
+                    memcpy(cc_addrs + used, piece, strlen(piece) + 1);
+                }
+            }
             i++;
+        }
+
+        if (cc_addrs[0] != '\0') {
+            snprintf(cc_hdr, sizeof(cc_hdr), "Cc: %s\r\n", cc_addrs);
+            if (sendmail) {
+                fprintf(sendmail, "%s", cc_hdr);
+            } else {
+                OS_SendTCP(socket, cc_hdr);
+            }
         }
     }
 
