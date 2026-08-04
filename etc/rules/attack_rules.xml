@@ -114,7 +114,7 @@
     <if_matched_group>connection_attempt</if_matched_group>
     <description>Network scan from same source ip.</description>
     <same_source_ip />
-    <info type="link">http://project.honeynet.org/papers/enemy2/</info>
+    <info type="link">https://web.archive.org/web/20000815211839/http://project.honeynet.org/papers/enemy2/</info>
   </rule>
 </group> <!-- SYSLOG,SCANS -->
 
