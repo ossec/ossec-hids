@@ -79,7 +79,7 @@
 
   <rule id="31110" level="6">
     <if_sid>31100</if_sid>
-    <url_pcre2>\?-d|\?-s|\?-a|\?-b|\?-w</url_pcre2>
+    <url_pcre2>\.php\?-[dsabw]|/cgi-bin/[^\s?]*\?-[dsabw]</url_pcre2>
     <description>PHP CGI-bin vulnerability attempt.</description>
     <group>attack,</group>
   </rule>
