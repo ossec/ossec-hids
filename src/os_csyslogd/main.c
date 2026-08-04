@@ -8,6 +8,7 @@
  */
 
 #include "csyslogd.h"
+#include "os_net/os_net.h"
 
 /* Prototypes */
 static void help_csyslogd(int status) __attribute__((noreturn));
@@ -125,6 +126,39 @@ int main(int argc, char **argv)
         ltmp = strchr(__shost, '.');
         if (ltmp) {
             *ltmp = '\0';
+        }
+    }
+
+    /* Resolve hostnames to IPs before chroot — DNS is unavailable afterwards
+     * and historically caused crashes when <server> was not a numeric IP (#1744).
+     * Also run under -t so misconfigured hostnames fail config test. */
+    if (syslog_config) {
+        unsigned int s = 0;
+
+        while (syslog_config[s]) {
+            char *resolved;
+
+            if (!syslog_config[s]->server) {
+                s++;
+                continue;
+            }
+
+            if (OS_IsValidIP(syslog_config[s]->server, NULL) == 1) {
+                s++;
+                continue;
+            }
+
+            resolved = OS_GetHost(syslog_config[s]->server, 5);
+            if (!resolved) {
+                ErrorExit("%s: ERROR: Unable to resolve syslog_output server "
+                          "hostname '%s'.", ARGV0, syslog_config[s]->server);
+            }
+
+            verbose("%s: INFO: Resolved syslog_output server '%s' to '%s'.",
+                    ARGV0, syslog_config[s]->server, resolved);
+            free(syslog_config[s]->server);
+            syslog_config[s]->server = resolved;
+            s++;
         }
     }
 

@@ -34,6 +34,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Resolve csyslogd syslog_output hostnames before chroot so hostname servers no longer crash (#1744)
 - @atomicturtle - Emit a single To: plus one comma-separated Cc: for granular/extra recipients so ISPs stop rejecting duplicate To headers (#1901)
 - @atomicturtle - Strip Recv-Q/Send-Q from default netstat listen check to stop rule 533 false positives (#495, #2063)
 - @reyjrar / @atomicturtle - [PR 235](https://github.com/ossec/ossec-hids/pull/235) - Canonicalize Windows FIM paths so realtime and scheduled scans use the same slash form
