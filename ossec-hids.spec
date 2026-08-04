@@ -480,6 +480,13 @@ chmod 0664 %{_localstatedir}/ossec/logs/ossec.log
 if command -v semanage >/dev/null 2>&1; then
     semanage fcontext -a -t bin_t '/var/ossec/bin(/.*)?' >/dev/null 2>&1 || :
     restorecon -Rv /var/ossec/bin >/dev/null 2>&1 || :
+    # Stock logrotate can rotate var_log_t. Skip if contrib ossec_agent
+    # module is loaded (it labels logs as ossec_log_t instead). (#1948)
+    if ! semodule -l 2>/dev/null | grep -q '^ossec_agent'; then
+        semanage fcontext -a -t var_log_t '/var/ossec/logs(/.*)?' >/dev/null 2>&1 || \
+            semanage fcontext -m -t var_log_t '/var/ossec/logs(/.*)?' >/dev/null 2>&1 || :
+        restorecon -Rv /var/ossec/logs >/dev/null 2>&1 || :
+    fi
 fi
 
 
@@ -531,6 +538,13 @@ fi
 if command -v semanage >/dev/null 2>&1; then
     semanage fcontext -a -t bin_t '/var/ossec/bin(/.*)?' >/dev/null 2>&1 || :
     restorecon -Rv /var/ossec/bin >/dev/null 2>&1 || :
+    # Stock logrotate can rotate var_log_t. Skip if contrib ossec_agent
+    # module is loaded (it labels logs as ossec_log_t instead). (#1948)
+    if ! semodule -l 2>/dev/null | grep -q '^ossec_agent'; then
+        semanage fcontext -a -t var_log_t '/var/ossec/logs(/.*)?' >/dev/null 2>&1 || \
+            semanage fcontext -m -t var_log_t '/var/ossec/logs(/.*)?' >/dev/null 2>&1 || :
+        restorecon -Rv /var/ossec/logs >/dev/null 2>&1 || :
+    fi
 fi
 
 
@@ -582,11 +596,21 @@ if [ $1 = 0 ]; then
 fi
 
 
+%postun agent
+# Remove SELinux context rules only if the package is being completely removed
+if [ $1 -eq 0 ]; then
+    if command -v semanage >/dev/null 2>&1; then
+        semanage fcontext -d '/var/ossec/bin(/.*)?' >/dev/null 2>&1 || :
+        semanage fcontext -d '/var/ossec/logs(/.*)?' >/dev/null 2>&1 || :
+    fi
+fi
+
 %postun server
 # Remove the SELinux context rule only if the package is being completely removed
 if [ $1 -eq 0 ]; then
     if command -v semanage >/dev/null 2>&1; then
-        semanage fcontext -d '/var/ossec/bin(/.*)?'
+        semanage fcontext -d '/var/ossec/bin(/.*)?' >/dev/null 2>&1 || :
+        semanage fcontext -d '/var/ossec/logs(/.*)?' >/dev/null 2>&1 || :
     fi
 fi
 
