@@ -34,6 +34,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Strip Recv-Q/Send-Q from default netstat listen check to stop rule 533 false positives (#495, #2063)
 - @reyjrar / @atomicturtle - [PR 235](https://github.com/ossec/ossec-hids/pull/235) - Canonicalize Windows FIM paths so realtime and scheduled scans use the same slash form
 - @lazyp / @atomicturtle - [PR 564](https://github.com/ossec/ossec-hids/pull/564) - Skip leading XML declarations (and UTF-8 BOM) in OS_ReadXML
 - @AdUser / @atomicturtle - [PR 2105](https://github.com/ossec/ossec-hids/pull/2105) - Insert SQL NULL for missing alert src_ip/dst_ip in os_dbd (not the string 'NULL')
