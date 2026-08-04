@@ -1582,6 +1582,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - [**] [1:1882:10] ATTACK-RESPONSES id check returned userid [**]
     [Classification: Potentially Bad Traffic] [Priority: 2]
     {UDP} 192.168.20.32 -> 192.168.20.2
+  - [Drop] [**] [1:10000002:0] cmd.exe test detected [**] [Priority: 0]
+    {TCP} 10.1.4.2:59244 -> 10.1.7.2:80
   -->
 
 <decoder name="snort">
@@ -1590,7 +1592,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="snort">
   <type>ids</type>
-  <prematch_pcre2>^\[\*\*\] \[\d+:\d+:\d+\] </prematch_pcre2>
+  <prematch_pcre2>^\[\*\*\] \[\d+:\d+:\d+\] |^\[Drop\] \[\*\*\] \[\d+:\d+:\d+\] </prematch_pcre2>
 </decoder>
 
 <decoder name="snort2">
