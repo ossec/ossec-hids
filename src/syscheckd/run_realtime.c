@@ -27,6 +27,7 @@
 
 #include "syscheck.h"
 #include "error_messages/error_messages.h"
+#include "win_acl_op.h"
 
 /* Prototypes */
 int realtime_checksumfile(const char *file_name) __attribute__((nonnull));
@@ -52,7 +53,7 @@ int realtime_checksumfile(const char *file_name)
         {
             int sum_off = fim_sum_data_offset(buf);
 
-            if (strcmp(c_sum, buf + sum_off) != 0) {
+            if (!fim_sum_equal(c_sum, buf + sum_off)) {
                 char alert_msg[OS_MAXSTR + 1];
                 int real_change = fim_sum_has_real_change(buf + sum_off, c_sum);
 
@@ -60,7 +61,30 @@ int realtime_checksumfile(const char *file_name)
                     alert_msg[OS_MAXSTR] = '\0';
 
                     #ifdef WIN32
-                    snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                    {
+                        char *sum_only = NULL;
+                        char *acl_txt = NULL;
+                        size_t slen = fim_sum_data_len(c_sum);
+
+                        os_calloc(OS_MAXSTR + 1, sizeof(char), sum_only);
+                        os_calloc(OS_MAXSTR + 1, sizeof(char), acl_txt);
+                        if (slen > (size_t)OS_MAXSTR) {
+                            slen = (size_t)OS_MAXSTR;
+                        }
+                        memcpy(sum_only, c_sum, slen);
+                        sum_only[slen] = '\0';
+
+                        if (sum_off >= 9 &&
+                                fim_win_acl_change_text(buf + sum_off, c_sum,
+                                                        acl_txt, (size_t)OS_MAXSTR + 1) > 0) {
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s",
+                                     sum_only, file_name, acl_txt);
+                        } else {
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s", sum_only, file_name);
+                        }
+                        free(sum_only);
+                        free(acl_txt);
+                    }
                     #else
                     char *fullalert = NULL;
 
@@ -355,7 +379,7 @@ int realtime_win32read(win32rtfim *rtlocald)
                                rtlocald->buffer,
                                sizeof(rtlocald->buffer) / sizeof(TCHAR),
                                TRUE,
-                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY,
+                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY | FILE_NOTIFY_CHANGE_ATTRIBUTES,
                                0,
                                &rtlocald->overlap,
                                RTCallBack);

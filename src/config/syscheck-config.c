@@ -165,6 +165,8 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_check_owner = "check_owner";
     const char *xml_check_group = "check_group";
     const char *xml_check_perm = "check_perm";
+    const char *xml_check_attrs = "check_attrs";
+    const char *xml_check_acl = "check_acl";
     const char *xml_real_time = "realtime";
     const char *xml_report_changes = "report_changes";
     const char *xml_restrict = "restrict";
@@ -372,6 +374,29 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
             } else if (strcmp(*attrs, xml_no_recurse) == 0) {
                 if(strcmp(*values, "yes") == 0) {
                     opts |= CHECK_NORECURSE;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
+            } else if (strcmp(*attrs, xml_check_attrs) == 0) {
+                /* Windows file attributes (Hidden/System/...). Ignored on
+                 * non-Windows agents; accepted so shared agent.conf is portable. */
+                if (strcmp(*values, "yes") == 0) {
+                    opts |= CHECK_ATTRS;
+                } else if (strcmp(*values, "no") == 0) {
+                    opts &= ~CHECK_ATTRS;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
+            } else if (strcmp(*attrs, xml_check_acl) == 0) {
+                /* Windows NTFS DACL/ACE matrix. Ignored on non-Windows. */
+                if (strcmp(*values, "yes") == 0) {
+                    opts |= CHECK_ACL;
+                } else if (strcmp(*values, "no") == 0) {
+                    opts &= ~CHECK_ACL;
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
                     ret = 0;
@@ -868,6 +893,8 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_REALTIME,
         CHECK_SEECHANGES,
         CHECK_NORECURSE,
+        CHECK_ATTRS,
+        CHECK_ACL,
         0
         };
     char *check_strings[] = {
@@ -881,6 +908,8 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         "realtime",
         "report_changes",
         "no_recurse",
+        "attrs",
+        "acl",
 	NULL
 	};
 
