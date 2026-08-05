@@ -150,6 +150,9 @@ int OS_RemoveAgent(const char *u_id) {
     }
 #endif
 
+    /* Capture name-ip before blanking the keys entry (#244) */
+    full_name = getFullnameById(u_id);
+
 #ifdef REUSE_ID
     long fp_seek;
     size_t fp_read;
@@ -159,12 +162,14 @@ int OS_RemoveAgent(const char *u_id) {
 
     if (stat(AUTH_FILE, &fp_stat) < 0) {
         fclose(fp);
+        free(full_name);
         return 0;
     }
 
     buffer = malloc(fp_stat.st_size);
     if (!buffer) {
         fclose(fp);
+        free(full_name);
         return 0;
     }
 
@@ -182,10 +187,12 @@ int OS_RemoveAgent(const char *u_id) {
 
     if (!fp) {
         free(buffer);
+        free(full_name);
         return 0;
     }
 
     fwrite(buffer, sizeof(char), fp_read, fp);
+    free(buffer);
 
 #else
     /* Remove the agent, but keep the id */
@@ -194,9 +201,10 @@ int OS_RemoveAgent(const char *u_id) {
 #endif
     fclose(fp);
 
-    full_name = getFullnameById(u_id);
-    if (full_name)
+    if (full_name) {
         delete_agentinfo(full_name);
+        free(full_name);
+    }
 
     /* Remove counter for ID */
     OS_RemoveCounter(u_id);
