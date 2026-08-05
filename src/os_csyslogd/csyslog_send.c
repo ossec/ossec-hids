@@ -100,6 +100,25 @@ int csyslog_connect(SyslogConfig *cfg)
     csyslog_close(cfg);
 
     if (cfg->protocol == CSYSLOG_TCP) {
+        /* Load CA / build SSL_CTX before connect (and before chroot) so a
+         * failed first connect still leaves a usable ctx for post-chroot
+         * reconnects. */
+        if (cfg->tls) {
+#ifdef LIBOPENSSL_ENABLED
+            if (!cfg->ssl_ctx) {
+                cfg->ssl_ctx = csyslog_tls_ctx_create((int)cfg->tls_verify,
+                                                     cfg->tls_ca);
+                if (!cfg->ssl_ctx) {
+                    return -1;
+                }
+            }
+#else
+            merror("%s: ERROR: syslog_output tls requested but OpenSSL is not enabled.",
+                   ARGV0);
+            return -1;
+#endif
+        }
+
         sock = OS_ConnectTCP(cfg->port, cfg->server);
         if (sock < 0) {
             return -1;
@@ -109,29 +128,13 @@ int csyslog_connect(SyslogConfig *cfg)
 
         if (cfg->tls) {
 #ifdef LIBOPENSSL_ENABLED
-            SSL_CTX *ctx = (SSL_CTX *)cfg->ssl_ctx;
-            SSL *ssl;
-
-            if (!ctx) {
-                ctx = csyslog_tls_ctx_create((int)cfg->tls_verify, cfg->tls_ca);
-                if (!ctx) {
-                    csyslog_close(cfg);
-                    return -1;
-                }
-                cfg->ssl_ctx = ctx;
-            }
-
-            ssl = csyslog_tls_connect(ctx, sock, cfg->server, (int)cfg->tls_verify);
+            SSL *ssl = csyslog_tls_connect((SSL_CTX *)cfg->ssl_ctx, sock,
+                                           cfg->server, (int)cfg->tls_verify);
             if (!ssl) {
                 csyslog_close(cfg);
                 return -1;
             }
             cfg->ssl = ssl;
-#else
-            merror("%s: ERROR: syslog_output tls requested but OpenSSL is not enabled.",
-                   ARGV0);
-            csyslog_close(cfg);
-            return -1;
 #endif
         }
     } else {
@@ -146,6 +149,7 @@ int csyslog_connect(SyslogConfig *cfg)
 }
 
 /* Send one framed alert. TCP/TLS append a trailing newline (RFC 6587).
+ * Embedded CR/LF in the payload are flattened so one alert stays one frame.
  * On failure, reconnect once and retry. Returns 0 on success, -1 on failure.
  */
 int csyslog_send(SyslogConfig *cfg, const char *msg, size_t len)
@@ -160,12 +164,19 @@ int csyslog_send(SyslogConfig *cfg, const char *msg, size_t len)
     }
 
     if (cfg->protocol == CSYSLOG_TCP) {
+        size_t i;
+
         if (len >= OS_CSYSLOG_MAX) {
             merror("%s: WARN: syslog_output TCP message truncated from %zu to %d bytes.",
                    ARGV0, len, OS_CSYSLOG_MAX - 1);
             len = OS_CSYSLOG_MAX - 1;
         }
         memcpy(framed, msg, len);
+        for (i = 0; i < len; i++) {
+            if (framed[i] == '\n' || framed[i] == '\r') {
+                framed[i] = ' ';
+            }
+        }
         framed[len] = '\n';
         framed[len + 1] = '\0';
         out = framed;

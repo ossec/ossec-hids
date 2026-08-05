@@ -19,7 +19,8 @@
 #include <poll.h>
 
 #ifndef CSYSLOG_TLS_WRITE_MAX_SPIN
-#define CSYSLOG_TLS_WRITE_MAX_SPIN 10000
+/* Cap total WANT_* waits (~10s) to match socket send/recv timeouts. */
+#define CSYSLOG_TLS_WRITE_MAX_SPIN 10
 #endif
 
 #ifndef CSYSLOG_TLS_WRITE_WAIT_MS
