@@ -14,6 +14,9 @@
 
 #define OS_CSYSLOGD_MAX_TRIES 10
 
+/* Outbound syslog/CEF/JSON alert size (matches OS_MAXSTR elsewhere). */
+#define OS_CSYSLOG_MAX OS_MAXSTR
+
 /** Prototypes **/
 
 /* Read syslog config */
