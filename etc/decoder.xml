@@ -3390,10 +3390,16 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 </decoder>
 
 
-<!-- cPanel / cpsrvd (login_log, session_log, access_log).
+<!-- cPanel login/session/access logs (#1132 / #1036).
+  - Timestamp uses numeric TZ offset (+/-0400), which must not match postgresql_log.
+  - Parent matches cpsrvd and direct daemon tags used in some cPanel builds:
+    cpaneld, whostmgrd, webmaild.
   - Examples:
   - [2016-11-18 09:32:19 +0000] info [cpsrvd] 10.1.5.19 - admin "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password hash is missing from system (user probably does not exist)
   - [2017-01-25 06:01:10 -0500] info [cpsrvd] 10.1.5.19 - test "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: invalid cpanel user test (loadcpdata failed)
+  - [2017-05-26 07:02:05 -0400] info [webmaild] 10.101.1.42 - thousands "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN webmaild: user password incorrect
+  - [2017-05-26 07:02:52 -0400] info [whostmgrd] 10.101.1.42 - root "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password incorrect
+  - [2017-05-29 01:32:33 -0400] info [cpaneld] 10.101.1.38 - thousands "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: access denied for root, reseller, and user password
   - [2016-04-18 13:07:02 -0400] info [cpsrvd] 10.1.5.19 - root - SUCCESS LOGIN whostmgrd
   - [2016-04-18 13:07:15 -0400] info [cpsrvd] 10.1.5.19 - reseller (possessor: root) - SUCCESS LOGIN cpaneld
   - [2017-02-03 01:21:31 -0500] info [cpsrvd] 10.101.1.18 NEW testuser:XImQi9d3anWMNSc9 address=10.101.1.18,app=cpaneld,creator=pupkin,method=handle_form_login,path=form,possessed=0
@@ -3401,7 +3407,7 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   - 46.118.10.79 - paul [11/18/2016:09:35:43 -0000] "GET" FAILED LOGIN cpdavd: Could not fetch system home directory for paul
   -->
 <decoder name="cpanel">
-  <prematch_pcre2>^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4}\] info \[cpsrvd\] </prematch_pcre2>
+  <prematch_pcre2>^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4}\] info \[(?:cpsrvd|cpaneld|whostmgrd|webmaild)\] </prematch_pcre2>
 </decoder>
 
 <decoder name="cpanel-login-failed">
