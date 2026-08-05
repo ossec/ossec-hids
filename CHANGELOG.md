@@ -26,6 +26,7 @@ Work toward the next minor release after 4.2.0.
 
 **General**
 
+- @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
 - @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
 - @atomicturtle - Reject dangerous/ambiguous syscheck_control flag combinations such as ``-r -u`` (#462)
