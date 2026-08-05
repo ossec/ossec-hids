@@ -286,9 +286,12 @@ int main(int argc, char **argv)
                 ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir, strerror(errno));
             }
 
-            /* Deleting FIM maintenance marker */
-            snprintf(final_dir, 1020, "/%s/.syscheck.maint", SYSCHECK_DIR);
-            unlink(final_dir);
+            /* Deleting FIM maintenance marker (may not exist) */
+            syscheck_maint_path(NULL, NULL, final_dir, sizeof(final_dir));
+            if ((unlink(final_dir)) != 0 && errno != ENOENT) {
+                ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir,
+                          strerror(errno));
+            }
 
             if (json_output) {
                 cJSON_AddNumberToObject(json_root, "error", 0);

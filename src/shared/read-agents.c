@@ -947,11 +947,10 @@ void syscheck_maint_log_accept(const char *location, const char *kind,
     FILE *fp;
     time_t now = time(NULL);
     char tbuf[64];
-    struct tm *tm_s;
+    struct tm tm_buf;
 
-    tm_s = localtime(&now);
-    if (tm_s) {
-        strftime(tbuf, sizeof(tbuf), "%F %T", tm_s);
+    if (localtime_r(&now, &tm_buf) != NULL) {
+        strftime(tbuf, sizeof(tbuf), "%F %T", &tm_buf);
     } else {
         snprintf(tbuf, sizeof(tbuf), "%ld", (long)now);
     }
