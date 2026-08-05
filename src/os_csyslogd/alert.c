@@ -107,17 +107,14 @@ char *cefescape(const char *msg, const bool header)
 /* Send an alert via syslog
  * Returns 1 on success or 0 on error
  */
-int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
+int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
 {
     char *logmsg = NULL;
     char *tstamp;
     char *hostname;
     char syslog_msg[OS_CSYSLOG_MAX];
 
-    /* Invalid socket */
-    if (syslog_config->socket < 0) {
-        return (0);
-    }
+    /* Socket may be -1 after a prior send failure; csyslog_send reconnects. */
 
     /* Clear the memory before insert */
     memset(syslog_msg, '\0', OS_CSYSLOG_MAX);
@@ -387,7 +384,9 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         field_add_truncated(syslog_msg, OS_CSYSLOG_MAX, " message=\"%s\"", logmsg, 2);
     }
 
-    OS_SendUDPbySize(syslog_config->socket, strlen(syslog_msg), syslog_msg);
+    if (csyslog_send(syslog_config, syslog_msg, strlen(syslog_msg)) < 0) {
+        return (0);
+    }
     return (1);
 }
 
