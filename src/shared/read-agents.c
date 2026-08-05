@@ -736,6 +736,91 @@ int print_rootcheck(const char *sk_name, const char *sk_ip, const char *fname,
 
 #endif
 
+/* Build FIM maintenance marker path for local (sk_name NULL) or agent. */
+void syscheck_maint_path(const char *sk_name, const char *sk_ip,
+                         char *buf, size_t buflen)
+{
+    if (!sk_name) {
+        snprintf(buf, buflen, "%s/.syscheck.maint", SYSCHECK_DIR);
+    } else if (!sk_ip) {
+        snprintf(buf, buflen, "%s/.%s.maint", SYSCHECK_DIR, sk_name);
+    } else {
+        snprintf(buf, buflen, "%s/.(%s) %s.maint", SYSCHECK_DIR, sk_name, sk_ip);
+    }
+}
+
+/* Map analysisd lf->location ("syscheck", "(name) ip->syscheck", …) to marker. */
+void syscheck_maint_path_from_location(const char *location,
+                                       char *buf, size_t buflen)
+{
+    char base[OS_FLSIZE + 1];
+    char *arrow;
+
+    strncpy(base, location, OS_FLSIZE);
+    base[OS_FLSIZE] = '\0';
+
+    arrow = strstr(base, "->");
+    if (arrow) {
+        *arrow = '\0';
+        snprintf(buf, buflen, "%s/.%s.maint", SYSCHECK_DIR, base);
+        return;
+    }
+
+    if (strcmp(base, "syscheck") == 0 ||
+            strcmp(base, "syscheck-registry") == 0) {
+        snprintf(buf, buflen, "%s/.syscheck.maint", SYSCHECK_DIR);
+        return;
+    }
+
+    snprintf(buf, buflen, "%s/.%s.maint", SYSCHECK_DIR, base);
+}
+
+int syscheck_maint_is_enabled(const char *sk_name, const char *sk_ip)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    return (access(path, F_OK) == 0) ? 1 : 0;
+}
+
+int syscheck_maint_is_enabled_location(const char *location)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path_from_location(location, path, sizeof(path));
+    return (access(path, F_OK) == 0) ? 1 : 0;
+}
+
+int syscheck_maint_enable(const char *sk_name, const char *sk_ip)
+{
+    FILE *fp;
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    fp = fopen(path, "w");
+    if (!fp) {
+        merror("%s: ERROR: Cannot create %s: %s", __local_name, path,
+               strerror(errno));
+        return (0);
+    }
+    fprintf(fp, "#!maint\n");
+    fclose(fp);
+    return (1);
+}
+
+int syscheck_maint_disable(const char *sk_name, const char *sk_ip)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    if (unlink(path) != 0 && errno != ENOENT) {
+        merror("%s: ERROR: Cannot delete %s: %s", __local_name, path,
+               strerror(errno));
+        return (0);
+    }
+    return (1);
+}
+
 /* Delete syscheck db */
 int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
 {
@@ -773,6 +858,13 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
     }
     if ((unlink(tmp_file)) < 0) {
         merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file, strerror(errno));
+    }
+
+    /* Delete FIM maintenance marker */
+    syscheck_maint_path(sk_name, sk_ip, tmp_file, sizeof(tmp_file));
+    if ((unlink(tmp_file)) < 0 && errno != ENOENT) {
+        merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file,
+               strerror(errno));
     }
 
     /* Delete registry entries */

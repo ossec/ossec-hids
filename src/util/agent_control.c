@@ -28,13 +28,14 @@ static void helpmsg(int status)
     printf("\t-R <id>     Restarts agent.\n");
     printf("\t-r -a       Runs the integrity/rootkit checking on all agents now.\n");
     printf("\t-r          Runs the integrity/rootkit checking on one agent now.\n\n");
+    printf("\t-M <action> FIM maintenance mode: enable|disable|status (use with -u).\n");
     printf("\t-b <ip>     Blocks the specified ip address.\n");
     printf("\t-f <ar>     Used with -b, specifies which response to run.\n");
     printf("\t-L          List available active responses.\n");
     printf("\t-m          Show the limit of agents that can be added.\n");
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
     printf("\t-j          Changes the output to JSON .\n");
-    printf("\t-u <id>     Used with -r and -b Specifies the agent to use.\n");
+    printf("\t-u <id>     Used with -r, -b, and -M. Specifies the agent to use.\n");
     exit(status);
 }
 
@@ -65,6 +66,7 @@ int main(int argc, char **argv)
     int end_time = 0;
     int restart_agent = 0;
     int show_max_agents = 0;
+    const char *maint_action = NULL;
 
     char shost[512];
 
@@ -78,7 +80,7 @@ int main(int argc, char **argv)
         helpmsg(1);
     }
 
-    while ((c = getopt(argc, argv, "VehdlLcsjarmu:i:b:f:R:")) != -1) {
+    while ((c = getopt(argc, argv, "VehdlLcsjarmu:i:b:f:R:M:")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -103,6 +105,13 @@ int main(int argc, char **argv)
                 break;
             case 'm':
                 show_max_agents++;
+                break;
+            case 'M':
+                if (!optarg) {
+                    merror("%s: -M needs enable|disable|status", ARGV0);
+                    helpmsg(1);
+                }
+                maint_action = optarg;
                 break;
             case 's':
                 csv_output = 1;
@@ -416,6 +425,16 @@ int main(int argc, char **argv)
                 printf("   Syscheck last started  at: %s\n", agt_info->syscheck_time);
                 printf("   Rootcheck last started at: %s\n", agt_info->rootcheck_time);
             }
+            if (agt_id != -1) {
+                printf("   FIM maintenance mode:  %s\n",
+                       syscheck_maint_is_enabled(keys.keyentries[agt_id]->name,
+                                                 keys.keyentries[agt_id]->ip->ip)
+                       ? "enabled" : "disabled");
+            } else {
+                printf("   FIM maintenance mode:  %s\n",
+                       syscheck_maint_is_enabled(NULL, NULL)
+                       ? "enabled" : "disabled");
+            }
         }else if(json_output){
                 cJSON_AddStringToObject(response, "os", agt_info->os);
                 cJSON_AddStringToObject(response, "version", agt_info->version);
@@ -425,6 +444,13 @@ int main(int argc, char **argv)
                 cJSON_AddStringToObject(response, "syscheckEndTime", end_time ? agt_info->syscheck_endtime : "");
                 cJSON_AddStringToObject(response, "rootcheckTime", agt_info->rootcheck_time);
                 cJSON_AddStringToObject(response, "rootcheckEndTime", end_time ? agt_info->rootcheck_endtime : "");
+                cJSON_AddStringToObject(response, "fimMaintenance",
+                    (agt_id != -1)
+                        ? (syscheck_maint_is_enabled(keys.keyentries[agt_id]->name,
+                                                     keys.keyentries[agt_id]->ip->ip)
+                           ? "enabled" : "disabled")
+                        : (syscheck_maint_is_enabled(NULL, NULL)
+                           ? "enabled" : "disabled"));
 
         } else {
             printf("%s,%s,%s,%s,%s,\n",
@@ -439,6 +465,87 @@ int main(int argc, char **argv)
             cJSON_AddItemToObject(root, "response", response);
             printf("%s",cJSON_PrintUnformatted(root));
             cJSON_Delete(root);
+        }
+        exit(0);
+    }
+
+    /* FIM maintenance mode */
+    if (maint_action) {
+        const char *sk_name = NULL;
+        const char *sk_ip = NULL;
+        int enabled;
+        int ok = 1;
+
+        if (!agent_id) {
+            if (json_output) {
+                cJSON_AddNumberToObject(root, "error", 44);
+                cJSON_AddStringToObject(root, "description",
+                                        "-M requires -u <agent_id>");
+                printf("%s", cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            } else {
+                printf("\n** -M requires -u <agent_id>.\n");
+            }
+            exit(1);
+        }
+
+        if (strcmp(agent_id, "000") != 0) {
+            sk_name = keys.keyentries[agt_id]->name;
+            sk_ip = keys.keyentries[agt_id]->ip->ip;
+        }
+
+        if (strcmp(maint_action, "enable") == 0) {
+            ok = syscheck_maint_enable(sk_name, sk_ip);
+            enabled = 1;
+        } else if (strcmp(maint_action, "disable") == 0) {
+            ok = syscheck_maint_disable(sk_name, sk_ip);
+            enabled = 0;
+        } else if (strcmp(maint_action, "status") == 0) {
+            enabled = syscheck_maint_is_enabled(sk_name, sk_ip);
+            ok = 1;
+        } else {
+            if (json_output) {
+                cJSON_AddNumberToObject(root, "error", 45);
+                cJSON_AddStringToObject(root, "description",
+                                        "Invalid -M action (enable|disable|status)");
+                printf("%s", cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            } else {
+                printf("\n** Invalid -M action '%s' (use enable|disable|status).\n",
+                       maint_action);
+            }
+            exit(1);
+        }
+
+        if (!ok) {
+            if (json_output) {
+                cJSON_AddNumberToObject(root, "error", 46);
+                cJSON_AddStringToObject(root, "description",
+                                        "Unable to update FIM maintenance mode");
+                printf("%s", cJSON_PrintUnformatted(root));
+                cJSON_Delete(root);
+            } else {
+                printf("\n** Unable to update FIM maintenance mode.\n");
+            }
+            exit(1);
+        }
+
+        if (json_output) {
+            cJSON *response = cJSON_CreateObject();
+            cJSON_AddNumberToObject(root, "error", 0);
+            cJSON_AddStringToObject(response, "agent", agent_id);
+            cJSON_AddStringToObject(response, "fimMaintenance",
+                                    enabled ? "enabled" : "disabled");
+            cJSON_AddStringToObject(response, "action", maint_action);
+            cJSON_AddItemToObject(root, "response", response);
+            printf("%s", cJSON_PrintUnformatted(root));
+            cJSON_Delete(root);
+        } else if (strcmp(maint_action, "status") == 0) {
+            printf("\nOSSEC HIDS %s: Agent %s FIM maintenance mode: %s\n",
+                   ARGV0, agent_id, enabled ? "enabled" : "disabled");
+        } else {
+            printf("\nOSSEC HIDS %s: FIM maintenance mode %s for agent %s.\n",
+                   ARGV0, enabled ? "enabled" : "disabled", agent_id);
         }
         exit(0);
     }

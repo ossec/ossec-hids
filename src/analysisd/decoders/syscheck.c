@@ -15,6 +15,7 @@
 #include "alerts/alerts.h"
 #include "decoder.h"
 #include "fim_sum_op.h"
+#include "read-agents.h"
 
 #ifdef SQLITE_ENABLED
 #include <sqlite3.h>
@@ -62,6 +63,8 @@ static __thread _sdb sdb;
  * workers serialize FILE* / hash-index mutations for the same agent.
  */
 static char sk_agent_cp[MAX_AGENTS + 1][1];
+static char sk_agent_maint[MAX_AGENTS + 1][1];
+static time_t sk_agent_maint_checked[MAX_AGENTS + 1];
 static char *sk_agent_ips[MAX_AGENTS + 1];
 static FILE *sk_agent_fps[MAX_AGENTS + 1];
 static OSHash *sk_agent_index[MAX_AGENTS + 1];
@@ -144,6 +147,8 @@ void SyscheckInit()
             sk_agent_fps[i] = NULL;
             sk_agent_index[i] = NULL;
             sk_agent_cp[i][0] = '0';
+            sk_agent_maint[i][0] = '?';
+            sk_agent_maint_checked[i] = 0;
             os_mutex_init(&sk_agent_mutex[i], NULL);
         }
         sk_shared_ready = 1;
@@ -155,6 +160,8 @@ void SyscheckInit()
         sk_agent_fps[i] = NULL;
         sk_agent_index[i] = NULL;
         sk_agent_cp[i][0] = '0';
+        sk_agent_maint[i][0] = '?';
+        sk_agent_maint_checked[i] = 0;
     }
 #endif
 
@@ -165,6 +172,75 @@ void SyscheckInit()
 /* Check if the db is completed for that specific agent */
 #define DB_IsCompleted(x) (sk_agent_cp[x][0] == '1')?1:0
 
+/* FIM maintenance mode: re-check marker every few seconds, log transitions. */
+static int DB_IsMaintenance(int agent_id, const char *location)
+{
+    time_t now = time(NULL);
+    int on;
+
+    if (sk_agent_maint_checked[agent_id] != 0 &&
+            (now - sk_agent_maint_checked[agent_id]) < 2 &&
+            sk_agent_maint[agent_id][0] != '?') {
+        return (sk_agent_maint[agent_id][0] == '1') ? 1 : 0;
+    }
+
+    on = syscheck_maint_is_enabled_location(location);
+    if (sk_agent_maint[agent_id][0] == '?' ||
+            (on && sk_agent_maint[agent_id][0] != '1') ||
+            (!on && sk_agent_maint[agent_id][0] == '1')) {
+        if (on || sk_agent_maint[agent_id][0] == '1') {
+            merror("%s: INFO: Syscheck maintenance mode %s for '%s'.",
+                   ARGV0, on ? "enabled" : "disabled", location);
+        }
+    }
+
+    sk_agent_maint[agent_id][0] = on ? '1' : '0';
+    sk_agent_maint_checked[agent_id] = now;
+    return on;
+}
+
+/* Quietly comment the old DB line and append the new checksum (new baseline). */
+static int DB_QuietUpdate(const char *f_name, const char *c_sum, Eventinfo *lf,
+                          FILE *fp, sk_db_entry *db_entry)
+{
+    char new_prefix[OS_MAXSTR + 1];
+    fpos_t new_pos;
+
+    if (fsetpos(fp, &sdb.init_pos) != 0) {
+        merror("%s: Error handling integrity database (fsetpos).", ARGV0);
+        lf->data = NULL;
+        return (0);
+    }
+    if (fputc('#', fp) == EOF) {
+        merror("%s: Error handling integrity database (fputc).", ARGV0);
+        lf->data = NULL;
+        return (0);
+    }
+    if (fseek(fp, 0, SEEK_END) != 0) {
+        merror("%s: Error handling integrity database (fseek).", ARGV0);
+        lf->data = NULL;
+        return (0);
+    }
+    if (fgetpos(fp, &new_pos) != 0) {
+        merror("%s: Error handling integrity database (fgetpos).", ARGV0);
+        lf->data = NULL;
+        return (0);
+    }
+    snprintf(new_prefix, sizeof(new_prefix), "+++%s", c_sum);
+    if (fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name) < 0 ||
+            fflush(fp) != 0) {
+        merror("%s: Error handling integrity database (write).", ARGV0);
+        lf->data = NULL;
+        return (0);
+    }
+    if (db_entry) {
+        db_entry->pos = new_pos;
+        memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
+        db_entry->prefix_sum[OS_MAXSTR] = '\0';
+    }
+    lf->data = NULL;
+    return (0);
+}
 static void __setcompleted(const char *agent)
 {
     FILE *fp;
@@ -440,7 +516,7 @@ static sk_db_entry *DB_GetOrCreateIndexEntry(int agent_id, const char *f_name)
  * 1 if a change alert was generated. */
 static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                                 Eventinfo *lf, FILE *fp,
-                                sk_db_entry *db_entry)
+                                sk_db_entry *db_entry, int maintenance)
 {
     int p = 0;
     char *saved_sum = sdb.buf + 3;
@@ -454,44 +530,12 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
     /* Placeholder-only hash transitions (xxx <-> real) are not integrity
      * events; update the DB quietly so future scans stay clean (#1590/#1704). */
     if (!fim_sum_has_real_change(saved_sum, c_sum)) {
-        char new_prefix[OS_MAXSTR + 1];
-        fpos_t new_pos;
+        return DB_QuietUpdate(f_name, c_sum, lf, fp, db_entry);
+    }
 
-        if (fsetpos(fp, &sdb.init_pos) != 0) {
-            merror("%s: Error handling integrity database (fsetpos).", ARGV0);
-            lf->data = NULL;
-            return (0);
-        }
-        if (fputc('#', fp) == EOF) {
-            merror("%s: Error handling integrity database (fputc).", ARGV0);
-            lf->data = NULL;
-            return (0);
-        }
-        if (fseek(fp, 0, SEEK_END) != 0) {
-            merror("%s: Error handling integrity database (fseek).", ARGV0);
-            lf->data = NULL;
-            return (0);
-        }
-        if (fgetpos(fp, &new_pos) != 0) {
-            merror("%s: Error handling integrity database (fgetpos).", ARGV0);
-            lf->data = NULL;
-            return (0);
-        }
-        snprintf(new_prefix, sizeof(new_prefix), "+++%s", c_sum);
-        if (fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name) < 0 ||
-                fflush(fp) != 0) {
-            merror("%s: Error handling integrity database (write).", ARGV0);
-            lf->data = NULL;
-            return (0);
-        }
-        /* Publish index metadata only after a successful append. */
-        if (db_entry) {
-            db_entry->pos = new_pos;
-            memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
-            db_entry->prefix_sum[OS_MAXSTR] = '\0';
-        }
-        lf->data = NULL;
-        return (0);
+    /* During FIM maintenance, accept the new checksum as baseline with no alert. */
+    if (maintenance) {
+        return DB_QuietUpdate(f_name, c_sum, lf, fp, db_entry);
     }
 
 
@@ -827,7 +871,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
 
 /* Fall back to a linear scan when the hash index is unavailable or incomplete. */
 static int DB_SearchLinear(const char *f_name, const char *c_sum, Eventinfo *lf,
-                           FILE *fp, int agent_id)
+                           FILE *fp, int agent_id, int maintenance)
 {
     size_t sn_size;
     char *saved_name;
@@ -864,7 +908,8 @@ static int DB_SearchLinear(const char *f_name, const char *c_sum, Eventinfo *lf,
         }
 
         return DB_ProcessFoundEntry(f_name, c_sum, lf, fp,
-                                    DB_GetOrCreateIndexEntry(agent_id, f_name));
+                                    DB_GetOrCreateIndexEntry(agent_id, f_name),
+                                    maintenance);
     }
 
     return (-1);
@@ -875,6 +920,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
 {
     int agent_id;
     int result = 0;
+    int maintenance;
     FILE *fp;
 
     /* Expose filename variable for active response */
@@ -888,6 +934,8 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         lf->data = NULL;
         return (0);
     }
+
+    maintenance = DB_IsMaintenance(agent_id, lf->location);
 
     DB_BuildIndex(agent_id, fp);
 
@@ -903,11 +951,13 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             strncpy(sdb.buf, db_entry->prefix_sum, OS_MAXSTR);
             sdb.buf[OS_MAXSTR] = '\0';
             sdb.init_pos = db_entry->pos;
-            result = DB_ProcessFoundEntry(f_name, c_sum, lf, fp, db_entry);
+            result = DB_ProcessFoundEntry(f_name, c_sum, lf, fp, db_entry,
+                                          maintenance);
             goto out;
         }
 
-        linear_rc = DB_SearchLinear(f_name, c_sum, lf, fp, agent_id);
+        linear_rc = DB_SearchLinear(f_name, c_sum, lf, fp, agent_id,
+                                    maintenance);
         if (linear_rc >= 0) {
             result = linear_rc;
             goto out;
@@ -927,10 +977,10 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
     fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name);
     fflush(fp);
 
-    /* Alert if configured to notify on new files */
+    /* Alert if configured to notify on new files (skip during maintenance). */
     /* TODO: debugging this - Scott */
     /* if ((Config.syscheck_alert_new == 1) && (DB_IsCompleted(agent_id))) { */
-    if (Config.syscheck_alert_new == 1)  {
+    if ((Config.syscheck_alert_new == 1) && !maintenance)  {
         sdb.syscheck_dec->id = sdb.idn;
 
         char *newfilec_sum = NULL;

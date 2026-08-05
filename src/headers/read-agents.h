@@ -37,6 +37,20 @@ int print_rootcheck(const char *sk_name, const char *sk_ip, const char *fname, i
 /* Delete syscheck db */
 int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete) __attribute__((nonnull));
 
+/* FIM maintenance mode markers (manager-side, per agent).
+ * While enabled, analysisd updates the syscheck DB without alerting.
+ */
+void syscheck_maint_path(const char *sk_name, const char *sk_ip,
+                         char *buf, size_t buflen) __attribute__((nonnull(3)));
+void syscheck_maint_path_from_location(const char *location,
+                                       char *buf, size_t buflen)
+    __attribute__((nonnull(1, 2)));
+int syscheck_maint_is_enabled(const char *sk_name, const char *sk_ip);
+int syscheck_maint_is_enabled_location(const char *location)
+    __attribute__((nonnull(1)));
+int syscheck_maint_enable(const char *sk_name, const char *sk_ip);
+int syscheck_maint_disable(const char *sk_name, const char *sk_ip);
+
 /* Delete rootcheck db */
 int delete_rootcheck(const char *sk_name, const char *sk_ip, int full_delete) __attribute__((nonnull));
 
