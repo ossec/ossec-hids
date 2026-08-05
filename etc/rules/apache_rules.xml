@@ -316,8 +316,15 @@
 
   <rule id="30411" level="7">
     <if_sid>30402</if_sid>
-    <pcre2>with code 403</pcre2>
+    <pcre2>with code 403|with code 406|with code 501|with code 505</pcre2>
     <description>ModSecurity rejected a query</description>
+  </rule>
+
+  <rule id="30412" level="12" frequency="6" timeframe="120">
+    <if_matched_sid>30411</if_matched_sid>
+    <same_source_ip />
+    <description>Multiple attempts blocked by ModSecurity.</description>
+    <group>access_denied,</group>
   </rule>
 </group> <!-- ERROR_LOG,APACHE -->
 

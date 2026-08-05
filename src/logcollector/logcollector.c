@@ -290,6 +290,8 @@ void LogCollectorStart()
                 logff[i].read = read_multiline;
             } else if (strcmp("audit", logff[i].logformat) == 0) {
                 logff[i].read = read_audit;
+            } else if (strcmp("modsec-audit", logff[i].logformat) == 0) {
+                logff[i].read = read_modsec_audit;
             } else if (strcmp("multi-line_indented", logff[i].logformat) == 0) {
                 logff[i].read = read_multiline_indented;
             } else {
