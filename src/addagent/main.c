@@ -51,7 +51,7 @@ static void helpmsg(int status)
     print_out("    -F <sec>    Remove agents with duplicated IP if disconnected since <sec> seconds");
     print_out("    -f <file>   Bulk generate client keys from file (Manager only)");
     print_out("                <file> contains lines in IP,NAME format");
-    print_out("                <file> should also exist within /var/ossec due to manage_agents chrooting");
+    print_out("                Use -f - to read the same format from stdin");
     exit(status);
 }
 
