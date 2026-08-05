@@ -26,6 +26,7 @@ Work toward the next minor release after 4.2.0.
 
 **General**
 
+- @atomicturtle - Allow manage_agents ``-f -`` to bulk-load agents from stdin (#459)
 - @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
 - @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
