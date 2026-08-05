@@ -19,14 +19,14 @@
 
   <rule id="30501" level="6">
     <if_sid>30500</if_sid>
-    <pcre2>Message: Access denied with code |Action: Intercepted</pcre2>
+    <pcre2>--[0-9A-Za-z]+-H--.*Message: Access denied with code .*Action: Intercepted</pcre2>
     <description>ModSecurity blocked a request (audit log).</description>
     <group>access_denied,attack,</group>
   </rule>
 
   <rule id="30502" level="5">
     <if_sid>30500</if_sid>
-    <pcre2>Message: Warning\.</pcre2>
+    <pcre2>--[0-9A-Za-z]+-H--.*Message: Warning\.</pcre2>
     <description>ModSecurity warning (audit log).</description>
     <group>attack,</group>
   </rule>

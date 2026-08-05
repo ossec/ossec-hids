@@ -1847,7 +1847,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 
 <!-- ModSecurity / libmodsecurity serial audit log (log_format modsec-audit).
-  - Logcollector joins a transaction (through --id-Z--) into one line.
+  - Logcollector joins a transaction (through matching --id-Z--) into one line.
+  - srcip is taken from section A; Message matches prefer the -H-- section.
   - Examples (collapsed):
   -  --fbd13fc1-A-- [22/Dec/2015:15:25:00 +0000] VnhlYH8AAQEAADYdAUkAAAAA 127.0.0.1 55275 127.0.0.1 80 --fbd13fc1-H-- Message: Access denied with code 403 (phase 2). ... Action: Intercepted (phase 2) --fbd13fc1-Z--
   -->
@@ -1857,15 +1858,15 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="modsecurity-audit-denied">
   <parent>modsecurity-audit</parent>
-  <prematch_pcre2>Message: Access denied with code </prematch_pcre2>
-  <pcre2>\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+).*Message: Access denied with code (\d+)</pcre2>
+  <prematch_pcre2>--[0-9A-Za-z]+-H--.*Message: Access denied with code </prematch_pcre2>
+  <pcre2>--[0-9A-Za-z]+-A--\s+\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+).*--[0-9A-Za-z]+-H--.*Message: Access denied with code (\d+)</pcre2>
   <order>srcip,srcport,dstip,dstport,id</order>
 </decoder>
 
 <decoder name="modsecurity-audit-warning">
   <parent>modsecurity-audit</parent>
-  <prematch_pcre2>Message: Warning\.</prematch_pcre2>
-  <pcre2>\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+)</pcre2>
+  <prematch_pcre2>--[0-9A-Za-z]+-H--.*Message: Warning\.</prematch_pcre2>
+  <pcre2>--[0-9A-Za-z]+-A--\s+\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+)</pcre2>
   <order>srcip,srcport,dstip,dstport</order>
 </decoder>
 
