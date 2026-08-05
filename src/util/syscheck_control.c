@@ -286,6 +286,10 @@ int main(int argc, char **argv)
                 ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir, strerror(errno));
             }
 
+            /* Deleting FIM maintenance marker */
+            snprintf(final_dir, 1020, "/%s/.syscheck.maint", SYSCHECK_DIR);
+            unlink(final_dir);
+
             if (json_output) {
                 cJSON_AddNumberToObject(json_root, "error", 0);
                 cJSON_AddStringToObject(json_root, "response", "Integrity check database updated");

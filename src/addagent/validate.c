@@ -813,9 +813,16 @@ int print_agents(int print_status, int active_only, int csv_output, cJSON *json_
                         }
 
                         if (csv_output) {
-                            printf("%s,%s,%s,%s,\n", line_read, name, ip, print_agent_status(agt_status));
+                            syscheck_maint_info mi;
+                            const char *mtag = "";
+                            if (syscheck_maint_get(name, ip, &mi)) {
+                                mtag = syscheck_maint_list_tag(&mi);
+                            }
+                            printf("%s,%s,%s,%s,%s\n", line_read, name, ip,
+                                   print_agent_status(agt_status), mtag);
                         } else if (json_output) {
                             cJSON *json_agent = cJSON_CreateObject();
+                            syscheck_maint_info mi;
                           
                             if (!json_agent)
                                 return 0;
@@ -824,9 +831,25 @@ int print_agents(int print_status, int active_only, int csv_output, cJSON *json_
                             cJSON_AddStringToObject(json_agent, "name", name);
                             cJSON_AddStringToObject(json_agent, "ip", ip);
                             cJSON_AddStringToObject(json_agent, "status", print_agent_status(agt_status));
+                            if (syscheck_maint_get(name, ip, &mi)) {
+                                cJSON_AddStringToObject(json_agent, "fimMaintenance",
+                                                        syscheck_maint_list_tag(&mi));
+                            }
                             cJSON_AddItemToArray(json_output, json_agent);
                         } else {
-                            printf(PRINT_AGENT_STATUS, line_read, name, ip, print_agent_status(agt_status));
+                            syscheck_maint_info mi;
+                            const char *mtag = "";
+                            if (syscheck_maint_get(name, ip, &mi)) {
+                                mtag = syscheck_maint_list_tag(&mi);
+                            }
+                            if (mtag[0]) {
+                                printf("   ID: %s, Name: %s, IP: %s, %s, %s\n",
+                                       line_read, name, ip,
+                                       print_agent_status(agt_status), mtag);
+                            } else {
+                                printf(PRINT_AGENT_STATUS, line_read, name, ip,
+                                       print_agent_status(agt_status));
+                            }
                         }
                     } else {
                         printf(PRINT_AGENT, line_read, name, ip);
