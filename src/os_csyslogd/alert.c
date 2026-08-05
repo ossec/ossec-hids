@@ -22,6 +22,7 @@ char *cefescape(const char *msg, const bool header)
     const char *ptr;
     char *buffptr;
     size_t size;
+    int needs_escape = 0;
 
     /* Recycle the buffer */
     if (buffer) {
@@ -29,14 +30,22 @@ char *cefescape(const char *msg, const bool header)
         buffer = NULL;
     }
 
-    /* Test if the string needs escaping */
-    if ((NULL == msg) ||                            /* Cleanup call or empty string */
-        ((header && (NULL == strchr(msg, '|'))) &&  /* | in the header must be escaped */
-        (!header && (NULL == strchr(msg, '='))) &&  /* = in the extension must be escaped */
-        (NULL == strchr(msg, '\\')) &&              /* \ must be escaped */
-        (NULL == strchr(msg, '\r')) &&              /* \r removed from header, escaped in extension */
-        (NULL == strchr(msg, '\n')))) {             /* \n removed from header, escaped in extension */
-        return buffer;
+    /* Cleanup call */
+    if (NULL == msg) {
+        return NULL;
+    }
+
+    if (header && strchr(msg, '|')) {
+        needs_escape = 1;
+    }
+    if (!header && strchr(msg, '=')) {
+        needs_escape = 1;
+    }
+    if (strchr(msg, '\\') || strchr(msg, '\r') || strchr(msg, '\n')) {
+        needs_escape = 1;
+    }
+    if (!needs_escape) {
+        return (char *)msg;
     }
 
     /* Calculate the size of the escaped message
@@ -107,17 +116,16 @@ char *cefescape(const char *msg, const bool header)
 /* Send an alert via syslog
  * Returns 1 on success or 0 on error
  */
-int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
+int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
 {
     char *logmsg = NULL;
+    int logmsg_allocated = 0;
+    int result = 0;
     char *tstamp;
     char *hostname;
     char syslog_msg[OS_CSYSLOG_MAX];
 
-    /* Invalid socket */
-    if (syslog_config->socket < 0) {
-        return (0);
-    }
+    /* Socket may be -1 after a prior send failure; csyslog_send reconnects. */
 
     /* Clear the memory before insert */
     memset(syslog_msg, '\0', OS_CSYSLOG_MAX);
@@ -189,6 +197,7 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
             logmsg = al_data->log[0];
         } else {
             short int i = 0;
+            logmsg_allocated = 1;
             while (NULL != al_data->log[i]) {
                 logmsg = os_LoadString(logmsg, al_data->log[i]);
                 i++;
@@ -196,7 +205,7 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
                     logmsg = os_LoadString(logmsg, "\n");
                 }
                 /* Save on memory and processing since it's going to get truncated anyway */
-                if (OS_CSYSLOG_MAX <= strlen(logmsg)) {
+                if (logmsg && OS_CSYSLOG_MAX <= strlen(logmsg)) {
                     break;
                 }
             }
@@ -336,18 +345,28 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         /* Create the JSON string */
         json_string = cJSON_PrintUnformatted(root);
 
-        /* Create the syslog message */
-        snprintf(syslog_msg, OS_CSYSLOG_MAX,
-                 "<%u>%s %s ossec: %s",
-
-                 /* syslog header */
-                 syslog_config->priority, tstamp, hostname,
-
-                 /* JSON Encoded Data */
-                 json_string
-                );
-        /* Clean up the memory for the JSON structure */
-        free(json_string);
+        /* Create the syslog message; avoid mid-JSON truncation. */
+        if (json_string) {
+            int n = snprintf(syslog_msg, OS_CSYSLOG_MAX,
+                             "<%u>%s %s ossec: %s",
+                             syslog_config->priority, tstamp, hostname,
+                             json_string);
+            if (n < 0 || (size_t)n >= OS_CSYSLOG_MAX) {
+                merror("%s: WARN: syslog_output JSON alert truncated; "
+                       "sending compact stub (rule %u).",
+                       ARGV0, al_data->rule);
+                snprintf(syslog_msg, OS_CSYSLOG_MAX,
+                         "<%u>%s %s ossec: {\"crit\":%u,\"id\":%u,\"truncated\":true}",
+                         syslog_config->priority, tstamp, hostname,
+                         al_data->level, al_data->rule);
+            }
+            free(json_string);
+        } else {
+            snprintf(syslog_msg, OS_CSYSLOG_MAX,
+                     "<%u>%s %s ossec: {\"crit\":%u,\"id\":%u,\"error\":\"json_encode\"}",
+                     syslog_config->priority, tstamp, hostname,
+                     al_data->level, al_data->rule);
+        }
         cJSON_Delete(root);
     } else if (syslog_config->format == SPLUNK_CSYSLOG) {
         /* Build a Splunk Style Key/Value string for logging */
@@ -387,7 +406,13 @@ int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config)
         field_add_truncated(syslog_msg, OS_CSYSLOG_MAX, " message=\"%s\"", logmsg, 2);
     }
 
-    OS_SendUDPbySize(syslog_config->socket, strlen(syslog_msg), syslog_msg);
-    return (1);
+    if (csyslog_send(syslog_config, syslog_msg, strlen(syslog_msg)) == 0) {
+        result = 1;
+    }
+
+    if (logmsg_allocated) {
+        free(logmsg);
+    }
+    return (result);
 }
 

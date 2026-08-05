@@ -12,6 +12,10 @@
 #ifndef _CSYSLOGCONFIG__H
 #define _CSYSLOGCONFIG__H
 
+/* Syslog transport */
+#define CSYSLOG_UDP  0
+#define CSYSLOG_TCP  1
+
 /* Database config structure */
 typedef struct _SyslogConfig {
     char *port;
@@ -20,11 +24,19 @@ typedef struct _SyslogConfig {
     unsigned int *rule_id;
     unsigned int priority;
     unsigned int use_fqdn;
+    unsigned int protocol;   /* CSYSLOG_UDP or CSYSLOG_TCP */
+    unsigned int tls;        /* 1 = wrap TCP in TLS */
+    unsigned int tls_verify; /* 1 = verify peer (default) */
     int socket;
 
     char *server;
+    char *tls_ca;            /* optional CA file path (pre-chroot) */
     OSMatch *group;
     OSMatch *location;
+
+    /* Runtime transport state (updated on reconnect; not from XML). */
+    void *ssl;               /* SSL* when tls */
+    void *ssl_ctx;           /* SSL_CTX* when tls */
 } SyslogConfig;
 
 struct SyslogConfig_holder {

@@ -183,20 +183,24 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    /* Connect before chroot: DNS works here and OS_ConnectUDP can walk the
-     * full addrinfo list (IPv6 then IPv4 fallback). FDs survive chroot. */
+    /* Connect before chroot: DNS works here and OS_Connect* can walk the
+     * full addrinfo list (IPv6 then IPv4 fallback). FDs survive chroot.
+     * TLS loads CA paths here before the chroot jail. */
     {
         unsigned int s = 0;
 
         while (syslog_config[s]) {
-            syslog_config[s]->socket = OS_ConnectUDP(syslog_config[s]->port,
-                                                     syslog_config[s]->server);
-            if (syslog_config[s]->socket < 0) {
+            const char *proto = (syslog_config[s]->protocol == CSYSLOG_TCP) ?
+                                "tcp" : "udp";
+            const char *tls = syslog_config[s]->tls ? "+tls" : "";
+
+            if (csyslog_connect(syslog_config[s]) < 0) {
                 merror(CONNS_ERROR, ARGV0, syslog_config[s]->server);
             } else {
                 /* Use merror for visibility at default log level (historical). */
-                merror("%s: INFO: Forwarding alerts via syslog to: '%s:%s'.",
-                       ARGV0, syslog_config[s]->server, syslog_config[s]->port);
+                merror("%s: INFO: Forwarding alerts via syslog (%s%s) to: '%s:%s'.",
+                       ARGV0, proto, tls,
+                       syslog_config[s]->server, syslog_config[s]->port);
             }
             s++;
         }

@@ -26,6 +26,7 @@ Work toward the next minor release after 4.2.0.
 
 **General**
 
+- @atomicturtle - Add optional TCP and TLS to syslog_output (ossec-csyslogd) (#1762)
 - @atomicturtle - Raise csyslogd syslog/CEF/JSON alert buffer from 2048 to OS_MAXSTR (#1762)
 - @atomicturtle - Add Asterisk IPv6 denied decoder so srcip omits square brackets (#1892)
 - @atomicturtle - Allow manage_agents ``-f -`` to bulk-load agents from stdin (#459)
