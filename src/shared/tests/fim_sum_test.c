@@ -59,6 +59,19 @@ int main(void)
                fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx",
                                        "0:0:0:0:aaa:bbb:xxx:32"), 1);
 
+    expect_int("offset acl format",
+               fim_sum_data_offset("++++++++-0:0:0:0:aaa:bbb:ccc:0:deadbeef"), 9);
+    expect_int("acl digest change",
+               fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx:0:aaa",
+                                       "0:0:0:0:aaa:bbb:xxx:0:bbb"), 1);
+    expect_int("acl equal ignores snapshot",
+               fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx:0:aaa\nold",
+                                       "0:0:0:0:aaa:bbb:xxx:0:aaa\nnew"), 0);
+    expect_int("fim_sum_equal true",
+               fim_sum_equal("0:0:0:0:a:b:c\nsnap", "0:0:0:0:a:b:c\nother"), 1);
+    expect_int("fim_sum_equal false",
+               fim_sum_equal("0:0:0:0:a:b:c", "0:0:0:0:a:b:d"), 0);
+
     {
         char abuf[128];
         fim_win_attrs_str(0x22, abuf, sizeof(abuf)); /* HIDDEN|ARCHIVE */

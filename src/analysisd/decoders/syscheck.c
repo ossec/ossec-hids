@@ -693,6 +693,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         char *oldsha1 = NULL, *newsha1 = NULL;
         char *oldsha256 = NULL, *newsha256 = NULL;
         char *oldattrs = NULL, *newattrs = NULL;
+        char *oldacl = NULL, *newacl = NULL;
 
         oldsize = saved_sum;
         newsize = c_sum;
@@ -757,7 +758,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                                 oldsha256++;
                                 newsha256++;
 
-                                /* Optional Windows attrs after sha256 */
+                                /* Optional Windows attrs[:acl] after sha256 */
                                 oldattrs = strchr(oldsha256, ':');
                                 newattrs = strchr(newsha256, ':');
                                 if (oldattrs && newattrs) {
@@ -765,6 +766,15 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                                     *newattrs = '\0';
                                     oldattrs++;
                                     newattrs++;
+
+                                    oldacl = strchr(oldattrs, ':');
+                                    newacl = strchr(newattrs, ':');
+                                    if (oldacl && newacl) {
+                                        *oldacl = '\0';
+                                        *newacl = '\0';
+                                        oldacl++;
+                                        newacl++;
+                                    }
                                 }
                             }
                         }
@@ -884,6 +894,10 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                      old_abuf, new_abuf);
         }
 
+        /* ACL digest change is detailed in lf->data (Permissions appendix). */
+        (void)oldacl;
+        (void)newacl;
+
         /* Provide information about the file */
         snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changed for: "
                  "'%.756s'\n"
@@ -905,7 +919,8 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                  sdb.sha1,
                  sdb.sha256,
                  sdb.attrs,
-                 lf->data == NULL ? "" : "What changed:\n",
+                 lf->data == NULL ? "" :
+                    (strncmp(lf->data, "Permissions:", 12) == 0 ? "" : "What changed:\n"),
                  lf->data == NULL ? "" : lf->data
                 );
     }

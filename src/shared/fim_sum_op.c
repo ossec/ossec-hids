@@ -65,6 +65,11 @@ int fim_sum_data_offset(const char *hash_entry)
         return (6);
     }
 
+    /* With ACL: flags[8] is '+' or '-' before size. */
+    if (len >= 9 && (hash_entry[8] == '+' || hash_entry[8] == '-')) {
+        return (9);
+    }
+
     /* With attrs: flags[7] is '+' or '-' before size. */
     if (len >= 8 && (hash_entry[7] == '+' || hash_entry[7] == '-')) {
         return (8);
@@ -72,6 +77,35 @@ int fim_sum_data_offset(const char *hash_entry)
 
     /* Current: 7 flag chars (includes sha256 enable flag). */
     return (7);
+}
+
+size_t fim_sum_data_len(const char *sum_and_maybe_snapshot)
+{
+    const char *nl;
+
+    if (!sum_and_maybe_snapshot) {
+        return (0);
+    }
+    nl = strchr(sum_and_maybe_snapshot, '\n');
+    if (nl) {
+        return (size_t)(nl - sum_and_maybe_snapshot);
+    }
+    return (strlen(sum_and_maybe_snapshot));
+}
+
+int fim_sum_equal(const char *a, const char *b)
+{
+    size_t alen, blen;
+
+    if (!a || !b) {
+        return (0);
+    }
+    alen = fim_sum_data_len(a);
+    blen = fim_sum_data_len(b);
+    if (alen != blen) {
+        return (0);
+    }
+    return (strncmp(a, b, alen) == 0);
 }
 
 /* Split "a:b:c:..." into up to max_fields pointers into a mutable copy. */
@@ -100,10 +134,10 @@ static int fim_split_sum(char *buf, char **fields, int max_fields)
 
 int fim_sum_has_real_change(const char *old_sum, const char *new_sum)
 {
-    char old_buf[512];
-    char new_buf[512];
-    char *of[9];
-    char *nf[9];
+    char old_buf[1024];
+    char new_buf[1024];
+    char *of[10];
+    char *nf[10];
     int oc, nc, i;
     size_t olen, nlen;
 
@@ -115,23 +149,28 @@ int fim_sum_has_real_change(const char *old_sum, const char *new_sum)
         return (0);
     }
 
-    olen = strlen(old_sum);
-    nlen = strlen(new_sum);
+    olen = fim_sum_data_len(old_sum);
+    nlen = fim_sum_data_len(new_sum);
     if (olen >= sizeof(old_buf) || nlen >= sizeof(new_buf)) {
-        /* Oversized: fall back to strict compare already failed above */
         return (1);
     }
 
-    memcpy(old_buf, old_sum, olen + 1);
-    memcpy(new_buf, new_sum, nlen + 1);
+    memcpy(old_buf, old_sum, olen);
+    old_buf[olen] = '\0';
+    memcpy(new_buf, new_sum, nlen);
+    new_buf[nlen] = '\0';
 
-    oc = fim_split_sum(old_buf, of, 9);
-    nc = fim_split_sum(new_buf, nf, 9);
+    if (strcmp(old_buf, new_buf) == 0) {
+        return (0);
+    }
+
+    oc = fim_split_sum(old_buf, of, 10);
+    nc = fim_split_sum(new_buf, nf, 10);
     if (oc < 6 || nc < 6) {
         return (1);
     }
 
-    /* size, perm, uid, gid — always meaningful when they differ */
+    /* size, perm, uid, gid */
     for (i = 0; i < 4; i++) {
         if (strcmp(of[i], nf[i]) != 0) {
             return (1);
@@ -149,16 +188,54 @@ int fim_sum_has_real_change(const char *old_sum, const char *new_sum)
         return (1);
     }
 
-    /* Optional Windows attrs (8th field, index 7) */
+    /* Optional attrs (index 7) */
     if (oc >= 8 && nc >= 8) {
         if (strcmp(of[7], nf[7]) != 0) {
             return (1);
         }
     } else if (oc >= 8 || nc >= 8) {
-        /* One side gained/lost attrs tracking */
         return (1);
     }
 
+    /* Optional ACL digest (index 8) */
+    if (oc >= 9 && nc >= 9) {
+        if (strcmp(of[8], nf[8]) != 0) {
+            return (1);
+        }
+    } else if (oc >= 9 || nc >= 9) {
+        return (1);
+    }
+
+    return (0);
+}
+
+int fim_sum_get_field(const char *sum, int index, char *buf, size_t buflen)
+{
+    char tmp[1024];
+    char *fields[10];
+    size_t nlen;
+    int n;
+    int written;
+
+    if (!sum || !buf || buflen == 0 || index < 0) {
+        return (-1);
+    }
+    buf[0] = '\0';
+    nlen = fim_sum_data_len(sum);
+    if (nlen == 0 || nlen >= sizeof(tmp)) {
+        return (-1);
+    }
+    memcpy(tmp, sum, nlen);
+    tmp[nlen] = '\0';
+    n = fim_split_sum(tmp, fields, 10);
+    if (index >= n) {
+        return (-1);
+    }
+    written = snprintf(buf, buflen, "%s", fields[index]);
+    if (written < 0 || (size_t)written >= buflen) {
+        buf[0] = '\0';
+        return (-1);
+    }
     return (0);
 }
 

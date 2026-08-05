@@ -21,6 +21,7 @@
 #include "shared.h"
 #include "syscheck.h"
 #include "fim_sum_op.h"
+#include "win_acl_op.h"
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
 #include "os_crypto/sha256/sha256_op.h"
@@ -349,6 +350,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 {
     int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0, sha256sum = 0;
     int attrs = 0;
+    int acl = 0;
     int return_error = 0;
     int checksum_failed = 0;
     int sum_off;
@@ -358,12 +360,19 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     os_sha256 sha256_sum;
 #ifdef WIN32
     DWORD win_attrs = 0;
+    char acl_digest[33];
+    fim_acl_t facl;
+    int have_facl = 0;
 #endif
 
     /* Clean sums */
     strncpy(mf_sum, "xxx", 4);
     strncpy(sf_sum, "xxx", 4);
     strncpy(sha256_sum, "xxx", 4);
+#ifdef WIN32
+    acl_digest[0] = '\0';
+    memset(&facl, 0, sizeof(facl));
+#endif
 
     /* Stat the file */
 #ifdef WIN32
@@ -434,7 +443,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     /* If it's a digit (size), then it's the old format, no sha256 */
 
 #ifdef WIN32
-    /* attrs flag is only present in the 8-char flag format */
+    /* attrs: present in 8+ flag formats; value used when flag[7] is '+'. */
     if (sum_off >= 8 && oldsum[7] == '+') {
         attrs = 1;
         win_attrs = GetFileAttributes(file_name);
@@ -444,8 +453,21 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             return (-2);
         }
     }
+
+    /* ACL: 9-flag format with flag[8] == '+' */
+    if (sum_off >= 9 && oldsum[8] == '+') {
+        acl = 1;
+        if (fim_win_acl_read(file_name, &facl) != 0 ||
+                fim_win_acl_digest(&facl, acl_digest) != 0) {
+            fim_acl_free(&facl);
+            merror("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
+            return (-2);
+        }
+        have_facl = 1;
+    }
 #else
     (void)attrs;
+    (void)acl;
     (void)sum_off;
 #endif
 
@@ -505,18 +527,17 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #endif
 
     if (checksum_failed) {
+#ifdef WIN32
+        if (have_facl) {
+            fim_acl_free(&facl);
+        }
+#endif
         return (-2);
     }
 
     newsum[0] = '\0';
-    /* Caller is expected to provide a buffer of at least 
-     * 256 + 2 bytes for `newsum` 
-     * (see create_db.c: char c_sum[OS_MAXSTR + 1];). The
-     * snprintf() below is limited to
-     * OS_MAXSTR bytes, which is safely within that size even 
-     * when including all checksum
-     * fields (size, perm, uid, gid, md5, sha1, 
-     * sha256).
+    /* Caller is expected to provide a buffer of at least
+     * OS_MAXSTR + 1 bytes for `newsum`.
      */
 
 #ifndef WIN32
@@ -529,10 +550,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              sha1sum  == 0 ? "xxx" : sf_sum,
              sha256sum == 0 ? "xxx" : sha256_sum);
 #else
-    HANDLE hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = CreateFile(file_name, GENERIC_READ,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                              NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD dwErrorCode = GetLastError();
         char alert_msg[PATH_MAX+4];
+        if (have_facl) {
+            fim_acl_free(&facl);
+        }
         alert_msg[PATH_MAX + 3] = '\0';
         snprintf(alert_msg, PATH_MAX + 4, "CreateFile=%ld %s", dwErrorCode, file_name);
         send_syscheck_msg(alert_msg);
@@ -545,10 +571,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     if (dwRtnCode != ERROR_SUCCESS) {
         DWORD dwErrorCode = GetLastError();
         CloseHandle(hFile);
-        char alert_msg[PATH_MAX+4];
-        alert_msg[PATH_MAX + 3] = '\0';
-        snprintf(alert_msg, PATH_MAX + 4, "GetSecurityInfo=%ld %s", dwErrorCode, file_name);
-        send_syscheck_msg(alert_msg);
+        if (have_facl) {
+            fim_acl_free(&facl);
+        }
+        {
+            char alert_msg[PATH_MAX+4];
+            alert_msg[PATH_MAX + 3] = '\0';
+            snprintf(alert_msg, PATH_MAX + 4, "GetSecurityInfo=%ld %s", dwErrorCode, file_name);
+            send_syscheck_msg(alert_msg);
+        }
         return -1;
     }
 
@@ -560,13 +591,42 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
       memcpy( st_uid, szSID, strlen(szSID) );
     }
     LocalFree(szSID);
+    if (pSD) {
+        LocalFree(pSD);
+    }
     CloseHandle(hFile);
 
-    if (attrs) {
+    if (acl) {
+        /* attrs slot always present when ACL is enabled (0 if unchecked). */
+        snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s:%lu:%s",
+                 size == 0 ? 0 : (long)statbuf.st_size,
+                 perm == 0 ? 0 : (int)statbuf.st_mode,
+                 owner == 0 ? "0" : (st_uid ? st_uid : "0"),
+                 group == 0 ? 0 : (int)statbuf.st_gid,
+                 md5sum   == 0 ? "xxx" : mf_sum,
+                 sha1sum  == 0 ? "xxx" : sf_sum,
+                 sha256sum == 0 ? "xxx" : sha256_sum,
+                 attrs ? (unsigned long)win_attrs : 0UL,
+                 acl_digest);
+        /* Append SID-stable snapshot for local cache / ACE diffs. */
+        if (have_facl) {
+            size_t used = strlen(newsum);
+            if (used + 2 < (size_t)OS_MAXSTR) {
+                newsum[used] = '\n';
+                newsum[used + 1] = '\0';
+                if (fim_win_acl_snapshot(&facl, newsum + used + 1,
+                                         (size_t)OS_MAXSTR - used - 1) != 0) {
+                    newsum[used] = '\0';
+                }
+            }
+            fim_acl_free(&facl);
+            have_facl = 0;
+        }
+    } else if (attrs) {
         snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s:%lu",
                  size == 0 ? 0 : (long)statbuf.st_size,
                  perm == 0 ? 0 : (int)statbuf.st_mode,
-                 owner == 0 ? "0" : st_uid,
+                 owner == 0 ? "0" : (st_uid ? st_uid : "0"),
                  group == 0 ? 0 : (int)statbuf.st_gid,
                  md5sum   == 0 ? "xxx" : mf_sum,
                  sha1sum  == 0 ? "xxx" : sf_sum,
@@ -576,13 +636,16 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s",
                  size == 0 ? 0 : (long)statbuf.st_size,
                  perm == 0 ? 0 : (int)statbuf.st_mode,
-                 owner == 0 ? "0" : st_uid,
+                 owner == 0 ? "0" : (st_uid ? st_uid : "0"),
                  group == 0 ? 0 : (int)statbuf.st_gid,
                  md5sum   == 0 ? "xxx" : mf_sum,
                  sha1sum  == 0 ? "xxx" : sf_sum,
                  sha256sum == 0 ? "xxx" : sha256_sum);
     }
 
+    if (have_facl) {
+        fim_acl_free(&facl);
+    }
     free(st_uid);
 #endif
 

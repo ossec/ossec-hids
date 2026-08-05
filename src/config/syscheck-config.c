@@ -166,6 +166,7 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
     const char *xml_check_group = "check_group";
     const char *xml_check_perm = "check_perm";
     const char *xml_check_attrs = "check_attrs";
+    const char *xml_check_acl = "check_acl";
     const char *xml_real_time = "realtime";
     const char *xml_report_changes = "report_changes";
     const char *xml_restrict = "restrict";
@@ -385,6 +386,17 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
                     opts |= CHECK_ATTRS;
                 } else if (strcmp(*values, "no") == 0) {
                     opts &= ~CHECK_ATTRS;
+                } else {
+                    merror(SK_INV_OPT, __local_name, *values, *attrs);
+                    ret = 0;
+                    goto out_free;
+                }
+            } else if (strcmp(*attrs, xml_check_acl) == 0) {
+                /* Windows NTFS DACL/ACE matrix. Ignored on non-Windows. */
+                if (strcmp(*values, "yes") == 0) {
+                    opts |= CHECK_ACL;
+                } else if (strcmp(*values, "no") == 0) {
+                    opts &= ~CHECK_ACL;
                 } else {
                     merror(SK_INV_OPT, __local_name, *values, *attrs);
                     ret = 0;
@@ -882,6 +894,7 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         CHECK_SEECHANGES,
         CHECK_NORECURSE,
         CHECK_ATTRS,
+        CHECK_ACL,
         0
         };
     char *check_strings[] = {
@@ -896,6 +909,7 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
         "report_changes",
         "no_recurse",
         "attrs",
+        "acl",
 	NULL
 	};
 

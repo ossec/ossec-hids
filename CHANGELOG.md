@@ -28,6 +28,7 @@ Work toward the next minor release after 4.2.0.
 
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
 - @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
+- @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
 - @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
