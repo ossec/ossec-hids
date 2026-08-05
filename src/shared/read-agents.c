@@ -779,15 +779,17 @@ int syscheck_maint_read_path(const char *path, syscheck_maint_info *info)
 {
     FILE *fp;
     char line[256];
+    struct stat st;
 
     memset(info, 0, sizeof(*info));
 
-    if (access(path, F_OK) != 0) {
+    if (stat(path, &st) != 0) {
         return (0);
     }
 
     info->enabled = 1;
-    info->enabled_at = time(NULL); /* legacy markers lack metadata */
+    /* Legacy markers (#!maint only) have no enabled_at; use mtime. */
+    info->enabled_at = st.st_mtime;
 
     fp = fopen(path, "r");
     if (!fp) {
@@ -907,9 +909,7 @@ int syscheck_maint_set_pending_end(const char *sk_name, const char *sk_ip,
 
     syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
     if (!syscheck_maint_read_path(path, &info)) {
-        memset(&info, 0, sizeof(info));
-        info.enabled = 1;
-        info.enabled_at = time(NULL);
+        return (0);
     }
     info.pending_end = pending ? 1 : 0;
     return syscheck_maint_write_path(path, &info);

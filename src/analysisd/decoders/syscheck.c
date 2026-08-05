@@ -267,8 +267,9 @@ static int DB_QuietUpdate(const char *f_name, const char *c_sum, Eventinfo *lf,
     }
     if (db_entry) {
         db_entry->pos = new_pos;
-        memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
-        db_entry->prefix_sum[OS_MAXSTR] = '\0';
+        strncpy(db_entry->prefix_sum, new_prefix,
+                sizeof(db_entry->prefix_sum) - 1);
+        db_entry->prefix_sum[sizeof(db_entry->prefix_sum) - 1] = '\0';
     }
     if (log_maint && lf->location) {
         syscheck_maint_log_accept(lf->location, "modify", f_name);
