@@ -28,6 +28,8 @@ int main(void)
                fim_sum_data_offset("++++++-0:0:0:0:aaa:bbb:ccc"), 7);
     expect_int("offset legacy format",
                fim_sum_data_offset("++++++0:0:0:0:aaa:bbb"), 6);
+    expect_int("offset attrs format",
+               fim_sum_data_offset("++++++++0:0:0:0:aaa:bbb:ccc:32"), 8);
 
     expect_int("equal sums",
                fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx",
@@ -47,6 +49,29 @@ int main(void)
     expect_int("size change",
                fim_sum_has_real_change("10:0:0:0:aaa:bbb:xxx",
                                        "11:0:0:0:aaa:bbb:xxx"), 1);
+    expect_int("attrs change",
+               fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx:32",
+                                       "0:0:0:0:aaa:bbb:xxx:34"), 1);
+    expect_int("attrs equal",
+               fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx:32",
+                                       "0:0:0:0:aaa:bbb:xxx:32"), 0);
+    expect_int("attrs added",
+               fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx",
+                                       "0:0:0:0:aaa:bbb:xxx:32"), 1);
+
+    {
+        char abuf[128];
+        fim_win_attrs_str(0x22, abuf, sizeof(abuf)); /* HIDDEN|ARCHIVE */
+        if (strcmp(abuf, "HIDDEN, ARCHIVE") != 0) {
+            printf("FAIL attrs str: got '%s'\n", abuf);
+            failures++;
+        }
+        fim_win_attrs_str(0, abuf, sizeof(abuf));
+        if (strcmp(abuf, "NONE") != 0) {
+            printf("FAIL attrs none: got '%s'\n", abuf);
+            failures++;
+        }
+    }
 
     if (failures) {
         printf("FAILED: %d assertion(s)\n", failures);

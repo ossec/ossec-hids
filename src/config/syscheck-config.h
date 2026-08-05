@@ -26,6 +26,7 @@
 #define CHECK_SHA256SUM     0000400
 #define CHECK_GENERIC       0001000
 #define CHECK_NORECURSE     0002000
+#define CHECK_ATTRS         0004000  /* Windows file attributes (Hidden, etc.) */
 
 
 #include <stdio.h>

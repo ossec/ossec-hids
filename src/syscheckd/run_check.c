@@ -20,6 +20,7 @@
 
 #include "shared.h"
 #include "syscheck.h"
+#include "fim_sum_op.h"
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
 #include "os_crypto/sha256/sha256_op.h"
@@ -347,12 +348,17 @@ void start_daemon()
 int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 {
     int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0, sha256sum = 0;
+    int attrs = 0;
     int return_error = 0;
     int checksum_failed = 0;
+    int sum_off;
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
     os_sha256 sha256_sum;
+#ifdef WIN32
+    DWORD win_attrs = 0;
+#endif
 
     /* Clean sums */
     strncpy(mf_sum, "xxx", 4);
@@ -384,6 +390,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     }
 
     /* Get the old sum values */
+    sum_off = fim_sum_data_offset(oldsum);
 
     /* size */
     if (oldsum[0] == '+') {
@@ -425,6 +432,22 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         sha256sum = 0;
     }
     /* If it's a digit (size), then it's the old format, no sha256 */
+
+#ifdef WIN32
+    /* attrs flag is only present in the 8-char flag format */
+    if (sum_off >= 8 && oldsum[7] == '+') {
+        attrs = 1;
+        win_attrs = GetFileAttributes(file_name);
+        if (win_attrs == INVALID_FILE_ATTRIBUTES) {
+            merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                   ARGV0, file_name, (unsigned long)GetLastError());
+            return (-2);
+        }
+    }
+#else
+    (void)attrs;
+    (void)sum_off;
+#endif
 
     /* Generate new checksum */
     if (S_ISREG(statbuf.st_mode))
@@ -539,14 +562,26 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     LocalFree(szSID);
     CloseHandle(hFile);
 
-    snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s",
-             size == 0 ? 0 : (long)statbuf.st_size,
-             perm == 0 ? 0 : (int)statbuf.st_mode,
-             owner == 0 ? "0" : st_uid,
-             group == 0 ? 0 : (int)statbuf.st_gid,
-             md5sum   == 0 ? "xxx" : mf_sum,
-             sha1sum  == 0 ? "xxx" : sf_sum,
-             sha256sum == 0 ? "xxx" : sha256_sum);
+    if (attrs) {
+        snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s:%lu",
+                 size == 0 ? 0 : (long)statbuf.st_size,
+                 perm == 0 ? 0 : (int)statbuf.st_mode,
+                 owner == 0 ? "0" : st_uid,
+                 group == 0 ? 0 : (int)statbuf.st_gid,
+                 md5sum   == 0 ? "xxx" : mf_sum,
+                 sha1sum  == 0 ? "xxx" : sf_sum,
+                 sha256sum == 0 ? "xxx" : sha256_sum,
+                 (unsigned long)win_attrs);
+    } else {
+        snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s",
+                 size == 0 ? 0 : (long)statbuf.st_size,
+                 perm == 0 ? 0 : (int)statbuf.st_mode,
+                 owner == 0 ? "0" : st_uid,
+                 group == 0 ? 0 : (int)statbuf.st_gid,
+                 md5sum   == 0 ? "xxx" : mf_sum,
+                 sha1sum  == 0 ? "xxx" : sf_sum,
+                 sha256sum == 0 ? "xxx" : sha256_sum);
+    }
 
     free(st_uid);
 #endif

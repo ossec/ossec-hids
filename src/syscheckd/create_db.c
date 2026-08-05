@@ -9,6 +9,7 @@
 
 #include "shared.h"
 #include "syscheck.h"
+#include "fim_sum_op.h"
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
 #include "os_crypto/sha256/sha256_op.h"
@@ -211,6 +212,53 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
 #endif
 
+#ifdef WIN32
+            {
+                DWORD win_attrs = 0;
+
+                if (opts & CHECK_ATTRS) {
+                    win_attrs = GetFileAttributes(file_name);
+                    if (win_attrs == INVALID_FILE_ATTRIBUTES) {
+                        merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                               ARGV0, file_name, (unsigned long)GetLastError());
+                        return (0);
+                    }
+                    snprintf(hash_entry, 916,
+                             "%c%c%c%c%c%c%c+%ld:%d:%d:%d:%s:%s:%s:%lu",
+                             opts & CHECK_SIZE ? '+' : '-',
+                             opts & CHECK_PERM ? '+' : '-',
+                             opts & CHECK_OWNER ? '+' : '-',
+                             opts & CHECK_GROUP ? '+' : '-',
+                             opts & CHECK_MD5SUM ? '+' : '-',
+                             sha1s,
+                             opts & CHECK_SHA256SUM ? '+' : '-',
+                             opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
+                             opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
+                             opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
+                             opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+                             opts & CHECK_MD5SUM ? mf_sum : "xxx",
+                             opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                             opts & CHECK_SHA256SUM ? sha256_sum : "xxx",
+                             (unsigned long)win_attrs);
+                } else {
+                    snprintf(hash_entry, 916, "%c%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s:%s",
+                             opts & CHECK_SIZE ? '+' : '-',
+                             opts & CHECK_PERM ? '+' : '-',
+                             opts & CHECK_OWNER ? '+' : '-',
+                             opts & CHECK_GROUP ? '+' : '-',
+                             opts & CHECK_MD5SUM ? '+' : '-',
+                             sha1s,
+                             opts & CHECK_SHA256SUM ? '+' : '-',
+                             opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
+                             opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
+                             opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
+                             opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+                             opts & CHECK_MD5SUM ? mf_sum : "xxx",
+                             opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                             opts & CHECK_SHA256SUM ? sha256_sum : "xxx");
+                }
+            }
+#else
             snprintf(hash_entry, 916, "%c%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s:%s",
                      opts & CHECK_SIZE ? '+' : '-',
                      opts & CHECK_PERM ? '+' : '-',
@@ -226,6 +274,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                      opts & CHECK_MD5SUM ? mf_sum : "xxx",
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
                      opts & CHECK_SHA256SUM ? sha256_sum : "xxx");
+#endif
 
             /* Send the new checksum to the analysis server */
             alert_msg[916] = '\0';
@@ -274,16 +323,36 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
             LocalFree(szSID);
             CloseHandle(hFile);
-    
-            snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s:%s %s",
-                     opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
-                     opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
-                     (opts & CHECK_OWNER) ? st_uid : "0",
-                     opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
-                     opts & CHECK_MD5SUM ? mf_sum : "xxx",
-                     opts & CHECK_SHA1SUM ? sf_sum : "xxx",
-                     opts & CHECK_SHA256SUM ? sha256_sum : "xxx",
-                     file_name);
+
+            if (opts & CHECK_ATTRS) {
+                DWORD win_attrs = GetFileAttributes(file_name);
+                if (win_attrs == INVALID_FILE_ATTRIBUTES) {
+                    free(st_uid);
+                    merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                           ARGV0, file_name, (unsigned long)GetLastError());
+                    return (0);
+                }
+                snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s:%s:%lu %s",
+                         opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
+                         opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
+                         (opts & CHECK_OWNER) ? st_uid : "0",
+                         opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+                         opts & CHECK_MD5SUM ? mf_sum : "xxx",
+                         opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                         opts & CHECK_SHA256SUM ? sha256_sum : "xxx",
+                         (unsigned long)win_attrs,
+                         file_name);
+            } else {
+                snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s:%s %s",
+                         opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
+                         opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
+                         (opts & CHECK_OWNER) ? st_uid : "0",
+                         opts & CHECK_GROUP ? (int)statbuf.st_gid : 0,
+                         opts & CHECK_MD5SUM ? mf_sum : "xxx",
+                         opts & CHECK_SHA1SUM ? sf_sum : "xxx",
+                         opts & CHECK_SHA256SUM ? sha256_sum : "xxx",
+                         file_name);
+            }
             free(st_uid);
 #endif
             if (send_syscheck_msg(alert_msg) == 0) {
@@ -302,6 +371,25 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             c_sum[OS_MAXSTR] = '\0';
             alert_msg[0] = '\0';
             alert_msg[OS_MAXSTR] = '\0';
+
+#ifdef WIN32
+            /* Upgrade local cache to 8-flag format when check_attrs was enabled. */
+            if ((opts & CHECK_ATTRS) && fim_sum_data_offset(buf) == 7) {
+                char *upgraded;
+                size_t blen = strlen(buf);
+
+                os_calloc(blen + 2, sizeof(char), upgraded);
+                memcpy(upgraded, buf, 7);
+                upgraded[7] = '+';
+                memcpy(upgraded + 8, buf + 7, blen - 7 + 1);
+                if (OSHash_Update(syscheck.fp, file_name, upgraded) == 1) {
+                    free(buf);
+                    buf = upgraded;
+                } else {
+                    free(upgraded);
+                }
+            }
+#endif
 
             /* If it returns < 0, we have already alerted (missing file) or
              * skipped (checksum read failure). */
