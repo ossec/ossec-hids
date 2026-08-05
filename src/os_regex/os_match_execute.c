@@ -43,11 +43,8 @@ int OSMatch_Execute_pcre2_match(const char *str, size_t str_len, OSMatch * reg)
         }
     }
 
-#ifdef USE_PCRE2_JIT
-    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, match_data, NULL);
-#else
+    /* Prefer pcre2_match: uses JIT when available, interpreter otherwise (#2040). */
     rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, match_data, NULL);
-#endif
 
     return (rc >= 0);
 }
