@@ -26,6 +26,7 @@ Work toward the next minor release after 4.2.0.
 
 **General**
 
+- @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
 - @atomicturtle - Reject dangerous/ambiguous syscheck_control flag combinations such as ``-r -u`` (#462)
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
