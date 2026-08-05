@@ -65,12 +65,14 @@ static __thread _sdb sdb;
 static char sk_agent_cp[MAX_AGENTS + 1][1];
 static char sk_agent_maint[MAX_AGENTS + 1][1];
 static time_t sk_agent_maint_checked[MAX_AGENTS + 1];
+static time_t sk_agent_maint_warn_last[MAX_AGENTS + 1];
 static char *sk_agent_ips[MAX_AGENTS + 1];
 static FILE *sk_agent_fps[MAX_AGENTS + 1];
 static OSHash *sk_agent_index[MAX_AGENTS + 1];
 #ifndef WIN32
 static pthread_mutex_t sk_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t sk_agent_mutex[MAX_AGENTS + 1];
+static pthread_mutex_t sk_maint_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int sk_shared_ready = 0;
 #endif
 
@@ -149,6 +151,7 @@ void SyscheckInit()
             sk_agent_cp[i][0] = '0';
             sk_agent_maint[i][0] = '?';
             sk_agent_maint_checked[i] = 0;
+            sk_agent_maint_warn_last[i] = 0;
             os_mutex_init(&sk_agent_mutex[i], NULL);
         }
         sk_shared_ready = 1;
@@ -162,6 +165,7 @@ void SyscheckInit()
         sk_agent_cp[i][0] = '0';
         sk_agent_maint[i][0] = '?';
         sk_agent_maint_checked[i] = 0;
+        sk_agent_maint_warn_last[i] = 0;
     }
 #endif
 
@@ -172,36 +176,64 @@ void SyscheckInit()
 /* Check if the db is completed for that specific agent */
 #define DB_IsCompleted(x) (sk_agent_cp[x][0] == '1')?1:0
 
-/* FIM maintenance mode: re-check marker every few seconds, log transitions. */
+/* FIM maintenance: cache "on" briefly; never trust cached "off" (enable edge). */
 static int DB_IsMaintenance(int agent_id, const char *location)
 {
     time_t now = time(NULL);
+    syscheck_maint_info info;
     int on;
+    char prev;
 
-    if (sk_agent_maint_checked[agent_id] != 0 &&
-            (now - sk_agent_maint_checked[agent_id]) < 2 &&
-            sk_agent_maint[agent_id][0] != '?') {
-        return (sk_agent_maint[agent_id][0] == '1') ? 1 : 0;
+#ifndef WIN32
+    os_mutex_lock(&sk_maint_mutex);
+#endif
+
+    prev = sk_agent_maint[agent_id][0];
+
+    /* Only skip disk I/O when we recently confirmed maintenance is ON. */
+    if (prev == '1' &&
+            sk_agent_maint_checked[agent_id] != 0 &&
+            (now - sk_agent_maint_checked[agent_id]) < 2) {
+#ifndef WIN32
+        os_mutex_unlock(&sk_maint_mutex);
+#endif
+        return 1;
     }
 
-    on = syscheck_maint_is_enabled_location(location);
-    if (sk_agent_maint[agent_id][0] == '?' ||
-            (on && sk_agent_maint[agent_id][0] != '1') ||
-            (!on && sk_agent_maint[agent_id][0] == '1')) {
-        if (on || sk_agent_maint[agent_id][0] == '1') {
+    on = syscheck_maint_get_location(location, &info) ? 1 : 0;
+
+    if (prev == '?' || (on && prev != '1') || (!on && prev == '1')) {
+        if (on || prev == '1') {
             merror("%s: INFO: Syscheck maintenance mode %s for '%s'.",
                    ARGV0, on ? "enabled" : "disabled", location);
         }
     }
 
+    if (on && info.enabled_at > 0 &&
+            (now - info.enabled_at) >= SYSCHECK_MAINT_WARN_AFTER) {
+        if (sk_agent_maint_warn_last[agent_id] == 0 ||
+                (now - sk_agent_maint_warn_last[agent_id]) >=
+                SYSCHECK_MAINT_WARN_INTERVAL) {
+            merror("%s: WARN: Syscheck maintenance mode still enabled for '%s' "
+                   "for %ld hours; FIM changes are silently accepted.",
+                   ARGV0, location,
+                   (long)((now - info.enabled_at) / 3600));
+            sk_agent_maint_warn_last[agent_id] = now;
+        }
+    }
+
     sk_agent_maint[agent_id][0] = on ? '1' : '0';
     sk_agent_maint_checked[agent_id] = now;
+
+#ifndef WIN32
+    os_mutex_unlock(&sk_maint_mutex);
+#endif
     return on;
 }
 
 /* Quietly comment the old DB line and append the new checksum (new baseline). */
 static int DB_QuietUpdate(const char *f_name, const char *c_sum, Eventinfo *lf,
-                          FILE *fp, sk_db_entry *db_entry)
+                          FILE *fp, sk_db_entry *db_entry, int log_maint)
 {
     char new_prefix[OS_MAXSTR + 1];
     fpos_t new_pos;
@@ -237,6 +269,12 @@ static int DB_QuietUpdate(const char *f_name, const char *c_sum, Eventinfo *lf,
         db_entry->pos = new_pos;
         memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
         db_entry->prefix_sum[OS_MAXSTR] = '\0';
+    }
+    if (log_maint && lf->location) {
+        syscheck_maint_log_accept(lf->location, "modify", f_name);
+        syscheck_maint_bump_silent_location(lf->location);
+        debug1("%s: Maintenance accept modify '%s' from '%s'.",
+               ARGV0, f_name, lf->location);
     }
     lf->data = NULL;
     return (0);
@@ -530,12 +568,12 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
     /* Placeholder-only hash transitions (xxx <-> real) are not integrity
      * events; update the DB quietly so future scans stay clean (#1590/#1704). */
     if (!fim_sum_has_real_change(saved_sum, c_sum)) {
-        return DB_QuietUpdate(f_name, c_sum, lf, fp, db_entry);
+        return DB_QuietUpdate(f_name, c_sum, lf, fp, db_entry, 0);
     }
 
     /* During FIM maintenance, accept the new checksum as baseline with no alert. */
     if (maintenance) {
-        return DB_QuietUpdate(f_name, c_sum, lf, fp, db_entry);
+        return DB_QuietUpdate(f_name, c_sum, lf, fp, db_entry, 1);
     }
 
 
@@ -977,10 +1015,20 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
     fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name);
     fflush(fp);
 
+    if (maintenance) {
+        syscheck_maint_log_accept(lf->location, "new", f_name);
+        syscheck_maint_bump_silent_location(lf->location);
+        debug1("%s: Maintenance accept new '%s' from '%s'.",
+               ARGV0, f_name, lf->location);
+        lf->data = NULL;
+        result = 0;
+        goto out;
+    }
+
     /* Alert if configured to notify on new files (skip during maintenance). */
     /* TODO: debugging this - Scott */
     /* if ((Config.syscheck_alert_new == 1) && (DB_IsCompleted(agent_id))) { */
-    if ((Config.syscheck_alert_new == 1) && !maintenance)  {
+    if (Config.syscheck_alert_new == 1)  {
         sdb.syscheck_dec->id = sdb.idn;
 
         char *newfilec_sum = NULL;
@@ -1121,7 +1169,15 @@ int DecodeSyscheck(Eventinfo *lf)
          * a database completed message
          */
         if (strcmp(lf->log, HC_SK_DB_COMPLETED) == 0) {
+            syscheck_maint_info minfo;
+
             DB_SetCompleted(lf);
+            if (syscheck_maint_get_location(lf->location, &minfo) &&
+                    minfo.pending_end) {
+                syscheck_maint_clear_location(lf->location);
+                merror("%s: INFO: Syscheck maintenance mode ended for '%s' "
+                       "after baseline scan.", ARGV0, lf->location);
+            }
             return (0);
         }
 

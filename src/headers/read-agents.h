@@ -10,6 +10,8 @@
 #ifndef __CRAGENT_H
 #define __CRAGENT_H
 
+#include <stddef.h>
+#include <time.h>
 #include <external/cJSON/cJSON.h>
 
 
@@ -40,16 +42,41 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete) __a
 /* FIM maintenance mode markers (manager-side, per agent).
  * While enabled, analysisd updates the syscheck DB without alerting.
  */
+typedef struct _syscheck_maint_info {
+    int enabled;
+    time_t enabled_at;
+    int pending_end;
+    unsigned long silent_updates;
+} syscheck_maint_info;
+
 void syscheck_maint_path(const char *sk_name, const char *sk_ip,
                          char *buf, size_t buflen) __attribute__((nonnull(3)));
 void syscheck_maint_path_from_location(const char *location,
                                        char *buf, size_t buflen)
     __attribute__((nonnull(1, 2)));
+int syscheck_maint_read_path(const char *path, syscheck_maint_info *info)
+    __attribute__((nonnull));
+int syscheck_maint_write_path(const char *path, const syscheck_maint_info *info)
+    __attribute__((nonnull));
+int syscheck_maint_get(const char *sk_name, const char *sk_ip,
+                       syscheck_maint_info *info) __attribute__((nonnull(3)));
+int syscheck_maint_get_location(const char *location, syscheck_maint_info *info)
+    __attribute__((nonnull));
 int syscheck_maint_is_enabled(const char *sk_name, const char *sk_ip);
 int syscheck_maint_is_enabled_location(const char *location)
     __attribute__((nonnull(1)));
 int syscheck_maint_enable(const char *sk_name, const char *sk_ip);
 int syscheck_maint_disable(const char *sk_name, const char *sk_ip);
+int syscheck_maint_set_pending_end(const char *sk_name, const char *sk_ip,
+                                   int pending);
+int syscheck_maint_clear_location(const char *location) __attribute__((nonnull));
+int syscheck_maint_bump_silent_location(const char *location)
+    __attribute__((nonnull));
+void syscheck_maint_log_accept(const char *location, const char *kind,
+                               const char *path) __attribute__((nonnull));
+/* Returns "" / "Maint" / "Maint(pending-end)" for list output. */
+const char *syscheck_maint_list_tag(const syscheck_maint_info *info)
+    __attribute__((nonnull));
 
 /* Delete rootcheck db */
 int delete_rootcheck(const char *sk_name, const char *sk_ip, int full_delete) __attribute__((nonnull));

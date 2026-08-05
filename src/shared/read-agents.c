@@ -775,37 +775,115 @@ void syscheck_maint_path_from_location(const char *location,
     snprintf(buf, buflen, "%s/.%s.maint", SYSCHECK_DIR, base);
 }
 
-int syscheck_maint_is_enabled(const char *sk_name, const char *sk_ip)
+int syscheck_maint_read_path(const char *path, syscheck_maint_info *info)
+{
+    FILE *fp;
+    char line[256];
+
+    memset(info, 0, sizeof(*info));
+
+    if (access(path, F_OK) != 0) {
+        return (0);
+    }
+
+    info->enabled = 1;
+    info->enabled_at = time(NULL); /* legacy markers lack metadata */
+
+    fp = fopen(path, "r");
+    if (!fp) {
+        return (1);
+    }
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        char *nl = strchr(line, '\n');
+        if (nl) {
+            *nl = '\0';
+        }
+        if (strncmp(line, "enabled_at=", 11) == 0) {
+            info->enabled_at = (time_t)strtoul(line + 11, NULL, 10);
+        } else if (strncmp(line, "pending_end=", 12) == 0) {
+            info->pending_end = atoi(line + 12) ? 1 : 0;
+        } else if (strncmp(line, "silent_updates=", 15) == 0) {
+            info->silent_updates = strtoul(line + 15, NULL, 10);
+        }
+    }
+
+    fclose(fp);
+    return (1);
+}
+
+int syscheck_maint_write_path(const char *path, const syscheck_maint_info *info)
+{
+    FILE *fp;
+
+    fp = fopen(path, "w");
+    if (!fp) {
+        merror("%s: ERROR: Cannot write %s: %s", __local_name, path,
+               strerror(errno));
+        return (0);
+    }
+
+    fprintf(fp, "#!maint\n");
+    fprintf(fp, "enabled_at=%ld\n", (long)info->enabled_at);
+    fprintf(fp, "pending_end=%d\n", info->pending_end ? 1 : 0);
+    fprintf(fp, "silent_updates=%lu\n", info->silent_updates);
+    fclose(fp);
+    return (1);
+}
+
+int syscheck_maint_get(const char *sk_name, const char *sk_ip,
+                       syscheck_maint_info *info)
 {
     char path[OS_FLSIZE + 1];
 
     syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
-    return (access(path, F_OK) == 0) ? 1 : 0;
+    return syscheck_maint_read_path(path, info);
 }
 
-int syscheck_maint_is_enabled_location(const char *location)
+int syscheck_maint_get_location(const char *location, syscheck_maint_info *info)
 {
     char path[OS_FLSIZE + 1];
 
     syscheck_maint_path_from_location(location, path, sizeof(path));
-    return (access(path, F_OK) == 0) ? 1 : 0;
+    return syscheck_maint_read_path(path, info);
+}
+
+int syscheck_maint_is_enabled(const char *sk_name, const char *sk_ip)
+{
+    syscheck_maint_info info;
+
+    return syscheck_maint_get(sk_name, sk_ip, &info) ? 1 : 0;
+}
+
+int syscheck_maint_is_enabled_location(const char *location)
+{
+    syscheck_maint_info info;
+
+    return syscheck_maint_get_location(location, &info) ? 1 : 0;
 }
 
 int syscheck_maint_enable(const char *sk_name, const char *sk_ip)
 {
-    FILE *fp;
     char path[OS_FLSIZE + 1];
+    syscheck_maint_info info;
 
     syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
-    fp = fopen(path, "w");
-    if (!fp) {
-        merror("%s: ERROR: Cannot create %s: %s", __local_name, path,
-               strerror(errno));
-        return (0);
+    memset(&info, 0, sizeof(info));
+    info.enabled = 1;
+    info.enabled_at = time(NULL);
+    info.pending_end = 0;
+    info.silent_updates = 0;
+    /* Preserve silent_updates if re-enabling an existing marker. */
+    {
+        syscheck_maint_info old;
+        if (syscheck_maint_read_path(path, &old)) {
+            info.silent_updates = old.silent_updates;
+            if (old.enabled_at > 0) {
+                info.enabled_at = old.enabled_at;
+            }
+        }
     }
-    fprintf(fp, "#!maint\n");
-    fclose(fp);
-    return (1);
+    return syscheck_maint_write_path(path, &info);
 }
 
 int syscheck_maint_disable(const char *sk_name, const char *sk_ip)
@@ -819,6 +897,84 @@ int syscheck_maint_disable(const char *sk_name, const char *sk_ip)
         return (0);
     }
     return (1);
+}
+
+int syscheck_maint_set_pending_end(const char *sk_name, const char *sk_ip,
+                                   int pending)
+{
+    char path[OS_FLSIZE + 1];
+    syscheck_maint_info info;
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    if (!syscheck_maint_read_path(path, &info)) {
+        memset(&info, 0, sizeof(info));
+        info.enabled = 1;
+        info.enabled_at = time(NULL);
+    }
+    info.pending_end = pending ? 1 : 0;
+    return syscheck_maint_write_path(path, &info);
+}
+
+int syscheck_maint_clear_location(const char *location)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path_from_location(location, path, sizeof(path));
+    if (unlink(path) != 0 && errno != ENOENT) {
+        merror("%s: ERROR: Cannot delete %s: %s", __local_name, path,
+               strerror(errno));
+        return (0);
+    }
+    return (1);
+}
+
+int syscheck_maint_bump_silent_location(const char *location)
+{
+    char path[OS_FLSIZE + 1];
+    syscheck_maint_info info;
+
+    syscheck_maint_path_from_location(location, path, sizeof(path));
+    if (!syscheck_maint_read_path(path, &info)) {
+        return (0);
+    }
+    info.silent_updates++;
+    return syscheck_maint_write_path(path, &info);
+}
+
+void syscheck_maint_log_accept(const char *location, const char *kind,
+                               const char *fpath)
+{
+    FILE *fp;
+    time_t now = time(NULL);
+    char tbuf[64];
+    struct tm *tm_s;
+
+    tm_s = localtime(&now);
+    if (tm_s) {
+        strftime(tbuf, sizeof(tbuf), "%F %T", tm_s);
+    } else {
+        snprintf(tbuf, sizeof(tbuf), "%ld", (long)now);
+    }
+
+    fp = fopen(FIM_MAINT_LOG, "a");
+    if (!fp) {
+        debug1("%s: Unable to open %s: %s", __local_name, FIM_MAINT_LOG,
+               strerror(errno));
+        return;
+    }
+    fprintf(fp, "%s %s %s %s\n", tbuf, location, kind, fpath);
+    fclose(fp);
+}
+
+const char *syscheck_maint_list_tag(const syscheck_maint_info *info)
+{
+    if (!info->enabled) {
+        return "";
+    }
+    if (info->pending_end) {
+        return "Maint(pending-end)";
+    }
+    return "Maint";
 }
 
 /* Delete syscheck db */

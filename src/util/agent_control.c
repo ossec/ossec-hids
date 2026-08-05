@@ -28,7 +28,8 @@ static void helpmsg(int status)
     printf("\t-R <id>     Restarts agent.\n");
     printf("\t-r -a       Runs the integrity/rootkit checking on all agents now.\n");
     printf("\t-r          Runs the integrity/rootkit checking on one agent now.\n\n");
-    printf("\t-M <action> FIM maintenance mode: enable|disable|status (use with -u).\n");
+    printf("\t-M <action> FIM maintenance: enable|disable|status|end (use with -u).\n");
+    printf("\t            Prefer 'end' after patching (scan then clear). 'disable' is immediate.\n");
     printf("\t-b <ip>     Blocks the specified ip address.\n");
     printf("\t-f <ar>     Used with -b, specifies which response to run.\n");
     printf("\t-L          List available active responses.\n");
@@ -259,13 +260,25 @@ int main(int argc, char **argv)
         cJSON *agents = NULL;
         
         if (!csv_output && !json_output) {
+            syscheck_maint_info mi000;
+            const char *mtag = "";
+
+            if (syscheck_maint_get(NULL, NULL, &mi000)) {
+                mtag = syscheck_maint_list_tag(&mi000);
+            }
             printf("\nOSSEC HIDS %s. List of available agents:",
                    ARGV0);
-            printf("\n   ID: 000, Name: %s (server), IP: 127.0.0.1, Active/Local\n",
-                   shost);
+            if (mtag[0]) {
+                printf("\n   ID: 000, Name: %s (server), IP: 127.0.0.1, Active/Local, %s\n",
+                       shost, mtag);
+            } else {
+                printf("\n   ID: 000, Name: %s (server), IP: 127.0.0.1, Active/Local\n",
+                       shost);
+            }
         } else if(json_output){
                 cJSON *first = cJSON_CreateObject();
                 agents = cJSON_CreateArray();
+                syscheck_maint_info mi000;
                 
                 if (!(first && root && agents))
                     exit(1);
@@ -277,9 +290,18 @@ int main(int argc, char **argv)
                 cJSON_AddStringToObject(first, "name", shost);
                 cJSON_AddStringToObject(first, "ip", "127.0.0.1");
                 cJSON_AddStringToObject(first, "status", "Active");
+                if (syscheck_maint_get(NULL, NULL, &mi000)) {
+                    cJSON_AddStringToObject(first, "fimMaintenance",
+                                            syscheck_maint_list_tag(&mi000));
+                }
                 cJSON_AddItemToArray(agents, first);
         } else {
-            printf("000,%s (server),127.0.0.1,Active/Local,\n", shost);
+            syscheck_maint_info mi000;
+            const char *mtag = "";
+            if (syscheck_maint_get(NULL, NULL, &mi000)) {
+                mtag = syscheck_maint_list_tag(&mi000);
+            }
+            printf("000,%s (server),127.0.0.1,Active/Local,%s\n", shost, mtag);
         }
         
         print_agents(1, active_only, csv_output, agents);
@@ -426,14 +448,34 @@ int main(int argc, char **argv)
                 printf("   Rootcheck last started at: %s\n", agt_info->rootcheck_time);
             }
             if (agt_id != -1) {
-                printf("   FIM maintenance mode:  %s\n",
-                       syscheck_maint_is_enabled(keys.keyentries[agt_id]->name,
-                                                 keys.keyentries[agt_id]->ip->ip)
-                       ? "enabled" : "disabled");
+                syscheck_maint_info mi;
+                if (syscheck_maint_get(keys.keyentries[agt_id]->name,
+                                       keys.keyentries[agt_id]->ip->ip, &mi)) {
+                    printf("   FIM maintenance mode:  %s",
+                           syscheck_maint_list_tag(&mi));
+                    if (mi.pending_end) {
+                        printf(" (pending end)");
+                    }
+                    printf("\n");
+                    printf("   Maint enabled since:   %ld (%ld hours ago)\n",
+                           (long)mi.enabled_at,
+                           (long)((time(NULL) - mi.enabled_at) / 3600));
+                    printf("   Silent FIM accepts:    %lu\n", mi.silent_updates);
+                } else {
+                    printf("   FIM maintenance mode:  disabled\n");
+                }
             } else {
-                printf("   FIM maintenance mode:  %s\n",
-                       syscheck_maint_is_enabled(NULL, NULL)
-                       ? "enabled" : "disabled");
+                syscheck_maint_info mi;
+                if (syscheck_maint_get(NULL, NULL, &mi)) {
+                    printf("   FIM maintenance mode:  %s\n",
+                           syscheck_maint_list_tag(&mi));
+                    printf("   Maint enabled since:   %ld (%ld hours ago)\n",
+                           (long)mi.enabled_at,
+                           (long)((time(NULL) - mi.enabled_at) / 3600));
+                    printf("   Silent FIM accepts:    %lu\n", mi.silent_updates);
+                } else {
+                    printf("   FIM maintenance mode:  disabled\n");
+                }
             }
         }else if(json_output){
                 cJSON_AddStringToObject(response, "os", agt_info->os);
@@ -444,13 +486,26 @@ int main(int argc, char **argv)
                 cJSON_AddStringToObject(response, "syscheckEndTime", end_time ? agt_info->syscheck_endtime : "");
                 cJSON_AddStringToObject(response, "rootcheckTime", agt_info->rootcheck_time);
                 cJSON_AddStringToObject(response, "rootcheckEndTime", end_time ? agt_info->rootcheck_endtime : "");
-                cJSON_AddStringToObject(response, "fimMaintenance",
-                    (agt_id != -1)
-                        ? (syscheck_maint_is_enabled(keys.keyentries[agt_id]->name,
-                                                     keys.keyentries[agt_id]->ip->ip)
-                           ? "enabled" : "disabled")
-                        : (syscheck_maint_is_enabled(NULL, NULL)
-                           ? "enabled" : "disabled"));
+                {
+                    syscheck_maint_info mi;
+                    int got = (agt_id != -1)
+                        ? syscheck_maint_get(keys.keyentries[agt_id]->name,
+                                             keys.keyentries[agt_id]->ip->ip, &mi)
+                        : syscheck_maint_get(NULL, NULL, &mi);
+                    if (got) {
+                        cJSON_AddStringToObject(response, "fimMaintenance",
+                                                syscheck_maint_list_tag(&mi));
+                        cJSON_AddNumberToObject(response, "fimMaintEnabledAt",
+                                                (double)mi.enabled_at);
+                        cJSON_AddNumberToObject(response, "fimMaintSilentUpdates",
+                                                (double)mi.silent_updates);
+                        cJSON_AddBoolToObject(response, "fimMaintPendingEnd",
+                                              mi.pending_end);
+                    } else {
+                        cJSON_AddStringToObject(response, "fimMaintenance",
+                                                "disabled");
+                    }
+                }
 
         } else {
             printf("%s,%s,%s,%s,%s,\n",
@@ -473,8 +528,9 @@ int main(int argc, char **argv)
     if (maint_action) {
         const char *sk_name = NULL;
         const char *sk_ip = NULL;
-        int enabled;
+        int enabled = 0;
         int ok = 1;
+        syscheck_maint_info mi;
 
         if (!agent_id) {
             if (json_output) {
@@ -500,18 +556,45 @@ int main(int argc, char **argv)
         } else if (strcmp(maint_action, "disable") == 0) {
             ok = syscheck_maint_disable(sk_name, sk_ip);
             enabled = 0;
+            if (ok && !json_output) {
+                printf("\n** Warning: immediate disable does not wait for a "
+                       "syscheck scan. Prefer '-M end' after patching.\n");
+            }
         } else if (strcmp(maint_action, "status") == 0) {
-            enabled = syscheck_maint_is_enabled(sk_name, sk_ip);
+            enabled = syscheck_maint_get(sk_name, sk_ip, &mi);
             ok = 1;
+        } else if (strcmp(maint_action, "end") == 0) {
+            /* Enable if needed, mark pending_end, force a scan. */
+            if (!syscheck_maint_get(sk_name, sk_ip, &mi)) {
+                ok = syscheck_maint_enable(sk_name, sk_ip);
+            }
+            if (ok) {
+                ok = syscheck_maint_set_pending_end(sk_name, sk_ip, 1);
+            }
+            if (ok) {
+                if (strcmp(agent_id, "000") == 0) {
+                    os_set_restart_syscheck();
+                } else {
+                    arq = connect_to_remoted();
+                    if (arq < 0) {
+                        ok = 0;
+                    } else if (send_msg_to_agent(arq, HC_SK_RESTART,
+                                                agent_id, NULL) != 0) {
+                        ok = 0;
+                    }
+                }
+            }
+            enabled = 1;
         } else {
             if (json_output) {
                 cJSON_AddNumberToObject(root, "error", 45);
                 cJSON_AddStringToObject(root, "description",
-                                        "Invalid -M action (enable|disable|status)");
+                                        "Invalid -M action (enable|disable|status|end)");
                 printf("%s", cJSON_PrintUnformatted(root));
                 cJSON_Delete(root);
             } else {
-                printf("\n** Invalid -M action '%s' (use enable|disable|status).\n",
+                printf("\n** Invalid -M action '%s' "
+                       "(use enable|disable|status|end).\n",
                        maint_action);
             }
             exit(1);
@@ -530,19 +613,44 @@ int main(int argc, char **argv)
             exit(1);
         }
 
+        syscheck_maint_get(sk_name, sk_ip, &mi);
+
         if (json_output) {
             cJSON *response = cJSON_CreateObject();
             cJSON_AddNumberToObject(root, "error", 0);
             cJSON_AddStringToObject(response, "agent", agent_id);
             cJSON_AddStringToObject(response, "fimMaintenance",
-                                    enabled ? "enabled" : "disabled");
+                                    enabled ? (mi.pending_end
+                                               ? "Maint(pending-end)"
+                                               : "enabled")
+                                            : "disabled");
             cJSON_AddStringToObject(response, "action", maint_action);
+            if (enabled) {
+                cJSON_AddNumberToObject(response, "fimMaintEnabledAt",
+                                        (double)mi.enabled_at);
+                cJSON_AddNumberToObject(response, "fimMaintSilentUpdates",
+                                        (double)mi.silent_updates);
+                cJSON_AddBoolToObject(response, "fimMaintPendingEnd",
+                                      mi.pending_end);
+            }
             cJSON_AddItemToObject(root, "response", response);
             printf("%s", cJSON_PrintUnformatted(root));
             cJSON_Delete(root);
         } else if (strcmp(maint_action, "status") == 0) {
-            printf("\nOSSEC HIDS %s: Agent %s FIM maintenance mode: %s\n",
-                   ARGV0, agent_id, enabled ? "enabled" : "disabled");
+            if (enabled) {
+                printf("\nOSSEC HIDS %s: Agent %s FIM maintenance: %s\n",
+                       ARGV0, agent_id, syscheck_maint_list_tag(&mi));
+                printf("   enabled_at=%ld  silent_updates=%lu  pending_end=%d\n",
+                       (long)mi.enabled_at, mi.silent_updates, mi.pending_end);
+            } else {
+                printf("\nOSSEC HIDS %s: Agent %s FIM maintenance mode: disabled\n",
+                       ARGV0, agent_id);
+            }
+        } else if (strcmp(maint_action, "end") == 0) {
+            printf("\nOSSEC HIDS %s: FIM maintenance end requested for agent %s.\n"
+                   "Syscheck/Rootcheck restart sent; maintenance clears when "
+                   "the baseline scan completes (syscheck-db-completed).\n",
+                   ARGV0, agent_id);
         } else {
             printf("\nOSSEC HIDS %s: FIM maintenance mode %s for agent %s.\n",
                    ARGV0, enabled ? "enabled" : "disabled", agent_id);
