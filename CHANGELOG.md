@@ -40,6 +40,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Make PCRE2 JIT optional (soft-fail compile, match via pcre2_match) so analysisd starts on macOS (#2040)
 - @atomicturtle - Accept AR expect ``username`` (alias of ``user``), fall back to srcuser, and document fixed script argv (#2104)
 - @atomicturtle - Decode cPanel login lines from webmaild/whostmgrd/cpaneld as well as cpsrvd (#1132)
 - @atomicturtle - Avoid FIM false positives from xxx hash placeholders and checksum read failures (#1590, #1704)

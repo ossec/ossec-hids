@@ -131,11 +131,8 @@ int OSRegex_Compile(const char *pattern, OSRegex *reg, int flags)
     }
 
 #ifdef USE_PCRE2_JIT
-    /* Just In Time compilation for faster execution */
-    if (pcre2_jit_compile(reg->regex, PCRE2_JIT_COMPLETE) != 0) {
-        reg->error = OS_REGEX_NO_JIT;
-        goto compile_error;
-    }
+    /* JIT is optional; interpreter fallback via pcre2_match (#2040). */
+    (void) pcre2_jit_compile(reg->regex, PCRE2_JIT_COMPLETE);
 #endif
 
     if (flags & OS_RETURN_SUBSTRING) {

@@ -132,11 +132,14 @@ int OSPcre2_Compile(const char *pattern, OSPcre2 *reg, int flags)
     }
 
 #ifdef USE_PCRE2_JIT
-    /* Just In Time compilation for faster execution */
-    if (pcre2_jit_compile(reg->regex, PCRE2_JIT_COMPLETE) != 0) {
-        reg->error = OS_REGEX_NO_JIT;
-        goto compile_error;
-    }
+    /*
+     * JIT is an optional speedup. On some platforms (notably macOS with a
+     * non-JIT system libpcre2) compile fails; treating that as fatal
+     * prevented analysisd from starting (#2040). Ignore failure here;
+     * execute paths call pcre2_match, which uses JIT when present and
+     * otherwise falls back to the interpreter.
+     */
+    (void) pcre2_jit_compile(reg->regex, PCRE2_JIT_COMPLETE);
 #endif
 
     return (1);
