@@ -109,7 +109,7 @@ int main(int argc, char **argv)
                 break;
             case 'M':
                 if (!optarg) {
-                    merror("%s: -M needs enable|disable|status", ARGV0);
+                    merror("%s: -M needs enable|disable|status|end", ARGV0);
                     helpmsg(1);
                 }
                 maint_action = optarg;
@@ -530,7 +530,11 @@ int main(int argc, char **argv)
         const char *sk_ip = NULL;
         int enabled = 0;
         int ok = 1;
+        int end_delivery_failed = 0;
+        int end_we_enabled = 0;
         syscheck_maint_info mi;
+
+        memset(&mi, 0, sizeof(mi));
 
         if (!agent_id) {
             if (json_output) {
@@ -552,7 +556,7 @@ int main(int argc, char **argv)
 
         if (strcmp(maint_action, "enable") == 0) {
             ok = syscheck_maint_enable(sk_name, sk_ip);
-            enabled = 1;
+            enabled = ok ? 1 : 0;
         } else if (strcmp(maint_action, "disable") == 0) {
             ok = syscheck_maint_disable(sk_name, sk_ip);
             enabled = 0;
@@ -567,24 +571,39 @@ int main(int argc, char **argv)
             /* Enable if needed, mark pending_end, force a scan. */
             if (!syscheck_maint_get(sk_name, sk_ip, &mi)) {
                 ok = syscheck_maint_enable(sk_name, sk_ip);
+                end_we_enabled = ok ? 1 : 0;
             }
             if (ok) {
                 ok = syscheck_maint_set_pending_end(sk_name, sk_ip, 1);
             }
             if (ok) {
                 if (strcmp(agent_id, "000") == 0) {
-                    os_set_restart_syscheck();
+                    if (!os_set_restart_syscheck()) {
+                        ok = 0;
+                        end_delivery_failed = 1;
+                    }
                 } else {
                     arq = connect_to_remoted();
                     if (arq < 0) {
                         ok = 0;
+                        end_delivery_failed = 1;
                     } else if (send_msg_to_agent(arq, HC_SK_RESTART,
                                                 agent_id, NULL) != 0) {
                         ok = 0;
+                        end_delivery_failed = 1;
                     }
                 }
             }
-            enabled = 1;
+            if (!ok) {
+                /* Roll back: clear pending_end; drop marker only if we created it. */
+                if (end_delivery_failed) {
+                    syscheck_maint_set_pending_end(sk_name, sk_ip, 0);
+                }
+                if (end_we_enabled) {
+                    syscheck_maint_disable(sk_name, sk_ip);
+                }
+            }
+            enabled = ok ? 1 : 0;
         } else {
             if (json_output) {
                 cJSON_AddNumberToObject(root, "error", 45);
@@ -602,18 +621,29 @@ int main(int argc, char **argv)
 
         if (!ok) {
             if (json_output) {
-                cJSON_AddNumberToObject(root, "error", 46);
+                cJSON_AddNumberToObject(root, "error",
+                                        end_delivery_failed ? 47 : 46);
                 cJSON_AddStringToObject(root, "description",
-                                        "Unable to update FIM maintenance mode");
+                                        end_delivery_failed
+                                        ? "Unable to deliver syscheck restart for -M end"
+                                        : "Unable to update FIM maintenance mode");
                 printf("%s", cJSON_PrintUnformatted(root));
                 cJSON_Delete(root);
+            } else if (end_delivery_failed) {
+                printf("\n** Unable to deliver syscheck restart for -M end "
+                       "(maintenance pending_end rolled back).\n");
             } else {
                 printf("\n** Unable to update FIM maintenance mode.\n");
             }
             exit(1);
         }
 
-        syscheck_maint_get(sk_name, sk_ip, &mi);
+        if (!syscheck_maint_get(sk_name, sk_ip, &mi)) {
+            enabled = 0;
+            memset(&mi, 0, sizeof(mi));
+        } else {
+            enabled = 1;
+        }
 
         if (json_output) {
             cJSON *response = cJSON_CreateObject();
