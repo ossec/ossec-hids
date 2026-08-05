@@ -138,11 +138,19 @@ int field_add_truncated(char *dest, size_t size, const char *format, const char 
         return -1;
     }
 
-    total_sz = strlen(value) + strlen(format) - fmt_size;
-    if (available_sz <= strlen(format) - fmt_size) {
-        return -1;
+    total_sz = strlen(value);
+    {
+        size_t fmt_len = strlen(format);
+
+        if (fmt_size < 0 || (size_t)fmt_size > fmt_len) {
+            return -1;
+        }
+        total_sz += fmt_len - (size_t)fmt_size;
+        if (available_sz <= fmt_len - (size_t)fmt_size) {
+            return -1;
+        }
+        field_sz = available_sz - fmt_len + (size_t)fmt_size;
     }
-    field_sz = available_sz - strlen(format) + fmt_size;
 
     if (
         ((value[0] != '(') && (value[1] != 'n') && (value[2] != 'o')) ||

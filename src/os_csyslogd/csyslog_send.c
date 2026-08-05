@@ -15,11 +15,20 @@
 #include "os_net/os_net.h"
 
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <poll.h>
 #include <errno.h>
+#include <unistd.h>
 
 #ifndef CSYSLOG_SNDTIMEO_SEC
 #define CSYSLOG_SNDTIMEO_SEC 10
+#endif
+
+#ifndef CSYSLOG_CONNECT_TIMEOUT_SEC
+#define CSYSLOG_CONNECT_TIMEOUT_SEC CSYSLOG_SNDTIMEO_SEC
 #endif
 
 static void csyslog_set_tcp_opts(int sock)
@@ -43,6 +52,93 @@ static void csyslog_set_tcp_opts(int sock)
         merror("%s: WARN: Unable to set SO_RCVTIMEO on syslog_output socket: %s",
                ARGV0, strerror(errno));
     }
+}
+
+/* Non-blocking TCP connect with a hard deadline so a blackholed SIEM does
+ * not stall the single-threaded csyslogd loop during SYN retries.
+ */
+static int csyslog_connect_tcp(const char *port, const char *server)
+{
+    struct addrinfo hints;
+    struct addrinfo *result = NULL;
+    struct addrinfo *rp;
+    int sock = -1;
+    int s;
+    int flags;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    s = getaddrinfo(server, port, &hints, &result);
+    if (s != 0) {
+        hints.ai_family = AF_INET;
+        s = getaddrinfo(server, port, &hints, &result);
+    }
+    if (s != 0 || !result) {
+        return -1;
+    }
+
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        int rv;
+        struct pollfd pfd;
+        int soerr = 0;
+        socklen_t soerr_len = sizeof(soerr);
+
+        sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sock < 0) {
+            continue;
+        }
+
+        flags = fcntl(sock, F_GETFL, 0);
+        if (flags < 0 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
+            close(sock);
+            sock = -1;
+            continue;
+        }
+
+        rv = connect(sock, rp->ai_addr, rp->ai_addrlen);
+        if (rv != 0) {
+            if (errno != EINPROGRESS) {
+                close(sock);
+                sock = -1;
+                continue;
+            }
+
+            pfd.fd = sock;
+            pfd.events = POLLOUT;
+            pfd.revents = 0;
+            rv = poll(&pfd, 1, CSYSLOG_CONNECT_TIMEOUT_SEC * 1000);
+            if (rv <= 0) {
+                close(sock);
+                sock = -1;
+                continue;
+            }
+            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &soerr, &soerr_len) < 0 ||
+                    soerr != 0) {
+                close(sock);
+                sock = -1;
+                continue;
+            }
+        }
+
+        /* Back to blocking for SSL_connect / send with SO_*TIMEO. */
+        flags = fcntl(sock, F_GETFL, 0);
+        if (flags >= 0) {
+            fcntl(sock, F_SETFL, flags & ~O_NONBLOCK);
+        }
+        break;
+    }
+
+    freeaddrinfo(result);
+
+    if (sock < 0) {
+        return -1;
+    }
+
+    csyslog_set_tcp_opts(sock);
+    return sock;
 }
 
 /* TCP can return short writes; loop until complete or error. */
@@ -119,11 +215,10 @@ int csyslog_connect(SyslogConfig *cfg)
 #endif
         }
 
-        sock = OS_ConnectTCP(cfg->port, cfg->server);
+        sock = csyslog_connect_tcp(cfg->port, cfg->server);
         if (sock < 0) {
             return -1;
         }
-        csyslog_set_tcp_opts(sock);
         cfg->socket = sock;
 
         if (cfg->tls) {
