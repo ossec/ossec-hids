@@ -475,8 +475,38 @@ Eventinfo *analysisd_copy_event_for_log(const Eventinfo *lf)
     if (lf->srcgeoip) {
         os_strdup(lf->srcgeoip, cpy->srcgeoip);
     }
+    if (lf->src_country) {
+        os_strdup(lf->src_country, cpy->src_country);
+    }
+    if (lf->src_region) {
+        os_strdup(lf->src_region, cpy->src_region);
+    }
+    if (lf->src_city) {
+        os_strdup(lf->src_city, cpy->src_city);
+    }
+    if (lf->srcasn) {
+        os_strdup(lf->srcasn, cpy->srcasn);
+    }
+    if (lf->srcas_org) {
+        os_strdup(lf->srcas_org, cpy->srcas_org);
+    }
     if (lf->dstgeoip) {
         os_strdup(lf->dstgeoip, cpy->dstgeoip);
+    }
+    if (lf->dst_country) {
+        os_strdup(lf->dst_country, cpy->dst_country);
+    }
+    if (lf->dst_region) {
+        os_strdup(lf->dst_region, cpy->dst_region);
+    }
+    if (lf->dst_city) {
+        os_strdup(lf->dst_city, cpy->dst_city);
+    }
+    if (lf->dstasn) {
+        os_strdup(lf->dstasn, cpy->dstasn);
+    }
+    if (lf->dstas_org) {
+        os_strdup(lf->dstas_org, cpy->dstas_org);
     }
     if (lf->srcport) {
         os_strdup(lf->srcport, cpy->srcport);

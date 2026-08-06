@@ -74,8 +74,12 @@ int Rules_OP_ReadRules(const char *rulefile)
 
     const char *xml_srcip = "srcip";
     const char *xml_srcgeoip = "srcgeoip";
+    const char *xml_src_country = "src_country";
+    const char *xml_srcasn = "srcasn";
     const char *xml_srcport = "srcport";
     const char *xml_srcgeoip_pcre2 = "srcgeoip_pcre2";
+    const char *xml_src_country_pcre2 = "src_country_pcre2";
+    const char *xml_srcasn_pcre2 = "srcasn_pcre2";
     const char *xml_srcport_pcre2 = "srcport_pcre2";
     const char *xml_dstip = "dstip";
     const char *xml_dstgeoip = "dstgeoip";
@@ -348,6 +352,8 @@ int Rules_OP_ReadRules(const char *rulefile)
                 char *srcport = NULL;
                 char *dstport = NULL;
                 char *srcgeoip = NULL;
+                char *src_country = NULL;
+                char *srcasn = NULL;
                 char *dstgeoip = NULL;
 
                 char *status = NULL;
@@ -360,6 +366,8 @@ int Rules_OP_ReadRules(const char *rulefile)
                 char *srcport_pcre2 = NULL;
                 char *dstport_pcre2 = NULL;
                 char *srcgeoip_pcre2 = NULL;
+                char *src_country_pcre2 = NULL;
+                char *srcasn_pcre2 = NULL;
                 char *dstgeoip_pcre2 = NULL;
 
                 char *status_pcre2 = NULL;
@@ -570,6 +578,20 @@ int Rules_OP_ReadRules(const char *rulefile)
 
                         if(!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
                             config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                    } else if (strcasecmp(rule_opt[k]->element, xml_src_country) == 0) {
+                        src_country =
+                            loadmemory(src_country,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                    } else if (strcasecmp(rule_opt[k]->element, xml_srcasn) == 0) {
+                        srcasn =
+                            loadmemory(srcasn,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
                     } else if(strcasecmp(rule_opt[k]->element,xml_dstgeoip)==0) {
                         dstgeoip =
                             loadmemory(dstgeoip,
@@ -639,6 +661,20 @@ int Rules_OP_ReadRules(const char *rulefile)
                                     rule_opt[k]->content);
 
                         if(!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                    } else if (strcasecmp(rule_opt[k]->element, xml_src_country_pcre2) == 0) {
+                        src_country_pcre2 =
+                            loadmemory(src_country_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                    } else if (strcasecmp(rule_opt[k]->element, xml_srcasn_pcre2) == 0) {
+                        srcasn_pcre2 =
+                            loadmemory(srcasn_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO))
                             config_ruleinfo->alert_opts |= DO_EXTRAINFO;
                     } else if(strcasecmp(rule_opt[k]->element,xml_dstgeoip_pcre2)==0) {
                         dstgeoip_pcre2 =
@@ -1378,6 +1414,46 @@ int Rules_OP_ReadRules(const char *rulefile)
                     }
                     free(srcgeoip_pcre2);
                     srcgeoip_pcre2 = NULL;
+                }
+
+                if (src_country) {
+                    os_calloc(1, sizeof(OSMatch), config_ruleinfo->src_country);
+                    if (!OSMatch_Compile(src_country, config_ruleinfo->src_country, 0)) {
+                        merror(REGEX_COMPILE, ARGV0, src_country,
+                               config_ruleinfo->src_country->error);
+                        return (-1);
+                    }
+                    free(src_country);
+                    src_country = NULL;
+                } else if (src_country_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->src_country_pcre2);
+                    if (!OSPcre2_Compile(src_country_pcre2, config_ruleinfo->src_country_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, src_country_pcre2,
+                               config_ruleinfo->src_country_pcre2->error);
+                        return (-1);
+                    }
+                    free(src_country_pcre2);
+                    src_country_pcre2 = NULL;
+                }
+
+                if (srcasn) {
+                    os_calloc(1, sizeof(OSMatch), config_ruleinfo->srcasn);
+                    if (!OSMatch_Compile(srcasn, config_ruleinfo->srcasn, 0)) {
+                        merror(REGEX_COMPILE, ARGV0, srcasn,
+                               config_ruleinfo->srcasn->error);
+                        return (-1);
+                    }
+                    free(srcasn);
+                    srcasn = NULL;
+                } else if (srcasn_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->srcasn_pcre2);
+                    if (!OSPcre2_Compile(srcasn_pcre2, config_ruleinfo->srcasn_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, srcasn_pcre2,
+                               config_ruleinfo->srcasn_pcre2->error);
+                        return (-1);
+                    }
+                    free(srcasn_pcre2);
+                    srcasn_pcre2 = NULL;
                 }
 
 

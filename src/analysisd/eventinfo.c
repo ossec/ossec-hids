@@ -208,13 +208,15 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
                 }
             }
 
-            /* GEOIP version of check for repetitions from same src_ip */
+            /* Prefer ISO country codes when available (stable across City vs display strings). */
             if (rule->context_opts & DIFFERENT_SRCGEOIP) {
-                if ((!lf->srcgeoip) || (!my_lf->srcgeoip)) {
+                const char *a = lf->src_country ? lf->src_country : lf->srcgeoip;
+                const char *b = my_lf->src_country ? my_lf->src_country : my_lf->srcgeoip;
+                if ((!a) || (!b)) {
                     continue;
                 }
 
-                if (strcmp(lf->srcgeoip, my_lf->srcgeoip) == 0) {
+                if (strcmp(a, b) == 0) {
                     continue;
                 }
             }
@@ -384,12 +386,13 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
 
             /* Check for different from same srcgeoip */
             if (rule->context_opts & DIFFERENT_SRCGEOIP) {
-
-                if ((!lf->srcgeoip) || (!my_lf->srcgeoip)) {
+                const char *a = lf->src_country ? lf->src_country : lf->srcgeoip;
+                const char *b = my_lf->src_country ? my_lf->src_country : my_lf->srcgeoip;
+                if ((!a) || (!b)) {
                     continue;
                 }
 
-                if (strcmp(lf->srcgeoip, my_lf->srcgeoip) == 0) {
+                if (strcmp(a, b) == 0) {
                     continue;
                 }
             }
@@ -540,12 +543,13 @@ Eventinfo *Search_LastEvents(Eventinfo *my_lf, RuleInfo *rule)
 
         /* Check for different from same srcgeoip */
         if (rule->context_opts & DIFFERENT_SRCGEOIP) {
-
-            if ((!lf->srcgeoip) || (!my_lf->srcgeoip)) {
+            const char *a = lf->src_country ? lf->src_country : lf->srcgeoip;
+            const char *b = my_lf->src_country ? my_lf->src_country : my_lf->srcgeoip;
+            if ((!a) || (!b)) {
                 continue;
             }
 
-            if (strcmp(lf->srcgeoip, my_lf->srcgeoip) == 0) {
+            if (strcmp(a, b) == 0) {
                 continue;
             }
         }
@@ -608,8 +612,18 @@ void Zero_Eventinfo(Eventinfo *lf)
 
     lf->srcip = NULL;
     lf->srcgeoip = NULL;
+    lf->src_country = NULL;
+    lf->src_region = NULL;
+    lf->src_city = NULL;
+    lf->srcasn = NULL;
+    lf->srcas_org = NULL;
     lf->dstip = NULL;
     lf->dstgeoip = NULL;
+    lf->dst_country = NULL;
+    lf->dst_region = NULL;
+    lf->dst_city = NULL;
+    lf->dstasn = NULL;
+    lf->dstas_org = NULL;
     lf->srcport = NULL;
     lf->dstport = NULL;
     lf->protocol = NULL;
@@ -700,6 +714,27 @@ void Free_Eventinfo(Eventinfo *lf)
         lf->srcgeoip = NULL;
     }
 
+    if (lf->src_country) {
+        free(lf->src_country);
+        lf->src_country = NULL;
+    }
+    if (lf->src_region) {
+        free(lf->src_region);
+        lf->src_region = NULL;
+    }
+    if (lf->src_city) {
+        free(lf->src_city);
+        lf->src_city = NULL;
+    }
+    if (lf->srcasn) {
+        free(lf->srcasn);
+        lf->srcasn = NULL;
+    }
+    if (lf->srcas_org) {
+        free(lf->srcas_org);
+        lf->srcas_org = NULL;
+    }
+
     if (lf->dstip) {
         free(lf->dstip);
     }
@@ -707,6 +742,27 @@ void Free_Eventinfo(Eventinfo *lf)
     if(lf->dstgeoip) {
         free(lf->dstgeoip);
         lf->dstgeoip = NULL;
+    }
+
+    if (lf->dst_country) {
+        free(lf->dst_country);
+        lf->dst_country = NULL;
+    }
+    if (lf->dst_region) {
+        free(lf->dst_region);
+        lf->dst_region = NULL;
+    }
+    if (lf->dst_city) {
+        free(lf->dst_city);
+        lf->dst_city = NULL;
+    }
+    if (lf->dstasn) {
+        free(lf->dstasn);
+        lf->dstasn = NULL;
+    }
+    if (lf->dstas_org) {
+        free(lf->dstas_org);
+        lf->dstas_org = NULL;
     }
 
     if (lf->srcport) {
