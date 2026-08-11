@@ -46,8 +46,11 @@ void os_winreg_check(void);
 /* Start real time */
 int realtime_start(void);
 
-/* Add a directory to real time monitoring */
-int realtime_adddir(const char *dir) __attribute__((nonnull));
+/* Add a directory to real time monitoring.
+ * opts: syscheck directory options (Windows uses CHECK_ATTRS for the
+ * attribute notify mask; ignored on other platforms).
+ */
+int realtime_adddir(const char *dir, int opts) __attribute__((nonnull(1)));
 
 /* Process real time queue */
 int realtime_process(void);

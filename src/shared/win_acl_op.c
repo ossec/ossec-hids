@@ -338,7 +338,9 @@ int fim_win_acl_parse_snapshot(const char *text, fim_acl_t *out)
 
 int fim_win_acl_digest(const fim_acl_t *acl, char *md5_hex33)
 {
-    char snap[8192];
+    char *snap = NULL;
+    size_t cap = 8192;
+    const size_t max_cap = 256 * 1024;
     os_md5 md5;
 
     if (!acl || !md5_hex33) {
@@ -354,11 +356,34 @@ int fim_win_acl_digest(const fim_acl_t *acl, char *md5_hex33)
         memcpy(md5_hex33, md5, 33);
         return (0);
     }
-    if (fim_win_acl_snapshot(acl, snap, sizeof(snap)) != 0) {
-        return (-1);
+
+    /* Grow until the snapshot fits without the truncation marker so the
+     * digest covers the full DACL (display/format paths may still truncate).
+     */
+    for (;;) {
+        char *neu = realloc(snap, cap);
+        if (!neu) {
+            free(snap);
+            return (-1);
+        }
+        snap = neu;
+        if (fim_win_acl_snapshot(acl, snap, cap) != 0) {
+            free(snap);
+            return (-1);
+        }
+        if (strstr(snap, "... truncated") == NULL) {
+            break;
+        }
+        if (cap >= max_cap) {
+            free(snap);
+            return (-1);
+        }
+        cap *= 2;
     }
+
     OS_MD5_Str(snap, md5);
     memcpy(md5_hex33, md5, 33);
+    free(snap);
     return (0);
 }
 
@@ -670,7 +695,8 @@ int fim_win_acl_read(const char *path, fim_acl_t *out)
         }
         snprintf(ace.sid, sizeof(ace.sid), "%s", sid_str);
         LocalFree(sid_str);
-        ace.ord = (unsigned int)n;
+        /* Original DACL index (not filtered allow/deny-only index). */
+        ace.ord = (unsigned int)i;
 
         if (n >= cap) {
             fim_ace_t *neu;

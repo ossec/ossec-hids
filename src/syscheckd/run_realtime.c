@@ -189,7 +189,7 @@ int realtime_start()
 }
 
 /* Add a directory to real time checking */
-int realtime_adddir(const char *dir)
+int realtime_adddir(const char *dir, __attribute__((unused)) int opts)
 {
     if (!syscheck.realtime) {
         realtime_start();
@@ -293,6 +293,7 @@ typedef struct _win32rtfim {
     OVERLAPPED overlap;
 
     char *dir;
+    int opts;
     TCHAR buffer[1228800];
 } win32rtfim;
 
@@ -374,12 +375,23 @@ int realtime_start()
 int realtime_win32read(win32rtfim *rtlocald)
 {
     int rc;
+    DWORD notify_filter;
+
+    notify_filter = FILE_NOTIFY_CHANGE_FILE_NAME |
+                    FILE_NOTIFY_CHANGE_DIR_NAME |
+                    FILE_NOTIFY_CHANGE_SIZE |
+                    FILE_NOTIFY_CHANGE_LAST_WRITE |
+                    FILE_NOTIFY_CHANGE_SECURITY;
+    /* Attribute notifications only when check_attrs is enabled for this dir. */
+    if (rtlocald->opts & CHECK_ATTRS) {
+        notify_filter |= FILE_NOTIFY_CHANGE_ATTRIBUTES;
+    }
 
     rc = ReadDirectoryChangesW(rtlocald->h,
                                rtlocald->buffer,
                                sizeof(rtlocald->buffer) / sizeof(TCHAR),
                                TRUE,
-                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY | FILE_NOTIFY_CHANGE_ATTRIBUTES,
+                               notify_filter,
                                0,
                                &rtlocald->overlap,
                                RTCallBack);
@@ -392,7 +404,7 @@ int realtime_win32read(win32rtfim *rtlocald)
     return (0);
 }
 
-int realtime_adddir(const char *dir)
+int realtime_adddir(const char *dir, int opts)
 {
     char wdchar[32 + 1];
     win32rtfim *rtlocald;
@@ -429,6 +441,7 @@ int realtime_adddir(const char *dir)
     }
 
     rtlocald->overlap.Offset = ++syscheck.realtime->fd;
+    rtlocald->opts = opts;
 
     /* Set key for hash */
     wdchar[32] = '\0';
@@ -462,7 +475,8 @@ int realtime_start()
     return (0);
 }
 
-int realtime_adddir(__attribute__((unused)) const char *dir)
+int realtime_adddir(__attribute__((unused)) const char *dir,
+                    __attribute__((unused)) int opts)
 {
     return (0);
 }

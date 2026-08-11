@@ -674,7 +674,7 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     /* Check for real time flag */
     if (opts & CHECK_REALTIME) {
 #if defined(INOTIFY_ENABLED) || defined(WIN32)
-        realtime_adddir(dir_name);
+        realtime_adddir(dir_name, opts);
 #else
         merror("%s: WARN: realtime monitoring request on unsupported system for '%s'",
                 ARGV0,

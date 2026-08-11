@@ -758,21 +758,29 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                                 oldsha256++;
                                 newsha256++;
 
-                                /* Optional Windows attrs[:acl] after sha256 */
+                                /* Optional Windows attrs[:acl] after sha256.
+                                 * Split each side independently so mixed
+                                 * formats (pre/post enabling CHECK_ATTRS/ACL
+                                 * or mixed agent versions) still leave a
+                                 * clean sha256 token.
+                                 */
                                 oldattrs = strchr(oldsha256, ':');
-                                newattrs = strchr(newsha256, ':');
-                                if (oldattrs && newattrs) {
+                                if (oldattrs) {
                                     *oldattrs = '\0';
-                                    *newattrs = '\0';
                                     oldattrs++;
-                                    newattrs++;
-
                                     oldacl = strchr(oldattrs, ':');
-                                    newacl = strchr(newattrs, ':');
-                                    if (oldacl && newacl) {
+                                    if (oldacl) {
                                         *oldacl = '\0';
-                                        *newacl = '\0';
                                         oldacl++;
+                                    }
+                                }
+                                newattrs = strchr(newsha256, ':');
+                                if (newattrs) {
+                                    *newattrs = '\0';
+                                    newattrs++;
+                                    newacl = strchr(newattrs, ':');
+                                    if (newacl) {
+                                        *newacl = '\0';
                                         newacl++;
                                     }
                                 }
