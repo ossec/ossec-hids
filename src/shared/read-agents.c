@@ -1523,6 +1523,110 @@ int get_agent_status(const char *agent_name, const char *agent_ip)
     return (GA_STATUS_NACTIVE);
 }
 
+/*
+ * Build name-ip strings for agents still present in client.keys.
+ * Orphaned queue/agent-info files from deleted agents are ignored (#244).
+ */
+static char **load_registered_agent_info_names(size_t *count)
+{
+    FILE *fp;
+    char buffer[OS_BUFFER_SIZE + 1];
+    char **names = NULL;
+    size_t n = 0;
+
+    *count = 0;
+
+    fp = fopen(KEYS_FILE, "r");
+    if (!fp) {
+        return (NULL);
+    }
+
+    while (fgets(buffer, OS_BUFFER_SIZE, fp) != NULL) {
+        char *tmp_str;
+        char *name;
+        char *ip;
+        char expected[OS_SIZE_1024 + 1];
+
+        if ((buffer[0] == '#') || (buffer[0] == ' ')) {
+            continue;
+        }
+
+        /* id */
+        tmp_str = strchr(buffer, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        tmp_str++;
+
+        /* Removed / placeholder entry kept for ID reuse */
+        if (*tmp_str == '#') {
+            continue;
+        }
+
+        name = tmp_str;
+        tmp_str = strchr(tmp_str, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        *tmp_str = '\0';
+        tmp_str++;
+
+        ip = tmp_str;
+        tmp_str = strchr(tmp_str, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        *tmp_str = '\0';
+
+        /* Match remoted agent-info naming (CIDR slash stripped) */
+        tmp_str = strchr(ip, '/');
+        if (tmp_str) {
+            *tmp_str = '\0';
+        }
+
+        snprintf(expected, sizeof(expected), "%s-%s", name, ip);
+
+        names = (char **)realloc(names, (n + 1) * sizeof(char *));
+        if (!names) {
+            ErrorExit(MEM_ERROR, __local_name, errno, strerror(errno));
+        }
+        os_strdup(expected, names[n]);
+        n++;
+    }
+
+    fclose(fp);
+    *count = n;
+    return (names);
+}
+
+static int agent_info_name_registered(char **names, size_t count,
+                                      const char *d_name)
+{
+    size_t i;
+
+    for (i = 0; i < count; i++) {
+        if (strcmp(names[i], d_name) == 0) {
+            return (1);
+        }
+    }
+
+    return (0);
+}
+
+static void free_registered_agent_info_names(char **names, size_t count)
+{
+    size_t i;
+
+    if (!names) {
+        return;
+    }
+
+    for (i = 0; i < count; i++) {
+        free(names[i]);
+    }
+    free(names);
+}
+
 /* List available agents with specified timeout */
 char **get_agents_with_timeout(int flag, int timeout)
 {
@@ -1530,6 +1634,8 @@ char **get_agents_with_timeout(int flag, int timeout)
     char **f_files = NULL;
     DIR *dp;
     struct dirent *entry;
+    char **registered = NULL;
+    size_t registered_count = 0;
 
     /* Open the directory */
     dp = opendir(AGENTINFO_DIR);
@@ -1541,6 +1647,8 @@ char **get_agents_with_timeout(int flag, int timeout)
         return (NULL);
     }
 
+    registered = load_registered_agent_info_names(&registered_count);
+
     /* Read directory */
     while ((entry = readdir(dp)) != NULL) {
         int status = 0;
@@ -1550,6 +1658,12 @@ char **get_agents_with_timeout(int flag, int timeout)
         /* Ignore . and ..  */
         if ((strcmp(entry->d_name, ".") == 0) ||
                 (strcmp(entry->d_name, "..") == 0)) {
+            continue;
+        }
+
+        /* Skip agent-info left behind after agent removal (#244) */
+        if (!agent_info_name_registered(registered, registered_count,
+                                        entry->d_name)) {
             continue;
         }
 
@@ -1596,6 +1710,7 @@ char **get_agents_with_timeout(int flag, int timeout)
         f_size++;
     }
 
+    free_registered_agent_info_names(registered, registered_count);
     closedir(dp);
     return (f_files);
 }

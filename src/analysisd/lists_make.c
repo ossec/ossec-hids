@@ -17,6 +17,30 @@
 #include <errno.h>
 #include "lists_make.h"
 
+/* Trailing comment marker for CDB list text files (#1527). */
+#define LIST_COMMENT_MARK "###"
+
+/*
+ * Strip a trailing "###" comment and any spaces/tabs immediately before it.
+ * Full-line comments become an empty string. Returns the (possibly empty) line.
+ */
+static char *lists_strip_comment(char *str)
+{
+    char *comment;
+    char *p;
+
+    comment = strstr(str, LIST_COMMENT_MARK);
+    if (!comment) {
+        return str;
+    }
+
+    p = comment;
+    while (p > str && (p[-1] == ' ' || p[-1] == '\t')) {
+        p--;
+    }
+    *p = '\0';
+    return str;
+}
 
 void Lists_OP_MakeAll(int force)
 {
@@ -62,6 +86,14 @@ void Lists_OP_MakeCDB(const char *txt_filename, const char *cdb_filename, int fo
             if (tmp_str) {
                 *tmp_str = '\0';
             }
+
+            lists_strip_comment(str);
+
+            /* Skip blank lines and full-line comments */
+            if (str[0] == '\0') {
+                continue;
+            }
+
             if ((val = strchr(str, ':'))) {
                 *val = '\0';
                 val++;
@@ -86,4 +118,3 @@ void Lists_OP_MakeCDB(const char *txt_filename, const char *cdb_filename, int fo
         printf(" * File %s does not need to be compiled\n", cdb_filename);
     }
 }
-

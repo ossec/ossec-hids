@@ -1830,7 +1830,52 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<!-- libmodsecurity / ModSecurity-nginx error log lines use [client IP] before ModSecurity: -->
+<decoder name="nginx-errorlog-modsec-denied">
+  <parent>nginx-errorlog</parent>
+  <prematch_pcre2 offset="after_parent">\[client \S+\] ModSecurity: Access denied</prematch_pcre2>
+  <pcre2 offset="after_parent">\[client (\S+)\] ModSecurity: Access denied with code (\d+)</pcre2>
+  <order>srcip,id</order>
+</decoder>
 
+<decoder name="nginx-errorlog-modsec-warning">
+  <parent>nginx-errorlog</parent>
+  <prematch_pcre2 offset="after_parent">\[client \S+\] ModSecurity: Warning</prematch_pcre2>
+  <pcre2 offset="after_parent">\[client (\S+)\] ModSecurity: Warning</pcre2>
+  <order>srcip</order>
+</decoder>
+
+
+<!-- ModSecurity / libmodsecurity serial audit log (log_format modsec-audit).
+  - Logcollector joins a transaction (through matching --id-Z--) into one line.
+  - srcip is taken from section A; Message matches prefer the -H-- section.
+  - Examples (collapsed):
+  -  --fbd13fc1-A-- [22/Dec/2015:15:25:00 +0000] VnhlYH8AAQEAADYdAUkAAAAA 127.0.0.1 55275 127.0.0.1 80 --fbd13fc1-H-- Message: Access denied with code 403 (phase 2). ... Action: Intercepted (phase 2) --fbd13fc1-Z--
+  -->
+<decoder name="modsecurity-audit">
+  <prematch_pcre2>--[0-9A-Za-z]+-A--</prematch_pcre2>
+</decoder>
+
+<decoder name="modsecurity-audit-denied">
+  <parent>modsecurity-audit</parent>
+  <prematch_pcre2>--[0-9A-Za-z]+-H--.*Message: Access denied with code </prematch_pcre2>
+  <pcre2>--[0-9A-Za-z]+-A--\s+\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+).*--[0-9A-Za-z]+-H--.*Message: Access denied with code (\d+)</pcre2>
+  <order>srcip,srcport,dstip,dstport,id</order>
+</decoder>
+
+<decoder name="modsecurity-audit-warning">
+  <parent>modsecurity-audit</parent>
+  <prematch_pcre2>--[0-9A-Za-z]+-H--.*Message: Warning\.</prematch_pcre2>
+  <pcre2>--[0-9A-Za-z]+-A--\s+\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+)</pcre2>
+  <order>srcip,srcport,dstip,dstport</order>
+</decoder>
+
+<decoder name="modsecurity-audit-fields">
+  <parent>modsecurity-audit</parent>
+  <prematch_pcre2 offset="after_parent">\[\d{2}/\w+/\d{4}:</prematch_pcre2>
+  <pcre2 offset="after_parent">\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+)</pcre2>
+  <order>srcip,srcport,dstip,dstport</order>
+</decoder>
 
 
 <!-- NCSA common log decoder (used by apache, Lotus Domino and IIS NCSA).
@@ -2328,6 +2373,13 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
   <prematch_pcre2>Registration from </prematch_pcre2>
   <pcre2 offset="after_prematch">failed for '(\S+):(\d+?)'|failed for '(\S+)'</pcre2>
   <order>srcip,srcport</order>
+</decoder>
+
+<decoder name="asterisk-denied3-ipv6">
+  <parent>asterisk</parent>
+  <prematch_pcre2>^NOTICE\[\d+?\]\[[A-Za-z0-9@_-]+?\]: \S+ in \S+: Call from </prematch_pcre2>
+  <pcre2 offset="after_prematch">^'\S*' \(\[([^\]]+)\]:(\d+)\) to extension '(\S+)' rejected because extension not found in context '(\S+)'\.$</pcre2>
+  <order>srcip, srcport, extra_data, extra_data</order>
 </decoder>
 
 <decoder name="asterisk-denied3">

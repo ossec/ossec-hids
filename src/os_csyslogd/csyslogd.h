@@ -14,13 +14,21 @@
 
 #define OS_CSYSLOGD_MAX_TRIES 10
 
+/* Outbound syslog/CEF/JSON alert size (matches OS_MAXSTR elsewhere). */
+#define OS_CSYSLOG_MAX OS_MAXSTR
+
 /** Prototypes **/
 
 /* Read syslog config */
 SyslogConfig **OS_ReadSyslogConf(int test_config, const char *cfgfile);
 
 /* Send alerts via syslog */
-int OS_Alert_SendSyslog(alert_data *al_data, const SyslogConfig *syslog_config);
+int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config);
+
+/* Connect / send / close transport for one syslog_output destination */
+int csyslog_connect(SyslogConfig *cfg);
+int csyslog_send(SyslogConfig *cfg, const char *msg, size_t len);
+void csyslog_close(SyslogConfig *cfg);
 
 /* Database inserting main function */
 void OS_CSyslogD(SyslogConfig **syslog_config) __attribute__((noreturn));

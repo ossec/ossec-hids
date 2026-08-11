@@ -100,8 +100,13 @@ src/win32/route-null.cmd
 src/win32/runtime_dlls.nsh
 src/win32/ossec-win32-agent.exe
 
-# Local testsuite (not tracked)
-testsuite/
+# Testsuite build artifacts (sources under testsuite/ are tracked)
+testsuite/*.rpm
+testsuite/*.deb
+testsuite/*.changes
+testsuite/*.buildinfo
+testsuite/*.tar.gz
+testsuite/*.tar.xz
 
 # Pbuilder prepared source (generate_ossec.sh -d writes here)
 contrib/debian-packages/build/

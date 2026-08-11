@@ -73,12 +73,23 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 /* Format Field for output */
 int field_add_string(char *dest, size_t size, const char *format, const char *value )
 {
-    char buffer[OS_SIZE_2048];
+    char buffer[OS_CSYSLOG_MAX];
     int len = 0;
-    int dest_sz = size - strlen(dest);
+    size_t dest_len;
+    size_t dest_sz;
+    size_t lim;
 
-    /* Not enough room in the buffer? */
-    if (dest_sz <= 0 ) {
+    if (!dest || size == 0) {
+        return -1;
+    }
+
+    dest_len = strlen(dest);
+    if (dest_len >= size) {
+        return -1;
+    }
+
+    dest_sz = size - dest_len;
+    if (dest_sz <= 1) {
         return -1;
     }
 
@@ -89,8 +100,12 @@ int field_add_string(char *dest, size_t size, const char *format, const char *va
                 ((value[0] != 'u') && (value[1] != 'n') && (value[4] != 'k'))
             )
        ) {
-        len = snprintf(buffer, sizeof(buffer) - dest_sz - 1, format, value);
-        strncat(dest, buffer, dest_sz);
+        lim = sizeof(buffer);
+        if (lim > dest_sz) {
+            lim = dest_sz;
+        }
+        len = snprintf(buffer, lim, format, value);
+        strncat(dest, buffer, dest_sz - 1);
     }
 
     return len;
@@ -99,19 +114,42 @@ int field_add_string(char *dest, size_t size, const char *format, const char *va
 /* Add a field, but truncate if too long */
 int field_add_truncated(char *dest, size_t size, const char *format, const char *value, int fmt_size )
 {
-    char buffer[OS_SIZE_2048];
-
-    int available_sz = size - strlen(dest);
-    int total_sz = strlen(value) + strlen(format) - fmt_size;
-    int field_sz = available_sz - strlen(format) + fmt_size;
-
+    char buffer[OS_CSYSLOG_MAX];
+    size_t dest_len;
+    size_t available_sz;
+    size_t total_sz;
+    size_t field_sz;
+    size_t lim;
     int len = 0;
     char trailer[] = "...";
     char *truncated = NULL;
 
-    /* Not enough room in the buffer? */
-    if (available_sz <= 0 ) {
+    if (!dest || !value || size == 0) {
         return -1;
+    }
+
+    dest_len = strlen(dest);
+    if (dest_len >= size) {
+        return -1;
+    }
+
+    available_sz = size - dest_len;
+    if (available_sz <= 1) {
+        return -1;
+    }
+
+    total_sz = strlen(value);
+    {
+        size_t fmt_len = strlen(format);
+
+        if (fmt_size < 0 || (size_t)fmt_size > fmt_len) {
+            return -1;
+        }
+        total_sz += fmt_len - (size_t)fmt_size;
+        if (available_sz <= fmt_len - (size_t)fmt_size) {
+            return -1;
+        }
+        field_sz = available_sz - fmt_len + (size_t)fmt_size;
     }
 
     if (
@@ -122,15 +160,27 @@ int field_add_truncated(char *dest, size_t size, const char *format, const char 
 
         if ( (truncated = (char *) malloc(field_sz + 1)) != NULL ) {
             if ( total_sz > available_sz ) {
-                /* Truncate and add a trailer */
-                os_substr(truncated, value, 0, field_sz - strlen(trailer));
+                size_t trailer_len = strlen(trailer);
+
+                /* field_sz is size_t; subtracting trailer_len without a
+                 * guard underflows and lets os_substr overrun truncated. */
+                if (field_sz <= trailer_len) {
+                    free(truncated);
+                    return -1;
+                }
+                os_substr(truncated, value, 0, field_sz - trailer_len);
                 strcat(truncated, trailer);
             } else {
                 strncpy(truncated, value, field_sz);
+                truncated[field_sz] = '\0';
             }
 
-            len = snprintf(buffer, available_sz, format, truncated);
-            strncat(dest, buffer, available_sz);
+            lim = sizeof(buffer);
+            if (lim > available_sz) {
+                lim = available_sz;
+            }
+            len = snprintf(buffer, lim, format, truncated);
+            strncat(dest, buffer, available_sz - 1);
         } else {
             /* Memory Error */
             len = -3;
