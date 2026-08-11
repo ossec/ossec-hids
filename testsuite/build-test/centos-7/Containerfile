@@ -1,0 +1,23 @@
+FROM centos:7
+
+# Fix EOL repositories
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+
+RUN yum -y install epel-release && \
+    yum -y update && \
+    yum -y install \
+    gcc \
+    make \
+    openssl-devel \
+    pcre2-devel \
+    zlib-devel \
+    systemd-devel \
+    file-devel \
+    libcurl-devel \
+    audit-libs-devel \
+    findutils \
+    && \
+    yum clean all
+
+WORKDIR /src

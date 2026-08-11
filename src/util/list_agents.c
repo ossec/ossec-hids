@@ -24,7 +24,7 @@ static void helpmsg(int status)
     printf("\t-h    This help message.\n");
     printf("\t-a    List all agents.\n");
     printf("\t-c    List the connected (active) agents.\n");
-    printf("\t-n    List the not connected (active) agents.\n");
+    printf("\t-n    List the not connected (inactive) agents.\n");
     exit(status);
 }
 

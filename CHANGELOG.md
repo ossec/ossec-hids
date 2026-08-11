@@ -26,8 +26,15 @@ Work toward the next minor release after 4.2.0.
 
 **General**
 
+- @atomicturtle - Add optional TCP and TLS to syslog_output (ossec-csyslogd) (#1762)
+- @atomicturtle - Raise csyslogd syslog/CEF/JSON alert buffer from 2048 to OS_MAXSTR (#1762)
+- @atomicturtle - Add Asterisk IPv6 denied decoder so srcip omits square brackets (#1892)
+- @atomicturtle - Allow manage_agents ``-f -`` to bulk-load agents from stdin (#459)
+- @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
+- @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
 - @atomicturtle - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules (#1390)
+- @atomicturtle - Reject dangerous/ambiguous syscheck_control flag combinations such as ``-r -u`` (#462)
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
 - @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
@@ -36,6 +43,7 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - Make PCRE2 JIT optional (soft-fail compile, match via pcre2_match) so analysisd starts on macOS (#2040)
 - @atomicturtle - Accept AR expect ``username`` (alias of ``user``), fall back to srcuser, and document fixed script argv (#2104)
 - @atomicturtle - Decode cPanel login lines from webmaild/whostmgrd/cpaneld as well as cpsrvd (#1132)
 - @atomicturtle - Avoid FIM false positives from xxx hash placeholders and checksum read failures (#1590, #1704)

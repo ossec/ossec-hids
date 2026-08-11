@@ -100,6 +100,10 @@ ifeq (${uname_S},Darwin)
 		DEFINES+=-DDarwin
 		DEFINES+=-DHIGHFIRST
 		LUA_PLAT=macosx
+		# System libpcre2 on macOS is often built without JIT; requiring JIT
+		# made analysisd fail to load decoder.xml (#2040). Soft-fail remains
+		# in OSPcre2_Compile; default off here to match typical packages.
+		USE_PCRE2_JIT=n
 
 else
 ifeq (${uname_S},FreeBSD)

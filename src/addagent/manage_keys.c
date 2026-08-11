@@ -339,12 +339,17 @@ int k_bulkload(const char *cmdbulk)
 
     extern int willchroot;
 
-    /* Check if we can open the input file */
-    printf("Opening: [%s]\n", cmdbulk);
-    infp = fopen(cmdbulk, "r");
-    if (!infp) {
-        perror("Failed.");
-        ErrorExit(FOPEN_ERROR, ARGV0, cmdbulk, errno, strerror(errno));
+    /* Check if we can open the input file (or stdin for "-") */
+    if (strcmp(cmdbulk, "-") == 0) {
+        printf("Reading bulk agents from stdin\n");
+        infp = stdin;
+    } else {
+        printf("Opening: [%s]\n", cmdbulk);
+        infp = fopen(cmdbulk, "r");
+        if (!infp) {
+            perror("Failed.");
+            ErrorExit(FOPEN_ERROR, ARGV0, cmdbulk, errno, strerror(errno));
+        }
     }
 
     /* Check if we can open the auth_file */
@@ -372,10 +377,17 @@ int k_bulkload(const char *cmdbulk)
 
         memset(ip, '\0', FILE_SIZE + 1);
         token = strtok(line, delims);
+        if (!token) {
+            continue;
+        }
         strncpy(ip, trimwhitespace(token), FILE_SIZE - 1);
 
         memset(name, '\0', FILE_SIZE + 1);
         token = strtok(NULL, delims);
+        if (!token) {
+            printf(INVALID_NAME, "");
+            continue;
+        }
         strncpy(name, trimwhitespace(token), FILE_SIZE - 1);
 
 #ifndef WIN32
@@ -480,6 +492,8 @@ cleanup:
         }
     };
 
-    fclose(infp);
+    if (infp != stdin) {
+        fclose(infp);
+    }
     return (status);
 }

@@ -38,12 +38,12 @@ const char *OSPcre2_Execute_pcre2_match(const char *str, OSPcre2 *reg)
         }
     }
 
-    /* Execute the reg */
-#ifdef USE_PCRE2_JIT
-    rc = pcre2_jit_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, match_data, NULL);
-#else
+    /* Execute the reg.
+     * Prefer pcre2_match over pcre2_jit_match: when JIT code is present,
+     * pcre2_match uses it automatically; when JIT compile failed or was
+     * skipped, it falls back to the interpreter (#2040).
+     */
     rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, match_data, NULL);
-#endif
 
     /* Check execution result */
     if (rc <= 0) {
