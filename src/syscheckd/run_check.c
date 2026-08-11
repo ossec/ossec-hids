@@ -362,7 +362,16 @@ static int syscheck_opts_for_path(const char *path, int *matched)
         size_t len = strlen(syscheck.dir[i]);
         char next;
 
-        if (len == 0 || len < best_len) {
+        if (len == 0) {
+            continue;
+        }
+        /* Normalize trailing separators so "/var/log/" matches "/var/log/foo".
+         * Keep a lone "/" (or "\") so the root directory still matches. */
+        while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
+                           syscheck.dir[i][len - 1] == '\\')) {
+            len--;
+        }
+        if (len < best_len) {
             continue;
         }
 #ifdef WIN32

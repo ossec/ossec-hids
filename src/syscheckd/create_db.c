@@ -492,7 +492,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     size_t data_len = (blen > (size_t)cur_off) ? (blen - (size_t)cur_off) : 0;
 
                     os_calloc((size_t)need + data_len + 1, sizeof(char), upgraded);
-                    memcpy(upgraded, buf, 7);
+                    /* Copy only the old flag prefix — never pull size digits
+                     * from legacy 6-flag entries into the flag slots. */
+                    {
+                        size_t flag_copy = (cur_off < 7) ? (size_t)cur_off : 7;
+
+                        memcpy(upgraded, buf, flag_copy);
+                        if (cur_off < 7) {
+                            upgraded[6] = (opts & CHECK_SHA256SUM) ? '+' : '-';
+                        }
+                    }
                     if (need >= 8) {
                         upgraded[7] = want_attrs ? '+' : '-';
                     }
@@ -543,9 +552,11 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                             memcpy(sum_only, c_sum, slen);
                             sum_only[slen] = '\0';
 
-                            if (sum_off >= 9 &&
-                                    fim_win_acl_change_text(buf + sum_off, c_sum,
-                                                            acl_txt, (size_t)OS_MAXSTR + 1) > 0) {
+                            /* fim_win_acl_change_text() already no-ops unless the
+                             * new sum carries an ACL digest/snapshot that changed,
+                             * so do not gate on sum_off (legacy 7/8-flag cache). */
+                            if (fim_win_acl_change_text(buf + sum_off, c_sum,
+                                                        acl_txt, (size_t)OS_MAXSTR + 1) > 0) {
                                 snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s",
                                          sum_only, file_name, acl_txt);
                             } else {
@@ -600,7 +611,17 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                         }
 
                         os_calloc((size_t)nflags + strlen(c_sum) + 1, sizeof(char), updated);
-                        memcpy(updated, buf, 7);
+                        /* Copy only the old flag prefix — never pull size digits
+                         * from legacy 6-flag entries into the flag slots. */
+                        {
+                            size_t flag_copy = (sum_off < 7) ? (size_t)sum_off : 7;
+
+                            memcpy(updated, buf, flag_copy);
+                            if (sum_off < 7) {
+                                /* Legacy cache had no sha256 enable flag. */
+                                updated[6] = '-';
+                            }
+                        }
                         if (nflags >= 8) {
                             updated[7] = (fields >= 8) ? '+' : '-';
                             /* When only ACL forced the attrs slot, keep the slot
