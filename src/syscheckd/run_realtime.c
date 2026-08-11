@@ -113,7 +113,7 @@ int realtime_checksumfile(const char *file_name)
                 {
                     char *updated;
                     char *old_data = buf;
-                    int nflags = sum_off;
+                    int nflags;
                     int fields = 1;
                     size_t clen = fim_sum_data_len(c_sum);
                     size_t i;
@@ -135,9 +135,9 @@ int realtime_checksumfile(const char *file_name)
                     memcpy(updated, buf, 7);
                     if (nflags >= 8) {
                         updated[7] = (fields >= 8) ? '+' : '-';
-                        /* Prefer attrs enablement from field presence; keep
-                         * disabled marker when only ACL forced a slot. */
-                        if (fields == 9 && buf[7] == '-') {
+                        /* When only ACL forced the attrs slot, keep the slot
+                         * disabled unless the old entry marked attrs enabled. */
+                        if (fields == 9 && (sum_off < 8 || buf[7] != '+')) {
                             updated[7] = '-';
                         }
                     }

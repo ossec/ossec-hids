@@ -341,13 +341,19 @@ void start_daemon()
     }
 }
 
-/* Resolve syscheck opts for a path (longest matching configured directory). */
-static int syscheck_opts_for_path(const char *path)
+/* Resolve syscheck opts for a path (longest matching configured directory).
+ * Sets *matched to 1 when a directory matched, 0 otherwise (so callers can
+ * distinguish "matched with opts==0" from "no match").
+ */
+static int syscheck_opts_for_path(const char *path, int *matched)
 {
     int i;
     int best = -1;
     size_t best_len = 0;
 
+    if (matched) {
+        *matched = 0;
+    }
     if (!path || !syscheck.dir) {
         return (0);
     }
@@ -376,7 +382,13 @@ static int syscheck_opts_for_path(const char *path)
         best = i;
     }
 
-    return (best >= 0) ? syscheck.opts[best] : 0;
+    if (best < 0) {
+        return (0);
+    }
+    if (matched) {
+        *matched = 1;
+    }
+    return (syscheck.opts[best]);
 }
 
 /* Read file information and return a pointer to the checksum.
@@ -393,6 +405,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     int checksum_failed = 0;
     int sum_off;
     int path_opts;
+    int path_matched = 0;
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
@@ -413,7 +426,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     memset(&facl, 0, sizeof(facl));
 #endif
 
-    path_opts = syscheck_opts_for_path(file_name);
+    path_opts = syscheck_opts_for_path(file_name, &path_matched);
 
     /* Stat the file */
 #ifdef WIN32
@@ -494,7 +507,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                    ARGV0, file_name, (unsigned long)GetLastError());
             return (-2);
         }
-    } else if (path_opts == 0 && sum_off >= 8 && oldsum[7] == '+') {
+    } else if (!path_matched && sum_off >= 8 && oldsum[7] == '+') {
         /* Path not matched to a configured directory; honor cache flags. */
         attrs = 1;
         win_attrs = GetFileAttributes(file_name);
@@ -514,7 +527,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             return (-2);
         }
         have_facl = 1;
-    } else if (path_opts == 0 && sum_off >= 9 && oldsum[8] == '+') {
+    } else if (!path_matched && sum_off >= 9 && oldsum[8] == '+') {
         acl = 1;
         if (fim_win_acl_read(file_name, &facl) != 0 ||
                 fim_win_acl_digest(&facl, acl_digest) != 0) {
@@ -529,6 +542,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     (void)acl;
     (void)sum_off;
     (void)path_opts;
+    (void)path_matched;
 #endif
 
     /* Generate new checksum */

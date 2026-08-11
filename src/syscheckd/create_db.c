@@ -581,7 +581,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     {
                         char *updated;
                         char *old_data = buf;
-                        int nflags = sum_off;
+                        int nflags;
                         int fields = 1;
                         size_t clen = fim_sum_data_len(c_sum);
                         size_t i;
@@ -602,8 +602,12 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                         os_calloc((size_t)nflags + strlen(c_sum) + 1, sizeof(char), updated);
                         memcpy(updated, buf, 7);
                         if (nflags >= 8) {
-                            updated[7] = (sum_off >= 8) ? buf[7] :
-                                         ((fields >= 8) ? '+' : '-');
+                            updated[7] = (fields >= 8) ? '+' : '-';
+                            /* When only ACL forced the attrs slot, keep the slot
+                             * disabled unless the old entry marked attrs enabled. */
+                            if (fields == 9 && (sum_off < 8 || buf[7] != '+')) {
+                                updated[7] = '-';
+                            }
                         }
                         if (nflags >= 9) {
                             updated[8] = '+';
