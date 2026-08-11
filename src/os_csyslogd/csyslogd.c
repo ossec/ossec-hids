@@ -138,11 +138,19 @@ int field_add_truncated(char *dest, size_t size, const char *format, const char 
         return -1;
     }
 
-    total_sz = strlen(value) + strlen(format) - fmt_size;
-    if (available_sz <= strlen(format) - fmt_size) {
-        return -1;
+    total_sz = strlen(value);
+    {
+        size_t fmt_len = strlen(format);
+
+        if (fmt_size < 0 || (size_t)fmt_size > fmt_len) {
+            return -1;
+        }
+        total_sz += fmt_len - (size_t)fmt_size;
+        if (available_sz <= fmt_len - (size_t)fmt_size) {
+            return -1;
+        }
+        field_sz = available_sz - fmt_len + (size_t)fmt_size;
     }
-    field_sz = available_sz - strlen(format) + fmt_size;
 
     if (
         ((value[0] != '(') && (value[1] != 'n') && (value[2] != 'o')) ||
@@ -152,8 +160,15 @@ int field_add_truncated(char *dest, size_t size, const char *format, const char 
 
         if ( (truncated = (char *) malloc(field_sz + 1)) != NULL ) {
             if ( total_sz > available_sz ) {
-                /* Truncate and add a trailer */
-                os_substr(truncated, value, 0, field_sz - strlen(trailer));
+                size_t trailer_len = strlen(trailer);
+
+                /* field_sz is size_t; subtracting trailer_len without a
+                 * guard underflows and lets os_substr overrun truncated. */
+                if (field_sz <= trailer_len) {
+                    free(truncated);
+                    return -1;
+                }
+                os_substr(truncated, value, 0, field_sz - trailer_len);
                 strcat(truncated, trailer);
             } else {
                 strncpy(truncated, value, field_sz);

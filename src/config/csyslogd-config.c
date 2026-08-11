@@ -24,6 +24,11 @@ int Read_CSyslog(XML_NODE node, void *config, __attribute__((unused)) void *conf
     const char *xml_syslog_group = "group";
     const char *xml_syslog_location = "location";
     const char *xml_syslog_use_fqdn = "use_fqdn";
+    const char *xml_syslog_protocol = "protocol";
+    const char *xml_syslog_tls = "tls";
+    const char *xml_syslog_tls_verify = "tls_verify";
+    const char *xml_syslog_tls_ca = "tls_ca";
+    int protocol_set = 0;
 
     struct SyslogConfig_holder *config_holder = (struct SyslogConfig_holder *)config;
     SyslogConfig **syslog_config = config_holder->data;
@@ -41,6 +46,7 @@ int Read_CSyslog(XML_NODE node, void *config, __attribute__((unused)) void *conf
 
     /* Zero the elements */
     syslog_config[s]->server = NULL;
+    syslog_config[s]->tls_ca = NULL;
     syslog_config[s]->rule_id = NULL;
     syslog_config[s]->group = NULL;
     syslog_config[s]->location = NULL;
@@ -48,7 +54,12 @@ int Read_CSyslog(XML_NODE node, void *config, __attribute__((unused)) void *conf
     syslog_config[s]->port = "514";
     syslog_config[s]->format = DEFAULT_CSYSLOG;
     syslog_config[s]->use_fqdn = 0;
+    syslog_config[s]->protocol = CSYSLOG_UDP;
+    syslog_config[s]->tls = 0;
+    syslog_config[s]->tls_verify = 1;
     syslog_config[s]->socket = -1;
+    syslog_config[s]->ssl = NULL;
+    syslog_config[s]->ssl_ctx = NULL;
     /* local 0 facility (16) + severity 4 - warning. --default */
     syslog_config[s]->priority = (16 * 8) + 4;
 
@@ -162,6 +173,42 @@ int Read_CSyslog(XML_NODE node, void *config, __attribute__((unused)) void *conf
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 goto fail;
             }
+        } else if (strcmp(node[i]->element, xml_syslog_protocol) == 0) {
+            if (strcmp(node[i]->content, "udp") == 0) {
+                syslog_config[s]->protocol = CSYSLOG_UDP;
+                protocol_set = 1;
+            } else if (strcmp(node[i]->content, "tcp") == 0) {
+                syslog_config[s]->protocol = CSYSLOG_TCP;
+                protocol_set = 1;
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                goto fail;
+            }
+        } else if (strcmp(node[i]->element, xml_syslog_tls) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                syslog_config[s]->tls = 1;
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                syslog_config[s]->tls = 0;
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                goto fail;
+            }
+        } else if (strcmp(node[i]->element, xml_syslog_tls_verify) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                syslog_config[s]->tls_verify = 1;
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                syslog_config[s]->tls_verify = 0;
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                goto fail;
+            }
+        } else if (strcmp(node[i]->element, xml_syslog_tls_ca) == 0) {
+            if (node[i]->content[0] == '\0') {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                goto fail;
+            }
+            free(syslog_config[s]->tls_ca);
+            os_strdup(node[i]->content, syslog_config[s]->tls_ca);
         } else if (strcmp(node[i]->element, xml_syslog_group) == 0) {
             os_calloc(1, sizeof(OSMatch), syslog_config[s]->group);
             if (!OSMatch_Compile(node[i]->content,
@@ -183,6 +230,21 @@ int Read_CSyslog(XML_NODE node, void *config, __attribute__((unused)) void *conf
         goto fail;
     }
 
+    /* tls=yes implies TCP unless protocol was explicitly set to udp. */
+    if (syslog_config[s]->tls) {
+        if (protocol_set && syslog_config[s]->protocol == CSYSLOG_UDP) {
+            merror("%s: ERROR: syslog_output tls=yes requires protocol=tcp "
+                   "(got protocol=udp).", __local_name);
+            goto fail;
+        }
+        syslog_config[s]->protocol = CSYSLOG_TCP;
+#ifndef LIBOPENSSL_ENABLED
+        merror("%s: ERROR: syslog_output tls=yes requires building with OpenSSL "
+               "(LIBOPENSSL_ENABLED).", __local_name);
+        goto fail;
+#endif
+    }
+
     config_holder->data = syslog_config;
     return (0);
 
@@ -190,6 +252,7 @@ fail:
     i = 0;
     while (syslog_config[i]) {
         free(syslog_config[i]->server);
+        free(syslog_config[i]->tls_ca);
 
         if (syslog_config[i]->group) {
             OSMatch_FreePattern(syslog_config[i]->group);
