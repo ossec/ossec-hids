@@ -113,10 +113,38 @@ int realtime_checksumfile(const char *file_name)
                 {
                     char *updated;
                     char *old_data = buf;
+                    int nflags = sum_off;
+                    int fields = 1;
+                    size_t clen = fim_sum_data_len(c_sum);
+                    size_t i;
 
-                    os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
-                    memcpy(updated, buf, (size_t)sum_off);
-                    memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
+                    for (i = 0; i < clen; i++) {
+                        if (c_sum[i] == ':') {
+                            fields++;
+                        }
+                    }
+                    if (fields >= 9) {
+                        nflags = 9;
+                    } else if (fields >= 8) {
+                        nflags = 8;
+                    } else {
+                        nflags = 7;
+                    }
+
+                    os_calloc((size_t)nflags + strlen(c_sum) + 1, sizeof(char), updated);
+                    memcpy(updated, buf, 7);
+                    if (nflags >= 8) {
+                        updated[7] = (fields >= 8) ? '+' : '-';
+                        /* Prefer attrs enablement from field presence; keep
+                         * disabled marker when only ACL forced a slot. */
+                        if (fields == 9 && buf[7] == '-') {
+                            updated[7] = '-';
+                        }
+                    }
+                    if (nflags >= 9) {
+                        updated[8] = '+';
+                    }
+                    memcpy(updated + nflags, c_sum, strlen(c_sum) + 1);
                     if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
                         free(old_data);
                     } else {

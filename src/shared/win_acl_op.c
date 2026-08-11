@@ -268,6 +268,38 @@ int fim_win_acl_snapshot(const fim_acl_t *acl, char *buf, size_t buflen)
     return (0);
 }
 
+char *fim_win_acl_snapshot_dup(const fim_acl_t *acl)
+{
+    char *snap = NULL;
+    size_t cap = 8192;
+    const size_t max_cap = 256 * 1024;
+
+    if (!acl) {
+        return (NULL);
+    }
+
+    for (;;) {
+        char *neu = realloc(snap, cap);
+        if (!neu) {
+            free(snap);
+            return (NULL);
+        }
+        snap = neu;
+        if (fim_win_acl_snapshot(acl, snap, cap) != 0) {
+            free(snap);
+            return (NULL);
+        }
+        if (strstr(snap, "... truncated") == NULL) {
+            return (snap);
+        }
+        if (cap >= max_cap) {
+            free(snap);
+            return (NULL);
+        }
+        cap *= 2;
+    }
+}
+
 int fim_win_acl_parse_snapshot(const char *text, fim_acl_t *out)
 {
     char *copy;
@@ -338,9 +370,7 @@ int fim_win_acl_parse_snapshot(const char *text, fim_acl_t *out)
 
 int fim_win_acl_digest(const fim_acl_t *acl, char *md5_hex33)
 {
-    char *snap = NULL;
-    size_t cap = 8192;
-    const size_t max_cap = 256 * 1024;
+    char *snap;
     os_md5 md5;
 
     if (!acl || !md5_hex33) {
@@ -357,30 +387,10 @@ int fim_win_acl_digest(const fim_acl_t *acl, char *md5_hex33)
         return (0);
     }
 
-    /* Grow until the snapshot fits without the truncation marker so the
-     * digest covers the full DACL (display/format paths may still truncate).
-     */
-    for (;;) {
-        char *neu = realloc(snap, cap);
-        if (!neu) {
-            free(snap);
-            return (-1);
-        }
-        snap = neu;
-        if (fim_win_acl_snapshot(acl, snap, cap) != 0) {
-            free(snap);
-            return (-1);
-        }
-        if (strstr(snap, "... truncated") == NULL) {
-            break;
-        }
-        if (cap >= max_cap) {
-            free(snap);
-            return (-1);
-        }
-        cap *= 2;
+    snap = fim_win_acl_snapshot_dup(acl);
+    if (!snap) {
+        return (-1);
     }
-
     OS_MD5_Str(snap, md5);
     memcpy(md5_hex33, md5, 33);
     free(snap);
@@ -392,8 +402,14 @@ static void format_one_ace(const fim_ace_t *a, char *line, size_t linelen, int w
     char inh[32];
     char rights[512];
     char who[256];
-    const char *kind = (a->type == FIM_ACE_DENY) ? "DENIED" : "ALLOWED";
+    const char *kind;
 
+    if (a->type == FIM_ACE_OTHER) {
+        snprintf(line, linelen, "OPAQUE %s (type/mask encoded)", a->sid);
+        return;
+    }
+
+    kind = (a->type == FIM_ACE_DENY) ? "DENIED" : "ALLOWED";
     format_inherit(a->flags, inh, sizeof(inh));
     format_mask(a->mask, rights, sizeof(rights));
     if (with_name) {
@@ -461,7 +477,10 @@ int fim_win_acl_diff(const fim_acl_t *old_acl, const fim_acl_t *new_acl,
     buf[0] = '\0';
 
     if (old_acl->special != new_acl->special) {
-        append_str(buf, buflen, &used, "Permissions changed (DACL state):\n");
+        /* Keep "Permissions:" prefix so analysisd does not label this as
+         * a content-diff "What changed:" appendix. */
+        append_str(buf, buflen, &used, "Permissions:\n");
+        append_str(buf, buflen, &used, "  DACL state changed\n");
         fim_win_acl_format(new_acl, buf + used,
                            buflen > used ? buflen - used : 0);
         return ((int)strlen(buf));
@@ -473,62 +492,81 @@ int fim_win_acl_diff(const fim_acl_t *old_acl, const fim_acl_t *new_acl,
 
     append_str(buf, buflen, &used, "Permissions:\n");
 
-    /* Removed / modified */
-    for (i = 0; i < old_acl->count; i++) {
-        const fim_ace_t *o = &old_acl->aces[i];
-        int found = 0;
-        for (j = 0; j < new_acl->count; j++) {
-            const fim_ace_t *n = &new_acl->aces[j];
-            if (!ace_same_principal(o, n)) {
-                continue;
+    /* Track which new ACEs have been paired so duplicate principals
+     * (same SID/type/flags, different masks) map 1:1. */
+    {
+        unsigned char *new_used = NULL;
+
+        if (new_acl->count > 0) {
+            new_used = calloc(new_acl->count, 1);
+            if (!new_used) {
+                return (-1);
             }
-            found = 1;
-            if (o->mask != n->mask) {
-                append_str(buf, buflen, &used, "  Modified: ");
+        }
+
+        /* Removed / modified */
+        for (i = 0; i < old_acl->count; i++) {
+            const fim_ace_t *o = &old_acl->aces[i];
+            int found = 0;
+
+            for (j = 0; j < new_acl->count; j++) {
+                const fim_ace_t *n = &new_acl->aces[j];
+
+                if (new_used && new_used[j]) {
+                    continue;
+                }
+                if (!ace_same_principal(o, n)) {
+                    continue;
+                }
+                found = 1;
+                if (new_used) {
+                    new_used[j] = 1;
+                }
+                if (o->mask != n->mask || o->ord != n->ord) {
+                    append_str(buf, buflen, &used, "  Modified: ");
+                    format_one_ace(o, line, sizeof(line), 1);
+                    append_str(buf, buflen, &used, line);
+                    append_str(buf, buflen, &used, " -> ");
+                    format_one_ace(n, line, sizeof(line), 1);
+                    append_str(buf, buflen, &used, line);
+                    append_str(buf, buflen, &used, "\n");
+                    any = 1;
+                }
+                break;
+            }
+            if (!found) {
+                append_str(buf, buflen, &used, "  Removed: ");
                 format_one_ace(o, line, sizeof(line), 1);
-                append_str(buf, buflen, &used, line);
-                append_str(buf, buflen, &used, " -> ");
-                format_one_ace(n, line, sizeof(line), 1);
                 append_str(buf, buflen, &used, line);
                 append_str(buf, buflen, &used, "\n");
                 any = 1;
             }
-            break;
-        }
-        if (!found) {
-            append_str(buf, buflen, &used, "  Removed: ");
-            format_one_ace(o, line, sizeof(line), 1);
-            append_str(buf, buflen, &used, line);
-            append_str(buf, buflen, &used, "\n");
-            any = 1;
-        }
-        if (used + 128 >= buflen) {
-            append_str(buf, buflen, &used, "  ... truncated ...\n");
-            return ((int)used);
-        }
-    }
-
-    /* Added */
-    for (j = 0; j < new_acl->count; j++) {
-        const fim_ace_t *n = &new_acl->aces[j];
-        int found = 0;
-        for (i = 0; i < old_acl->count; i++) {
-            if (ace_same_principal(&old_acl->aces[i], n)) {
-                found = 1;
-                break;
+            if (used + 128 >= buflen) {
+                append_str(buf, buflen, &used, "  ... truncated ...\n");
+                free(new_used);
+                return ((int)used);
             }
         }
-        if (!found) {
+
+        /* Added */
+        for (j = 0; j < new_acl->count; j++) {
+            const fim_ace_t *n = &new_acl->aces[j];
+
+            if (new_used && new_used[j]) {
+                continue;
+            }
             append_str(buf, buflen, &used, "  Added: ");
             format_one_ace(n, line, sizeof(line), 1);
             append_str(buf, buflen, &used, line);
             append_str(buf, buflen, &used, "\n");
             any = 1;
+            if (used + 128 >= buflen) {
+                append_str(buf, buflen, &used, "  ... truncated ...\n");
+                free(new_used);
+                return ((int)used);
+            }
         }
-        if (used + 128 >= buflen) {
-            append_str(buf, buflen, &used, "  ... truncated ...\n");
-            break;
-        }
+        free(new_used);
     }
 
     if (!any) {
@@ -667,36 +705,56 @@ int fim_win_acl_read(const char *path, fim_acl_t *out)
         if (!GetAce(pDacl, i, (LPVOID *)&hdr) || !hdr) {
             continue;
         }
-        if (hdr->AceType != ACCESS_ALLOWED_ACE_TYPE &&
-                hdr->AceType != ACCESS_DENIED_ACE_TYPE) {
-            continue;
-        }
 
         memset(&ace, 0, sizeof(ace));
-        ace.type = (hdr->AceType == ACCESS_DENIED_ACE_TYPE) ?
-                   FIM_ACE_DENY : FIM_ACE_ALLOW;
+        ace.ord = (unsigned int)i;
         ace.flags = hdr->AceFlags &
                     (OBJECT_INHERIT_ACE | CONTAINER_INHERIT_ACE |
                      NO_PROPAGATE_INHERIT_ACE | INHERIT_ONLY_ACE |
                      INHERITED_ACE);
 
-        if (hdr->AceType == ACCESS_ALLOWED_ACE_TYPE) {
-            ACCESS_ALLOWED_ACE *a = (ACCESS_ALLOWED_ACE *)hdr;
-            ace.mask = a->Mask;
-            sid = (PSID)&a->SidStart;
-        } else {
-            ACCESS_DENIED_ACE *a = (ACCESS_DENIED_ACE *)hdr;
-            ace.mask = a->Mask;
-            sid = (PSID)&a->SidStart;
-        }
+        if (hdr->AceType == ACCESS_ALLOWED_ACE_TYPE ||
+                hdr->AceType == ACCESS_DENIED_ACE_TYPE) {
+            ace.type = (hdr->AceType == ACCESS_DENIED_ACE_TYPE) ?
+                       FIM_ACE_DENY : FIM_ACE_ALLOW;
 
-        if (!ConvertSidToStringSidA(sid, &sid_str) || !sid_str) {
-            continue;
+            if (hdr->AceType == ACCESS_ALLOWED_ACE_TYPE) {
+                ACCESS_ALLOWED_ACE *a = (ACCESS_ALLOWED_ACE *)hdr;
+                ace.mask = a->Mask;
+                sid = (PSID)&a->SidStart;
+            } else {
+                ACCESS_DENIED_ACE *a = (ACCESS_DENIED_ACE *)hdr;
+                ace.mask = a->Mask;
+                sid = (PSID)&a->SidStart;
+            }
+
+            if (!ConvertSidToStringSidA(sid, &sid_str) || !sid_str) {
+                LocalFree(pSD);
+                fim_acl_free(out);
+                return (-1);
+            }
+            snprintf(ace.sid, sizeof(ace.sid), "%s", sid_str);
+            LocalFree(sid_str);
+        } else {
+            /* Callback/object/unknown ACE: include an opaque digest so the
+             * integrity hash still changes when these entries change. */
+            os_md5 ace_md5;
+            const unsigned char *raw = (const unsigned char *)hdr;
+            size_t raw_len = hdr->AceSize;
+
+            ace.type = FIM_ACE_OTHER;
+            ace.mask = hdr->AceType;
+            if (raw_len == 0 || raw_len > 65535) {
+                raw_len = sizeof(ACE_HEADER);
+            }
+            if (OS_MD5_Bytes((const char *)raw, raw_len, ace_md5) != 0) {
+                LocalFree(pSD);
+                fim_acl_free(out);
+                return (-1);
+            }
+            snprintf(ace.sid, sizeof(ace.sid), "TYPE%u_%s",
+                     (unsigned int)hdr->AceType, ace_md5);
         }
-        snprintf(ace.sid, sizeof(ace.sid), "%s", sid_str);
-        LocalFree(sid_str);
-        /* Original DACL index (not filtered allow/deny-only index). */
-        ace.ord = (unsigned int)i;
 
         if (n >= cap) {
             fim_ace_t *neu;

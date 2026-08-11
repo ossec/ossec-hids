@@ -198,12 +198,13 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 
         buf = (char *) OSHash_Get(syscheck.fp, file_name);
         if (!buf) {
-            char alert_msg[916 + 1];    /* to accommodate a long */
+            char alert_msg[OS_MAXSTR + 1];
             char hash_entry[916 + 1];
             char *hash_full = NULL;     /* optional ACL snapshot entry */
-            alert_msg[916] = '\0';
+            alert_msg[OS_MAXSTR] = '\0';
             hash_entry[916] = '\0';
             hash_entry[0] = '\0';
+            alert_msg[0] = '\0';
 
 #ifndef WIN32
             if (opts & CHECK_SEECHANGES) {
@@ -219,7 +220,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             {
                 DWORD win_attrs = 0;
                 char acl_digest[33];
-                char acl_snap[8192];
+                char *acl_snap = NULL;
                 fim_acl_t acl;
                 int have_acl = 0;
                 const char *uid_str;
@@ -231,34 +232,37 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 char *st_uid = NULL;
 
                 acl_digest[0] = '\0';
-                acl_snap[0] = '\0';
                 memset(&acl, 0, sizeof(acl));
 
                 if (opts & CHECK_ATTRS) {
                     win_attrs = GetFileAttributes(file_name);
                     if (win_attrs == INVALID_FILE_ATTRIBUTES) {
-                        merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                        merror("%s: WARN: Unable to get attributes for '%s' (%lu); "
+                               "continuing without attribute baseline",
                                ARGV0, file_name, (unsigned long)GetLastError());
-                        return (0);
+                        win_attrs = 0;
                     }
                 }
 
                 if (opts & CHECK_ACL) {
                     if (fim_win_acl_read(file_name, &acl) != 0) {
                         fim_acl_free(&acl);
-                        merror("%s: WARN: Unable to read ACL for '%s'",
+                        merror("%s: WARN: Unable to read ACL for '%s'; "
+                               "continuing without ACL baseline",
                                ARGV0, file_name);
-                        return (0);
-                    }
-                    if (fim_win_acl_digest(&acl, acl_digest) != 0 ||
-                            fim_win_acl_snapshot(&acl, acl_snap, sizeof(acl_snap)) != 0) {
+                    } else if (fim_win_acl_digest(&acl, acl_digest) != 0 ||
+                               (acl_snap = fim_win_acl_snapshot_dup(&acl)) == NULL) {
                         fim_acl_free(&acl);
-                        merror("%s: WARN: Unable to digest ACL for '%s'",
+                        free(acl_snap);
+                        acl_snap = NULL;
+                        merror("%s: WARN: Unable to digest ACL for '%s'; "
+                               "continuing without ACL baseline",
                                ARGV0, file_name);
-                        return (0);
+                        acl_digest[0] = '\0';
+                    } else {
+                        have_acl = 1;
+                        fim_acl_free(&acl);
                     }
-                    have_acl = 1;
-                    fim_acl_free(&acl);
                 }
 
                 if (have_acl) {
@@ -284,12 +288,16 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                              acl_digest);
                     {
                         size_t he_len = strlen(hash_entry);
-                        size_t snap_len = strlen(acl_snap);
+                        size_t snap_len = acl_snap ? strlen(acl_snap) : 0;
 
                         os_calloc(he_len + 1 + snap_len + 1, sizeof(char), hash_full);
                         memcpy(hash_full, hash_entry, he_len);
                         hash_full[he_len] = '\n';
-                        memcpy(hash_full + he_len + 1, acl_snap, snap_len + 1);
+                        if (acl_snap) {
+                            memcpy(hash_full + he_len + 1, acl_snap, snap_len + 1);
+                        } else {
+                            hash_full[he_len + 1] = '\0';
+                        }
                     }
                 } else if (opts & CHECK_ATTRS) {
                     snprintf(hash_entry, 916,
@@ -328,7 +336,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 }
 
                 /* Owner SID for the manager alert (reuse attrs/ACL above). */
-                alert_msg[916] = '\0';
+                alert_msg[OS_MAXSTR] = '\0';
                 hFile = CreateFile(file_name, GENERIC_READ,
                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -336,6 +344,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     DWORD dwErrorCode = GetLastError();
                     char err_msg[PATH_MAX + 4];
                     free(hash_full);
+                    free(acl_snap);
                     err_msg[PATH_MAX + 3] = '\0';
                     snprintf(err_msg, PATH_MAX + 4, "CreateFile=%ld %s",
                              dwErrorCode, file_name);
@@ -350,6 +359,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     DWORD dwErrorCode = GetLastError();
                     CloseHandle(hFile);
                     free(hash_full);
+                    free(acl_snap);
                     {
                         char err_msg[PATH_MAX + 4];
                         err_msg[PATH_MAX + 3] = '\0';
@@ -374,7 +384,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                 uid_str = (opts & CHECK_OWNER) ? (st_uid ? st_uid : "0") : "0";
 
                 if (have_acl) {
-                    snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s:%s:%lu:%s %s",
+                    snprintf(alert_msg, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s:%lu:%s %s",
                              opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                              opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                              uid_str,
@@ -386,7 +396,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                              acl_digest,
                              file_name);
                 } else if (opts & CHECK_ATTRS) {
-                    snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s:%s:%lu %s",
+                    snprintf(alert_msg, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s:%lu %s",
                              opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                              opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                              uid_str,
@@ -397,7 +407,7 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                              (unsigned long)win_attrs,
                              file_name);
                 } else {
-                    snprintf(alert_msg, 916, "%ld:%d:%s:%d:%s:%s:%s %s",
+                    snprintf(alert_msg, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s %s",
                              opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                              opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                              uid_str,
@@ -408,6 +418,8 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                              file_name);
                 }
                 free(st_uid);
+                free(acl_snap);
+                acl_snap = NULL;
             }
 #else
             snprintf(hash_entry, 916, "%c%c%c%c%c%c%c%ld:%d:%d:%d:%s:%s:%s",
@@ -459,39 +471,39 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
             alert_msg[OS_MAXSTR] = '\0';
 
 #ifdef WIN32
-            /* Upgrade local cache flag format when attrs/ACL were enabled. */
+            /* Keep local cache flag format aligned with current directory opts. */
             {
                 int cur_off = fim_sum_data_offset(buf);
+                int want_attrs = (opts & CHECK_ATTRS) ? 1 : 0;
+                int want_acl = (opts & CHECK_ACL) ? 1 : 0;
+                int need = 7;
 
-                if ((opts & CHECK_ACL) && (cur_off == 7 || cur_off == 8)) {
+                if (want_acl) {
+                    need = 9;
+                } else if (want_attrs) {
+                    need = 8;
+                }
+
+                if (cur_off != need ||
+                        (need >= 8 && ((buf[7] == '+') != want_attrs)) ||
+                        (need >= 9 && ((buf[8] == '+') != want_acl))) {
                     char *upgraded;
                     size_t blen = strlen(buf);
-                    size_t insert = (size_t)(9 - cur_off);
+                    size_t data_len = (blen > (size_t)cur_off) ? (blen - (size_t)cur_off) : 0;
 
-                    os_calloc(blen + insert + 1, sizeof(char), upgraded);
-                    memcpy(upgraded, buf, (size_t)cur_off);
-                    if (cur_off == 7) {
-                        upgraded[7] = (opts & CHECK_ATTRS) ? '+' : '-';
-                        upgraded[8] = '+';
-                        memcpy(upgraded + 9, buf + 7, blen - 7 + 1);
-                    } else {
-                        upgraded[8] = '+';
-                        memcpy(upgraded + 9, buf + 8, blen - 8 + 1);
-                    }
-                    if (OSHash_Update(syscheck.fp, file_name, upgraded) == 1) {
-                        free(buf);
-                        buf = upgraded;
-                    } else {
-                        free(upgraded);
-                    }
-                } else if ((opts & CHECK_ATTRS) && cur_off == 7) {
-                    char *upgraded;
-                    size_t blen = strlen(buf);
-
-                    os_calloc(blen + 2, sizeof(char), upgraded);
+                    os_calloc((size_t)need + data_len + 1, sizeof(char), upgraded);
                     memcpy(upgraded, buf, 7);
-                    upgraded[7] = '+';
-                    memcpy(upgraded + 8, buf + 7, blen - 7 + 1);
+                    if (need >= 8) {
+                        upgraded[7] = want_attrs ? '+' : '-';
+                    }
+                    if (need >= 9) {
+                        upgraded[8] = want_acl ? '+' : '-';
+                    }
+                    if (data_len > 0) {
+                        memcpy(upgraded + need, buf + cur_off, data_len + 1);
+                    } else {
+                        upgraded[need] = '\0';
+                    }
                     if (OSHash_Update(syscheck.fp, file_name, upgraded) == 1) {
                         free(buf);
                         buf = upgraded;
@@ -569,10 +581,34 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                     {
                         char *updated;
                         char *old_data = buf;
+                        int nflags = sum_off;
+                        int fields = 1;
+                        size_t clen = fim_sum_data_len(c_sum);
+                        size_t i;
 
-                        os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
-                        memcpy(updated, buf, (size_t)sum_off);
-                        memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
+                        for (i = 0; i < clen; i++) {
+                            if (c_sum[i] == ':') {
+                                fields++;
+                            }
+                        }
+                        if (fields >= 9) {
+                            nflags = 9;
+                        } else if (fields >= 8) {
+                            nflags = 8;
+                        } else {
+                            nflags = 7;
+                        }
+
+                        os_calloc((size_t)nflags + strlen(c_sum) + 1, sizeof(char), updated);
+                        memcpy(updated, buf, 7);
+                        if (nflags >= 8) {
+                            updated[7] = (sum_off >= 8) ? buf[7] :
+                                         ((fields >= 8) ? '+' : '-');
+                        }
+                        if (nflags >= 9) {
+                            updated[8] = '+';
+                        }
+                        memcpy(updated + nflags, c_sum, strlen(c_sum) + 1);
                         if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
                             free(old_data);
                         } else {

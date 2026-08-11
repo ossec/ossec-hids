@@ -16,6 +16,7 @@
 
 #define FIM_ACE_ALLOW 0
 #define FIM_ACE_DENY  1
+#define FIM_ACE_OTHER 2  /* callback/object/unknown ACE types (opaque in digest) */
 
 #define FIM_ACL_NORMAL    0
 #define FIM_ACL_NODACL    1
@@ -63,6 +64,9 @@ int fim_win_acl_parse_snapshot(const char *text, fim_acl_t *out);
 
 /* Write canonical snapshot (SID-stable, for cache + digest input). */
 int fim_win_acl_snapshot(const fim_acl_t *acl, char *buf, size_t buflen);
+
+/* Allocate a full (non-truncated) snapshot. Caller must free. NULL on error. */
+char *fim_win_acl_snapshot_dup(const fim_acl_t *acl);
 
 /* Build human-readable ACL change text from local-cache / c_sum entries
  * that may include a "\\n" + snapshot after the sum. Returns bytes written,

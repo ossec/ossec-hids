@@ -55,9 +55,12 @@ int main(void)
     expect_int("attrs equal",
                fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx:32",
                                        "0:0:0:0:aaa:bbb:xxx:32"), 0);
-    expect_int("attrs added",
+    expect_int("attrs added format-only",
                fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx",
-                                       "0:0:0:0:aaa:bbb:xxx:32"), 1);
+                                       "0:0:0:0:aaa:bbb:xxx:32"), 0);
+    expect_int("acl added format-only",
+               fim_sum_has_real_change("0:0:0:0:aaa:bbb:xxx:0",
+                                       "0:0:0:0:aaa:bbb:xxx:0:deadbeef"), 0);
 
     expect_int("offset acl format",
                fim_sum_data_offset("++++++++-0:0:0:0:aaa:bbb:ccc:0:deadbeef"), 9);

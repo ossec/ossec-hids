@@ -188,22 +188,19 @@ int fim_sum_has_real_change(const char *old_sum, const char *new_sum)
         return (1);
     }
 
-    /* Optional attrs (index 7) */
+    /* Optional attrs (index 7). Format-only add/remove (enabling/disabling
+     * check_attrs) is not a content change. */
     if (oc >= 8 && nc >= 8) {
         if (strcmp(of[7], nf[7]) != 0) {
             return (1);
         }
-    } else if (oc >= 8 || nc >= 8) {
-        return (1);
     }
 
-    /* Optional ACL digest (index 8) */
+    /* Optional ACL digest (index 8). Format-only add/remove is quiet. */
     if (oc >= 9 && nc >= 9) {
         if (strcmp(of[8], nf[8]) != 0) {
             return (1);
         }
-    } else if (oc >= 9 || nc >= 9) {
-        return (1);
     }
 
     return (0);

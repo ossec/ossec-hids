@@ -341,6 +341,44 @@ void start_daemon()
     }
 }
 
+/* Resolve syscheck opts for a path (longest matching configured directory). */
+static int syscheck_opts_for_path(const char *path)
+{
+    int i;
+    int best = -1;
+    size_t best_len = 0;
+
+    if (!path || !syscheck.dir) {
+        return (0);
+    }
+
+    for (i = 0; syscheck.dir[i]; i++) {
+        size_t len = strlen(syscheck.dir[i]);
+        char next;
+
+        if (len == 0 || len < best_len) {
+            continue;
+        }
+#ifdef WIN32
+        if (strncasecmp(path, syscheck.dir[i], len) != 0) {
+            continue;
+        }
+#else
+        if (strncmp(path, syscheck.dir[i], len) != 0) {
+            continue;
+        }
+#endif
+        next = path[len];
+        if (next != '\0' && next != '/' && next != '\\') {
+            continue;
+        }
+        best_len = len;
+        best = i;
+    }
+
+    return (best >= 0) ? syscheck.opts[best] : 0;
+}
+
 /* Read file information and return a pointer to the checksum.
  * Returns 0 on success, -1 if the file is missing (delete alert already
  * sent), -2 if metadata/checksum read failed (e.g. EACCES, EMFILE) so
@@ -354,6 +392,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     int return_error = 0;
     int checksum_failed = 0;
     int sum_off;
+    int path_opts;
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
@@ -373,6 +412,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     acl_digest[0] = '\0';
     memset(&facl, 0, sizeof(facl));
 #endif
+
+    path_opts = syscheck_opts_for_path(file_name);
 
     /* Stat the file */
 #ifdef WIN32
@@ -443,8 +484,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     /* If it's a digit (size), then it's the old format, no sha256 */
 
 #ifdef WIN32
-    /* attrs: present in 8+ flag formats; value used when flag[7] is '+'. */
-    if (sum_off >= 8 && oldsum[7] == '+') {
+    /* Prefer current directory opts over sticky cache flags so enabling or
+     * disabling check_attrs / check_acl takes effect without a DB wipe. */
+    if (path_opts & CHECK_ATTRS) {
+        attrs = 1;
+        win_attrs = GetFileAttributes(file_name);
+        if (win_attrs == INVALID_FILE_ATTRIBUTES) {
+            merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                   ARGV0, file_name, (unsigned long)GetLastError());
+            return (-2);
+        }
+    } else if (path_opts == 0 && sum_off >= 8 && oldsum[7] == '+') {
+        /* Path not matched to a configured directory; honor cache flags. */
         attrs = 1;
         win_attrs = GetFileAttributes(file_name);
         if (win_attrs == INVALID_FILE_ATTRIBUTES) {
@@ -454,8 +505,16 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         }
     }
 
-    /* ACL: 9-flag format with flag[8] == '+' */
-    if (sum_off >= 9 && oldsum[8] == '+') {
+    if (path_opts & CHECK_ACL) {
+        acl = 1;
+        if (fim_win_acl_read(file_name, &facl) != 0 ||
+                fim_win_acl_digest(&facl, acl_digest) != 0) {
+            fim_acl_free(&facl);
+            merror("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
+            return (-2);
+        }
+        have_facl = 1;
+    } else if (path_opts == 0 && sum_off >= 9 && oldsum[8] == '+') {
         acl = 1;
         if (fim_win_acl_read(file_name, &facl) != 0 ||
                 fim_win_acl_digest(&facl, acl_digest) != 0) {
@@ -469,6 +528,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     (void)attrs;
     (void)acl;
     (void)sum_off;
+    (void)path_opts;
 #endif
 
     /* Generate new checksum */

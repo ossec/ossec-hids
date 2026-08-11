@@ -902,9 +902,21 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                      old_abuf, new_abuf);
         }
 
-        /* ACL digest change is detailed in lf->data (Permissions appendix). */
-        (void)oldacl;
-        (void)newacl;
+        /* ACL digest (detailed ACE matrix may also be in lf->data). */
+        if (oldacl && newacl && strcmp(oldacl, newacl) != 0) {
+            char acl_line[OS_FLSIZE];
+
+            snprintf(acl_line, sizeof(acl_line),
+                     "ACL digest changed from '%.32s' to '%.32s'\n",
+                     oldacl, newacl);
+            if (sdb.attrs[0] == '\0') {
+                snprintf(sdb.attrs, OS_FLSIZE, "%s", acl_line);
+            } else {
+                char combined[OS_FLSIZE];
+                snprintf(combined, sizeof(combined), "%s%s", sdb.attrs, acl_line);
+                snprintf(sdb.attrs, OS_FLSIZE, "%s", combined);
+            }
+        }
 
         /* Provide information about the file */
         snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changed for: "
