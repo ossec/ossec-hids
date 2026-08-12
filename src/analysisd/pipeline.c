@@ -950,7 +950,7 @@ static void *analysisd_input_recv_thread(void *arg)
             continue;
         }
 
-        if (analysisd_shutting_down || (int)pipeline_m_queue < 0) {
+        if (analysisd_shutting_down || (int)pipeline_m_queue != fd) {
             break;
         }
 
@@ -960,7 +960,7 @@ static void *analysisd_input_recv_thread(void *arg)
 
         recv_len = OS_RecvUnix(fd, OS_MAXSTR, msg);
         if (recv_len <= 0) {
-            if (analysisd_shutting_down || (int)pipeline_m_queue < 0) {
+            if (analysisd_shutting_down || (int)pipeline_m_queue != fd) {
                 break;
             }
             continue;

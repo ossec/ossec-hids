@@ -14,6 +14,7 @@
 int update_fname(int i);
 static int logformat_is_shared(int idx);
 static void clear_logreader_entry(int idx);
+static void logcollector_queue_send(const char *msg, const char *locmsg);
 
 /* Global variables */
 int loop_timeout;
@@ -37,6 +38,20 @@ static char *rand_keepalive_str(char *dst, int size)
     }
     dst[i] = '\0';
     return dst;
+}
+
+/* SendMSG closes the fd on hard socket errors; reconnect before reuse. */
+static void logcollector_queue_send(const char *msg, const char *locmsg)
+{
+    if (SendMSG(logr_queue, msg, locmsg, LOCALFILE_MQ) < 0) {
+        merror(QUEUE_SEND, ARGV0);
+        if ((logr_queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
+            ErrorExit(QUEUE_FATAL, ARGV0, DEFAULTQPATH);
+        }
+        if (SendMSG(logr_queue, msg, locmsg, LOCALFILE_MQ) < 0) {
+            merror(QUEUE_SEND, ARGV0);
+        }
+    }
 }
 
 /* Return 1 if another logreader entry shares the same logformat pointer
@@ -453,7 +468,7 @@ void LogCollectorStart()
 
         /* Send keep alive message */
         rand_keepalive_str(keepalive, 700);
-        SendMSG(logr_queue, keepalive, "ossec-keepalive", LOCALFILE_MQ);
+        logcollector_queue_send(keepalive, "ossec-keepalive");
 
         /* Zero f_check */
         f_check = 0;
@@ -551,8 +566,7 @@ void LogCollectorStart()
                              logff[i].file);
 
                     /* Send message about log rotated */
-                    SendMSG(logr_queue, msg_alert,
-                            "ossec-logcollector", LOCALFILE_MQ);
+                    logcollector_queue_send(msg_alert, "ossec-logcollector");
 
                     debug1("%s: DEBUG: File inode changed. %s",
                            ARGV0, logff[i].file);
@@ -581,8 +595,7 @@ void LogCollectorStart()
                              logff[i].file);
 
                     /* Send message about log rotated */
-                    SendMSG(logr_queue, msg_alert,
-                            "ossec-logcollector", LOCALFILE_MQ);
+                    logcollector_queue_send(msg_alert, "ossec-logcollector");
 
                     debug1("%s: DEBUG: File size reduced. %s",
                            ARGV0, logff[i].file);

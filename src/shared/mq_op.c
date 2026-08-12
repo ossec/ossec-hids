@@ -111,8 +111,10 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
     }
 
     /* Five send attempts; after the first failure, sleep 1/3/5/10s
-     * between retries (total sleep budget 19s). On OS_SOCKTERR close the
-     * fd so callers can StartMQ again; they see -1 as before.
+     * between retries (total sleep budget 19s). OS_SOCKTERR is fatal
+     * only on the initial attempt; close(queue) so callers that StartMQ
+     * again do not leak the dead fd. Callers must not reuse queue after -1
+     * without StartMQ (pass-by-value cannot clear the caller's variable).
      */
     __mq_rcode = OS_SendUnix(queue, tmpstr, 0);
     if (__mq_rcode < 0) {
