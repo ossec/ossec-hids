@@ -29,9 +29,43 @@
 /* Prototypes */
 static void send_sk_db(void);
 static void syscheck_log_send_failures(void);
+static time_t syscheck_idle_wait(time_t curr_time, time_t prev_time_sk,
+                                 time_t prev_time_rk);
 
 /* Count of baseline/update messages that could not reach the agent queue. */
 static unsigned int syscheck_send_failures = 0;
+
+/* Max idle between daemon-loop iterations: honor <frequency> / rootcheck
+ * cadence while still capping at SYSCHECK_WAIT so long frequencies do not
+ * block forever in select/sleep.
+ */
+static time_t syscheck_idle_wait(time_t curr_time, time_t prev_time_sk,
+                                 time_t prev_time_rk)
+{
+    time_t remaining;
+    time_t next_sk;
+    time_t sk_remain;
+
+    next_sk = prev_time_sk + (time_t)syscheck.time;
+    sk_remain = next_sk - curr_time;
+    remaining = sk_remain;
+
+    if (syscheck.rootcheck && rootcheck.time > 0) {
+        time_t next_rk = prev_time_rk + (time_t)rootcheck.time;
+        time_t rk_remain = next_rk - curr_time;
+        if (rk_remain < remaining) {
+            remaining = rk_remain;
+        }
+    }
+
+    if (remaining < 1) {
+        remaining = 1;
+    }
+    if (remaining > SYSCHECK_WAIT) {
+        remaining = SYSCHECK_WAIT;
+    }
+    return remaining;
+}
 
 
 /* Send a message related to syscheck change/addition.
@@ -206,9 +240,11 @@ void start_daemon()
         }
     }
 
-    /* Check every SYSCHECK_WAIT */
+    /* Loop: run due scans, then idle up to min(SYSCHECK_WAIT, remaining freq). */
     while (1) {
         int run_now = 0;
+        int select_rc;
+        time_t idle_wait;
         curr_time = time(0);
 
         /* Check if syscheck should be restarted */
@@ -300,41 +336,45 @@ void start_daemon()
             prev_time_sk = time(0);
         }
 
+        curr_time = time(0);
+        idle_wait = syscheck_idle_wait(curr_time, prev_time_sk, prev_time_rk);
+
 #ifdef INOTIFY_ENABLED
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
-            selecttime.tv_sec = SYSCHECK_WAIT;
+            selecttime.tv_sec = (long)idle_wait;
             selecttime.tv_usec = 0;
 
             /* zero-out the fd_set */
             FD_ZERO (&rfds);
             FD_SET(syscheck.realtime->fd, &rfds);
 
-            run_now = select(syscheck.realtime->fd + 1, &rfds,
-                             NULL, NULL, &selecttime);
-            if (run_now < 0) {
+            select_rc = select(syscheck.realtime->fd + 1, &rfds,
+                               NULL, NULL, &selecttime);
+            if (select_rc < 0) {
                 merror("%s: ERROR: Select failed (for realtime fim).", ARGV0);
-                sleep(SYSCHECK_WAIT);
-            } else if (run_now == 0) {
-                /* Timeout */
+                sleep((unsigned int)idle_wait);
+            } else if (select_rc == 0) {
+                /* Timeout — re-evaluate frequency */
             } else if (FD_ISSET (syscheck.realtime->fd, &rfds)) {
                 realtime_process();
             }
         } else {
-            sleep(SYSCHECK_WAIT);
+            sleep((unsigned int)idle_wait);
         }
 #elif defined(WIN32)
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
-            if (WaitForSingleObjectEx(syscheck.realtime->evt, SYSCHECK_WAIT * 1000, TRUE) == WAIT_FAILED) {
+            if (WaitForSingleObjectEx(syscheck.realtime->evt,
+                                      (DWORD)(idle_wait * 1000), TRUE) == WAIT_FAILED) {
                 merror("%s: ERROR: WaitForSingleObjectEx failed (for realtime fim).", ARGV0);
-                sleep(SYSCHECK_WAIT);
+                sleep((unsigned int)idle_wait);
             } else {
                 sleep(1);
             }
         } else {
-            sleep(SYSCHECK_WAIT);
+            sleep((unsigned int)idle_wait);
         }
 #else
-        sleep(SYSCHECK_WAIT);
+        sleep((unsigned int)idle_wait);
 #endif
     }
 }
