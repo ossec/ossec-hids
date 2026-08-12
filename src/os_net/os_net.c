@@ -229,10 +229,8 @@ int OS_BindUnixDomain(const char *path, mode_t mode, int max_msg_size)
     socklen_t optlen = sizeof(len);
 
     /* Make sure the path isn't there */
-    int urc = -1;
-    if (( urc = unlink(path)) < 0) {
-        /* XXX I think we're blindly unlinking path, so if it doesn't exist, don't log an error */
-        if (urc != ENOENT) {
+    if (unlink(path) < 0) {
+        if (errno != ENOENT) {
             merror("ERROR: Cannot unlink file %s: %s", path, strerror(errno));
         }
     }

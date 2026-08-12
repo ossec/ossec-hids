@@ -371,6 +371,16 @@ int main_analysisd(int argc, char **argv)
     }
     nowChroot();
 
+    /* Bind the analysis queue early (before decoder/rule load) so producers
+     * started by ossec-control do not connect to a stale socket path while
+     * we are still loading config. Group is already set; socket is 0660.
+     */
+    if (!test_config) {
+        if ((m_queue = StartMQ(DEFAULTQUEUE, READ)) < 0) {
+            ErrorExit(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
+        }
+    }
+
     Config.decoder_order_size = (size_t)getDefine_Int("analysisd", "decoder_order_size", 8, MAX_DECODER_ORDER_SIZE);
 
 
@@ -545,10 +555,7 @@ int main_analysisd(int argc, char **argv)
         ErrorExit(PID_ERROR, ARGV0);
     }
 
-    /* Set the queue */
-    if ((m_queue = StartMQ(DEFAULTQUEUE, READ)) < 0) {
-        ErrorExit(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
-    }
+    /* Queue already bound post-chroot (see StartMQ above). */
 
     /* allowlist */
     if (Config.allow_list == NULL) {

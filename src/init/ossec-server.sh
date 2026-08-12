@@ -223,6 +223,15 @@ start()
             fi
 
             echo "Started ${i}..."
+
+            # Producers must not start until analysisd has bound the queue.
+            if [ X"$i" = "Xossec-analysisd" ]; then
+                wait_for_analysis_queue
+                if [ $? != 0 ]; then
+                    unlock;
+                    exit 1;
+                fi
+            fi
         else
             echo "${i} already running..."
         fi
@@ -264,24 +273,105 @@ pstatus()
     return 0;
 }
 
+# After SIGTERM, wait for process exit (analysisd may need a few seconds to
+# drain). Escalate to SIGKILL after grace so restart does not race a half-dead
+# daemon.
+wait_pids_gone()
+{
+    local grace=45
+    local elapsed=0
+    local pid
+    local still
+
+    if [ "X$*" = "X" ]; then
+        return 0
+    fi
+
+    while [ ${elapsed} -lt ${grace} ]; do
+        still=0
+        for pid in $*; do
+            kill -0 ${pid} >/dev/null 2>&1
+            if [ $? = 0 ]; then
+                still=1
+                break
+            fi
+        done
+        if [ ${still} = 0 ]; then
+            return 0
+        fi
+        sleep 1
+        elapsed=`expr ${elapsed} + 1`
+    done
+
+    for pid in $*; do
+        kill -0 ${pid} >/dev/null 2>&1
+        if [ $? = 0 ]; then
+            echo "Process ${pid} did not exit; sending SIGKILL .."
+            kill -9 ${pid} >/dev/null 2>&1
+        fi
+    done
+    sleep 1
+}
+
 stopa()
 {
     lock;
     checkpid;
+    WAIT_PIDS=""
     for i in ${DAEMONS}; do
         pstatus ${i};
         if [ $? = 1 ]; then
             echo "Killing ${i} .. ";
-
-            kill `cat ${DIR}/var/run/${i}*.pid`;
+            for j in `cat ${DIR}/var/run/${i}*.pid 2>/dev/null`; do
+                kill ${j} >/dev/null 2>&1
+                WAIT_PIDS="${WAIT_PIDS} ${j}"
+            done
         else
             echo "${i} not running ..";
         fi
         rm -f ${DIR}/var/run/${i}*.pid
     done
 
+    wait_pids_gone ${WAIT_PIDS}
+
+    # Drop stale analysis queue path so the next StartMQ(WRITE) cannot
+    # connect to a dead peer inode left behind after stop.
+    rm -f ${DIR}/queue/ossec/queue 2>/dev/null
+
     unlock;
     echo "$NAME $VERSION Stopped"
+}
+
+# Wait until DEFAULTQUEUE accepts a datagram connect (analysisd early-bind).
+wait_for_analysis_queue()
+{
+    local elapsed=0
+    local max=60
+    local qpath="${DIR}/queue/ossec/queue"
+
+    while [ ${elapsed} -lt ${max} ]; do
+        if [ -S "${qpath}" ] || [ -e "${qpath}" ]; then
+            python3 - "${qpath}" <<'PY' 2>/dev/null
+import socket, sys
+path = sys.argv[1]
+s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+try:
+    s.connect(path)
+except Exception:
+    sys.exit(1)
+finally:
+    s.close()
+sys.exit(0)
+PY
+            if [ $? = 0 ]; then
+                return 0
+            fi
+        fi
+        sleep 1
+        elapsed=`expr ${elapsed} + 1`
+    done
+    echo "ERROR: analysis queue not ready at ${qpath} after ${max}s"
+    return 1
 }
 
 ### MAIN HERE ###
@@ -297,7 +387,6 @@ stop)
 restart)
     testconfig
     stopa
-    sleep 1;
     start
     ;;
 reload)
