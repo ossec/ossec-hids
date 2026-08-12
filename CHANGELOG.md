@@ -2,8 +2,6 @@
 
 **Release Maintainers**
 
-Dan Parriott
-
 Scott R. Shinn (https://www.atomicorp.com)
 
 **Contributors on this release**
