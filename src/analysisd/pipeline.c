@@ -115,6 +115,7 @@ static pthread_t writer_firewall_thread_id;
 static pthread_t writer_fts_thread_id;
 static pthread_t state_thread_id;
 static pthread_mutex_t writer_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t input_queue_close_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int decode_event_thread_count = 0;
 static int decode_syscheck_thread_count = 0;
@@ -991,14 +992,22 @@ static void *analysisd_input_recv_thread(void *arg)
 
 static void analysisd_close_input_queue(void)
 {
-    int fd = (int)pipeline_m_queue;
+    int fd;
 
+    /* Serialize so request_shutdown and pipeline_shutdown cannot close the
+     * same fd twice (and accidentally close a reused descriptor).
+     */
+    os_mutex_lock(&input_queue_close_mutex);
+    fd = (int)pipeline_m_queue;
     if (fd < 0) {
+        os_mutex_unlock(&input_queue_close_mutex);
         return;
     }
 
     /* Publish closed state before shutdown/close so the recv loop exits. */
     pipeline_m_queue = -1;
+    os_mutex_unlock(&input_queue_close_mutex);
+
     (void)shutdown(fd, SHUT_RDWR);
     (void)close(fd);
 }

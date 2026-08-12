@@ -259,10 +259,11 @@ pstatus()
 
 wait_pids_gone()
 {
-    local grace=45
-    local elapsed=0
-    local pid
-    local still
+    # No `local`: scripts are #!/bin/sh (POSIX); dash rejects `local`.
+    grace=45
+    elapsed=0
+    pid=""
+    still=0
 
     if [ "X$*" = "X" ]; then
         return 0
@@ -330,13 +331,24 @@ stopa()
 
 wait_for_analysis_queue()
 {
-    local elapsed=0
-    local max=60
-    local qpath="${DIR}/queue/ossec/queue"
+    # No `local`: scripts are #!/bin/sh (POSIX); dash rejects `local`.
+    elapsed=0
+    max=60
+    qpath="${DIR}/queue/ossec/queue"
+    py=""
+
+    if command -v python3 >/dev/null 2>&1; then
+        py=python3
+    elif command -v python >/dev/null 2>&1; then
+        py=python
+    else
+        echo "ERROR: python3 or python required to probe analysis queue at ${qpath}"
+        return 1
+    fi
 
     while [ ${elapsed} -lt ${max} ]; do
         if [ -S "${qpath}" ] || [ -e "${qpath}" ]; then
-            python3 - "${qpath}" <<'PY' 2>/dev/null
+            ${py} - "${qpath}" <<'PY' 2>/dev/null
 import socket, sys
 path = sys.argv[1]
 s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)

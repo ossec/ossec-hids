@@ -26,11 +26,13 @@ static int mq_wait_connect(const char *path, const unsigned int *delays,
 {
     size_t i;
     int rc;
+    int last_errno = 0;
 
     rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256);
     if (rc >= 0) {
         return (rc);
     }
+    last_errno = errno;
 
     for (i = 0; i < ndelays; i++) {
         sleep(delays[i]);
@@ -38,8 +40,10 @@ static int mq_wait_connect(const char *path, const unsigned int *delays,
         if (rc >= 0) {
             return (rc);
         }
+        last_errno = errno;
     }
 
+    errno = last_errno;
     return (-1);
 }
 
@@ -57,8 +61,11 @@ int StartMQ(const char *path, short int type)
     rc = mq_wait_connect(path, connect_waits,
                          sizeof(connect_waits) / sizeof(connect_waits[0]));
     if (rc < 0) {
+        int saved_errno = errno;
+
         merror(QUEUE_ERROR, __local_name, path,
-               (File_DateofChange(path) < 0) ? "Queue not found" : strerror(errno));
+               (File_DateofChange(path) < 0) ? "Queue not found"
+                                             : strerror(saved_errno));
         return (-1);
     }
 
