@@ -20,13 +20,11 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 **Release Notes**
 
-OSSEC 4.3.0 is about day-2 operations that used to hurt: quieter patching windows, modern alert shipping, and first-class WAF visibility.
+OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are listed below.
 
-- **FIM maintenance mode** — Patch and rebuild without drowning in integrity alerts. Flip maintenance on for an agent with ``agent_control -M enable -u <id>``; syscheck keeps updating the baseline silently. When you are done, ``-M end`` restarts the scan and clears maintenance so only real post-change drift alerts. Status and disable are built in for ops workflows (#677, #1289, #1681).
-- **Secure, modern ``syslog_output``** — Ship alerts to your SIEM over TCP or TLS, not just UDP. Configure ``protocol``, ``tls``, ``tls_verify``, and optional ``tls_ca``; long CEF/JSON payloads are no longer chopped at 2KB (#1762).
-- **ModSecurity in the pipeline** — Ingest libmodsecurity serial audit logs (``modsec-audit``) and decode nginx ModSecurity error events into actionable OSSEC alerts (#1390).
-
-The full list of enhancements, decoder/rule updates, and bug fixes is in the General and Bug Fixes sections below.
+- **FIM maintenance mode** — Per-agent mode via ``agent_control -M`` (``enable``, ``disable``, ``status``, ``end`` with ``-u <id>``). While enabled, syscheck accepts file changes into the baseline without generating integrity alerts. ``end`` restarts syscheck/rootcheck and clears maintenance when that scan finishes (#677, #1289, #1681).
+- **TCP/TLS ``syslog_output``** — ``ossec-csyslogd`` supports TCP and optional TLS (``protocol``, ``tls``, ``tls_verify``, ``tls_ca``) in addition to UDP. Alert payloads (default/CEF/JSON/Splunk) may use up to ``OS_MAXSTR`` instead of a 2048-byte limit (#1762).
+- **ModSecurity audit logs** — Collect libmodsecurity serial audit logs with the ``modsec-audit`` localfile format, and decode nginx ModSecurity error-log events with new rules (#1390).
 
 **General**
 
