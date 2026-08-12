@@ -2,8 +2,6 @@
 
 **Release Maintainers**
 
-Dan Parriott
-
 Scott R. Shinn (https://www.atomicorp.com)
 
 **Contributors on this release**
@@ -22,7 +20,13 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 **Release Notes**
 
-Work toward the next minor release after 4.2.0.
+OSSEC 4.3.0 is about day-2 operations that used to hurt: quieter patching windows, modern alert shipping, and first-class WAF visibility.
+
+- **FIM maintenance mode** — Patch and rebuild without drowning in integrity alerts. Flip maintenance on for an agent with ``agent_control -M enable -u <id>``; syscheck keeps updating the baseline silently. When you are done, ``-M end`` restarts the scan and clears maintenance so only real post-change drift alerts. Status and disable are built in for ops workflows (#677, #1289, #1681).
+- **Secure, modern ``syslog_output``** — Ship alerts to your SIEM over TCP or TLS, not just UDP. Configure ``protocol``, ``tls``, ``tls_verify``, and optional ``tls_ca``; long CEF/JSON payloads are no longer chopped at 2KB (#1762).
+- **ModSecurity in the pipeline** — Ingest libmodsecurity serial audit logs (``modsec-audit``) and decode nginx ModSecurity error events into actionable OSSEC alerts (#1390).
+
+The full list of enhancements, decoder/rule updates, and bug fixes is in the General and Bug Fixes sections below.
 
 **General**
 
@@ -34,6 +38,11 @@ Work toward the next minor release after 4.2.0.
 - @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
 - @atomicturtle - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules (#1390)
+- @atomicturtle - Add per-agent FIM maintenance mode via agent_control (#677, #1289, #1681)
+- @atomicturtle - Detect Postfix SMTP connect aborts and escalate by source IP (#1897)
+- @atomicturtle - Match Snort [Drop] fast alerts in the snort decoder (#1926)
+- @atomicturtle - Decode named client IPs with optional BIND @cookie prefix (#1927)
+- @atomicturtle - Add muhstik to blacklisted user-agent rule 31508 (#1387)
 - @atomicturtle - Reject dangerous/ambiguous syscheck_control flag combinations such as ``-r -u`` (#462)
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
 - @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
@@ -43,7 +52,9 @@ Work toward the next minor release after 4.2.0.
 
 **Bug Fixes**
 
+- @atomicturtle - [PR 2295](https://github.com/ossec/ossec-hids/pull/2295) - Fix syscheck queue/restart races and honor FIM ``<frequency>`` under realtime
 - @atomicturtle - Make PCRE2 JIT optional (soft-fail compile, match via pcre2_match) so analysisd starts on macOS (#2040)
+- @atomicturtle - Restore ossec-lua binary names after Lua 5.4.7 upgrade (#2245)
 - @atomicturtle - Accept AR expect ``username`` (alias of ``user``), fall back to srcuser, and document fixed script argv (#2104)
 - @atomicturtle - Decode cPanel login lines from webmaild/whostmgrd/cpaneld as well as cpsrvd (#1132)
 - @atomicturtle - Avoid FIM false positives from xxx hash placeholders and checksum read failures (#1590, #1704)
@@ -52,6 +63,9 @@ Work toward the next minor release after 4.2.0.
 - @atomicturtle - Stop treating MJ12bot as a malicious user agent in rule 31508 (#1317)
 - @atomicturtle - Ignore snap and /dev/loop df 100% alerts under rule 532 (#1418)
 - @atomicturtle - Label /var/ossec/logs as var_log_t for logrotate and allow logrotate_t on ossec_log_t (#1948)
+- @atomicturtle - Replace dead Honeynet Project link in rule 40601 (#2111)
+- @atomicturtle - Limit PHP CGI rule 31110 to .php and cgi-bin URLs (#1101)
+- @atomicturtle - Ignore ProFTPD sreaddir buffer growth as a false positive (#1015)
 - @atomicturtle - Pass CFLAGS/LDFLAGS into bundled ossec-lua/ossec-luac via MYCFLAGS/MYLDFLAGS (#1568)
 - @atomicturtle - Open csyslogd syslog_output sockets before chroot so hostnames work without losing OS_Connect multi-address fallback (#1744)
 - @atomicturtle - Emit a single To: plus one comma-separated Cc: for granular/extra recipients so ISPs stop rejecting duplicate To headers (#1901)
