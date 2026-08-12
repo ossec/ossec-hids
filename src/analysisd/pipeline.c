@@ -31,7 +31,7 @@
 
 #include <errno.h>
 #include <poll.h>
-#include <signal.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <sys/socket.h>
 #include <time.h>
@@ -69,8 +69,11 @@ os_queue *writer_queue_firewall = NULL;
 os_queue *writer_queue_fts = NULL;
 os_queue *raw_input_queue = NULL;
 
-static volatile sig_atomic_t analysisd_shutting_down = 0;
-static volatile sig_atomic_t pipeline_m_queue = -1;
+/* Cross-thread flags/fd: sig_atomic_t is only defined vs signal handlers.
+ * _Atomic gives well-defined concurrent loads/stores between pthreads.
+ */
+static _Atomic int analysisd_shutting_down = 0;
+static _Atomic int pipeline_m_queue = -1;
 static volatile long alert_ticket = 0;
 
 static int cfg_event_threads = 1;
@@ -934,8 +937,8 @@ static void *analysisd_input_recv_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
-        int fd = (int)pipeline_m_queue;
+    while (!atomic_load(&analysisd_shutting_down)) {
+        int fd = atomic_load(&pipeline_m_queue);
 
         if (fd < 0) {
             break;
@@ -950,7 +953,8 @@ static void *analysisd_input_recv_thread(void *arg)
             continue;
         }
 
-        if (analysisd_shutting_down || (int)pipeline_m_queue != fd) {
+        if (atomic_load(&analysisd_shutting_down) ||
+            atomic_load(&pipeline_m_queue) != fd) {
             break;
         }
 
@@ -960,7 +964,8 @@ static void *analysisd_input_recv_thread(void *arg)
 
         recv_len = OS_RecvUnix(fd, OS_MAXSTR, msg);
         if (recv_len <= 0) {
-            if (analysisd_shutting_down || (int)pipeline_m_queue != fd) {
+            if (atomic_load(&analysisd_shutting_down) ||
+                atomic_load(&pipeline_m_queue) != fd) {
                 break;
             }
             continue;
@@ -998,14 +1003,14 @@ static void analysisd_close_input_queue(void)
      * same fd twice (and accidentally close a reused descriptor).
      */
     os_mutex_lock(&input_queue_close_mutex);
-    fd = (int)pipeline_m_queue;
+    fd = atomic_load(&pipeline_m_queue);
     if (fd < 0) {
         os_mutex_unlock(&input_queue_close_mutex);
         return;
     }
 
     /* Publish closed state before shutdown/close so the recv loop exits. */
-    pipeline_m_queue = -1;
+    atomic_store(&pipeline_m_queue, -1);
     os_mutex_unlock(&input_queue_close_mutex);
 
     (void)shutdown(fd, SHUT_RDWR);
@@ -1042,7 +1047,7 @@ static void *analysisd_input_demux_thread(void *arg)
 
 void analysisd_pipeline_request_shutdown(void)
 {
-    analysisd_shutting_down = 1;
+    atomic_store(&analysisd_shutting_down, 1);
     /* Wake input_recv if it is blocked in poll/recv (producers may already
      * be dead, so no datagrams arrive to unblock a plain recvfrom). */
     analysisd_close_input_queue();
@@ -1141,7 +1146,7 @@ void analysisd_pipeline_shutdown(void)
     char name[64];
     int join_failed = 0;
 
-    analysisd_shutting_down = 1;
+    atomic_store(&analysisd_shutting_down, 1);
     analysisd_state_shutdown();
 
     /* Stage 1: stop accepting new messages, then drain decode input. */
@@ -1271,7 +1276,7 @@ void analysisd_pipeline_run(int m_queue)
 {
     int i;
 
-    pipeline_m_queue = m_queue;
+    atomic_store(&pipeline_m_queue, m_queue);
 
     cfg_event_threads = analysisd_resolve_threads("event_threads");
     cfg_syscheck_threads = analysisd_resolve_threads("syscheck_threads");
