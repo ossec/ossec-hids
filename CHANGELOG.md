@@ -22,27 +22,16 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 **Release Notes**
 
-OSSEC 4.3.0 is a post-4.2.0 operability and detection release. It adds new integrations and admin tooling, expands decoder/rule coverage, and includes a large set of stability and false-positive fixes (see Bug Fixes below).
+OSSEC 4.3.0 focuses on operability and detection coverage after 4.2.0. Major additions:
 
-**New features**
-
-- Optional TCP and TLS transport for ``syslog_output`` (ossec-csyslogd), including certificate verification controls (#1762)
-- Larger csyslogd alert payload capacity (syslog/CEF/JSON) raised from 2048 bytes to ``OS_MAXSTR`` (#1762)
-- ModSecurity / libmodsecurity serial audit log collection (``modsec-audit``) with nginx error-log ModSecurity decoders and rules (#1390)
-- Per-agent FIM maintenance mode through ``agent_control`` for controlled integrity-monitoring pauses (#677, #1289, #1681)
+- Optional TCP and TLS for ``syslog_output`` (ossec-csyslogd), with larger alert payloads up to ``OS_MAXSTR`` (#1762)
+- ModSecurity / libmodsecurity serial audit log collection (``modsec-audit``) plus matching nginx ModSecurity decoders and rules (#1390)
+- Per-agent FIM maintenance mode via ``agent_control`` (#677, #1289, #1681)
 - Dedicated OSSEC iptables chain for firewall-drop active response (#678)
+- cPanel login/session/access decoders and rules, including webmaild/whostmgrd/cpaneld (#1036, #1132)
 - ``manage_agents -f -`` bulk agent import from stdin (#459)
-- ``###`` trailing comments in CDB list text files (#1527)
-- cPanel/cpsrvd decoders and rules for login, session, and access events (#1036), including webmaild/whostmgrd/cpaneld login lines (#1132)
-- Windows interactive logon (type 2) success detail rule 18262 (#504)
-- Asterisk IPv6 “denied” decoding without square brackets around ``srcip`` (#1892)
-- Postfix SMTP connect-abort detection with source-IP escalation (#1897)
-- Snort ``[Drop]`` fast-alert matching in the snort decoder (#1926)
-- BIND/named client IP decoding with optional ``@cookie`` prefix (#1927)
-- muhstik user-agent coverage in blacklisted UA rule 31508 (#1387)
-- Agent state backup before remove/force-delete, with alerts on duplicated agent IP (#1166)
-- Safer ``syscheck_control`` flag handling that rejects ambiguous combinations such as ``-r -u`` (#462)
-- Default Linux compile/link hardening (PIE, FORTIFY, stack protector, full RELRO) (#633)
+
+The full list of enhancements, decoder/rule updates, and bug fixes is in the General and Bug Fixes sections below.
 
 **General**
 
