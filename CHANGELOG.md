@@ -22,14 +22,11 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 **Release Notes**
 
-OSSEC 4.3.0 focuses on operability and detection coverage after 4.2.0. Major additions:
+OSSEC 4.3.0 focuses on three major capabilities after 4.2.0:
 
-- Optional TCP and TLS for ``syslog_output`` (ossec-csyslogd), with larger alert payloads up to ``OS_MAXSTR`` (#1762)
-- ModSecurity / libmodsecurity serial audit log collection (``modsec-audit``) plus matching nginx ModSecurity decoders and rules (#1390)
-- Per-agent FIM maintenance mode via ``agent_control`` (#677, #1289, #1681)
-- Dedicated OSSEC iptables chain for firewall-drop active response (#678)
-- cPanel login/session/access decoders and rules, including webmaild/whostmgrd/cpaneld (#1036, #1132)
-- ``manage_agents -f -`` bulk agent import from stdin (#459)
+- **TCP/TLS ``syslog_output``** — ``ossec-csyslogd`` can send alerts over TCP and optional TLS (``protocol``, ``tls``, ``tls_verify``, ``tls_ca``), not only UDP. TLS implies TCP; peer verification is on by default and can use a custom CA. Alert payloads (default/CEF/JSON/Splunk) now scale up to ``OS_MAXSTR`` instead of a 2048-byte cap, so long CEF/syslog messages are no longer truncated for remote SIEM receivers (#1762).
+- **FIM maintenance mode** — Per-agent integrity maintenance via ``agent_control -M`` (``enable`` / ``disable`` / ``status`` / ``end``, with ``-u <id>``). While enabled, syscheck updates are accepted into the baseline without raising change alerts, so patching and planned file churn do not flood FIM. ``end`` restarts syscheck/rootcheck and clears maintenance when the post-change scan completes (#677, #1289, #1681).
+- **ModSecurity audit decoding** — Collect libmodsecurity serial audit logs with the ``modsec-audit`` localfile format, and match nginx ModSecurity error-log events with new decoders and rules (#1390).
 
 The full list of enhancements, decoder/rule updates, and bug fixes is in the General and Bug Fixes sections below.
 
