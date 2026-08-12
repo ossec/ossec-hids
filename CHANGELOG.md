@@ -22,11 +22,11 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 **Release Notes**
 
-OSSEC 4.3.0 focuses on three major capabilities after 4.2.0:
+OSSEC 4.3.0 is about day-2 operations that used to hurt: quieter patching windows, modern alert shipping, and first-class WAF visibility.
 
-- **TCP/TLS ``syslog_output``** — ``ossec-csyslogd`` can send alerts over TCP and optional TLS (``protocol``, ``tls``, ``tls_verify``, ``tls_ca``), not only UDP. TLS implies TCP; peer verification is on by default and can use a custom CA. Alert payloads (default/CEF/JSON/Splunk) now scale up to ``OS_MAXSTR`` instead of a 2048-byte cap, so long CEF/syslog messages are no longer truncated for remote SIEM receivers (#1762).
-- **FIM maintenance mode** — Per-agent integrity maintenance via ``agent_control -M`` (``enable`` / ``disable`` / ``status`` / ``end``, with ``-u <id>``). While enabled, syscheck updates are accepted into the baseline without raising change alerts, so patching and planned file churn do not flood FIM. ``end`` restarts syscheck/rootcheck and clears maintenance when the post-change scan completes (#677, #1289, #1681).
-- **ModSecurity audit decoding** — Collect libmodsecurity serial audit logs with the ``modsec-audit`` localfile format, and match nginx ModSecurity error-log events with new decoders and rules (#1390).
+- **FIM maintenance mode** — Patch and rebuild without drowning in integrity alerts. Flip maintenance on for an agent with ``agent_control -M enable -u <id>``; syscheck keeps updating the baseline silently. When you are done, ``-M end`` restarts the scan and clears maintenance so only real post-change drift alerts. Status and disable are built in for ops workflows (#677, #1289, #1681).
+- **Secure, modern ``syslog_output``** — Ship alerts to your SIEM over TCP or TLS, not just UDP. Configure ``protocol``, ``tls``, ``tls_verify``, and optional ``tls_ca``; long CEF/JSON payloads are no longer chopped at 2KB (#1762).
+- **ModSecurity in the pipeline** — Ingest libmodsecurity serial audit logs (``modsec-audit``) and decode nginx ModSecurity error events into actionable OSSEC alerts (#1390).
 
 The full list of enhancements, decoder/rule updates, and bug fixes is in the General and Bug Fixes sections below.
 
