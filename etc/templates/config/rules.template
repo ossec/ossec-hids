@@ -68,5 +68,6 @@
     <include>dnsmasq_rules.xml</include>
     <include>nsd_rules.xml</include>
     <include>unbound_rules.xml</include>
+    <include>geoip_rules.xml</include>
     <include>local_rules.xml</include>
   </rules>  

@@ -301,7 +301,13 @@ endif # USE_ZEROMQ
 
 ifneq (,$(filter ${USE_GEOIP},auto yes y Y 1))
 	DEFINES+=-DLIBGEOIP_ENABLED
-	OSSEC_LDFLAGS+=-lGeoIP
+	MAXMINDDB_CFLAGS:=$(shell pkg-config --cflags libmaxminddb 2>/dev/null)
+	MAXMINDDB_LIBS:=$(shell pkg-config --libs libmaxminddb 2>/dev/null)
+	ifeq (${MAXMINDDB_LIBS},)
+		MAXMINDDB_LIBS:=-lmaxminddb
+	endif
+	OSSEC_CFLAGS+=${MAXMINDDB_CFLAGS}
+	OSSEC_LDFLAGS+=${MAXMINDDB_LIBS}
 endif # USE_GEOIP
 
 ifneq (,$(filter ${USE_CURL},yes y Y 1))
@@ -629,7 +635,8 @@ help: failtarget
 	@echo "                         Use PGSQL_CFLAGS and PGSQL_LIBS to override defaults"
 	@echo
 	@echo "Geoip support: "
-	@echo "   make USE_GEOIP=1      Build with GeoIP support"
+	@echo "   make USE_GEOIP=1      Build with MaxMind libmaxminddb (MMDB) GeoIP support"
+	@echo "                         (needs libmaxminddb headers/pkg-config, e.g. libmaxminddb-devel)"
 	@echo
 	@echo "External source options: "
 	@echo "   make LUA_ENABLE=no    Disable LUA build"

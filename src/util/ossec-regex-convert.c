@@ -34,6 +34,8 @@ const OSConvertionMap conv_map[] = {
     {.old_element = "program_name", .new_element = "program_name_pcre2", .map = OS_CONVERT_MATCH},
     {.old_element = "prematch", .new_element = "prematch_pcre2", .map = OS_CONVERT_REGEX},
     {.old_element = "srcgeoip", .new_element = "srcgeoip_pcre2", .map = OS_CONVERT_MATCH},
+    {.old_element = "src_country", .new_element = "src_country_pcre2", .map = OS_CONVERT_MATCH},
+    {.old_element = "srcasn", .new_element = "srcasn_pcre2", .map = OS_CONVERT_MATCH},
     {.old_element = "dstgeoip", .new_element = "dstgeoip_pcre2", .map = OS_CONVERT_MATCH},
     {.old_element = "srcport", .new_element = "srcport_pcre2", .map = OS_CONVERT_MATCH},
     {.old_element = "dstport", .new_element = "dstport_pcre2", .map = OS_CONVERT_MATCH},
