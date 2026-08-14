@@ -37,6 +37,7 @@ typedef struct __sdb {
     char md5[OS_FLSIZE + 1];
     char sha1[OS_FLSIZE + 1];
     char sha256[OS_FLSIZE + 1];
+    char attrs[OS_FLSIZE + 1];
 
     int db_err;
 
@@ -126,6 +127,7 @@ void SyscheckInit()
     memset(sdb.md5, '\0', OS_FLSIZE + 1);
     memset(sdb.sha1, '\0', OS_FLSIZE + 1);
     memset(sdb.sha256, '\0', OS_FLSIZE + 1);
+    memset(sdb.attrs, '\0', OS_FLSIZE + 1);
 
     /* Create decoder (TLS — each worker owns its own) */
     os_calloc(1, sizeof(OSDecoderInfo), sdb.syscheck_dec);
@@ -690,6 +692,8 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         char *oldmd5 = NULL, *newmd5 = NULL;
         char *oldsha1 = NULL, *newsha1 = NULL;
         char *oldsha256 = NULL, *newsha256 = NULL;
+        char *oldattrs = NULL, *newattrs = NULL;
+        char *oldacl = NULL, *newacl = NULL;
 
         oldsize = saved_sum;
         newsize = c_sum;
@@ -753,6 +757,33 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                                 *newsha256 = '\0';
                                 oldsha256++;
                                 newsha256++;
+
+                                /* Optional Windows attrs[:acl] after sha256.
+                                 * Split each side independently so mixed
+                                 * formats (pre/post enabling CHECK_ATTRS/ACL
+                                 * or mixed agent versions) still leave a
+                                 * clean sha256 token.
+                                 */
+                                oldattrs = strchr(oldsha256, ':');
+                                if (oldattrs) {
+                                    *oldattrs = '\0';
+                                    oldattrs++;
+                                    oldacl = strchr(oldattrs, ':');
+                                    if (oldacl) {
+                                        *oldacl = '\0';
+                                        oldacl++;
+                                    }
+                                }
+                                newattrs = strchr(newsha256, ':');
+                                if (newattrs) {
+                                    *newattrs = '\0';
+                                    newattrs++;
+                                    newacl = strchr(newattrs, ':');
+                                    if (newacl) {
+                                        *newacl = '\0';
+                                        newacl++;
+                                    }
+                                }
                             }
                         }
                     }
@@ -855,9 +886,42 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
             os_strdup(newsha256, lf->sha256_after);
         }
 
+        /* Windows file attributes message (#1352) */
+        if (!oldattrs || !newattrs || strcmp(oldattrs, newattrs) == 0) {
+            sdb.attrs[0] = '\0';
+        } else {
+            char old_abuf[128];
+            char new_abuf[128];
+            unsigned int oattrs = (unsigned int)strtoul(oldattrs, NULL, 10);
+            unsigned int nattrs = (unsigned int)strtoul(newattrs, NULL, 10);
+
+            fim_win_attrs_str(oattrs, old_abuf, sizeof(old_abuf));
+            fim_win_attrs_str(nattrs, new_abuf, sizeof(new_abuf));
+            snprintf(sdb.attrs, OS_FLSIZE,
+                     "Attributes changed from '%s' to '%s'\n",
+                     old_abuf, new_abuf);
+        }
+
+        /* ACL digest (detailed ACE matrix may also be in lf->data). */
+        if (oldacl && newacl && strcmp(oldacl, newacl) != 0) {
+            char acl_line[OS_FLSIZE];
+
+            snprintf(acl_line, sizeof(acl_line),
+                     "ACL digest changed from '%.32s' to '%.32s'\n",
+                     oldacl, newacl);
+            if (sdb.attrs[0] == '\0') {
+                snprintf(sdb.attrs, OS_FLSIZE, "%s", acl_line);
+            } else {
+                char combined[OS_FLSIZE];
+                snprintf(combined, sizeof(combined), "%s%s", sdb.attrs, acl_line);
+                snprintf(sdb.attrs, OS_FLSIZE, "%s", combined);
+            }
+        }
+
         /* Provide information about the file */
         snprintf(sdb.comment, OS_MAXSTR, "Integrity checksum changed for: "
                  "'%.756s'\n"
+                 "%s"
                  "%s"
                  "%s"
                  "%s"
@@ -874,7 +938,9 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                  sdb.md5,
                  sdb.sha1,
                  sdb.sha256,
-                 lf->data == NULL ? "" : "What changed:\n",
+                 sdb.attrs,
+                 lf->data == NULL ? "" :
+                    (strncmp(lf->data, "Permissions:", 12) == 0 ? "" : "What changed:\n"),
                  lf->data == NULL ? "" : lf->data
                 );
     }

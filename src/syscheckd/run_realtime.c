@@ -27,6 +27,7 @@
 
 #include "syscheck.h"
 #include "error_messages/error_messages.h"
+#include "win_acl_op.h"
 
 /* Prototypes */
 int realtime_checksumfile(const char *file_name) __attribute__((nonnull));
@@ -52,7 +53,7 @@ int realtime_checksumfile(const char *file_name)
         {
             int sum_off = fim_sum_data_offset(buf);
 
-            if (strcmp(c_sum, buf + sum_off) != 0) {
+            if (!fim_sum_equal(c_sum, buf + sum_off)) {
                 char alert_msg[OS_MAXSTR + 1];
                 int real_change = fim_sum_has_real_change(buf + sum_off, c_sum);
 
@@ -60,7 +61,32 @@ int realtime_checksumfile(const char *file_name)
                     alert_msg[OS_MAXSTR] = '\0';
 
                     #ifdef WIN32
-                    snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                    {
+                        char *sum_only = NULL;
+                        char *acl_txt = NULL;
+                        size_t slen = fim_sum_data_len(c_sum);
+
+                        os_calloc(OS_MAXSTR + 1, sizeof(char), sum_only);
+                        os_calloc(OS_MAXSTR + 1, sizeof(char), acl_txt);
+                        if (slen > (size_t)OS_MAXSTR) {
+                            slen = (size_t)OS_MAXSTR;
+                        }
+                        memcpy(sum_only, c_sum, slen);
+                        sum_only[slen] = '\0';
+
+                        /* fim_win_acl_change_text() already no-ops unless the
+                         * new sum carries an ACL digest/snapshot that changed,
+                         * so do not gate on sum_off (legacy 7/8-flag cache). */
+                        if (fim_win_acl_change_text(buf + sum_off, c_sum,
+                                                    acl_txt, (size_t)OS_MAXSTR + 1) > 0) {
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s\n%s",
+                                     sum_only, file_name, acl_txt);
+                        } else {
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s", sum_only, file_name);
+                        }
+                        free(sum_only);
+                        free(acl_txt);
+                    }
                     #else
                     char *fullalert = NULL;
 
@@ -89,10 +115,48 @@ int realtime_checksumfile(const char *file_name)
                 {
                     char *updated;
                     char *old_data = buf;
+                    int nflags;
+                    int fields = 1;
+                    size_t clen = fim_sum_data_len(c_sum);
+                    size_t i;
 
-                    os_calloc((size_t)sum_off + strlen(c_sum) + 1, sizeof(char), updated);
-                    memcpy(updated, buf, (size_t)sum_off);
-                    memcpy(updated + sum_off, c_sum, strlen(c_sum) + 1);
+                    for (i = 0; i < clen; i++) {
+                        if (c_sum[i] == ':') {
+                            fields++;
+                        }
+                    }
+                    if (fields >= 9) {
+                        nflags = 9;
+                    } else if (fields >= 8) {
+                        nflags = 8;
+                    } else {
+                        nflags = 7;
+                    }
+
+                    os_calloc((size_t)nflags + strlen(c_sum) + 1, sizeof(char), updated);
+                    /* Copy only the old flag prefix — never pull size digits
+                     * from legacy 6-flag entries into the flag slots. */
+                    {
+                        size_t flag_copy = (sum_off < 7) ? (size_t)sum_off : 7;
+
+                        memcpy(updated, buf, flag_copy);
+                        if (sum_off < 7) {
+                            /* Legacy cache had no sha256 enable flag. */
+                            updated[6] = '-';
+                        }
+                    }
+                    if (nflags >= 8) {
+                        updated[7] = (fields >= 8) ? '+' : '-';
+                        /* When only ACL forced the attrs slot, keep the slot
+                         * disabled unless the old entry marked attrs enabled. */
+                        if (fields == 9 && (sum_off < 8 || buf[7] != '+')) {
+                            updated[7] = '-';
+                        }
+                    }
+                    if (nflags >= 9) {
+                        updated[8] = '+';
+                    }
+                    memcpy(updated + nflags, c_sum, strlen(c_sum) + 1);
                     if (OSHash_Update(syscheck.fp, file_name, updated) == 1) {
                         free(old_data);
                     } else {
@@ -165,7 +229,7 @@ int realtime_start()
 }
 
 /* Add a directory to real time checking */
-int realtime_adddir(const char *dir)
+int realtime_adddir(const char *dir, __attribute__((unused)) int opts)
 {
     if (!syscheck.realtime) {
         realtime_start();
@@ -269,6 +333,7 @@ typedef struct _win32rtfim {
     OVERLAPPED overlap;
 
     char *dir;
+    int opts;
     TCHAR buffer[1228800];
 } win32rtfim;
 
@@ -350,12 +415,23 @@ int realtime_start()
 int realtime_win32read(win32rtfim *rtlocald)
 {
     int rc;
+    DWORD notify_filter;
+
+    notify_filter = FILE_NOTIFY_CHANGE_FILE_NAME |
+                    FILE_NOTIFY_CHANGE_DIR_NAME |
+                    FILE_NOTIFY_CHANGE_SIZE |
+                    FILE_NOTIFY_CHANGE_LAST_WRITE |
+                    FILE_NOTIFY_CHANGE_SECURITY;
+    /* Attribute notifications only when check_attrs is enabled for this dir. */
+    if (rtlocald->opts & CHECK_ATTRS) {
+        notify_filter |= FILE_NOTIFY_CHANGE_ATTRIBUTES;
+    }
 
     rc = ReadDirectoryChangesW(rtlocald->h,
                                rtlocald->buffer,
                                sizeof(rtlocald->buffer) / sizeof(TCHAR),
                                TRUE,
-                               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY,
+                               notify_filter,
                                0,
                                &rtlocald->overlap,
                                RTCallBack);
@@ -368,7 +444,7 @@ int realtime_win32read(win32rtfim *rtlocald)
     return (0);
 }
 
-int realtime_adddir(const char *dir)
+int realtime_adddir(const char *dir, int opts)
 {
     char wdchar[32 + 1];
     win32rtfim *rtlocald;
@@ -405,6 +481,7 @@ int realtime_adddir(const char *dir)
     }
 
     rtlocald->overlap.Offset = ++syscheck.realtime->fd;
+    rtlocald->opts = opts;
 
     /* Set key for hash */
     wdchar[32] = '\0';
@@ -438,7 +515,8 @@ int realtime_start()
     return (0);
 }
 
-int realtime_adddir(__attribute__((unused)) const char *dir)
+int realtime_adddir(__attribute__((unused)) const char *dir,
+                    __attribute__((unused)) int opts)
 {
     return (0);
 }
