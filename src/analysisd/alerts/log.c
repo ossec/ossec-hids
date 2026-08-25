@@ -84,7 +84,7 @@ void OS_Store(const Eventinfo *lf)
 
 void OS_LogOutput(Eventinfo *lf)
 {
-    /* GeoIP fields are filled at decode time (SrcIP_FP / DstIP_FP). */
+    /* GeoIP fields are filled at decode time (DecodeEvent / SrcIP_FP / DstIP_FP). */
 
     printf(
         "** Alert %ld.%ld:%s - %s\n"
@@ -167,7 +167,7 @@ void OS_LogOutput(Eventinfo *lf)
 
 void OS_Log(Eventinfo *lf)
 {
-    /* GeoIP fields are filled at decode time (SrcIP_FP / DstIP_FP). */
+    /* GeoIP fields are filled at decode time (DecodeEvent / SrcIP_FP / DstIP_FP). */
 
     /* Writing to the alert log file */
     {

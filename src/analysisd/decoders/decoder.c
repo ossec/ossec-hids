@@ -330,6 +330,18 @@ void DecodeEvent(Eventinfo *lf, regex_matching *decoder_match)
 
 out:
     os_regex_set_thread_match(NULL);
+#ifdef LIBGEOIP_ENABLED
+    /* Plugin decoders assign srcip/dstip directly and never hit SrcIP_FP /
+     * DstIP_FP. Enrich here so rule matching and alert logs see GeoIP fields.
+     * OS_GeoIP_Enrich() is a no-op when the FP path already filled them.
+     */
+    if (lf->srcip) {
+        OS_GeoIP_Enrich(lf, 1);
+    }
+    if (lf->dstip) {
+        OS_GeoIP_Enrich(lf, 0);
+    }
+#endif
 #ifdef TESTRULE
     if (!alert_only && lf->decoder_info) {
         print_out("       decoder: '%s'", lf->decoder_info->name);
@@ -417,6 +429,8 @@ void *DstIP_FP(Eventinfo *lf, char *field, __attribute__((unused)) int order)
                 print_out("       dst_country: '%s'", lf->dst_country);
             if (lf->dstasn)
                 print_out("       dstasn: '%s'", lf->dstasn);
+            if (lf->dstas_org)
+                print_out("       dstas_org: '%s'", lf->dstas_org);
         }
     #endif
 

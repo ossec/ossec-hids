@@ -151,6 +151,19 @@ void OS_GeoIP_Enrich(Eventinfo *lf, int is_src)
         return;
     }
 
+    /* Skip MMDB work when this side was already enriched (e.g. SrcIP_FP
+     * followed by the DecodeEvent catch-all for plugin decoders).
+     */
+    if (is_src) {
+        if (lf->srcgeoip || lf->src_country || lf->src_region ||
+                lf->src_city || lf->srcasn || lf->srcas_org) {
+            return;
+        }
+    } else if (lf->dstgeoip || lf->dst_country || lf->dst_region ||
+               lf->dst_city || lf->dstasn || lf->dstas_org) {
+        return;
+    }
+
     lookup_city(ip, &country, &region, &city, &display);
     lookup_asn(ip, &asn, &as_org);
 
