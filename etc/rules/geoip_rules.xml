@@ -1,0 +1,75 @@
+<!--
+  - GeoIP / MaxMind detection rules
+  - Requires analysisd built with USE_GEOIP=1 and <geoipdb> pointing at a
+    GeoLite2-City (or Country) MMDB. Optional <geoipasn> enables ASN rules.
+  - On RHEL/Rocky build hosts: dnf install libmaxminddb-devel geolite2-city
+    (runtime also needs the libmaxminddb package)
+  - Example:
+      <global>
+        <geoipdb>/usr/share/GeoIP/GeoLite2-City.mmdb</geoipdb>
+        <geoipasn>/usr/share/GeoIP/GeoLite2-ASN.mmdb</geoipasn>
+      </global>
+  - Enable JSON fields with analysisd.geoip_jsonout=1
+  -
+  - same_user correlates on dstuser (SSH invalid-user failures need the
+    ssh-invfailed decoder to extract the attempted username).
+  - frequency="0" + different_srcgeoip fires when one prior same-user event
+    has a different country than the current event (OSSEC frequency is
+    off-by-+2 vs naive counting; see rules syntax docs).
+  -->
+
+<group name="geoip,">
+
+  <!-- Same user failing from multiple countries (credential stuffing / ATO) -->
+  <rule id="87601" level="10" frequency="0" timeframe="600">
+    <if_matched_group>authentication_failed</if_matched_group>
+    <same_user />
+    <different_srcgeoip />
+    <srcgeoip_pcre2>.+</srcgeoip_pcre2>
+    <description>Authentication failures for the same user from multiple GeoIP countries.</description>
+    <group>authentication_failures,attack,</group>
+  </rule>
+
+  <!-- Impossible travel: same user succeeds from a different country within 15m -->
+  <rule id="87611" level="12" frequency="0" timeframe="900">
+    <if_matched_group>authentication_success</if_matched_group>
+    <same_user />
+    <different_srcgeoip />
+    <srcgeoip_pcre2>.+</srcgeoip_pcre2>
+    <description>Successful authentications for the same user from multiple GeoIP countries (possible impossible travel).</description>
+    <group>authentication_success,attack,</group>
+  </rule>
+
+  <!--
+    Hosting / cloud ASN auth (opt-in). Requires <geoipasn> MMDB.
+    ASNs: Amazon 16509/14618, Google 15169/396982, Microsoft 8075,
+    DigitalOcean 14061, Hetzner 24940, OVH 16276, Linode 63949,
+    Vultr 20473, Oracle 31898.
+    Uncomment in local_rules.xml (or here) only if cloud/hosting logins are
+    unexpected for your deployment — these replace the parent auth sid.
+
+    <rule id="87620" level="8">
+      <if_group>authentication_success</if_group>
+      <srcasn_pcre2>^(16509|14618|15169|396982|8075|14061|24940|16276|63949|20473|31898)$</srcasn_pcre2>
+      <description>Successful authentication from a common cloud/hosting ASN.</description>
+      <group>authentication_success,geoip_hosting,</group>
+    </rule>
+
+    <rule id="87621" level="7">
+      <if_group>authentication_failed</if_group>
+      <srcasn_pcre2>^(16509|14618|15169|396982|8075|14061|24940|16276|63949|20473|31898)$</srcasn_pcre2>
+      <description>Authentication failure from a common cloud/hosting ASN.</description>
+      <group>authentication_failed,geoip_hosting,</group>
+    </rule>
+  -->
+
+  <!--
+    Example country policy (enable in local_rules.xml; do not ship hard denylists):
+    <rule id="100876" level="10">
+      <if_group>authentication_success</if_group>
+      <src_country_pcre2>^(?!US$).+</src_country_pcre2>
+      <description>Successful auth from outside expected country (US allowlist).</description>
+    </rule>
+  -->
+
+</group>

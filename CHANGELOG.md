@@ -27,6 +27,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 **Contributors on this release**
 
 - @atomicturtle
+- @ddpbsd
 - @reyjrar
 - @hyn172
 - @lazyp
@@ -69,6 +70,8 @@ OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are liste
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
 - @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules; tighten postgresql_log so it does not steal cPanel logs (#1132)
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
+- @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
+- @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
 
 **Bug Fixes**
 

@@ -37,6 +37,8 @@ typedef struct __Config {
 
     /* GeoIP DB */
     char *geoipdb_file;
+    /* Optional GeoLite2-ASN (or compatible) MMDB */
+    char *geoipasn_file;
 
     /* ZEROMQ Export */
     u_int8_t zeromq_output;

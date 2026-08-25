@@ -147,6 +147,8 @@ typedef struct _RuleInfo {
     os_ip **srcip;
     os_ip **dstip;
     OSMatch *srcgeoip;
+    OSMatch *src_country;
+    OSMatch *srcasn;
     OSMatch *dstgeoip;
     OSMatch *srcport;
     OSMatch *dstport;
@@ -161,6 +163,8 @@ typedef struct _RuleInfo {
 
 
     OSPcre2 *srcgeoip_pcre2;
+    OSPcre2 *src_country_pcre2;
+    OSPcre2 *srcasn_pcre2;
     OSPcre2 *dstgeoip_pcre2;
     OSPcre2 *srcport_pcre2;
     OSPcre2 *dstport_pcre2;

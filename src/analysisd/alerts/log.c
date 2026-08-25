@@ -84,16 +84,7 @@ void OS_Store(const Eventinfo *lf)
 
 void OS_LogOutput(Eventinfo *lf)
 {
-#ifdef LIBGEOIP_ENABLED
-    if (Config.geoipdb_file) {
-        if (lf->srcip && !lf->srcgeoip) {
-            lf->srcgeoip = GetGeoInfobyIP(lf->srcip);
-        }
-        if (lf->dstip && !lf->dstgeoip) {
-            lf->dstgeoip = GetGeoInfobyIP(lf->dstip);
-        }
-    }
-#endif
+    /* GeoIP fields are filled at decode time (DecodeEvent / SrcIP_FP / DstIP_FP). */
 
     printf(
         "** Alert %ld.%ld:%s - %s\n"
@@ -176,16 +167,7 @@ void OS_LogOutput(Eventinfo *lf)
 
 void OS_Log(Eventinfo *lf)
 {
-#ifdef LIBGEOIP_ENABLED
-    if (Config.geoipdb_file) {
-        if (lf->srcip && !lf->srcgeoip) {
-            lf->srcgeoip = GetGeoInfobyIP(lf->srcip);
-        }
-        if (lf->dstip && !lf->dstgeoip) {
-            lf->dstgeoip = GetGeoInfobyIP(lf->dstip);
-        }
-    }
-#endif
+    /* GeoIP fields are filled at decode time (DecodeEvent / SrcIP_FP / DstIP_FP). */
 
     /* Writing to the alert log file */
     {

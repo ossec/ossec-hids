@@ -469,7 +469,11 @@ int analysisd_analyze_event(Eventinfo *lf)
                 lf->sid_node_to_delete = currently_rule->sid_prev_matched->last_node;
             }
             os_mutex_unlock(&currently_rule->mutex);
-        } else if (currently_rule->group_prev_matched) {
+        }
+        /* Also feed group lists when present. Do not use else-if: rules like
+         * 5710/5716 are watched by if_matched_sid (5712/5720) AND must still
+         * appear in if_matched_group histories (40111, geoip_rules, etc.). */
+        if (currently_rule->group_prev_matched) {
             unsigned int j = 0;
 
             os_mutex_lock(&currently_rule->mutex);
