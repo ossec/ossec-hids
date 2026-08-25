@@ -16,7 +16,10 @@ With no argument, loops over every distro in `testsuite/build-test/` (centos-7, 
 1. **Agent build** with `USE_AUDIT=yes` (FIM auditd code path + adapter)
 2. **Server build** with the same flags (full server target still includes syscheckd)
 
-Optional post-agent check (off by default): set `TEST=1` to run **`verify-syscheck-audit.sh`**, which confirms `ossec-syscheckd` links audit symbols (`audit_init`, `fim_audit_event`):
+Optional post-build checks (off by default): set `TEST=1` to run:
+
+- **Agent:** [`verify-syscheck-audit.sh`](build-test/verify-syscheck-audit.sh) — `ossec-syscheckd` links audit symbols (`audit_init`, `fim_audit_event`)
+- **Server:** [`verify-jsonout-default.sh`](build-test/verify-jsonout-default.sh) — `jsonout_output` defaults on when `<jsonout_output>` is omitted, and `no` still disables it
 
 ```bash
 TEST=1 ./testsuite/build-test/build.sh fedora-43

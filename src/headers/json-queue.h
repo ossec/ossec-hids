@@ -1,10 +1,10 @@
-/* Copyright (C) 2009 Trend Micro Inc.
- * All right reserved.
+/* Copyright (C) 2026 Atomicorp, Inc.
+ * All rights reserved.
  *
  * This program is a free software; you can redistribute it
  * and/or modify it under the terms of the GNU General Public
  * License (version 2) as published by the FSF - Free Software
- * Foundation
+ * Foundation.
  */
 
 #ifndef JSON_QUEUE_H

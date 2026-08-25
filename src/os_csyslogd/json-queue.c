@@ -1,10 +1,10 @@
-/* Copyright (C) 2009 Trend Micro Inc.
- * All right reserved.
+/* Copyright (C) 2026 Atomicorp, Inc.
+ * All rights reserved.
  *
  * This program is a free software; you can redistribute it
  * and/or modify it under the terms of the GNU General Public
  * License (version 2) as published by the FSF - Free Software
- * Foundation
+ * Foundation.
  */
 
 #include "shared.h"
@@ -124,8 +124,8 @@ cJSON *jqueue_next(file_queue *queue)
         return NULL;
     }
 
-    /* Daily rotate / rename replaces the path with a new inode. Check that
-     * before copytruncate rewind so we do not seek the unlinked old file. */
+    /* Daily rotate replaces the path with a new inode. Check that
+     * before a size-based rewind so we do not seek the unlinked old file. */
     if (buf.st_ino != queue->f_status.st_ino) {
         debug2("%s: DEBUG: alerts.json inode changed; reloading.", __local_name);
         if (jqueue_open_path(queue, queue->file_name, 0) < 0) {
@@ -135,7 +135,7 @@ cJSON *jqueue_next(file_queue *queue)
         return jqueue_parse_json(queue);
     }
 
-    /* copytruncate keeps the inode and shrinks the file (logrotate). */
+    /* Same inode, shorter file (external truncate). */
     if (buf.st_size < queue->f_status.st_size ||
         (pos > 0 && buf.st_size < pos)) {
         debug2("%s: DEBUG: alerts.json truncated; rewinding.", __local_name);

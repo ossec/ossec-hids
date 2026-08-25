@@ -9,7 +9,7 @@
 #   make regression
 
 CC ?= cc
-CFLAGS += -I./ -I./headers -I./analysisd -Wall -Wextra
+CFLAGS += -I./ -I./headers -I./analysisd -I./external/compat -Wall -Wextra
 CFLAGS += -DARGV0=\"ossec-analysisd\"
 
 EVENTINFO_OBJS = analysisd/eventinfo-live.o analysisd/eventinfo_list-live.o
@@ -20,7 +20,8 @@ REGRESSION_BINS = \
 	issue_1079_last_events_uaf \
 	issue_correlation_agent_shard \
 	issue_1748_sid_list_crash \
-	issue_1274_auth_ipv6_key
+	issue_1274_auth_ipv6_key \
+	jsonout_default
 
 .PHONY: all check clean
 
@@ -52,6 +53,14 @@ issue_1274_auth_ipv6_key: tests/regressions/issue_1274_auth_ipv6_key.c addagent/
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1274_auth_ipv6_key.c addagent/validate.o \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+# GlobalConf lives in analysisd/config.c (defines _Config Config).
+# Compile current global-config.c so jsonout_output offset matches the headers.
+jsonout_default: tests/regressions/jsonout_default.c analysisd/config.c config/global-config.c config.a shared.a
+	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/jsonout_default.c analysisd/config.c \
+		config/global-config.c \
+		-Wl,--start-group config.a shared.a os_regex.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
 
 addagent/validate.o: addagent/validate.c
 	$(CC) $(CFLAGS) -c addagent/validate.c -o $@

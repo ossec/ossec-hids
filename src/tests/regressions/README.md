@@ -23,6 +23,7 @@
 #                                      if_matched_sid cross-location
 #   - issue_1748_sid_list_crash        sid_prev_matched overflow + free callback
 #   - issue_1274_auth_ipv6_key         auth IPv6 key handling
+#   - jsonout_default                  jsonout_output on when the XML tag is omitted
 #
 # Additional scripts without unified Make targets (manual / historical):
 #   issue_1814_control_chars.c, issue_1817_uaf_fix.c, issue_1818_syscheck_uaf.c,

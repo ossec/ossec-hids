@@ -76,6 +76,7 @@ src/os_maild/tests/sms_queue_test
 src/os_maild/tests/maild_shutdown_gate_test
 src/os_auth/tests/auth_conn_drop_test
 src/shared/tests/thread_pool_test
+src/jsonout_default
 
 # test and coverage files
 *.gcno
