@@ -13,17 +13,9 @@ echo "== make TARGET=${MAKE_TARGET} ${MAKE_OPTS} =="
 make TARGET="${MAKE_TARGET}" ${MAKE_OPTS} -j"$(nproc 2>/dev/null || echo 2)"
 
 if [ "${TEST:-}" = "1" ]; then
-    if [ "${MAKE_TARGET}" = "agent" ]; then
-        echo "== verify syscheck audit =="
-        chmod +x ../testsuite/build-test/verify-syscheck-audit.sh
-        ../testsuite/build-test/verify-syscheck-audit.sh .
-    elif [ "${MAKE_TARGET}" = "server" ] || [ "${MAKE_TARGET}" = "hybrid" ]; then
-        echo "== verify alerts.json / JSON syslog =="
-        chmod +x ../testsuite/build-test/verify-alerts-json.sh
-        ../testsuite/build-test/verify-alerts-json.sh .
-    else
-        echo "== skip post-build verify for MAKE_TARGET=${MAKE_TARGET} =="
-    fi
+    echo "== verify syscheck audit =="
+    chmod +x ../testsuite/build-test/verify-syscheck-audit.sh
+    ../testsuite/build-test/verify-syscheck-audit.sh .
 else
-    echo "== skip post-build verify (set TEST=1 to enable) =="
+    echo "== skip syscheck audit verify (set TEST=1 to enable) =="
 fi

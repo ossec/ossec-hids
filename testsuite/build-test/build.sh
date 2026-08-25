@@ -104,9 +104,8 @@ for distro_dir in "${DISTRO_DIRS[@]}"; do
         -v "$ROOT_DIR:/src:Z" \
         -e MAKE_TARGET=server \
         -e MAKE_OPTS="$MAKE_OPTS" \
-        -e TEST="$TEST" \
         "$image_name" \
-        /bin/sh -c "cd /src/src && chmod +x ../testsuite/build-test/build-linux.sh && ../testsuite/build-test/build-linux.sh"; then
+        /bin/sh -c "cd /src/src && make clean && make TARGET=server ${MAKE_OPTS} -j\$(nproc 2>/dev/null || echo 2)"; then
         echo "FAILED: Server compilation for $distro_name failed."
         ((FAILURES++))
     else

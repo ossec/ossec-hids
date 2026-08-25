@@ -1,2 +1,0 @@
-line one of sample text for report_changes
-line two stays until edited
