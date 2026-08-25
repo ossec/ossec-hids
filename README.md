@@ -1,4 +1,4 @@
-OSSEC v4.2.0 
+OSSEC v4.3.0 
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/ossec/ossec-hids)](https://github.com/ossec/ossec-hids/releases)
 [![GitHub license](https://img.shields.io/github/license/ossec/ossec-hids)](https://github.com/ossec/ossec-hids/blob/master/LICENSE)
