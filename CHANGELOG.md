@@ -1,3 +1,23 @@
+**OSSEC changelog (4.4.0) <support@atomicorp.com>**
+
+**Release Maintainers**
+
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+- @bearxy123
+
+**Release Notes**
+
+Work toward the next minor release after 4.3.0.
+
+**Bug Fixes**
+
+- @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
+
+
 **OSSEC changelog (4.3.0) <support@atomicorp.com>**
 
 **Release Maintainers**
