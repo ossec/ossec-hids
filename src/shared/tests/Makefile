@@ -8,7 +8,7 @@ TOP = ../..
 CFLAGS_COMMON = -g -Wall -I$(TOP)/headers -I$(TOP) -I$(TOP)/analysisd
 
 # Headless tests run by `check`. Interactive helpers stay under `legacy_helpers`.
-AUTO_TEST_BINS = thread_pool_test queue_op_test string_test fim_sum_test ar_expect_test fim_maint_test
+AUTO_TEST_BINS = thread_pool_test queue_op_test string_test fim_sum_test ar_expect_test fim_maint_test win_acl_test
 LEGACY_HELPER_BINS = prime_test hash_test merge_test ip_test
 
 .PHONY: maketest check clean legacy_helpers
@@ -28,6 +28,11 @@ string_test: string_test.c
 
 fim_sum_test: fim_sum_test.c ../fim_sum_op.c ../../headers/fim_sum_op.h
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"fim_sum_test\" -o $@ fim_sum_test.c ../fim_sum_op.c
+
+win_acl_test: win_acl_test.c ../../headers/win_acl_op.h $(TOP)/shared.a
+	$(CC) $(CFLAGS_COMMON) -DARGV0=\"win_acl_test\" -o $@ \
+		win_acl_test.c \
+		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_crypto.a -Wl,--end-group
 
 ar_expect_test: ar_expect_test.c ../ar_expect.c ../../headers/ar.h
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"ar_expect_test\" -o $@ \

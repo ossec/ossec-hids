@@ -35,6 +35,8 @@ OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are liste
 - @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
 - @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
+- @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
+- @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
 - @atomicturtle - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules (#1390)
 - @atomicturtle - Add per-agent FIM maintenance mode via agent_control (#677, #1289, #1681)
 - @atomicturtle - Detect Postfix SMTP connect aborts and escalate by source IP (#1897)
