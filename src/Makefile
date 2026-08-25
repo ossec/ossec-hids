@@ -44,8 +44,10 @@ endif
 ONEWAY?=no
 CLEANFULL?=no
 
-export MYLDFLAGS= "${LDFLAGS}"
-export MYCFLAGS= "${CFLAGS}"
+# Bundled Lua: honor user CFLAGS/LDFLAGS (+ hardening). Full flag strings
+# are applied in the lua: target so parent MAKEFLAGS cannot wipe them (#1568).
+LUA_CFLAGS=${CFLAGS}
+LUA_LDFLAGS=${LDFLAGS}
 
 DEFINES+=-DMAX_AGENTS=${MAXAGENTS} -DOSSECHIDS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
 DEFINES+=-DDEFAULTDIR=\"${PREFIX}\"
@@ -98,6 +100,10 @@ ifeq (${uname_S},Darwin)
 		DEFINES+=-DDarwin
 		DEFINES+=-DHIGHFIRST
 		LUA_PLAT=macosx
+		# System libpcre2 on macOS is often built without JIT; requiring JIT
+		# made analysisd fail to load decoder.xml (#2040). Soft-fail remains
+		# in OSPcre2_Compile; default off here to match typical packages.
+		USE_PCRE2_JIT=n
 
 else
 ifeq (${uname_S},FreeBSD)
@@ -141,6 +147,20 @@ endif # AIX
 endif # Linux
 endif # winagent
 
+# Lua platform defines (after LUA_PLAT is finalized above).
+LUA_SYSCFLAGS=-DLUA_USE_POSIX
+LUA_SYSLIBS=
+ifeq (${LUA_PLAT},macosx)
+LUA_SYSCFLAGS=-DLUA_USE_MACOSX -DLUA_USE_READLINE
+LUA_SYSLIBS=-lreadline
+else ifeq (${LUA_PLAT},freebsd)
+LUA_SYSCFLAGS=-DLUA_USE_LINUX -DLUA_USE_READLINE -I/usr/include/edit
+LUA_SYSLIBS=-Wl,-E -ledit
+else ifeq (${LUA_PLAT},solaris)
+LUA_SYSCFLAGS=-DLUA_USE_POSIX -DLUA_USE_DLOPEN -D_REENTRANT
+LUA_SYSLIBS=-ldl
+endif
+
 ## OpenBSD doesn't need the imsg stuff.
 ifneq (${uname_S},OpenBSD)
         CFLAGS+=-I./external/compat
@@ -172,9 +192,13 @@ ifeq (${uname_S},Linux)
 ifneq (,$(filter ${USE_HARDENING},yes y Y 1))
 	OSSEC_CFLAGS+=-fPIE -Wformat -Wformat-security -fstack-protector-strong
 	OSSEC_LDFLAGS+=-pie -Wl,-z,relro -Wl,-z,now
+	# Mirror hardening into Lua only (not OSSEC -l* link deps).
+	LUA_CFLAGS+=-fPIE -Wformat -Wformat-security -fstack-protector-strong
+	LUA_LDFLAGS+=-pie -Wl,-z,relro -Wl,-z,now
 ifndef DEBUG
 	# _FORTIFY_SOURCE requires optimization
 	OSSEC_CFLAGS+=-O2 -D_FORTIFY_SOURCE=2
+	LUA_CFLAGS+=-O2 -D_FORTIFY_SOURCE=2
 endif #DEBUG
 endif # USE_HARDENING
 endif # Linux
@@ -759,7 +783,13 @@ endif
 
 lua:
 ifeq (${LUA_ENABLE},yes)
-	cd ${EXTERNAL_LUA} && ${MAKE} ${LUA_PLAT}
+	# Explicit CFLAGS/LDFLAGS so parent MAKEFLAGS cannot wipe Lua platform defines.
+	cd ${EXTERNAL_LUA}/src && ${MAKE} all \
+		SYSCFLAGS="${LUA_SYSCFLAGS}" \
+		SYSLIBS="${LUA_SYSLIBS}" \
+		CFLAGS="-O2 -Wall -Wextra -DLUA_COMPAT_5_3 ${LUA_SYSCFLAGS} ${LUA_CFLAGS}" \
+		LDFLAGS="${LUA_LDFLAGS}" \
+		LIBS="-lm ${LUA_SYSLIBS}"
 endif
 
 ${EXTERNAL_ZLIB}libz.a:

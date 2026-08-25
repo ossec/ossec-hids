@@ -6,8 +6,14 @@
 # Expect: srcip
 # Author: Ahmet Ozturk (ipfilter and IPSec)
 # Author: Daniel B. Cid (iptables)
-# Author: cgzones 
-# Last modified: Oct 04, 2012
+# Author: cgzones
+# Last modified: Aug 04, 2026
+#
+# Linux iptables: drops are inserted into a dedicated OSSEC chain (#678) so
+# configuration-management tools that purge unmanaged INPUT/FORWARD rules do
+# not remove active-response blocks. The script creates the chain and a jump
+# from INPUT (and FORWARD when IP forwarding is enabled) if missing.
+# Override the chain name with OSSEC_FW_CHAIN if needed.
 
 UNAME=`uname`
 ECHO="/bin/echo"
@@ -18,17 +24,18 @@ IP6TABLES="/sbin/ip6tables"
 IPFILTER="/sbin/ipf"
 if [ "X$UNAME" = "XSunOS" ]; then
     IPFILTER="/usr/sbin/ipf"
-fi    
+fi
 GENFILT="/usr/sbin/genfilt"
 LSFILT="/usr/sbin/lsfilt"
 MKFILT="/usr/sbin/mkfilt"
 RMFILT="/usr/sbin/rmfilt"
-ARG1=""
-ARG2=""
+ARG=""
 RULEID=""
 ACTION=$1
 USER=$2
 IP=$3
+# Dedicated chain for AR drops (iptables/ip6tables). Configurable for #678.
+CHAIN="${OSSEC_FW_CHAIN:-OSSEC}"
 PWD=`pwd`
 LOCK="${PWD}/fw-drop"
 LOCK_PID="${PWD}/fw-drop/pid"
@@ -47,7 +54,7 @@ echo "`date` $0 $1 $2 $3 $4 $5" >> ${LOG_FILE}
 
 # Checking for an IP
 if [ "x${IP}" = "x" ]; then
-   echo "$0: <action> <username> <ip>" 
+   echo "$0: <action> <username> <ip>"
    exit 1;
 fi
 
@@ -123,9 +130,46 @@ lock()
 # Unlock function
 unlock()
 {
-   rm -rf ${LOCK} 
+   rm -rf ${LOCK}
 }
 
+# Return 0 if parent chain already jumps to ${CHAIN}.
+ossec_jump_present()
+{
+    parent="$1"
+    if ${IPTABLES} -C "${parent}" -j "${CHAIN}" >/dev/null 2>&1; then
+        return 0
+    fi
+    # iptables without -C reports "Bad argument"; fall back to listing.
+    if ${IPTABLES} -C "${parent}" -j "${CHAIN}" 2>&1 | ${GREP} -qi "Bad argument"; then
+        ${IPTABLES} -n -L "${parent}" 2>/dev/null | ${GREP} -Eq "^${CHAIN}[[:space:]]"
+        return $?
+    fi
+    return 1
+}
+
+# Ensure dedicated OSSEC chain exists and is jumped to from INPUT (/FORWARD).
+ensure_ossec_chain()
+{
+    ${IPTABLES} -n -L "${CHAIN}" >/dev/null 2>&1 || ${IPTABLES} -N "${CHAIN}"
+
+    ossec_jump_present INPUT || ${IPTABLES} -I INPUT -j "${CHAIN}"
+
+    if [ -e "$IPV4F" ]; then
+        IPV4KEY="$(cat "$IPV4F")"
+    else
+        IPV4KEY="0"
+    fi
+    if [ -e "$IPV6F" ]; then
+        IPV6KEY="$(cat "$IPV6F")"
+    else
+        IPV6KEY="0"
+    fi
+
+    if [ "$IPV4KEY" != "0" ] || [ "$IPV6KEY" != "0" ]; then
+        ossec_jump_present FORWARD || ${IPTABLES} -I FORWARD -j "${CHAIN}"
+    fi
+}
 
 
 # Blocking IP
@@ -139,13 +183,11 @@ fi
 # We should run on linux
 if [ "X${UNAME}" = "XLinux" ]; then
    if [ "x${ACTION}" = "xadd" ]; then
-      ARG1="-I INPUT -s ${IP} -j DROP"
-      ARG2="-I FORWARD -s ${IP} -j DROP"
+      ARG="-I ${CHAIN} -s ${IP} -j DROP"
    else
-      ARG1="-D INPUT -s ${IP} -j DROP"
-      ARG2="-D FORWARD -s ${IP} -j DROP"
+      ARG="-D ${CHAIN} -s ${IP} -j DROP"
    fi
-   
+
    # Checking if iptables is present
    if [ ! -x ${IPTABLES} ]; then
       IPTABLES="/usr"${IPTABLES}
@@ -158,8 +200,9 @@ if [ "X${UNAME}" = "XLinux" ]; then
    # Executing and exiting
    COUNT=0;
    lock;
+   ensure_ossec_chain
    while [ 1 ]; do
-        ${IPTABLES} ${ARG1}
+        ${IPTABLES} ${ARG}
         RES=$?
         if [ $RES = 0 ]; then
             break;
@@ -170,66 +213,28 @@ if [ "X${UNAME}" = "XLinux" ]; then
 
             if [ $COUNT -gt 4 ]; then
                 break;
-            fi    
-        fi
-   done
-   
-   COUNT=0;
-   while [ 1 ]; do
-        #
-        # Looking for IPV4 and IPV6 FORWARD
-        #
-        if [ -e "$IPV4F" ]
-        then
-                IPV4KEY="$(cat "$IPV4F")"
-        else
-                IPV4KEY="0"
-        fi
-        if [ -e "$IPV6F" ]
-        then
-                IPV6KEY="$(cat "$IPV6F")"
-        else
-                IPV6KEY="0"
-        fi
-                
-        if [ "$IPV4KEY" = "0" ] && [ "$IPV6KEY" = "0" ]
-        then
-                break
-        fi
-
-        ${IPTABLES} ${ARG2}
-        RES=$?
-        if [ $RES = 0 ]; then
-            break;
-        else
-            COUNT=`expr $COUNT + 1`;
-            echo "`date` Unable to run (iptables returning != $RES): $COUNT - $0 $1 $2 $3 $4 $5" >> ${LOG_FILE}
-            sleep $COUNT;
-
-            if [ $COUNT -gt 4 ]; then
-                break;
-            fi       
+            fi
         fi
    done
    unlock;
-            
+
    exit 0;
-   
+
 # FreeBSD, SunOS or NetBSD with ipfilter
 elif [ "X${UNAME}" = "XFreeBSD" -o "X${UNAME}" = "XSunOS" -o "X${UNAME}" = "XNetBSD" ]; then
-   
+
    # Checking if ipfilter is present
    ls ${IPFILTER} >> /dev/null 2>&1
    if [ $? != 0 ]; then
       exit 0;
-   fi    
+   fi
 
    # Checking if echo is present
    ls ${ECHO} >> /dev/null 2>&1
    if [ $? != 0 ]; then
        exit 0;
-   fi    
-   
+   fi
+
    if [ "x${ACTION}" = "xadd" ]; then
       ARG1="\"@1 block out quick from any to ${IP}\""
       ARG2="\"@1 block in quick from ${IP} to any\""
@@ -239,11 +244,11 @@ elif [ "X${UNAME}" = "XFreeBSD" -o "X${UNAME}" = "XSunOS" -o "X${UNAME}" = "XNet
       ARG2="\"@1 block in quick from ${IP} to any\""
       IPFARG="${IPFILTER} -rf -"
    fi
-  
-   # Executing it 
-   eval ${ECHO} ${ARG1}| ${IPFARG}       
+
+   # Executing it
+   eval ${ECHO} ${ARG1}| ${IPFARG}
    eval ${ECHO} ${ARG2}| ${IPFARG}
-   
+
    exit 0;
 
 # AIX with ipsec
@@ -254,7 +259,7 @@ elif [ "X${UNAME}" = "XAIX" ]; then
   if [ $? != 0 ]; then
      exit 0;
   fi
-         
+
   # Checking if lsfilt is present
   ls ${LSFILT} >> /dev/null 2>&1
   if [ $? != 0 ]; then
@@ -265,7 +270,7 @@ elif [ "X${UNAME}" = "XAIX" ]; then
   if [ $? != 0 ]; then
      exit 0;
   fi
-         
+
   # Checking if rmfilt is present
   ls ${RMFILT} >> /dev/null 2>&1
   if [ $? != 0 ]; then
@@ -273,16 +278,16 @@ elif [ "X${UNAME}" = "XAIX" ]; then
   fi
 
   if [ "x${ACTION}" = "xadd" ]; then
-    ARG1=" -v 4 -a D -s ${IP} -m 255.255.255.255 -d 0.0.0.0 -M 0.0.0.0 -w B -D \"Access Denied by OSSEC-HIDS\"" 
+    ARG1=" -v 4 -a D -s ${IP} -m 255.255.255.255 -d 0.0.0.0 -M 0.0.0.0 -w B -D \"Access Denied by OSSEC-HIDS\""
     #Add filter to rule table
     eval ${GENFILT} ${ARG1}
-    
+
     #Deactivate  and activate the filter rules.
     eval ${MKFILT} -v 4 -d
     eval ${MKFILT} -v 4 -u
   else
     # removing a specific rule is not so easy :(
-     eval ${LSFILT} -v 4 -O  | ${GREP} ${IP} | 
+     eval ${LSFILT} -v 4 -O  | ${GREP} ${IP} |
      while read -r LINE
      do
          RULEID=`${ECHO} ${LINE} | cut -f 1 -d "|"`

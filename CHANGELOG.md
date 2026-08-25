@@ -1,8 +1,26 @@
-**OSSEC changelog (4.3.0) <support@atomicorp.com>**
+**OSSEC changelog (4.4.0) <support@atomicorp.com>**
 
 **Release Maintainers**
 
-Dan Parriott
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+- @bearxy123
+
+**Release Notes**
+
+Work toward the next minor release after 4.3.0.
+
+**Bug Fixes**
+
+- @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
+
+
+**OSSEC changelog (4.3.0) <support@atomicorp.com>**
+
+**Release Maintainers**
 
 Scott R. Shinn (https://www.atomicorp.com)
 
@@ -18,25 +36,63 @@ Scott R. Shinn (https://www.atomicorp.com)
 - @alex-front
 - @crlorentzen
 - @hcw2016
-- @bearxy123
+- @AdUser
 
 **Release Notes**
 
-Work toward the next minor release after 4.2.0.
+OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are listed below.
+
+- **FIM maintenance mode** — Per-agent mode via ``agent_control -M`` (``enable``, ``disable``, ``status``, ``end`` with ``-u <id>``). While enabled, syscheck accepts file changes into the baseline without generating integrity alerts. ``end`` restarts syscheck/rootcheck and clears maintenance when that scan finishes (#677, #1289, #1681).
+- **TCP/TLS ``syslog_output``** — ``ossec-csyslogd`` supports TCP and optional TLS (``protocol``, ``tls``, ``tls_verify``, ``tls_ca``) in addition to UDP. Alert payloads (default/CEF/JSON/Splunk) may use up to ``OS_MAXSTR`` instead of a 2048-byte limit (#1762).
+- **ModSecurity audit logs** — Collect libmodsecurity serial audit logs with the ``modsec-audit`` localfile format, and decode nginx ModSecurity error-log events with new rules (#1390).
 
 **General**
 
+- @atomicturtle - Add optional TCP and TLS to syslog_output (ossec-csyslogd) (#1762)
+- @atomicturtle - Raise csyslogd syslog/CEF/JSON alert buffer from 2048 to OS_MAXSTR (#1762)
+- @atomicturtle - Add Asterisk IPv6 denied decoder so srcip omits square brackets (#1892)
+- @atomicturtle - Allow manage_agents ``-f -`` to bulk-load agents from stdin (#459)
+- @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
+- @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
+- @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
+- @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
+- @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
+- @atomicturtle - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules (#1390)
+- @atomicturtle - Add per-agent FIM maintenance mode via agent_control (#677, #1289, #1681)
+- @atomicturtle - Detect Postfix SMTP connect aborts and escalate by source IP (#1897)
+- @atomicturtle - Match Snort [Drop] fast alerts in the snort decoder (#1926)
+- @atomicturtle - Decode named client IPs with optional BIND @cookie prefix (#1927)
+- @atomicturtle - Add muhstik to blacklisted user-agent rule 31508 (#1387)
+- @atomicturtle - Reject dangerous/ambiguous syscheck_control flag combinations such as ``-r -u`` (#462)
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
 - @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
-- @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules (login, session, access)
+- @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules; tighten postgresql_log so it does not steal cPanel logs (#1132)
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
 
 **Bug Fixes**
 
+- @atomicturtle - [PR 2295](https://github.com/ossec/ossec-hids/pull/2295) - Fix syscheck queue/restart races and honor FIM ``<frequency>`` under realtime
+- @atomicturtle - Make PCRE2 JIT optional (soft-fail compile, match via pcre2_match) so analysisd starts on macOS (#2040)
+- @atomicturtle - Restore ossec-lua binary names after Lua 5.4.7 upgrade (#2245)
+- @atomicturtle - Accept AR expect ``username`` (alias of ``user``), fall back to srcuser, and document fixed script argv (#2104)
+- @atomicturtle - Decode cPanel login lines from webmaild/whostmgrd/cpaneld as well as cpsrvd (#1132)
+- @atomicturtle - Avoid FIM false positives from xxx hash placeholders and checksum read failures (#1590, #1704)
+- @atomicturtle - Match web-accesslog URLs that contain spaces; do not treat POST as a simple ignored request (#914, #922)
+- @atomicturtle - Require more attack-group context and same_location for rule 40501 (#1082)
+- @atomicturtle - Stop treating MJ12bot as a malicious user agent in rule 31508 (#1317)
+- @atomicturtle - Ignore snap and /dev/loop df 100% alerts under rule 532 (#1418)
+- @atomicturtle - Label /var/ossec/logs as var_log_t for logrotate and allow logrotate_t on ossec_log_t (#1948)
+- @atomicturtle - Replace dead Honeynet Project link in rule 40601 (#2111)
+- @atomicturtle - Limit PHP CGI rule 31110 to .php and cgi-bin URLs (#1101)
+- @atomicturtle - Ignore ProFTPD sreaddir buffer growth as a false positive (#1015)
+- @atomicturtle - Pass CFLAGS/LDFLAGS into bundled ossec-lua/ossec-luac via MYCFLAGS/MYLDFLAGS (#1568)
+- @atomicturtle - Open csyslogd syslog_output sockets before chroot so hostnames work without losing OS_Connect multi-address fallback (#1744)
+- @atomicturtle - Emit a single To: plus one comma-separated Cc: for granular/extra recipients so ISPs stop rejecting duplicate To headers (#1901)
+- @atomicturtle - Strip Recv-Q/Send-Q from default netstat listen check to stop rule 533 false positives (#495, #2063)
 - @reyjrar / @atomicturtle - [PR 235](https://github.com/ossec/ossec-hids/pull/235) - Canonicalize Windows FIM paths so realtime and scheduled scans use the same slash form
 - @lazyp / @atomicturtle - [PR 564](https://github.com/ossec/ossec-hids/pull/564) - Skip leading XML declarations (and UTF-8 BOM) in OS_ReadXML
-- @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
+- @AdUser / @atomicturtle - [PR 2105](https://github.com/ossec/ossec-hids/pull/2105) - Insert SQL NULL for missing alert src_ip/dst_ip in os_dbd (not the string 'NULL')
 - @doke2 / @atomicturtle - [PR 663](https://github.com/ossec/ossec-hids/pull/663) - Log AGENTCONFIG path when reading shared agent.conf in syscheckd
 - @crlorentzen / @atomicturtle - [PR 1124](https://github.com/ossec/ossec-hids/pull/1124) - Fix PIX/ASA 6-308001/605004/605005 field extraction (masked/empty users, remote IP)
 

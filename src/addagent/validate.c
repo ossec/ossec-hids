@@ -150,6 +150,9 @@ int OS_RemoveAgent(const char *u_id) {
     }
 #endif
 
+    /* Capture name-ip before blanking the keys entry (#244) */
+    full_name = getFullnameById(u_id);
+
 #ifdef REUSE_ID
     long fp_seek;
     size_t fp_read;
@@ -159,12 +162,14 @@ int OS_RemoveAgent(const char *u_id) {
 
     if (stat(AUTH_FILE, &fp_stat) < 0) {
         fclose(fp);
+        free(full_name);
         return 0;
     }
 
     buffer = malloc(fp_stat.st_size);
     if (!buffer) {
         fclose(fp);
+        free(full_name);
         return 0;
     }
 
@@ -182,10 +187,12 @@ int OS_RemoveAgent(const char *u_id) {
 
     if (!fp) {
         free(buffer);
+        free(full_name);
         return 0;
     }
 
     fwrite(buffer, sizeof(char), fp_read, fp);
+    free(buffer);
 
 #else
     /* Remove the agent, but keep the id */
@@ -194,9 +201,10 @@ int OS_RemoveAgent(const char *u_id) {
 #endif
     fclose(fp);
 
-    full_name = getFullnameById(u_id);
-    if (full_name)
+    if (full_name) {
         delete_agentinfo(full_name);
+        free(full_name);
+    }
 
     /* Remove counter for ID */
     OS_RemoveCounter(u_id);
@@ -813,9 +821,16 @@ int print_agents(int print_status, int active_only, int csv_output, cJSON *json_
                         }
 
                         if (csv_output) {
-                            printf("%s,%s,%s,%s,\n", line_read, name, ip, print_agent_status(agt_status));
+                            syscheck_maint_info mi;
+                            const char *mtag = "";
+                            if (syscheck_maint_get(name, ip, &mi)) {
+                                mtag = syscheck_maint_list_tag(&mi);
+                            }
+                            printf("%s,%s,%s,%s,%s\n", line_read, name, ip,
+                                   print_agent_status(agt_status), mtag);
                         } else if (json_output) {
                             cJSON *json_agent = cJSON_CreateObject();
+                            syscheck_maint_info mi;
                           
                             if (!json_agent)
                                 return 0;
@@ -824,9 +839,25 @@ int print_agents(int print_status, int active_only, int csv_output, cJSON *json_
                             cJSON_AddStringToObject(json_agent, "name", name);
                             cJSON_AddStringToObject(json_agent, "ip", ip);
                             cJSON_AddStringToObject(json_agent, "status", print_agent_status(agt_status));
+                            if (syscheck_maint_get(name, ip, &mi)) {
+                                cJSON_AddStringToObject(json_agent, "fimMaintenance",
+                                                        syscheck_maint_list_tag(&mi));
+                            }
                             cJSON_AddItemToArray(json_output, json_agent);
                         } else {
-                            printf(PRINT_AGENT_STATUS, line_read, name, ip, print_agent_status(agt_status));
+                            syscheck_maint_info mi;
+                            const char *mtag = "";
+                            if (syscheck_maint_get(name, ip, &mi)) {
+                                mtag = syscheck_maint_list_tag(&mi);
+                            }
+                            if (mtag[0]) {
+                                printf("   ID: %s, Name: %s, IP: %s, %s, %s\n",
+                                       line_read, name, ip,
+                                       print_agent_status(agt_status), mtag);
+                            } else {
+                                printf(PRINT_AGENT_STATUS, line_read, name, ip,
+                                       print_agent_status(agt_status));
+                            }
                         }
                     } else {
                         printf(PRINT_AGENT, line_read, name, ip);

@@ -145,10 +145,15 @@
 
  <rule id="532" level="0">
     <if_sid>531</if_sid>
-    <pcre2>cdrom|/media|usb|/mount|floppy|dvd</pcre2>
-    <description>Ignoring external medias.</description> 
+    <pcre2>cdrom|/media|usb|/mount|floppy|dvd|/dev/loop|/snap/</pcre2>
+    <description>Ignoring removable media and snap/loop filesystems.</description>
   </rule>
 
+  <!-- Default install command strips Recv-Q/Send-Q via awk (see install.sh).
+       Existing configs still using raw netstat output will false-positive on
+       queue churn; update the localfile command to:
+       netstat -tan |grep LISTEN |egrep -v '(127.0.0.1| ::1)' | awk '{print $1,$4,$5,$6}' | sort
+  -->
   <rule id="533" level="7">
     <if_sid>530</if_sid>
     <pcre2>ossec: output: 'netstat -tan</pcre2>

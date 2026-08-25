@@ -999,6 +999,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - Examples:
   -  valhalla named[7885]: client 192.168.1.231#1142: update 'hayaletgemi.edu/IN' denied
   - named[12637]: client 1.2.3.4#32769: query (cache) 'somedomain.com/MX/IN' denied
+  - Oct 26 00:00:53 valhalla named[43400]: client @0x7f2b78046e40 76.188.251.143#80 (sl): query (cache) 'sl/ANY/IN' denied
+  - Nov 25 13:27:03 tiny named[478]: client @0xb464d6a2d0 127.0.0.1#25298 (www.slashdot.org): query: www.slashdot.org IN A + (127.0.0.1)
   -  Oct 22 10:12:33 junction named[31687]: /etc/blocked.slave:9892: syntax error near ';'
   -  Oct 22 10:12:33 junction named[31687]: reloading configuration failed: unexpected token
  -->
@@ -1009,7 +1011,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="named-query">
   <parent>named</parent>
   <prematch_pcre2>: query:? </prematch_pcre2>
-  <pcre2>client @\S+ (\S+)#\d+[ ]*?\S*: </pcre2>
+  <pcre2>client (?:@\S+ )?(\S+)#\d+[ ]*?\S*: </pcre2>
   <order>srcip,url</order>
 </decoder>
 
@@ -1022,7 +1024,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="named_client">
   <parent>named</parent>
   <prematch_pcre2>^client </prematch_pcre2>
-  <pcre2 offset="after_prematch">^(\S+)#</pcre2>
+  <pcre2 offset="after_prematch">^(?:@\S+ )?(\S+)#</pcre2>
   <order>srcip</order>
 </decoder>
 
@@ -1066,6 +1068,17 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <parent>postfix</parent>
   <prematch_pcre2>^warning: \S+: SASL </prematch_pcre2>
   <pcre2>^warning: \S+\[(\S+)\]:</pcre2>
+  <order>srcip</order>
+</decoder>
+
+<!-- Extract srcip from smtpd TLS/connect aborts, e.g.:
+  - postfix/smtpd[29322]: SSL_accept error from unknown[203.0.113.10]: lost connection
+  - postfix/smtpd[29322]: lost connection after CONNECT from unknown[203.0.113.10]
+ -->
+<decoder name="postfix-connect-abort">
+  <parent>postfix</parent>
+  <prematch_pcre2>^SSL_accept error from |^lost connection after \S+ from </prematch_pcre2>
+  <pcre2 offset="after_prematch">\[(\S+)\]</pcre2>
   <order>srcip</order>
 </decoder>
 
@@ -1571,6 +1584,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - [**] [1:1882:10] ATTACK-RESPONSES id check returned userid [**]
     [Classification: Potentially Bad Traffic] [Priority: 2]
     {UDP} 192.168.20.32 -> 192.168.20.2
+  - [Drop] [**] [1:10000002:0] cmd.exe test detected [**] [Priority: 0]
+    {TCP} 10.1.4.2:59244 -> 10.1.7.2:80
   -->
 
 <decoder name="snort">
@@ -1579,7 +1594,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <decoder name="snort">
   <type>ids</type>
-  <prematch_pcre2>^\[\*\*\] \[\d+:\d+:\d+\] </prematch_pcre2>
+  <prematch_pcre2>^\[\*\*\] \[\d+:\d+:\d+\] |^\[Drop\] \[\*\*\] \[\d+:\d+:\d+\] </prematch_pcre2>
 </decoder>
 
 <decoder name="snort2">
@@ -1815,7 +1830,52 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<!-- libmodsecurity / ModSecurity-nginx error log lines use [client IP] before ModSecurity: -->
+<decoder name="nginx-errorlog-modsec-denied">
+  <parent>nginx-errorlog</parent>
+  <prematch_pcre2 offset="after_parent">\[client \S+\] ModSecurity: Access denied</prematch_pcre2>
+  <pcre2 offset="after_parent">\[client (\S+)\] ModSecurity: Access denied with code (\d+)</pcre2>
+  <order>srcip,id</order>
+</decoder>
 
+<decoder name="nginx-errorlog-modsec-warning">
+  <parent>nginx-errorlog</parent>
+  <prematch_pcre2 offset="after_parent">\[client \S+\] ModSecurity: Warning</prematch_pcre2>
+  <pcre2 offset="after_parent">\[client (\S+)\] ModSecurity: Warning</pcre2>
+  <order>srcip</order>
+</decoder>
+
+
+<!-- ModSecurity / libmodsecurity serial audit log (log_format modsec-audit).
+  - Logcollector joins a transaction (through matching --id-Z--) into one line.
+  - srcip is taken from section A; Message matches prefer the -H-- section.
+  - Examples (collapsed):
+  -  --fbd13fc1-A-- [22/Dec/2015:15:25:00 +0000] VnhlYH8AAQEAADYdAUkAAAAA 127.0.0.1 55275 127.0.0.1 80 --fbd13fc1-H-- Message: Access denied with code 403 (phase 2). ... Action: Intercepted (phase 2) --fbd13fc1-Z--
+  -->
+<decoder name="modsecurity-audit">
+  <prematch_pcre2>--[0-9A-Za-z]+-A--</prematch_pcre2>
+</decoder>
+
+<decoder name="modsecurity-audit-denied">
+  <parent>modsecurity-audit</parent>
+  <prematch_pcre2>--[0-9A-Za-z]+-H--.*Message: Access denied with code </prematch_pcre2>
+  <pcre2>--[0-9A-Za-z]+-A--\s+\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+).*--[0-9A-Za-z]+-H--.*Message: Access denied with code (\d+)</pcre2>
+  <order>srcip,srcport,dstip,dstport,id</order>
+</decoder>
+
+<decoder name="modsecurity-audit-warning">
+  <parent>modsecurity-audit</parent>
+  <prematch_pcre2>--[0-9A-Za-z]+-H--.*Message: Warning\.</prematch_pcre2>
+  <pcre2>--[0-9A-Za-z]+-A--\s+\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+)</pcre2>
+  <order>srcip,srcport,dstip,dstport</order>
+</decoder>
+
+<decoder name="modsecurity-audit-fields">
+  <parent>modsecurity-audit</parent>
+  <prematch_pcre2 offset="after_parent">\[\d{2}/\w+/\d{4}:</prematch_pcre2>
+  <pcre2 offset="after_parent">\[[^\]]+\]\s+\S+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\d+)</pcre2>
+  <order>srcip,srcport,dstip,dstport</order>
+</decoder>
 
 
 <!-- NCSA common log decoder (used by apache, Lotus Domino and IIS NCSA).
@@ -1831,12 +1891,14 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   -  1.1.1.1 - username [18/Jan/2006:13:10:06 -0500] "GET /xxx.html HTTP/1.1"
   -  123.4.5.6 aa.xx.com - [05/Nov/2006:00:46:56 -0500] "GET / HTTP/1.1" 302 -
   - ::ffff:202.194.15.192 190.7.138.180 - [18/Oct/2010:10:48:55 -0500] "GET //php-my-admin/config/config.inc.php?p=phpinfo(); HTTP/1.1" 404 345 "-"  "Mozilla/4.0 (compatible; MSIE 6.0; Windows 98)"
+  - 11.22.33.44 - - [01/Aug/2016:05:15:07 +0000] "GET /ariadne/www/loader.php/system/\x22><iMg src=N onerror=alert(document.cookie)> HTTP/1.1" 301 178 "-" "Mozilla/5.0 [en] (X11, U; OpenVAS 8.0.7)"
+  - URL may contain spaces (scanner/XSS payloads); use .+? instead of \S+ (#914).
   -->
 <decoder name="web-accesslog">
   <type>web-log</type>
-  <prematch_pcre2>^\S+ \S+ \S+ \[\S+ \S\d+\] "\w+ \S+ HTTP\S+" </prematch_pcre2>
+  <prematch_pcre2>^\S+ \S+ \S+ \[\S+ \S\d+\] "\w+ .+? HTTP\S+" </prematch_pcre2>
   <pcre2>^(\S+) \S+ (\S+) \[\S+ \S\d+\] </pcre2>
-  <pcre2>"(\w+) (\S+) HTTP\S+" (\d+) </pcre2>
+  <pcre2>"(\w+) (.+?) HTTP\S+" (\d+) </pcre2>
   <order>srcip, srcuser, action, url, id</order>
 </decoder>
 
@@ -2311,6 +2373,13 @@ Sat May  7 03:27:57 CDT 2011 /var/ossec/active-response/bin/firewall-drop.sh del
   <prematch_pcre2>Registration from </prematch_pcre2>
   <pcre2 offset="after_prematch">failed for '(\S+):(\d+?)'|failed for '(\S+)'</pcre2>
   <order>srcip,srcport</order>
+</decoder>
+
+<decoder name="asterisk-denied3-ipv6">
+  <parent>asterisk</parent>
+  <prematch_pcre2>^NOTICE\[\d+?\]\[[A-Za-z0-9@_-]+?\]: \S+ in \S+: Call from </prematch_pcre2>
+  <pcre2 offset="after_prematch">^'\S*' \(\[([^\]]+)\]:(\d+)\) to extension '(\S+)' rejected because extension not found in context '(\S+)'\.$</pcre2>
+  <order>srcip, srcport, extra_data, extra_data</order>
 </decoder>
 
 <decoder name="asterisk-denied3">
@@ -3373,10 +3442,16 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
 </decoder>
 
 
-<!-- cPanel / cpsrvd (login_log, session_log, access_log).
+<!-- cPanel login/session/access logs (#1132 / #1036).
+  - Timestamp uses numeric TZ offset (+/-0400), which must not match postgresql_log.
+  - Parent matches cpsrvd and direct daemon tags used in some cPanel builds:
+    cpaneld, whostmgrd, webmaild.
   - Examples:
   - [2016-11-18 09:32:19 +0000] info [cpsrvd] 10.1.5.19 - admin "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password hash is missing from system (user probably does not exist)
   - [2017-01-25 06:01:10 -0500] info [cpsrvd] 10.1.5.19 - test "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: invalid cpanel user test (loadcpdata failed)
+  - [2017-05-26 07:02:05 -0400] info [webmaild] 10.101.1.42 - thousands "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN webmaild: user password incorrect
+  - [2017-05-26 07:02:52 -0400] info [whostmgrd] 10.101.1.42 - root "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN whostmgrd: user password incorrect
+  - [2017-05-29 01:32:33 -0400] info [cpaneld] 10.101.1.38 - thousands "POST /login/?login_only=1 HTTP/1.1" FAILED LOGIN cpaneld: access denied for root, reseller, and user password
   - [2016-04-18 13:07:02 -0400] info [cpsrvd] 10.1.5.19 - root - SUCCESS LOGIN whostmgrd
   - [2016-04-18 13:07:15 -0400] info [cpsrvd] 10.1.5.19 - reseller (possessor: root) - SUCCESS LOGIN cpaneld
   - [2017-02-03 01:21:31 -0500] info [cpsrvd] 10.101.1.18 NEW testuser:XImQi9d3anWMNSc9 address=10.101.1.18,app=cpaneld,creator=pupkin,method=handle_form_login,path=form,possessed=0
@@ -3384,7 +3459,7 @@ s=2 SFwdQ=0 SDupQ=0 SErr=0 RQ=2 RIQ=0 RFwdQ=0 RDupQ=0 RTCP=0 SFwdR=0 SFail=0 SFE
   - 46.118.10.79 - paul [11/18/2016:09:35:43 -0000] "GET" FAILED LOGIN cpdavd: Could not fetch system home directory for paul
   -->
 <decoder name="cpanel">
-  <prematch_pcre2>^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4}\] info \[cpsrvd\] </prematch_pcre2>
+  <prematch_pcre2>^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4}\] info \[(?:cpsrvd|cpaneld|whostmgrd|webmaild)\] </prematch_pcre2>
 </decoder>
 
 <decoder name="cpanel-login-failed">

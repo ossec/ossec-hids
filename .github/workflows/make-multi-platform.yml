@@ -5,9 +5,9 @@ name: Build (multi-platform)
 
 on:
   push:
-    branches: [ "main", "master", "v4.2.0" ]
+    branches: [ "main", "master", "v4.2.0", "v4.3.0" ]
   pull_request:
-    branches: [ "main", "master", "v4.2.0" ]
+    branches: [ "main", "master", "v4.2.0", "v4.3.0" ]
   workflow_dispatch:  # Run manually from Actions tab (choose branch)
 
 jobs:

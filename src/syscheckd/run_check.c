@@ -20,6 +20,8 @@
 
 #include "shared.h"
 #include "syscheck.h"
+#include "fim_sum_op.h"
+#include "win_acl_op.h"
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
 #include "os_crypto/sha256/sha256_op.h"
@@ -29,9 +31,43 @@
 /* Prototypes */
 static void send_sk_db(void);
 static void syscheck_log_send_failures(void);
+static time_t syscheck_idle_wait(time_t curr_time, time_t prev_time_sk,
+                                 time_t prev_time_rk);
 
 /* Count of baseline/update messages that could not reach the agent queue. */
 static unsigned int syscheck_send_failures = 0;
+
+/* Max idle between daemon-loop iterations: honor <frequency> / rootcheck
+ * cadence while still capping at SYSCHECK_WAIT so long frequencies do not
+ * block forever in select/sleep.
+ */
+static time_t syscheck_idle_wait(time_t curr_time, time_t prev_time_sk,
+                                 time_t prev_time_rk)
+{
+    time_t remaining;
+    time_t next_sk;
+    time_t sk_remain;
+
+    next_sk = prev_time_sk + (time_t)syscheck.time;
+    sk_remain = next_sk - curr_time;
+    remaining = sk_remain;
+
+    if (syscheck.rootcheck && rootcheck.time > 0) {
+        time_t next_rk = prev_time_rk + (time_t)rootcheck.time;
+        time_t rk_remain = next_rk - curr_time;
+        if (rk_remain < remaining) {
+            remaining = rk_remain;
+        }
+    }
+
+    if (remaining < 1) {
+        remaining = 1;
+    }
+    if (remaining > SYSCHECK_WAIT) {
+        remaining = SYSCHECK_WAIT;
+    }
+    return remaining;
+}
 
 
 /* Send a message related to syscheck change/addition.
@@ -206,9 +242,11 @@ void start_daemon()
         }
     }
 
-    /* Check every SYSCHECK_WAIT */
+    /* Loop: run due scans, then idle up to min(SYSCHECK_WAIT, remaining freq). */
     while (1) {
         int run_now = 0;
+        int select_rc;
+        time_t idle_wait;
         curr_time = time(0);
 
         /* Check if syscheck should be restarted */
@@ -300,59 +338,144 @@ void start_daemon()
             prev_time_sk = time(0);
         }
 
+        curr_time = time(0);
+        idle_wait = syscheck_idle_wait(curr_time, prev_time_sk, prev_time_rk);
+
 #ifdef INOTIFY_ENABLED
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
-            selecttime.tv_sec = SYSCHECK_WAIT;
+            selecttime.tv_sec = (long)idle_wait;
             selecttime.tv_usec = 0;
 
             /* zero-out the fd_set */
             FD_ZERO (&rfds);
             FD_SET(syscheck.realtime->fd, &rfds);
 
-            run_now = select(syscheck.realtime->fd + 1, &rfds,
-                             NULL, NULL, &selecttime);
-            if (run_now < 0) {
+            select_rc = select(syscheck.realtime->fd + 1, &rfds,
+                               NULL, NULL, &selecttime);
+            if (select_rc < 0) {
                 merror("%s: ERROR: Select failed (for realtime fim).", ARGV0);
-                sleep(SYSCHECK_WAIT);
-            } else if (run_now == 0) {
-                /* Timeout */
+                sleep((unsigned int)idle_wait);
+            } else if (select_rc == 0) {
+                /* Timeout — re-evaluate frequency */
             } else if (FD_ISSET (syscheck.realtime->fd, &rfds)) {
                 realtime_process();
             }
         } else {
-            sleep(SYSCHECK_WAIT);
+            sleep((unsigned int)idle_wait);
         }
 #elif defined(WIN32)
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
-            if (WaitForSingleObjectEx(syscheck.realtime->evt, SYSCHECK_WAIT * 1000, TRUE) == WAIT_FAILED) {
+            if (WaitForSingleObjectEx(syscheck.realtime->evt,
+                                      (DWORD)(idle_wait * 1000), TRUE) == WAIT_FAILED) {
                 merror("%s: ERROR: WaitForSingleObjectEx failed (for realtime fim).", ARGV0);
-                sleep(SYSCHECK_WAIT);
+                sleep((unsigned int)idle_wait);
             } else {
                 sleep(1);
             }
         } else {
-            sleep(SYSCHECK_WAIT);
+            sleep((unsigned int)idle_wait);
         }
 #else
-        sleep(SYSCHECK_WAIT);
+        sleep((unsigned int)idle_wait);
 #endif
     }
 }
 
-/* Read file information and return a pointer to the checksum */
+/* Resolve syscheck opts for a path (longest matching configured directory).
+ * Sets *matched to 1 when a directory matched, 0 otherwise (so callers can
+ * distinguish "matched with opts==0" from "no match").
+ */
+static int syscheck_opts_for_path(const char *path, int *matched)
+{
+    int i;
+    int best = -1;
+    size_t best_len = 0;
+
+    if (matched) {
+        *matched = 0;
+    }
+    if (!path || !syscheck.dir) {
+        return (0);
+    }
+
+    for (i = 0; syscheck.dir[i]; i++) {
+        size_t len = strlen(syscheck.dir[i]);
+        char next;
+
+        if (len == 0) {
+            continue;
+        }
+        /* Normalize trailing separators so "/var/log/" matches "/var/log/foo".
+         * Keep a lone "/" (or "\") so the root directory still matches. */
+        while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
+                           syscheck.dir[i][len - 1] == '\\')) {
+            len--;
+        }
+        if (len < best_len) {
+            continue;
+        }
+#ifdef WIN32
+        if (strncasecmp(path, syscheck.dir[i], len) != 0) {
+            continue;
+        }
+#else
+        if (strncmp(path, syscheck.dir[i], len) != 0) {
+            continue;
+        }
+#endif
+        next = path[len];
+        if (next != '\0' && next != '/' && next != '\\') {
+            continue;
+        }
+        best_len = len;
+        best = i;
+    }
+
+    if (best < 0) {
+        return (0);
+    }
+    if (matched) {
+        *matched = 1;
+    }
+    return (syscheck.opts[best]);
+}
+
+/* Read file information and return a pointer to the checksum.
+ * Returns 0 on success, -1 if the file is missing (delete alert already
+ * sent), -2 if metadata/checksum read failed (e.g. EACCES, EMFILE) so
+ * the caller should skip without treating it as an integrity change.
+ */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 {
     int size = 0, perm = 0, owner = 0, group = 0, md5sum = 0, sha1sum = 0, sha256sum = 0;
+    int attrs = 0;
+    int acl = 0;
     int return_error = 0;
+    int checksum_failed = 0;
+    int sum_off;
+    int path_opts;
+    int path_matched = 0;
     struct stat statbuf;
     os_md5 mf_sum;
     os_sha1 sf_sum;
     os_sha256 sha256_sum;
+#ifdef WIN32
+    DWORD win_attrs = 0;
+    char acl_digest[33];
+    fim_acl_t facl;
+    int have_facl = 0;
+#endif
 
     /* Clean sums */
     strncpy(mf_sum, "xxx", 4);
     strncpy(sf_sum, "xxx", 4);
     strncpy(sha256_sum, "xxx", 4);
+#ifdef WIN32
+    acl_digest[0] = '\0';
+    memset(&facl, 0, sizeof(facl));
+#endif
+
+    path_opts = syscheck_opts_for_path(file_name, &path_matched);
 
     /* Stat the file */
 #ifdef WIN32
@@ -362,16 +485,24 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #endif
     if (return_error)
     {
-        char alert_msg[PATH_MAX+4];
+        /* Only treat missing paths as deletions; other metadata errors
+         * (EACCES, etc.) must not look like "file deleted". */
+        if (errno == ENOENT || errno == ENOTDIR) {
+            char alert_msg[PATH_MAX+4];
 
-        alert_msg[PATH_MAX + 3] = '\0';
-        snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-        send_syscheck_msg(alert_msg);
+            alert_msg[PATH_MAX + 3] = '\0';
+            snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+            send_syscheck_msg(alert_msg);
+            return (-1);
+        }
 
-        return (-1);
+        merror("%s: WARN: Unable to stat file '%s': %s",
+               ARGV0, file_name, strerror(errno));
+        return (-2);
     }
 
     /* Get the old sum values */
+    sum_off = fim_sum_data_offset(oldsum);
 
     /* size */
     if (oldsum[0] == '+') {
@@ -398,12 +529,11 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         md5sum = 1;
     }
 
-    /* sha1 sum */
-    if (oldsum[5] == '+') {
+    /* sha1 sum: '+' or 's' means enabled; '-' or 'n' means disabled.
+     * ('s'/'n' also encode report_changes / seechanges.) */
+    if (oldsum[5] == '+' || oldsum[5] == 's') {
         sha1sum = 1;
-    } else if (oldsum[5] == 's') {
-        sha1sum = 1;
-    } else if (oldsum[5] == 'n') {
+    } else {
         sha1sum = 0;
     }
 
@@ -415,6 +545,55 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     }
     /* If it's a digit (size), then it's the old format, no sha256 */
 
+#ifdef WIN32
+    /* Prefer current directory opts over sticky cache flags so enabling or
+     * disabling check_attrs / check_acl takes effect without a DB wipe. */
+    if (path_opts & CHECK_ATTRS) {
+        attrs = 1;
+        win_attrs = GetFileAttributes(file_name);
+        if (win_attrs == INVALID_FILE_ATTRIBUTES) {
+            merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                   ARGV0, file_name, (unsigned long)GetLastError());
+            return (-2);
+        }
+    } else if (!path_matched && sum_off >= 8 && oldsum[7] == '+') {
+        /* Path not matched to a configured directory; honor cache flags. */
+        attrs = 1;
+        win_attrs = GetFileAttributes(file_name);
+        if (win_attrs == INVALID_FILE_ATTRIBUTES) {
+            merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                   ARGV0, file_name, (unsigned long)GetLastError());
+            return (-2);
+        }
+    }
+
+    if (path_opts & CHECK_ACL) {
+        acl = 1;
+        if (fim_win_acl_read(file_name, &facl) != 0 ||
+                fim_win_acl_digest(&facl, acl_digest) != 0) {
+            fim_acl_free(&facl);
+            merror("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
+            return (-2);
+        }
+        have_facl = 1;
+    } else if (!path_matched && sum_off >= 9 && oldsum[8] == '+') {
+        acl = 1;
+        if (fim_win_acl_read(file_name, &facl) != 0 ||
+                fim_win_acl_digest(&facl, acl_digest) != 0) {
+            fim_acl_free(&facl);
+            merror("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
+            return (-2);
+        }
+        have_facl = 1;
+    }
+#else
+    (void)attrs;
+    (void)acl;
+    (void)sum_off;
+    (void)path_opts;
+    (void)path_matched;
+#endif
+
     /* Generate new checksum */
     if (S_ISREG(statbuf.st_mode))
     {
@@ -422,12 +601,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             /* Generate checksums of the file */
             if (sha1sum || md5sum) {
                 if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                    merror("%s: WARN: Unable to read file '%s' for checksum: %s",
+                           ARGV0, file_name, strerror(errno));
+                    checksum_failed = 1;
                     strncpy(sf_sum, "xxx", 4);
                     strncpy(mf_sum, "xxx", 4);
                 }
             }
             if (sha256sum) {
                 if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                    merror("%s: WARN: Unable to read file '%s' for sha256: %s",
+                           ARGV0, file_name, strerror(errno));
+                    checksum_failed = 1;
                     strncpy(sha256_sum, "xxx", 4);
                 }
             }
@@ -443,12 +628,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     /* Generate checksums of the file */
                     if (sha1sum || md5sum) {
                         if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                            merror("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                   ARGV0, file_name, strerror(errno));
+                            checksum_failed = 1;
                             strncpy(sf_sum, "xxx", 4);
                             strncpy(mf_sum, "xxx", 4);
                         }
                     }
                     if (sha256sum) {
                         if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
+                            merror("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                   ARGV0, file_name, strerror(errno));
+                            checksum_failed = 1;
                             strncpy(sha256_sum, "xxx", 4);
                         }
                     }
@@ -458,15 +649,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     }
 #endif
 
+    if (checksum_failed) {
+#ifdef WIN32
+        if (have_facl) {
+            fim_acl_free(&facl);
+        }
+#endif
+        return (-2);
+    }
+
     newsum[0] = '\0';
-    /* Caller is expected to provide a buffer of at least 
-     * 256 + 2 bytes for `newsum` 
-     * (see create_db.c: char c_sum[OS_MAXSTR + 1];). The
-     * snprintf() below is limited to
-     * OS_MAXSTR bytes, which is safely within that size even 
-     * when including all checksum
-     * fields (size, perm, uid, gid, md5, sha1, 
-     * sha256).
+    /* Caller is expected to provide a buffer of at least
+     * OS_MAXSTR + 1 bytes for `newsum`.
      */
 
 #ifndef WIN32
@@ -479,10 +673,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              sha1sum  == 0 ? "xxx" : sf_sum,
              sha256sum == 0 ? "xxx" : sha256_sum);
 #else
-    HANDLE hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = CreateFile(file_name, GENERIC_READ,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                              NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         DWORD dwErrorCode = GetLastError();
         char alert_msg[PATH_MAX+4];
+        if (have_facl) {
+            fim_acl_free(&facl);
+        }
         alert_msg[PATH_MAX + 3] = '\0';
         snprintf(alert_msg, PATH_MAX + 4, "CreateFile=%ld %s", dwErrorCode, file_name);
         send_syscheck_msg(alert_msg);
@@ -495,10 +694,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     if (dwRtnCode != ERROR_SUCCESS) {
         DWORD dwErrorCode = GetLastError();
         CloseHandle(hFile);
-        char alert_msg[PATH_MAX+4];
-        alert_msg[PATH_MAX + 3] = '\0';
-        snprintf(alert_msg, PATH_MAX + 4, "GetSecurityInfo=%ld %s", dwErrorCode, file_name);
-        send_syscheck_msg(alert_msg);
+        if (have_facl) {
+            fim_acl_free(&facl);
+        }
+        {
+            char alert_msg[PATH_MAX+4];
+            alert_msg[PATH_MAX + 3] = '\0';
+            snprintf(alert_msg, PATH_MAX + 4, "GetSecurityInfo=%ld %s", dwErrorCode, file_name);
+            send_syscheck_msg(alert_msg);
+        }
         return -1;
     }
 
@@ -510,17 +714,61 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
       memcpy( st_uid, szSID, strlen(szSID) );
     }
     LocalFree(szSID);
+    if (pSD) {
+        LocalFree(pSD);
+    }
     CloseHandle(hFile);
 
-    snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s",
-             size == 0 ? 0 : (long)statbuf.st_size,
-             perm == 0 ? 0 : (int)statbuf.st_mode,
-             owner == 0 ? "0" : st_uid,
-             group == 0 ? 0 : (int)statbuf.st_gid,
-             md5sum   == 0 ? "xxx" : mf_sum,
-             sha1sum  == 0 ? "xxx" : sf_sum,
-             sha256sum == 0 ? "xxx" : sha256_sum);
+    if (acl) {
+        /* attrs slot always present when ACL is enabled (0 if unchecked). */
+        snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s:%lu:%s",
+                 size == 0 ? 0 : (long)statbuf.st_size,
+                 perm == 0 ? 0 : (int)statbuf.st_mode,
+                 owner == 0 ? "0" : (st_uid ? st_uid : "0"),
+                 group == 0 ? 0 : (int)statbuf.st_gid,
+                 md5sum   == 0 ? "xxx" : mf_sum,
+                 sha1sum  == 0 ? "xxx" : sf_sum,
+                 sha256sum == 0 ? "xxx" : sha256_sum,
+                 attrs ? (unsigned long)win_attrs : 0UL,
+                 acl_digest);
+        /* Append SID-stable snapshot for local cache / ACE diffs. */
+        if (have_facl) {
+            size_t used = strlen(newsum);
+            if (used + 2 < (size_t)OS_MAXSTR) {
+                newsum[used] = '\n';
+                newsum[used + 1] = '\0';
+                if (fim_win_acl_snapshot(&facl, newsum + used + 1,
+                                         (size_t)OS_MAXSTR - used - 1) != 0) {
+                    newsum[used] = '\0';
+                }
+            }
+            fim_acl_free(&facl);
+            have_facl = 0;
+        }
+    } else if (attrs) {
+        snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s:%lu",
+                 size == 0 ? 0 : (long)statbuf.st_size,
+                 perm == 0 ? 0 : (int)statbuf.st_mode,
+                 owner == 0 ? "0" : (st_uid ? st_uid : "0"),
+                 group == 0 ? 0 : (int)statbuf.st_gid,
+                 md5sum   == 0 ? "xxx" : mf_sum,
+                 sha1sum  == 0 ? "xxx" : sf_sum,
+                 sha256sum == 0 ? "xxx" : sha256_sum,
+                 (unsigned long)win_attrs);
+    } else {
+        snprintf(newsum, OS_MAXSTR, "%ld:%d:%s:%d:%s:%s:%s",
+                 size == 0 ? 0 : (long)statbuf.st_size,
+                 perm == 0 ? 0 : (int)statbuf.st_mode,
+                 owner == 0 ? "0" : (st_uid ? st_uid : "0"),
+                 group == 0 ? 0 : (int)statbuf.st_gid,
+                 md5sum   == 0 ? "xxx" : mf_sum,
+                 sha1sum  == 0 ? "xxx" : sf_sum,
+                 sha256sum == 0 ? "xxx" : sha256_sum);
+    }
 
+    if (have_facl) {
+        fim_acl_free(&facl);
+    }
     free(st_uid);
 #endif
 

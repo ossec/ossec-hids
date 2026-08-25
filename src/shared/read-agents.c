@@ -736,6 +736,246 @@ int print_rootcheck(const char *sk_name, const char *sk_ip, const char *fname,
 
 #endif
 
+/* Build FIM maintenance marker path for local (sk_name NULL) or agent. */
+void syscheck_maint_path(const char *sk_name, const char *sk_ip,
+                         char *buf, size_t buflen)
+{
+    if (!sk_name) {
+        snprintf(buf, buflen, "%s/.syscheck.maint", SYSCHECK_DIR);
+    } else if (!sk_ip) {
+        snprintf(buf, buflen, "%s/.%s.maint", SYSCHECK_DIR, sk_name);
+    } else {
+        snprintf(buf, buflen, "%s/.(%s) %s.maint", SYSCHECK_DIR, sk_name, sk_ip);
+    }
+}
+
+/* Map analysisd lf->location ("syscheck", "(name) ip->syscheck", …) to marker. */
+void syscheck_maint_path_from_location(const char *location,
+                                       char *buf, size_t buflen)
+{
+    char base[OS_FLSIZE + 1];
+    char *arrow;
+
+    strncpy(base, location, OS_FLSIZE);
+    base[OS_FLSIZE] = '\0';
+
+    arrow = strstr(base, "->");
+    if (arrow) {
+        *arrow = '\0';
+        snprintf(buf, buflen, "%s/.%s.maint", SYSCHECK_DIR, base);
+        return;
+    }
+
+    if (strcmp(base, "syscheck") == 0 ||
+            strcmp(base, "syscheck-registry") == 0) {
+        snprintf(buf, buflen, "%s/.syscheck.maint", SYSCHECK_DIR);
+        return;
+    }
+
+    snprintf(buf, buflen, "%s/.%s.maint", SYSCHECK_DIR, base);
+}
+
+int syscheck_maint_read_path(const char *path, syscheck_maint_info *info)
+{
+    FILE *fp;
+    char line[256];
+    struct stat st;
+
+    memset(info, 0, sizeof(*info));
+
+    if (stat(path, &st) != 0) {
+        return (0);
+    }
+
+    info->enabled = 1;
+    /* Legacy markers (#!maint only) have no enabled_at; use mtime. */
+    info->enabled_at = st.st_mtime;
+
+    fp = fopen(path, "r");
+    if (!fp) {
+        return (1);
+    }
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        char *nl = strchr(line, '\n');
+        if (nl) {
+            *nl = '\0';
+        }
+        if (strncmp(line, "enabled_at=", 11) == 0) {
+            info->enabled_at = (time_t)strtoul(line + 11, NULL, 10);
+        } else if (strncmp(line, "pending_end=", 12) == 0) {
+            info->pending_end = atoi(line + 12) ? 1 : 0;
+        } else if (strncmp(line, "silent_updates=", 15) == 0) {
+            info->silent_updates = strtoul(line + 15, NULL, 10);
+        }
+    }
+
+    fclose(fp);
+    return (1);
+}
+
+int syscheck_maint_write_path(const char *path, const syscheck_maint_info *info)
+{
+    FILE *fp;
+
+    fp = fopen(path, "w");
+    if (!fp) {
+        merror("%s: ERROR: Cannot write %s: %s", __local_name, path,
+               strerror(errno));
+        return (0);
+    }
+
+    fprintf(fp, "#!maint\n");
+    fprintf(fp, "enabled_at=%ld\n", (long)info->enabled_at);
+    fprintf(fp, "pending_end=%d\n", info->pending_end ? 1 : 0);
+    fprintf(fp, "silent_updates=%lu\n", info->silent_updates);
+    fclose(fp);
+    return (1);
+}
+
+int syscheck_maint_get(const char *sk_name, const char *sk_ip,
+                       syscheck_maint_info *info)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    return syscheck_maint_read_path(path, info);
+}
+
+int syscheck_maint_get_location(const char *location, syscheck_maint_info *info)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path_from_location(location, path, sizeof(path));
+    return syscheck_maint_read_path(path, info);
+}
+
+int syscheck_maint_is_enabled(const char *sk_name, const char *sk_ip)
+{
+    syscheck_maint_info info;
+
+    return syscheck_maint_get(sk_name, sk_ip, &info) ? 1 : 0;
+}
+
+int syscheck_maint_is_enabled_location(const char *location)
+{
+    syscheck_maint_info info;
+
+    return syscheck_maint_get_location(location, &info) ? 1 : 0;
+}
+
+int syscheck_maint_enable(const char *sk_name, const char *sk_ip)
+{
+    char path[OS_FLSIZE + 1];
+    syscheck_maint_info info;
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    memset(&info, 0, sizeof(info));
+    info.enabled = 1;
+    info.enabled_at = time(NULL);
+    info.pending_end = 0;
+    info.silent_updates = 0;
+    /* Preserve silent_updates if re-enabling an existing marker. */
+    {
+        syscheck_maint_info old;
+        if (syscheck_maint_read_path(path, &old)) {
+            info.silent_updates = old.silent_updates;
+            if (old.enabled_at > 0) {
+                info.enabled_at = old.enabled_at;
+            }
+        }
+    }
+    return syscheck_maint_write_path(path, &info);
+}
+
+int syscheck_maint_disable(const char *sk_name, const char *sk_ip)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    if (unlink(path) != 0 && errno != ENOENT) {
+        merror("%s: ERROR: Cannot delete %s: %s", __local_name, path,
+               strerror(errno));
+        return (0);
+    }
+    return (1);
+}
+
+int syscheck_maint_set_pending_end(const char *sk_name, const char *sk_ip,
+                                   int pending)
+{
+    char path[OS_FLSIZE + 1];
+    syscheck_maint_info info;
+
+    syscheck_maint_path(sk_name, sk_ip, path, sizeof(path));
+    if (!syscheck_maint_read_path(path, &info)) {
+        return (0);
+    }
+    info.pending_end = pending ? 1 : 0;
+    return syscheck_maint_write_path(path, &info);
+}
+
+int syscheck_maint_clear_location(const char *location)
+{
+    char path[OS_FLSIZE + 1];
+
+    syscheck_maint_path_from_location(location, path, sizeof(path));
+    if (unlink(path) != 0 && errno != ENOENT) {
+        merror("%s: ERROR: Cannot delete %s: %s", __local_name, path,
+               strerror(errno));
+        return (0);
+    }
+    return (1);
+}
+
+int syscheck_maint_bump_silent_location(const char *location)
+{
+    char path[OS_FLSIZE + 1];
+    syscheck_maint_info info;
+
+    syscheck_maint_path_from_location(location, path, sizeof(path));
+    if (!syscheck_maint_read_path(path, &info)) {
+        return (0);
+    }
+    info.silent_updates++;
+    return syscheck_maint_write_path(path, &info);
+}
+
+void syscheck_maint_log_accept(const char *location, const char *kind,
+                               const char *fpath)
+{
+    FILE *fp;
+    time_t now = time(NULL);
+    char tbuf[64];
+    struct tm tm_buf;
+
+    if (localtime_r(&now, &tm_buf) != NULL) {
+        strftime(tbuf, sizeof(tbuf), "%F %T", &tm_buf);
+    } else {
+        snprintf(tbuf, sizeof(tbuf), "%ld", (long)now);
+    }
+
+    fp = fopen(FIM_MAINT_LOG, "a");
+    if (!fp) {
+        debug1("%s: Unable to open %s: %s", __local_name, FIM_MAINT_LOG,
+               strerror(errno));
+        return;
+    }
+    fprintf(fp, "%s %s %s %s\n", tbuf, location, kind, fpath);
+    fclose(fp);
+}
+
+const char *syscheck_maint_list_tag(const syscheck_maint_info *info)
+{
+    if (!info->enabled) {
+        return "";
+    }
+    if (info->pending_end) {
+        return "Maint(pending-end)";
+    }
+    return "Maint";
+}
+
 /* Delete syscheck db */
 int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
 {
@@ -773,6 +1013,13 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
     }
     if ((unlink(tmp_file)) < 0) {
         merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file, strerror(errno));
+    }
+
+    /* Delete FIM maintenance marker */
+    syscheck_maint_path(sk_name, sk_ip, tmp_file, sizeof(tmp_file));
+    if ((unlink(tmp_file)) < 0 && errno != ENOENT) {
+        merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file,
+               strerror(errno));
     }
 
     /* Delete registry entries */
@@ -1276,6 +1523,110 @@ int get_agent_status(const char *agent_name, const char *agent_ip)
     return (GA_STATUS_NACTIVE);
 }
 
+/*
+ * Build name-ip strings for agents still present in client.keys.
+ * Orphaned queue/agent-info files from deleted agents are ignored (#244).
+ */
+static char **load_registered_agent_info_names(size_t *count)
+{
+    FILE *fp;
+    char buffer[OS_BUFFER_SIZE + 1];
+    char **names = NULL;
+    size_t n = 0;
+
+    *count = 0;
+
+    fp = fopen(KEYS_FILE, "r");
+    if (!fp) {
+        return (NULL);
+    }
+
+    while (fgets(buffer, OS_BUFFER_SIZE, fp) != NULL) {
+        char *tmp_str;
+        char *name;
+        char *ip;
+        char expected[OS_SIZE_1024 + 1];
+
+        if ((buffer[0] == '#') || (buffer[0] == ' ')) {
+            continue;
+        }
+
+        /* id */
+        tmp_str = strchr(buffer, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        tmp_str++;
+
+        /* Removed / placeholder entry kept for ID reuse */
+        if (*tmp_str == '#') {
+            continue;
+        }
+
+        name = tmp_str;
+        tmp_str = strchr(tmp_str, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        *tmp_str = '\0';
+        tmp_str++;
+
+        ip = tmp_str;
+        tmp_str = strchr(tmp_str, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        *tmp_str = '\0';
+
+        /* Match remoted agent-info naming (CIDR slash stripped) */
+        tmp_str = strchr(ip, '/');
+        if (tmp_str) {
+            *tmp_str = '\0';
+        }
+
+        snprintf(expected, sizeof(expected), "%s-%s", name, ip);
+
+        names = (char **)realloc(names, (n + 1) * sizeof(char *));
+        if (!names) {
+            ErrorExit(MEM_ERROR, __local_name, errno, strerror(errno));
+        }
+        os_strdup(expected, names[n]);
+        n++;
+    }
+
+    fclose(fp);
+    *count = n;
+    return (names);
+}
+
+static int agent_info_name_registered(char **names, size_t count,
+                                      const char *d_name)
+{
+    size_t i;
+
+    for (i = 0; i < count; i++) {
+        if (strcmp(names[i], d_name) == 0) {
+            return (1);
+        }
+    }
+
+    return (0);
+}
+
+static void free_registered_agent_info_names(char **names, size_t count)
+{
+    size_t i;
+
+    if (!names) {
+        return;
+    }
+
+    for (i = 0; i < count; i++) {
+        free(names[i]);
+    }
+    free(names);
+}
+
 /* List available agents with specified timeout */
 char **get_agents_with_timeout(int flag, int timeout)
 {
@@ -1283,6 +1634,8 @@ char **get_agents_with_timeout(int flag, int timeout)
     char **f_files = NULL;
     DIR *dp;
     struct dirent *entry;
+    char **registered = NULL;
+    size_t registered_count = 0;
 
     /* Open the directory */
     dp = opendir(AGENTINFO_DIR);
@@ -1294,6 +1647,8 @@ char **get_agents_with_timeout(int flag, int timeout)
         return (NULL);
     }
 
+    registered = load_registered_agent_info_names(&registered_count);
+
     /* Read directory */
     while ((entry = readdir(dp)) != NULL) {
         int status = 0;
@@ -1303,6 +1658,12 @@ char **get_agents_with_timeout(int flag, int timeout)
         /* Ignore . and ..  */
         if ((strcmp(entry->d_name, ".") == 0) ||
                 (strcmp(entry->d_name, "..") == 0)) {
+            continue;
+        }
+
+        /* Skip agent-info left behind after agent removal (#244) */
+        if (!agent_info_name_registered(registered, registered_count,
+                                        entry->d_name)) {
             continue;
         }
 
@@ -1349,6 +1710,7 @@ char **get_agents_with_timeout(int flag, int timeout)
         f_size++;
     }
 
+    free_registered_agent_info_names(registered, registered_count);
     closedir(dp);
     return (f_files);
 }

@@ -432,9 +432,10 @@ int analysisd_analyze_event(Eventinfo *lf)
                 int do_ar = 1;
 
                 if ((*rule_ar)->ar_cmd->expect & USERNAME) {
-                    if (!lf->dstuser || !OS_PRegex(lf->dstuser, "^[a-zA-Z._0-9@?-]*$")) {
-                        if (lf->dstuser) {
-                            merror(CRAFTED_USER, ARGV0, lf->dstuser);
+                    const char *uname = OS_ARUsername(lf);
+                    if (!uname || !OS_PRegex(uname, "^[a-zA-Z._0-9@?-]*$")) {
+                        if (uname) {
+                            merror(CRAFTED_USER, ARGV0, uname);
                         }
                         do_ar = 0;
                     }

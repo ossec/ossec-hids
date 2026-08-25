@@ -68,6 +68,9 @@ void *read_fullcommand(int pos, int *rc, int drop_it);
 /* Read auditd events */
 void *read_audit(int pos, int *rc, int drop_it);
 
+/* Read ModSecurity / libmodsecurity serial audit logs */
+void *read_modsec_audit(int pos, int *rc, int drop_it);
+
 #ifdef WIN32
 void win_startel(char *evt_log);
 void win_readel();

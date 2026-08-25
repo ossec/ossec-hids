@@ -103,8 +103,10 @@ void *comp_mswin_targetuser_calleruser_diff(Eventinfo *lf)
     return (NULL);
 }
 
-/* Example 4: Checking if a HTTP request is a simple GET/POST without a query
- * This avoid that we call the attack rules for no reason.
+/* Example 4: Checking if a HTTP request is a simple GET without a query.
+ * Skips noisy attack-rule evaluation for ordinary GETs. POST/PUT/etc must
+ * not be treated as simple: rule 31108 would otherwise match first and
+ * shadow POST-flood / appsec children (#922).
  */
 void *is_simple_http_request(Eventinfo *lf)
 {
@@ -113,12 +115,17 @@ void *is_simple_http_request(Eventinfo *lf)
         return (NULL);
     }
 
+    /* Non-GET methods are never "simple" for ignore purposes */
+    if (lf->action && strcasecmp(lf->action, "GET") != 0) {
+        return (NULL);
+    }
+
     /* Simple GET / request */
     if (strcmp(lf->url, "/") == 0) {
         return (lf);
     }
 
-    /* Simple request, no query */
+    /* Simple GET, no query */
     if (!strchr(lf->url, '?')) {
         return (lf);
     }

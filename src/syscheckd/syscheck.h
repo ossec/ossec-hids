@@ -46,8 +46,11 @@ void os_winreg_check(void);
 /* Start real time */
 int realtime_start(void);
 
-/* Add a directory to real time monitoring */
-int realtime_adddir(const char *dir) __attribute__((nonnull));
+/* Add a directory to real time monitoring.
+ * opts: syscheck directory options (Windows uses CHECK_ATTRS for the
+ * attribute notify mask; ignored on other platforms).
+ */
+int realtime_adddir(const char *dir, int opts) __attribute__((nonnull(1)));
 
 /* Process real time queue */
 int realtime_process(void);
@@ -55,7 +58,10 @@ int realtime_process(void);
 /* Process the content of the file changes */
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));
 
-/* Get checksum changes */
+/* Get checksum changes.
+ * Returns 0 on success, -1 if missing (delete alerted), -2 if metadata
+ * or checksum read failed (caller should skip without alerting).
+ */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum) __attribute__((nonnull));
 
 int send_syscheck_msg(const char *msg) __attribute__((nonnull));

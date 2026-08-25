@@ -82,6 +82,35 @@
     <description>Invalid URI, file name too long.</description>
     <group>invalid_request,</group>
   </rule>
+
+  <!-- libmodsecurity / ModSecurity-nginx (error log) -->
+  <rule id="31330" level="6">
+    <if_sid>31301</if_sid>
+    <pcre2>ModSecurity: Access denied</pcre2>
+    <description>Access attempt blocked by ModSecurity.</description>
+    <group>access_denied,modsecurity,</group>
+  </rule>
+
+  <rule id="31331" level="5">
+    <if_sid>31301</if_sid>
+    <pcre2>ModSecurity: Warning</pcre2>
+    <description>ModSecurity warning.</description>
+    <group>modsecurity,</group>
+  </rule>
+
+  <rule id="31332" level="7">
+    <if_sid>31330</if_sid>
+    <id_pcre2>^403$</id_pcre2>
+    <description>ModSecurity rejected a query (403).</description>
+    <group>access_denied,modsecurity,</group>
+  </rule>
+
+  <rule id="31333" level="12" frequency="6" timeframe="120">
+    <if_matched_sid>31330</if_matched_sid>
+    <same_source_ip />
+    <description>Multiple attempts blocked by ModSecurity.</description>
+    <group>access_denied,modsecurity,</group>
+  </rule>
 </group> <!-- ERROR_LOG,NGINX -->
 
 <!-- EOF -->

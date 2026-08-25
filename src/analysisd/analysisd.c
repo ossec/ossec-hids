@@ -545,7 +545,10 @@ int main_analysisd(int argc, char **argv)
         ErrorExit(PID_ERROR, ARGV0);
     }
 
-    /* Set the queue */
+    /* Bind after decoder/rule load so ossec-control's connect-based queue
+     * wait does not release producers while we still cannot drain the MQ.
+     * Stale sockets are removed on stop; StartMQ(WRITE) waits for connect.
+     */
     if ((m_queue = StartMQ(DEFAULTQUEUE, READ)) < 0) {
         ErrorExit(QUEUE_ERROR, ARGV0, DEFAULTQUEUE, strerror(errno));
     }

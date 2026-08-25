@@ -1,0 +1,15 @@
+# OSSEC HIDS
+
+OSSEC HIDS is a GPLv2 host-based intrusion detection system. It provides file integrity monitoring (FIM), log analysis, rootkit detection, and active response.
+
+- Project: https://github.com/ossec/ossec-hids
+- Website: https://www.ossec.net
+- Documentation: https://www.ossec.net/docs/
+- License: GNU General Public License version 2 (LICENSE)
+- Changelog: CHANGELOG.md
+- Current stable version: 4.3.0 (git tag 4.3.0)
+- Previous stable version: 4.2.0
+- Source tarball: https://github.com/ossec/ossec-hids/archive/refs/tags/4.3.0.tar.gz
+- Floating latest tag (stable only): https://github.com/ossec/ossec-hids/archive/latest.tar.gz
+- Maintenance branch for 4.3.x backports: v4.3.0
+- Development branch: main

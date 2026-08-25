@@ -18,6 +18,15 @@
 #include "eventinfo.h"
 
 
+const char *OS_ARUsername(const Eventinfo *lf)
+{
+    if (!lf) {
+        return NULL;
+    }
+
+    return ar_pick_username(lf->dstuser, lf->srcuser);
+}
+
 void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
 {
     char exec_msg[OS_SIZE_1024 + 1];
@@ -61,9 +70,12 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
         }
     }
 
-    /* Get username */
-    if (lf->dstuser && (ar->ar_cmd->expect & USERNAME)) {
-        user = lf->dstuser;
+    /* Get username (dstuser preferred, srcuser fallback) */
+    if (ar->ar_cmd->expect & USERNAME) {
+        const char *uname = OS_ARUsername(lf);
+        if (uname) {
+            user = uname;
+        }
     }
 
     /* Get filename */

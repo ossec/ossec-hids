@@ -17,24 +17,33 @@
  * nested sleep ladders (see PR #578 / @awiddersheim).
  */
 
-/* Wait for the queue socket path to appear. Returns 0 if present, -1 if not.
- * delays[] are sleeps between existence checks (total wait 1+5+15 = 21s).
+/* Wait until a live AF_UNIX connect succeeds (not merely path presence).
+ * Stale socket files left after analysisd exit otherwise look "ready".
+ * Returns a connected fd, or -1 on timeout/failure.
  */
-static int mq_wait_for_path(const char *path, const unsigned int *delays, size_t ndelays)
+static int mq_wait_connect(const char *path, const unsigned int *delays,
+                           size_t ndelays)
 {
     size_t i;
+    int rc;
+    int last_errno = 0;
 
-    if (File_DateofChange(path) >= 0) {
-        return (0);
+    rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256);
+    if (rc >= 0) {
+        return (rc);
     }
+    last_errno = errno;
 
     for (i = 0; i < ndelays; i++) {
         sleep(delays[i]);
-        if (File_DateofChange(path) >= 0) {
-            return (0);
+        rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256);
+        if (rc >= 0) {
+            return (rc);
         }
+        last_errno = errno;
     }
 
+    errno = last_errno;
     return (-1);
 }
 
@@ -42,29 +51,21 @@ static int mq_wait_for_path(const char *path, const unsigned int *delays, size_t
 int StartMQ(const char *path, short int type)
 {
     int rc;
-    size_t i;
-    static const unsigned int path_waits[] = { 1, 5, 15 };
-    static const unsigned int connect_waits[] = { 1, 2 };
+    /* Total sleep budget similar to historical 1+5+15 path wait + connect. */
+    static const unsigned int connect_waits[] = { 1, 2, 5, 10, 15 };
 
     if (type == READ) {
         return (OS_BindUnixDomain(path, 0660, OS_MAXSTR + 512));
     }
 
-    /* Give the other end up to 21 seconds to create the socket. */
-    if (mq_wait_for_path(path, path_waits,
-                         sizeof(path_waits) / sizeof(path_waits[0])) < 0) {
-        merror(QUEUE_ERROR, __local_name, path, "Queue not found");
-        return (-1);
-    }
-
-    /* Up to 3 connect attempts with 1s then 2s between failures (~3s sleeps). */
-    rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256);
-    for (i = 0; rc < 0 && i < sizeof(connect_waits) / sizeof(connect_waits[0]); i++) {
-        sleep(connect_waits[i]);
-        rc = OS_ConnectUnixDomain(path, OS_MAXSTR + 256);
-    }
+    rc = mq_wait_connect(path, connect_waits,
+                         sizeof(connect_waits) / sizeof(connect_waits[0]));
     if (rc < 0) {
-        merror(QUEUE_ERROR, __local_name, path, strerror(errno));
+        int saved_errno = errno;
+
+        merror(QUEUE_ERROR, __local_name, path,
+               (File_DateofChange(path) < 0) ? "Queue not found"
+                                             : strerror(saved_errno));
         return (-1);
     }
 
@@ -111,7 +112,9 @@ int SendMSG(int queue, const char *message, const char *locmsg, char loc)
 
     /* Five send attempts; after the first failure, sleep 1/3/5/10s
      * between retries (total sleep budget 19s). OS_SOCKTERR is fatal
-     * only on the initial attempt, matching historical behavior.
+     * only on the initial attempt; close(queue) so callers that StartMQ
+     * again do not leak the dead fd. Callers must not reuse queue after -1
+     * without StartMQ (pass-by-value cannot clear the caller's variable).
      */
     __mq_rcode = OS_SendUnix(queue, tmpstr, 0);
     if (__mq_rcode < 0) {

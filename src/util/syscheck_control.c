@@ -25,8 +25,8 @@ static void helpmsg(int status)
     printf("\t-h          This help message.\n");
     printf("\t-l          List available (active or inactive) agents.\n");
     printf("\t-lc         List only active agents.\n");
-    printf("\t-u <id>     Updates (clears) the database for the agent.\n");
-    printf("\t-u all      Updates (clears) the database for all agents.\n");
+    printf("\t-u <id>     Clears the syscheck database for the agent.\n");
+    printf("\t-u all      Clears the syscheck database for all agents.\n");
     printf("\t-i <id>     List modified files for the agent.\n");
     printf("\t-r -i <id>  List modified registry entries for the agent "
            "(Windows only).\n");
@@ -37,11 +37,23 @@ static void helpmsg(int status)
     printf("\t-s          Changes the output to CSV (comma delimited).\n");
     printf("\t-j          Changes the output to JSON.\n");
     printf("\n");
+    printf("\tNotes:\n");
+    printf("\t  -u clears (resets) the FIM database; it does not start a scan.\n");
+    printf("\t  To run integrity checking on an agent, use agent_control -r -u <id>.\n");
+    printf("\t  -r is only valid with -i (Windows registry listing).\n");
+    printf("\n");
     printf("\tExamples:\n");
     printf("\n");
     printf("\t'Show information about /etc/passwd from agent with ID 019'\n");
     printf("\t%s -i 019 -f /etc/passwd\n", ARGV0);
     exit(status);
+}
+
+static void invalid_combo(const char *msg) __attribute__((noreturn));
+static void invalid_combo(const char *msg)
+{
+    printf("\n** %s\n", msg);
+    helpmsg(1);
 }
 
 int main(int argc, char **argv)
@@ -105,14 +117,14 @@ int main(int argc, char **argv)
             case 'i':
                 info_agent++;
                 if (!optarg) {
-                    merror("%s: -u needs an argument", ARGV0);
+                    merror("%s: -i needs an argument", ARGV0);
                     helpmsg(1);
                 }
                 agent_id = optarg;
                 break;
             case 'f':
                 if (!optarg) {
-                    merror("%s: -u needs an argument", ARGV0);
+                    merror("%s: -f needs an argument", ARGV0);
                     helpmsg(1);
                 }
                 fname = optarg;
@@ -129,6 +141,38 @@ int main(int argc, char **argv)
                 helpmsg(1);
                 break;
         }
+    }
+
+    if (optind < argc) {
+        printf("\n** Unexpected argument: '%s'\n", argv[optind]);
+        helpmsg(1);
+    }
+
+    /*
+     * Reject foot-gun combinations. In particular, agent_control uses
+     * "-r -u <id>" to *run* a scan; here -u clears the DB and -r only
+     * applies to registry listing with -i (#462).
+     */
+    if (update_syscheck && (registry_only || info_agent || fname ||
+                            zero_counter || list_agents)) {
+        invalid_combo(
+            "-u (clear database) cannot be combined with -r, -i, -f, -z, -d, or -l.\n"
+            "   To run an integrity scan, use: agent_control -r -u <id>");
+    }
+    if (registry_only && !info_agent) {
+        invalid_combo(
+            "-r must be used with -i <id> to list Windows registry changes.\n"
+            "   To run an integrity scan, use: agent_control -r -u <id>");
+    }
+    if ((fname || zero_counter) && !info_agent) {
+        invalid_combo("-f/-z/-d require -i <id>.");
+    }
+    if (list_agents && (info_agent || update_syscheck || fname ||
+                        zero_counter || registry_only)) {
+        invalid_combo("-l cannot be combined with database clear/list options.");
+    }
+    if (active_only && !list_agents) {
+        invalid_combo("-c must be used with -l (list active agents only).");
     }
 
     /* Get the group name */
@@ -284,6 +328,13 @@ int main(int argc, char **argv)
             }
             if ((unlink(final_dir)) != 0) {
                 ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir, strerror(errno));
+            }
+
+            /* Deleting FIM maintenance marker (may not exist) */
+            syscheck_maint_path(NULL, NULL, final_dir, sizeof(final_dir));
+            if ((unlink(final_dir)) != 0 && errno != ENOENT) {
+                ErrorExit("%s: ERROR: Cannot delete %s: %s", ARGV0, final_dir,
+                          strerror(errno));
             }
 
             if (json_output) {

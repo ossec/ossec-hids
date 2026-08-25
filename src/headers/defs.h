@@ -39,7 +39,7 @@
 
 /* Some global names */
 #define __ossec_name    "OSSEC HIDS"
-#define __ossec_version "v4.2.0"
+#define __ossec_version "v4.3.0"
 #define __author        "OSSEC Foundation"
 #define __contact       "contact@ossec.net"
 #define __site          "https://www.ossec.net"
@@ -190,6 +190,11 @@ http://www.ossec.net/main/license/\n"
 #define FWLOGS            "/logs/firewall"
 #define FWLOGS_DAILY      "/logs/firewall/firewall.log"
 #define EVENTSJSON_DAILY  "/logs/archives/archives.json"
+#define FIM_MAINT_LOG     "/logs/fim_maintenance.log"
+
+/* FIM maintenance: warn if left enabled this long (seconds) */
+#define SYSCHECK_MAINT_WARN_AFTER     86400
+#define SYSCHECK_MAINT_WARN_INTERVAL  3600
 
 /* Stats directories */
 #define STATWQUEUE  "/stats/weekly-average"

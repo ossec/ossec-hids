@@ -15,5 +15,8 @@
 
 void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar);
 
+/* Username for AR scripts: prefer dstuser, fall back to srcuser (#2104). */
+const char *OS_ARUsername(const Eventinfo *lf);
+
 #endif
 

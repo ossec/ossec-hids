@@ -8,6 +8,7 @@
  */
 
 #include "csyslogd.h"
+#include "os_net/os_net.h"
 
 /* Prototypes */
 static void help_csyslogd(int status) __attribute__((noreturn));
@@ -128,6 +129,42 @@ int main(int argc, char **argv)
         }
     }
 
+    /* Validate syslog_output servers. Hostnames are connected before chroot
+     * below so OS_Connect() keeps multi-address / IPv4 fallback (#1744). */
+    if (syslog_config) {
+        unsigned int s = 0;
+
+        while (syslog_config[s]) {
+            int ip_check;
+
+            if (!syslog_config[s]->server || syslog_config[s]->server[0] == '\0') {
+                ErrorExit("%s: ERROR: syslog_output server is empty.", ARGV0);
+            }
+
+            /* OS_IsValidIP: 1 = host IP, 2 = IP/CIDR (not a valid syslog target). */
+            ip_check = OS_IsValidIP(syslog_config[s]->server, NULL);
+            if (ip_check == 2) {
+                ErrorExit("%s: ERROR: syslog_output server '%s' must be a "
+                          "hostname or IP address, not a network/CIDR.",
+                          ARGV0, syslog_config[s]->server);
+            }
+
+            /* Under -t, probe hostname resolution without collapsing to one IP. */
+            if (test_config && ip_check == 0) {
+                char *probe = OS_GetHost(syslog_config[s]->server, 5);
+
+                if (!probe || probe[0] == '\0') {
+                    free(probe);
+                    ErrorExit("%s: ERROR: Unable to resolve syslog_output server "
+                              "hostname '%s'.", ARGV0, syslog_config[s]->server);
+                }
+                free(probe);
+            }
+
+            s++;
+        }
+    }
+
     /* Exit here if test config is set */
     if (test_config) {
         exit(0);
@@ -144,6 +181,29 @@ int main(int argc, char **argv)
         verbose("%s: INFO: Remote syslog server not configured. "
                 "Clean exit.", ARGV0);
         exit(0);
+    }
+
+    /* Connect before chroot: DNS works here and OS_Connect* can walk the
+     * full addrinfo list (IPv6 then IPv4 fallback). FDs survive chroot.
+     * TLS loads CA paths here before the chroot jail. */
+    {
+        unsigned int s = 0;
+
+        while (syslog_config[s]) {
+            const char *proto = (syslog_config[s]->protocol == CSYSLOG_TCP) ?
+                                "tcp" : "udp";
+            const char *tls = syslog_config[s]->tls ? "+tls" : "";
+
+            if (csyslog_connect(syslog_config[s]) < 0) {
+                merror(CONNS_ERROR, ARGV0, syslog_config[s]->server);
+            } else {
+                /* Use merror for visibility at default log level (historical). */
+                merror("%s: INFO: Forwarding alerts via syslog (%s%s) to: '%s:%s'.",
+                       ARGV0, proto, tls,
+                       syslog_config[s]->server, syslog_config[s]->port);
+            }
+            s++;
+        }
     }
 
     /* Privilege separation */
