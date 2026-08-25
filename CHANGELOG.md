@@ -14,14 +14,11 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 Work toward the next minor release after 4.3.0.
 
-**General**
-
-- @atomicturtle - Enable ``alerts.json`` by default (``jsonout_output``) and forward that object for JSON ``syslog_output`` so ``agent_name`` is a first-class field (#1907). This changes the JSON syslog schema; default/CEF/Splunk still use ``alerts.log``. Agent IP is not added.
-
 **Bug Fixes**
 
 - @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
 - @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
+
 
 **OSSEC changelog (4.3.0) <support@atomicorp.com>**
 
