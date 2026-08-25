@@ -16,10 +16,22 @@ With no argument, loops over every distro in `testsuite/build-test/` (centos-7, 
 1. **Agent build** with `USE_AUDIT=yes` (FIM auditd code path + adapter)
 2. **Server build** with the same flags (full server target still includes syscheckd)
 
-Optional post-agent check (off by default): set `TEST=1` to run **`verify-syscheck-audit.sh`**, which confirms `ossec-syscheckd` links audit symbols (`audit_init`, `fim_audit_event`):
+Optional post-build checks (off by default): set `TEST=1` to run:
+
+- **Agent:** [`verify-syscheck-audit.sh`](build-test/verify-syscheck-audit.sh) — `ossec-syscheckd` links audit symbols (`audit_init`, `fim_audit_event`)
+- **Server:** [`verify-alerts-json.sh`](build-test/verify-alerts-json.sh) — `ossec-analysisd` / `ossec-csyslogd` exist, JSON syslog forwards `alerts.json`, and a small `jqueue` test parses `agent_name`
 
 ```bash
 TEST=1 ./testsuite/build-test/build.sh fedora-43
+```
+
+### Linux E2E (install / JSON syslog)
+
+After a server is installed from this tree, [`e2e-linux/`](e2e-linux/README.md) can inject an alert and print `alerts.json` plus the JSON `syslog_output` datagram (`agent_name`):
+
+```bash
+./testsuite/e2e-linux/run.sh --inventory testsuite/e2e-linux/inventory.community.yaml \
+    --backend ssh --suite 05-alerts-json-syslog --no-build-packages
 ```
 
 Goal: confirm agents/servers **build** with audit enabled and system **libaudit** / **libbpf** headers installed. eBPF BPF `.o` objects are built only when the container has `bpftool`, `clang`, and kernel BTF (`smoke_bpf_build.sh` skips otherwise).

@@ -1,0 +1,4 @@
+# Example auth-like failure for ossec-logtest / localfile smoke.
+Aug 11 15:00:01 e2e sshd[12345]: Failed password for invalid user e2etest from 203.0.113.10 port 5555 ssh2
+Aug 11 15:00:02 e2e sshd[12345]: Failed password for invalid user e2etest from 203.0.113.10 port 5555 ssh2
+Aug 11 15:00:03 e2e sshd[12345]: Failed password for root from 203.0.113.10 port 5556 ssh2

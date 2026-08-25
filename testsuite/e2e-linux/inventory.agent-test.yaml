@@ -1,0 +1,14 @@
+hosts:
+  - name: rocky10-community-server
+    backend: ssh
+    ssh: root@10.66.6.82
+    role: server
+    family: rpm
+    distro: rockylinux-10
+
+  - name: rocky10-agent-podman
+    backend: podman
+    image: localhost/ossec-e2e-rocky10
+    role: agent
+    family: rpm
+    server: "10.66.6.82"

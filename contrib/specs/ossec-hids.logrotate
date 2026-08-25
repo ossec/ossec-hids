@@ -4,6 +4,7 @@
 /var/ossec/logs/ossec.log
 /var/ossec/logs/active-responses.log
 /var/ossec/logs/alerts/alerts.log
+/var/ossec/logs/alerts/alerts.json
 /var/ossec/logs/firewall/firewall.log
 {
     missingok

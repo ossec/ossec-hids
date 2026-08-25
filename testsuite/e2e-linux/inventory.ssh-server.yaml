@@ -1,0 +1,8 @@
+# SSH-only inventory for community Rocky 10 server validation
+hosts:
+  - name: rocky10-community-server
+    backend: ssh
+    ssh: root@10.66.6.82
+    role: server
+    family: rpm
+    distro: rockylinux-10

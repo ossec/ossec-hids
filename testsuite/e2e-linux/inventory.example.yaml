@@ -1,0 +1,30 @@
+# Example inventory — copy to inventory.community.yaml (gitignored) for local use.
+hosts:
+  - name: rocky10-community-server
+    backend: ssh
+    ssh: root@10.66.6.82
+    role: server
+    family: rpm
+    distro: rockylinux-10
+
+  - name: rocky10-server-podman
+    backend: podman
+    image: localhost/ossec-e2e-rocky10
+    role: server
+    family: rpm
+    distro: rockylinux-10
+
+  - name: rocky10-agent-podman
+    backend: podman
+    image: localhost/ossec-e2e-rocky10
+    role: agent
+    family: rpm
+    # When testing against the community manager:
+    server: "10.66.6.82"
+
+  - name: ubuntu2404-agent-podman
+    backend: podman
+    image: localhost/ossec-e2e-ubuntu2404
+    role: agent
+    family: deb
+    server: "10.66.6.82"
