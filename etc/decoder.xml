@@ -184,8 +184,8 @@
 <decoder name="ssh-invfailed">
   <parent>sshd</parent>
   <prematch_pcre2>^Failed \S+ for invalid user|^Failed \S+ for illegal user</prematch_pcre2>
-  <pcre2 offset="after_prematch">from (\S+) port \d+ \w+$</pcre2>
-  <order>srcip</order>
+  <pcre2 offset="after_prematch">^ (\S+) from (\S+) port \d+</pcre2>
+  <order>user, srcip</order>
 </decoder>
 
 <decoder name="ssh-failed">
@@ -219,8 +219,8 @@
 <decoder name="ssh-invalid-user">
   <parent>sshd</parent>
   <prematch_pcre2>^Invalid user|^Illegal user</prematch_pcre2>
-  <pcre2 offset="after_prematch"> from (\S+)</pcre2>
-  <order>srcip</order>
+  <pcre2 offset="after_prematch">^ (\S+) from (\S+)$</pcre2>
+  <order>user, srcip</order>
 </decoder>
 
 <decoder name="ssh-scan">
@@ -240,8 +240,8 @@
 <decoder name="ssh-disconnected">
   <parent>sshd</parent>
   <prematch_pcre2>^Disconnected from invalid user</prematch_pcre2>
-  <pcre2 offset="after_prematch">\S+ (\S+) </pcre2>
-  <order>srcip</order>
+  <pcre2 offset="after_prematch">^ (\S+) (\S+) </pcre2>
+  <order>user, srcip</order>
 </decoder>
 
 <decoder name="ssh-connection">
@@ -928,6 +928,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   - Jan 11 03:45:09 hostname dovecot: auth-worker(default): sql(username,1.2.3.4): unknown user
   - Jan 11 03:42:09 hostname dovecot: auth(default): pam(user@example.com,1.2.3.4): pam_authenticate() failed: User not known to the underlying authentication module
   - Jul  4 17:30:51 hostname dovecot[2992]: pop3-login: Disconnected: rip=1.2.3.4, lip=1.2.3.5
+  - Jul  4 17:30:51 hostname dovecot[2992]: pop3-login: Disconnected: rip=1.2.3.4, lip=4.5.6.7,
+  - Jun 23 15:04:05 hostname dovecot: imap-login: Login: user=<username>, method=PLAIN, rip=1.2.3.4, lip=4.5.6.7,
   - dovecot: Jun 23 15:04:06 Info: IMAP(username): Disconnected: Logged out bytes=59/566
   - dovecot: May 31 09:43:57 Info: pop3-login: Aborted login (1 authentication attempts): user=<username>, method=PLAIN, rip=::ffff:1.2.3.4, lip=::ffff:1.2.3.5, secured
   - Jan 30 09:37:55 hostname dovecot: pop3-login: Aborted login: user=<username>, method=PLAIN, rip=::ffff:1.2.3.4, lip=::ffff:1.2.3.5
@@ -944,7 +946,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="dovecot-success">
   <parent>dovecot</parent>
   <prematch_pcre2 offset="after_parent">^\w{4}-login: Login: </prematch_pcre2>
-  <pcre2 offset="after_prematch">^user=\<(\S+)\>, method=\S+, rip=(\S+), lip=(\S+), mpid=\S+, (\S*?)$</pcre2>
+  <pcre2 offset="after_prematch">^user=\<(\S+)\>, method=\S+, rip=(\S+), lip=([^,\s]+)(?:,|$)(?: mpid=\S+, (\S*?))?$</pcre2>
   <order>user, srcip, dstip, protocol</order>
 </decoder>
 
@@ -972,7 +974,7 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 <decoder name="dovecot-disconnect">
   <parent>dovecot</parent>
   <prematch_pcre2 offset="after_parent">^\w{4}-login: Disconnected: </prematch_pcre2>
-  <pcre2 offset="after_prematch">^rip=(\S+), lip=(\S+)</pcre2>
+  <pcre2 offset="after_prematch">^rip=(\S+), lip=([^,\s]+)(?:,|$)</pcre2>
   <order>srcip, dstip</order>
 </decoder>
 

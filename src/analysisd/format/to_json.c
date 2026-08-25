@@ -90,8 +90,25 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
     }
 
 #ifdef LIBGEOIP_ENABLED
-    if (lf->srcgeoip && Config.geoip_jsonout) {
-        cJSON_AddStringToObject(root, "srcgeoip", lf->srcgeoip);
+    if (Config.geoip_jsonout) {
+        if (lf->srcgeoip) {
+            cJSON_AddStringToObject(root, "srcgeoip", lf->srcgeoip);
+        }
+        if (lf->src_country) {
+            cJSON_AddStringToObject(root, "src_country", lf->src_country);
+        }
+        if (lf->src_region) {
+            cJSON_AddStringToObject(root, "src_region", lf->src_region);
+        }
+        if (lf->src_city) {
+            cJSON_AddStringToObject(root, "src_city", lf->src_city);
+        }
+        if (lf->srcasn) {
+            cJSON_AddStringToObject(root, "srcasn", lf->srcasn);
+        }
+        if (lf->srcas_org) {
+            cJSON_AddStringToObject(root, "srcas_org", lf->srcas_org);
+        }
     }
 #endif
 
@@ -105,8 +122,25 @@ char *Eventinfo_to_jsonstr(const Eventinfo *lf)
         cJSON_AddStringToObject(root, "dstip", lf->dstip);
     }
 #ifdef LIBGEOIP_ENABLED
-    if (lf->dstgeoip && Config.geoip_jsonout) {
-        cJSON_AddStringToObject(root, "dstgeoip", lf->dstgeoip);
+    if (Config.geoip_jsonout) {
+        if (lf->dstgeoip) {
+            cJSON_AddStringToObject(root, "dstgeoip", lf->dstgeoip);
+        }
+        if (lf->dst_country) {
+            cJSON_AddStringToObject(root, "dst_country", lf->dst_country);
+        }
+        if (lf->dst_region) {
+            cJSON_AddStringToObject(root, "dst_region", lf->dst_region);
+        }
+        if (lf->dst_city) {
+            cJSON_AddStringToObject(root, "dst_city", lf->dst_city);
+        }
+        if (lf->dstasn) {
+            cJSON_AddStringToObject(root, "dstasn", lf->dstasn);
+        }
+        if (lf->dstas_org) {
+            cJSON_AddStringToObject(root, "dstas_org", lf->dstas_org);
+        }
     }
 #endif
 

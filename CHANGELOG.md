@@ -7,6 +7,8 @@ Scott R. Shinn (https://www.atomicorp.com)
 **Contributors on this release**
 
 - @atomicturtle
+- @bearxy123
+- @AdUser
 
 **Release Notes**
 
@@ -15,6 +17,11 @@ Work toward the next minor release after 4.3.0.
 **General**
 
 - @atomicturtle - Enable ``alerts.json`` by default (``jsonout_output``) and forward that object for JSON ``syslog_output`` so ``agent_name`` is a first-class field (#1907). This changes the JSON syslog schema; default/CEF/Splunk still use ``alerts.log``. Agent IP is not added.
+
+**Bug Fixes**
+
+- @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
+- @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
 
 **OSSEC changelog (4.3.0) <support@atomicorp.com>**
 
@@ -25,6 +32,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 **Contributors on this release**
 
 - @atomicturtle
+- @ddpbsd
 - @reyjrar
 - @hyn172
 - @lazyp
@@ -53,6 +61,8 @@ OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are liste
 - @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
 - @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
+- @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
+- @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
 - @atomicturtle - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules (#1390)
 - @atomicturtle - Add per-agent FIM maintenance mode via agent_control (#677, #1289, #1681)
 - @atomicturtle - Detect Postfix SMTP connect aborts and escalate by source IP (#1897)
@@ -65,6 +75,8 @@ OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are liste
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
 - @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules; tighten postgresql_log so it does not steal cPanel logs (#1132)
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
+- @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
+- @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
 
 **Bug Fixes**
 

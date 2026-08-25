@@ -14,18 +14,16 @@
 #include "config/global-config.h"
 
 #ifdef LIBGEOIP_ENABLED
-#include "GeoIP.h"
+#include <maxminddb.h>
+extern MMDB_s geoipdb;
+extern int geoipdb_ready;
+extern MMDB_s geoipasn;
+extern int geoipasn_ready;
 #endif
 
 
 extern long int __crt_ftell; /* Global ftell pointer */
 extern _Config Config;       /* Global Config structure */
-
-/*
-#ifdef LIBGEOIP_ENABLED
-GeoIP *geoipdb;
-#endif
-*/
 
 int GlobalConf(const char *cfgfile);
 
