@@ -8,6 +8,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 - @atomicturtle
 - @bearxy123
+- @AdUser
 
 **Release Notes**
 
@@ -15,6 +16,7 @@ Work toward the next minor release after 4.3.0.
 
 **Bug Fixes**
 
+- @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
 - @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
 
 
