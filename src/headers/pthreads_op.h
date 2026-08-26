@@ -23,6 +23,12 @@ void os_mutex_destroy(pthread_mutex_t *mutex);
 
 size_t os_thread_stack_size(void);
 
+void os_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr);
+void os_rwlock_read(pthread_rwlock_t *rwlock);
+void os_rwlock_write(pthread_rwlock_t *rwlock);
+void os_rwlock_unlock(pthread_rwlock_t *rwlock);
+void os_rwlock_destroy(pthread_rwlock_t *rwlock);
+
 void os_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
 void os_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
 void os_cond_signal(pthread_cond_t *cond);

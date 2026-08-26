@@ -52,6 +52,14 @@ typedef struct _keystore {
 
     /* Key file stat */
     time_t file_change;
+
+    /*
+     * Outbound (sender) counter file. Must not live at
+     * keyentries[keysize]: that index becomes 0 during reload and used
+     * to overwrite agent 0's rids file (GitHub issue 2065).
+     */
+    FILE *sender_fp;
+    ino_t sender_inode;
 } keystore;
 
 /** Function prototypes -- key management **/
@@ -75,6 +83,12 @@ int OS_UpdateKeys(keystore *keys) __attribute((nonnull));
 
 /* Start counter for all agents */
 void OS_StartCounter(keystore *keys) __attribute((nonnull));
+
+/* Persist the outbound sender counter (not an agent rids file) */
+void OS_StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local) __attribute((nonnull));
+
+/* Close the dedicated sender-counter FILE* (locks the sender mutex) */
+void OS_CloseSenderCounter(keystore *keys) __attribute((nonnull));
 
 /* Remove counter for id */
 void OS_RemoveCounter(const char *id) __attribute((nonnull));

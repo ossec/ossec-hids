@@ -38,7 +38,7 @@ static void __chash(keystore *keys, const char *id, const char *name, char *ip, 
 
     /* Allocate for the whole structure */
     keys->keyentries = (keyentry **)realloc(keys->keyentries,
-                                            (keys->keysize + 2) * sizeof(keyentry *));
+                                            (keys->keysize + 1) * sizeof(keyentry *));
     if (!keys->keyentries) {
         ErrorExit(MEM_ERROR, __local_name, errno, strerror(errno));
     }
@@ -168,9 +168,15 @@ void OS_ReadKeys(keystore *keys)
         ErrorExit(MEM_ERROR, __local_name, errno, strerror(errno));
     }
 
-    /* Initialize structure */
+    /* Initialize structure. Callers that already have a live keystore
+     * (remoted reload) must OS_FreeKeys first so sender_fp is closed.
+     * Do not fclose sender_fp here: CLI tools stack-allocate an
+     * uninitialized keystore and a garbage FILE* would be closed.
+     */
     os_calloc(1, sizeof(keyentry*), keys->keyentries);
     keys->keysize = 0;
+    keys->sender_fp = NULL;
+    keys->sender_inode = 0;
 
     /* Zero the buffers */
     __memclear(id, name, ip, key, KEYSIZE + 1);
@@ -264,16 +270,12 @@ void OS_ReadKeys(keystore *keys)
         }
     }
 
-    /* Add additional entry for sender == keysize */
-    os_calloc(1, sizeof(keyentry), keys->keyentries[keys->keysize]);
-    keys->keyentries[keys->keysize]->fp = NULL;
-    keys->keyentries[keys->keysize]->inode = 0;
-    pthread_mutex_init(&keys->keyentries[keys->keysize]->mutex, NULL);
-
     return;
 }
 
-/* Free the auth keys */
+/* Free the auth keys.
+ * remoted must hold key_lock_write() — there is no sleep-to-drain window.
+ */
 void OS_FreeKeys(keystore *keys)
 {
     unsigned int i = 0;
@@ -285,19 +287,22 @@ void OS_FreeKeys(keystore *keys)
     hashid = keys->keyhash_id;
     haship = keys->keyhash_ip;
 
-    /* Zero the entries */
-    keys->keysize = 0;
     keys->keyhash_id = NULL;
     keys->keyhash_ip = NULL;
 
-    /* Sleep to give time to other threads to stop using them */
-    sleep(1);
-
     /* Free the hashes */
-    OSHash_Free(hashid);
-    OSHash_Free(haship);
+    if (hashid) {
+        OSHash_Free(hashid);
+    }
+    if (haship) {
+        OSHash_Free(haship);
+    }
 
-    for (i = 0; i <= _keysize; i++) {
+    if (keys->sender_fp) {
+        OS_CloseSenderCounter(keys);
+    }
+
+    for (i = 0; i < _keysize; i++) {
         if (keys->keyentries[i]) {
             if (keys->keyentries[i]->ip) {
                 free(keys->keyentries[i]->ip->ip);
@@ -346,25 +351,74 @@ int OS_CheckUpdateKeys(const keystore *keys)
 /* Update the keys if changed */
 int OS_UpdateKeys(keystore *keys)
 {
-    if (keys->file_change !=  File_DateofChange(KEYS_FILE)) {
-        merror(ENCFILE_CHANGED, __local_name);
-        debug1("%s: DEBUG: Freekeys", __local_name);
+    unsigned int i;
+    unsigned int saved_count;
+    struct {
+        char *id;
+        char *ip;
+        time_t rcvd;
+        struct sockaddr_storage peer_info;
+        crypt_method crypto_method;
+    } *saved = NULL;
 
-        OS_FreeKeys(keys);
-        debug1("%s: DEBUG: OS_ReadKeys", __local_name);
-
-        /* Read keys */
-        verbose(ENC_READ, __local_name);
-
-        OS_ReadKeys(keys);
-        debug1("%s: DEBUG: OS_StartCounter", __local_name);
-
-        OS_StartCounter(keys);
-        debug1("%s: DEBUG: OS_UpdateKeys completed", __local_name);
-
-        return (1);
+    if (keys->file_change == File_DateofChange(KEYS_FILE)) {
+        return (0);
     }
-    return (0);
+
+    merror(ENCFILE_CHANGED, __local_name);
+    debug1("%s: DEBUG: Freekeys", __local_name);
+
+    saved_count = keys->keysize;
+    if (saved_count > 0) {
+        os_calloc(saved_count, sizeof(*saved), saved);
+        for (i = 0; i < saved_count; i++) {
+            if (!keys->keyentries[i] || !keys->keyentries[i]->id) {
+                continue;
+            }
+            os_strdup(keys->keyentries[i]->id, saved[i].id);
+            if (keys->keyentries[i]->ip && keys->keyentries[i]->ip->ip) {
+                os_strdup(keys->keyentries[i]->ip->ip, saved[i].ip);
+            }
+            saved[i].rcvd = keys->keyentries[i]->rcvd;
+            saved[i].peer_info = keys->keyentries[i]->peer_info;
+            saved[i].crypto_method = keys->keyentries[i]->crypto_method;
+        }
+    }
+
+    OS_FreeKeys(keys);
+    debug1("%s: DEBUG: OS_ReadKeys", __local_name);
+
+    /* Read keys */
+    verbose(ENC_READ, __local_name);
+
+    OS_ReadKeys(keys);
+    debug1("%s: DEBUG: OS_StartCounter", __local_name);
+
+    OS_StartCounter(keys);
+
+    if (saved) {
+        for (i = 0; i < saved_count; i++) {
+            int id;
+
+            if (!saved[i].id) {
+                continue;
+            }
+            id = OS_IsAllowedID(keys, saved[i].id);
+            if (id >= 0 && saved[i].ip && keys->keyentries[id]->ip &&
+                    keys->keyentries[id]->ip->ip &&
+                    strcmp(keys->keyentries[id]->ip->ip, saved[i].ip) == 0) {
+                keys->keyentries[id]->rcvd = saved[i].rcvd;
+                keys->keyentries[id]->peer_info = saved[i].peer_info;
+                keys->keyentries[id]->crypto_method = saved[i].crypto_method;
+            }
+            free(saved[i].id);
+            free(saved[i].ip);
+        }
+        free(saved);
+    }
+
+    debug1("%s: DEBUG: OS_UpdateKeys completed", __local_name);
+    return (1);
 }
 
 /* Check if an IP address is allowed to connect */

@@ -283,23 +283,31 @@ static int send_file_toagent(unsigned int agentid, const char *name, const char 
     /* Send the file name first */
     snprintf(buf, OS_SIZE_1024, "%s%s%s %s\n",
              CONTROL_HEADER, FILE_UPDATE_HEADER, sum, name);
+    key_lock_read();
     if (send_msg(remoted_secure_listener, agentid, buf) == -1) {
+        key_unlock();
         merror(SEC_ERROR, ARGV0);
         fclose(fp);
         return (-1);
     }
+    key_unlock();
 
     /* Send the file contents */
     while ((n = fread(buf, 1, 900, fp)) > 0) {
         buf[n] = '\0';
 
+        key_lock_read();
         if (send_msg(remoted_secure_listener, agentid, buf) == -1) {
+            key_unlock();
             merror(SEC_ERROR, ARGV0);
             fclose(fp);
             return (-1);
         }
+        key_unlock();
 
-        /* Sleep 1 every 30 messages -- no flood */
+        /* Sleep 1 every 30 messages -- no flood. Do not hold the key
+         * read lock across this sleep or OS_UpdateKeys cannot run.
+         */
         if (i > 30) {
             sleep(1);
             i = 0;
@@ -309,11 +317,14 @@ static int send_file_toagent(unsigned int agentid, const char *name, const char 
 
     /* Send the message to close the file */
     snprintf(buf, OS_SIZE_1024, "%s%s", CONTROL_HEADER, FILE_CLOSE_HEADER);
+    key_lock_read();
     if (send_msg(remoted_secure_listener, agentid, buf) == -1) {
+        key_unlock();
         merror(SEC_ERROR, ARGV0);
         fclose(fp);
         return (-1);
     }
+    key_unlock();
 
     fclose(fp);
 
@@ -324,6 +335,20 @@ static int send_file_toagent(unsigned int agentid, const char *name, const char 
 static void read_controlmsg(unsigned int agentid, char *msg)
 {
     int i;
+    char srcip[IPSIZE + 1];
+
+    srcip[0] = '\0';
+    key_lock_read();
+    if (agentid < keys.keysize && keys.keyentries[agentid] &&
+            keys.keyentries[agentid]->ip && keys.keyentries[agentid]->ip->ip) {
+        strncpy(srcip, keys.keyentries[agentid]->ip->ip, IPSIZE);
+        srcip[IPSIZE] = '\0';
+    }
+    key_unlock();
+    if (!srcip[0]) {
+        merror("%s: Invalid message from '%u' (unknown agent)", ARGV0, agentid);
+        return;
+    }
 
     /* Remove uname */
     msg = strchr(msg, '\n');
@@ -351,8 +376,7 @@ static void read_controlmsg(unsigned int agentid, char *msg)
         msg = strchr(msg, '\n');
         if (!msg) {
             merror("%s: Invalid message from '%s' (strchr \\n)",
-                   ARGV0,
-                   keys.keyentries[agentid]->ip->ip);
+                   ARGV0, srcip);
             break;
         }
 
@@ -362,8 +386,7 @@ static void read_controlmsg(unsigned int agentid, char *msg)
         file = strchr(file, ' ');
         if (!file) {
             merror("%s: Invalid message from '%s' (strchr ' ')",
-                   ARGV0,
-                   keys.keyentries[agentid]->ip->ip);
+                   ARGV0, srcip);
             break;
         }
 
@@ -476,7 +499,10 @@ void *wait_for_msgs(__attribute__((unused)) void *none)
             return (NULL);
         }
 
-        /* Check if any agent is ready */
+        /* Check if any agent is ready. Hold the key read lock so OS_FreeKeys
+         * cannot run (no sleep(1) drain) while we index keyentries.
+         */
+        key_lock_read();
         for (i = 0; i < keys.keysize; i++) {
             /* If agent wasn't changed, try next */
             if (_changed[i] != 1) {
@@ -510,9 +536,19 @@ void *wait_for_msgs(__attribute__((unused)) void *none)
             }
 
             if (id) {
+                /* Drop the key lock around shared-file I/O (send_file_toagent
+                 * re-acquires around each send_msg). Holding it here would
+                 * block OS_UpdateKeys for the duration of the transfer.
+                 */
+                key_unlock();
                 read_controlmsg(i, msg);
+                key_lock_read();
+                if (i >= keys.keysize) {
+                    break;
+                }
             }
         }
+        key_unlock();
     }
 
     return (NULL);

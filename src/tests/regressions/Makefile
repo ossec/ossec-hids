@@ -21,6 +21,7 @@ REGRESSION_BINS = \
 	issue_correlation_agent_shard \
 	issue_1748_sid_list_crash \
 	issue_1274_auth_ipv6_key \
+	issue_2065_sender_counter \
 	jsonout_default
 
 .PHONY: all check clean
@@ -52,6 +53,11 @@ issue_1748_sid_list_crash: tests/regressions/issue_1748_sid_list_crash.c $(EVENT
 issue_1274_auth_ipv6_key: tests/regressions/issue_1274_auth_ipv6_key.c addagent/validate.o shared.a os_crypto.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1274_auth_ipv6_key.c addagent/validate.o \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+issue_2065_sender_counter: tests/regressions/issue_2065_sender_counter.c os_crypto.a shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_2065_sender_counter.c \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
 # GlobalConf lives in analysisd/config.c (defines _Config Config).

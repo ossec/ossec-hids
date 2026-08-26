@@ -130,7 +130,10 @@ void HandleSecure()
                 satop((struct sockaddr *) &peer_info, srcip, IPSIZE);
                 srcip[IPSIZE] = '\0';
 
-                /* Get a valid agent id */
+                /* Get a valid agent id. Hold a key read lock from lookup
+                 * through the last use of keyentries (send_msg does not lock).
+                 */
+                key_lock_read();
                 if (buffer[0] == '!') {
                     tmp_msg = buffer;
                     tmp_msg++;
@@ -145,6 +148,7 @@ void HandleSecure()
                     }
 
                     if (*tmp_msg != '!') {
+                        key_unlock();
                         merror(ENCFORMAT_ERROR, __local_name, srcip);
                         continue;
                     }
@@ -155,9 +159,12 @@ void HandleSecure()
 
                     agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
                     if (agentid == -1) {
+                        key_unlock();
                         if (check_keyupdate()) {
+                            key_lock_read();
                             agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
                             if (agentid == -1) {
+                                key_unlock();
                                 merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
                                 continue;
                             }
@@ -169,9 +176,12 @@ void HandleSecure()
                 } else {
                     agentid = OS_IsAllowedIP(&keys, srcip);
                     if (agentid < 0) {
+                        key_unlock();
                         if (check_keyupdate()) {
+                            key_lock_read();
                             agentid = OS_IsAllowedIP(&keys, srcip);
                             if (agentid == -1) {
+                                key_unlock();
                                 merror(DENYIP_WARN, ARGV0, srcip);
                                 continue;
                             }
@@ -208,6 +218,7 @@ void HandleSecure()
                              last_aes_reject = now;
                              aes_reject_count = 0;
                          }
+                         key_unlock();
                          continue;
                      }
                 } else if (logr.crypto_accept == W_ACCEPT_AES) {
@@ -234,6 +245,7 @@ void HandleSecure()
                              last_bf_reject = now;
                              bf_reject_count = 0;
                          }
+                         key_unlock();
                          continue;
                      }
                 }
@@ -244,6 +256,7 @@ void HandleSecure()
                                      agentid, recv_b - 1, &final_size, srcip);
                 if (tmp_msg == NULL) {
                     /* If duplicated, a warning was already generated */
+                    key_unlock();
                     continue;
                 }
 
@@ -256,6 +269,7 @@ void HandleSecure()
                     keys.keyentries[agentid]->rcvd = time(0);
                     sendmsg_unlock();
                     save_controlmsg((unsigned)agentid, tmp_msg);
+                    key_unlock();
                     continue;
                 }
 
@@ -263,6 +277,7 @@ void HandleSecure()
                 snprintf(srcmsg, OS_FLSIZE, "(%s) %s",
                          keys.keyentries[agentid]->name,
                          keys.keyentries[agentid]->ip->ip);
+                key_unlock();
 
                /*
                 * If we can't send the message, try to connect to the
