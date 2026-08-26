@@ -54,8 +54,8 @@ typedef struct _OSNetInfo {
 } OSNetInfo;
 
 /*
- * OS_Bindport ipv6 flag (used only when _ip is unset).
- * DEFAULT/YES: dual-stack IPv4+IPv6. NO: IPv4-only wildcard.
+ * OS_Bindport ipv6 flag (used when _ip is not a numeric address).
+ * DEFAULT/YES: dual-stack IPv4+IPv6. NO: IPv4-only.
  * A numeric _ip always wins; the ipv6 flag is ignored.
  */
 #define OS_BIND_IPV6_DEFAULT 0
@@ -65,9 +65,9 @@ typedef struct _OSNetInfo {
 /*
  * OS_Bindport*
  * Bind a specific port (protocol and a ip).
- * If the IP is not set, bind all addresses (IPv4 and IPv6 dual-stack)
+ * If _ip is not a numeric address, bind all addresses (IPv4 and IPv6 dual-stack)
  * unless ipv6 is OS_BIND_IPV6_NO (IPv4-only).
- * If the IP is set, bind only that address in its own family.
+ * If _ip is numeric, bind only that address in its own family.
  * Return a pointer to the OSNetInfo struct.
  */
 
