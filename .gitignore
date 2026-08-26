@@ -76,6 +76,7 @@ src/os_maild/tests/sms_queue_test
 src/os_maild/tests/maild_shutdown_gate_test
 src/os_auth/tests/auth_conn_drop_test
 src/shared/tests/thread_pool_test
+src/jsonout_default
 
 # test and coverage files
 *.gcno
@@ -101,12 +102,7 @@ src/win32/runtime_dlls.nsh
 src/win32/ossec-win32-agent.exe
 
 # Testsuite build artifacts (sources under testsuite/ are tracked)
-testsuite/*.rpm
-testsuite/*.deb
-testsuite/*.changes
-testsuite/*.buildinfo
-testsuite/*.tar.gz
-testsuite/*.tar.xz
+testsuite/*
 
 # Pbuilder prepared source (generate_ossec.sh -d writes here)
 contrib/debian-packages/build/

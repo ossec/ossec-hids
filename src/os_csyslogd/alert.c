@@ -127,6 +127,15 @@ int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
 
     /* Socket may be -1 after a prior send failure; csyslog_send reconnects. */
 
+    if (!al_data || !syslog_config) {
+        return (0);
+    }
+
+    /* JSON format is forwarded from alerts.json via OS_Alert_SendSyslog_JSON. */
+    if (syslog_config->format == JSON_CSYSLOG) {
+        return (0);
+    }
+
     /* Clear the memory before insert */
     memset(syslog_msg, '\0', OS_CSYSLOG_MAX);
 
@@ -278,96 +287,6 @@ int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
         }
         field_add_truncated(syslog_msg, OS_CSYSLOG_MAX, " msg=%s", cefescape(logmsg, false), 2);
         cefescape(NULL,0);  /* Clean up the escaping buffer */
-    } else if (syslog_config->format == JSON_CSYSLOG) {
-        /* Build a JSON Object for logging */
-        cJSON *root;
-        char *json_string;
-        root = cJSON_CreateObject();
-
-        /* Data guaranteed to be there */
-        cJSON_AddNumberToObject(root, "crit",      al_data->level);
-        cJSON_AddNumberToObject(root, "id",        al_data->rule);
-        cJSON_AddStringToObject(root, "component", al_data->location);
-
-        /* Rule Meta Data */
-        if (al_data->group) {
-            cJSON_AddStringToObject(root, "classification", al_data->group);
-        }
-        if (al_data->comment) {
-            cJSON_AddStringToObject(root, "description",    al_data->comment);
-        }
-
-        /* Raw log message generating event */
-        if (logmsg) {
-            cJSON_AddStringToObject(root, "message",  logmsg);
-        }
-
-        /* Add data if it exists */
-        if (al_data->user) {
-            cJSON_AddStringToObject(root, "acct",     al_data->user);
-        }
-        if (al_data->srcip) {
-            cJSON_AddStringToObject(root, "src_ip",   al_data->srcip);
-        }
-        if (al_data->srcport) {
-            cJSON_AddNumberToObject(root, "src_port", al_data->srcport);
-        }
-        if (al_data->dstip) {
-            cJSON_AddStringToObject(root, "dst_ip",   al_data->dstip);
-        }
-        if (al_data->dstport) {
-            cJSON_AddNumberToObject(root, "dst_port", al_data->dstport);
-        }
-        if (al_data->filename) {
-            cJSON_AddStringToObject(root, "file",     al_data->filename);
-        }
-        if (al_data->old_md5) {
-            cJSON_AddStringToObject(root, "md5_old",  al_data->old_md5);
-        }
-        if (al_data->new_md5) {
-            cJSON_AddStringToObject(root, "md5_new",  al_data->new_md5);
-        }
-        if (al_data->old_sha1) {
-            cJSON_AddStringToObject(root, "sha1_old", al_data->old_sha1);
-        }
-        if (al_data->new_sha1) {
-            cJSON_AddStringToObject(root, "sha1_new", al_data->new_sha1);
-        }
-#ifdef LIBGEOIP_ENABLED
-        if (al_data->srcgeoip) {
-            cJSON_AddStringToObject(root, "src_city", al_data->srcgeoip);
-        }
-        if (al_data->dstgeoip) {
-            cJSON_AddStringToObject(root, "dst_city", al_data->dstgeoip);
-        }
-#endif
-
-        /* Create the JSON string */
-        json_string = cJSON_PrintUnformatted(root);
-
-        /* Create the syslog message; avoid mid-JSON truncation. */
-        if (json_string) {
-            int n = snprintf(syslog_msg, OS_CSYSLOG_MAX,
-                             "<%u>%s %s ossec: %s",
-                             syslog_config->priority, tstamp, hostname,
-                             json_string);
-            if (n < 0 || (size_t)n >= OS_CSYSLOG_MAX) {
-                merror("%s: WARN: syslog_output JSON alert truncated; "
-                       "sending compact stub (rule %u).",
-                       ARGV0, al_data->rule);
-                snprintf(syslog_msg, OS_CSYSLOG_MAX,
-                         "<%u>%s %s ossec: {\"crit\":%u,\"id\":%u,\"truncated\":true}",
-                         syslog_config->priority, tstamp, hostname,
-                         al_data->level, al_data->rule);
-            }
-            free(json_string);
-        } else {
-            snprintf(syslog_msg, OS_CSYSLOG_MAX,
-                     "<%u>%s %s ossec: {\"crit\":%u,\"id\":%u,\"error\":\"json_encode\"}",
-                     syslog_config->priority, tstamp, hostname,
-                     al_data->level, al_data->rule);
-        }
-        cJSON_Delete(root);
     } else if (syslog_config->format == SPLUNK_CSYSLOG) {
         /* Build a Splunk Style Key/Value string for logging */
         snprintf(syslog_msg, OS_CSYSLOG_MAX,
@@ -415,4 +334,196 @@ int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
     }
     return (result);
 }
+
+static int json_match_string(OSMatch *matcher, cJSON *item)
+{
+    if (!matcher || !cJSON_IsString(item) || !item->valuestring) {
+        return 0;
+    }
+    return OSMatch_Execute(item->valuestring, strlen(item->valuestring), matcher);
+}
+
+static void json_syslog_stub(char *dest, size_t dest_sz, unsigned int priority,
+                             const char *tstamp, const char *hostname,
+                             cJSON *json_data, const char *reason)
+{
+    cJSON *stub;
+    cJSON *rule;
+    cJSON *item;
+    char *payload;
+
+    stub = cJSON_CreateObject();
+    if (!stub) {
+        snprintf(dest, dest_sz, "<%u>%s %s ossec: {\"truncated\":true}",
+                 priority, tstamp, hostname);
+        return;
+    }
+
+    item = cJSON_GetObjectItem(json_data, "agent_name");
+    if (cJSON_IsString(item) && item->valuestring) {
+        cJSON_AddStringToObject(stub, "agent_name", item->valuestring);
+    }
+    rule = cJSON_GetObjectItem(json_data, "rule");
+    if (cJSON_IsObject(rule)) {
+        cJSON *rr = cJSON_CreateObject();
+        if (rr) {
+            item = cJSON_GetObjectItem(rule, "sidid");
+            if (cJSON_IsNumber(item)) {
+                cJSON_AddNumberToObject(rr, "sidid", item->valueint);
+            }
+            item = cJSON_GetObjectItem(rule, "level");
+            if (cJSON_IsNumber(item)) {
+                cJSON_AddNumberToObject(rr, "level", item->valueint);
+            }
+            cJSON_AddItemToObject(stub, "rule", rr);
+        }
+    }
+    cJSON_AddTrueToObject(stub, "truncated");
+    if (reason) {
+        cJSON_AddStringToObject(stub, "reason", reason);
+    }
+
+    payload = cJSON_PrintUnformatted(stub);
+    cJSON_Delete(stub);
+    if (payload) {
+        snprintf(dest, dest_sz, "<%u>%s %s ossec: %s",
+                 priority, tstamp, hostname, payload);
+        free(payload);
+    } else {
+        snprintf(dest, dest_sz, "<%u>%s %s ossec: {\"truncated\":true}",
+                 priority, tstamp, hostname);
+    }
+}
+
+int OS_Alert_SendSyslog_JSON(cJSON *json_data, SyslogConfig *syslog_config)
+{
+    cJSON *rule;
+    cJSON *item;
+    cJSON *groups;
+    char *json_string = NULL;
+    char *hostname;
+    char tstamp[32];
+    char syslog_msg[OS_CSYSLOG_MAX];
+    time_t now;
+    struct tm tm_buf;
+    struct tm *tm_p;
+    int n;
+    int result = 0;
+
+    if (!json_data || !syslog_config) {
+        return (0);
+    }
+
+    rule = cJSON_GetObjectItem(json_data, "rule");
+    if (!rule) {
+        debug2("%s: DEBUG: JSON alert missing rule field.", ARGV0);
+        return (0);
+    }
+
+    if (syslog_config->location) {
+        if (!json_match_string(syslog_config->location,
+                               cJSON_GetObjectItem(json_data, "location")) &&
+            !json_match_string(syslog_config->location,
+                               cJSON_GetObjectItem(json_data, "logfile"))) {
+            return (0);
+        }
+    }
+
+    if (syslog_config->level) {
+        item = cJSON_GetObjectItem(rule, "level");
+        if (!cJSON_IsNumber(item) || item->valueint < (int)syslog_config->level) {
+            return (0);
+        }
+    }
+
+    if (syslog_config->rule_id) {
+        int id_i = 0;
+        int sid = 0;
+
+        item = cJSON_GetObjectItem(rule, "sidid");
+        if (!cJSON_IsNumber(item)) {
+            return (0);
+        }
+        sid = item->valueint;
+        while (syslog_config->rule_id[id_i] != 0) {
+            if ((int)syslog_config->rule_id[id_i] == sid) {
+                break;
+            }
+            id_i++;
+        }
+        if (!syslog_config->rule_id[id_i]) {
+            return (0);
+        }
+    }
+
+    if (syslog_config->group) {
+        int found = 0;
+
+        item = cJSON_GetObjectItem(rule, "group");
+        if (json_match_string(syslog_config->group, item)) {
+            found = 1;
+        } else {
+            groups = cJSON_GetObjectItem(rule, "groups");
+            if (cJSON_IsArray(groups)) {
+                cJSON_ArrayForEach(item, groups) {
+                    if (json_match_string(syslog_config->group, item)) {
+                        found = 1;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!found) {
+            return (0);
+        }
+    }
+
+    now = time(NULL);
+    item = cJSON_GetObjectItem(json_data, "TimeStamp");
+    if (cJSON_IsNumber(item) && item->valuedouble > 0) {
+        now = (time_t)(item->valuedouble / 1000.0);
+    }
+
+    tm_p = localtime_r(&now, &tm_buf);
+    if (!tm_p) {
+        snprintf(tstamp, sizeof(tstamp), "Jan  1 00:00:00");
+    } else {
+        strftime(tstamp, sizeof(tstamp), "%b %d %T", tm_p);
+        if (tstamp[4] == '0') {
+            tstamp[4] = ' ';
+        }
+    }
+
+    hostname = syslog_config->use_fqdn ? __shost_long : __shost;
+    json_string = cJSON_PrintUnformatted(json_data);
+    memset(syslog_msg, '\0', OS_CSYSLOG_MAX);
+
+    if (json_string) {
+        n = snprintf(syslog_msg, OS_CSYSLOG_MAX,
+                     "<%u>%s %s ossec: %s",
+                     syslog_config->priority, tstamp, hostname, json_string);
+        if (n < 0) {
+            merror("%s: WARN: syslog_output JSON alert encode failed; sending stub.",
+                   ARGV0);
+            json_syslog_stub(syslog_msg, OS_CSYSLOG_MAX, syslog_config->priority,
+                             tstamp, hostname, json_data, "encode");
+        } else if ((size_t)n >= OS_CSYSLOG_MAX) {
+            merror("%s: WARN: syslog_output JSON alert truncated; sending compact stub.",
+                   ARGV0);
+            json_syslog_stub(syslog_msg, OS_CSYSLOG_MAX, syslog_config->priority,
+                             tstamp, hostname, json_data, "size");
+        }
+        free(json_string);
+    } else {
+        snprintf(syslog_msg, OS_CSYSLOG_MAX,
+                 "<%u>%s %s ossec: {\"error\":\"json_encode\"}",
+                 syslog_config->priority, tstamp, hostname);
+    }
+
+    if (csyslog_send(syslog_config, syslog_msg, strlen(syslog_msg)) == 0) {
+        result = 1;
+    }
+    return (result);
+}
+
 

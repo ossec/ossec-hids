@@ -9,11 +9,57 @@
 
 #include "shared.h"
 #include "csyslogd.h"
+#include "json-queue.h"
 
 /* Global variables */
 char __shost[512];
 char __shost_long[512];
 
+typedef struct alert_source_t {
+    int alert_log;
+    int alert_json;
+} alert_source_t;
+
+/* Drain this many JSON objects before reading alerts.log so a JSON flood
+ * cannot starve default/CEF/Splunk destinations, and log waits cannot
+ * leave JSON one-alert-per-timeout. */
+#define JSON_DRAIN_MAX 64
+
+static alert_source_t get_alert_sources(SyslogConfig **syslog_config)
+{
+    alert_source_t sources = {0, 0};
+    int i;
+
+    if (!syslog_config) {
+        return sources;
+    }
+
+    for (i = 0; syslog_config[i]; i++) {
+        if (syslog_config[i]->format == JSON_CSYSLOG) {
+            sources.alert_json = 1;
+        } else {
+            sources.alert_log = 1;
+        }
+    }
+
+    return sources;
+}
+
+static void send_json_alert(cJSON *json_data, SyslogConfig **syslog_config)
+{
+    int s = 0;
+
+    if (!json_data || !syslog_config) {
+        return;
+    }
+
+    while (syslog_config[s]) {
+        if (syslog_config[s]->format == JSON_CSYSLOG) {
+            OS_Alert_SendSyslog_JSON(json_data, syslog_config[s]);
+        }
+        s++;
+    }
+}
 
 /* Monitor the alerts and send them via syslog
  * Only return in case of error
@@ -22,51 +68,118 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
 {
     int s = 0;
     time_t tm;
+    struct tm tm_buf;
     struct tm *p;
     int tries = 0;
-    file_queue *fileq;
-    alert_data *al_data;
+    int drained;
+    unsigned int log_timeout;
+    alert_source_t sources;
+    file_queue *fileq = NULL;
+    file_queue jfileq;
+    alert_data *al_data = NULL;
+    cJSON *json_data = NULL;
 
-    /* Get current time before starting */
-    tm = time(NULL);
-    p = localtime(&tm);
+    if (!syslog_config) {
+        merror("%s: ERROR: No syslog_output configurations available. Exiting.", ARGV0);
+        exit(1);
+    }
 
-    /* Initialize file queue to read the alerts */
-    os_calloc(1, sizeof(file_queue), fileq);
-    while ( (Init_FileQueue(fileq, p, 0) ) < 0 ) {
-        tries++;
-        if ( tries > OS_CSYSLOGD_MAX_TRIES ) {
-            merror("%s: ERROR: Could not open queue after %d tries, exiting!",
-                   ARGV0, tries
-                  );
+    sources = get_alert_sources(syslog_config);
+
+    if (sources.alert_log) {
+        tm = time(NULL);
+        p = localtime_r(&tm, &tm_buf);
+        if (!p) {
+            merror("%s: ERROR: localtime_r failed while opening alerts.log queue.", ARGV0);
             exit(1);
         }
-        sleep(1);
+
+        os_calloc(1, sizeof(file_queue), fileq);
+        while ((Init_FileQueue(fileq, p, 0)) < 0) {
+            tries++;
+            if (tries > OS_CSYSLOGD_MAX_TRIES) {
+                merror("%s: ERROR: Could not open alerts.log queue after %d tries, exiting!",
+                       ARGV0, tries);
+                exit(1);
+            }
+            sleep(1);
+        }
+        debug1("%s: INFO: File queue connected.", ARGV0);
     }
-    debug1("%s: INFO: File queue connected.", ARGV0 );
+
+    if (sources.alert_json) {
+        jqueue_init(&jfileq);
+        tries = 0;
+        while (jqueue_open(&jfileq, 1) < 0) {
+            tries++;
+            if (tries > OS_CSYSLOGD_MAX_TRIES) {
+                merror("%s: ERROR: Could not open alerts.json after %d tries; "
+                       "JSON syslog_output will retry (enable jsonout_output / wait for first alert).",
+                       ARGV0, tries);
+                break;
+            }
+            sleep(1);
+        }
+        if (jfileq.fp) {
+            debug1("%s: INFO: JSON file queue connected.", ARGV0);
+        }
+    }
+
+    if (!sources.alert_log && !sources.alert_json) {
+        merror("%s: ERROR: No syslog_output configurations available. Exiting.", ARGV0);
+        exit(1);
+    }
 
     /* UDP sockets were opened in main() before chroot (#1744). */
 
     /* Infinite loop reading the alerts and inserting them */
     while (1) {
-        tm = time(NULL);
-        p = localtime(&tm);
+        al_data = NULL;
+        drained = 0;
 
-        /* Get message if available (timeout of 5 seconds) */
-        al_data = Read_FileMon(fileq, p, 5);
-        if (!al_data) {
-            continue;
+        if (sources.alert_json) {
+            while (drained < JSON_DRAIN_MAX &&
+                   (json_data = jqueue_next(&jfileq)) != NULL) {
+                send_json_alert(json_data, syslog_config);
+                cJSON_Delete(json_data);
+                drained++;
+            }
         }
 
-        /* Send via syslog */
-        s = 0;
-        while (syslog_config[s]) {
-            OS_Alert_SendSyslog(al_data, syslog_config[s]);
-            s++;
+        if (sources.alert_log) {
+            tm = time(NULL);
+            p = localtime_r(&tm, &tm_buf);
+            if (p && fileq) {
+                /* Mixed JSON+log: one FileMon wait instead of five, so JSON
+                 * catch-up is not delayed up to 25s. When a JSON batch is still
+                 * draining, poll alerts.log without blocking. */
+                if (!sources.alert_json) {
+                    log_timeout = 5;
+                } else if (drained >= JSON_DRAIN_MAX) {
+                    log_timeout = 0;
+                } else {
+                    log_timeout = 1;
+                }
+                al_data = Read_FileMon(fileq, p, log_timeout);
+            }
         }
 
-        /* Clear the memory */
-        FreeAlertData(al_data);
+        if (al_data) {
+            s = 0;
+            while (syslog_config[s]) {
+                if (syslog_config[s]->format != JSON_CSYSLOG) {
+                    OS_Alert_SendSyslog(al_data, syslog_config[s]);
+                }
+                s++;
+            }
+            FreeAlertData(al_data);
+        }
+
+        /* JSON-only (or mixed with no log event this pass) needs a wait
+         * when FileMon is not sleeping for us. */
+        if (!sources.alert_log && drained == 0) {
+            sleep(1);
+        }
     }
 }
 

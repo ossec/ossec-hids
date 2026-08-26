@@ -11,6 +11,7 @@
 #define _CSYSLOGD_H
 
 #include "config/csyslogd-config.h"
+#include "cJSON.h"
 
 #define OS_CSYSLOGD_MAX_TRIES 10
 
@@ -24,6 +25,9 @@ SyslogConfig **OS_ReadSyslogConf(int test_config, const char *cfgfile);
 
 /* Send alerts via syslog */
 int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config);
+
+/* Forward an analysisd alerts.json object via syslog */
+int OS_Alert_SendSyslog_JSON(cJSON *json_data, SyslogConfig *syslog_config);
 
 /* Connect / send / close transport for one syslog_output destination */
 int csyslog_connect(SyslogConfig *cfg);

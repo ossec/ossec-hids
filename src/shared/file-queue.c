@@ -139,12 +139,15 @@ int Init_FileQueue(file_queue *fileq, const struct tm *p, int flags)
 alert_data *Read_FileMon(file_queue *fileq, const struct tm *p, unsigned int timeout)
 {
     unsigned int i = 0;
+    unsigned int attempts;
     alert_data *al_data;
 
     /* If the file queue is not available, try to access it */
     if (!fileq->fp) {
         if (Handle_Queue(fileq, 0) != 1) {
-            file_sleep();
+            if (timeout > 0) {
+                file_sleep();
+            }
             return (NULL);
         }
     }
@@ -162,7 +165,9 @@ alert_data *Read_FileMon(file_queue *fileq, const struct tm *p, unsigned int tim
             GetFile_Queue(fileq);
 
             if (Handle_Queue(fileq, 0) != 1) {
-                file_sleep();
+                if (timeout > 0) {
+                    file_sleep();
+                }
                 return (NULL);
             }
         } else {
@@ -170,14 +175,18 @@ alert_data *Read_FileMon(file_queue *fileq, const struct tm *p, unsigned int tim
         }
     }
 
-    /* Try up to timeout times to get an event */
-    while (i < timeout) {
+    /* Try up to timeout times to get an event. timeout 0: one non-blocking read. */
+    attempts = (timeout == 0) ? 1u : timeout;
+    while (i < attempts) {
         al_data = GetAlertData(fileq->flags, fileq->fp);
         if (al_data) {
             return (al_data);
         }
 
         i++;
+        if (timeout == 0) {
+            break;
+        }
         file_sleep();
     }
 
