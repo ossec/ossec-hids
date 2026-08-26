@@ -536,12 +536,33 @@ void *wait_for_msgs(__attribute__((unused)) void *none)
             }
 
             if (id) {
+                char saved_id[KEYSIZE];
+                int agent_idx = -1;
+
+                saved_id[0] = '\0';
+                if (keys.keyentries[i] && keys.keyentries[i]->id) {
+                    strncpy(saved_id, keys.keyentries[i]->id, KEYSIZE - 1);
+                    saved_id[KEYSIZE - 1] = '\0';
+                }
+
                 /* Drop the key lock around shared-file I/O (send_file_toagent
                  * re-acquires around each send_msg). Holding it here would
                  * block OS_UpdateKeys for the duration of the transfer.
+                 * Re-resolve by agent ID after the unlocked window so a
+                 * reload cannot send to a reshuffled slot.
                  */
                 key_unlock();
-                read_controlmsg(i, msg);
+
+                key_lock_read();
+                if (saved_id[0] != '\0') {
+                    agent_idx = OS_IsAllowedID(&keys, saved_id);
+                }
+                key_unlock();
+
+                if (agent_idx >= 0) {
+                    read_controlmsg((unsigned)agent_idx, msg);
+                }
+
                 key_lock_read();
                 if (i >= keys.keysize) {
                     break;

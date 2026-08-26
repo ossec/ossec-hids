@@ -284,6 +284,7 @@ void OS_FreeKeys(keystore *keys)
     OSHash *haship;
 
     _keysize = keys->keysize;
+    keys->keysize = 0;
     hashid = keys->keyhash_id;
     haship = keys->keyhash_ip;
 

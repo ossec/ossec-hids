@@ -84,7 +84,10 @@ int OS_UpdateKeys(keystore *keys) __attribute((nonnull));
 /* Start counter for all agents */
 void OS_StartCounter(keystore *keys) __attribute((nonnull));
 
-/* Persist the outbound sender counter (not an agent rids file) */
+/* Persist the outbound sender counter (not an agent rids file).
+ * Takes the sender-counter mutex; CreateSecMSG already holds that lock
+ * and uses the internal unlocked helper instead.
+ */
 void OS_StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local) __attribute((nonnull));
 
 /* Close the dedicated sender-counter FILE* (locks the sender mutex) */
