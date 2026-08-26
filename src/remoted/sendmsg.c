@@ -14,24 +14,29 @@
 /* pthread send_msg mutex */
 static pthread_mutex_t sendmsg_mutex;
 
-/* pthread key update mutex */
-static pthread_mutex_t keyupdate_mutex;
+/* Keystore rwlock: exclusive reload vs concurrent lookup/send */
+static pthread_rwlock_t keyupdate_rwlock;
 
 
 /* Initializes mutex */
 void keyupdate_init()
 {
-    os_mutex_init(&keyupdate_mutex, NULL);
+    os_rwlock_init(&keyupdate_rwlock, NULL);
 }
 
-void key_lock()
+void key_lock_read(void)
 {
-    os_mutex_lock(&keyupdate_mutex);
+    os_rwlock_read(&keyupdate_rwlock);
 }
 
-void key_unlock()
+void key_lock_write(void)
 {
-    os_mutex_unlock(&keyupdate_mutex);
+    os_rwlock_write(&keyupdate_rwlock);
+}
+
+void key_unlock(void)
+{
+    os_rwlock_unlock(&keyupdate_rwlock);
 }
 
 /* Check for key updates */
@@ -42,18 +47,13 @@ int check_keyupdate()
         return (0);
     }
 
-    key_lock();
-
-    /* Lock before using */
-    os_mutex_lock(&sendmsg_mutex);
+    key_lock_write();
 
     if (OS_UpdateKeys(&keys)) {
-        os_mutex_unlock(&sendmsg_mutex);
         key_unlock();
         return (1);
     }
 
-    os_mutex_unlock(&sendmsg_mutex);
     key_unlock();
 
     return (0);
@@ -79,6 +79,7 @@ void sendmsg_unlock(void)
 /*
  * Send message to an agent
  * Returns -1 on error
+ * Caller must hold key_lock_read() (or write).
  */
 
 int send_msg(remoted_listener *listener, unsigned int agentid, const char *msg)
@@ -93,6 +94,11 @@ int send_msg(remoted_listener *listener, unsigned int agentid, const char *msg)
     }
 
     os_mutex_lock(&sendmsg_mutex);
+
+    if (agentid >= keys.keysize || !keys.keyentries[agentid]) {
+        os_mutex_unlock(&sendmsg_mutex);
+        return (-1);
+    }
 
     /* If we don't have the agent id, ignore it */
     if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * NOTIFY_TIME))) {

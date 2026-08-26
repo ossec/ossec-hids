@@ -71,8 +71,11 @@ void sendmsg_unlock(void);
 
 int check_keyupdate(void);
 
-void key_lock(void);
-
+/* Keystore rwlock: write for OS_UpdateKeys, read for lookup/send.
+ * send_msg() does not take this lock; the caller must hold a read (or write) lock.
+ */
+void key_lock_read(void);
+void key_lock_write(void);
 void key_unlock(void);
 
 void keyupdate_init(void);

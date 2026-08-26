@@ -113,7 +113,7 @@ void *AR_Forward(__attribute__((unused)) void *arg)
             }
 
             /* Lock use of keys */
-            key_lock();
+            key_lock_read();
 
             /* Send to ALL agents */
             if (ar_location & ALL_AGENTS) {

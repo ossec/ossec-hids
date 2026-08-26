@@ -46,6 +46,46 @@ void os_mutex_destroy(pthread_mutex_t *mutex)
 
 #include <signal.h>
 
+void os_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr)
+{
+    int error = pthread_rwlock_init(rwlock, attr);
+    if (error != 0) {
+        ErrorExit("%s: At pthread_rwlock_init(): %s", __local_name, strerror(error));
+    }
+}
+
+void os_rwlock_read(pthread_rwlock_t *rwlock)
+{
+    int error = pthread_rwlock_rdlock(rwlock);
+    if (error != 0) {
+        ErrorExit("%s: At pthread_rwlock_rdlock(): %s", __local_name, strerror(error));
+    }
+}
+
+void os_rwlock_write(pthread_rwlock_t *rwlock)
+{
+    int error = pthread_rwlock_wrlock(rwlock);
+    if (error != 0) {
+        ErrorExit("%s: At pthread_rwlock_wrlock(): %s", __local_name, strerror(error));
+    }
+}
+
+void os_rwlock_unlock(pthread_rwlock_t *rwlock)
+{
+    int error = pthread_rwlock_unlock(rwlock);
+    if (error != 0) {
+        ErrorExit("%s: At pthread_rwlock_unlock(): %s", __local_name, strerror(error));
+    }
+}
+
+void os_rwlock_destroy(pthread_rwlock_t *rwlock)
+{
+    int error = pthread_rwlock_destroy(rwlock);
+    if (error != 0) {
+        ErrorExit("%s: At pthread_rwlock_destroy(): %s", __local_name, strerror(error));
+    }
+}
+
 size_t os_thread_stack_size(void)
 {
     int stack_kb = getDefine_Int("ossec", "thread_stack_size",

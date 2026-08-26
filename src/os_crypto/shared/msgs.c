@@ -23,10 +23,12 @@ static ino_t File_Inode(const char *file) {
 }
 
 /* Prototypes */
-static void StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local) __attribute((nonnull));
 static void StoreCounter(const keystore *keys, int id, unsigned int global, unsigned int local) __attribute((nonnull));
 static void ReloadCounter(keystore *keys, unsigned int id, const char * cid) __attribute((nonnull));
+static void ReloadSenderCounter(keystore *keys) __attribute((nonnull));
+static void store_sender_counter(const keystore *keys, unsigned int global, unsigned int local) __attribute((nonnull));
 static char *CheckSum(char *msg, size_t length) __attribute((nonnull));
+static FILE *fopen_rids(const char *rids_file) __attribute((nonnull));
 
 /* Sending counts */
 static unsigned int global_count = 0;
@@ -85,71 +87,69 @@ void OS_StartCounter(keystore *keys)
 
     /* debug2("OS_StartCounter: keysize: %u", keys->keysize); */
 
-    /* Start receiving counter */
-    for (i = 0; i <= keys->keysize; i++) {
-        /* On i == keysize, we deal with the sender counter */
-        if (i == keys->keysize) {
-            snprintf(rids_file, OS_FLSIZE, "%s/%s",
-                     RIDS_DIR,
-                     SENDER_COUNTER);
-        } else {
-            snprintf(rids_file, OS_FLSIZE, "%s/%s",
-                     RIDS_DIR,
-                     keys->keyentries[i]->id);
-        }
+    /* Start receiving counter (agents only; sender is not keyentries[keysize]) */
+    for (i = 0; i < keys->keysize; i++) {
+        snprintf(rids_file, OS_FLSIZE, "%s/%s",
+                 RIDS_DIR,
+                 keys->keyentries[i]->id);
 
-        keys->keyentries[i]->fp = fopen(rids_file, "r+");
+        keys->keyentries[i]->fp = fopen_rids(rids_file);
 
-        /* If nothing is there, try to open as write only */
         if (!keys->keyentries[i]->fp) {
-            keys->keyentries[i]->fp = fopen(rids_file, "w");
-            if (!keys->keyentries[i]->fp) {
-                int my_error = errno;
+            int my_error = errno;
 
-                /* Just in case we run out of file descriptors */
-                if ((i > 10) && (keys->keyentries[i - 1]->fp)) {
-                    fclose(keys->keyentries[i - 1]->fp);
+            /* Just in case we run out of file descriptors */
+            if ((i > 10) && (keys->keyentries[i - 1]->fp)) {
+                fclose(keys->keyentries[i - 1]->fp);
 
-                    if (keys->keyentries[i - 2]->fp) {
-                        fclose(keys->keyentries[i - 2]->fp);
-                    }
+                if (keys->keyentries[i - 2]->fp) {
+                    fclose(keys->keyentries[i - 2]->fp);
                 }
-
-                merror("Unable to open agent file. errno: %d", my_error);
-                ErrorExit(FOPEN_ERROR, __local_name, rids_file, errno, strerror(errno));
             }
+
+            merror("Unable to open agent file. errno: %d", my_error);
+            ErrorExit(FOPEN_ERROR, __local_name, rids_file, my_error, strerror(my_error));
         } else {
             unsigned int g_c = 0, l_c = 0;
             if (fscanf(keys->keyentries[i]->fp, "%u:%u", &g_c, &l_c) != 2) {
-                if (i == keys->keysize) {
-                    debug2("No previous sender counter.");
-                } else {
-                    debug2("No previous counter available for '%s'.",
-                            keys->keyentries[i]->name);
-                }
+                debug2("No previous counter available for '%s'.",
+                        keys->keyentries[i]->name);
 
                 g_c = 0;
                 l_c = 0;
             }
 
-            if (i == keys->keysize) {
-                debug2("Assigning sender counter: %u:%u",
-                        g_c, l_c);
-                global_count = g_c;
-                local_count = l_c;
-            } else {
-                debug2("Assigning counter for agent %s: '%u:%u'.",
-                        keys->keyentries[i]->name, g_c, l_c);
+            debug2("Assigning counter for agent %s: '%u:%u'.",
+                    keys->keyentries[i]->name, g_c, l_c);
 
-                keys->keyentries[i]->global = g_c;
-                keys->keyentries[i]->local = l_c;
-            }
+            keys->keyentries[i]->global = g_c;
+            keys->keyentries[i]->local = l_c;
         }
 
-        /* Initialize mutex */
-        pthread_mutex_init(&keys->keyentries[i]->mutex, NULL);
+        /* Per-entry mutex is initialized in __chash() at allocation. */
         keys->keyentries[i]->inode = File_Inode(rids_file);
     }
+
+    snprintf(rids_file, OS_FLSIZE, "%s/%s", RIDS_DIR, SENDER_COUNTER);
+    keys->sender_fp = fopen_rids(rids_file);
+    if (!keys->sender_fp) {
+        int my_error = errno;
+        merror("Unable to open sender counter file. errno: %d", my_error);
+        ErrorExit(FOPEN_ERROR, __local_name, rids_file, my_error, strerror(my_error));
+    } else {
+        unsigned int g_c = 0, l_c = 0;
+        if (fscanf(keys->sender_fp, "%u:%u", &g_c, &l_c) != 2) {
+            debug2("No previous sender counter.");
+            /* Keep in-memory counters. Zeroing here rewinds the outbound
+             * counter on reload and agents reject later server messages.
+             */
+        } else {
+            debug2("Assigning sender counter: %u:%u", g_c, l_c);
+            global_count = g_c;
+            local_count = l_c;
+        }
+    }
+    keys->sender_inode = File_Inode(rids_file);
 
     debug2("Stored counter.");
 
@@ -183,13 +183,53 @@ void OS_RemoveCounter(const char *id)
     }
 }
 
-/* Store sender counter */
-static void StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local)
+static FILE *fopen_rids(const char *rids_file)
 {
+    FILE *fp;
+
+    fp = fopen(rids_file, "r+");
+    if (!fp) {
+        /* r+ fails when the file does not exist; w+ creates it read/write
+         * so the following fscanf/fprintf paths both work.
+         */
+        fp = fopen(rids_file, "w+");
+    }
+    return (fp);
+}
+
+/* Caller must hold sender_counter_mutex. */
+static void store_sender_counter(const keystore *keys, unsigned int global, unsigned int local)
+{
+    if (!keys->sender_fp) {
+        return;
+    }
+
     /* Write to the beginning of the file */
-    fseek(keys->keyentries[keys->keysize]->fp, 0, SEEK_SET);
-    fprintf(keys->keyentries[keys->keysize]->fp, "%u:%u:", global, local);
-    fflush(keys->keyentries[keys->keysize]->fp);
+    if (fseek(keys->sender_fp, 0, SEEK_SET) != 0) {
+        merror("Unable to seek sender counter: %s (%d)", strerror(errno), errno);
+        return;
+    }
+    fprintf(keys->sender_fp, "%u:%u:", global, local);
+    fflush(keys->sender_fp);
+}
+
+/* Persist the outbound sender counter. Never writes agent rids. */
+void OS_StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local)
+{
+    os_mutex_lock(&sender_counter_mutex);
+    store_sender_counter(keys, global, local);
+    os_mutex_unlock(&sender_counter_mutex);
+}
+
+void OS_CloseSenderCounter(keystore *keys)
+{
+    os_mutex_lock(&sender_counter_mutex);
+    if (keys->sender_fp) {
+        fclose(keys->sender_fp);
+        keys->sender_fp = NULL;
+        keys->sender_inode = 0;
+    }
+    os_mutex_unlock(&sender_counter_mutex);
 }
 
 /* Store the global and local count of events */
@@ -227,26 +267,16 @@ static void ReloadCounter(keystore *keys, unsigned int id, const char * cid)
             unsigned int l_c = 0;
 
             if (fscanf(keys->keyentries[id]->fp, "%u:%u", &g_c, &l_c) != 2) {
-                if (id == keys->keysize) {
-                    debug1("No previous sender counter.");
-                } else {
-                    debug2("No previous counter available for '%s'.", keys->keyentries[id]->id);
-                }
+                debug2("No previous counter available for '%s'.", keys->keyentries[id]->id);
 
                 g_c = 0;
                 l_c = 0;
             }
 
-            if (id == keys->keysize) {
-                debug1("Reloading sender counter: %u:%u", g_c, l_c);
-                global_count = g_c;
-                local_count = l_c;
-            } else {
-                debug1("Reloading counter for agent %s: '%u:%u'.", keys->keyentries[id]->id, g_c, l_c);
+            debug1("Reloading counter for agent %s: '%u:%u'.", keys->keyentries[id]->id, g_c, l_c);
 
-                keys->keyentries[id]->global = g_c;
-                keys->keyentries[id]->local = l_c;
-            }
+            keys->keyentries[id]->global = g_c;
+            keys->keyentries[id]->local = l_c;
         }
 
         keys->keyentries[id]->inode = new_inode;
@@ -258,6 +288,51 @@ static void ReloadCounter(keystore *keys, unsigned int id, const char * cid)
 fail_open:
     os_mutex_unlock(&keys->keyentries[id]->mutex);
     merror("Unable to reload counter '%s': %s (%d)", cid, strerror(errno), errno);
+}
+
+static void ReloadSenderCounter(keystore *keys)
+{
+    /* Caller (CreateSecMSG) holds sender_counter_mutex. */
+    ino_t new_inode;
+    char rids_file[OS_FLSIZE + 1];
+
+    snprintf(rids_file, OS_FLSIZE, "%s/%s", RIDS_DIR, SENDER_COUNTER);
+    new_inode = File_Inode(rids_file);
+
+    if (keys->sender_inode == new_inode && keys->sender_fp) {
+        return;
+    }
+
+    if (keys->sender_fp) {
+        fclose(keys->sender_fp);
+        keys->sender_fp = NULL;
+    }
+
+    keys->sender_fp = fopen_rids(rids_file);
+    if (!keys->sender_fp) {
+        merror("Unable to reload counter '%s': %s (%d)", SENDER_COUNTER, strerror(errno), errno);
+        keys->sender_inode = 0;
+        return;
+    }
+
+    {
+        unsigned int g_c = 0;
+        unsigned int l_c = 0;
+
+        if (fscanf(keys->sender_fp, "%u:%u", &g_c, &l_c) != 2) {
+            debug1("No previous sender counter.");
+            /* Keep in-memory global/local. Zeroing here would rewind the
+             * outbound counter and make agents reject later server messages.
+             */
+        } else {
+            debug1("Reloading sender counter: %u:%u", g_c, l_c);
+            global_count = g_c;
+            local_count = l_c;
+        }
+    }
+
+    /* Restat after create/reopen so we don't store inode 0 for a new file. */
+    keys->sender_inode = File_Inode(rids_file);
 }
 
 /* Verify the checksum of the message
@@ -559,7 +634,7 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
     msg_encrypted[OS_MAXSTR] = '\0';
 
     os_mutex_lock(&sender_counter_mutex);
-    ReloadCounter((keystore *)keys, keys->keysize, SENDER_COUNTER);
+    ReloadSenderCounter((keystore *)keys);
 
     /* Increase local and global counters */
     if (local_count >= 9997) {
@@ -569,7 +644,7 @@ size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, ch
     local_count++;
     msg_global = global_count;
     msg_local = local_count;
-    StoreSenderCounter(keys, msg_global, msg_local);
+    store_sender_counter(keys, msg_global, msg_local);
     os_mutex_unlock(&sender_counter_mutex);
 
     length = snprintf(_tmpmsg, OS_MAXSTR, "%05hu%010u:%04u:", rand1, msg_global, msg_local);
