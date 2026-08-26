@@ -157,7 +157,13 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
             }
         } else if (strcasecmp(node[i]->element, xml_remote_ipv6) == 0) {
             if (strcasecmp(node[i]->content, "yes") == 0) {
-                logr->ipv6[pl] = 1;
+                logr->ipv6[pl] = OS_BIND_IPV6_YES;
+            } else if (strcasecmp(node[i]->content, "no") == 0) {
+                logr->ipv6[pl] = OS_BIND_IPV6_NO;
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element,
+                       node[i]->content);
+                return (OS_INVALID);
             }
         } else if (strcasecmp(node[i]->element, xml_remote_lip) == 0) {
             os_strdup(node[i]->content, logr->lip[pl]);

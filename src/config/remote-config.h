@@ -28,7 +28,7 @@ typedef struct _remoted {
     int *proto;
     char **port;
     int *conn;
-    int *ipv6;
+    int *ipv6; /* OS_BIND_IPV6_*: ignored when lip is set */
 
     char **lip;
     os_ip **allowips;

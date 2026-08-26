@@ -22,6 +22,7 @@ REGRESSION_BINS = \
 	issue_1748_sid_list_crash \
 	issue_1274_auth_ipv6_key \
 	issue_2065_sender_counter \
+	issue_1611_local_ip_bind \
 	jsonout_default
 
 .PHONY: all check clean
@@ -59,6 +60,11 @@ issue_2065_sender_counter: tests/regressions/issue_2065_sender_counter.c os_cryp
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_2065_sender_counter.c \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1611_local_ip_bind.c \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
 
 # GlobalConf lives in analysisd/config.c (defines _Config Config).
 # Link config.a from a current server build; do not also compile

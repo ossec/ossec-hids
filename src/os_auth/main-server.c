@@ -359,7 +359,7 @@ int main(int argc, char **argv)
     }
 
     /* Connect via TCP */
-    netinfo = OS_Bindporttcp(port, NULL);
+    netinfo = OS_Bindporttcp(port, NULL, OS_BIND_IPV6_DEFAULT);
     if (netinfo->status < 0) {
         merror("%s: Unable to bind to port %s", ARGV0, port);
         exit(1);
