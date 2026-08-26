@@ -149,7 +149,11 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ip
 
     /* Try to support legacy ipv4 only hosts (dual-stack wildcard only). */
     if ((ip_family == AF_UNSPEC) && (ipv6 != OS_BIND_IPV6_NO) &&
-        ((s == EAI_FAMILY) || (s == EAI_NONAME))) {
+        ((s == EAI_FAMILY) || (s == EAI_NONAME)
+#ifdef EAI_SYSTEM
+         || (s == EAI_SYSTEM)
+#endif
+        )) {
         hints.ai_family = AF_INET;
         hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
         s = getaddrinfo(_ip, _port, &hints, &result);
@@ -216,14 +220,14 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ip
             * previous iteration of this loop.
             */
             if (errno == EADDRINUSE) {
-                close (ossock);
+                OS_CloseSocket(ossock);
                 continue;
             }
 
             /* tell them why this address failed */
             verbose ("Bind failed on socket for %s: %s",
                      OS_DecodeSockaddr (rp->ai_addr), strerror (errno));
-            close (ossock);
+            OS_CloseSocket(ossock);
             continue;
         }
 
@@ -231,7 +235,7 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ip
             if (listen(ossock, 32) < 0) {
                 verbose ("Request to listen() failed on socket for %s: %s",
                           OS_DecodeSockaddr (rp->ai_addr), strerror (errno));
-                close (ossock);
+                OS_CloseSocket(ossock);
                 continue;
             }
             verbose ("Request for TCP listen() succeeded.");
@@ -239,6 +243,13 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ip
 
         /* success - accumulate data for select call */
         verbose ("Socket bound for %s", OS_DecodeSockaddr (rp->ai_addr));
+
+        if (ni->fdcnt >= (int)(sizeof(ni->fds) / sizeof(ni->fds[0]))) {
+            verbose ("Too many bound sockets for select(); dropping %s",
+                     OS_DecodeSockaddr (rp->ai_addr));
+            OS_CloseSocket(ossock);
+            break;
+        }
 
         /* save bound socket info for select() */
         ni->fds[ni->fdcnt++] = ossock;  /* increment after use! */

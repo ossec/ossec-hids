@@ -159,16 +159,19 @@ int remoted_bind_listener(int position)
         }
     }
 
+    int ipv6_flag;
+
     /* Bind TCP */
+    ipv6_flag = (logr.ipv6) ? logr.ipv6[position] : OS_BIND_IPV6_DEFAULT;
     if (logr.proto[position] == IPPROTO_TCP) {
         listener->netinfo = OS_Bindporttcp(logr.port[position], logr.lip[position],
-                                           logr.ipv6[position]);
+                                           ipv6_flag);
         if (listener->netinfo->status < 0) {
             ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
         }
     } else {
         listener->netinfo = OS_Bindportudp(logr.port[position], logr.lip[position],
-                                           logr.ipv6[position]);
+                                           ipv6_flag);
         if (listener->netinfo->status < 0) {
             ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
         }

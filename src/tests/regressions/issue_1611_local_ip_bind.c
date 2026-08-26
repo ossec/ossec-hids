@@ -25,7 +25,7 @@ static void close_ni(OSNetInfo *ni)
         return;
     }
 
-    if (ni->status >= 0) {
+    if (ni->status >= 0 || ni->fdcnt > 0) {
         for (i = 0; i < ni->fdcnt; i++) {
             OS_CloseSocket(ni->fds[i]);
         }
@@ -70,17 +70,6 @@ static int sock_name(int fd, struct sockaddr_storage *ss)
     return (0);
 }
 
-static unsigned short sock_port(const struct sockaddr_storage *ss)
-{
-    if (ss->ss_family == AF_INET) {
-        return (ntohs(((const struct sockaddr_in *)ss)->sin_port));
-    }
-    if (ss->ss_family == AF_INET6) {
-        return (ntohs(((const struct sockaddr_in6 *)ss)->sin6_port));
-    }
-    return (0);
-}
-
 static int addr_is(const struct sockaddr_storage *ss, int family, const char *expect)
 {
     char buf[INET6_ADDRSTRLEN];
@@ -111,6 +100,25 @@ static int udp_ready(int fd, int timeout_ms)
     return (select(fd + 1, &rfds, NULL, NULL, &tv));
 }
 
+static OSNetInfo *bind_udp(const char *ip, int ipv6, unsigned short *port_out)
+{
+    char portstr[8];
+    int port;
+    OSNetInfo *ni;
+
+    *port_out = 0;
+    for (port = 20000; port < 21000; port++) {
+        snprintf(portstr, sizeof(portstr), "%d", port);
+        ni = OS_Bindportudp(portstr, ip, ipv6);
+        if (ni && ni->status >= 0 && ni->fdcnt >= 1) {
+            *port_out = (unsigned short)port;
+            return (ni);
+        }
+        close_ni(ni);
+    }
+    return (NULL);
+}
+
 static int send_udp(const char *ip, unsigned short port, const char *msg)
 {
     int fd;
@@ -134,8 +142,9 @@ static int test_local_ipv4(void)
     struct sockaddr_storage ss;
     char buf[64];
     int n;
+    unsigned short port;
 
-    ni = OS_Bindportudp("0", "127.0.0.1", OS_BIND_IPV6_DEFAULT);
+    ni = bind_udp("127.0.0.1", OS_BIND_IPV6_DEFAULT, &port);
     if (!ni || ni->status < 0 || ni->fdcnt != 1) {
         fprintf(stderr, "FAIL: bind 127.0.0.1\n");
         close_ni(ni);
@@ -154,7 +163,7 @@ static int test_local_ipv4(void)
         return (1);
     }
 
-    if (send_udp("127.0.0.1", sock_port(&ss), "v4") != 0) {
+    if (send_udp("127.0.0.1", port, "v4") != 0) {
         fprintf(stderr, "FAIL: send to 127.0.0.1\n");
         close_ni(ni);
         return (1);
@@ -167,6 +176,9 @@ static int test_local_ipv4(void)
     }
 
     n = recv(ni->fds[0], buf, sizeof(buf) - 1, 0);
+    if (n >= 0) {
+        buf[n] = '\0';
+    }
     if (n < 2 || strncmp(buf, "v4", 2) != 0) {
         fprintf(stderr, "FAIL: IPv4 payload\n");
         close_ni(ni);
@@ -174,7 +186,7 @@ static int test_local_ipv4(void)
     }
 
     if (ipv6_loopback_ok()) {
-        if (send_udp("::1", sock_port(&ss), "v6") == 0) {
+        if (send_udp("::1", port, "v6") == 0) {
             if (udp_ready(ni->fds[0], 200) > 0) {
                 fprintf(stderr, "FAIL: IPv4 local_ip accepted IPv6 traffic\n");
                 close_ni(ni);
@@ -193,13 +205,14 @@ static int test_local_ipv6(void)
     struct sockaddr_storage ss;
     char buf[64];
     int n;
+    unsigned short port;
 
     if (!ipv6_loopback_ok()) {
         printf("SKIP: no IPv6 loopback for ::1 bind\n");
         return (0);
     }
 
-    ni = OS_Bindportudp("0", "::1", OS_BIND_IPV6_DEFAULT);
+    ni = bind_udp("::1", OS_BIND_IPV6_DEFAULT, &port);
     if (!ni || ni->status < 0 || ni->fdcnt != 1) {
         fprintf(stderr, "FAIL: bind ::1\n");
         close_ni(ni);
@@ -218,7 +231,7 @@ static int test_local_ipv6(void)
         return (1);
     }
 
-    if (send_udp("::1", sock_port(&ss), "v6") != 0) {
+    if (send_udp("::1", port, "v6") != 0) {
         fprintf(stderr, "FAIL: send to ::1\n");
         close_ni(ni);
         return (1);
@@ -231,13 +244,16 @@ static int test_local_ipv6(void)
     }
 
     n = recv(ni->fds[0], buf, sizeof(buf) - 1, 0);
+    if (n >= 0) {
+        buf[n] = '\0';
+    }
     if (n < 2 || strncmp(buf, "v6", 2) != 0) {
         fprintf(stderr, "FAIL: IPv6 payload\n");
         close_ni(ni);
         return (1);
     }
 
-    if (send_udp("127.0.0.1", sock_port(&ss), "v4") == 0) {
+    if (send_udp("127.0.0.1", port, "v4") == 0) {
         if (udp_ready(ni->fds[0], 200) > 0) {
             fprintf(stderr, "FAIL: IPv6 local_ip accepted IPv4 traffic\n");
             close_ni(ni);
@@ -255,8 +271,9 @@ static int test_wildcard(void)
     struct sockaddr_storage ss;
     char buf[64];
     int n;
+    unsigned short port;
 
-    ni = OS_Bindportudp("0", NULL, OS_BIND_IPV6_DEFAULT);
+    ni = bind_udp(NULL, OS_BIND_IPV6_DEFAULT, &port);
     if (!ni || ni->status < 0 || ni->fdcnt < 1) {
         fprintf(stderr, "FAIL: wildcard bind\n");
         close_ni(ni);
@@ -268,7 +285,7 @@ static int test_wildcard(void)
         return (1);
     }
 
-    if (send_udp("127.0.0.1", sock_port(&ss), "v4") != 0) {
+    if (send_udp("127.0.0.1", port, "v4") != 0) {
         fprintf(stderr, "FAIL: send IPv4 to wildcard\n");
         close_ni(ni);
         return (1);
@@ -281,6 +298,9 @@ static int test_wildcard(void)
     }
 
     n = recv(ni->fds[0], buf, sizeof(buf) - 1, 0);
+    if (n >= 0) {
+        buf[n] = '\0';
+    }
     if (n < 2 || strncmp(buf, "v4", 2) != 0) {
         fprintf(stderr, "FAIL: wildcard IPv4 payload\n");
         close_ni(ni);
@@ -291,7 +311,7 @@ static int test_wildcard(void)
         int i;
         int got = 0;
 
-        if (send_udp("::1", sock_port(&ss), "v6") != 0) {
+        if (send_udp("::1", port, "v6") != 0) {
             fprintf(stderr, "FAIL: send IPv6 to wildcard\n");
             close_ni(ni);
             return (1);
@@ -300,6 +320,9 @@ static int test_wildcard(void)
         for (i = 0; i < ni->fdcnt; i++) {
             if (udp_ready(ni->fds[i], 300) > 0) {
                 n = recv(ni->fds[i], buf, sizeof(buf) - 1, 0);
+                if (n >= 0) {
+                    buf[n] = '\0';
+                }
                 if (n >= 2 && strncmp(buf, "v6", 2) == 0) {
                     got = 1;
                     break;
@@ -322,8 +345,9 @@ static int test_ipv6_no_wildcard(void)
 {
     OSNetInfo *ni;
     struct sockaddr_storage ss;
+    unsigned short port;
 
-    ni = OS_Bindportudp("0", NULL, OS_BIND_IPV6_NO);
+    ni = bind_udp(NULL, OS_BIND_IPV6_NO, &port);
     if (!ni || ni->status < 0 || ni->fdcnt != 1) {
         fprintf(stderr, "FAIL: ipv6=no wildcard bind\n");
         close_ni(ni);
@@ -343,7 +367,7 @@ static int test_ipv6_no_wildcard(void)
     }
 
     if (ipv6_loopback_ok()) {
-        if (send_udp("::1", sock_port(&ss), "v6") == 0) {
+        if (send_udp("::1", port, "v6") == 0) {
             if (udp_ready(ni->fds[0], 200) > 0) {
                 fprintf(stderr, "FAIL: ipv6=no accepted IPv6 traffic\n");
                 close_ni(ni);
@@ -352,7 +376,7 @@ static int test_ipv6_no_wildcard(void)
         }
     }
 
-    if (send_udp("127.0.0.1", sock_port(&ss), "v4") != 0) {
+    if (send_udp("127.0.0.1", port, "v4") != 0) {
         fprintf(stderr, "FAIL: send IPv4 to ipv6=no wildcard\n");
         close_ni(ni);
         return (1);
@@ -372,8 +396,9 @@ static int test_local_ip_ignores_ipv6(void)
 {
     OSNetInfo *ni;
     struct sockaddr_storage ss;
+    unsigned short port;
 
-    ni = OS_Bindportudp("0", "127.0.0.1", OS_BIND_IPV6_YES);
+    ni = bind_udp("127.0.0.1", OS_BIND_IPV6_YES, &port);
     if (!ni || ni->status < 0 || ni->fdcnt != 1) {
         fprintf(stderr, "FAIL: local_ip with ipv6=yes\n");
         close_ni(ni);
@@ -397,7 +422,7 @@ static int test_local_ip_ignores_ipv6(void)
         return (0);
     }
 
-    ni = OS_Bindportudp("0", "::1", OS_BIND_IPV6_NO);
+    ni = bind_udp("::1", OS_BIND_IPV6_NO, &port);
     if (!ni || ni->status < 0 || ni->fdcnt != 1) {
         fprintf(stderr, "FAIL: local_ip with ipv6=no\n");
         close_ni(ni);
