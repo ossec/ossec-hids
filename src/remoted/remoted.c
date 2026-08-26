@@ -161,12 +161,14 @@ int remoted_bind_listener(int position)
 
     /* Bind TCP */
     if (logr.proto[position] == IPPROTO_TCP) {
-        listener->netinfo = OS_Bindporttcp(logr.port[position], logr.lip[position]);
+        listener->netinfo = OS_Bindporttcp(logr.port[position], logr.lip[position],
+                                           logr.ipv6[position]);
         if (listener->netinfo->status < 0) {
             ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
         }
     } else {
-        listener->netinfo = OS_Bindportudp(logr.port[position], logr.lip[position]);
+        listener->netinfo = OS_Bindportudp(logr.port[position], logr.lip[position],
+                                           logr.ipv6[position]);
         if (listener->netinfo->status < 0) {
             ErrorExit(BIND_ERROR, ARGV0, logr.port[position]);
         }

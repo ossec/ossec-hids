@@ -17,13 +17,14 @@
 agent *os_net_agt;
 
 /* Prototypes */
-static OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip);
+static OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ipv6);
 static int OS_Connect(char *_port, unsigned int protocol, const char *_ip);
 static int OS_DecodeAddrinfo (struct addrinfo *res);
 static char *OS_DecodeSockaddr (struct sockaddr *sa);
 static char *DecodeFamily (int val);
 static char *DecodeSocktype (int val);
 static char *DecodeProtocol (int val);
+static int os_numeric_ip_family(const char *ip);
 
 /* Unix socket -- not for windows */
 #ifndef WIN32
@@ -44,11 +45,36 @@ static socklen_t us_l = sizeof(n_us);
 
 #endif /* WIN32*/
 
+/* Return AF_INET / AF_INET6 for a numeric address, or AF_UNSPEC. */
+static int os_numeric_ip_family(const char *ip)
+{
+    struct addrinfo hints, *res;
+    int family;
+    int s;
+
+    if (ip == NULL || ip[0] == '\0') {
+        return (AF_UNSPEC);
+    }
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_flags = AI_NUMERICHOST;
+    s = getaddrinfo(ip, NULL, &hints, &res);
+    if (s != 0) {
+        return (AF_UNSPEC);
+    }
+
+    family = res->ai_family;
+    freeaddrinfo(res);
+    return (family);
+}
+
 
 /* Bind all relevant ports */
-OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
+OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ipv6)
 {
     int ossock = 0, s;
+    int ip_family;
     struct addrinfo hints, *result, *rp;
     OSNetInfo *ni;			/* return data */
 
@@ -64,31 +90,48 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     /* init hints for getaddrinfo() */
     memset(&hints, 0, sizeof(struct addrinfo));
 
-   /*
-    * If you cannot bind both IPv4 and IPv6, the problem is likely due to the
-    * AF_INET6 family with the AI_V4MAPPED flag. Alter your Makefile to use the
-    * NOV4MAP define and it should work like a breeze. All of the *BSDs fall
-    * into this category even though AI_V4MAPPED exists in netdb.h (true for
-    * all modern OS's). This should work with all Linux versions too, but the
-    * original code for AF_INET6 was left for Linux because it works.
-    *
-    * d. stoddard - 4/19/2018
-    */
+    ip_family = os_numeric_ip_family(_ip);
+
+    if (ip_family == AF_INET || ip_family == AF_INET6) {
+        /* <local_ip> is set: bind only that address, in its own family. */
+        if (ipv6 != OS_BIND_IPV6_DEFAULT) {
+            verbose("local_ip is set; ipv6 option ignored");
+        }
+        hints.ai_family = ip_family;
+        hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;
+    } else if (ipv6 == OS_BIND_IPV6_NO) {
+        /* No local_ip, ipv6 disabled: IPv4 wildcard only. */
+        hints.ai_family = AF_INET;
+        hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
+    } else {
+       /*
+        * No local_ip (or a non-numeric host): dual-stack wildcard.
+        *
+        * If you cannot bind both IPv4 and IPv6, the problem is likely due to the
+        * AF_INET6 family with the AI_V4MAPPED flag. Alter your Makefile to use the
+        * NOV4MAP define and it should work like a breeze. All of the *BSDs fall
+        * into this category even though AI_V4MAPPED exists in netdb.h (true for
+        * all modern OS's). This should work with all Linux versions too, but the
+        * original code for AF_INET6 was left for Linux because it works.
+        *
+        * d. stoddard - 4/19/2018
+        */
 
 #if defined(__linux__) && !defined(NOV4MAP)
 #if defined (AI_V4MAPPED)
-    hints.ai_family = AF_INET6;		/* Allow IPv4 and IPv6 */
-    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
+        hints.ai_family = AF_INET6;		/* Allow IPv4 and IPv6 */
+        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
 #else
-    /* handle as normal IPv4 and IPv6 multi request */
-    hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
+        /* handle as normal IPv4 and IPv6 multi request */
+        hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
+        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
 #endif /* AI_V4MAPPED */
 #else
-    /* FreeBSD, OpenBSD, NetBSD, and others */
-    hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-    hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
+        /* FreeBSD, OpenBSD, NetBSD, and others */
+        hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
+        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
 #endif
+    }
 
     hints.ai_protocol = _proto;
     if (_proto == IPPROTO_UDP) {
@@ -104,8 +147,9 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
     /* get linked list of adresses */
     s = getaddrinfo(_ip, _port, &hints, &result);
 
-    /* Try to support legacy ipv4 only hosts */
-    if((s == EAI_FAMILY) || (s == EAI_NONAME)) {
+    /* Try to support legacy ipv4 only hosts (dual-stack wildcard only). */
+    if ((ip_family == AF_UNSPEC) && (ipv6 != OS_BIND_IPV6_NO) &&
+        ((s == EAI_FAMILY) || (s == EAI_NONAME))) {
         hints.ai_family = AF_INET;
         hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
         s = getaddrinfo(_ip, _port, &hints, &result);
@@ -138,6 +182,19 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
                      strerror(errno));
             continue;
         }
+
+#ifdef IPV6_V6ONLY
+        /* A specific IPv6 local_ip must not also accept IPv4-mapped traffic. */
+        if (ip_family == AF_INET6 && rp->ai_family == AF_INET6) {
+            int v6only = 1;
+            if (setsockopt(ossock, IPPROTO_IPV6, IPV6_V6ONLY,
+                           (char *)&v6only, sizeof(v6only)) < 0) {
+                verbose ("setsockopt error: IPV6_V6ONLY: %s", strerror(errno));
+                OS_CloseSocket(ossock);
+                continue;
+            }
+        }
+#endif
 
         if (_proto == IPPROTO_TCP) {
             int flag = 1;
@@ -209,15 +266,15 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip)
 
 
 /* Bind a TCP port, using the OS_Bindport */
-OSNetInfo *OS_Bindporttcp(char *_port, const char *_ip)
+OSNetInfo *OS_Bindporttcp(char *_port, const char *_ip, int ipv6)
 {
-    return (OS_Bindport(_port, IPPROTO_TCP, _ip));
+    return (OS_Bindport(_port, IPPROTO_TCP, _ip, ipv6));
 }
 
 /* Bind a UDP port, using the OS_Bindport */
-OSNetInfo *OS_Bindportudp(char *_port, const char *_ip)
+OSNetInfo *OS_Bindportudp(char *_port, const char *_ip, int ipv6)
 {
-    return (OS_Bindport(_port, IPPROTO_UDP, _ip));
+    return (OS_Bindport(_port, IPPROTO_UDP, _ip, ipv6));
 }
 
 #ifndef WIN32
