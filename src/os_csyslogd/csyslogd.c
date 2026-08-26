@@ -146,14 +146,20 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
             }
         }
 
-        if (sources.alert_log && drained < JSON_DRAIN_MAX) {
+        if (sources.alert_log) {
             tm = time(NULL);
             p = localtime_r(&tm, &tm_buf);
             if (p && fileq) {
-                /* Mixed JSON+log: one FileMon wait (5s) instead of five, so
-                 * JSON catch-up is not delayed up to 25s. Skip the log wait
-                 * while a JSON batch is still draining. */
-                log_timeout = sources.alert_json ? 1 : 5;
+                /* Mixed JSON+log: one FileMon wait instead of five, so JSON
+                 * catch-up is not delayed up to 25s. When a JSON batch is still
+                 * draining, poll alerts.log without blocking. */
+                if (!sources.alert_json) {
+                    log_timeout = 5;
+                } else if (drained >= JSON_DRAIN_MAX) {
+                    log_timeout = 0;
+                } else {
+                    log_timeout = 1;
+                }
                 al_data = Read_FileMon(fileq, p, log_timeout);
             }
         }

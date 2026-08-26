@@ -55,10 +55,10 @@ issue_1274_auth_ipv6_key: tests/regressions/issue_1274_auth_ipv6_key.c addagent/
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
 # GlobalConf lives in analysisd/config.c (defines _Config Config).
-# Compile current global-config.c so jsonout_output offset matches the headers.
-jsonout_default: tests/regressions/jsonout_default.c analysisd/config.c config/global-config.c config.a shared.a
+# Link config.a from a current server build; do not also compile
+# config/global-config.c or Read_Global is defined twice.
+jsonout_default: tests/regressions/jsonout_default.c analysisd/config.c config.a shared.a
 	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/jsonout_default.c analysisd/config.c \
-		config/global-config.c \
 		-Wl,--start-group config.a shared.a os_regex.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
 

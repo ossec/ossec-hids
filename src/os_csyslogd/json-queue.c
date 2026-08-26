@@ -43,7 +43,7 @@ int jqueue_open_path(file_queue *queue, const char *path, int tail)
         return -1;
     }
 
-    if (tail && fseek(queue->fp, 0, SEEK_END) == -1) {
+    if (tail && fseek(queue->fp, 0, SEEK_END) != 0) {
         merror(FSEEK_ERROR, __local_name, queue->file_name, errno, strerror(errno));
         fclose(queue->fp);
         queue->fp = NULL;

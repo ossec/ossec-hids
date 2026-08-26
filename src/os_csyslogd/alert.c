@@ -364,17 +364,19 @@ static void json_syslog_stub(char *dest, size_t dest_sz, unsigned int priority,
         cJSON_AddStringToObject(stub, "agent_name", item->valuestring);
     }
     rule = cJSON_GetObjectItem(json_data, "rule");
-    if (rule) {
+    if (cJSON_IsObject(rule)) {
         cJSON *rr = cJSON_CreateObject();
-        item = cJSON_GetObjectItem(rule, "sidid");
-        if (cJSON_IsNumber(item)) {
-            cJSON_AddNumberToObject(rr, "sidid", item->valueint);
+        if (rr) {
+            item = cJSON_GetObjectItem(rule, "sidid");
+            if (cJSON_IsNumber(item)) {
+                cJSON_AddNumberToObject(rr, "sidid", item->valueint);
+            }
+            item = cJSON_GetObjectItem(rule, "level");
+            if (cJSON_IsNumber(item)) {
+                cJSON_AddNumberToObject(rr, "level", item->valueint);
+            }
+            cJSON_AddItemToObject(stub, "rule", rr);
         }
-        item = cJSON_GetObjectItem(rule, "level");
-        if (cJSON_IsNumber(item)) {
-            cJSON_AddNumberToObject(rr, "level", item->valueint);
-        }
-        cJSON_AddItemToObject(stub, "rule", rr);
     }
     cJSON_AddTrueToObject(stub, "truncated");
     if (reason) {

@@ -52,6 +52,7 @@ static void expect_jsonout(const char *label, const char *xml, int want)
     snprintf(cfg, sizeof(cfg), "%s.conf", path);
     unlink(path);
     if (write_cfg(cfg, xml) != 0) {
+        unlink(cfg);
         failures++;
         return;
     }
