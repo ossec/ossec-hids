@@ -85,3 +85,6 @@ jobs:
         run: |
           cd src
           make TARGET=winagent PCRE2_SYSTEM=yes ZLIB_SYSTEM=yes -j$(nproc)
+
+      - name: Verify win32ui manifest (issue 2307)
+        run: src/tests/regressions/issue_2307_win32ui_manifest.sh
