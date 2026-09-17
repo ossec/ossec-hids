@@ -7,17 +7,33 @@ Scott R. Shinn (https://www.atomicorp.com)
 **Contributors on this release**
 
 - @atomicturtle
+- @ddpbsd
 - @bearxy123
 - @AdUser
 
 **Release Notes**
 
-Work toward the next minor release after 4.3.0.
+OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are listed below.
+
+- **Windows FIM attributes and ACLs** — Opt-in ``check_attrs`` for Hidden/System/attribute change alerts and ``check_acl`` for NTFS DACL/ACE matrix alerts (#1352, #2285).
+- **GeoIP via libmaxminddb** — Replaces EOL GeoIP Legacy with GeoLite2 MMDB lookups, plus ASN/country enrichment and GeoIP IDS rules (#1828, #2259).
+- **JSON syslog alerts** — ``ossec-csyslogd`` forwards analysisd JSON alerts so ``agent_name`` is a first-class field. ``jsonout`` stays on when the XML tag is omitted; alerts rotation remains with monitord (#1907, #2302).
+
+**General**
+
+- @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
+- @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
+- @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
+- @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
+- @atomicturtle - [PR 2302](https://github.com/ossec/ossec-hids/pull/2302) - Forward analysisd JSON alerts over syslog so agent_name is a first-class field; keep jsonout on when undeclared
 
 **Bug Fixes**
 
 - @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
 - @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
+- @atomicturtle - [PR 2303](https://github.com/ossec/ossec-hids/pull/2303) - Stop remoted from writing the sender counter into agent 0 rids on key reload (#2065)
+- @atomicturtle - [PR 2304](https://github.com/ossec/ossec-hids/pull/2304) - Stop remoted from mapping a v4 local_ip onto a dual-stack IPv6 socket (#1611)
+- @atomicturtle - [PR 2308](https://github.com/ossec/ossec-hids/pull/2308) - Use a four-part win32ui manifest version so the Windows agent UI can start (#2307)
 
 
 **OSSEC changelog (4.3.0) <support@atomicorp.com>**
@@ -29,7 +45,6 @@ Scott R. Shinn (https://www.atomicorp.com)
 **Contributors on this release**
 
 - @atomicturtle
-- @ddpbsd
 - @reyjrar
 - @hyn172
 - @lazyp
@@ -58,8 +73,6 @@ OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are liste
 - @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
 - @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
 - @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
-- @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
-- @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
 - @atomicturtle - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules (#1390)
 - @atomicturtle - Add per-agent FIM maintenance mode via agent_control (#677, #1289, #1681)
 - @atomicturtle - Detect Postfix SMTP connect aborts and escalate by source IP (#1897)
@@ -72,8 +85,6 @@ OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are liste
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
 - @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules; tighten postgresql_log so it does not steal cPanel logs (#1132)
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
-- @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
-- @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
 
 **Bug Fixes**
 

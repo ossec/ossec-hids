@@ -25,12 +25,12 @@
 ; general
 !define MUI_ICON favicon.ico
 !define MUI_UNICON ossec-uninstall.ico
-!define VERSION "4.3.0"
+!define VERSION "4.4.0"
 !define NAME "OSSEC HIDS"
 !define SERVICE "OssecSvc"
 
 Name "${NAME} Windows Agent v${VERSION}"
-BrandingText "Copyright (C) 2003 - 2014 Trend Micro Inc."
+BrandingText "Copyright (C) 2026 Atomicorp, Inc."
 OutFile "${OutFile}"
 
 InstallDir "$PROGRAMFILES\ossec-agent"

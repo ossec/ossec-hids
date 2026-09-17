@@ -21,7 +21,7 @@
 Summary:     An Open Source Host-based Intrusion Detection System
 Name:        ossec-hids
 Epoch: 1
-Version:     4.3.0
+Version:     4.4.0
 Release:     1%{?dist}.art
 License:     GPL
 Group:       Applications/System
@@ -205,7 +205,7 @@ pushd src
 
 # Agent
 mkdir clients/
-make TARGET=agent PCRE2_SYSTEM=yes %{?make_magic_opt}
+make %{?_smp_mflags} TARGET=agent PCRE2_SYSTEM=yes %{?make_magic_opt}
 mv manage_agents clients/manage_agent
 mv ossec-logcollector  clients/client-logcollector
 mv ossec-syscheckd  clients/client-syscheckd
@@ -216,7 +216,7 @@ mv agent-auth  clients/
 # Hybrid
 make clean
 mkdir hybrid/
-make TARGET=agent PCRE2_SYSTEM=yes PREFIX=/var/ossec/ossec-agent %{?make_magic_opt}
+make %{?_smp_mflags} TARGET=agent PCRE2_SYSTEM=yes PREFIX=/var/ossec/ossec-agent %{?make_magic_opt}
 mv ossec-agentd hybrid/
 mv ossec-execd hybrid/
 mv ossec-logcollector hybrid/
@@ -228,7 +228,7 @@ mv manage_agents hybrid/manage_agent
 make clean 
 # not on amzn22023
 #make DATABASE=pgsql MAXAGENTS=16384 GEOIP=1 TARGET=server PCRE2_SYSTEM=yes 
-make DATABASE=pgsql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
+make %{?_smp_mflags} DATABASE=pgsql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
 mkdir postgres
 cp ossec-dbd postgres/
 
@@ -236,11 +236,11 @@ cp ossec-dbd postgres/
 make clean
 # not on amzn2023
 #make DATABASE=mysql MAXAGENTS=16384 USE_GEOIP=1 TARGET=server PCRE2_SYSTEM=yes 
-make DATABASE=mysql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
+make %{?_smp_mflags} DATABASE=mysql MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
 mkdir mariadb
 cp ossec-dbd mariadb
 make clean
-make MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
+make %{?_smp_mflags} MAXAGENTS=16384 TARGET=server PCRE2_SYSTEM=yes %{?make_magic_opt}
 #make DATABASE=mysql MAXAGENTS=16384  TARGET=server
 
 popd
@@ -774,6 +774,10 @@ fi
 
 # Changes
 %changelog
+* Tue Sep 15 2026 Support <support@atomicorp.com> - 4.4.0-1
+- Update to 4.4.0
+- Honor %{_smp_mflags} for parallel make in %build
+
 * Tue Aug 25 2026 Support <support@atomicorp.com> - 4.3.0-1
 - Update to 4.3.0
 
