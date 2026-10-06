@@ -384,11 +384,18 @@ int main(int argc, char **argv)
     printf("INFO: Using agent name as: %s\n", agentname);
 
     memset(buf, 0, sizeof(buf));
-    if (authpass) {
-        snprintf(buf, 2048, "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
-    }
-    else {
-        snprintf(buf, 2048, "OSSEC A:'%s'\n", agentname);
+    {
+        int reqlen;
+
+        if (authpass) {
+            reqlen = snprintf(buf, sizeof(buf), "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
+        } else {
+            reqlen = snprintf(buf, sizeof(buf), "OSSEC A:'%s'\n", agentname);
+        }
+        if (reqlen < 0 || (size_t)reqlen >= sizeof(buf)) {
+            printf("ERROR: Enrollment request is too long.\n");
+            exit(1);
+        }
     }
 
     ret = SSL_write(ssl, buf, strlen(buf));
