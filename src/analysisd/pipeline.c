@@ -31,7 +31,16 @@
 
 #include <errno.h>
 #include <poll.h>
+/* GCC 4.9+ and Clang provide <stdatomic.h>. EL7's GCC 4.8 does not, but it
+ * does have the __atomic_* builtins used below.
+ */
+#if defined(__clang__) || (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)))
 #include <stdatomic.h>
+#else
+#define _Atomic
+#define atomic_load(ptr) __atomic_load_n((ptr), __ATOMIC_SEQ_CST)
+#define atomic_store(ptr, val) __atomic_store_n((ptr), (val), __ATOMIC_SEQ_CST)
+#endif
 #include <stdint.h>
 #include <sys/socket.h>
 #include <time.h>
@@ -70,7 +79,8 @@ os_queue *writer_queue_fts = NULL;
 os_queue *raw_input_queue = NULL;
 
 /* Cross-thread flags/fd: sig_atomic_t is only defined vs signal handlers.
- * _Atomic gives well-defined concurrent loads/stores between pthreads.
+ * Every read and write goes through atomic_load/atomic_store so EL7's
+ * __atomic fallback and C11 _Atomic stay equivalent.
  */
 static _Atomic int analysisd_shutting_down = 0;
 static _Atomic int pipeline_m_queue = -1;
@@ -141,7 +151,7 @@ static void analysisd_warn_dropped(const char *where)
     unsigned int shard_drop;
     unsigned int arch_drop;
 
-    if (analysisd_shutting_down) {
+    if (atomic_load(&analysisd_shutting_down)) {
         return;
     }
 
@@ -339,7 +349,7 @@ static int analysisd_push_decoded(Eventinfo *lf)
     if (analysisd_queue_push_wait(decode_queue_event_output[shard], lf,
                                   cfg_shard_push_wait_ms) != 0) {
         Free_Eventinfo(lf);
-        if (!analysisd_shutting_down) {
+        if (!atomic_load(&analysisd_shutting_down)) {
             analysisd_inc_shard_dropped();
             analysisd_inc_dropped_events();
             analysisd_warn_dropped("decode->shard");
@@ -366,7 +376,7 @@ int analysisd_enqueue_alert(Eventinfo *lf)
         return 0;
     }
 
-    if (analysisd_shutting_down) {
+    if (atomic_load(&analysisd_shutting_down)) {
         /* Caller still owns lf. */
         return -1;
     }
@@ -397,7 +407,7 @@ int analysisd_enqueue_statistical(Eventinfo *lf)
         return 0;
     }
 
-    if (analysisd_shutting_down) {
+    if (atomic_load(&analysisd_shutting_down)) {
         return -1;
     }
 
@@ -623,7 +633,7 @@ static void *analysisd_writer_log_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         lf = (Eventinfo *)os_queue_pop_ex(writer_queue_log);
         if (!lf) {
             break;
@@ -649,7 +659,7 @@ static void *analysisd_writer_statistical_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         lf = (Eventinfo *)os_queue_pop_ex(writer_queue_statistical);
         if (!lf) {
             break;
@@ -673,7 +683,7 @@ static void *analysisd_writer_archive_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         lf = (Eventinfo *)os_queue_pop_ex(writer_queue_archive);
         if (!lf) {
             break;
@@ -698,7 +708,7 @@ static void *analysisd_writer_firewall_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         lf = (Eventinfo *)os_queue_pop_ex(writer_queue_firewall);
         if (!lf) {
             break;
@@ -720,7 +730,7 @@ static void *analysisd_writer_fts_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         line = (char *)os_queue_pop_ex(writer_queue_fts);
         if (!line) {
             break;
@@ -752,10 +762,10 @@ static void *analysisd_decode_worker_thread(void *arg)
     os_block_worker_signals();
     memset(&decoder_match, 0, sizeof(decoder_match));
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         msg = (char *)os_queue_pop_ex(input_queue);
         if (!msg) {
-            if (analysisd_shutting_down) {
+            if (atomic_load(&analysisd_shutting_down)) {
                 break;
             }
             continue;
@@ -798,10 +808,10 @@ static void *analysisd_decode_syscheck_thread(void *arg)
     os_block_worker_signals();
     SyscheckInit();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         msg = (char *)os_queue_pop_ex(decode_queue_syscheck_input);
         if (!msg) {
-            if (analysisd_shutting_down) {
+            if (atomic_load(&analysisd_shutting_down)) {
                 break;
             }
             continue;
@@ -839,10 +849,10 @@ static void *analysisd_decode_rootcheck_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         msg = (char *)os_queue_pop_ex(decode_queue_rootcheck_input);
         if (!msg) {
-            if (analysisd_shutting_down) {
+            if (atomic_load(&analysisd_shutting_down)) {
                 break;
             }
             continue;
@@ -879,10 +889,10 @@ static void *analysisd_decode_hostinfo_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         msg = (char *)os_queue_pop_ex(decode_queue_hostinfo_input);
         if (!msg) {
-            if (analysisd_shutting_down) {
+            if (atomic_load(&analysisd_shutting_down)) {
                 break;
             }
             continue;
@@ -932,10 +942,10 @@ static void *analysisd_process_event_thread(void *arg)
     memset(&rule_match, 0, sizeof(rule_match));
     os_regex_set_thread_match(&rule_match);
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         lf = (Eventinfo *)os_queue_pop_ex(decode_queue_event_output[tid]);
         if (!lf) {
-            if (analysisd_shutting_down) {
+            if (atomic_load(&analysisd_shutting_down)) {
                 break;
             }
             continue;
@@ -1055,10 +1065,10 @@ static void *analysisd_input_demux_thread(void *arg)
     (void)arg;
     os_block_worker_signals();
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         copy = (char *)os_queue_pop_ex(raw_input_queue);
         if (!copy) {
-            if (analysisd_shutting_down) {
+            if (atomic_load(&analysisd_shutting_down)) {
                 break;
             }
             continue;
@@ -1410,7 +1420,7 @@ void analysisd_pipeline_run(int m_queue)
                 ARGV0, process_event_thread_count);
     }
 
-    while (!analysisd_shutting_down) {
+    while (!atomic_load(&analysisd_shutting_down)) {
         sleep(1);
     }
 
