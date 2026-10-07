@@ -9,6 +9,32 @@
 
 #include "setup-shared.h"
 
+/*
+ * Replace inherited ACEs with an allow-list: NT AUTHORITY\SYSTEM (the
+ * OssecSvc account) and BUILTIN\Administrators. (OI)(CI) propagates to
+ * files and subfolders (#182).
+ */
+static int set_allow_list(void)
+{
+    const char *cmds[] = {
+        "icacls . /inheritance:r /T /C /Q",
+        "icacls . /grant \"*S-1-5-18:(OI)(CI)F\" /T /C /Q",
+        "icacls . /grant \"*S-1-5-32-544:(OI)(CI)F\" /T /C /Q",
+        NULL
+    };
+    int i;
+
+    for (i = 0; cmds[i] != NULL; i++) {
+        int rc = system(cmds[i]);
+
+        if (rc != 0) {
+            printf("%s: ERROR: '%s' returned %d.\n", ARGV0, cmds[i], rc);
+            return (0);
+        }
+    }
+
+    return (1);
+}
 
 /* Set up Windows after installation */
 int main(int argc, char **argv)
@@ -53,26 +79,34 @@ int main(int argc, char **argv)
         snprintf(cmd, OS_MAXSTR, "move help.txt ../");
         system(cmd);
 
-        /* Change permissions */
-        system("echo y|icacls * /T \"*S-1-5-32-544:F\" ");
+        /* Allow SYSTEM and Administrators; UI and docs are moved aside. */
+        {
+            int acl_ok = set_allow_list();
 
-        /* Copy them back */
-        snprintf(cmd, OS_MAXSTR, "move ..\\os_win32ui.exe .");
-        system(cmd);
+            /* Copy them back */
+            snprintf(cmd, OS_MAXSTR, "move ..\\os_win32ui.exe .");
+            system(cmd);
 
-        snprintf(cmd, OS_MAXSTR, "move ..\\win32ui.exe .");
-        system(cmd);
+            snprintf(cmd, OS_MAXSTR, "move ..\\win32ui.exe .");
+            system(cmd);
 
-        snprintf(cmd, OS_MAXSTR, "move ..\\uninstall.exe .");
-        system(cmd);
+            snprintf(cmd, OS_MAXSTR, "move ..\\uninstall.exe .");
+            system(cmd);
 
-        snprintf(cmd, OS_MAXSTR, "move ..\\doc.html .");
-        system(cmd);
+            snprintf(cmd, OS_MAXSTR, "move ..\\doc.html .");
+            system(cmd);
 
-        snprintf(cmd, OS_MAXSTR, "move ..\\help.txt .");
-        system(cmd);
+            snprintf(cmd, OS_MAXSTR, "move ..\\help.txt .");
+            system(cmd);
+
+            if (!acl_ok) {
+                return (0);
+            }
+        }
     } else {
-        system("echo y|icacls . /T /G  \"*S-1-5-32-544:F\" ");
+        if (!set_allow_list()) {
+            return (0);
+        }
     }
 
     return (1);
