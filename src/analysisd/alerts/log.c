@@ -89,7 +89,7 @@ void OS_LogOutput(Eventinfo *lf)
     printf(
         "** Alert %ld.%ld:%s - %s\n"
         "%d %s %02d %s %s%s%s\nRule: %d (level %d) -> '%s'"
-        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%.1256s\n",
+        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%s\n",
         (long int)lf->time,
         lf->alert_id ? lf->alert_id : __crt_ftell,
         lf->generated_rule->alert_opts & DO_MAILALERT ? " mail " : "",
@@ -149,7 +149,7 @@ void OS_LogOutput(Eventinfo *lf)
 
         if (lasts) {
             while (*lasts) {
-                printf("%.1256s\n", *lasts);
+                printf("%s\n", *lasts);
                 lasts++;
             }
             if (!lf->alert_last_events && lf->generated_rule) {
@@ -180,7 +180,7 @@ void OS_Log(Eventinfo *lf)
         fprintf(_aflog,
                 "** Alert %ld.%ld:%s - %s\n"
                 "%d %s %02d %s %s%s%s\nRule: %d (level %d) -> '%s'"
-                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%.1256s\n",
+                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n%s\n",
                 (long int)lf->time,
                 alert_id,
                 lf->generated_rule->alert_opts & DO_MAILALERT ? " mail " : "",
@@ -235,7 +235,7 @@ void OS_Log(Eventinfo *lf)
         /* Print the last events if present */
         if (lasts) {
             while (*lasts) {
-                fprintf(_aflog, "%.1256s\n", *lasts);
+                fprintf(_aflog, "%s\n", *lasts);
                 lasts++;
             }
             if (!lf->alert_last_events && lf->generated_rule) {
