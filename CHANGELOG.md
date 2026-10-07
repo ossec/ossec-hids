@@ -29,6 +29,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 - @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
 - @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
 - @atomicturtle - [PR 2302](https://github.com/ossec/ossec-hids/pull/2302) - Forward analysisd JSON alerts over syslog so agent_name is a first-class field; keep jsonout on when undeclared
+- @atomicturtle - Allow silent Windows agent installs to skip IIS logging and integrity checking via `/IISLogging=no` and `/IntegrityChecking=no` (#1000)
 
 **Bug Fixes**
 

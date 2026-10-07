@@ -13,9 +13,11 @@
 ; include SimpleSC
 !addplugindir "SimpleSC"
 
-; include GetTime
+; include FileFunc helpers (time + silent-install cmdline options)
 !include "FileFunc.nsh"
 !insertmacro GetTime
+!insertmacro GetParameters
+!insertmacro GetOptions
 
 ; output file
 !ifndef OutFile
@@ -119,6 +121,23 @@ Function .onInit
         ${EndIf}
     ${EndIf}
     ServiceStopped:
+FunctionEnd
+
+; Return 0 in $R9 if "/$R8=no" (any case of no) was passed on the cmdline (#1000).
+Function SkipOptionalComponent
+    ${GetParameters} $R0
+    ClearErrors
+    ${GetOptions} $R0 "/$R8=" $R1
+    IfErrors skip_opt_keep
+        StrCmp $R1 "no" skip_opt_yes
+        StrCmp $R1 "NO" skip_opt_yes
+        StrCmp $R1 "No" skip_opt_yes
+        Goto skip_opt_keep
+    skip_opt_yes:
+        StrCpy $R9 0
+        Return
+    skip_opt_keep:
+        StrCpy $R9 1
 FunctionEnd
 
 ; main install section
@@ -338,14 +357,22 @@ Section "OSSEC Agent (required)" MainSec
     SetupComplete:
 SectionEnd
 
-; add IIS logs
+; Optional: skip with /IISLogging=no (silent or GUI cmdline)
 Section "Scan and monitor IIS logs (recommended)" IISLogs
+    StrCpy $R8 "IISLogging"
+    Call SkipOptionalComponent
+    StrCmp $R9 0 skip_iis_logs
     nsExec::ExecToLog '"$INSTDIR\setup-iis.exe" "$INSTDIR"'
+    skip_iis_logs:
 SectionEnd
 
-; add integrity checking
+; Optional: skip with /IntegrityChecking=no (silent or GUI cmdline)
 Section "Enable integrity checking (recommended)" IntChecking
+    StrCpy $R8 "IntegrityChecking"
+    Call SkipOptionalComponent
+    StrCmp $R9 0 skip_int_checking
     nsExec::ExecToLog '"$INSTDIR\setup-syscheck.exe" "$INSTDIR" "enable"'
+    skip_int_checking:
 SectionEnd
 
 ; uninstall section
