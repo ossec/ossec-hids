@@ -326,9 +326,16 @@ int main(int argc, char **argv)
             char *ret = fgets(buf, 4095, fp);
 
             if (ret && strlen(buf) > 2) {
-                /* Remove newline */
-                buf[strlen(buf) - 1] = '\0';
-                authpass = strdup(buf);
+                size_t len = strlen(buf);
+
+                /* Remove a trailing newline only. A file with no newline
+                 * keeps every password character. */
+                while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
+                    buf[--len] = '\0';
+                }
+                if (buf[0] != '\0') {
+                    authpass = strdup(buf);
+                }
             }
 
             fclose(fp);

@@ -315,19 +315,33 @@ int main(int argc, char **argv)
         buf[0] = '\0';
 
         if (fp) {
+            size_t len;
+
             buf[4096] = '\0';
             fgets(buf, 4095, fp);
 
-            if (strlen(buf) > 2) {
-                authpass = strndup(buf, 32);
-                if(!authpass) {
-                    fprintf(stderr, "Could not set the authpass: %s", strerror(errno));
-                    exit(1);
+            /* Keep the password itself. A trailing newline is not part of it,
+             * and the password is not truncated to 32 characters. */
+            len = strlen(buf);
+            if (len > 2) {
+                while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
+                    buf[--len] = '\0';
                 }
+                if (buf[0] != '\0') {
+                    authpass = strdup(buf);
+                    if(!authpass) {
+                        fprintf(stderr, "Could not set the authpass: %s", strerror(errno));
+                        exit(1);
+                    }
+                    printf("INFO: Using specified password.\n");
+                } else {
+                    authpass = NULL;
+                }
+            } else {
+                authpass = NULL;
             }
 
             fclose(fp);
-            printf("INFO: Using specified password.\n");
         }
     }
     if (!authpass) {
@@ -370,11 +384,18 @@ int main(int argc, char **argv)
     printf("INFO: Using agent name as: %s\n", agentname);
 
     memset(buf, 0, sizeof(buf));
-    if (authpass) {
-        snprintf(buf, 2048, "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
-    }
-    else {
-        snprintf(buf, 2048, "OSSEC A:'%s'\n", agentname);
+    {
+        int reqlen;
+
+        if (authpass) {
+            reqlen = snprintf(buf, sizeof(buf), "OSSEC PASS: %s OSSEC A:'%s'\n", authpass, agentname);
+        } else {
+            reqlen = snprintf(buf, sizeof(buf), "OSSEC A:'%s'\n", agentname);
+        }
+        if (reqlen < 0 || (size_t)reqlen >= sizeof(buf)) {
+            printf("ERROR: Enrollment request is too long.\n");
+            exit(1);
+        }
     }
 
     ret = SSL_write(ssl, buf, strlen(buf));
