@@ -1972,7 +1972,9 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
 
 <!-- Windows IIS decoder for default settings
   -  Tested with IIS 7.5 and IIS 8.5 (Windows 2008R2 and Windows 2012R2)
-  -  Will extract URL, Source IP, and HTTP response code
+  -  Will extract action, URL, server port, source IP, User-Agent, and HTTP response code
+  -  #Fields: date time s-ip cs-method cs-uri-stem cs-uri-query s-port cs-username
+  -           c-ip cs(User-Agent) cs(Referer) sc-status ...
   -  Examples:
   -  IIS 7.5
   -  2015-07-28 15:07:26 1.2.3.4 GET /QOsa/Browser/Default.aspx UISessionId=SN1234123&DeviceId=SN12312232SHARP+MX-4111N 80 - 31.3.3.7 OpenSystems/1.0;+product-family="85";+product-version="123ER123" 302 0 0 624
@@ -1987,8 +1989,8 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <type>web-log</type>
   <use_own_name>true</use_own_name>
   <prematch_pcre2 offset="after_parent">^\S+ GET |^\S+ POST </prematch_pcre2>
-  <pcre2 offset="after_prematch">(\S+ \S*) .* (\S+) \S*.* (\d{3}) \S+ \S+ \S+</pcre2>
-  <order>url,srcip,id</order>
+  <pcre2 offset="after_parent">^\S+ (\w+) (\S+ \S+) (\S+) \S+ (\S+) (\S+) .*?(\d{3}) </pcre2>
+  <order>action, url, srcport, srcip, user_agent, id</order>
 </decoder>
 
 

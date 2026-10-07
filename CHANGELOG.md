@@ -21,6 +21,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **General**
 
+- @atomicturtle - Extract User-Agent (and action/srcport) from default IIS W3C access logs (#989)
 - @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
 - @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
 - @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
