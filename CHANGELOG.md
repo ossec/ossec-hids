@@ -31,6 +31,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
+- @atomicturtle - Stop truncating alert full_log / previous-output lines at 1256 bytes in alerts.log (#473)
 - @atomicturtle - Stop Windows CreateFile/GetSecurityInfo failures from becoming false syscheck size-change alerts (#1581)
 - @atomicturtle - Drop rule 31107 so search URLs no longer suppress SQLi/XSS/web-attack alerts (#1078)
 - @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
