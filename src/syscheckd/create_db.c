@@ -335,20 +335,19 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                              opts & CHECK_SHA256SUM ? sha256_sum : "xxx");
                 }
 
-                /* Owner SID for the manager alert (reuse attrs/ACL above). */
+                /* Owner SID for the manager alert (reuse attrs/ACL above).
+                 * Never send CreateFile=/GetSecurityInfo= on the integrity
+                 * channel (#1581); log and skip this file for the scan. */
                 alert_msg[OS_MAXSTR] = '\0';
                 hFile = CreateFile(file_name, GENERIC_READ,
                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hFile == INVALID_HANDLE_VALUE) {
-                    DWORD dwErrorCode = GetLastError();
-                    char err_msg[PATH_MAX + 4];
+                    merror("%s: WARN: CreateFile failed for '%s' (%lu); "
+                           "skipping file this scan",
+                           ARGV0, file_name, (unsigned long)GetLastError());
                     free(hash_full);
                     free(acl_snap);
-                    err_msg[PATH_MAX + 3] = '\0';
-                    snprintf(err_msg, PATH_MAX + 4, "CreateFile=%ld %s",
-                             dwErrorCode, file_name);
-                    send_syscheck_msg(err_msg);
                     return -1;
                 }
 
@@ -356,17 +355,12 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
                                             OWNER_SECURITY_INFORMATION,
                                             &pSidOwner, NULL, NULL, NULL, &pSD);
                 if (dwRtnCode != ERROR_SUCCESS) {
-                    DWORD dwErrorCode = GetLastError();
+                    merror("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
+                           "skipping file this scan",
+                           ARGV0, file_name, (unsigned long)GetLastError());
                     CloseHandle(hFile);
                     free(hash_full);
                     free(acl_snap);
-                    {
-                        char err_msg[PATH_MAX + 4];
-                        err_msg[PATH_MAX + 3] = '\0';
-                        snprintf(err_msg, PATH_MAX + 4, "GetSecurityInfo=%ld %s",
-                                 dwErrorCode, file_name);
-                        send_syscheck_msg(err_msg);
-                    }
                     return -1;
                 }
 

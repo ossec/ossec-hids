@@ -1282,6 +1282,18 @@ int DecodeSyscheck(Eventinfo *lf)
     /* Checksum is at the beginning of the log */
     c_sum = lf->log;
 
+    /* Reject non-sum payloads (e.g. legacy Windows CreateFile=/GetSecurityInfo=
+     * API errors that agents used to send on the integrity channel). Without
+     * a ':', DB_ProcessFoundEntry treats the whole string as a size (#1581).
+     * Deleted files use checksum "-1".
+     */
+    if (strcmp(c_sum, "-1") != 0 && strchr(c_sum, ':') == NULL) {
+        merror("%s: WARN: Ignoring invalid syscheck checksum for '%s' (%.64s).",
+               ARGV0, f_name, c_sum);
+        lf->data = NULL;
+        return (0);
+    }
+
     /* Extract the MD5 hash and search for it in the allowlist
      * Sample message:
      * 0:0:0:0:78f5c869675b1d09ddad870adad073f9:bd6c8d7a58b462aac86475e59af0e22954039c50
