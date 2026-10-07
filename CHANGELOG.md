@@ -30,6 +30,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
+- @atomicturtle - Drop rule 31107 so search URLs no longer suppress SQLi/XSS/web-attack alerts (#1078)
 - @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
 - @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
 - @atomicturtle - [PR 2303](https://github.com/ossec/ossec-hids/pull/2303) - Stop remoted from writing the sender counter into agent 0 rids on key reload (#2065)
