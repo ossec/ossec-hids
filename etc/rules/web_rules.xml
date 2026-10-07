@@ -93,15 +93,6 @@
   </rule>
 
 
-  <!-- If your site have a search engine, you may need to ignore
-    - it in here.
-    -->
-  <rule id="31107" level="0">
-    <if_sid>31103, 31104, 31105</if_sid>
-    <url_pcre2>^/search\.php\?search=|^/index\.php\?searchword=</url_pcre2>
-    <description>Ignored URLs for the web attacks</description>
-  </rule>
-
   <rule id="31115" level="13" maxsize="7900">
     <if_sid>31100</if_sid>
     <description>URL too long. Higher than allowed on most </description>
