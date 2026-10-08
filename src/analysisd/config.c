@@ -39,6 +39,7 @@ int GlobalConf(const char *cfgfile)
     Config.mailnotify = -1;
     Config.keeplogdate = 0;
     Config.syscheck_alert_new = 0;
+    Config.syscheck_report_new_as_changed = 0;
     Config.syscheck_auto_ignore = 1;
     Config.ar = 0;
 

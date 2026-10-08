@@ -21,6 +21,7 @@ int Read_GlobalSK(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     const char *xml_ignore = "ignore";
     const char *xml_auto_ignore = "auto_ignore";
     const char *xml_alert_new_files = "alert_new_files";
+    const char *xml_report_new_as_changed = "report_new_files_as_changed";
 
     _Config *Config;
     Config = (_Config *)configp;
@@ -61,6 +62,15 @@ int Read_GlobalSK(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                 Config->syscheck_alert_new = 1;
             } else if (strcmp(node[i]->content, "no") == 0) {
                 Config->syscheck_alert_new = 0;
+            } else {
+                merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
+                return (OS_INVALID);
+            }
+        } else if (strcmp(node[i]->element, xml_report_new_as_changed) == 0) {
+            if (strcmp(node[i]->content, "yes") == 0) {
+                Config->syscheck_report_new_as_changed = 1;
+            } else if (strcmp(node[i]->content, "no") == 0) {
+                Config->syscheck_report_new_as_changed = 0;
             } else {
                 merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                 return (OS_INVALID);
