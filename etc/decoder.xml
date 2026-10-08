@@ -1989,7 +1989,13 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <type>web-log</type>
   <use_own_name>true</use_own_name>
   <prematch_pcre2 offset="after_parent">^\S+ GET |^\S+ POST </prematch_pcre2>
-  <pcre2 offset="after_parent">^\S+ (\w+) (\S+ \S+) (\S+) \S+ (\S+) (\S+) .*?(\d{3}) </pcre2>
+  <!-- cs(Referer) is optional and is not captured. sc-status is the
+       three-digit field followed by sc-substatus, sc-win32-status, and
+       sc-bytes (and, when present, cs-bytes and time-taken). That lines
+       the fields up at the end of the record, so a referer of /404 or of
+       a bare 200 cannot become the response code, and a three-digit
+       sc-substatus such as 500.100 stays the substatus. -->
+  <pcre2 offset="after_parent">^\S+ (\w+) (\S+ \S+) (\S+) \S+ (\S+) (\S+)(?: \S+)? (\d{3}) \d+ \d+ \d+(?: \d+ \d+)?$</pcre2>
   <order>action, url, srcport, srcip, user_agent, id</order>
 </decoder>
 

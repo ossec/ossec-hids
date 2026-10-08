@@ -36,6 +36,10 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
+- @atomicturtle - Take the IIS default W3C ``sc-status`` from the fields that follow it, so a referer of ``/404`` or ``200`` and a three-digit ``sc-substatus`` are not the response code (#989)
+- @atomicturtle - Reject an ossec-dbd INSERT whose base query cannot fit, and reserve the SQL buffer's terminating NUL when capping ``full_log`` (#1959)
+- @atomicturtle - Bound agent decrypt backoff so a burst of bad or empty replies sleeps once per drain and still fails over (#1944)
+- @atomicturtle - Log ``GetSecurityInfo``'s return code when a Windows FIM owner lookup fails (#1581)
 - @atomicturtle - Apply both exact and sregex ``registry_ignore`` entries so default ``\Enum$`` is not skipped (#851)
 - @atomicturtle - Scan realtime-created paths with ``read_file`` so short-lived files do not flood ossec.log with ``Error opening directory`` (#1792)
 - @atomicturtle - Extract Windows 4625 UPN Account Name (skip Subject ``-``) and budget ossec-dbd INSERT fields so oversized alerts cannot truncate mid-quote (#1959)

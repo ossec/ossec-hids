@@ -21,6 +21,7 @@ void *receiver_thread(__attribute__((unused)) void *none)
 {
     extern agent *agt;
     int recv_b;
+    int rejected;
 
     char file[OS_SIZE_1024 + 1];
     char buffer[OS_MAXSTR + 1];
@@ -69,13 +70,19 @@ void *receiver_thread(__attribute__((unused)) void *none)
         }
 
         /* Read until no more messages are available */
+        rejected = 0;
         while ((recv_b = recv(agt->sock, buffer, OS_SIZE_1024, 0)) > 0) {
             /* Id of zero -- only one key allowed */
             tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
             if (tmp_msg == NULL) {
                 merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
-                /* Avoid a hot drain loop if the socket is full of garbage (#1944). */
-                sleep(1);
+                /* Drain a queued burst, then one delay — not one second per
+                 * datagram. A continuous flood still yields (#1944).
+                 */
+                rejected++;
+                if (rejected >= 32) {
+                    break;
+                }
                 continue;
             }
 
@@ -217,6 +224,10 @@ void *receiver_thread(__attribute__((unused)) void *none)
                 merror("%s: WARN: Unknown message received. No action defined.",
                        ARGV0);
             }
+        }
+
+        if (rejected > 0) {
+            sleep(1);
         }
     }
 

@@ -251,13 +251,18 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
         break;
     }
 
-    if (n < 0) {
+    /* snprintf's size argument includes the NUL, so a base query of
+     * OS_SIZE_8192 bytes or more cannot be stored. Reject it instead of
+     * inserting a truncated statement.
+     */
+    if (n < 0 || (size_t)n >= OS_SIZE_8192) {
         free(fulllog);
         merror("%s: Unable to build alert SQL.", ARGV0);
         return (0);
     }
 
-    room = ((size_t)n < OS_SIZE_8192) ? (OS_SIZE_8192 - (size_t)n) : 0;
+    /* Final snprintf is limited to OS_SIZE_8192 (8191 chars + NUL). */
+    room = (OS_SIZE_8192 - 1) - (size_t)n;
     if (room < 2) {
         fulllog[0] = '\0';
     } else {
@@ -267,7 +272,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     /* Generate final SQL */
     switch (db_config->db_type) {
       case MYSQLDB:
-        snprintf(sql_query, OS_SIZE_8192,
+        n = snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,user,full_log,tld) "
                  "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s','%.2s')",
@@ -285,7 +290,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
         break;
 
       case POSTGDB:
-        snprintf(sql_query, OS_SIZE_8192,
+        n = snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,\"user\",full_log) "
                  "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s')",
@@ -301,10 +306,19 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                  user_sql,
                  fulllog);
         break;
+
+      default:
+        n = (int)strlen(sql_query);
+        break;
     }
 
     free(fulllog);
     fulllog = NULL;
+
+    if (n < 0 || (size_t)n >= OS_SIZE_8192) {
+        merror("%s: Unable to build alert SQL.", ARGV0);
+        return (0);
+    }
 
     /* Insert into the db */
     if (!osdb_query_insert(db_config->conn, sql_query)) {

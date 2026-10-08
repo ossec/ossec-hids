@@ -358,7 +358,7 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                 if (dwRtnCode != ERROR_SUCCESS) {
                     merror("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
                            "skipping file this scan",
-                           ARGV0, file_name, (unsigned long)GetLastError());
+                           ARGV0, file_name, (unsigned long)dwRtnCode);
                     CloseHandle(hFile);
                     free(hash_full);
                     free(acl_snap);
