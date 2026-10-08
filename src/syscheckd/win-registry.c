@@ -322,7 +322,10 @@ void os_winreg_open_key(char *subkey, char *full_key_name)
     }
     ig_count++;
 
-    /* Registry ignore list */
+    /* Registry ignore lists (exact and sregex are independent; do not
+     * else-if them — default ossec.conf ships both, and the sregex
+     * \Enum$ was never consulted when any exact entry existed (#851).
+     */
     if (full_key_name && syscheck.registry_ignore) {
         while (syscheck.registry_ignore[i] != NULL) {
             if (strcasecmp(syscheck.registry_ignore[i], full_key_name) == 0) {
@@ -330,7 +333,9 @@ void os_winreg_open_key(char *subkey, char *full_key_name)
             }
             i++;
         }
-    } else if (full_key_name && syscheck.registry_ignore_regex) {
+    }
+
+    if (full_key_name && syscheck.registry_ignore_regex) {
         i = 0;
         while (syscheck.registry_ignore_regex[i] != NULL) {
             if (OSMatch_Execute(full_key_name, strlen(full_key_name),
