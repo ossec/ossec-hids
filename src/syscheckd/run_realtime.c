@@ -48,7 +48,8 @@ int realtime_checksumfile(const char *file_name)
         c_sum[0] = '\0';
         c_sum[OS_MAXSTR] = '\0';
 
-        /* -1: missing file already alerted. -2: read failed; caller retries. */
+        /* -1: missing (alert deferred when the realtime queue asked).
+         * -2: read failed; caller retries. */
         {
             int read_rc = c_read_file(file_name, buf, c_sum);
 
@@ -183,6 +184,7 @@ int realtime_checksumfile(const char *file_name)
         /* New file */
         char *c;
         int i;
+        int read_rc = 0;
         buf = strdup(file_name);
 
         /* Find container directory */
@@ -196,7 +198,8 @@ int realtime_checksumfile(const char *file_name)
                     /* New realtime paths are files; read_dir() would opendir()
                      * and WARN on ENOENT races for ephemeral names (#1792).
                      */
-                    read_file(file_name, syscheck.opts[i], syscheck.filerestrict[i]);
+                    read_rc = read_file(file_name, syscheck.opts[i],
+                                        syscheck.filerestrict[i]);
                     break;
                 }
             }
@@ -207,6 +210,12 @@ int realtime_checksumfile(const char *file_name)
         }
 
         free(buf);
+        /* A sharing failure on a file that is not in the database yet
+         * returns -1 from read_file. Closing the handle may not notify
+         * again, so the queue must retry it. */
+        if (read_rc < 0) {
+            return (-2);
+        }
     }
 
     return (0);
@@ -421,8 +430,31 @@ void realtime_pending_process(void)
         }
 
         c_read_set_quiet(entry->attempts > 0);
+        /* Do not alert from inside the checksum. The file can disappear
+         * after rt_path_missing() and before the stat in c_read_file. */
+        c_read_defer_missing_alert(1);
         read_rc = realtime_checksumfile(entry->path);
+        c_read_defer_missing_alert(0);
         c_read_set_quiet(0);
+
+        if (read_rc == -1) {
+            if (!entry->missing_seen) {
+                entry->missing_seen = 1;
+                entry->due = rt_due_after(RT_DELETE_CONFIRM_MS);
+                prev = entry;
+                continue;
+            }
+
+            {
+                char alert_msg[PATH_MAX + 4];
+
+                alert_msg[PATH_MAX + 3] = '\0';
+                snprintf(alert_msg, PATH_MAX + 4, "-1 %s", entry->path);
+                send_syscheck_msg(alert_msg);
+            }
+            rt_pend_drop(prev, entry);
+            continue;
+        }
 
         if (read_rc == -2) {
             entry->missing_seen = 0;

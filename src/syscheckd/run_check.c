@@ -40,9 +40,17 @@ static unsigned int syscheck_send_failures = 0;
 /* Realtime retries re-enter c_read_file. Warn on the first failure only. */
 static int c_read_quiet = 0;
 
+/* Realtime confirms a missing path before the delete alert is sent. */
+static int c_read_defer_missing = 0;
+
 void c_read_set_quiet(int quiet)
 {
     c_read_quiet = quiet ? 1 : 0;
+}
+
+void c_read_defer_missing_alert(int defer)
+{
+    c_read_defer_missing = defer ? 1 : 0;
 }
 
 #define c_read_warn(...) do { \
@@ -520,9 +528,13 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (errno == ENOENT || errno == ENOTDIR) {
             char alert_msg[PATH_MAX+4];
 
-            alert_msg[PATH_MAX + 3] = '\0';
-            snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-            send_syscheck_msg(alert_msg);
+            /* The realtime queue may see the path vanish between its own
+             * existence check and this stat. It confirms before alerting. */
+            if (!c_read_defer_missing) {
+                alert_msg[PATH_MAX + 3] = '\0';
+                snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+                send_syscheck_msg(alert_msg);
+            }
             return (-1);
         }
 

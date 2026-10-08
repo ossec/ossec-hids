@@ -72,12 +72,17 @@ int realtime_pending_ms(void);
 /* Suppress c_read_file warnings while a realtime retry is in progress. */
 void c_read_set_quiet(int quiet);
 
+/* When set, a missing path returns -1 without sending the delete alert.
+ * The realtime queue confirms the path is still gone before it alerts. */
+void c_read_defer_missing_alert(int defer);
+
 /* Process the content of the file changes */
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));
 
 /* Get checksum changes.
- * Returns 0 on success, -1 if missing (delete alerted), -2 if metadata
- * or checksum read failed (caller should skip without alerting).
+ * Returns 0 on success, -1 if missing (delete alerted, unless the
+ * realtime queue deferred it), -2 if metadata or checksum read failed
+ * (caller should skip without alerting).
  */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum) __attribute__((nonnull));
 
