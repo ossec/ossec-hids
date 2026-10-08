@@ -207,16 +207,28 @@ static void *_Rules_ReadInsertDB(RuleInfo *rule, void *db_config)
         comment = rule->comment != NULL ? rule->comment : "NULL";
         snprintf(desc, sizeof(desc), "%s", comment);
 
-        /* Generate SQL. REPLACE is MySQL; PostgreSQL has no REPLACE. */
+        /* REPLACE is MySQL. PostgreSQL 9.2 (RHEL/CentOS 7) has neither
+         * REPLACE nor ON CONFLICT, which arrived in 9.5.
+         */
         if (dbc->db_type == POSTGDB) {
             snprintf(sql_query, OS_SIZE_1024 - 1,
-                     "INSERT INTO "
-                     "signature(rule_id, level, description) "
-                     "VALUES ('%u','%u','%s') "
-                     "ON CONFLICT (rule_id) DO UPDATE SET "
-                     "level = EXCLUDED.level, "
-                     "description = EXCLUDED.description",
-                     rule->sigid, rule->level, desc);
+                     "SELECT id FROM "
+                     "signature WHERE rule_id = '%u'",
+                     rule->sigid);
+
+            if (osdb_query_select(dbc->conn, sql_query) == 0) {
+                snprintf(sql_query, OS_SIZE_1024 - 1,
+                         "INSERT INTO "
+                         "signature(rule_id, level, description) "
+                         "VALUES ('%u','%u','%s')",
+                         rule->sigid, rule->level, desc);
+            } else {
+                snprintf(sql_query, OS_SIZE_1024 - 1,
+                         "UPDATE "
+                         "signature SET level='%u', description='%s' "
+                         "WHERE rule_id = '%u'",
+                         rule->level, desc, rule->sigid);
+            }
         } else {
             snprintf(sql_query, OS_SIZE_1024 - 1,
                      "REPLACE INTO "
