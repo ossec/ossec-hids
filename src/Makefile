@@ -94,27 +94,26 @@ ifeq (${uname_S},SunOS)
 		OSSEC_LDFLAGS+=-lsocket -lnsl -lresolv
 		LUA_PLAT=solaris
 		PATH:=${PATH}:/usr/ccs/bin:/usr/xpg4/bin:/opt/csw/gcc3/bin:/opt/csw/bin:/usr/sfw/bin
-		# A stock zone has gcc and no Studio cc (issue #2016).
+		# A stock zone has gcc and no Studio cc. Solaris 10 /bin/sh has no
+		# command -v, and that is the shell GNU make uses (issue #2016).
 		ifeq ($(origin CC),default)
-		ifeq ($(shell command -v cc >/dev/null 2>&1 && echo yes),)
+		ifeq ($(shell found=; IFS=:; for d in $$PATH; do \
+			if [ -n "$$d" ] && [ -x "$$d/cc" ] && [ -f "$$d/cc" ]; then found=yes; break; fi; \
+		done; echo $$found),)
 			CC:=gcc
 		endif
 		endif
 		# No system libpcre2 unless the user already chose PCRE2_SYSTEM.
 		ifeq ($(origin PCRE2_SYSTEM),file)
-		ifeq ($(shell command -v pcre2-config >/dev/null 2>&1 && echo yes),)
+		ifeq ($(shell found=; IFS=:; for d in $$PATH; do \
+			if [ -n "$$d" ] && [ -x "$$d/pcre2-config" ] && [ -f "$$d/pcre2-config" ]; then found=yes; break; fi; \
+		done; echo $$found),)
 			PCRE2_SYSTEM:=no
 		endif
 		endif
 		# /usr/sbin/install is the SVR4 script ("null was not found anywhere").
-		SOLARIS_INSTALL:=$(shell for c in /usr/gnu/bin/install /usr/bin/ginstall /usr/bin/install; do \
-			if [ -x $$c ] && $$c --version >/dev/null 2>&1; then echo $$c; exit 0; fi; \
-		done)
-		ifneq (${SOLARIS_INSTALL},)
-			INSTALL_CMD=${SOLARIS_INSTALL} -m $(1) -o $(2) -g $(3)
-		else
-			INSTALL_CMD=./install-shim-solaris.sh -m $(1) -o $(2) -g $(3)
-		endif
+		# ginstall is GNU install, including when /usr/sbin is first on PATH.
+		INSTALL_CMD=ginstall -m $(1) -o $(2) -g $(3)
 
 else
 ifeq (${uname_S},Darwin)
