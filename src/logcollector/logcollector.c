@@ -384,8 +384,13 @@ void LogCollectorStart()
                     }
                     logff[i].fp = NULL;
                     handle_file(i, 0, 1);
-                } else if (!logff[i].fp) {
-                    handle_file(i, 0, 0);
+                } else if (!logff[i].fp && logff[i].ign < 999) {
+                    /* The file is not open yet. The first open reads from
+                     * the start. A reopen after an error seeks to the end
+                     * so the file is not ingested twice. ign == 999 is the
+                     * open-attempt limit; a successful open must not clear it.
+                     */
+                    handle_file(i, logff[i].ign > 0 ? 1 : 0, 0);
                 }
             }
 

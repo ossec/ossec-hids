@@ -23,6 +23,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint
         WHERE conname = 'agent_server_name'
+          AND conrelid = 'agent'::regclass
     ) THEN
         ALTER TABLE agent ADD CONSTRAINT agent_server_name UNIQUE (server_id, name);
     END IF;

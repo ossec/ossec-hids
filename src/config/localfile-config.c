@@ -202,30 +202,11 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                 }
 
                 for (g = 0; paths[g] != NULL; g++) {
-                    if (strchr(paths[g], '%')) {
-                        struct tm *p;
-                        time_t l_time = time(0);
-                        char lfile[OS_FLSIZE + 1];
-                        size_t ret;
-
-                        p = localtime(&l_time);
-                        lfile[OS_FLSIZE] = '\0';
-                        ret = strftime(lfile, OS_FLSIZE, paths[g], p);
-                        if (ret == 0) {
-                            int k;
-
-                            merror(PARSE_ERROR, __local_name, paths[g]);
-                            for (k = g; paths[k] != NULL; k++) {
-                                free(paths[k]);
-                            }
-                            free(paths);
-                            return (OS_INVALID);
-                        }
-                        os_strdup(paths[g], logf[pl].ffile);
-                        os_strdup(paths[g], logf[pl].file);
-                    } else {
-                        os_strdup(paths[g], logf[pl].file);
-                    }
+                    /* Expanded names are real files. A '%' in the filename
+                     * is literal (for example 100%done.log), not a strftime
+                     * template. The template lives on the configured location.
+                     */
+                    os_strdup(paths[g], logf[pl].file);
                     free(paths[g]);
 
                     pl++;

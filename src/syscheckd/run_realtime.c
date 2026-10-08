@@ -229,6 +229,11 @@ int realtime_checksumfile(const char *file_name)
 #define RT_FIRST_DELAY_MS       200
 #define RT_DELETE_CONFIRM_MS    1000
 #define RT_RETRY_CAP_MS         5000
+/* Short retries, then 30s. After this many failures the file stays
+ * unreadable (mode 000 and similar). Drop it so the queue cannot grow
+ * without bound; the next scheduled scan stores the placeholder.
+ */
+#define RT_UNREADABLE_MAX       120
 
 typedef struct _rt_pend {
     char *path;
@@ -304,9 +309,9 @@ static unsigned int rt_backoff_ms(int attempts)
     if (attempts <= (int)(sizeof(steps) / sizeof(steps[0]))) {
         return steps[attempts - 1];
     }
-    /* The entry stays queued: closing the file is not a new event, so
-     * dropping it would lose the change until the next scheduled scan.
-     * After the short retries, wake infrequently. */
+    /* After the short retries, wake infrequently. RT_UNREADABLE_MAX
+     * drops the entry so a file that never becomes readable does not
+     * stay queued until the process exits. */
     return 30000;
 }
 
@@ -462,6 +467,12 @@ void realtime_pending_process(void)
         if (read_rc == -2) {
             entry->missing_seen = 0;
             entry->attempts++;
+            if (entry->attempts >= RT_UNREADABLE_MAX) {
+                merror("%s: ERROR: Realtime check of '%s' gave up after %d unreadable attempts.",
+                       ARGV0, entry->path, entry->attempts);
+                rt_pend_drop(prev, entry);
+                continue;
+            }
             entry->due = rt_due_after(rt_backoff_ms(entry->attempts));
             if (entry->attempts == 1) {
                 debug1("%s: DEBUG: Realtime check of '%s' will be retried.",

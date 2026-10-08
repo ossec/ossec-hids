@@ -33,6 +33,14 @@ static void chdir_to_install_dir(void)
     }
 
     slash = strrchr(path, '\\');
+    {
+        char *fwd = strrchr(path, '/');
+
+        /* GetModuleFileNameA keeps the separator used to launch the exe. */
+        if (fwd != NULL && (slash == NULL || fwd > slash)) {
+            slash = fwd;
+        }
+    }
     if (!slash || slash == path) {
         ErrorExit("%s: Unable to locate the install directory.", ARGV0);
     }

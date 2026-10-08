@@ -170,6 +170,10 @@ int main(int argc, char **argv)
         OS_PassEmptyKeyfile();
     }
 
+    /* Fail a bad monitord.notify_time here. send_msg() reads it under
+     * sendmsg_mutex, and getDefine_Int() calls ErrorExit. */
+    (void)get_notify_time();
+
 
     /* Check if the user and group given are valid */
     uid = Privsep_GetUser(user);
