@@ -32,10 +32,46 @@ int run_count = 0;
 /* Prototypes */
 void os_winreg_open_key(char *subkey, char *fullkey_name, int arch);
 
-/* Symmetric DB/alert identity: always tag with [x32] or [x64]. */
+/* DB/alert identity: 32-bit view stays untagged (legacy baseline compatible);
+ * 64-bit view is tagged [x64] so both can coexist when arch=both. */
 static void os_winreg_arch_key(char *out, size_t n, const char *path, int arch)
 {
-    snprintf(out, n, "%s [x%s]", path, (arch == ARCH_64BIT) ? "64" : "32");
+    if (arch == ARCH_64BIT) {
+        snprintf(out, n, "%s [x64]", path);
+    } else {
+        snprintf(out, n, "%s", path);
+    }
+}
+
+/* OS is 64-bit (WoW64 host), not merely that this agent binary is 64-bit. */
+static int os_winreg_os_is_64bit(void)
+{
+#ifdef _WIN64
+    return (1);
+#else
+    {
+        static int cached = -1;
+        BOOL wow64 = FALSE;
+        typedef BOOL (WINAPI *fn_IsWow64Process)(HANDLE, PBOOL);
+        fn_IsWow64Process fn;
+        FARPROC proc;
+
+        if (cached != -1) {
+            return (cached);
+        }
+
+        proc = GetProcAddress(GetModuleHandle("kernel32.dll"),
+                              "IsWow64Process");
+        /* void* hop avoids -Wcast-function-type on FARPROC → typed pointer */
+        fn = (fn_IsWow64Process)(void *)proc;
+        if (fn && fn(GetCurrentProcess(), &wow64) && wow64) {
+            cached = 1;
+        } else {
+            cached = 0;
+        }
+        return (cached);
+    }
+#endif
 }
 
 
@@ -359,13 +395,26 @@ void os_winreg_open_key(char *subkey, char *full_key_name, int arch)
     access = KEY_READ |
              ((arch == ARCH_64BIT) ? KEY_WOW64_64KEY : KEY_WOW64_32KEY);
 
-    if (RegOpenKeyEx(sub_tree, subkey, 0, access, &oshkey) != ERROR_SUCCESS) {
-        if (arch == ARCH_64BIT) {
-            merror(SK_REG_OPEN64, ARGV0, subkey);
-        } else {
-            merror(SK_REG_OPEN, ARGV0, subkey);
+    {
+        LONG rc;
+
+        rc = RegOpenKeyEx(sub_tree, subkey, 0, access, &oshkey);
+        if (rc != ERROR_SUCCESS) {
+            /* Absent in this view is common with arch=both; not an error */
+            if (rc == ERROR_FILE_NOT_FOUND || rc == ERROR_PATH_NOT_FOUND) {
+                debug1("%s: DEBUG: Registry key not present (%s): '%s'",
+                       ARGV0,
+                       (arch == ARCH_64BIT) ? "64bit" : "32bit",
+                       subkey);
+                return;
+            }
+            if (arch == ARCH_64BIT) {
+                merror(SK_REG_OPEN64, ARGV0, subkey);
+            } else {
+                merror(SK_REG_OPEN, ARGV0, subkey);
+            }
+            return;
         }
-        return;
     }
 
     os_winreg_querykey(oshkey, subkey, full_key_name, arch);
@@ -410,6 +459,14 @@ void os_winreg_check()
         arch = (syscheck.registry_arch &&
                 syscheck.registry_arch[i] == ARCH_64BIT)
                ? ARCH_64BIT : ARCH_32BIT;
+
+        /* No native 64-bit view on a 32-bit OS */
+        if (arch == ARCH_64BIT && !os_winreg_os_is_64bit()) {
+            debug1("%s: DEBUG: Skipping 64bit registry view on 32-bit OS: %s",
+                   ARGV0, syscheck.registry[i]);
+            i++;
+            continue;
+        }
 
         /* Read syscheck registry entry */
         debug1("%s: DEBUG: Attempt to read: %s (%s)", ARGV0,

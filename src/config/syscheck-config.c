@@ -131,19 +131,25 @@ int read_reg(syscheck_config *syscheck, char *entries, int arch)
             }
         }
 
-        /* Duplicate = same path and same arch */
-        i = 0;
-        while (syscheck->registry && syscheck->registry[i]) {
-            if (strcmp(syscheck->registry[i], tmp_entry) == 0 &&
-                    syscheck->registry_arch[i] == arch) {
-                merror(SK_DUP, __local_name, tmp_entry);
-                return (1);
-            }
-            i++;
-        }
+        /* Duplicate = same path and same arch; skip only this entry */
+        {
+            int is_dup = 0;
 
-        /* Add new entry (vals carries arch for registry) */
-        dump_syscheck_entry(syscheck, tmp_entry, arch, 1, NULL);
+            i = 0;
+            while (syscheck->registry && syscheck->registry[i]) {
+                if (strcasecmp(syscheck->registry[i], tmp_entry) == 0 &&
+                        syscheck->registry_arch &&
+                        syscheck->registry_arch[i] == arch) {
+                    merror(SK_DUP, __local_name, tmp_entry);
+                    is_dup = 1;
+                    break;
+                }
+                i++;
+            }
+            if (!is_dup) {
+                dump_syscheck_entry(syscheck, tmp_entry, arch, 1, NULL);
+            }
+        }
 
         /* Next entry */
         entry++;
@@ -559,8 +565,12 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             /* Optional arch="32bit|64bit|both" (default 32bit) */
             if (node[i]->attributes && node[i]->values) {
                 for (j = 0; node[i]->attributes[j]; j++) {
-                    if (strcmp(node[i]->attributes[j], "arch") == 0 &&
-                            node[i]->values[j]) {
+                    if (!node[i]->values[j]) {
+                        merror(XML_VALUEERR, __local_name,
+                               node[i]->element, node[i]->attributes[j]);
+                        return (OS_INVALID);
+                    }
+                    if (strcmp(node[i]->attributes[j], "arch") == 0) {
                         if (strcmp(node[i]->values[j], "32bit") == 0) {
                             arch = ARCH_32BIT;
                         } else if (strcmp(node[i]->values[j], "64bit") == 0) {
@@ -572,7 +582,10 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
                                    node[i]->element, node[i]->values[j]);
                             return (OS_INVALID);
                         }
-                        break;
+                    } else {
+                        merror(XML_INVATTR, __local_name,
+                               node[i]->attributes[j], node[i]->element);
+                        return (OS_INVALID);
                     }
                 }
             }

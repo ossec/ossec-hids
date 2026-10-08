@@ -29,7 +29,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
-- @atomicturtle - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access and symmetric ``[x32]``/``[x64]`` DB identity so native Software hive changes are visible to the 32-bit agent (#954)
+- @atomicturtle - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is tagged ``[x64]`` so native Software hive changes are visible to the 32-bit agent (#954)
 - @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
 - @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
 - @atomicturtle - [PR 2303](https://github.com/ossec/ossec-hids/pull/2303) - Stop remoted from writing the sender counter into agent 0 rids on key reload (#2065)
