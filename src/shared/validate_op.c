@@ -267,9 +267,17 @@ static int os_pton_sockaddr(const char *ip, struct sockaddr_storage *ss)
         return (AF_UNSPEC);
     }
 
-    /* WSAStringToAddress accepts "addr:port" and "[addr]". inet_pton does not. */
+    /* WSAStringToAddress accepts "a.b.c.d:port" and "[addr]:port".
+     * inet_pton accepts neither. One colon is an IPv4 port suffix, not IPv6. */
     if (strchr(ip, '[') != NULL || strchr(ip, ']') != NULL) {
         return (AF_UNSPEC);
+    }
+    {
+        const char *colon = strchr(ip, ':');
+
+        if (colon != NULL && strchr(colon + 1, ':') == NULL) {
+            return (AF_UNSPEC);
+        }
     }
 
     if (strchr(ip, ':') == NULL) {
