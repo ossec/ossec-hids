@@ -269,6 +269,7 @@ static int os_pton_sockaddr(const char *ip, struct sockaddr_storage *ss)
 
     snprintf(buf, sizeof(buf), "%s", ip);
     memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
     len = (int)sizeof(sin);
     if (WSAStringToAddress(buf, AF_INET, NULL, (LPSOCKADDR)&sin, &len) == 0) {
         memset(ss, 0, sizeof(*ss));
@@ -278,6 +279,7 @@ static int os_pton_sockaddr(const char *ip, struct sockaddr_storage *ss)
 
     snprintf(buf, sizeof(buf), "%s", ip);
     memset(&sin6, 0, sizeof(sin6));
+    sin6.sin6_family = AF_INET6;
     len = (int)sizeof(sin6);
     if (WSAStringToAddress(buf, AF_INET6, NULL, (LPSOCKADDR)&sin6, &len) == 0) {
         memset(ss, 0, sizeof(*ss));
