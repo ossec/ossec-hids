@@ -33,6 +33,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
+- @atomicturtle - Back off when the agent cannot decrypt a server reply so a bad or missing key cannot peg a CPU core (#1944)
 - @atomicturtle - Stop truncating alert full_log / previous-output lines at 1256 bytes in alerts.log (#473)
 - @atomicturtle - Stop Windows CreateFile/GetSecurityInfo failures from becoming false syscheck size-change alerts (#1581)
 - @atomicturtle - Drop rule 31107 so search URLs no longer suppress SQLi/XSS/web-attack alerts (#1078)
