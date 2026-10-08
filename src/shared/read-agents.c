@@ -1516,7 +1516,7 @@ int get_agent_status(const char *agent_name, const char *agent_ip)
         return (GA_STATUS_INV);
     }
 
-    if (file_status.st_mtime > (time(0) - (3 * NOTIFY_TIME + 30))) {
+    if (file_status.st_mtime > (time(0) - (3 * get_notify_time() + 30))) {
         return (GA_STATUS_ACTIVE);
     }
 
@@ -1717,5 +1717,5 @@ char **get_agents_with_timeout(int flag, int timeout)
 
 /* List available agents */
 char **get_agents(int flag) {
-  return get_agents_with_timeout(flag, NOTIFY_TIME);
+  return get_agents_with_timeout(flag, get_notify_time());
 }

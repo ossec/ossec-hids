@@ -145,6 +145,18 @@ int getDefine_Int(const char *high_name, const char *low_name, int min, int max)
     return (ret);
 }
 
+/* Cached monitord.notify_time for status / remoted send eligibility (#874, #1022). */
+int get_notify_time(void)
+{
+    static int cached = -1;
+
+    if (cached < 0) {
+        cached = getDefine_Int("monitord", "notify_time", 60, 3600);
+    }
+
+    return (cached);
+}
+
 /* Check if IP_address is present at that_IP
  * Returns 1 on success or 0 on failure
  */
