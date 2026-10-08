@@ -129,7 +129,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
 {
     int i;
     int n;
-    unsigned int location_id = 0;
+    int location_id = 0;
     unsigned short s_port = 0, d_port = 0;
     int *loc_id;
     char sql_query[OS_SIZE_8192 + 1];
@@ -178,7 +178,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
             location_id = __DBSelectLocation(al_data->location, db_config);
         }
 
-        if (!location_id) {
+        if (location_id <= 0) {
             merror("%s: Unable to insert location: '%s'.",
                    ARGV0, al_data->location);
             return (0);

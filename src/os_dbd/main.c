@@ -220,6 +220,12 @@ int main(int argc, char **argv)
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }
 
+    /* Insert agents. Still root (setgid already applied) so client.keys
+     * mode 0640 root:ossec is readable. A missing keys file is logged
+     * and does not stop alert inserts.
+     */
+    OS_Agents_InsertDB(&db_config);
+
     /* Read rules and insert into the db */
     if (OS_InsertRulesDB(&db_config) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);

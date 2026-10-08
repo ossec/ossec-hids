@@ -52,9 +52,10 @@ CREATE TABLE agent
     last_contact    INT8         NOT NULL,
     ip_address      VARCHAR(46)  NOT NULL,
     version         VARCHAR(32)  NOT NULL,
-    name            VARCHAR(64)  NOT NULL,
+    name            VARCHAR(128) NOT NULL,
     information     VARCHAR(128) NOT NULL,
-    PRIMARY KEY  (id, server_id)
+    PRIMARY KEY  (id, server_id),
+    UNIQUE (server_id, name)
     );
 
 CREATE TABLE location

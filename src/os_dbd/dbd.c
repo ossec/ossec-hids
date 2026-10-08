@@ -21,6 +21,7 @@
 void OS_DBD(DBConfig *db_config)
 {
     time_t tm;
+    time_t agents_refreshed = 0;
     struct tm *p;
     file_queue *fileq;
     alert_data *al_data;
@@ -40,8 +41,14 @@ void OS_DBD(DBConfig *db_config)
     }
 
     /* Get maximum ID */
-    db_config->alert_id = OS_SelectMaxID(db_config);
-    db_config->alert_id++;
+    {
+        int max_id = OS_SelectMaxID(db_config);
+
+        if (max_id < 0) {
+            ErrorExit(DB_MAINERROR, ARGV0);
+        }
+        db_config->alert_id = (unsigned int)max_id + 1;
+    }
 
     /* Infinite loop reading the alerts and inserting them */
     while (1) {
@@ -51,6 +58,13 @@ void OS_DBD(DBConfig *db_config)
         /* Get message if available (timeout of 5 seconds) */
         al_data = Read_FileMon(fileq, p, 5);
         if (!al_data) {
+            /* Refresh agents when idle so SELECT/INSERT work does not
+             * delay alert ingestion under load.
+             */
+            if ((tm - agents_refreshed) >= 60) {
+                OS_Agents_InsertDB(db_config);
+                agents_refreshed = time(NULL);
+            }
             continue;
         }
 

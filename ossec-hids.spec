@@ -379,6 +379,9 @@ install -m 0755 active-response/*.sh ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ac
 install -m 0644 src/rootcheck/db/*.txt ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared
 install -m 0644 src/os_dbd/mysql.schema ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0644 src/os_dbd/postgresql.schema ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
+install -m 0644 src/os_dbd/upgrade-agent-1363-mysql.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
+install -m 0644 src/os_dbd/upgrade-agent-1363-postgresql.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
+install -m 0644 src/os_dbd/convert-db-ipv6.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0550 src/init/ossec-{client,server}.sh ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
 install -m 0550 src/agentlessd/scripts/* ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/agentless
 
@@ -766,11 +769,14 @@ fi
 %defattr(-,root,root)
 %{_localstatedir}/ossec/bin/ossec-dbd
 %{_datadir}/ossec/contrib/mysql.schema
+%{_datadir}/ossec/contrib/upgrade-agent-1363-mysql.sql
+%{_datadir}/ossec/contrib/convert-db-ipv6.sql
 
 %files postgres
 %defattr(-,root,root)
 %{_localstatedir}/ossec/bin/ossec-pgsql-dbd
 %{_datadir}/ossec/contrib/postgresql.schema
+%{_datadir}/ossec/contrib/upgrade-agent-1363-postgresql.sql
 
 # Changes
 %changelog
