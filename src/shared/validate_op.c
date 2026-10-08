@@ -267,14 +267,21 @@ static int os_pton_sockaddr(const char *ip, struct sockaddr_storage *ss)
         return (AF_UNSPEC);
     }
 
-    snprintf(buf, sizeof(buf), "%s", ip);
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
-    len = (int)sizeof(sin);
-    if (WSAStringToAddress(buf, AF_INET, NULL, (LPSOCKADDR)&sin, &len) == 0) {
-        memset(ss, 0, sizeof(*ss));
-        memcpy(ss, &sin, sizeof(sin));
-        return (AF_INET);
+    /* WSAStringToAddress accepts "addr:port" and "[addr]". inet_pton does not. */
+    if (strchr(ip, '[') != NULL || strchr(ip, ']') != NULL) {
+        return (AF_UNSPEC);
+    }
+
+    if (strchr(ip, ':') == NULL) {
+        snprintf(buf, sizeof(buf), "%s", ip);
+        memset(&sin, 0, sizeof(sin));
+        sin.sin_family = AF_INET;
+        len = (int)sizeof(sin);
+        if (WSAStringToAddress(buf, AF_INET, NULL, (LPSOCKADDR)&sin, &len) == 0) {
+            memset(ss, 0, sizeof(*ss));
+            memcpy(ss, &sin, sizeof(sin));
+            return (AF_INET);
+        }
     }
 
     snprintf(buf, sizeof(buf), "%s", ip);
