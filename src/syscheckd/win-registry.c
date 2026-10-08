@@ -30,7 +30,13 @@ int ig_count = 0;
 int run_count = 0;
 
 /* Prototypes */
-void os_winreg_open_key(char *subkey, char *fullkey_name);
+void os_winreg_open_key(char *subkey, char *fullkey_name, int arch);
+
+/* Symmetric DB/alert identity: always tag with [x32] or [x64]. */
+static void os_winreg_arch_key(char *out, size_t n, const char *path, int arch)
+{
+    snprintf(out, n, "%s [x%s]", path, (arch == ARCH_64BIT) ? "64" : "32");
+}
 
 
 int os_winreg_changed(char *key, char *md5, char *sha1)
@@ -78,6 +84,7 @@ int os_winreg_changed(char *key, char *md5, char *sha1)
 
     fseek(syscheck.reg_fp, 0, SEEK_END);
     fprintf(syscheck.reg_fp, "%s%s %s\n", md5, sha1, key);
+    fflush(syscheck.reg_fp);
     return (1);
 }
 
@@ -143,7 +150,7 @@ char *os_winreg_sethkey(char *reg_entry)
 }
 
 /* Query the key and get all its values */
-void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name)
+void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
 {
     int rc;
     DWORD i, j;
@@ -213,7 +220,7 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name)
                 }
 
                 /* Open subkey */
-                os_winreg_open_key(new_key, new_key_full);
+                os_winreg_open_key(new_key, new_key_full, arch);
             }
         }
     }
@@ -295,14 +302,20 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name)
             return;
         }
 
-        /* Look for p_key on the reg db */
-        if (os_winreg_changed(full_key_name, mf_sum, sf_sum)) {
-            char reg_changed[MAX_LINE + 1];
-            snprintf(reg_changed, MAX_LINE, "0:0:0:0:%s:%s %s",
-                     mf_sum, sf_sum, full_key_name);
+        /* Look for tagged key on the reg db */
+        {
+            char tagged_key[MAX_KEY + 16];
+            os_winreg_arch_key(tagged_key, sizeof(tagged_key),
+                               full_key_name, arch);
 
-            /* Notify server */
-            notify_registry(reg_changed, 0);
+            if (os_winreg_changed(tagged_key, mf_sum, sf_sum)) {
+                char reg_changed[MAX_LINE + 1];
+                snprintf(reg_changed, MAX_LINE, "0:0:0:0:%s:%s %s",
+                         mf_sum, sf_sum, tagged_key);
+
+                /* Notify server */
+                notify_registry(reg_changed, 0);
+            }
         }
 
         ig_count++;
@@ -310,10 +323,11 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name)
 }
 
 /* Open the registry key */
-void os_winreg_open_key(char *subkey, char *full_key_name)
+void os_winreg_open_key(char *subkey, char *full_key_name, int arch)
 {
     int i = 0;
     HKEY oshkey;
+    REGSAM access;
 
     /* Sleep X every Y files */
     if (ig_count >= syscheck.sleep_after) {
@@ -322,7 +336,7 @@ void os_winreg_open_key(char *subkey, char *full_key_name)
     }
     ig_count++;
 
-    /* Registry ignore list */
+    /* Registry ignore list (configured path, before arch tagging) */
     if (full_key_name && syscheck.registry_ignore) {
         while (syscheck.registry_ignore[i] != NULL) {
             if (strcasecmp(syscheck.registry_ignore[i], full_key_name) == 0) {
@@ -330,7 +344,8 @@ void os_winreg_open_key(char *subkey, char *full_key_name)
             }
             i++;
         }
-    } else if (full_key_name && syscheck.registry_ignore_regex) {
+    }
+    if (full_key_name && syscheck.registry_ignore_regex) {
         i = 0;
         while (syscheck.registry_ignore_regex[i] != NULL) {
             if (OSMatch_Execute(full_key_name, strlen(full_key_name),
@@ -341,12 +356,19 @@ void os_winreg_open_key(char *subkey, char *full_key_name)
         }
     }
 
-    if (RegOpenKeyEx(sub_tree, subkey, 0, KEY_READ, &oshkey) != ERROR_SUCCESS) {
-        merror(SK_REG_OPEN, ARGV0, subkey);
+    access = KEY_READ |
+             ((arch == ARCH_64BIT) ? KEY_WOW64_64KEY : KEY_WOW64_32KEY);
+
+    if (RegOpenKeyEx(sub_tree, subkey, 0, access, &oshkey) != ERROR_SUCCESS) {
+        if (arch == ARCH_64BIT) {
+            merror(SK_REG_OPEN64, ARGV0, subkey);
+        } else {
+            merror(SK_REG_OPEN, ARGV0, subkey);
+        }
         return;
     }
 
-    os_winreg_querykey(oshkey, subkey, full_key_name);
+    os_winreg_querykey(oshkey, subkey, full_key_name, arch);
     RegCloseKey(oshkey);
     return;
 }
@@ -374,6 +396,8 @@ void os_winreg_check()
 
     /* Get sub class and a valid registry entry */
     while (syscheck.registry[i] != NULL) {
+        int arch;
+
         sub_tree = NULL;
         rk = NULL;
 
@@ -383,8 +407,14 @@ void os_winreg_check()
             continue;
         }
 
+        arch = (syscheck.registry_arch &&
+                syscheck.registry_arch[i] == ARCH_64BIT)
+               ? ARCH_64BIT : ARCH_32BIT;
+
         /* Read syscheck registry entry */
-        debug1("%s: DEBUG: Attempt to read: %s", ARGV0, syscheck.registry[i]);
+        debug1("%s: DEBUG: Attempt to read: %s (%s)", ARGV0,
+               syscheck.registry[i],
+               (arch == ARCH_64BIT) ? "64bit" : "32bit");
 
         rk = os_winreg_sethkey(syscheck.registry[i]);
         if (sub_tree == NULL) {
@@ -394,7 +424,7 @@ void os_winreg_check()
             continue;
         }
 
-        os_winreg_open_key(rk, syscheck.registry[i]);
+        os_winreg_open_key(rk, syscheck.registry[i], arch);
         i++;
         sleep(syscheck.tsleep * 5);
     }
@@ -409,4 +439,3 @@ void os_winreg_check()
     return;
 }
 #endif /* WIN32 */
-

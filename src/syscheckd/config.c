@@ -38,6 +38,7 @@ int Read_Syscheck_Config(const char *cfgfile)
     syscheck.realtime       = NULL;
 #ifdef WIN32
     syscheck.registry       = NULL;
+    syscheck.registry_arch  = NULL;
     syscheck.reg_fp         = NULL;
 #endif
     syscheck.prefilter_cmd  = NULL;
