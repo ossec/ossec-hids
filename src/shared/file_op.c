@@ -1817,23 +1817,59 @@ void remove_control_characters(char *str) {
 }
 
 #ifdef WIN32
-/* Append "\\name" (or "\\name\\suffix") onto *dest which already holds dirname.
- * dest is realloc'd as needed.
+/* Skip the \\?\ (or //?/) extended-length prefix; its '?' is not a wildcard. */
+static size_t win_skip_ext_prefix(const char *path)
+{
+    if (path[0] && path[1] && path[2] && path[3] &&
+            (path[0] == '\\' || path[0] == '/') &&
+            (path[1] == '\\' || path[1] == '/') &&
+            path[2] == '?' &&
+            (path[3] == '\\' || path[3] == '/')) {
+        return (4);
+    }
+    return (0);
+}
+
+/* Offset of the first * or ? that is a real wildcard (after \\?\ if present). */
+static size_t win_wildcard_pos(const char *path)
+{
+    size_t skip = win_skip_ext_prefix(path);
+
+    return (skip + strcspn(path + skip, "*?"));
+}
+
+/* Append name (and optional remaining suffix) onto *dest (dirname / prefix).
+ * Preserves rooted ("\") and drive-relative ("C:") join semantics.
  */
 static void win_path_append(char **dest, const char *name, const char *suffix)
 {
     size_t need;
+    size_t dlen;
     char *out;
+    int rooted = 0;
+    int drive_only = 0;
 
-    need = strlen(*dest) + 1 + strlen(name) + 1;
+    dlen = strlen(*dest);
+    if (dlen == 1 && ((*dest)[0] == '\\' || (*dest)[0] == '/')) {
+        rooted = 1;
+    } else if (dlen == 2 && (*dest)[1] == ':' &&
+               (((*dest)[0] >= 'A' && (*dest)[0] <= 'Z') ||
+                ((*dest)[0] >= 'a' && (*dest)[0] <= 'z'))) {
+        drive_only = 1;
+    }
+
+    need = dlen + 1 + strlen(name) + 1;
     if (suffix) {
         need += 1 + strlen(suffix);
     }
     os_calloc(need, sizeof(char), out);
-    if ((*dest)[0] != '\0') {
-        snprintf(out, need, "%s\\%s", *dest, name);
-    } else {
+
+    if (dlen == 0) {
         snprintf(out, need, "%s", name);
+    } else if (rooted || drive_only) {
+        snprintf(out, need, "%s%s", *dest, name);
+    } else {
+        snprintf(out, need, "%s\\%s", *dest, name);
     }
     if (suffix && *suffix) {
         size_t used = strlen(out);
@@ -1875,7 +1911,7 @@ char **expand_win32_wildcards(const char *path)
             return (NULL);
         }
 
-        glob_pos = strcspn(pattern, "*?");
+        glob_pos = win_wildcard_pos(pattern);
         if (glob_pos == strlen(pattern)) {
             /* No wildcards left — pending is the final result */
             return (pending);
@@ -1888,7 +1924,7 @@ char **expand_win32_wildcards(const char *path)
             pattern = pending[pi];
             next_glob = NULL;
 
-            glob_pos = strcspn(pattern, "*?");
+            glob_pos = win_wildcard_pos(pattern);
             /* Truncate at the next separator after this wildcard component */
             dirsep = strpbrk(pattern + glob_pos, "\\/");
             if (dirsep) {
@@ -1904,8 +1940,16 @@ char **expand_win32_wildcards(const char *path)
                 if (look_back_fwd && (!look_back || look_back_fwd > look_back)) {
                     look_back = look_back_fwd;
                 }
-                if (look_back) {
+                if (look_back == parent) {
+                    /* Rooted: "\*.log" → keep "\" */
+                    look_back[1] = '\0';
+                } else if (look_back) {
                     *look_back = '\0';
+                } else if (((parent[0] >= 'A' && parent[0] <= 'Z') ||
+                            (parent[0] >= 'a' && parent[0] <= 'z')) &&
+                           parent[1] == ':') {
+                    /* Drive-relative: "C:*.log" → keep "C:" */
+                    parent[2] = '\0';
                 } else {
                     parent[0] = '\0';
                 }
@@ -1921,9 +1965,6 @@ char **expand_win32_wildcards(const char *path)
             do {
                 if (strcmp(find_data.cFileName, ".") == 0 ||
                         strcmp(find_data.cFileName, "..") == 0) {
-                    continue;
-                }
-                if (find_data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
                     continue;
                 }
                 /* Need a directory if more path remains after this component */

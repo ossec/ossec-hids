@@ -371,6 +371,24 @@ void LogCollectorStart()
 
         /* Check which file is available */
         for (i = 0; i <= max_file; i++) {
+            /* Date-based names must rotate every poll (e.g. %M), not only
+             * on the slower VCHECK_FILES pass.
+             */
+            if (logff[i].file && logff[i].ffile) {
+                if (update_fname(i)) {
+                    if (logff[i].fp) {
+                        fclose(logff[i].fp);
+#ifdef WIN32
+                        CloseHandle(logff[i].h);
+#endif
+                    }
+                    logff[i].fp = NULL;
+                    handle_file(i, 0, 1);
+                } else if (!logff[i].fp) {
+                    handle_file(i, 0, 0);
+                }
+            }
+
             if (!logff[i].fp) {
                 /* Run periodic commands on the configured frequency. */
                 if (logff[i].read && logff[i].command && (f_check % 2)) {
@@ -486,27 +504,6 @@ void LogCollectorStart()
                 continue;
             }
 #endif
-
-            /* Date-based filenames -- rotate when strftime expands differently */
-            if (logff[i].ffile) {
-                if (update_fname(i)) {
-                    if (logff[i].fp) {
-                        fclose(logff[i].fp);
-#ifdef WIN32
-                        CloseHandle(logff[i].h);
-#endif
-                    }
-                    logff[i].fp = NULL;
-                    handle_file(i, 0, 1);
-                    continue;
-                }
-
-                /* Variable file name */
-                else if (!logff[i].fp) {
-                    handle_file(i, 0, 0);
-                    continue;
-                }
-            }
 
             /* Check for file change -- if the file is open already */
             if (logff[i].fp) {

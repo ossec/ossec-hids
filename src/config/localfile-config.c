@@ -18,6 +18,23 @@ static void init_empty_logreader(logreader *lr)
     lr->ign = 360;
 }
 
+#ifdef WIN32
+/* True if path has a real * / ? wildcard (ignore '?' in a \\?\ prefix). */
+static int localfile_has_win_wildcard(const char *path)
+{
+    const char *p = path;
+
+    if (p[0] && p[1] && p[2] && p[3] &&
+            (p[0] == '\\' || p[0] == '/') &&
+            (p[1] == '\\' || p[1] == '/') &&
+            p[2] == '?' &&
+            (p[3] == '\\' || p[3] == '/')) {
+        p += 4;
+    }
+    return (strchr(p, '*') != NULL || strchr(p, '?') != NULL);
+}
+#endif
+
 int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 {
     unsigned int pl = 0;
@@ -162,8 +179,7 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
              * component) so multi-segment patterns work (#1954).
              */
 #ifdef WIN32
-            if (strchr(node[i]->content, '*') ||
-                    strchr(node[i]->content, '?')) {
+            if (localfile_has_win_wildcard(node[i]->content)) {
                 char **paths;
                 int g;
 
@@ -173,11 +189,16 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 
                 paths = expand_win32_wildcards(node[i]->content);
                 if (!paths || !paths[0]) {
-                    merror(GLOB_NFOUND, __local_name, node[i]->content);
+                    /* Same soft-fail as POSIX glob() != 0: keep the literal
+                     * pattern so an empty directory does not abort the agent.
+                     */
+                    merror(GLOB_ERROR, __local_name, node[i]->content);
                     if (paths) {
                         free(paths);
                     }
-                    return (OS_INVALID);
+                    os_strdup(node[i]->content, logf[pl].file);
+                    i++;
+                    continue;
                 }
 
                 for (g = 0; paths[g] != NULL; g++) {
