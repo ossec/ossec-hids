@@ -1380,6 +1380,14 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
                         return (NULL);
                     }
                     break;
+                case RULE_SYSTEM_NAME:
+                    if (!lf->systemname) {
+                        return (NULL);
+                    }
+                    if (!OS_DBSearch(list_holder, lf->systemname)) {
+                        return (NULL);
+                    }
+                    break;
                 case RULE_STATUS:
                     if (!lf->status) {
                         return (NULL);

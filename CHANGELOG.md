@@ -21,6 +21,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **General**
 
+- @atomicturtle - Allow CDB ``<list>`` matching on decoded ``system_name`` via ``field="system_name"`` (#628)
 - @atomicturtle - Windows agent install ACL allows only SYSTEM and Administrators (#182)
 - @atomicturtle - ``ossec-regex -p`` tests a pattern as PCRE2, with the same flags as a ``<pcre2>`` rule (#1845)
 - @atomicturtle - Extract User-Agent (and action/srcport) from default IIS W3C access logs (#989)
