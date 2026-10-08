@@ -58,6 +58,20 @@ int realtime_adddir(const char *dir, int opts) __attribute__((nonnull(1)));
 /* Process real time queue */
 int realtime_process(void);
 
+/* Queue a realtime path. The checksum runs after a short delay.
+ * A failed read stays queued until it succeeds or the file is gone.
+ */
+void realtime_enqueue(const char *file_name);
+
+/* Run realtime checksums whose delay has elapsed. */
+void realtime_pending_process(void);
+
+/* Milliseconds until the next queued realtime checksum, or -1 if idle. */
+int realtime_pending_ms(void);
+
+/* Suppress c_read_file warnings while a realtime retry is in progress. */
+void c_read_set_quiet(int quiet);
+
 /* Process the content of the file changes */
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));
 

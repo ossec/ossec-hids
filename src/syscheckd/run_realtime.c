@@ -45,9 +45,13 @@ int realtime_checksumfile(const char *file_name)
         c_sum[0] = '\0';
         c_sum[OS_MAXSTR] = '\0';
 
-        /* If it returns < 0, missing file alerted or checksum read failed */
-        if (c_read_file(file_name, buf, c_sum) < 0) {
-            return (0);
+        /* -1: missing file already alerted. -2: read failed; caller retries. */
+        {
+            int read_rc = c_read_file(file_name, buf, c_sum);
+
+            if (read_rc < 0) {
+                return (read_rc);
+            }
         }
 
         {
@@ -106,7 +110,7 @@ int realtime_checksumfile(const char *file_name)
                     if (send_syscheck_msg(alert_msg) != 0) {
                         merror("%s: WARN: Failed to send syscheck update for '%s'. "
                               "Change will be retried on the next event/scan.", ARGV0, file_name);
-                        return (0);
+                        return (-2);
                     }
                 }
 
@@ -199,6 +203,221 @@ int realtime_checksumfile(const char *file_name)
     }
 
     return (0);
+}
+
+/* First look is delayed so an editor can finish a save (vim replace,
+ * Windows truncate while the file is still locked). A missing path is
+ * confirmed once before a delete alert. A failed read stays queued:
+ * closing the handle does not generate another notification (#1386).
+ */
+#define RT_FIRST_DELAY_MS       200
+#define RT_DELETE_CONFIRM_MS    1000
+#define RT_RETRY_CAP_MS         5000
+
+typedef struct _rt_pend {
+    char *path;
+    unsigned long long due;
+    int attempts;
+    int missing_seen;
+    struct _rt_pend *next;
+} rt_pend;
+
+static rt_pend *rt_pend_head = NULL;
+static OSHash *rt_pend_hash = NULL;
+
+static unsigned long long rt_now_ms(void)
+{
+#ifdef WIN32
+    return (unsigned long long)GetTickCount();
+#else
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    return ((unsigned long long)tv.tv_sec * 1000ULL) +
+           (unsigned long long)(tv.tv_usec / 1000);
+#endif
+}
+
+/* Absolute due time. On Windows the clock is 32-bit and wraps. */
+static unsigned long long rt_due_after(unsigned int delay_ms)
+{
+#ifdef WIN32
+    return (unsigned long long)((unsigned long)rt_now_ms() + delay_ms);
+#else
+    return rt_now_ms() + (unsigned long long)delay_ms;
+#endif
+}
+
+/* Milliseconds from now until due. Zero when due or already past. */
+static unsigned long long rt_until(unsigned long long due)
+{
+    unsigned long long now = rt_now_ms();
+
+#ifdef WIN32
+    unsigned long left = (unsigned long)due - (unsigned long)now;
+
+    if (left >= 0x80000000UL) {
+        return 0;
+    }
+    return (unsigned long long)left;
+#else
+    if (due <= now) {
+        return 0;
+    }
+    return due - now;
+#endif
+}
+
+static unsigned int rt_backoff_ms(int attempts)
+{
+    static const unsigned int steps[] = {200, 500, 1000, 2000, RT_RETRY_CAP_MS};
+
+    if (attempts < 1) {
+        return steps[0];
+    }
+    if (attempts > (int)(sizeof(steps) / sizeof(steps[0]))) {
+        return RT_RETRY_CAP_MS;
+    }
+    return steps[attempts - 1];
+}
+
+static int rt_path_missing(const char *path)
+{
+    struct stat st;
+
+#ifdef WIN32
+    if (stat(path, &st) < 0 && (errno == ENOENT || errno == ENOTDIR))
+#else
+    if (lstat(path, &st) < 0 && (errno == ENOENT || errno == ENOTDIR))
+#endif
+    {
+        return (1);
+    }
+    return (0);
+}
+
+static void rt_pend_drop(rt_pend *prev, rt_pend *entry)
+{
+    if (prev != NULL) {
+        prev->next = entry->next;
+    } else {
+        rt_pend_head = entry->next;
+    }
+    if (rt_pend_hash != NULL) {
+        OSHash_Delete(rt_pend_hash, entry->path);
+    }
+    free(entry->path);
+    free(entry);
+}
+
+void realtime_enqueue(const char *file_name)
+{
+    rt_pend *entry;
+    unsigned long long soon;
+
+    if (file_name == NULL || file_name[0] == '\0') {
+        return;
+    }
+
+    if (rt_pend_hash == NULL) {
+        rt_pend_hash = OSHash_Create();
+        if (rt_pend_hash == NULL) {
+            realtime_checksumfile(file_name);
+            return;
+        }
+    }
+
+    soon = rt_due_after(RT_FIRST_DELAY_MS);
+    entry = (rt_pend *)OSHash_Get(rt_pend_hash, file_name);
+    if (entry != NULL) {
+        /* Another notification arrived. Look again shortly, but do not
+         * push the due time out or a busy file would never be read. */
+        entry->missing_seen = 0;
+        if (rt_until(entry->due) > RT_FIRST_DELAY_MS) {
+            entry->due = soon;
+        }
+        return;
+    }
+
+    os_calloc(1, sizeof(rt_pend), entry);
+    os_strdup(file_name, entry->path);
+    entry->due = soon;
+    if (OSHash_Add(rt_pend_hash, entry->path, entry) != 2) {
+        free(entry->path);
+        free(entry);
+        realtime_checksumfile(file_name);
+        return;
+    }
+    entry->next = rt_pend_head;
+    rt_pend_head = entry;
+}
+
+int realtime_pending_ms(void)
+{
+    rt_pend *entry;
+    unsigned long long best = 0;
+    int have = 0;
+
+    for (entry = rt_pend_head; entry != NULL; entry = entry->next) {
+        unsigned long long left = rt_until(entry->due);
+
+        if (!have || left < best) {
+            best = left;
+            have = 1;
+        }
+    }
+    if (!have) {
+        return (-1);
+    }
+    if (best > 600000ULL) {
+        return (600000);
+    }
+    return ((int)best);
+}
+
+void realtime_pending_process(void)
+{
+    rt_pend *entry;
+    rt_pend *prev;
+    rt_pend *next;
+
+    prev = NULL;
+    for (entry = rt_pend_head; entry != NULL; entry = next) {
+        int read_rc;
+
+        next = entry->next;
+        if (rt_until(entry->due) > 0) {
+            prev = entry;
+            continue;
+        }
+
+        /* Do not alert a delete on the first look. Editors replace a
+         * file by unlinking it, and the new name appears a moment later. */
+        if (rt_path_missing(entry->path) && !entry->missing_seen) {
+            entry->missing_seen = 1;
+            entry->due = rt_due_after(RT_DELETE_CONFIRM_MS);
+            prev = entry;
+            continue;
+        }
+
+        c_read_set_quiet(entry->attempts > 0);
+        read_rc = realtime_checksumfile(entry->path);
+        c_read_set_quiet(0);
+
+        if (read_rc == -2) {
+            entry->missing_seen = 0;
+            entry->attempts++;
+            entry->due = rt_due_after(rt_backoff_ms(entry->attempts));
+            if (entry->attempts == 1) {
+                debug1("%s: DEBUG: Realtime check of '%s' will be retried.",
+                       ARGV0, entry->path);
+            }
+            prev = entry;
+            continue;
+        }
+
+        rt_pend_drop(prev, entry);
+    }
 }
 
 #ifdef INOTIFY_ENABLED
@@ -315,12 +534,9 @@ int realtime_process()
                 snprintf(final_name, MAX_LINE, "%s/%s",
                          (char *)OSHash_Get(syscheck.realtime->dirtb, wdchar),
                          event->name);
-		/* Need a sleep here to avoid triggering on vim edits
-  		 * (and finding the file removed)
-  		 */
-		sleep(1);
-
-                realtime_checksumfile(final_name);
+                /* Delay the read so a vim replace is not seen as a delete.
+                 * The daemon loop drains the queue; do not sleep here. */
+                realtime_enqueue(final_name);
             }
 
             i += REALTIME_EVENT_SIZE + event->len;
@@ -394,8 +610,9 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
         snprintf(final_path, MAX_LINE, "%s/%s", rtlocald->dir, finalfile);
         os_normalize_path(final_path);
 
-        /* Check the change */
-        realtime_checksumfile(final_path);
+        /* Queue the change. A locked truncate must be retried after
+         * this callback returns; closing the file is not a new event. */
+        realtime_enqueue(final_path);
     } while (pinfo->NextEntryOffset != 0);
 
     realtime_win32read(rtlocald);
