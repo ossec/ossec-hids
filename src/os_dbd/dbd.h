@@ -22,6 +22,9 @@ int OS_ReadDBConf(int test_config, const char *cfgfile, DBConfig *db_config) __a
 /* Inserts server info to the db */
 int OS_Server_ReadInsertDB(const DBConfig *db_config) __attribute__((nonnull));
 
+/* Insert or update agents from client.keys and queue/agent-info */
+int OS_Agents_InsertDB(const DBConfig *db_config) __attribute__((nonnull));
+
 /* Insert rules in to the database */
 int OS_InsertRulesDB(DBConfig *db_config) __attribute__((nonnull));
 
