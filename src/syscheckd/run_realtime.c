@@ -14,6 +14,9 @@
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
+#ifndef WIN32
+#include <time.h>
+#endif
 
 #ifdef WIN32
 #define sleep(x) Sleep(x * 1000)
@@ -110,7 +113,11 @@ int realtime_checksumfile(const char *file_name)
                     if (send_syscheck_msg(alert_msg) != 0) {
                         merror("%s: WARN: Failed to send syscheck update for '%s'. "
                               "Change will be retried on the next event/scan.", ARGV0, file_name);
-                        return (-2);
+                        /* Do not keep this on the realtime retry list. A down
+                         * queue would pin every changed path and the daemon
+                         * would never idle. The cache is unchanged, so the
+                         * next scan or notification sends it. */
+                        return (0);
                     }
                 }
 
@@ -230,11 +237,21 @@ static unsigned long long rt_now_ms(void)
 #ifdef WIN32
     return (unsigned long long)GetTickCount();
 #else
-    struct timeval tv;
+    struct timespec ts;
 
-    gettimeofday(&tv, NULL);
-    return ((unsigned long long)tv.tv_sec * 1000ULL) +
-           (unsigned long long)(tv.tv_usec / 1000);
+    /* Wall clock jumps (NTP) would stall or fire every pending retry. */
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+        return ((unsigned long long)ts.tv_sec * 1000ULL) +
+               (unsigned long long)(ts.tv_nsec / 1000000L);
+    }
+
+    {
+        struct timeval tv;
+
+        gettimeofday(&tv, NULL);
+        return ((unsigned long long)tv.tv_sec * 1000ULL) +
+               (unsigned long long)(tv.tv_usec / 1000);
+    }
 #endif
 }
 
@@ -275,10 +292,13 @@ static unsigned int rt_backoff_ms(int attempts)
     if (attempts < 1) {
         return steps[0];
     }
-    if (attempts > (int)(sizeof(steps) / sizeof(steps[0]))) {
-        return RT_RETRY_CAP_MS;
+    if (attempts <= (int)(sizeof(steps) / sizeof(steps[0]))) {
+        return steps[attempts - 1];
     }
-    return steps[attempts - 1];
+    /* The entry stays queued: closing the file is not a new event, so
+     * dropping it would lose the change until the next scheduled scan.
+     * After the short retries, wake infrequently. */
+    return 30000;
 }
 
 static int rt_path_missing(const char *path)
