@@ -375,7 +375,11 @@ void os_winreg_open_key(char *subkey, char *full_key_name, int arch)
     }
     ig_count++;
 
-    /* Registry ignore list (configured path, before arch tagging) */
+    /* Registry ignore lists (exact and sregex are independent; do not
+     * else-if them — default ossec.conf ships both, and the sregex
+     * \Enum$ was never consulted when any exact entry existed (#851).
+     * Match the configured path before arch tagging.
+     */
     if (full_key_name && syscheck.registry_ignore) {
         while (syscheck.registry_ignore[i] != NULL) {
             if (strcasecmp(syscheck.registry_ignore[i], full_key_name) == 0) {
@@ -384,6 +388,7 @@ void os_winreg_open_key(char *subkey, char *full_key_name, int arch)
             i++;
         }
     }
+
     if (full_key_name && syscheck.registry_ignore_regex) {
         i = 0;
         while (syscheck.registry_ignore_regex[i] != NULL) {

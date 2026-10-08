@@ -100,8 +100,11 @@ int send_msg(remoted_listener *listener, unsigned int agentid, const char *msg)
         return (-1);
     }
 
-    /* If we don't have the agent id, ignore it */
-    if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * NOTIFY_TIME))) {
+    /* If we don't have the agent id, ignore it.
+     * Use monitord.notify_time (not compile-time NOTIFY_TIME) so remoted
+     * agrees with monitord / agent_control when that value is changed (#1022).
+     */
+    if (keys.keyentries[agentid]->rcvd < (time(0) - (2 * get_notify_time()))) {
         os_mutex_unlock(&sendmsg_mutex);
         return (-1);
     }

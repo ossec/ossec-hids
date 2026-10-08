@@ -101,12 +101,34 @@ static int __DBInsertLocation(const char *location, const DBConfig *db_config)
     return (0);
 }
 
+/* Cap a mutable SQL string field so snprintf into OS_SIZE_8192 cannot
+ * cut mid-quote (#1959). max_len is the max strlen; buffer must hold max_len+1.
+ */
+static void osdb_cap_field(char *str, size_t max_len)
+{
+    size_t len;
+
+    if (!str || max_len < 2) {
+        return;
+    }
+
+    len = strlen(str);
+    if (len <= max_len) {
+        return;
+    }
+
+    str[max_len - 2] = '.';
+    str[max_len - 1] = '.';
+    str[max_len] = '\0';
+}
+
 /* Insert alert into to the db
  * Returns 1 on success or 0 on error
  */
 int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
 {
     int i;
+    int n;
     unsigned int location_id = 0;
     unsigned short s_port = 0, d_port = 0;
     int *loc_id;
@@ -115,6 +137,9 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     /* Quoted IP or SQL NULL (max IPv6 textual form + quotes). */
     char srcip_sql[46 + 2 + 1];
     char dstip_sql[46 + 2 + 1];
+    /* Bounded user literal so a huge dstuser cannot blow the INSERT (#1959). */
+    char user_sql[512 + 1];
+    size_t room;
 
     /* Clear the memory before insert */
     sql_query[0] = '\0';
@@ -127,8 +152,15 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     d_port = al_data->dstport;
 
     /* Escape strings */
-    osdb_escapestr(al_data->user);
     osdb_escapestr(al_data->location);
+
+    user_sql[0] = '\0';
+    if (al_data->user) {
+        osdb_escapestr(al_data->user);
+        strncpy(user_sql, al_data->user, sizeof(user_sql) - 1);
+        user_sql[sizeof(user_sql) - 1] = '\0';
+        osdb_cap_field(user_sql, sizeof(user_sql) - 1);
+    }
 
     /* Nullable IP columns: true SQL NULL when absent (not the string 'NULL'). */
     sql_nullable_str(srcip_sql, sizeof(srcip_sql), (char *)al_data->srcip);
@@ -177,16 +209,70 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     }
 
     osdb_escapestr(fulllog);
-    if (strlen(fulllog) >  7456) {
-        fulllog[7454] = '.';
-        fulllog[7455] = '.';
-        fulllog[7456] = '\0';
+
+    /* Measure INSERT length with an empty full_log, then cap full_log to the
+     * remaining space so the final snprintf cannot truncate mid-quote.
+     */
+    switch (db_config->db_type) {
+      case MYSQLDB:
+        n = snprintf(sql_query, sizeof(sql_query),
+                     "INSERT INTO "
+                     "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,user,full_log,tld) "
+                     "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s','%.2s')",
+                     db_config->server_id, al_data->rule,
+                     al_data->level,
+                     (unsigned int)time(0), *loc_id,
+                     srcip_sql,
+                     (unsigned short)s_port,
+                     dstip_sql,
+                     (unsigned short)d_port,
+                     al_data->alertid,
+                     user_sql,
+                     "",
+                     al_data->srcgeoip ? al_data->srcgeoip : "");
+        break;
+
+      case POSTGDB:
+      default:
+        n = snprintf(sql_query, sizeof(sql_query),
+                     "INSERT INTO "
+                     "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,\"user\",full_log) "
+                     "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s')",
+                     db_config->server_id, al_data->rule,
+                     al_data->level,
+                     (unsigned int)time(0), *loc_id,
+                     srcip_sql,
+                     (unsigned short)s_port,
+                     dstip_sql,
+                     (unsigned short)d_port,
+                     al_data->alertid,
+                     user_sql,
+                     "");
+        break;
+    }
+
+    /* snprintf's size argument includes the NUL, so a base query of
+     * OS_SIZE_8192 bytes or more cannot be stored. Reject it instead of
+     * inserting a truncated statement.
+     */
+    if (n < 0 || (size_t)n >= OS_SIZE_8192) {
+        free(fulllog);
+        merror("%s: Unable to build alert SQL.", ARGV0);
+        return (0);
+    }
+
+    /* Final snprintf is limited to OS_SIZE_8192 (8191 chars + NUL). */
+    room = (OS_SIZE_8192 - 1) - (size_t)n;
+    if (room < 2) {
+        fulllog[0] = '\0';
+    } else {
+        osdb_cap_field(fulllog, room);
     }
 
     /* Generate final SQL */
     switch (db_config->db_type) {
       case MYSQLDB:
-        snprintf(sql_query, OS_SIZE_8192,
+        n = snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,user,full_log,tld) "
                  "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s','%.2s')",
@@ -198,13 +284,13 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                  dstip_sql,
                  (unsigned short)d_port,
                  al_data->alertid,
-                 al_data->user ? al_data->user : "",
+                 user_sql,
                  fulllog,
                  al_data->srcgeoip ? al_data->srcgeoip : "");
         break;
 
       case POSTGDB:
-        snprintf(sql_query, OS_SIZE_8192,
+        n = snprintf(sql_query, OS_SIZE_8192,
                  "INSERT INTO "
                  "alert(server_id,rule_id,level,timestamp,location_id,src_ip,src_port,dst_ip,dst_port,alertid,\"user\",full_log) "
                  "VALUES ('%u', '%u','%u','%u', '%u', %s, '%u', %s, '%u', '%s', '%s', '%s')",
@@ -217,13 +303,22 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                  (unsigned short)d_port,
                  al_data->alertid,
                  /* user is NOT NULL in schema — empty string, not SQL NULL */
-                 al_data->user ? al_data->user : "",
+                 user_sql,
                  fulllog);
+        break;
+
+      default:
+        n = (int)strlen(sql_query);
         break;
     }
 
     free(fulllog);
     fulllog = NULL;
+
+    if (n < 0 || (size_t)n >= OS_SIZE_8192) {
+        merror("%s: Unable to build alert SQL.", ARGV0);
+        return (0);
+    }
 
     /* Insert into the db */
     if (!osdb_query_insert(db_config->conn, sql_query)) {

@@ -39,6 +39,9 @@ int run_dbcheck(void);
 /* Scan directory */
 int read_dir(const char *dir_name, int opts, OSMatch *restriction);
 
+/* Scan a single path (file, or directory via read_dir). */
+int read_file(const char *file_name, int opts, OSMatch *restriction);
+
 
 /* Check the registry for changes */
 void os_winreg_check(void);

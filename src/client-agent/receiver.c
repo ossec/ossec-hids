@@ -25,6 +25,7 @@ static char file[OS_SIZE_1024 + 1] = "";
 void *receive_msg()
 {
     ssize_t recv_b;
+    int rejected = 0;
     char buffer[OS_MAXSTR + 1];
     char cleartext[OS_MAXSTR + 1];
     char *tmp_msg;
@@ -42,6 +43,13 @@ void *receive_msg()
         tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
         if (tmp_msg == NULL) {
             merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
+            /* Drain a queued burst, then one delay — not one second per
+             * datagram. A continuous flood still yields (#1944).
+             */
+            rejected++;
+            if (rejected >= 32) {
+                break;
+            }
             continue;
         }
 
@@ -194,6 +202,10 @@ void *receive_msg()
             merror("%s: WARN: Unknown message received. No action defined.",
                    ARGV0);
         }
+    }
+
+    if (rejected > 0) {
+        sleep(1);
     }
 
     return (NULL);

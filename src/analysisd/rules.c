@@ -90,6 +90,7 @@ int Rules_OP_ReadRules(const char *rulefile)
     const char *xml_data = "extra_data";
     const char *xml_hostname = "hostname";
     const char *xml_program_name = "program_name";
+    const char *xml_system_name = "system_name";
     const char *xml_status = "status";
     const char *xml_dstgeoip_pcre2 = "dstgeoip_pcre2";
     const char *xml_dstport_pcre2 = "dstport_pcre2";
@@ -807,6 +808,8 @@ int Rules_OP_ReadRules(const char *rulefile)
                                         rule_type = RULE_HOSTNAME;
                                     } else if (strcasecmp(rule_opt[k]->values[list_att_num], xml_program_name) == 0) {
                                         rule_type = RULE_PROGRAM_NAME;
+                                    } else if (strcasecmp(rule_opt[k]->values[list_att_num], xml_system_name) == 0) {
+                                        rule_type = RULE_SYSTEM_NAME;
                                     } else if (strcasecmp(rule_opt[k]->values[list_att_num], xml_status) == 0) {
                                         rule_type = RULE_STATUS;
                                     } else if (strcasecmp(rule_opt[k]->values[list_att_num], xml_action) == 0) {

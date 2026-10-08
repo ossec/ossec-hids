@@ -673,45 +673,42 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              sha1sum  == 0 ? "xxx" : sf_sum,
              sha256sum == 0 ? "xxx" : sha256_sum);
 #else
+    /* Never send CreateFile=/GetSecurityInfo= as a syscheck sum (#1581). */
     HANDLE hFile = CreateFile(file_name, GENERIC_READ,
                               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
-        DWORD dwErrorCode = GetLastError();
-        char alert_msg[PATH_MAX+4];
         if (have_facl) {
             fim_acl_free(&facl);
         }
-        alert_msg[PATH_MAX + 3] = '\0';
-        snprintf(alert_msg, PATH_MAX + 4, "CreateFile=%ld %s", dwErrorCode, file_name);
-        send_syscheck_msg(alert_msg);
-        return -1;
+        merror("%s: WARN: CreateFile failed for '%s' (%lu); "
+               "skipping file this scan",
+               ARGV0, file_name, (unsigned long)GetLastError());
+        return -2;
     }
 
     PSID pSidOwner = NULL;
     PSECURITY_DESCRIPTOR pSD = NULL;
-    DWORD dwRtnCode = GetSecurityInfo(hFile, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, &pSidOwner, NULL, NULL, NULL, &pSD);
+    DWORD dwRtnCode = GetSecurityInfo(hFile, SE_FILE_OBJECT,
+                                      OWNER_SECURITY_INFORMATION,
+                                      &pSidOwner, NULL, NULL, NULL, &pSD);
     if (dwRtnCode != ERROR_SUCCESS) {
-        DWORD dwErrorCode = GetLastError();
         CloseHandle(hFile);
         if (have_facl) {
             fim_acl_free(&facl);
         }
-        {
-            char alert_msg[PATH_MAX+4];
-            alert_msg[PATH_MAX + 3] = '\0';
-            snprintf(alert_msg, PATH_MAX + 4, "GetSecurityInfo=%ld %s", dwErrorCode, file_name);
-            send_syscheck_msg(alert_msg);
-        }
-        return -1;
+        merror("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
+               "skipping file this scan",
+               ARGV0, file_name, (unsigned long)dwRtnCode);
+        return -2;
     }
 
     LPSTR szSID = NULL;
     ConvertSidToStringSid(pSidOwner, &szSID);
-    char* st_uid = NULL;
-    if( szSID ) {
-      st_uid = (char *) calloc( strlen(szSID) + 1, 1 );
-      memcpy( st_uid, szSID, strlen(szSID) );
+    char *st_uid = NULL;
+    if (szSID) {
+        st_uid = (char *)calloc(strlen(szSID) + 1, 1);
+        memcpy(st_uid, szSID, strlen(szSID));
     }
     LocalFree(szSID);
     if (pSD) {

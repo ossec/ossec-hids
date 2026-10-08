@@ -7,6 +7,7 @@
 #include <schannel.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <windows.h>
 #include "headers/shared.h"
 #include "debug_op.h"
 #include "file_op.h"
@@ -16,6 +17,31 @@
 #include "addagent/manage_agents.h"
 
 #define IO_BUFFER_SIZE  0x10000
+
+/* The installer lets the user choose the directory. The agent reads
+ * client.keys from the directory that contains the executable. */
+static void chdir_to_install_dir(void)
+{
+    char path[OS_MAXSTR + 1];
+    char *slash;
+    DWORD len;
+
+    path[OS_MAXSTR] = '\0';
+    len = GetModuleFileNameA(NULL, path, OS_MAXSTR);
+    if (len == 0 || len >= OS_MAXSTR) {
+        ErrorExit("%s: Unable to locate the install directory.", ARGV0);
+    }
+
+    slash = strrchr(path, '\\');
+    if (!slash || slash == path) {
+        ErrorExit("%s: Unable to locate the install directory.", ARGV0);
+    }
+
+    *slash = '\0';
+    if (chdir(path) != 0) {
+        ErrorExit("%s: Unable to change to the install directory: %s", ARGV0, path);
+    }
+}
 
 void report_help()
 {
@@ -372,6 +398,8 @@ int main(int argc, char **argv)
     /* Setting the name */
     OS_SetName(ARGV0);
 
+    chdir_to_install_dir();
+
     while((c = getopt(argc, argv, "hm:p:A:P:")) != -1)
     {
         switch(c){
@@ -437,7 +465,14 @@ int main(int argc, char **argv)
             char *ret = fgets(buf, 4095, fp);
 
             if (ret && strlen(buf) > 2) {
-                authpass = buf;
+                size_t len = strlen(buf);
+
+                while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
+                    buf[--len] = '\0';
+                }
+                if (buf[0] != '\0') {
+                    authpass = buf;
+                }
             }
 
             fclose(fp);
