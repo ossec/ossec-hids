@@ -2100,17 +2100,20 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <order>srcip</order>
 </decoder>
 
+<!-- Account Name: allow UPN dots and machine $ accounts. Skip Subject's
+     lone "-" so 4625 keeps the failed-logon Account Name (#1959). Later
+     windows1 children overwrite earlier matches when both hit. -->
 <decoder name="windows1">
   <type>windows</type>
   <parent>windows</parent>
-  <pcre2> Account Name:[ ]+?([A-Za-z0-9@_-]+?)[ ]+?Account</pcre2>
+  <pcre2> Account Name:[ ]+(?!-[ ]+Account)([A-Za-z0-9@._$][A-Za-z0-9@._$-]*)[ ]+Account</pcre2>
   <order>user</order>
 </decoder>
 
 <decoder name="windows1">
   <type>windows</type>
   <parent>windows</parent>
-  <pcre2>Account Domain:[ ]+?([A-Za-z0-9@_-]+?)[ ]+?Logon ID:</pcre2>
+  <pcre2>Account Domain:[ ]+([A-Za-z0-9@._-][A-Za-z0-9@._-]*)[ ]+Logon ID:</pcre2>
   <order>extra_data</order>
 </decoder>
 
