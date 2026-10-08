@@ -11,6 +11,12 @@
 #include "localfile-config.h"
 #include "config.h"
 
+/* Zero a newly allocated logreader slot (os_realloc does not clear memory). */
+static void init_empty_logreader(logreader *lr)
+{
+    memset(lr, 0, sizeof(*lr));
+    lr->ign = 360;
+}
 
 int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 {
@@ -185,7 +191,13 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                         lfile[OS_FLSIZE] = '\0';
                         ret = strftime(lfile, OS_FLSIZE, paths[g], p);
                         if (ret == 0) {
+                            int k;
+
                             merror(PARSE_ERROR, __local_name, paths[g]);
+                            for (k = g; paths[k] != NULL; k++) {
+                                free(paths[k]);
+                            }
+                            free(paths);
                             return (OS_INVALID);
                         }
                         os_strdup(paths[g], logf[pl].ffile);
@@ -199,14 +211,8 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                     os_realloc(logf, (pl + 2) * sizeof(logreader),
                                log_config->config);
                     logf = log_config->config;
-                    logf[pl].file = NULL;
-                    logf[pl].alias = NULL;
-                    logf[pl].logformat = NULL;
-                    logf[pl].fp = NULL;
-                    logf[pl].ffile = NULL;
-                    logf[pl + 1].file = NULL;
-                    logf[pl + 1].alias = NULL;
-                    logf[pl + 1].logformat = NULL;
+                    init_empty_logreader(&logf[pl]);
+                    init_empty_logreader(&logf[pl + 1]);
                 }
                 free(paths);
             } else if (strchr(node[i]->content, '%'))
@@ -267,18 +273,11 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 
                     /* Now we need to create another file entry */
                     pl++;
-                    os_realloc(logf, (pl +2)*sizeof(logreader), log_config->config);
+                    os_realloc(logf, (pl + 2) * sizeof(logreader),
+                               log_config->config);
                     logf = log_config->config;
-
-                    logf[pl].file = NULL;
-                    logf[pl].alias = NULL;
-                    logf[pl].logformat = NULL;
-                    logf[pl].fp = NULL;
-                    logf[pl].ffile = NULL;
-
-                    logf[pl +1].file = NULL;
-                    logf[pl +1].alias = NULL;
-                    logf[pl +1].logformat = NULL;
+                    init_empty_logreader(&logf[pl]);
+                    init_empty_logreader(&logf[pl + 1]);
                 }
 
 

@@ -21,7 +21,6 @@ int loop_timeout;
 int logr_queue;
 int open_file_attempts;
 logreader *logff;
-static int _cday = 0;
 
 
 static char *rand_keepalive_str(char *dst, int size)
@@ -259,8 +258,6 @@ void LogCollectorStart()
 
             /* Initialize the files */
             if (logff[i].ffile) {
-                /* Day must be zero for all files to be initialized */
-                _cday = 0;
                 if (update_fname(i)) {
                     handle_file(i, 1, 1);
                 } else {
@@ -490,7 +487,7 @@ void LogCollectorStart()
             }
 #endif
 
-            /* Files with date -- check for day change */
+            /* Date-based filenames -- rotate when strftime expands differently */
             if (logff[i].ffile) {
                 if (update_fname(i)) {
                     if (logff[i].fp) {
@@ -681,9 +678,8 @@ int update_fname(int i)
 
     p = localtime(&__ctime);
 
-    /* Always recompute from the strftime template so %H/%M (and similar)
-     * rotate when the expanded name changes — not only on day-of-month
-     * boundaries (#1954).
+    /* Recompute from the strftime template so %H/%M (and similar) rotate
+     * when the expanded name changes — not only on day-of-month (#1954).
      */
     lfile[OS_FLSIZE] = '\0';
     ret = strftime(lfile, OS_FLSIZE, logff[i].ffile, p);
@@ -699,12 +695,9 @@ int update_fname(int i)
 
         verbose(VAR_LOG_MON, ARGV0, logff[i].file);
 
-        /* Other date-based files may still need a refresh this pass */
-        _cday = 0;
         return (1);
     }
 
-    _cday = p->tm_mday;
     return (0);
 }
 
