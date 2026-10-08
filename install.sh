@@ -92,6 +92,19 @@ Install()
     if [ "X%NUNAME" = "XBitrig" ]; then
 	MAKEBIN=gmake
     fi
+    # Solaris make is not GNU make on older releases, and a stock zone has
+    # gcc but no cc (issue #2016).
+    if [ "X$NUNAME" = "XSunOS" ]; then
+        if command -v gmake >/dev/null 2>&1; then
+            MAKEBIN=gmake
+        fi
+        if ! command -v cc >/dev/null 2>&1; then
+            if command -v gcc >/dev/null 2>&1; then
+                CC=gcc
+                export CC
+            fi
+        fi
+    fi
 
 
     # Makefile
