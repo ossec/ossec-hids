@@ -16,7 +16,33 @@ static const char *(months[]) = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 
 /* Live daemon log. Each writer fopen/fclose's it, so rename starts a new file. */
 #define OSSEC_LOG_LIVE "/logs/ossec.log"
+#define OSSEC_LOG_NEW  "/logs/.ossec.log.new"
 #define OSSEC_LOG_DIR  "/logs/ossec"
+
+/* Empty log owned by this process (ossec, after privsep) and group-writable.
+ * fchmod pins 0660 so the process umask cannot leave it owner-only. */
+static int mond_prepare_log(const char *path)
+{
+    int fd;
+    mode_t old_umask;
+
+    old_umask = umask(0117);
+    fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0660);
+    umask(old_umask);
+    if (fd < 0) {
+        merror(FOPEN_ERROR, ARGV0, path, errno, strerror(errno));
+        return (-1);
+    }
+    if (fchmod(fd, 0660) < 0) {
+        merror("%s: ERROR: Could not chmod '%s': %s",
+               ARGV0, path, strerror(errno));
+        close(fd);
+        unlink(path);
+        return (-1);
+    }
+    close(fd);
+    return (0);
+}
 
 static int mond_ensure_dir(const char *path)
 {
@@ -44,8 +70,6 @@ static void rotate_ossec_log(int cday, int cmon, int cyear, const struct tm *pre
     char dated_old[OS_FLSIZE + 1];
     char dir_year[OS_FLSIZE + 1];
     char dir_mon[OS_FLSIZE + 1];
-    FILE *fp;
-    mode_t old_umask;
 
     if (File_DateofChange(OSSEC_LOG_LIVE) < 0) {
         return;
@@ -69,20 +93,25 @@ static void rotate_ossec_log(int cday, int cmon, int cyear, const struct tm *pre
     memset(dated_old, '\0', OS_FLSIZE + 1);
     mond_ossec_log_path(dated, cyear, cmon, cday);
 
-    if (rename(OSSEC_LOG_LIVE, dated) < 0) {
-        merror("%s: ERROR: Could not rotate '%s' to '%s': %s",
-               ARGV0, OSSEC_LOG_LIVE, dated, strerror(errno));
+    /* Build the replacement first. rename() onto the live name then replaces
+     * any file a writer (for example ossec-remoted, as ossecr) created in the
+     * gap, so the result stays ossec:ossec 0660. */
+    if (mond_prepare_log(OSSEC_LOG_NEW) < 0) {
         return;
     }
 
-    /* Recreate the live file as ossec:ossec 0660 before the next writer. */
-    old_umask = umask(0117);
-    fp = fopen(OSSEC_LOG_LIVE, "a");
-    umask(old_umask);
-    if (fp) {
-        fclose(fp);
-    } else {
-        merror(FOPEN_ERROR, ARGV0, OSSEC_LOG_LIVE, errno, strerror(errno));
+    if (rename(OSSEC_LOG_LIVE, dated) < 0) {
+        merror("%s: ERROR: Could not rotate '%s' to '%s': %s",
+               ARGV0, OSSEC_LOG_LIVE, dated, strerror(errno));
+        unlink(OSSEC_LOG_NEW);
+        return;
+    }
+
+    if (rename(OSSEC_LOG_NEW, OSSEC_LOG_LIVE) < 0) {
+        merror("%s: ERROR: Could not install new '%s': %s",
+               ARGV0, OSSEC_LOG_LIVE, strerror(errno));
+        unlink(OSSEC_LOG_NEW);
+        return;
     }
 
     mond_ossec_log_path(dated_old, prev->tm_year + 1900, prev->tm_mon, prev->tm_mday);
