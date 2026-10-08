@@ -118,8 +118,11 @@ int Start_win32_Syscheck()
     /* Print options */
     r = 0;
     while (syscheck.registry[r] != NULL) {
-        verbose("%s: INFO: Monitoring registry entry: '%s'.",
-                ARGV0, syscheck.registry[r]);
+        verbose("%s: INFO: Monitoring registry entry: '%s' (%s).",
+                ARGV0, syscheck.registry[r],
+                (syscheck.registry_arch &&
+                 syscheck.registry_arch[r] == ARCH_64BIT)
+                ? "64bit" : "32bit");
         r++;
     }
 

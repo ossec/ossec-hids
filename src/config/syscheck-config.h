@@ -29,6 +29,11 @@
 #define CHECK_ATTRS         0004000  /* Windows file attributes (Hidden, etc.) */
 #define CHECK_ACL           0010000  /* Windows NTFS DACL/ACE matrix */
 
+/* Windows registry view (WoW64). Stored per windows_registry entry. */
+#define ARCH_32BIT  0
+#define ARCH_64BIT  1
+#define ARCH_BOTH   2   /* parse-time only; expands to 64 then 32 */
+
 
 #include <stdio.h>
 
@@ -76,6 +81,7 @@ typedef struct _config {
     char **registry_ignore;         /* list of registry entries to ignore */
     void **registry_ignore_regex;   /* regex of registry entries to ignore */
     char **registry;                /* array of registry entries to be scanned */
+    int *registry_arch;             /* ARCH_32BIT / ARCH_64BIT per registry[] */
     FILE *reg_fp;
 #endif
 

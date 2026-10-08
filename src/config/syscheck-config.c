@@ -18,10 +18,15 @@ int dump_syscheck_entry(syscheck_config *syscheck, const char *entry, int vals, 
 
     if (reg == 1) {
 #ifdef WIN32
+        /* vals holds ARCH_32BIT or ARCH_64BIT for registry entries */
         if (syscheck->registry == NULL) {
             os_calloc(2, sizeof(char *), syscheck->registry);
             syscheck->registry[pl + 1] = NULL;
             os_strdup(entry, syscheck->registry[pl]);
+
+            os_calloc(2, sizeof(int), syscheck->registry_arch);
+            syscheck->registry_arch[pl + 1] = 0;
+            syscheck->registry_arch[pl] = vals;
         } else {
             while (syscheck->registry[pl] != NULL) {
                 pl++;
@@ -30,6 +35,11 @@ int dump_syscheck_entry(syscheck_config *syscheck, const char *entry, int vals, 
                        syscheck->registry);
             syscheck->registry[pl + 1] = NULL;
             os_strdup(entry, syscheck->registry[pl]);
+
+            os_realloc(syscheck->registry_arch, (pl + 2) * sizeof(int),
+                       syscheck->registry_arch);
+            syscheck->registry_arch[pl + 1] = 0;
+            syscheck->registry_arch[pl] = vals;
         }
 #endif
     }
@@ -85,11 +95,13 @@ int dump_syscheck_entry(syscheck_config *syscheck, const char *entry, int vals, 
 }
 
 #ifdef WIN32
-/* Read Windows registry configuration */
-int read_reg(syscheck_config *syscheck, char *entries)
+/* Read Windows registry configuration (arch is ARCH_32BIT or ARCH_64BIT). */
+int read_reg(syscheck_config *syscheck, char *entries, int arch)
 {
     int i;
+    int is_dup;
     char **entry;
+    char **entry_org;
     char *tmp_str;
 
     /* Get each entry separately */
@@ -98,6 +110,7 @@ int read_reg(syscheck_config *syscheck, char *entries)
     if (entry == NULL) {
         return (0);
     }
+    entry_org = entry;
 
     while (*entry) {
         char *tmp_entry;
@@ -121,33 +134,32 @@ int read_reg(syscheck_config *syscheck, char *entries)
             }
         }
 
-        /* Add entries - look for the last available */
+        /* Duplicate = same path and same arch; skip only this entry */
+        is_dup = 0;
         i = 0;
         while (syscheck->registry && syscheck->registry[i]) {
-            int str_len_i;
-            int str_len_dir;
-
-            str_len_dir = strlen(tmp_entry);
-            str_len_i = strlen(syscheck->registry[i]);
-
-            if (str_len_dir > str_len_i) {
-                str_len_dir = str_len_i;
-            }
-
-            /* Duplicated entry */
-            if (strcmp(syscheck->registry[i], tmp_entry) == 0) {
+            if (strcasecmp(syscheck->registry[i], tmp_entry) == 0 &&
+                    syscheck->registry_arch &&
+                    syscheck->registry_arch[i] == arch) {
                 merror(SK_DUP, __local_name, tmp_entry);
-                return (1);
+                is_dup = 1;
+                break;
             }
             i++;
         }
-
-        /* Add new entry */
-        dump_syscheck_entry(syscheck, tmp_entry, 0, 1, NULL);
+        if (!is_dup) {
+            dump_syscheck_entry(syscheck, tmp_entry, arch, 1, NULL);
+        }
 
         /* Next entry */
         entry++;
     }
+
+    i = 0;
+    while (entry_org[i]) {
+        free(entry_org[i++]);
+    }
+    free(entry_org);
 
     return (1);
 }
@@ -554,7 +566,43 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
         /* Get Windows registry */
         else if (strcmp(node[i]->element, xml_registry) == 0) {
 #ifdef WIN32
-            if (!read_reg(syscheck, node[i]->content)) {
+            int arch = ARCH_32BIT;
+            int j;
+
+            /* Optional arch="32bit|64bit|both" (default 32bit) */
+            if (node[i]->attributes && node[i]->values) {
+                for (j = 0; node[i]->attributes[j]; j++) {
+                    if (!node[i]->values[j]) {
+                        merror(XML_VALUEERR, __local_name,
+                               node[i]->element, node[i]->attributes[j]);
+                        return (OS_INVALID);
+                    }
+                    if (strcmp(node[i]->attributes[j], "arch") == 0) {
+                        if (strcmp(node[i]->values[j], "32bit") == 0) {
+                            arch = ARCH_32BIT;
+                        } else if (strcmp(node[i]->values[j], "64bit") == 0) {
+                            arch = ARCH_64BIT;
+                        } else if (strcmp(node[i]->values[j], "both") == 0) {
+                            arch = ARCH_BOTH;
+                        } else {
+                            merror(XML_VALUEERR, __local_name,
+                                   node[i]->element, node[i]->values[j]);
+                            return (OS_INVALID);
+                        }
+                    } else {
+                        merror(XML_INVATTR, __local_name,
+                               node[i]->attributes[j], node[i]->element);
+                        return (OS_INVALID);
+                    }
+                }
+            }
+
+            if (arch == ARCH_BOTH) {
+                if (!read_reg(syscheck, node[i]->content, ARCH_64BIT) ||
+                        !read_reg(syscheck, node[i]->content, ARCH_32BIT)) {
+                    return (OS_INVALID);
+                }
+            } else if (!read_reg(syscheck, node[i]->content, arch)) {
                 return (OS_INVALID);
             }
 #endif
