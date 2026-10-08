@@ -74,7 +74,7 @@ static DBConfig *db_config_pt = NULL;
  */
 void osdb_escapestr(char *str)
 {
-    if (!str) {
+    if (!str || *str == '\0') {
         return;
     }
 
@@ -217,7 +217,7 @@ int mysql_osdb_query_insert(void *db_conn, const char *query)
 }
 
 /* Sends a select query to database. Returns the value of it.
- * Returns 0 on error (not found).
+ * Returns 0 when not found, -1 on error.
  */
 int mysql_osdb_query_select(void *db_conn, const char *query)
 {
@@ -230,7 +230,7 @@ int mysql_osdb_query_select(void *db_conn, const char *query)
         /* Failure: report error */
         merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
         osdb_seterror();
-        return (0);
+        return (-1);
     }
 
     /* Get result */
@@ -239,7 +239,7 @@ int mysql_osdb_query_select(void *db_conn, const char *query)
         /* Failure: report error */
         merror(DBQUERY_ERROR, ARGV0, query, mysql_error(db_conn));
         osdb_seterror();
-        return (0);
+        return (-1);
     }
 
     /* Get row. We only care about the first result. */
@@ -317,7 +317,7 @@ int postgresql_osdb_query_insert(void *db_conn, const char *query)
 }
 
 /* Send a select query to database. Returns the value of it.
- * Returns 0 on error (not found).
+ * Returns 0 when not found, -1 on error.
  */
 int postgresql_osdb_query_select(void *db_conn, const char *query)
 {
@@ -328,7 +328,7 @@ int postgresql_osdb_query_select(void *db_conn, const char *query)
     if (!result) {
         merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
         osdb_seterror();
-        return (0);
+        return (-1);
     }
 
     if ((PQresultStatus(result) == PGRES_TUPLES_OK)) {
@@ -337,8 +337,9 @@ int postgresql_osdb_query_select(void *db_conn, const char *query)
         }
     } else {
         merror(DBQUERY_ERROR, ARGV0, query, PQerrorMessage(db_conn));
+        PQclear(result);
         osdb_seterror();
-        return (0);
+        return (-1);
     }
 
     /* Clear result */

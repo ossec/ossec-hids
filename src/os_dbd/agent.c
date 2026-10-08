@@ -12,19 +12,19 @@
 
 /* Prototypes */
 static void __Agent_CopyField(char *dst, size_t dstlen, const char *src);
+static void __Agent_StripCidr(char *ip);
 static int __Agent_Upsert(const DBConfig *db_config, const char *name, const char *ip,
                           const char *version, const char *information,
-                          unsigned int last_contact, int have_contact) __attribute__((nonnull));
+                          unsigned int last_contact, int have_contact,
+                          int have_body) __attribute__((nonnull(1, 2, 3)));
 static int __Agent_ReadInfo(const char *name, const char *ip, char *version, size_t version_len,
                             char *information, size_t information_len,
-                            unsigned int *last_contact) __attribute__((nonnull));
+                            unsigned int *last_contact, int *have_body) __attribute__((nonnull));
 
 
 /* Cap to the column width, then run the dbd allow-list in place. */
 static void __Agent_CopyField(char *dst, size_t dstlen, const char *src)
 {
-    size_t n;
-
     if (dstlen < 2) {
         return;
     }
@@ -35,43 +35,47 @@ static void __Agent_CopyField(char *dst, size_t dstlen, const char *src)
     }
 
     snprintf(dst, dstlen, "%s", src);
-    /* snprintf already capped. Drop a partial UTF-8 sequence at the cut. */
-    if (strlen(src) >= dstlen) {
-        n = strlen(dst);
-        while (n > 0 && ((unsigned char)dst[n - 1] & 0xc0) == 0x80) {
-            n--;
-        }
-        if (n > 0 && ((unsigned char)dst[n - 1] & 0xc0) == 0xc0) {
-            n--;
-        }
-        dst[n] = '\0';
-    }
-
     osdb_escapestr(dst);
     if (dst[0] == '\0') {
         snprintf(dst, dstlen, "Unknown");
     }
 }
 
-/* Insert or update one agent. name is matched with server_id.
- * The table has no OSSEC agent-id column, and no unique key on name,
- * so REPLACE would add a second row.
+/* Match remoted / keys.c: agent-info files use the address without /prefix. */
+static void __Agent_StripCidr(char *ip)
+{
+    char *slash = strchr(ip, '/');
+
+    if (slash) {
+        *slash = '\0';
+    }
+}
+
+/* Insert or update one agent. Matched on server_id + name.
+ * The table has no OSSEC agent-id column.
  */
 static int __Agent_Upsert(const DBConfig *db_config, const char *name, const char *ip,
                           const char *version, const char *information,
-                          unsigned int last_contact, int have_contact)
+                          unsigned int last_contact, int have_contact,
+                          int have_body)
 {
     int agent_id;
     char sql_query[OS_SIZE_1024];
-    char name_sql[64 + 1];
+    char name_sql[128 + 1];
     char ip_sql[46 + 1];
     char version_sql[32 + 1];
     char info_sql[128 + 1];
+    char ip_store[46 + 1];
+
+    snprintf(ip_store, sizeof(ip_store), "%s", ip);
+    __Agent_StripCidr(ip_store);
 
     __Agent_CopyField(name_sql, sizeof(name_sql), name);
-    __Agent_CopyField(ip_sql, sizeof(ip_sql), ip);
-    __Agent_CopyField(version_sql, sizeof(version_sql), version);
-    __Agent_CopyField(info_sql, sizeof(info_sql), information);
+    __Agent_CopyField(ip_sql, sizeof(ip_sql), ip_store);
+    __Agent_CopyField(version_sql, sizeof(version_sql),
+                      have_body ? version : "Unknown");
+    __Agent_CopyField(info_sql, sizeof(info_sql),
+                      have_body ? information : "Unknown");
 
     snprintf(sql_query, OS_SIZE_1024 - 1,
              "SELECT id FROM "
@@ -80,6 +84,10 @@ static int __Agent_Upsert(const DBConfig *db_config, const char *name, const cha
              db_config->server_id, name_sql);
 
     agent_id = osdb_query_select(db_config->conn, sql_query);
+    if (agent_id < 0) {
+        return (0);
+    }
+
     if (agent_id == 0) {
         snprintf(sql_query, OS_SIZE_1024 - 1,
                  "INSERT INTO "
@@ -87,17 +95,24 @@ static int __Agent_Upsert(const DBConfig *db_config, const char *name, const cha
                  "VALUES ('%u', '%u', '%s', '%s', '%s', '%s')",
                  db_config->server_id, last_contact,
                  ip_sql, version_sql, name_sql, info_sql);
-    } else if (have_contact) {
+    } else if (have_contact && have_body) {
         snprintf(sql_query, OS_SIZE_1024 - 1,
                  "UPDATE agent SET "
                  "last_contact='%u', ip_address='%s', version='%s', information='%s' "
                  "WHERE id = '%d' AND server_id = '%u'",
                  last_contact, ip_sql, version_sql, info_sql,
                  agent_id, db_config->server_id);
-    } else {
-        /* Keepalive file is gone. Update the address from client.keys,
-         * leave last_contact / version / information alone.
+    } else if (have_contact) {
+        /* File exists but body was empty (remoted truncate window). Keep
+         * version and information; refresh last_contact and address.
          */
+        snprintf(sql_query, OS_SIZE_1024 - 1,
+                 "UPDATE agent SET "
+                 "last_contact='%u', ip_address='%s' "
+                 "WHERE id = '%d' AND server_id = '%u'",
+                 last_contact, ip_sql, agent_id, db_config->server_id);
+    } else {
+        /* No keepalive file. Update the address from client.keys only. */
         snprintf(sql_query, OS_SIZE_1024 - 1,
                  "UPDATE agent SET "
                  "ip_address='%s' "
@@ -115,33 +130,30 @@ static int __Agent_Upsert(const DBConfig *db_config, const char *name, const cha
 
 /* queue/agent-info/<name>-<ip> is written by remoted. The first line is
  * "uname - OSSEC ...". The file mtime is the last keepalive.
- * Returns 1 when the keepalive file exists.
+ * Returns 1 when the keepalive file exists. *have_body is set when the
+ * first line was read.
  */
 static int __Agent_ReadInfo(const char *name, const char *ip, char *version, size_t version_len,
                             char *information, size_t information_len,
-                            unsigned int *last_contact)
+                            unsigned int *last_contact, int *have_body)
 {
     FILE *fp;
     char path[OS_SIZE_1024 + 1];
     char buf[OS_SIZE_1024 + 1];
     char ip_file[64];
     char *sep;
-    char *slash;
     struct stat st;
 
     version[0] = '\0';
     information[0] = '\0';
     *last_contact = 0;
+    *have_body = 0;
 
     snprintf(ip_file, sizeof(ip_file), "%s", ip);
-    slash = strchr(ip_file, '/');
-    if (slash) {
-        *slash = '\0';
-    }
+    __Agent_StripCidr(ip_file);
 
-    /* client.keys is admin-owned. Do not use it as a path. */
-    if (strchr(name, '/') || strstr(name, "..") ||
-            strchr(ip_file, '/') || strstr(ip_file, "..")) {
+    /* Path separator only. Names may contain ".." as characters. */
+    if (strchr(name, '/') != NULL || strchr(ip_file, '/') != NULL) {
         return (0);
     }
 
@@ -175,6 +187,7 @@ static int __Agent_ReadInfo(const char *name, const char *ip, char *version, siz
         snprintf(version, version_len, "%s", sep + 3);
     }
     snprintf(information, information_len, "%s", buf);
+    *have_body = 1;
     return (1);
 }
 
@@ -206,6 +219,7 @@ int OS_Agents_InsertDB(const DBConfig *db_config)
         char information[OS_SIZE_1024 + 1];
         unsigned int last_contact = 0;
         int have_contact;
+        int have_body = 0;
 
         if (buffer[0] == '#' || buffer[0] == ' ' || buffer[0] == '\n') {
             continue;
@@ -246,9 +260,9 @@ int OS_Agents_InsertDB(const DBConfig *db_config)
 
         have_contact = __Agent_ReadInfo(name, ip, version, sizeof(version),
                                         information, sizeof(information),
-                                        &last_contact);
+                                        &last_contact, &have_body);
         if (__Agent_Upsert(db_config, name, ip, version, information,
-                           last_contact, have_contact)) {
+                           last_contact, have_contact, have_body)) {
             inserted++;
         }
     }

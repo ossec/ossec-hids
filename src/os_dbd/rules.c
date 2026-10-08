@@ -139,6 +139,13 @@ static void _Groups_ReadInsertDB(RuleInfo *rule, const DBConfig *db_config)
         }
 
         cat_id = __Groups_SelectGroup(tmp_group, db_config);
+        if (cat_id < 0) {
+            tmp_group = tmp_str;
+            if (tmp_group) {
+                tmp_str = strchr(tmp_group, ',');
+            }
+            continue;
+        }
 
         /* Check if we have this group in the db already. If not, add it. */
         if (cat_id == 0) {
@@ -146,12 +153,12 @@ static void _Groups_ReadInsertDB(RuleInfo *rule, const DBConfig *db_config)
             cat_id = __Groups_SelectGroup(tmp_group, db_config);
         }
 
-        /* If cat_id is valid (not zero), insert the mapping between
-         * the category and the rule
-         */
-        if (cat_id != 0) {
+        /* If cat_id is valid, insert the mapping between the category and the rule */
+        if (cat_id > 0) {
+            int mapped = __Groups_SelectGroupMapping(cat_id, rule->sigid, db_config);
+
             /* First check if the mapping is not already there */
-            if (!__Groups_SelectGroupMapping(cat_id, rule->sigid, db_config)) {
+            if (mapped == 0) {
                 /* If not, we add it */
                 __Groups_InsertGroupMapping(cat_id, rule->sigid, db_config);
             }
@@ -211,12 +218,17 @@ static void *_Rules_ReadInsertDB(RuleInfo *rule, void *db_config)
          * REPLACE nor ON CONFLICT, which arrived in 9.5.
          */
         if (dbc->db_type == POSTGDB) {
+            int existing;
+
             snprintf(sql_query, OS_SIZE_1024 - 1,
                      "SELECT id FROM "
                      "signature WHERE rule_id = '%u'",
                      rule->sigid);
 
-            if (osdb_query_select(dbc->conn, sql_query) == 0) {
+            existing = osdb_query_select(dbc->conn, sql_query);
+            if (existing < 0) {
+                return (NULL);
+            } else if (existing == 0) {
                 snprintf(sql_query, OS_SIZE_1024 - 1,
                          "INSERT INTO "
                          "signature(rule_id, level, description) "

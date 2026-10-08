@@ -52,29 +52,35 @@ static int __DBInsertServer(const char *server, const char *info, const DBConfig
              "SELECT id from server where hostname = '%s'",
              server);
 
-    /* If not present, insert */
-    if (osdb_query_select(db_config->conn, sql_query) == 0) {
-        snprintf(sql_query, OS_SIZE_1024 - 1,
-                 "INSERT INTO "
-                 "server(last_contact, version, hostname, information) "
-                 "VALUES ('%u', '%s', '%s', '%s')",
-                 (unsigned int)time(0), __ossec_version, server, info);
+    {
+        int existing = osdb_query_select(db_config->conn, sql_query);
 
-        if (!osdb_query_insert(db_config->conn, sql_query)) {
-            merror(DB_GENERROR, ARGV0);
+        if (existing < 0) {
+            return (0);
         }
-    }
 
-    /* If present, update it */
-    else {
-        snprintf(sql_query, OS_SIZE_1024 - 1,
-                 "UPDATE server SET "
-                 "last_contact='%u',version='%s',information='%s' "
-                 "WHERE hostname = '%s'",
-                 (unsigned int)time(0), __ossec_version, info, server);
+        /* If not present, insert */
+        if (existing == 0) {
+            snprintf(sql_query, OS_SIZE_1024 - 1,
+                     "INSERT INTO "
+                     "server(last_contact, version, hostname, information) "
+                     "VALUES ('%u', '%s', '%s', '%s')",
+                     (unsigned int)time(0), __ossec_version, server, info);
 
-        if (!osdb_query_insert(db_config->conn, sql_query)) {
-            merror(DB_GENERROR, ARGV0);
+            if (!osdb_query_insert(db_config->conn, sql_query)) {
+                merror(DB_GENERROR, ARGV0);
+            }
+        } else {
+            /* If present, update it */
+            snprintf(sql_query, OS_SIZE_1024 - 1,
+                     "UPDATE server SET "
+                     "last_contact='%u',version='%s',information='%s' "
+                     "WHERE hostname = '%s'",
+                     (unsigned int)time(0), __ossec_version, info, server);
+
+            if (!osdb_query_insert(db_config->conn, sql_query)) {
+                merror(DB_GENERROR, ARGV0);
+            }
         }
     }
 
