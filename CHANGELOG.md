@@ -36,7 +36,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
-- @atomicturtle - [PR 2333](https://github.com/ossec/ossec-hids/pull/2333) - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is tagged ``[x64]``. Default view is 32-bit regardless of agent bitness; unknown ``windows_registry`` attributes are rejected (#954)
+- @atomicturtle - [PR 2333](https://github.com/ossec/ossec-hids/pull/2333) - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is prefixed ``arch64:`` (collision-free). Default view is 32-bit regardless of agent bitness; unknown ``windows_registry`` attributes are rejected (#954)
 - @atomicturtle - Take the IIS default W3C ``sc-status`` from the fields that follow it, so a referer of ``/404`` or ``200`` and a three-digit ``sc-substatus`` are not the response code (#989)
 - @atomicturtle - Reject an ossec-dbd INSERT whose base query cannot fit, and reserve the SQL buffer's terminating NUL when capping ``full_log`` (#1959)
 - @atomicturtle - Bound agent decrypt backoff so a burst of bad or empty replies sleeps once per drain and still fails over (#1944)

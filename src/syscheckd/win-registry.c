@@ -23,7 +23,7 @@
 /* Places to story the registry values */
 #define SYS_WIN_REG     "syscheck/syscheckregistry.db"
 #define SYS_REG_TMP     "syscheck/syscheck_sum.tmp"
-/* Alert/DB line: "0:0:0:0:md5:sha1 path [x64]" — must fit MAX_KEY + tag */
+/* Alert/DB line: "0:0:0:0:md5:sha1 arch64:path" — must fit MAX_KEY + prefix */
 #define SYS_REG_MSG_SIZE (MAX_KEY + 128)
 
 /* Global variables */
@@ -34,12 +34,16 @@ int run_count = 0;
 /* Prototypes */
 void os_winreg_open_key(char *subkey, char *fullkey_name, int arch);
 
-/* DB/alert identity: 32-bit view stays untagged (legacy baseline compatible);
- * 64-bit view is tagged [x64] so both can coexist when arch=both. */
+/* DB/alert identity: 32-bit view stays untagged (legacy baseline compatible).
+ * 64-bit view uses a reserved "arch64:" prefix. A trailing " [x64]" suffix can
+ * collide with a real key name; configured paths always start with HKEY_*, so
+ * the prefix cannot match an untagged identity. Ignore matching uses the raw
+ * path before this transform.
+ */
 static void os_winreg_arch_key(char *out, size_t n, const char *path, int arch)
 {
     if (arch == ARCH_64BIT) {
-        snprintf(out, n, "%s [x64]", path);
+        snprintf(out, n, "arch64:%s", path);
     } else {
         snprintf(out, n, "%s", path);
     }
