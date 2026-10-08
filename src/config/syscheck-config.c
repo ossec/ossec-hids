@@ -507,6 +507,7 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
     const char *xml_registry_ignore = "registry_ignore";
     const char *xml_auto_ignore = "auto_ignore";
     const char *xml_alert_new_files = "alert_new_files";
+    const char *xml_report_new_as_changed = "report_new_files_as_changed";
     const char *xml_disabled = "disabled";
     const char *xml_scan_on_start = "scan_on_start";
     const char *xml_prefilter_cmd = "prefilter_cmd";
@@ -839,6 +840,8 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
             /* auto_ignore is not read here */
         } else if (strcmp(node[i]->element, xml_alert_new_files) == 0) {
             /* alert_new_files option is not read here */
+        } else if (strcmp(node[i]->element, xml_report_new_as_changed) == 0) {
+            /* report_new_files_as_changed is read via Read_GlobalSK */
         } else if (strcmp(node[i]->element, xml_prefilter_cmd) == 0) {
             char cmd[OS_MAXSTR];
             struct stat statbuf;

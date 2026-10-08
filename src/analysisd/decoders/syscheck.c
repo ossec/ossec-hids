@@ -1069,18 +1069,30 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         }
     }
 
-    /* If we reach here, this file is not present in our database */
-    fseek(fp, 0, SEEK_END);
-    if (sk_agent_index[agent_id]) {
-        sk_db_entry *db_entry = DB_GetOrCreateIndexEntry(agent_id, f_name);
+    /* If we reach here, this file is not present in our database.
+     * Default is "+++…" (not listed by syscheck_control -i). When
+     * report_new_files_as_changed is enabled and the agent DB is past
+     * baseline / maintenance, store as "!+++…" so -i includes creates (#1831).
+     */
+    {
+        int mark_changed = (!maintenance &&
+                            Config.syscheck_report_new_as_changed &&
+                            DB_IsCompleted(agent_id));
+        const char *row_fmt = mark_changed ? "!+++%s !%ld %s\n" : "+++%s !%ld %s\n";
+        const char *pfx_fmt = mark_changed ? "!+++%s" : "+++%s";
 
-        if (db_entry && fgetpos(fp, &db_entry->pos) == 0) {
-            snprintf(db_entry->prefix_sum, OS_MAXSTR, "+++%s", c_sum);
+        fseek(fp, 0, SEEK_END);
+        if (sk_agent_index[agent_id]) {
+            sk_db_entry *db_entry = DB_GetOrCreateIndexEntry(agent_id, f_name);
+
+            if (db_entry && fgetpos(fp, &db_entry->pos) == 0) {
+                snprintf(db_entry->prefix_sum, OS_MAXSTR, pfx_fmt, c_sum);
+            }
         }
-    }
 
-    fprintf(fp, "+++%s !%ld %s\n", c_sum, (long int)lf->time, f_name);
-    fflush(fp);
+        fprintf(fp, row_fmt, c_sum, (long int)lf->time, f_name);
+        fflush(fp);
+    }
 
     if (maintenance) {
         syscheck_maint_log_accept(lf->location, "new", f_name);

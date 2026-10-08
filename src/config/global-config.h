@@ -20,6 +20,9 @@ typedef struct __Config {
     u_int8_t integrity;
     u_int8_t syscheck_auto_ignore;
     u_int8_t syscheck_alert_new;
+    /* When set, new post-baseline FIM rows are stored as !+++ so
+     * syscheck_control -i lists them as changed (#1831). */
+    u_int8_t syscheck_report_new_as_changed;
     u_int8_t rootcheck;
     u_int8_t hostinfo;
     u_int8_t mailbylevel;
