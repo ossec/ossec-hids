@@ -431,9 +431,12 @@ void realtime_pending_process(void)
 
         c_read_set_quiet(entry->attempts > 0);
         /* Do not alert from inside the checksum. The file can disappear
-         * after rt_path_missing() and before the stat in c_read_file. */
+         * after rt_path_missing() and before the stat in c_read_file.
+         * A new file must not be stored with an "xxx" checksum either. */
         c_read_defer_missing_alert(1);
+        c_read_set_hold_baseline(1);
         read_rc = realtime_checksumfile(entry->path);
+        c_read_set_hold_baseline(0);
         c_read_defer_missing_alert(0);
         c_read_set_quiet(0);
 

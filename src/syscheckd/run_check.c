@@ -37,8 +37,11 @@ static time_t syscheck_idle_wait(time_t curr_time, time_t prev_time_sk,
 /* Count of baseline/update messages that could not reach the agent queue. */
 static unsigned int syscheck_send_failures = 0;
 
-/* Realtime retries re-enter c_read_file. Warn on the first failure only. */
+/* Realtime retries re-enter the checksum. Warn on the first failure only. */
 static int c_read_quiet = 0;
+
+/* A new file with a failed checksum stays unstored so it can be retried. */
+static int c_read_hold_baseline = 0;
 
 /* Realtime confirms a missing path before the delete alert is sent. */
 static int c_read_defer_missing = 0;
@@ -48,16 +51,25 @@ void c_read_set_quiet(int quiet)
     c_read_quiet = quiet ? 1 : 0;
 }
 
+int c_read_is_quiet(void)
+{
+    return (c_read_quiet);
+}
+
+void c_read_set_hold_baseline(int hold)
+{
+    c_read_hold_baseline = hold ? 1 : 0;
+}
+
+int c_read_holding_baseline(void)
+{
+    return (c_read_hold_baseline);
+}
+
 void c_read_defer_missing_alert(int defer)
 {
     c_read_defer_missing = defer ? 1 : 0;
 }
-
-#define c_read_warn(...) do { \
-        if (!c_read_quiet) { \
-            merror(__VA_ARGS__); \
-        } \
-    } while (0)
 
 /* Max idle between daemon-loop iterations: honor <frequency> / rootcheck
  * cadence while still capping at SYSCHECK_WAIT so long frequencies do not

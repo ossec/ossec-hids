@@ -69,12 +69,25 @@ void realtime_pending_process(void);
 /* Milliseconds until the next queued realtime checksum, or -1 if idle. */
 int realtime_pending_ms(void);
 
-/* Suppress c_read_file warnings while a realtime retry is in progress. */
+/* Suppress checksum warnings while a realtime retry is in progress. */
 void c_read_set_quiet(int quiet);
+int c_read_is_quiet(void);
+
+/* When set, read_file() does not store an "xxx" checksum as a baseline.
+ * The realtime queue retries until the file can be read. */
+void c_read_set_hold_baseline(int hold);
+int c_read_holding_baseline(void);
 
 /* When set, a missing path returns -1 without sending the delete alert.
  * The realtime queue confirms the path is still gone before it alerts. */
 void c_read_defer_missing_alert(int defer);
+
+/* shared.h (merror) must be included before this macro is used. */
+#define c_read_warn(...) do { \
+        if (!c_read_is_quiet()) { \
+            merror(__VA_ARGS__); \
+        } \
+    } while (0)
 
 /* Process the content of the file changes */
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));

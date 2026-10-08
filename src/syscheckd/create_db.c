@@ -114,6 +114,7 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
         os_sha256 sha256_sum;
         os_sha1 sf_sum2;
         os_sha1 sf_sum3;
+        int checksum_failed = 0;
 
         /* Clean sums */
         strncpy(mf_sum,  "xxx", 4);
@@ -132,16 +133,18 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                     if (S_ISREG(statbuf_lnk.st_mode)) {
                         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
                             if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
-                                merror("%s: WARN: Unable to read file '%s' for checksum: %s",
-                                       ARGV0, file_name, strerror(errno));
+                                c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                            ARGV0, file_name, strerror(errno));
+                                checksum_failed = 1;
                                 strncpy(mf_sum, "xxx", 4);
                                 strncpy(sf_sum, "xxx", 4);
                             }
                         }
                         if (opts & CHECK_SHA256SUM) {
                             if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                                merror("%s: WARN: Unable to read file '%s' for sha256: %s",
-                                       ARGV0, file_name, strerror(errno));
+                                c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                            ARGV0, file_name, strerror(errno));
+                                checksum_failed = 1;
                                 strncpy(sha256_sum, "xxx", 4);
                             }
                         }
@@ -150,16 +153,18 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
             } else {
                  if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
                      if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
-                        merror("%s: WARN: Unable to read file '%s' for checksum: %s",
-                               ARGV0, file_name, strerror(errno));
+                        c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                    ARGV0, file_name, strerror(errno));
+                        checksum_failed = 1;
                         strncpy(mf_sum, "xxx", 4);
                         strncpy(sf_sum, "xxx", 4);
                      }
                  }
                  if (opts & CHECK_SHA256SUM) {
                     if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                        merror("%s: WARN: Unable to read file '%s' for sha256: %s",
-                               ARGV0, file_name, strerror(errno));
+                        c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                    ARGV0, file_name, strerror(errno));
+                        checksum_failed = 1;
                         strncpy(sha256_sum, "xxx", 4);
                     }
                  }
@@ -168,16 +173,18 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
             if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
                 if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
                 {
-                    merror("%s: WARN: Unable to read file '%s' for checksum: %s",
-                           ARGV0, file_name, strerror(errno));
+                    c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                ARGV0, file_name, strerror(errno));
+                    checksum_failed = 1;
                     strncpy(mf_sum, "xxx", 4);
                     strncpy(sf_sum, "xxx", 4);
                 }
             }
             if (opts & CHECK_SHA256SUM) {
                 if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                    merror("%s: WARN: Unable to read file '%s' for sha256: %s",
-                           ARGV0, file_name, strerror(errno));
+                    c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                ARGV0, file_name, strerror(errno));
+                    checksum_failed = 1;
                     strncpy(sha256_sum, "xxx", 4);
                 }
             }
@@ -195,6 +202,13 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
             } else {
                 sha1s = '-';
             }
+        }
+
+        /* Realtime must not keep an unreadable new file as an "xxx"
+         * baseline. That would drop it from the retry queue. A scheduled
+         * scan still stores the placeholder. */
+        if (checksum_failed && c_read_holding_baseline()) {
+            return (-1);
         }
 
         buf = (char *) OSHash_Get(syscheck.fp, file_name);
@@ -344,9 +358,9 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hFile == INVALID_HANDLE_VALUE) {
-                    merror("%s: WARN: CreateFile failed for '%s' (%lu); "
-                           "skipping file this scan",
-                           ARGV0, file_name, (unsigned long)GetLastError());
+                    c_read_warn("%s: WARN: CreateFile failed for '%s' (%lu); "
+                                "skipping file this scan",
+                                ARGV0, file_name, (unsigned long)GetLastError());
                     free(hash_full);
                     free(acl_snap);
                     return -1;
@@ -356,9 +370,9 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                                             OWNER_SECURITY_INFORMATION,
                                             &pSidOwner, NULL, NULL, NULL, &pSD);
                 if (dwRtnCode != ERROR_SUCCESS) {
-                    merror("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
-                           "skipping file this scan",
-                           ARGV0, file_name, (unsigned long)dwRtnCode);
+                    c_read_warn("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
+                                "skipping file this scan",
+                                ARGV0, file_name, (unsigned long)dwRtnCode);
                     CloseHandle(hFile);
                     free(hash_full);
                     free(acl_snap);
