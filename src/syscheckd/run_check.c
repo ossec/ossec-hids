@@ -699,7 +699,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         }
         merror("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
                "skipping file this scan",
-               ARGV0, file_name, (unsigned long)GetLastError());
+               ARGV0, file_name, (unsigned long)dwRtnCode);
         return -2;
     }
 

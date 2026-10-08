@@ -122,10 +122,13 @@ void start_agent(int is_startup)
         while (((recv_b = recv(agt->sock, buffer, OS_MAXSTR,
                                MSG_DONTWAIT)) >= 0) || (attempts <= 5)) {
             if (recv_b <= 0) {
-                /* Sleep five seconds before trying to get the reply from
-                 * the server again
+                /* No reply yet. Bound the wait so empty datagrams still
+                 * reach server failover (#1944).
                  */
                 attempts++;
+                if (attempts > 5) {
+                    break;
+                }
                 sleep(attempts);
 
                 /* Send message again (after three attempts) */
@@ -143,8 +146,13 @@ void start_agent(int is_startup)
                 merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
                 /* Back off on undecryptable replies (bad/missing key, noise).
                  * A bare continue with MSG_DONTWAIT can peg a core (#1944).
+                 * Share the empty-recv budget so a stream of bad replies
+                 * still reaches server failover.
                  */
                 attempts++;
+                if (attempts > 5) {
+                    break;
+                }
                 sleep(attempts);
                 continue;
             }
