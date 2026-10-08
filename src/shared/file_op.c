@@ -1815,3 +1815,185 @@ void remove_control_characters(char *str) {
 
     str[j] = '\0'; // Null-terminate the string after removing control characters
 }
+
+#ifdef WIN32
+/* Skip the \\?\ (or //?/) extended-length prefix; its '?' is not a wildcard. */
+static size_t win_skip_ext_prefix(const char *path)
+{
+    if (path[0] && path[1] && path[2] && path[3] &&
+            (path[0] == '\\' || path[0] == '/') &&
+            (path[1] == '\\' || path[1] == '/') &&
+            path[2] == '?' &&
+            (path[3] == '\\' || path[3] == '/')) {
+        return (4);
+    }
+    return (0);
+}
+
+/* Offset of the first * or ? that is a real wildcard (after \\?\ if present). */
+static size_t win_wildcard_pos(const char *path)
+{
+    size_t skip = win_skip_ext_prefix(path);
+
+    return (skip + strcspn(path + skip, "*?"));
+}
+
+/* Append name (and optional remaining suffix) onto *dest (dirname / prefix).
+ * Preserves rooted ("\") and drive-relative ("C:") join semantics.
+ */
+static void win_path_append(char **dest, const char *name, const char *suffix)
+{
+    size_t need;
+    size_t dlen;
+    char *out;
+    int rooted = 0;
+    int drive_only = 0;
+
+    dlen = strlen(*dest);
+    if (dlen == 1 && ((*dest)[0] == '\\' || (*dest)[0] == '/')) {
+        rooted = 1;
+    } else if (dlen == 2 && (*dest)[1] == ':' &&
+               (((*dest)[0] >= 'A' && (*dest)[0] <= 'Z') ||
+                ((*dest)[0] >= 'a' && (*dest)[0] <= 'z'))) {
+        drive_only = 1;
+    }
+
+    need = dlen + 1 + strlen(name) + 1;
+    if (suffix) {
+        need += 1 + strlen(suffix);
+    }
+    os_calloc(need, sizeof(char), out);
+
+    if (dlen == 0) {
+        snprintf(out, need, "%s", name);
+    } else if (rooted || drive_only) {
+        snprintf(out, need, "%s%s", *dest, name);
+    } else {
+        snprintf(out, need, "%s\\%s", *dest, name);
+    }
+    if (suffix && *suffix) {
+        size_t used = strlen(out);
+        snprintf(out + used, need - used, "\\%s", suffix);
+    }
+    free(*dest);
+    *dest = out;
+}
+
+/* Expand * / ? one directory component at a time. FindFirstFile cannot
+ * resolve wildcards across more than one path segment by itself.
+ */
+char **expand_win32_wildcards(const char *path)
+{
+    WIN32_FIND_DATA find_data;
+    HANDLE hfind;
+    char **pending = NULL;
+    char **expanded = NULL;
+    char *pattern;
+    char *next_glob;
+    char *parent;
+    char *dirsep;
+    int pi;
+    int ei;
+    size_t glob_pos;
+
+    if (!path || !path[0]) {
+        return (NULL);
+    }
+
+    os_calloc(2, sizeof(char *), pending);
+    os_strdup(path, pending[0]);
+    pending[1] = NULL;
+
+    while (1) {
+        pattern = pending[0];
+        if (!pattern) {
+            free(pending);
+            return (NULL);
+        }
+
+        glob_pos = win_wildcard_pos(pattern);
+        if (glob_pos == strlen(pattern)) {
+            /* No wildcards left — pending is the final result */
+            return (pending);
+        }
+
+        os_calloc(2, sizeof(char *), expanded);
+        ei = 0;
+
+        for (pi = 0; pending[pi] != NULL; pi++) {
+            pattern = pending[pi];
+            next_glob = NULL;
+
+            glob_pos = win_wildcard_pos(pattern);
+            /* Truncate at the next separator after this wildcard component */
+            dirsep = strpbrk(pattern + glob_pos, "\\/");
+            if (dirsep) {
+                *dirsep = '\0';
+                next_glob = dirsep + 1;
+            }
+
+            os_strdup(pattern, parent);
+            {
+                char *look_back = strrchr(parent, '\\');
+                char *look_back_fwd = strrchr(parent, '/');
+
+                if (look_back_fwd && (!look_back || look_back_fwd > look_back)) {
+                    look_back = look_back_fwd;
+                }
+                if (look_back == parent) {
+                    /* Rooted: "\*.log" → keep "\" */
+                    look_back[1] = '\0';
+                } else if (look_back) {
+                    *look_back = '\0';
+                } else if (((parent[0] >= 'A' && parent[0] <= 'Z') ||
+                            (parent[0] >= 'a' && parent[0] <= 'z')) &&
+                           parent[1] == ':') {
+                    /* Drive-relative: "C:*.log" → keep "C:" */
+                    parent[2] = '\0';
+                } else {
+                    parent[0] = '\0';
+                }
+            }
+
+            hfind = FindFirstFile(pattern, &find_data);
+            if (hfind == INVALID_HANDLE_VALUE) {
+                free(pattern);
+                free(parent);
+                continue;
+            }
+
+            do {
+                if (strcmp(find_data.cFileName, ".") == 0 ||
+                        strcmp(find_data.cFileName, "..") == 0) {
+                    continue;
+                }
+                /* Need a directory if more path remains after this component */
+                if (next_glob &&
+                        !(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                    continue;
+                }
+
+                os_strdup(parent, expanded[ei]);
+                win_path_append(&expanded[ei], find_data.cFileName, next_glob);
+
+                ei++;
+                os_realloc(expanded, (ei + 2) * sizeof(char *), expanded);
+                expanded[ei] = NULL;
+            } while (FindNextFile(hfind, &find_data));
+
+            FindClose(hfind);
+            free(pattern);
+            free(parent);
+        }
+
+        free(pending);
+        pending = expanded;
+        expanded = NULL;
+
+        if (!pending[0]) {
+            free(pending);
+            return (NULL);
+        }
+    }
+}
+#endif /* WIN32 */

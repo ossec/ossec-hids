@@ -21,7 +21,6 @@ int loop_timeout;
 int logr_queue;
 int open_file_attempts;
 logreader *logff;
-static int _cday = 0;
 
 
 static char *rand_keepalive_str(char *dst, int size)
@@ -259,8 +258,6 @@ void LogCollectorStart()
 
             /* Initialize the files */
             if (logff[i].ffile) {
-                /* Day must be zero for all files to be initialized */
-                _cday = 0;
                 if (update_fname(i)) {
                     handle_file(i, 1, 1);
                 } else {
@@ -374,6 +371,24 @@ void LogCollectorStart()
 
         /* Check which file is available */
         for (i = 0; i <= max_file; i++) {
+            /* Date-based names must rotate every poll (e.g. %M), not only
+             * on the slower VCHECK_FILES pass.
+             */
+            if (logff[i].file && logff[i].ffile) {
+                if (update_fname(i)) {
+                    if (logff[i].fp) {
+                        fclose(logff[i].fp);
+#ifdef WIN32
+                        CloseHandle(logff[i].h);
+#endif
+                    }
+                    logff[i].fp = NULL;
+                    handle_file(i, 0, 1);
+                } else if (!logff[i].fp) {
+                    handle_file(i, 0, 0);
+                }
+            }
+
             if (!logff[i].fp) {
                 /* Run periodic commands on the configured frequency. */
                 if (logff[i].read && logff[i].command && (f_check % 2)) {
@@ -489,27 +504,6 @@ void LogCollectorStart()
                 continue;
             }
 #endif
-
-            /* Files with date -- check for day change */
-            if (logff[i].ffile) {
-                if (update_fname(i)) {
-                    if (logff[i].fp) {
-                        fclose(logff[i].fp);
-#ifdef WIN32
-                        CloseHandle(logff[i].h);
-#endif
-                    }
-                    logff[i].fp = NULL;
-                    handle_file(i, 0, 1);
-                    continue;
-                }
-
-                /* Variable file name */
-                else if (!logff[i].fp) {
-                    handle_file(i, 0, 0);
-                    continue;
-                }
-            }
 
             /* Check for file change -- if the file is open already */
             if (logff[i].fp) {
@@ -681,11 +675,9 @@ int update_fname(int i)
 
     p = localtime(&__ctime);
 
-    /* Handle file */
-    if (p->tm_mday == _cday) {
-        return (0);
-    }
-
+    /* Recompute from the strftime template so %H/%M (and similar) rotate
+     * when the expanded name changes — not only on day-of-month (#1954).
+     */
     lfile[OS_FLSIZE] = '\0';
     ret = strftime(lfile, OS_FLSIZE, logff[i].ffile, p);
     if (ret == 0) {
@@ -700,14 +692,9 @@ int update_fname(int i)
 
         verbose(VAR_LOG_MON, ARGV0, logff[i].file);
 
-        /* Setting cday to zero because other files may need
-         * to be changed.
-         */
-        _cday = 0;
         return (1);
     }
 
-    _cday = p->tm_mday;
     return (0);
 }
 
