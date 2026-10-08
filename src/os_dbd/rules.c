@@ -198,20 +198,49 @@ static void *_Rules_ReadInsertDB(RuleInfo *rule, void *db_config)
 
     debug2("%s: DEBUG: Inserting: %d", ARGV0, rule->sigid);
 
-    /* Generate SQL */
-    snprintf(sql_query, OS_SIZE_1024 - 1,
-             "REPLACE INTO "
-             "signature(rule_id, level, description) "
-             "VALUES ('%u','%u','%s')",
-             rule->sigid, rule->level,
-             rule->comment != NULL ? rule->comment : "NULL");
-
-    /* XXX We don't actually insert!?
-    if(!osdb_query_insert(dbc->conn, sql_query))
+    /* description is VARCHAR(255). Keep the literal inside the query buffer. */
     {
-        merror(DB_GENERROR, ARGV0);
+        DBConfig *dbc = (DBConfig *) db_config;
+        char desc[256];
+        const char *comment;
+
+        comment = rule->comment != NULL ? rule->comment : "NULL";
+        snprintf(desc, sizeof(desc), "%s", comment);
+
+        /* REPLACE is MySQL. PostgreSQL 9.2 (RHEL/CentOS 7) has neither
+         * REPLACE nor ON CONFLICT, which arrived in 9.5.
+         */
+        if (dbc->db_type == POSTGDB) {
+            snprintf(sql_query, OS_SIZE_1024 - 1,
+                     "SELECT id FROM "
+                     "signature WHERE rule_id = '%u'",
+                     rule->sigid);
+
+            if (osdb_query_select(dbc->conn, sql_query) == 0) {
+                snprintf(sql_query, OS_SIZE_1024 - 1,
+                         "INSERT INTO "
+                         "signature(rule_id, level, description) "
+                         "VALUES ('%u','%u','%s')",
+                         rule->sigid, rule->level, desc);
+            } else {
+                snprintf(sql_query, OS_SIZE_1024 - 1,
+                         "UPDATE "
+                         "signature SET level='%u', description='%s' "
+                         "WHERE rule_id = '%u'",
+                         rule->level, desc, rule->sigid);
+            }
+        } else {
+            snprintf(sql_query, OS_SIZE_1024 - 1,
+                     "REPLACE INTO "
+                     "signature(rule_id, level, description) "
+                     "VALUES ('%u','%u','%s')",
+                     rule->sigid, rule->level, desc);
+        }
+
+        if (!osdb_query_insert(dbc->conn, sql_query)) {
+            merror(DB_GENERROR, ARGV0);
+        }
     }
-    */
 
     return (NULL);
 }
