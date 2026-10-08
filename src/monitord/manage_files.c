@@ -14,6 +14,111 @@ static const char *(months[]) = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
                                 };
 
+/* Live daemon log. Each writer fopen/fclose's it, so rename starts a new file. */
+#define OSSEC_LOG_LIVE "/logs/ossec.log"
+#define OSSEC_LOG_NEW  "/logs/.ossec.log.new"
+#define OSSEC_LOG_DIR  "/logs/ossec"
+
+/* Empty log owned by this process (ossec, after privsep) and group-writable.
+ * fchmod pins 0660 so the process umask cannot leave it owner-only. */
+static int mond_prepare_log(const char *path)
+{
+    int fd;
+    mode_t old_umask;
+
+    old_umask = umask(0117);
+    fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0660);
+    umask(old_umask);
+    if (fd < 0) {
+        merror(FOPEN_ERROR, ARGV0, path, errno, strerror(errno));
+        return (-1);
+    }
+    if (fchmod(fd, 0660) < 0) {
+        merror("%s: ERROR: Could not chmod '%s': %s",
+               ARGV0, path, strerror(errno));
+        close(fd);
+        unlink(path);
+        return (-1);
+    }
+    close(fd);
+    return (0);
+}
+
+static int mond_ensure_dir(const char *path)
+{
+    if (IsDir(path) == 0) {
+        return (0);
+    }
+    if (mkdir(path, 0770) == 0 || (errno == EEXIST && IsDir(path) == 0)) {
+        return (0);
+    }
+    merror(MKDIR_ERROR, ARGV0, path, errno, strerror(errno));
+    return (-1);
+}
+
+static void mond_ossec_log_path(char *dst, int year, int mon, int day)
+{
+    snprintf(dst, OS_FLSIZE, OSSEC_LOG_DIR "/%d/%s/ossec-%02d.log",
+             year, months[mon], day);
+}
+
+/* Move the live ossec.log into the dated tree, then sign and compress it
+ * with the same flags as the alert logs (#704). */
+static void rotate_ossec_log(int cday, int cmon, int cyear, const struct tm *prev)
+{
+    char dated[OS_FLSIZE + 1];
+    char dated_old[OS_FLSIZE + 1];
+    char dir_year[OS_FLSIZE + 1];
+    char dir_mon[OS_FLSIZE + 1];
+
+    if (File_DateofChange(OSSEC_LOG_LIVE) < 0) {
+        return;
+    }
+
+    if (mond_ensure_dir(OSSEC_LOG_DIR) < 0) {
+        return;
+    }
+
+    snprintf(dir_year, OS_FLSIZE, OSSEC_LOG_DIR "/%d", cyear);
+    if (mond_ensure_dir(dir_year) < 0) {
+        return;
+    }
+
+    snprintf(dir_mon, OS_FLSIZE, OSSEC_LOG_DIR "/%d/%s", cyear, months[cmon]);
+    if (mond_ensure_dir(dir_mon) < 0) {
+        return;
+    }
+
+    memset(dated, '\0', OS_FLSIZE + 1);
+    memset(dated_old, '\0', OS_FLSIZE + 1);
+    mond_ossec_log_path(dated, cyear, cmon, cday);
+
+    /* Build the replacement first. rename() onto the live name then replaces
+     * any file a writer (for example ossec-remoted, as ossecr) created in the
+     * gap, so the result stays ossec:ossec 0660. */
+    if (mond_prepare_log(OSSEC_LOG_NEW) < 0) {
+        return;
+    }
+
+    if (rename(OSSEC_LOG_LIVE, dated) < 0) {
+        merror("%s: ERROR: Could not rotate '%s' to '%s': %s",
+               ARGV0, OSSEC_LOG_LIVE, dated, strerror(errno));
+        unlink(OSSEC_LOG_NEW);
+        return;
+    }
+
+    if (rename(OSSEC_LOG_NEW, OSSEC_LOG_LIVE) < 0) {
+        merror("%s: ERROR: Could not install new '%s': %s",
+               ARGV0, OSSEC_LOG_LIVE, strerror(errno));
+        unlink(OSSEC_LOG_NEW);
+        return;
+    }
+
+    mond_ossec_log_path(dated_old, prev->tm_year + 1900, prev->tm_mon, prev->tm_mday);
+    OS_SignLog(dated, dated_old, 0);
+    OS_CompressLog(dated);
+}
+
 
 void manage_files(int cday, int cmon, int cyear)
 {
@@ -180,6 +285,8 @@ void manage_files(int cday, int cmon, int cyear)
              pp_old->tm_mday);
     OS_SignLog(flogfile, flogfile_old, 0);
     OS_CompressLog(flogfile);
+
+    rotate_ossec_log(cday, cmon, cyear, pp_old);
 
     return;
 }

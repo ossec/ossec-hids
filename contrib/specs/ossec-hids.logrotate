@@ -1,8 +1,7 @@
 # Logrotate config for OSSEC HIDS (#1948)
 # Paths stay under /var/ossec/logs so one SELinux fcontext covers them.
-# Do not rotate /var/ossec/logs/alerts here; ossec-monitord owns those files.
+# Do not rotate alerts or ossec.log here; ossec-monitord owns those files (#704).
 
-/var/ossec/logs/ossec.log
 /var/ossec/logs/active-responses.log
 /var/ossec/logs/firewall/firewall.log
 {
