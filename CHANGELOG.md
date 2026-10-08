@@ -21,6 +21,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **General**
 
+- @atomicturtle - Rotate ``ossec.log`` on the daily monitord pass into ``logs/ossec/YYYY/Mon/ossec-DD.log``, then sign and compress it with the alert logs. Drop it from logrotate so ``copytruncate`` no longer races that file (#704)
 - @atomicturtle - Ignore the Windows Application Experience ``:Win32App_1`` NTFS stream in rootcheck (#758)
 - @atomicturtle - Honor ``monitord.notify_time`` for agent_control status and remoted send eligibility, not only monitord disconnect alerts (#874, #1022)
 - @atomicturtle - Allow CDB ``<list>`` matching on decoded ``system_name`` via ``field="system_name"`` (#628)
