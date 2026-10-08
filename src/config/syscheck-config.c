@@ -99,7 +99,9 @@ int dump_syscheck_entry(syscheck_config *syscheck, const char *entry, int vals, 
 int read_reg(syscheck_config *syscheck, char *entries, int arch)
 {
     int i;
+    int is_dup;
     char **entry;
+    char **entry_org;
     char *tmp_str;
 
     /* Get each entry separately */
@@ -108,6 +110,7 @@ int read_reg(syscheck_config *syscheck, char *entries, int arch)
     if (entry == NULL) {
         return (0);
     }
+    entry_org = entry;
 
     while (*entry) {
         char *tmp_entry;
@@ -132,28 +135,31 @@ int read_reg(syscheck_config *syscheck, char *entries, int arch)
         }
 
         /* Duplicate = same path and same arch; skip only this entry */
-        {
-            int is_dup = 0;
-
-            i = 0;
-            while (syscheck->registry && syscheck->registry[i]) {
-                if (strcasecmp(syscheck->registry[i], tmp_entry) == 0 &&
-                        syscheck->registry_arch &&
-                        syscheck->registry_arch[i] == arch) {
-                    merror(SK_DUP, __local_name, tmp_entry);
-                    is_dup = 1;
-                    break;
-                }
-                i++;
+        is_dup = 0;
+        i = 0;
+        while (syscheck->registry && syscheck->registry[i]) {
+            if (strcasecmp(syscheck->registry[i], tmp_entry) == 0 &&
+                    syscheck->registry_arch &&
+                    syscheck->registry_arch[i] == arch) {
+                merror(SK_DUP, __local_name, tmp_entry);
+                is_dup = 1;
+                break;
             }
-            if (!is_dup) {
-                dump_syscheck_entry(syscheck, tmp_entry, arch, 1, NULL);
-            }
+            i++;
+        }
+        if (!is_dup) {
+            dump_syscheck_entry(syscheck, tmp_entry, arch, 1, NULL);
         }
 
         /* Next entry */
         entry++;
     }
+
+    i = 0;
+    while (entry_org[i]) {
+        free(entry_org[i++]);
+    }
+    free(entry_org);
 
     return (1);
 }

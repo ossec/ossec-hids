@@ -23,6 +23,8 @@
 /* Places to story the registry values */
 #define SYS_WIN_REG     "syscheck/syscheckregistry.db"
 #define SYS_REG_TMP     "syscheck/syscheck_sum.tmp"
+/* Alert/DB line: "0:0:0:0:md5:sha1 path [x64]" — must fit MAX_KEY + tag */
+#define SYS_REG_MSG_SIZE (MAX_KEY + 128)
 
 /* Global variables */
 HKEY sub_tree;
@@ -77,14 +79,14 @@ static int os_winreg_os_is_64bit(void)
 
 int os_winreg_changed(char *key, char *md5, char *sha1)
 {
-    char buf[MAX_LINE + 1];
+    char buf[SYS_REG_MSG_SIZE + 1];
 
-    buf[MAX_LINE] = '\0';
+    buf[SYS_REG_MSG_SIZE] = '\0';
 
     /* Seek to the beginning of the db */
     fseek(syscheck.reg_fp, 0, SEEK_SET);
 
-    while (fgets(buf, MAX_LINE, syscheck.reg_fp) != NULL) {
+    while (fgets(buf, sizeof(buf), syscheck.reg_fp) != NULL) {
         if ((buf[0] != '#') && (buf[0] != ' ') && (buf[0] != '\n')) {
             char *n_buf;
 
@@ -345,8 +347,9 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
                                full_key_name, arch);
 
             if (os_winreg_changed(tagged_key, mf_sum, sf_sum)) {
-                char reg_changed[MAX_LINE + 1];
-                snprintf(reg_changed, MAX_LINE, "0:0:0:0:%s:%s %s",
+                char reg_changed[SYS_REG_MSG_SIZE + 1];
+                snprintf(reg_changed, sizeof(reg_changed),
+                         "0:0:0:0:%s:%s %s",
                          mf_sum, sf_sum, tagged_key);
 
                 /* Notify server */
