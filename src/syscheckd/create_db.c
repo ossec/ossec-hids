@@ -20,15 +20,12 @@
 #include <sddl.h>
 #endif
 
-/* Prototypes */
-static int read_file(const char *dir_name, int opts, OSMatch *restriction)  __attribute__((nonnull(1)));
-
 /* Global variables */
 static int __counter = 0;
 
 
 /* Read and generate the integrity data of a file */
-static int read_file(const char *file_name, int opts, OSMatch *restriction)
+int read_file(const char *file_name, int opts, OSMatch *restriction)
 {
     char *buf;
     char sha1s;
@@ -71,6 +68,10 @@ static int read_file(const char *file_name, int opts, OSMatch *restriction)
 		alert_msg[PATH_MAX + 3] = '\0';
 		snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
 		send_syscheck_msg(alert_msg);
+		return (0);
+	} else if (errno == ENOENT) {
+		/* Common under realtime CREATE for short-lived files (#1792). */
+		debug1("%s: DEBUG: File '%s' disappeared before scan.", ARGV0, file_name);
 		return (0);
 	}else{
 		merror("%s: Error accessing '%s'.", ARGV0, file_name);

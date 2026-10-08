@@ -182,7 +182,10 @@ int realtime_checksumfile(const char *file_name)
             for (i = 0; syscheck.dir[i]; i++) {
                 if (strcmp(syscheck.dir[i], buf) == 0) {
                     debug1("%s: DEBUG: Scanning new file '%s' with options for directory '%s'.", ARGV0, file_name, buf);
-                    read_dir(file_name, syscheck.opts[i], syscheck.filerestrict[i]);
+                    /* New realtime paths are files; read_dir() would opendir()
+                     * and WARN on ENOENT races for ephemeral names (#1792).
+                     */
+                    read_file(file_name, syscheck.opts[i], syscheck.filerestrict[i]);
                     break;
                 }
             }
