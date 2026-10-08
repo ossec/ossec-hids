@@ -35,6 +35,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
+- @atomicturtle - Scan realtime-created paths with ``read_file`` so short-lived files do not flood ossec.log with ``Error opening directory`` (#1792)
 - @atomicturtle - Extract Windows 4625 UPN Account Name (skip Subject ``-``) and budget ossec-dbd INSERT fields so oversized alerts cannot truncate mid-quote (#1959)
 - @atomicturtle - Back off when the agent cannot decrypt a server reply so a bad or missing key cannot peg a CPU core (#1944)
 - @atomicturtle - Stop truncating alert full_log / previous-output lines at 1256 bytes in alerts.log (#473)
