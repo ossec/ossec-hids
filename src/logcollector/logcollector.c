@@ -681,11 +681,10 @@ int update_fname(int i)
 
     p = localtime(&__ctime);
 
-    /* Handle file */
-    if (p->tm_mday == _cday) {
-        return (0);
-    }
-
+    /* Always recompute from the strftime template so %H/%M (and similar)
+     * rotate when the expanded name changes — not only on day-of-month
+     * boundaries (#1954).
+     */
     lfile[OS_FLSIZE] = '\0';
     ret = strftime(lfile, OS_FLSIZE, logff[i].ffile, p);
     if (ret == 0) {
@@ -700,9 +699,7 @@ int update_fname(int i)
 
         verbose(VAR_LOG_MON, ARGV0, logff[i].file);
 
-        /* Setting cday to zero because other files may need
-         * to be changed.
-         */
+        /* Other date-based files may still need a refresh this pass */
         _cday = 0;
         return (1);
     }

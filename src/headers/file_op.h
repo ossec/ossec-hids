@@ -60,6 +60,13 @@ extern int isVista;
 
 /* Rewrite '\\' to '/' in place so FIM paths, ignores, and alerts share one form. */
 void os_normalize_path(char *path);
+
+/* Expand * and ? in a Windows path (FindFirstFile, one path component at a
+ * time so directory wildcards work). Returns a NULL-terminated list of
+ * strdup'd paths; caller frees each entry and the array. Returns NULL if
+ * nothing matched.
+ */
+char **expand_win32_wildcards(const char *path);
 #endif
 
 int w_ref_parent_folder(const char *path);

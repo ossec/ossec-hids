@@ -151,11 +151,66 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
             }
         #endif
 
-            /* This is a glob*
-             * We will call this file multiple times until
-             * there is no one else available.
+            /* Glob / wildcard expansion (* and ?; '[' on Unix glob only).
+             * Windows uses expand_win32_wildcards() (FindFirstFile per path
+             * component) so multi-segment patterns work (#1954).
              */
-#ifndef WIN32 /* No windows support for glob */
+#ifdef WIN32
+            if (strchr(node[i]->content, '*') ||
+                    strchr(node[i]->content, '?')) {
+                char **paths;
+                int g;
+
+                if (glob_set == 0) {
+                    glob_set = pl + 1;
+                }
+
+                paths = expand_win32_wildcards(node[i]->content);
+                if (!paths || !paths[0]) {
+                    merror(GLOB_NFOUND, __local_name, node[i]->content);
+                    if (paths) {
+                        free(paths);
+                    }
+                    return (OS_INVALID);
+                }
+
+                for (g = 0; paths[g] != NULL; g++) {
+                    if (strchr(paths[g], '%')) {
+                        struct tm *p;
+                        time_t l_time = time(0);
+                        char lfile[OS_FLSIZE + 1];
+                        size_t ret;
+
+                        p = localtime(&l_time);
+                        lfile[OS_FLSIZE] = '\0';
+                        ret = strftime(lfile, OS_FLSIZE, paths[g], p);
+                        if (ret == 0) {
+                            merror(PARSE_ERROR, __local_name, paths[g]);
+                            return (OS_INVALID);
+                        }
+                        os_strdup(paths[g], logf[pl].ffile);
+                        os_strdup(paths[g], logf[pl].file);
+                    } else {
+                        os_strdup(paths[g], logf[pl].file);
+                    }
+                    free(paths[g]);
+
+                    pl++;
+                    os_realloc(logf, (pl + 2) * sizeof(logreader),
+                               log_config->config);
+                    logf = log_config->config;
+                    logf[pl].file = NULL;
+                    logf[pl].alias = NULL;
+                    logf[pl].logformat = NULL;
+                    logf[pl].fp = NULL;
+                    logf[pl].ffile = NULL;
+                    logf[pl + 1].file = NULL;
+                    logf[pl + 1].alias = NULL;
+                    logf[pl + 1].logformat = NULL;
+                }
+                free(paths);
+            } else if (strchr(node[i]->content, '%'))
+#else /* !WIN32 */
             if (strchr(node[i]->content, '*') ||
                     strchr(node[i]->content, '?') ||
                     strchr(node[i]->content, '[')) {
@@ -185,8 +240,7 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                 }
 
 
-                while(g.gl_pathv[glob_offset] != NULL)
-                {
+                while (g.gl_pathv[glob_offset] != NULL) {
                     /* Check for strftime on globs too */
                     if (strchr(g.gl_pathv[glob_offset], '%')) {
                         struct tm *p;
@@ -230,9 +284,7 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
 
                 globfree(&g);
             } else if (strchr(node[i]->content, '%'))
-            #else
-            if (strchr(node[i]->content, '%'))
-            #endif /* WIN32 */
+#endif /* WIN32 */
 
             /* We need the format file (based on date) */
             {
