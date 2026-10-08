@@ -92,6 +92,34 @@ Install()
     if [ "X%NUNAME" = "XBitrig" ]; then
 	MAKEBIN=gmake
     fi
+    # Solaris make is not GNU make on older releases, and a stock zone has
+    # gcc but no cc. Solaris 10 /bin/sh has no command -v (issue #2016).
+    if [ "X$NUNAME" = "XSunOS" ]; then
+        have_bin() {
+            _hb_name=$1
+            _hb_ifs=$IFS
+            IFS=:
+            for _hb_dir in $PATH; do
+                if [ -n "$_hb_dir" ] && [ -x "$_hb_dir/$_hb_name" ] && [ -f "$_hb_dir/$_hb_name" ]; then
+                    IFS=$_hb_ifs
+                    return 0
+                fi
+            done
+            IFS=$_hb_ifs
+            return 1
+        }
+        if have_bin gmake; then
+            MAKEBIN=gmake
+        fi
+        if have_bin cc; then
+            :
+        else
+            if have_bin gcc; then
+                CC=gcc
+                export CC
+            fi
+        fi
+    fi
 
 
     # Makefile
