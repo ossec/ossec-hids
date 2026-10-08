@@ -58,12 +58,44 @@ int realtime_adddir(const char *dir, int opts) __attribute__((nonnull(1)));
 /* Process real time queue */
 int realtime_process(void);
 
+/* Queue a realtime path. The checksum runs after a short delay.
+ * A failed read stays queued until it succeeds or the file is gone.
+ */
+void realtime_enqueue(const char *file_name);
+
+/* Run realtime checksums whose delay has elapsed. */
+void realtime_pending_process(void);
+
+/* Milliseconds until the next queued realtime checksum, or -1 if idle. */
+int realtime_pending_ms(void);
+
+/* Suppress checksum warnings while a realtime retry is in progress. */
+void c_read_set_quiet(int quiet);
+int c_read_is_quiet(void);
+
+/* When set, read_file() does not store an "xxx" checksum as a baseline.
+ * The realtime queue retries until the file can be read. */
+void c_read_set_hold_baseline(int hold);
+int c_read_holding_baseline(void);
+
+/* When set, a missing path returns -1 without sending the delete alert.
+ * The realtime queue confirms the path is still gone before it alerts. */
+void c_read_defer_missing_alert(int defer);
+
+/* shared.h (merror) must be included before this macro is used. */
+#define c_read_warn(...) do { \
+        if (!c_read_is_quiet()) { \
+            merror(__VA_ARGS__); \
+        } \
+    } while (0)
+
 /* Process the content of the file changes */
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));
 
 /* Get checksum changes.
- * Returns 0 on success, -1 if missing (delete alerted), -2 if metadata
- * or checksum read failed (caller should skip without alerting).
+ * Returns 0 on success, -1 if missing (delete alerted, unless the
+ * realtime queue deferred it), -2 if metadata or checksum read failed
+ * (caller should skip without alerting).
  */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum) __attribute__((nonnull));
 

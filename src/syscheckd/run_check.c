@@ -37,6 +37,40 @@ static time_t syscheck_idle_wait(time_t curr_time, time_t prev_time_sk,
 /* Count of baseline/update messages that could not reach the agent queue. */
 static unsigned int syscheck_send_failures = 0;
 
+/* Realtime retries re-enter the checksum. Warn on the first failure only. */
+static int c_read_quiet = 0;
+
+/* A new file with a failed checksum stays unstored so it can be retried. */
+static int c_read_hold_baseline = 0;
+
+/* Realtime confirms a missing path before the delete alert is sent. */
+static int c_read_defer_missing = 0;
+
+void c_read_set_quiet(int quiet)
+{
+    c_read_quiet = quiet ? 1 : 0;
+}
+
+int c_read_is_quiet(void)
+{
+    return (c_read_quiet);
+}
+
+void c_read_set_hold_baseline(int hold)
+{
+    c_read_hold_baseline = hold ? 1 : 0;
+}
+
+int c_read_holding_baseline(void)
+{
+    return (c_read_hold_baseline);
+}
+
+void c_read_defer_missing_alert(int defer)
+{
+    c_read_defer_missing = defer ? 1 : 0;
+}
+
 /* Max idle between daemon-loop iterations: honor <frequency> / rootcheck
  * cadence while still capping at SYSCHECK_WAIT so long frequencies do not
  * block forever in select/sleep.
@@ -338,13 +372,23 @@ void start_daemon()
             prev_time_sk = time(0);
         }
 
+        /* Checksum realtime paths whose delay has elapsed before sleeping. */
+        realtime_pending_process();
+
         curr_time = time(0);
         idle_wait = syscheck_idle_wait(curr_time, prev_time_sk, prev_time_rk);
 
 #ifdef INOTIFY_ENABLED
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
+            int pend_ms = realtime_pending_ms();
+
             selecttime.tv_sec = (long)idle_wait;
             selecttime.tv_usec = 0;
+            if (pend_ms >= 0 &&
+                    (time_t)pend_ms < idle_wait * 1000) {
+                selecttime.tv_sec = pend_ms / 1000;
+                selecttime.tv_usec = (pend_ms % 1000) * 1000;
+            }
 
             /* zero-out the fd_set */
             FD_ZERO (&rfds);
@@ -365,12 +409,18 @@ void start_daemon()
         }
 #elif defined(WIN32)
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
+            DWORD wait_ms = (DWORD)idle_wait * 1000;
+            int pend_ms = realtime_pending_ms();
+
+            /* Wake for a deferred checksum. The callback only queues the
+             * path; sleeping here would drop the short retries (#1386). */
+            if (pend_ms >= 0 && (DWORD)pend_ms < wait_ms) {
+                wait_ms = (DWORD)pend_ms;
+            }
             if (WaitForSingleObjectEx(syscheck.realtime->evt,
-                                      (DWORD)(idle_wait * 1000), TRUE) == WAIT_FAILED) {
+                                      wait_ms, TRUE) == WAIT_FAILED) {
                 merror("%s: ERROR: WaitForSingleObjectEx failed (for realtime fim).", ARGV0);
                 sleep((unsigned int)idle_wait);
-            } else {
-                sleep(1);
             }
         } else {
             sleep((unsigned int)idle_wait);
@@ -490,14 +540,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (errno == ENOENT || errno == ENOTDIR) {
             char alert_msg[PATH_MAX+4];
 
-            alert_msg[PATH_MAX + 3] = '\0';
-            snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
-            send_syscheck_msg(alert_msg);
+            /* The realtime queue may see the path vanish between its own
+             * existence check and this stat. It confirms before alerting. */
+            if (!c_read_defer_missing) {
+                alert_msg[PATH_MAX + 3] = '\0';
+                snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+                send_syscheck_msg(alert_msg);
+            }
             return (-1);
         }
 
-        merror("%s: WARN: Unable to stat file '%s': %s",
-               ARGV0, file_name, strerror(errno));
+        c_read_warn("%s: WARN: Unable to stat file '%s': %s",
+                    ARGV0, file_name, strerror(errno));
         return (-2);
     }
 
@@ -552,8 +606,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         attrs = 1;
         win_attrs = GetFileAttributes(file_name);
         if (win_attrs == INVALID_FILE_ATTRIBUTES) {
-            merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
-                   ARGV0, file_name, (unsigned long)GetLastError());
+            c_read_warn("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                        ARGV0, file_name, (unsigned long)GetLastError());
             return (-2);
         }
     } else if (!path_matched && sum_off >= 8 && oldsum[7] == '+') {
@@ -561,8 +615,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         attrs = 1;
         win_attrs = GetFileAttributes(file_name);
         if (win_attrs == INVALID_FILE_ATTRIBUTES) {
-            merror("%s: WARN: Unable to get attributes for '%s' (%lu)",
-                   ARGV0, file_name, (unsigned long)GetLastError());
+            c_read_warn("%s: WARN: Unable to get attributes for '%s' (%lu)",
+                        ARGV0, file_name, (unsigned long)GetLastError());
             return (-2);
         }
     }
@@ -572,7 +626,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (fim_win_acl_read(file_name, &facl) != 0 ||
                 fim_win_acl_digest(&facl, acl_digest) != 0) {
             fim_acl_free(&facl);
-            merror("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
+            c_read_warn("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
             return (-2);
         }
         have_facl = 1;
@@ -581,7 +635,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (fim_win_acl_read(file_name, &facl) != 0 ||
                 fim_win_acl_digest(&facl, acl_digest) != 0) {
             fim_acl_free(&facl);
-            merror("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
+            c_read_warn("%s: WARN: Unable to read ACL for '%s'", ARGV0, file_name);
             return (-2);
         }
         have_facl = 1;
@@ -601,8 +655,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             /* Generate checksums of the file */
             if (sha1sum || md5sum) {
                 if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
-                    merror("%s: WARN: Unable to read file '%s' for checksum: %s",
-                           ARGV0, file_name, strerror(errno));
+                    c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                ARGV0, file_name, strerror(errno));
                     checksum_failed = 1;
                     strncpy(sf_sum, "xxx", 4);
                     strncpy(mf_sum, "xxx", 4);
@@ -610,8 +664,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
             }
             if (sha256sum) {
                 if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                    merror("%s: WARN: Unable to read file '%s' for sha256: %s",
-                           ARGV0, file_name, strerror(errno));
+                    c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                ARGV0, file_name, strerror(errno));
                     checksum_failed = 1;
                     strncpy(sha256_sum, "xxx", 4);
                 }
@@ -628,8 +682,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     /* Generate checksums of the file */
                     if (sha1sum || md5sum) {
                         if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
-                            merror("%s: WARN: Unable to read file '%s' for checksum: %s",
-                                   ARGV0, file_name, strerror(errno));
+                            c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                        ARGV0, file_name, strerror(errno));
                             checksum_failed = 1;
                             strncpy(sf_sum, "xxx", 4);
                             strncpy(mf_sum, "xxx", 4);
@@ -637,8 +691,8 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                     }
                     if (sha256sum) {
                         if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                            merror("%s: WARN: Unable to read file '%s' for sha256: %s",
-                                   ARGV0, file_name, strerror(errno));
+                            c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
+                                        ARGV0, file_name, strerror(errno));
                             checksum_failed = 1;
                             strncpy(sha256_sum, "xxx", 4);
                         }
@@ -681,9 +735,9 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (have_facl) {
             fim_acl_free(&facl);
         }
-        merror("%s: WARN: CreateFile failed for '%s' (%lu); "
-               "skipping file this scan",
-               ARGV0, file_name, (unsigned long)GetLastError());
+        c_read_warn("%s: WARN: CreateFile failed for '%s' (%lu); "
+                    "skipping file this scan",
+                    ARGV0, file_name, (unsigned long)GetLastError());
         return -2;
     }
 
@@ -697,9 +751,9 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (have_facl) {
             fim_acl_free(&facl);
         }
-        merror("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
-               "skipping file this scan",
-               ARGV0, file_name, (unsigned long)dwRtnCode);
+        c_read_warn("%s: WARN: GetSecurityInfo failed for '%s' (%lu); "
+                    "skipping file this scan",
+                    ARGV0, file_name, (unsigned long)dwRtnCode);
         return -2;
     }
 
