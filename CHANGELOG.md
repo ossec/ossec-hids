@@ -21,6 +21,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **General**
 
+- @atomicturtle - Ignore the Windows Application Experience ``:Win32App_1`` NTFS stream in rootcheck (#758)
 - @atomicturtle - Honor ``monitord.notify_time`` for agent_control status and remoted send eligibility, not only monitord disconnect alerts (#874, #1022)
 - @atomicturtle - Allow CDB ``<list>`` matching on decoded ``system_name`` via ``field="system_name"`` (#628)
 - @atomicturtle - Windows agent install ACL allows only SYSTEM and Administrators (#182)
