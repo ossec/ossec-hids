@@ -11,9 +11,10 @@ CREATE TABLE IF NOT EXISTS  agent_ipv6
     last_contact    INT         UNSIGNED NOT NULL,
     ip_address      VARCHAR(46)          NOT NULL,
     version         VARCHAR(32)          NOT NULL,
-    name            VARCHAR(64)          NOT NULL,
+    name            VARCHAR(128)         NOT NULL,
     information     VARCHAR(128)         NOT NULL,
-    PRIMARY KEY  (id, server_id)
+    PRIMARY KEY  (id, server_id),
+    UNIQUE KEY agent_server_name (server_id, name)
     );
 
 CREATE TABLE IF NOT EXISTS  alert_ipv6
