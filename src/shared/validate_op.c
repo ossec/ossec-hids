@@ -251,6 +251,59 @@ int OS_IPFoundList(const char *ip_address, os_ip **list_of_ips)
     return (!_true);
 }
 
+/* Parse a numeric address into ss. Returns the family, or AF_UNSPEC.
+ * inet_pton, not getaddrinfo: Solaris returns EAI_FAIL for a later
+ * AI_NUMERICHOST lookup inside a chroot (issue #1365).
+ */
+static int os_pton_sockaddr(const char *ip, struct sockaddr_storage *ss)
+{
+#ifdef WIN32
+    struct sockaddr_in sin;
+    struct sockaddr_in6 sin6;
+    char buf[INET6_ADDRSTRLEN];
+    int len;
+
+    if (strlen(ip) >= sizeof(buf)) {
+        return (AF_UNSPEC);
+    }
+
+    snprintf(buf, sizeof(buf), "%s", ip);
+    memset(&sin, 0, sizeof(sin));
+    len = (int)sizeof(sin);
+    if (WSAStringToAddress(buf, AF_INET, NULL, (LPSOCKADDR)&sin, &len) == 0) {
+        memset(ss, 0, sizeof(*ss));
+        memcpy(ss, &sin, sizeof(sin));
+        return (AF_INET);
+    }
+
+    snprintf(buf, sizeof(buf), "%s", ip);
+    memset(&sin6, 0, sizeof(sin6));
+    len = (int)sizeof(sin6);
+    if (WSAStringToAddress(buf, AF_INET6, NULL, (LPSOCKADDR)&sin6, &len) == 0) {
+        memset(ss, 0, sizeof(*ss));
+        memcpy(ss, &sin6, sizeof(sin6));
+        return (AF_INET6);
+    }
+#else
+    struct sockaddr_in *sin = (struct sockaddr_in *)ss;
+    struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)ss;
+
+    memset(ss, 0, sizeof(*ss));
+    if (inet_pton(AF_INET, ip, &sin->sin_addr) == 1) {
+        sin->sin_family = AF_INET;
+        return (AF_INET);
+    }
+
+    memset(ss, 0, sizeof(*ss));
+    if (inet_pton(AF_INET6, ip, &sin6->sin6_addr) == 1) {
+        sin6->sin6_family = AF_INET6;
+        return (AF_INET6);
+    }
+#endif
+
+    return (AF_UNSPEC);
+}
+
 /** int OS_IsValidIP(char *ip_address, os_ip *final_ip)
  * Validate if an IP address is in the right format
  * Returns 0 if doesn't match or 1 if it is an IP or 2 an IP with CIDR.
@@ -260,7 +313,8 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
 {
     char *tmp_str;
     int cidr = -1, prefixlength;
-    struct addrinfo hints, *result;
+    int family;
+    struct sockaddr_storage parsed;
     char *ip_address = NULL;
 
     /* Can't be null */
@@ -311,53 +365,37 @@ int OS_IsValidIP(const char *in_address, os_ip *final_ip)
         }
     }
 
-    /* No cidr available */
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_flags = AI_NUMERICHOST;
-    if (getaddrinfo(ip_address, NULL, &hints, &result) != 0) {
-        free(ip_address);
-        return(0);
-    }
-
-    switch (result->ai_family)
-    {
-    case AF_INET:
-        if (cidr >=0 && cidr <= 32) {
+    family = os_pton_sockaddr(ip_address, &parsed);
+    if (family == AF_INET) {
+        if (cidr >= 0 && cidr <= 32) {
             prefixlength = cidr;
-            break;
         } else if (cidr < 0) {
             prefixlength = 32;
-            break;
+        } else {
+            free(ip_address);
+            return (0);
         }
-        free(ip_address);
-        free(result);
-        return(0);
-    case AF_INET6:
-        if (cidr >=0 && cidr <= 128) {
+    } else if (family == AF_INET6) {
+        if (cidr >= 0 && cidr <= 128) {
             prefixlength = cidr;
-            break;
         } else if (cidr < 0) {
             prefixlength = 128;
-            break;
+        } else {
+            free(ip_address);
+            return (0);
         }
+    } else {
         free(ip_address);
-        free(result);
-        return(0);
-    default:
-        free(ip_address);
-        free(result);
-        return(0);
+        return (0);
     }
 
     if (final_ip) {
-        memcpy(&(final_ip->ss), result->ai_addr, result->ai_addrlen);
-        final_ip->prefixlength = prefixlength;
+        memcpy(&final_ip->ss, &parsed, sizeof(parsed));
+        final_ip->prefixlength = (unsigned int)prefixlength;
     }
 
-    freeaddrinfo(result);
-
     free(ip_address);
-    return((cidr >= 0) ? 2 : 1);
+    return ((cidr >= 0) ? 2 : 1);
 }
 
 /** int sacmp(struct sockaddr *sa1, struct sockaddr *sa2, int prefixlength)
