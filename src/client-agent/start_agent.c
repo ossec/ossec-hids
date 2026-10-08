@@ -141,6 +141,11 @@ void start_agent(int is_startup)
             tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
             if (tmp_msg == NULL) {
                 merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
+                /* Back off on undecryptable replies (bad/missing key, noise).
+                 * A bare continue with MSG_DONTWAIT can peg a core (#1944).
+                 */
+                attempts++;
+                sleep(attempts);
                 continue;
             }
 

@@ -74,6 +74,8 @@ void *receiver_thread(__attribute__((unused)) void *none)
             tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
             if (tmp_msg == NULL) {
                 merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
+                /* Avoid a hot drain loop if the socket is full of garbage (#1944). */
+                sleep(1);
                 continue;
             }
 
