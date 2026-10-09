@@ -679,17 +679,40 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
 
     if (dwerror == ERROR_NOTIFY_ENUM_DIR || dwBytes == 0) {
         int i;
+        int best = -1;
+        size_t best_len = 0;
+        int scan_opts = rtlocald->opts & ~CHECK_REALTIME;
         OSMatch *restriction = NULL;
 
         /* Win32 documents enumeration as recovery when notifications are
-         * dropped; walk the watched tree to catch the missed batch. */
+         * dropped. Clear CHECK_REALTIME so read_dir does not call
+         * realtime_adddir again for every subdirectory. */
         for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
-            if (strcmp(syscheck.dir[i], rtlocald->dir) == 0) {
-                restriction = syscheck.filerestrict[i];
-                break;
+            size_t len = strlen(syscheck.dir[i]);
+            char next;
+
+            while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
+                               syscheck.dir[i][len - 1] == '\\')) {
+                len--;
             }
+            if (len < best_len) {
+                continue;
+            }
+            if (strncasecmp(rtlocald->dir, syscheck.dir[i], len) != 0) {
+                continue;
+            }
+            next = rtlocald->dir[len];
+            if (next != '\0' && next != '/' && next != '\\') {
+                continue;
+            }
+            best_len = len;
+            best = i;
         }
-        read_dir(rtlocald->dir, rtlocald->opts, restriction);
+        if (best >= 0) {
+            scan_opts = syscheck.opts[best] & ~CHECK_REALTIME;
+            restriction = syscheck.filerestrict[best];
+        }
+        read_dir(rtlocald->dir, scan_opts, restriction);
     }
 
     return;
