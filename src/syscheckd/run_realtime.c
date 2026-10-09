@@ -559,18 +559,16 @@ static void rt_overflow_queue_missing(const char *dir)
 
 static void realtime_overflow_process(void)
 {
-    rt_ovf_coalesce_pending();
-
     while (rt_ovf_head != NULL) {
-        rt_ovf *entry = rt_ovf_head;
+        rt_ovf *entry;
         int i;
         int best = -1;
         size_t best_len = 0;
-        int scan_opts = entry->opts & ~CHECK_REALTIME;
+        int scan_opts;
         OSMatch *restriction = NULL;
 
-        /* APCs may have queued overlapping children while a prior recovery
-         * ran; collapse again so each pass only walks maximal ancestors. */
+        /* APCs may queue overlapping children while a prior recovery runs;
+         * collapse so each pass only walks maximal ancestors. */
         rt_ovf_coalesce_pending();
         entry = rt_ovf_head;
         if (entry == NULL) {
@@ -579,6 +577,7 @@ static void realtime_overflow_process(void)
 
         rt_ovf_head = entry->next;
         OSHash_Delete(rt_ovf_hash, entry->dir);
+        scan_opts = entry->opts & ~CHECK_REALTIME;
 
         for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
             size_t len = strlen(syscheck.dir[i]);
