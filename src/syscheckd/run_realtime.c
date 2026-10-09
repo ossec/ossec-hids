@@ -715,9 +715,16 @@ void realtime_pending_process(void)
 
                 alert_msg[PATH_MAX + 3] = '\0';
                 snprintf(alert_msg, PATH_MAX + 4, "-1 %s", entry->path);
-                send_syscheck_msg(alert_msg);
-                /* Drop the cache entry so later overflow recoveries do not
-                 * re-alert the same deletion. */
+                /* Keep the cache entry if delivery fails so a later overflow
+                 * or scan can still report the deletion. */
+                if (send_syscheck_msg(alert_msg) != 0) {
+                    merror("%s: WARN: Failed to send syscheck delete for '%s'. "
+                           "Deletion will be retried.", ARGV0, entry->path);
+                    entry->attempts++;
+                    entry->due = rt_due_after(rt_backoff_ms(entry->attempts));
+                    prev = entry;
+                    continue;
+                }
                 if (syscheck.fp != NULL) {
                     oldsum = OSHash_Delete(syscheck.fp, entry->path);
                     free(oldsum);
