@@ -384,7 +384,15 @@ void LogCollectorStart()
                     }
                     logff[i].fp = NULL;
                     handle_file(i, 0, 1);
-                } else if (!logff[i].fp) {
+                } else if (!logff[i].fp && logff[i].ign < 999) {
+                    /* The file is not open yet. Read from the start so the
+                     * first lines of a newly created date file are kept.
+                     * ign starts at 360 and climbs on failed opens, so it is
+                     * not a sign the file was already read. ign == 999 is the
+                     * open-attempt limit; do not open again after that.
+                     * A read error that already has the file open reopens at
+                     * the end in the ferror path.
+                     */
                     handle_file(i, 0, 0);
                 }
             }

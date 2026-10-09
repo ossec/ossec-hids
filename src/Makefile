@@ -113,6 +113,11 @@ ifeq (${uname_S},SunOS)
 		endif
 		# /usr/sbin/install is the SVR4 script ("null was not found anywhere").
 		# ginstall is GNU install, including when /usr/sbin is first on PATH.
+		ifeq ($(shell found=; IFS=:; for d in $$PATH; do \
+			if [ -n "$$d" ] && [ -x "$$d/ginstall" ] && [ -f "$$d/ginstall" ]; then found=yes; break; fi; \
+		done; echo $$found),)
+			$(error Solaris install requires GNU install (ginstall) on PATH)
+		endif
 		INSTALL_CMD=ginstall -m $(1) -o $(2) -g $(3)
 
 else

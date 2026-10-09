@@ -21,6 +21,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **General**
 
+- @atomicturtle - Follow-up fixes from review of the 4.4.0 changes: Solaris ``ginstall`` is required up front, remoted reads ``notify_time`` at startup, date-based logcollector reopen honors the open-attempt limit, Windows wildcard paths stay literal, the agent-table upgrade constraint is limited to ``agent``, the Windows install ACL is reset before the allow-list, ``agent-auth`` accepts either path separator, and realtime FIM stops retrying a file that stays unreadable
 - @atomicturtle - Rotate ``ossec.log`` on the daily monitord pass into ``logs/ossec/YYYY/Mon/ossec-DD.log``, then sign and compress it with the alert logs. Drop it from logrotate so ``copytruncate`` no longer races that file (#704)
 - @atomicturtle - Ignore the Windows Application Experience ``:Win32App_1`` NTFS stream in rootcheck (#758)
 - @atomicturtle - Honor ``monitord.notify_time`` for agent_control status and remoted send eligibility, not only monitord disconnect alerts (#874, #1022)

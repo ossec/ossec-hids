@@ -17,6 +17,11 @@
 static int set_allow_list(void)
 {
     const char *cmds[] = {
+        /* /reset drops explicit grants left by an older install.
+         * /inheritance:r then removes the inherited ACEs /reset restored,
+         * and the two grants are the only remaining access.
+         */
+        "icacls . /reset /T /C /Q",
         "icacls . /inheritance:r /T /C /Q",
         "icacls . /grant \"*S-1-5-18:(OI)(CI)F\" /T /C /Q",
         "icacls . /grant \"*S-1-5-32-544:(OI)(CI)F\" /T /C /Q",
