@@ -1,3 +1,49 @@
+**OSSEC changelog (4.5.0 — unreleased) <support@atomicorp.com>**
+
+**Release Maintainers**
+
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+
+**Release Notes**
+
+Staging area for changes after the 4.4.0 tag. Rename this section to ``4.5.0`` (drop “unreleased”) when that release is cut. New user-facing work lands here, not under 4.4.0.
+
+**General**
+
+- @atomicturtle - Follow-up fixes from review of the 4.4.0 changes: Solaris ``ginstall`` is required up front, remoted reads ``notify_time`` at startup, date-based logcollector reopen honors the open-attempt limit, Windows wildcard paths stay literal, the agent-table upgrade constraint is limited to ``agent``, the Windows install ACL is reset before the allow-list, ``agent-auth`` accepts either path separator, and realtime FIM stops retrying a file that stays unreadable
+- @atomicturtle - Rotate ``ossec.log`` on the daily monitord pass into ``logs/ossec/YYYY/Mon/ossec-DD.log``, then sign and compress it with the alert logs. Drop it from logrotate so ``copytruncate`` no longer races that file (#704)
+- @atomicturtle - Ignore the Windows Application Experience ``:Win32App_1`` NTFS stream in rootcheck (#758)
+- @atomicturtle - Honor ``monitord.notify_time`` for agent_control status and remoted send eligibility, not only monitord disconnect alerts (#874, #1022)
+- @atomicturtle - Allow CDB ``<list>`` matching on decoded ``system_name`` via ``field="system_name"`` (#628)
+- @atomicturtle - Windows agent install ACL allows only SYSTEM and Administrators (#182)
+- @atomicturtle - ``ossec-regex -p`` tests a pattern as PCRE2, with the same flags as a ``<pcre2>`` rule (#1845)
+- @atomicturtle - Extract User-Agent (and action/srcport) from default IIS W3C access logs (#989)
+- @atomicturtle - Allow silent Windows agent installs to skip IIS logging and integrity checking via `/IISLogging=no` and `/IntegrityChecking=no` (#1000)
+- @atomicturtle - Optional ``<report_new_files_as_changed>`` so post-baseline FIM creates are stored as ``!+++`` and listed by ``syscheck_control -i`` (#1831)
+
+**Bug Fixes**
+
+- @atomicturtle - Stage bundled PCRE2 under ``pcre2_local/`` so macOS case-insensitive filesystems do not collide with the tarball ``INSTALL`` docs file (#1957)
+- @atomicturtle - Retry a realtime integrity check when the file is still locked or briefly missing, so emptying a file alerts without waiting for the next edit (#1386)
+- @atomicturtle - Add Windows ``<localfile>`` wildcard expansion (``*`` / ``?``, including multi-segment paths) and rotate date-based locations when the full ``strftime`` name changes so ``%H`` / ``%M`` work (#1954)
+- @atomicturtle - [PR 2333](https://github.com/ossec/ossec-hids/pull/2333) - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is prefixed ``arch64:`` (collision-free). Default view is 32-bit regardless of agent bitness; unknown ``windows_registry`` attributes are rejected (#954)
+- @atomicturtle - Take the IIS default W3C ``sc-status`` from the fields that follow it, so a referer of ``/404`` or ``200`` and a three-digit ``sc-substatus`` are not the response code (#989)
+- @atomicturtle - Reject an ossec-dbd INSERT whose base query cannot fit, and reserve the SQL buffer's terminating NUL when capping ``full_log`` (#1959)
+- @atomicturtle - Bound agent decrypt backoff so a burst of bad or empty replies sleeps once per drain and still fails over (#1944)
+- @atomicturtle - Log ``GetSecurityInfo``'s return code when a Windows FIM owner lookup fails (#1581)
+- @atomicturtle - Apply both exact and sregex ``registry_ignore`` entries so default ``\Enum$`` is not skipped (#851)
+- @atomicturtle - Scan realtime-created paths with ``read_file`` so short-lived files do not flood ossec.log with ``Error opening directory`` (#1792)
+- @atomicturtle - Extract Windows 4625 UPN Account Name (skip Subject ``-``) and budget ossec-dbd INSERT fields so oversized alerts cannot truncate mid-quote (#1959)
+- @atomicturtle - Back off when the agent cannot decrypt a server reply so a bad or missing key cannot peg a CPU core (#1944)
+- @atomicturtle - Stop truncating alert full_log / previous-output lines at 1256 bytes in alerts.log (#473)
+- @atomicturtle - Stop Windows CreateFile/GetSecurityInfo failures from becoming false syscheck size-change alerts (#1581)
+- @atomicturtle - Drop rule 31107 so search URLs no longer suppress SQLi/XSS/web-attack alerts (#1078)
+
+
 **OSSEC changelog (4.4.0) <support@atomicorp.com>**
 
 **Release Maintainers**
@@ -21,39 +67,14 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **General**
 
-- @atomicturtle - Follow-up fixes from review of the 4.4.0 changes: Solaris ``ginstall`` is required up front, remoted reads ``notify_time`` at startup, date-based logcollector reopen honors the open-attempt limit, Windows wildcard paths stay literal, the agent-table upgrade constraint is limited to ``agent``, the Windows install ACL is reset before the allow-list, ``agent-auth`` accepts either path separator, and realtime FIM stops retrying a file that stays unreadable
-- @atomicturtle - Rotate ``ossec.log`` on the daily monitord pass into ``logs/ossec/YYYY/Mon/ossec-DD.log``, then sign and compress it with the alert logs. Drop it from logrotate so ``copytruncate`` no longer races that file (#704)
-- @atomicturtle - Ignore the Windows Application Experience ``:Win32App_1`` NTFS stream in rootcheck (#758)
-- @atomicturtle - Honor ``monitord.notify_time`` for agent_control status and remoted send eligibility, not only monitord disconnect alerts (#874, #1022)
-- @atomicturtle - Allow CDB ``<list>`` matching on decoded ``system_name`` via ``field="system_name"`` (#628)
-- @atomicturtle - Windows agent install ACL allows only SYSTEM and Administrators (#182)
-- @atomicturtle - ``ossec-regex -p`` tests a pattern as PCRE2, with the same flags as a ``<pcre2>`` rule (#1845)
-- @atomicturtle - Extract User-Agent (and action/srcport) from default IIS W3C access logs (#989)
 - @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
 - @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
 - @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
 - @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
 - @atomicturtle - [PR 2302](https://github.com/ossec/ossec-hids/pull/2302) - Forward analysisd JSON alerts over syslog so agent_name is a first-class field; keep jsonout on when undeclared
-- @atomicturtle - Allow silent Windows agent installs to skip IIS logging and integrity checking via `/IISLogging=no` and `/IntegrityChecking=no` (#1000)
-- @atomicturtle - Optional ``<report_new_files_as_changed>`` so post-baseline FIM creates are stored as ``!+++`` and listed by ``syscheck_control -i`` (#1831)
 
 **Bug Fixes**
 
-- @atomicturtle - Stage bundled PCRE2 under ``pcre2_local/`` so macOS case-insensitive filesystems do not collide with the tarball ``INSTALL`` docs file (#1957)
-- @atomicturtle - Retry a realtime integrity check when the file is still locked or briefly missing, so emptying a file alerts without waiting for the next edit (#1386)
-- @atomicturtle - Add Windows ``<localfile>`` wildcard expansion (``*`` / ``?``, including multi-segment paths) and rotate date-based locations when the full ``strftime`` name changes so ``%H`` / ``%M`` work (#1954)
-- @atomicturtle - [PR 2333](https://github.com/ossec/ossec-hids/pull/2333) - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is prefixed ``arch64:`` (collision-free). Default view is 32-bit regardless of agent bitness; unknown ``windows_registry`` attributes are rejected (#954)
-- @atomicturtle - Take the IIS default W3C ``sc-status`` from the fields that follow it, so a referer of ``/404`` or ``200`` and a three-digit ``sc-substatus`` are not the response code (#989)
-- @atomicturtle - Reject an ossec-dbd INSERT whose base query cannot fit, and reserve the SQL buffer's terminating NUL when capping ``full_log`` (#1959)
-- @atomicturtle - Bound agent decrypt backoff so a burst of bad or empty replies sleeps once per drain and still fails over (#1944)
-- @atomicturtle - Log ``GetSecurityInfo``'s return code when a Windows FIM owner lookup fails (#1581)
-- @atomicturtle - Apply both exact and sregex ``registry_ignore`` entries so default ``\Enum$`` is not skipped (#851)
-- @atomicturtle - Scan realtime-created paths with ``read_file`` so short-lived files do not flood ossec.log with ``Error opening directory`` (#1792)
-- @atomicturtle - Extract Windows 4625 UPN Account Name (skip Subject ``-``) and budget ossec-dbd INSERT fields so oversized alerts cannot truncate mid-quote (#1959)
-- @atomicturtle - Back off when the agent cannot decrypt a server reply so a bad or missing key cannot peg a CPU core (#1944)
-- @atomicturtle - Stop truncating alert full_log / previous-output lines at 1256 bytes in alerts.log (#473)
-- @atomicturtle - Stop Windows CreateFile/GetSecurityInfo failures from becoming false syscheck size-change alerts (#1581)
-- @atomicturtle - Drop rule 31107 so search URLs no longer suppress SQLi/XSS/web-attack alerts (#1078)
 - @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
 - @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
 - @atomicturtle - [PR 2303](https://github.com/ossec/ossec-hids/pull/2303) - Stop remoted from writing the sender counter into agent 0 rids on key reload (#2065)
