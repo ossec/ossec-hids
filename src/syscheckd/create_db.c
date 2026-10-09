@@ -673,7 +673,8 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
 }
 
 /* When set, any opendir failure in this tree marks the walk incomplete
- * so callers (overflow delete reconcile) can refuse mass-delete recovery. */
+ * so callers (overflow delete reconcile) can refuse mass-delete recovery.
+ * Single-threaded syscheck only: not re-entrant / not safe across threads. */
 static int read_dir_track_complete = 0;
 static int read_dir_incomplete = 0;
 

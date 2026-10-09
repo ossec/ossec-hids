@@ -381,11 +381,22 @@ void realtime_enqueue(const char *file_name)
     rt_pend_head = entry;
 }
 
+#ifdef WIN32
+static int realtime_overflow_pending(void);
+#endif
+
 int realtime_pending_ms(void)
 {
     rt_pend *entry;
     unsigned long long best = 0;
     int have = 0;
+
+#ifdef WIN32
+    /* Keep the main loop tight while overflow recoveries remain. */
+    if (realtime_overflow_pending()) {
+        return (0);
+    }
+#endif
 
     for (entry = rt_pend_head; entry != NULL; entry = entry->next) {
         unsigned long long left = rt_until(entry->due);
@@ -435,9 +446,13 @@ static int rt_path_under_dir(const char *path, const char *dir)
     return (path[len] == '\0' || path[len] == '/' || path[len] == '\\');
 }
 
-/* Recovery always strips CHECK_REALTIME; compare the rest. */
+/* Recovery always strips CHECK_REALTIME; compare the rest.
+ * A non-recursive ancestor walk does not cover child directories. */
 static int rt_ovf_opts_compatible(int a, int b)
 {
+    if ((a & CHECK_NORECURSE) || (b & CHECK_NORECURSE)) {
+        return (0);
+    }
     return ((a & ~CHECK_REALTIME) == (b & ~CHECK_REALTIME));
 }
 
@@ -557,67 +572,72 @@ static void rt_overflow_queue_missing(const char *dir)
     }
 }
 
+/* Process at most one queued recovery per call so the main loop can keep
+ * draining notifications and rt_pend work between large tree walks. */
 static void realtime_overflow_process(void)
 {
-    while (rt_ovf_head != NULL) {
-        rt_ovf *entry;
-        int i;
-        int best = -1;
-        size_t best_len = 0;
-        int scan_opts;
-        OSMatch *restriction = NULL;
+    rt_ovf *entry;
+    int i;
+    int best = -1;
+    size_t best_len = 0;
+    int scan_opts;
+    OSMatch *restriction = NULL;
 
-        /* APCs may queue overlapping children while a prior recovery runs;
-         * collapse so each pass only walks maximal ancestors. */
-        rt_ovf_coalesce_pending();
-        entry = rt_ovf_head;
-        if (entry == NULL) {
-            break;
-        }
-
-        rt_ovf_head = entry->next;
-        OSHash_Delete(rt_ovf_hash, entry->dir);
-        scan_opts = entry->opts & ~CHECK_REALTIME;
-
-        for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
-            size_t len = strlen(syscheck.dir[i]);
-            char next;
-
-            while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
-                               syscheck.dir[i][len - 1] == '\\')) {
-                len--;
-            }
-            if (len < best_len) {
-                continue;
-            }
-            if (strncasecmp(entry->dir, syscheck.dir[i], len) != 0) {
-                continue;
-            }
-            next = entry->dir[len];
-            if (next != '\0' && next != '/' && next != '\\') {
-                continue;
-            }
-            best_len = len;
-            best = i;
-        }
-        if (best >= 0) {
-            scan_opts = syscheck.opts[best] & ~CHECK_REALTIME;
-            restriction = syscheck.filerestrict[best];
-        }
-
-        /* Only reconcile deletes after a complete enumeration. A failed
-         * open (offline share, transient path) must not look like a mass
-         * delete of every cached child. */
-        if (read_dir_complete(entry->dir, scan_opts, restriction) == 0) {
-            rt_overflow_queue_missing(entry->dir);
-        } else {
-            merror("%s: WARN: overflow recovery scan of '%s' incomplete; "
-                   "skipping delete reconciliation.", ARGV0, entry->dir);
-        }
-
-        free(entry->dir);
-        free(entry);
+    /* APCs may queue overlapping children while a prior recovery runs;
+     * collapse so each pass only walks maximal ancestors. */
+    rt_ovf_coalesce_pending();
+    entry = rt_ovf_head;
+    if (entry == NULL) {
+        return;
     }
+
+    rt_ovf_head = entry->next;
+    OSHash_Delete(rt_ovf_hash, entry->dir);
+    scan_opts = entry->opts & ~CHECK_REALTIME;
+
+    for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
+        size_t len = strlen(syscheck.dir[i]);
+        char next;
+
+        while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
+                           syscheck.dir[i][len - 1] == '\\')) {
+            len--;
+        }
+        if (len < best_len) {
+            continue;
+        }
+        if (strncasecmp(entry->dir, syscheck.dir[i], len) != 0) {
+            continue;
+        }
+        next = entry->dir[len];
+        if (next != '\0' && next != '/' && next != '\\') {
+            continue;
+        }
+        best_len = len;
+        best = i;
+    }
+    if (best >= 0) {
+        scan_opts = syscheck.opts[best] & ~CHECK_REALTIME;
+        restriction = syscheck.filerestrict[best];
+    }
+
+    /* Only reconcile deletes after a complete enumeration. A failed
+     * open (offline share, transient path) must not look like a mass
+     * delete of every cached child. */
+    if (read_dir_complete(entry->dir, scan_opts, restriction) == 0) {
+        rt_overflow_queue_missing(entry->dir);
+    } else {
+        merror("%s: WARN: overflow recovery scan of '%s' incomplete; "
+               "skipping delete reconciliation.", ARGV0, entry->dir);
+    }
+
+    free(entry->dir);
+    free(entry);
+}
+
+static int realtime_overflow_pending(void)
+{
+    return (rt_ovf_head != NULL);
 }
 #endif /* WIN32 */
 
@@ -869,40 +889,43 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
         /* Overflow: buffer contents are incomplete; do not parse. */
         merror("%s: ERROR: real time buffer overflow on '%s' (error %lu).",
                ARGV0, rtlocald->dir, (unsigned long)dwerror);
-    } else if (dwerror != ERROR_SUCCESS) {
-        merror("%s: ERROR: real time call back error %lu on '%s'.",
-               ARGV0, (unsigned long)dwerror, rtlocald->dir);
-    } else {
-        do {
-            pinfo = (PFILE_NOTIFY_INFORMATION) &rtlocald->buffer[offset];
-            offset += pinfo->NextEntryOffset;
-
-            lcount = WideCharToMultiByte(CP_ACP, 0, pinfo->FileName,
-                                         pinfo->FileNameLength / sizeof(WCHAR),
-                                         finalfile, MAX_PATH - 1, NULL, NULL);
-            finalfile[lcount] = TEXT('\0');
-
-            /* Build a path that matches scheduled FIM (forward-slash form).
-             * Credit: Brad Lhotsky (@reyjrar) for identifying the realtime vs
-             * full-scan slash mismatch in PR #235.
-             */
-            final_path[MAX_LINE] = '\0';
-            snprintf(final_path, MAX_LINE, "%s/%s", rtlocald->dir, finalfile);
-            os_normalize_path(final_path);
-
-            /* Queue the change. A locked truncate must be retried after
-             * this callback returns; closing the file is not a new event. */
-            realtime_enqueue(final_path);
-        } while (pinfo->NextEntryOffset != 0);
-    }
-
-    realtime_win32read(rtlocald);
-
-    if (dwerror == ERROR_NOTIFY_ENUM_DIR || dwBytes == 0) {
+        realtime_win32read(rtlocald);
         /* Defer enumeration + delete reconcile to the main loop so this
          * APC does not block other watches (and so repeats coalesce). */
         rt_overflow_schedule(rtlocald->dir, rtlocald->opts);
+        return;
     }
+
+    if (dwerror != ERROR_SUCCESS) {
+        /* Unknown failure: do not re-arm (avoids an APC spin). */
+        merror("%s: ERROR: real time call back error %lu on '%s'.",
+               ARGV0, (unsigned long)dwerror, rtlocald->dir);
+        return;
+    }
+
+    do {
+        pinfo = (PFILE_NOTIFY_INFORMATION) &rtlocald->buffer[offset];
+        offset += pinfo->NextEntryOffset;
+
+        lcount = WideCharToMultiByte(CP_ACP, 0, pinfo->FileName,
+                                     pinfo->FileNameLength / sizeof(WCHAR),
+                                     finalfile, MAX_PATH - 1, NULL, NULL);
+        finalfile[lcount] = TEXT('\0');
+
+        /* Build a path that matches scheduled FIM (forward-slash form).
+         * Credit: Brad Lhotsky (@reyjrar) for identifying the realtime vs
+         * full-scan slash mismatch in PR #235.
+         */
+        final_path[MAX_LINE] = '\0';
+        snprintf(final_path, MAX_LINE, "%s/%s", rtlocald->dir, finalfile);
+        os_normalize_path(final_path);
+
+        /* Queue the change. A locked truncate must be retried after
+         * this callback returns; closing the file is not a new event. */
+        realtime_enqueue(final_path);
+    } while (pinfo->NextEntryOffset != 0);
+
+    realtime_win32read(rtlocald);
 
     return;
 }
