@@ -39,6 +39,9 @@ int run_dbcheck(void);
 /* Scan directory */
 int read_dir(const char *dir_name, int opts, OSMatch *restriction);
 
+/* Scan directory; -1 if any directory in the tree could not be opened. */
+int read_dir_complete(const char *dir_name, int opts, OSMatch *restriction);
+
 /* Scan a single path (file, or directory via read_dir). */
 int read_file(const char *file_name, int opts, OSMatch *restriction);
 

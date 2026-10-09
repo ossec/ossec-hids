@@ -672,6 +672,12 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
     return (0);
 }
 
+/* When set, any opendir failure in this tree marks the walk incomplete
+ * so callers (overflow delete reconcile) can refuse mass-delete recovery.
+ * Single-threaded syscheck only: not re-entrant / not safe across threads. */
+static int read_dir_track_complete = 0;
+static int read_dir_incomplete = 0;
+
 int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 {
     size_t dir_size;
@@ -686,6 +692,9 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     /* Directory should be valid */
     if ((dir_size = strlen(dir_name)) > PATH_MAX) {
         merror(NULL_ERROR, ARGV0);
+        if (read_dir_track_complete) {
+            read_dir_incomplete = 1;
+        }
         return (-1);
     }
 
@@ -696,6 +705,9 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
         if(is_nfs != 0)
         {
             // Error will be -1, and 1 means skipped
+            if (read_dir_track_complete) {
+                read_dir_incomplete = 1;
+            }
             return(is_nfs);
         }
     }
@@ -738,6 +750,9 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
                dir_name,
                strerror(errno));
 #endif /* WIN32 */
+        if (read_dir_track_complete) {
+            read_dir_incomplete = 1;
+        }
         return (-1);
     }
 
@@ -753,6 +768,7 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 #endif
     }
 
+    errno = 0;
     while ((entry = readdir(dp)) != NULL) {
         char *s_name;
 
@@ -791,9 +807,39 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 
         /* Check integrity of the file */
         read_file(f_name, opts, restriction);
+        errno = 0;
+    }
+
+    /* readdir() returns NULL on EOF and on error; distinguish via errno. */
+    if (errno != 0) {
+        merror("%s: WARN: Error reading directory: '%s': %s ",
+               ARGV0, dir_name, strerror(errno));
+        if (read_dir_track_complete) {
+            read_dir_incomplete = 1;
+        }
+        closedir(dp);
+        return (-1);
     }
 
     closedir(dp);
+    return (0);
+}
+
+/* Like read_dir(), but returns -1 if any directory in the tree could not
+ * be opened (including nested dirs). Used when a failed walk must not be
+ * treated as evidence that cached paths were deleted. */
+int read_dir_complete(const char *dir_name, int opts, OSMatch *restriction)
+{
+    int rc;
+
+    read_dir_track_complete = 1;
+    read_dir_incomplete = 0;
+    rc = read_dir(dir_name, opts, restriction);
+    read_dir_track_complete = 0;
+
+    if (rc != 0 || read_dir_incomplete) {
+        return (-1);
+    }
     return (0);
 }
 
