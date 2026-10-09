@@ -435,9 +435,65 @@ static int rt_path_under_dir(const char *path, const char *dir)
     return (path[len] == '\0' || path[len] == '/' || path[len] == '\\');
 }
 
+/* Recovery always strips CHECK_REALTIME; compare the rest. */
+static int rt_ovf_opts_compatible(int a, int b)
+{
+    return ((a & ~CHECK_REALTIME) == (b & ~CHECK_REALTIME));
+}
+
+static void rt_ovf_unlink(rt_ovf *target)
+{
+    rt_ovf *prev = NULL;
+    rt_ovf *curr;
+
+    for (curr = rt_ovf_head; curr != NULL; curr = curr->next) {
+        if (curr == target) {
+            if (prev != NULL) {
+                prev->next = curr->next;
+            } else {
+                rt_ovf_head = curr->next;
+            }
+            if (rt_ovf_hash != NULL) {
+                OSHash_Delete(rt_ovf_hash, curr->dir);
+            }
+            free(curr->dir);
+            free(curr);
+            return;
+        }
+        prev = curr;
+    }
+}
+
+/* Keep only maximal ancestors when opts match. Nested Windows watches
+ * share a subtree notify filter, so one parent recovery covers children. */
+static void rt_ovf_coalesce_pending(void)
+{
+    rt_ovf *curr;
+    rt_ovf *next;
+    rt_ovf *other;
+
+    for (curr = rt_ovf_head; curr != NULL; curr = next) {
+        next = curr->next;
+        for (other = rt_ovf_head; other != NULL; other = other->next) {
+            if (other == curr) {
+                continue;
+            }
+            if (!rt_ovf_opts_compatible(curr->opts, other->opts)) {
+                continue;
+            }
+            if (rt_path_under_dir(curr->dir, other->dir)) {
+                rt_ovf_unlink(curr);
+                break;
+            }
+        }
+    }
+}
+
 static void rt_overflow_schedule(const char *dir, int opts)
 {
     rt_ovf *entry;
+    rt_ovf *curr;
+    rt_ovf *next;
 
     if (dir == NULL || dir[0] == '\0') {
         return;
@@ -447,6 +503,20 @@ static void rt_overflow_schedule(const char *dir, int opts)
         rt_ovf_hash = OSHash_Create();
         if (rt_ovf_hash == NULL) {
             return;
+        }
+    }
+
+    /* Skip when an ancestor is already queued; drop descendants of dir. */
+    for (curr = rt_ovf_head; curr != NULL; curr = next) {
+        next = curr->next;
+        if (!rt_ovf_opts_compatible(curr->opts, opts)) {
+            continue;
+        }
+        if (rt_path_under_dir(dir, curr->dir)) {
+            return;
+        }
+        if (rt_path_under_dir(curr->dir, dir)) {
+            rt_ovf_unlink(curr);
         }
     }
 
@@ -489,6 +559,8 @@ static void rt_overflow_queue_missing(const char *dir)
 
 static void realtime_overflow_process(void)
 {
+    rt_ovf_coalesce_pending();
+
     while (rt_ovf_head != NULL) {
         rt_ovf *entry = rt_ovf_head;
         int i;
@@ -496,6 +568,14 @@ static void realtime_overflow_process(void)
         size_t best_len = 0;
         int scan_opts = entry->opts & ~CHECK_REALTIME;
         OSMatch *restriction = NULL;
+
+        /* APCs may have queued overlapping children while a prior recovery
+         * ran; collapse again so each pass only walks maximal ancestors. */
+        rt_ovf_coalesce_pending();
+        entry = rt_ovf_head;
+        if (entry == NULL) {
+            break;
+        }
 
         rt_ovf_head = entry->next;
         OSHash_Delete(rt_ovf_hash, entry->dir);
