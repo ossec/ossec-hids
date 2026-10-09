@@ -526,10 +526,15 @@ static void realtime_overflow_process(void)
             restriction = syscheck.filerestrict[best];
         }
 
-        /* Enumerate survivors, then queue missing cached paths for delete
-         * confirmation on the next realtime_pending_process pass. */
-        read_dir(entry->dir, scan_opts, restriction);
-        rt_overflow_queue_missing(entry->dir);
+        /* Only reconcile deletes after a complete enumeration. A failed
+         * open (offline share, transient path) must not look like a mass
+         * delete of every cached child. */
+        if (read_dir_complete(entry->dir, scan_opts, restriction) == 0) {
+            rt_overflow_queue_missing(entry->dir);
+        } else {
+            merror("%s: WARN: overflow recovery scan of '%s' incomplete; "
+                   "skipping delete reconciliation.", ARGV0, entry->dir);
+        }
 
         free(entry->dir);
         free(entry);
