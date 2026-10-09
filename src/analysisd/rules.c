@@ -89,6 +89,8 @@ int Rules_OP_ReadRules(const char *rulefile)
     const char *xml_id = "id";
     const char *xml_data = "extra_data";
     const char *xml_hostname = "hostname";
+    const char *xml_agent_name = "agent_name";
+    const char *xml_location = "location";
     const char *xml_program_name = "program_name";
     const char *xml_system_name = "system_name";
     const char *xml_status = "status";
@@ -99,6 +101,8 @@ int Rules_OP_ReadRules(const char *rulefile)
     const char *xml_id_pcre2 = "id_pcre2";
     const char *xml_data_pcre2 = "extra_data_pcre2";
     const char *xml_hostname_pcre2 = "hostname_pcre2";
+    const char *xml_agent_name_pcre2 = "agent_name_pcre2";
+    const char *xml_location_pcre2 = "location_pcre2";
     const char *xml_program_name_pcre2 = "program_name_pcre2";
     const char *xml_status_pcre2 = "status_pcre2";
     const char *xml_action = "action";
@@ -359,6 +363,8 @@ int Rules_OP_ReadRules(const char *rulefile)
 
                 char *status = NULL;
                 char *hostname = NULL;
+                char *agent_name = NULL;
+                char *location = NULL;
                 char *extra_data = NULL;
                 char *program_name = NULL;
 
@@ -373,6 +379,8 @@ int Rules_OP_ReadRules(const char *rulefile)
 
                 char *status_pcre2 = NULL;
                 char *hostname_pcre2 = NULL;
+                char *agent_name_pcre2 = NULL;
+                char *location_pcre2 = NULL;
                 char *extra_data_pcre2 = NULL;
                 char *program_name_pcre2 = NULL;
 
@@ -635,6 +643,22 @@ int Rules_OP_ReadRules(const char *rulefile)
                         if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
                             config_ruleinfo->alert_opts |= DO_EXTRAINFO;
                         }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_agent_name) == 0) {
+                        agent_name =
+                            loadmemory(agent_name,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_location) == 0) {
+                        location =
+                            loadmemory(location,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
                     } else if (strcasecmp(rule_opt[k]->element, xml_data) == 0) {
                         extra_data =
                             loadmemory(extra_data,
@@ -714,6 +738,22 @@ int Rules_OP_ReadRules(const char *rulefile)
                     } else if (strcasecmp(rule_opt[k]->element, xml_hostname_pcre2) == 0) {
                         hostname_pcre2 =
                             loadmemory(hostname_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_agent_name_pcre2) == 0) {
+                        agent_name_pcre2 =
+                            loadmemory(agent_name_pcre2,
+                                       rule_opt[k]->content);
+
+                        if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
+                            config_ruleinfo->alert_opts |= DO_EXTRAINFO;
+                        }
+                    } else if (strcasecmp(rule_opt[k]->element, xml_location_pcre2) == 0) {
+                        location_pcre2 =
+                            loadmemory(location_pcre2,
                                        rule_opt[k]->content);
 
                         if (!(config_ruleinfo->alert_opts & DO_EXTRAINFO)) {
@@ -1327,6 +1367,50 @@ int Rules_OP_ReadRules(const char *rulefile)
                     hostname_pcre2 = NULL;
                 }
 
+                /* Agent name (OSSEC agent identity, distinct from log hostname) */
+                if (agent_name) {
+                    os_calloc(1, sizeof(OSMatch), config_ruleinfo->agent_name);
+                    if (!OSMatch_Compile(agent_name, config_ruleinfo->agent_name, 0)) {
+                        merror(REGEX_COMPILE, ARGV0, agent_name,
+                               config_ruleinfo->agent_name->error);
+                        return (-1);
+                    }
+                    free(agent_name);
+                    agent_name = NULL;
+                }
+                else if (agent_name_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->agent_name_pcre2);
+                    if (!OSPcre2_Compile(agent_name_pcre2, config_ruleinfo->agent_name_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, agent_name_pcre2,
+                               config_ruleinfo->agent_name_pcre2->error);
+                        return (-1);
+                    }
+                    free(agent_name_pcre2);
+                    agent_name_pcre2 = NULL;
+                }
+
+                /* Location (file path / channel / syscheck-* tag) */
+                if (location) {
+                    os_calloc(1, sizeof(OSMatch), config_ruleinfo->location);
+                    if (!OSMatch_Compile(location, config_ruleinfo->location, 0)) {
+                        merror(REGEX_COMPILE, ARGV0, location,
+                               config_ruleinfo->location->error);
+                        return (-1);
+                    }
+                    free(location);
+                    location = NULL;
+                }
+                else if (location_pcre2) {
+                    os_calloc(1, sizeof(OSPcre2), config_ruleinfo->location_pcre2);
+                    if (!OSPcre2_Compile(location_pcre2, config_ruleinfo->location_pcre2, PCRE2_CASELESS)) {
+                        merror(REGEX_COMPILE, ARGV0, location_pcre2,
+                               config_ruleinfo->location_pcre2->error);
+                        return (-1);
+                    }
+                    free(location_pcre2);
+                    location_pcre2 = NULL;
+                }
+
                 /* Add extra data */
                 if (extra_data) {
                     os_calloc(1, sizeof(OSMatch), config_ruleinfo->extra_data);
@@ -1792,6 +1876,11 @@ RuleInfo *zerorulemember(int id, int level,
     ruleinfo_pt->id = NULL;
     ruleinfo_pt->status = NULL;
     ruleinfo_pt->hostname = NULL;
+    ruleinfo_pt->agent_name = NULL;
+    ruleinfo_pt->location = NULL;
+    ruleinfo_pt->hostname_pcre2 = NULL;
+    ruleinfo_pt->agent_name_pcre2 = NULL;
+    ruleinfo_pt->location_pcre2 = NULL;
     ruleinfo_pt->program_name = NULL;
     ruleinfo_pt->action = NULL;
     os_calloc(Config.decoder_order_size, sizeof(FieldInfo*), ruleinfo_pt->fields);

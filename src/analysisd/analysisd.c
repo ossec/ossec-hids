@@ -1229,7 +1229,7 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
             }
         }
 
-        /* Check hostname */
+        /* Check hostname (device/log hostname from the event line) */
         if (rule->hostname) {
             if (!lf->hostname) {
                 return (NULL);
@@ -1248,6 +1248,52 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
 
             if (!OSPcre2_Execute(lf->hostname,
                                  rule->hostname_pcre2)) {
+                return (NULL);
+            }
+        }
+
+        /* Check OSSEC agent name (identity from location, #1668) */
+        if (rule->agent_name) {
+            if (!lf->agent_name) {
+                return (NULL);
+            }
+
+            if (!OSMatch_Execute(lf->agent_name,
+                                 strlen(lf->agent_name),
+                                 rule->agent_name)) {
+                return (NULL);
+            }
+        }
+        else if (rule->agent_name_pcre2) {
+            if (!lf->agent_name) {
+                return (NULL);
+            }
+
+            if (!OSPcre2_Execute(lf->agent_name,
+                                 rule->agent_name_pcre2)) {
+                return (NULL);
+            }
+        }
+
+        /* Check location (path / channel / syscheck-* tag) */
+        if (rule->location) {
+            if (!lf->location) {
+                return (NULL);
+            }
+
+            if (!OSMatch_Execute(lf->location,
+                                 strlen(lf->location),
+                                 rule->location)) {
+                return (NULL);
+            }
+        }
+        else if (rule->location_pcre2) {
+            if (!lf->location) {
+                return (NULL);
+            }
+
+            if (!OSPcre2_Execute(lf->location,
+                                 rule->location_pcre2)) {
                 return (NULL);
             }
         }

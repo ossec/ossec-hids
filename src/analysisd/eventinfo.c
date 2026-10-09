@@ -190,9 +190,12 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
                 }
             }
 
-            /* Check for same location */
+            /* Check for same location (log path / channel, not device hostname). */
             if (rule->context_opts & SAME_LOCATION) {
-                if (strcmp(lf->hostname, my_lf->hostname) != 0) {
+                if (!lf->location || !my_lf->location) {
+                    continue;
+                }
+                if (strcmp(lf->location, my_lf->location) != 0) {
                     continue;
                 }
             }
@@ -364,9 +367,12 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
                 }
             }
 
-            /* Check for same location */
+            /* Check for same location (log path / channel, not device hostname). */
             if (rule->context_opts & SAME_LOCATION) {
-                if (strcmp(lf->hostname, my_lf->hostname) != 0) {
+                if (!lf->location || !my_lf->location) {
+                    continue;
+                }
+                if (strcmp(lf->location, my_lf->location) != 0) {
                     continue;
                 }
             }
@@ -603,10 +609,14 @@ void Zero_Eventinfo(Eventinfo *lf)
     if (lf->flags & EF_FREE_HNAME) {
         free(lf->hostname);
     }
+    if (lf->flags & EF_FREE_AGENT_NAME) {
+        free(lf->agent_name);
+    }
 
     lf->log = NULL;
     lf->full_log = NULL;
     lf->hostname = NULL;
+    lf->agent_name = NULL;
     lf->program_name = NULL;
     lf->location = NULL;
 
@@ -904,6 +914,12 @@ void Free_Eventinfo(Eventinfo *lf)
         free(lf->hostname);
         lf->hostname = NULL;
         lf->flags &= ~EF_FREE_HNAME;
+    }
+
+    if (lf->flags & EF_FREE_AGENT_NAME) {
+        free(lf->agent_name);
+        lf->agent_name = NULL;
+        lf->flags &= ~EF_FREE_AGENT_NAME;
     }
 
     /* We dont need to free:

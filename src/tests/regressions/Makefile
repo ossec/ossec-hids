@@ -23,6 +23,7 @@ REGRESSION_BINS = \
 	issue_1274_auth_ipv6_key \
 	issue_2065_sender_counter \
 	issue_1611_local_ip_bind \
+	issue_1668_agent_hostname \
 	jsonout_default
 
 .PHONY: all check clean
@@ -66,6 +67,16 @@ issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a 
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
 
+issue_1668_agent_hostname: tests/regressions/issue_1668_agent_hostname.c \
+		analysisd/cleanevent.c analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/cleanevent.c -o analysisd/cleanevent-1668.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c -o analysisd/eventinfo-1668.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-1668.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1668_agent_hostname.c \
+		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o analysisd/eventinfo_list-1668.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
+
 # GlobalConf lives in analysisd/config.c (defines _Config Config).
 # Link config.a from a current server build; do not also compile
 # config/global-config.c or Read_Global is defined twice.
@@ -78,4 +89,6 @@ addagent/validate.o: addagent/validate.c
 	$(CC) $(CFLAGS) -c addagent/validate.c -o $@
 
 clean:
-	rm -f $(REGRESSION_BINS)
+	rm -f $(REGRESSION_BINS) \
+		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
+		analysisd/eventinfo_list-1668.o

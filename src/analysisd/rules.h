@@ -158,6 +158,8 @@ typedef struct _RuleInfo {
     OSMatch *id;
     OSMatch *status;
     OSMatch *hostname;
+    OSMatch *agent_name;
+    OSMatch *location;
     OSMatch *program_name;
     OSMatch *extra_data;
     FieldInfo **fields;
@@ -174,6 +176,8 @@ typedef struct _RuleInfo {
     OSPcre2 *id_pcre2;
     OSPcre2 *status_pcre2;
     OSPcre2 *hostname_pcre2;
+    OSPcre2 *agent_name_pcre2;
+    OSPcre2 *location_pcre2;
     OSPcre2 *program_name_pcre2;
     OSPcre2 *extra_data_pcre2;
     char *action;
