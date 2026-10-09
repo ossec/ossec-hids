@@ -420,10 +420,8 @@ char *Archiveinfo_to_jsonstr(const Eventinfo *lf)
     if(lf->year && strnlen(lf->mon, 4) && lf->day && strnlen(lf->hour, 10))
         W_JSON_ParseTimestamp(root, lf);
 
-    if(lf->hostname){
-        W_JSON_ParseHostname(root, lf->hostname);
-        W_JSON_ParseAgentIP(root, lf); 
-    }
+    W_JSON_ParseHostname(root, lf);
+    W_JSON_ParseAgentIP(root, lf);
 
     if (lf->location)
        W_JSON_ParseLocation(root,lf,0);

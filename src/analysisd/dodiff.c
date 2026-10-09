@@ -89,7 +89,12 @@ int doDiff(RuleInfo *rule, const Eventinfo *lf)
     flastcontent[OS_SIZE_8192] = '\0';
     OS_FreeRuleLastEvents(rule);
 
-    if (lf->hostname[0] == '(') {
+    /* Diff state is keyed by OSSEC agent (or local hostname). Prefer
+     * agent_name after #1668 so device hostnames do not collide across agents. */
+    if (lf->agent_name && lf->agent_name[0] != '\0') {
+        snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->agent_name,
+                 rule->sigid, DIFF_LAST_FILE);
+    } else if (lf->hostname && lf->hostname[0] == '(') {
         htpt = strchr(lf->hostname, ')');
         if (htpt) {
             *htpt = '\0';
@@ -101,9 +106,12 @@ int doDiff(RuleInfo *rule, const Eventinfo *lf)
             *htpt = ')';
         }
         htpt = NULL;
-    } else {
+    } else if (lf->hostname) {
         snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->hostname,
                  rule->sigid, DIFF_LAST_FILE);
+    } else {
+        merror("%s: ERROR: unable to build diff path (no hostname).", ARGV0);
+        goto out;
     }
 
     /* lf->size can't be too long */
