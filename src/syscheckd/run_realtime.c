@@ -623,22 +623,8 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
     PFILE_NOTIFY_INFORMATION pinfo;
     TCHAR finalfile[MAX_PATH];
 
-    if (dwBytes == 0) {
-        merror("%s: ERROR: real time call back called, but 0 bytes.", ARGV0);
-        rtlocald = OSHash_Get(syscheck.realtime->dirtb, "0");
-        if(rtlocald)
-            realtime_win32read(rtlocald);
-
-        return;
-    }
-
-    if (dwerror != ERROR_SUCCESS) {
-        merror("%s: ERROR: real time call back called, but error is set.",
-               ARGV0);
-        return;
-    }
-
-    /* Get hash to parse the data */
+    /* Resolve the watch that completed this overlapped I/O. Keys are the
+     * Offset values assigned in realtime_adddir(), not a fixed "0". */
     wdchar[32] = '\0';
     snprintf(wdchar, 32, "%d", (int)overlap->Offset);
     rtlocald = OSHash_Get(syscheck.realtime->dirtb, wdchar);
@@ -648,27 +634,40 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
         return;
     }
 
-    do {
-        pinfo = (PFILE_NOTIFY_INFORMATION) &rtlocald->buffer[offset];
-        offset += pinfo->NextEntryOffset;
+    if (dwerror != ERROR_SUCCESS) {
+        merror("%s: ERROR: real time call back called, but error is set.",
+               ARGV0);
+        return;
+    }
 
-        lcount = WideCharToMultiByte(CP_ACP, 0, pinfo->FileName,
-                                     pinfo->FileNameLength / sizeof(WCHAR),
-                                     finalfile, MAX_PATH - 1, NULL, NULL);
-        finalfile[lcount] = TEXT('\0');
+    if (dwBytes != 0) {
+        do {
+            pinfo = (PFILE_NOTIFY_INFORMATION) &rtlocald->buffer[offset];
+            offset += pinfo->NextEntryOffset;
 
-        /* Build a path that matches scheduled FIM (forward-slash form).
-         * Credit: Brad Lhotsky (@reyjrar) for identifying the realtime vs
-         * full-scan slash mismatch in PR #235.
-         */
-        final_path[MAX_LINE] = '\0';
-        snprintf(final_path, MAX_LINE, "%s/%s", rtlocald->dir, finalfile);
-        os_normalize_path(final_path);
+            lcount = WideCharToMultiByte(CP_ACP, 0, pinfo->FileName,
+                                         pinfo->FileNameLength / sizeof(WCHAR),
+                                         finalfile, MAX_PATH - 1, NULL, NULL);
+            finalfile[lcount] = TEXT('\0');
 
-        /* Queue the change. A locked truncate must be retried after
-         * this callback returns; closing the file is not a new event. */
-        realtime_enqueue(final_path);
-    } while (pinfo->NextEntryOffset != 0);
+            /* Build a path that matches scheduled FIM (forward-slash form).
+             * Credit: Brad Lhotsky (@reyjrar) for identifying the realtime vs
+             * full-scan slash mismatch in PR #235.
+             */
+            final_path[MAX_LINE] = '\0';
+            snprintf(final_path, MAX_LINE, "%s/%s", rtlocald->dir, finalfile);
+            os_normalize_path(final_path);
+
+            /* Queue the change. A locked truncate must be retried after
+             * this callback returns; closing the file is not a new event. */
+            realtime_enqueue(final_path);
+        } while (pinfo->NextEntryOffset != 0);
+    } else {
+        /* Empty completion usually means the change buffer overflowed and
+         * events were dropped. Re-arm the watch so realtime FIM continues. */
+        merror("%s: ERROR: real time call back called, but 0 bytes "
+               "(likely buffer overflow).", ARGV0);
+    }
 
     realtime_win32read(rtlocald);
 
