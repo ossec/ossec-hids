@@ -711,10 +711,17 @@ void realtime_pending_process(void)
 
             {
                 char alert_msg[PATH_MAX + 4];
+                void *oldsum;
 
                 alert_msg[PATH_MAX + 3] = '\0';
                 snprintf(alert_msg, PATH_MAX + 4, "-1 %s", entry->path);
                 send_syscheck_msg(alert_msg);
+                /* Drop the cache entry so later overflow recoveries do not
+                 * re-alert the same deletion. */
+                if (syscheck.fp != NULL) {
+                    oldsum = OSHash_Delete(syscheck.fp, entry->path);
+                    free(oldsum);
+                }
             }
             rt_pend_drop(prev, entry);
             continue;
@@ -904,8 +911,11 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
         return;
     }
 
-    if (dwerror == ERROR_NOTIFY_ENUM_DIR || dwBytes == 0) {
-        /* Overflow: buffer contents are incomplete; do not parse. */
+    /* Overflow is ERROR_NOTIFY_ENUM_DIR, or a successful completion with
+     * no bytes. Failed completions also report dwBytes==0 — do not treat
+     * those as overflow (would re-arm and spin the APC). */
+    if (dwerror == ERROR_NOTIFY_ENUM_DIR ||
+            (dwerror == ERROR_SUCCESS && dwBytes == 0)) {
         merror("%s: ERROR: real time buffer overflow on '%s' (error %lu).",
                ARGV0, rtlocald->dir, (unsigned long)dwerror);
         realtime_win32read(rtlocald);
