@@ -423,6 +423,7 @@ typedef struct _rt_ovf {
     struct _rt_ovf *next;
     char *dir;
     int opts;
+    int cfg; /* best-matching syscheck.dir index, or -1 */
 } rt_ovf;
 
 static rt_ovf *rt_ovf_head = NULL;
@@ -446,14 +447,52 @@ static int rt_path_under_dir(const char *path, const char *dir)
     return (path[len] == '\0' || path[len] == '/' || path[len] == '\\');
 }
 
-/* Recovery always strips CHECK_REALTIME; compare the rest.
- * A non-recursive ancestor walk does not cover child directories. */
-static int rt_ovf_opts_compatible(int a, int b)
+/* Longest-prefix match against configured syscheck directories. */
+static int rt_ovf_cfg_for_dir(const char *dir)
 {
-    if ((a & CHECK_NORECURSE) || (b & CHECK_NORECURSE)) {
+    int i;
+    int best = -1;
+    size_t best_len = 0;
+
+    for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
+        size_t len = strlen(syscheck.dir[i]);
+        char next;
+
+        while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
+                           syscheck.dir[i][len - 1] == '\\')) {
+            len--;
+        }
+        if (len < best_len) {
+            continue;
+        }
+        if (strncasecmp(dir, syscheck.dir[i], len) != 0) {
+            continue;
+        }
+        next = dir[len];
+        if (next != '\0' && next != '/' && next != '\\') {
+            continue;
+        }
+        best_len = len;
+        best = i;
+    }
+    return (best);
+}
+
+/* Recovery always strips CHECK_REALTIME; compare the rest.
+ * A non-recursive ancestor walk does not cover child directories.
+ * Different configured dirs (opts/restrict) must not cover each other. */
+static int rt_ovf_compatible(const rt_ovf *a, int opts_b, int cfg_b)
+{
+    if (a == NULL) {
         return (0);
     }
-    return ((a & ~CHECK_REALTIME) == (b & ~CHECK_REALTIME));
+    if ((a->opts & CHECK_NORECURSE) || (opts_b & CHECK_NORECURSE)) {
+        return (0);
+    }
+    if (a->cfg != cfg_b) {
+        return (0);
+    }
+    return ((a->opts & ~CHECK_REALTIME) == (opts_b & ~CHECK_REALTIME));
 }
 
 static void rt_ovf_unlink(rt_ovf *target)
@@ -479,8 +518,9 @@ static void rt_ovf_unlink(rt_ovf *target)
     }
 }
 
-/* Keep only maximal ancestors when opts match. Nested Windows watches
- * share a subtree notify filter, so one parent recovery covers children. */
+/* Keep only maximal ancestors when opts/config match. Nested Windows
+ * watches share a subtree notify filter, so one parent recovery covers
+ * children under the same configured directory. */
 static void rt_ovf_coalesce_pending(void)
 {
     rt_ovf *curr;
@@ -493,7 +533,7 @@ static void rt_ovf_coalesce_pending(void)
             if (other == curr) {
                 continue;
             }
-            if (!rt_ovf_opts_compatible(curr->opts, other->opts)) {
+            if (!rt_ovf_compatible(other, curr->opts, curr->cfg)) {
                 continue;
             }
             if (rt_path_under_dir(curr->dir, other->dir)) {
@@ -509,6 +549,7 @@ static void rt_overflow_schedule(const char *dir, int opts)
     rt_ovf *entry;
     rt_ovf *curr;
     rt_ovf *next;
+    int cfg;
 
     if (dir == NULL || dir[0] == '\0') {
         return;
@@ -521,10 +562,12 @@ static void rt_overflow_schedule(const char *dir, int opts)
         }
     }
 
+    cfg = rt_ovf_cfg_for_dir(dir);
+
     /* Skip when an ancestor is already queued; drop descendants of dir. */
     for (curr = rt_ovf_head; curr != NULL; curr = next) {
         next = curr->next;
-        if (!rt_ovf_opts_compatible(curr->opts, opts)) {
+        if (!rt_ovf_compatible(curr, opts, cfg)) {
             continue;
         }
         if (rt_path_under_dir(dir, curr->dir)) {
@@ -542,6 +585,7 @@ static void rt_overflow_schedule(const char *dir, int opts)
     os_calloc(1, sizeof(*entry), entry);
     os_strdup(dir, entry->dir);
     entry->opts = opts;
+    entry->cfg = cfg;
     if (OSHash_Add(rt_ovf_hash, entry->dir, entry) != 2) {
         free(entry->dir);
         free(entry);
@@ -577,9 +621,6 @@ static void rt_overflow_queue_missing(const char *dir)
 static void realtime_overflow_process(void)
 {
     rt_ovf *entry;
-    int i;
-    int best = -1;
-    size_t best_len = 0;
     int scan_opts;
     OSMatch *restriction = NULL;
 
@@ -594,31 +635,9 @@ static void realtime_overflow_process(void)
     rt_ovf_head = entry->next;
     OSHash_Delete(rt_ovf_hash, entry->dir);
     scan_opts = entry->opts & ~CHECK_REALTIME;
-
-    for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
-        size_t len = strlen(syscheck.dir[i]);
-        char next;
-
-        while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
-                           syscheck.dir[i][len - 1] == '\\')) {
-            len--;
-        }
-        if (len < best_len) {
-            continue;
-        }
-        if (strncasecmp(entry->dir, syscheck.dir[i], len) != 0) {
-            continue;
-        }
-        next = entry->dir[len];
-        if (next != '\0' && next != '/' && next != '\\') {
-            continue;
-        }
-        best_len = len;
-        best = i;
-    }
-    if (best >= 0) {
-        scan_opts = syscheck.opts[best] & ~CHECK_REALTIME;
-        restriction = syscheck.filerestrict[best];
+    if (entry->cfg >= 0 && syscheck.dir && syscheck.dir[entry->cfg]) {
+        scan_opts = syscheck.opts[entry->cfg] & ~CHECK_REALTIME;
+        restriction = syscheck.filerestrict[entry->cfg];
     }
 
     /* Only reconcile deletes after a complete enumeration. A failed
