@@ -1427,6 +1427,25 @@ test_shared: tests/test_shared.c shared.a os_xml.a os_net.a os_regex.a ${JSON_LI
 test_seechanges: tests/test_seechanges.o syscheckd/seechanges.o config.a shared.a os_xml.a os_net.a os_regex.a os_crypto.a ${ZLIB_LIB} ${JSON_LIB}
 	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${OSSEC_LDFLAGS} -o $@
 
+####################
+#### fuzzers #######
+####################
+
+# OSS-Fuzz / local libFuzzer harness for os_xml (issue #1789).
+# OSS-Fuzz sets LIB_FUZZING_ENGINE. Local: make fuzz_os_xml CC=clang
+# with -fsanitize=fuzzer,address in CFLAGS.
+ifndef LIB_FUZZING_ENGINE
+LIB_FUZZING_ENGINE := -fsanitize=fuzzer
+endif
+
+# os_xml.a has no external deps; avoid OSSEC_LDFLAGS (-pie/-lssl) which
+# conflict with libFuzzer's own link model.
+fuzz_os_xml: tests/fuzz/fuzz_os_xml.o os_xml.a
+	${OSSEC_CCBIN} ${OSSEC_CFLAGS} $^ ${LIB_FUZZING_ENGINE} -o $@
+
+tests/fuzz/%.o: tests/fuzz/%.c
+	${OSSEC_CC} ${OSSEC_CFLAGS} -fPIC -I./os_xml -c $^ -o $@
+
 test_valgrind: build_tests
 	valgrind --leak-check=full --track-origins=yes --trace-children=yes --vgdb=no --error-exitcode=0 --gen-suppressions=all --suppressions=tests/valgrind.supp ${MAKE} run_tests
 
@@ -1570,6 +1589,7 @@ clean-internals:
 	rm -f ${os_auth_o} ossec-authd agent-auth
 	rm -f ${all_analysisd_o} ${all_analysisd_libs} analysisd/compiled_rules/compiled_rules.h
 	rm -f ossec-logtest ossec-analysisd ossec-makelists
+	rm -f tests/fuzz/*.o fuzz_os_xml
 
 clean-windows:
 	rm -f win32/LICENSE.txt

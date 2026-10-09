@@ -1,0 +1,10 @@
+<!-- Seed from etc/decoder.xml (pam) -->
+<decoder name="pam">
+  <program_name_pcre2>\(pam_unix\)$</program_name_pcre2>
+</decoder>
+
+<decoder name="pam-userinfo">
+  <parent>pam</parent>
+  <pcre2>^session \S+ for user (\S+)</pcre2>
+  <order>user</order>
+</decoder>

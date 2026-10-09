@@ -1,0 +1,13 @@
+<!-- Seed from etc/rules/sshd_rules.xml -->
+<group name="syslog,sshd,">
+  <rule id="5700" level="0" noalert="1">
+    <decoded_as>sshd</decoded_as>
+    <description>SSHD messages grouped.</description>
+  </rule>
+
+  <rule id="5701" level="8">
+    <if_sid>5700</if_sid>
+    <pcre2>Bad protocol version identification</pcre2>
+    <description>Possible attack on the ssh server.</description>
+  </rule>
+</group>

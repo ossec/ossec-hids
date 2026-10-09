@@ -1,0 +1,10 @@
+<!-- Seed from etc/ossec.conf -->
+<ossec_config>
+  <global>
+    <jsonout_output>yes</jsonout_output>
+    <email_notification>no</email_notification>
+  </global>
+  <rules>
+    <include>sshd_rules.xml</include>
+  </rules>
+</ossec_config>
