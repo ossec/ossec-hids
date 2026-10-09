@@ -39,6 +39,7 @@ OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are liste
 
 **Bug Fixes**
 
+- @atomicturtle - Stage bundled PCRE2 under ``pcre2_local/`` so macOS case-insensitive filesystems do not collide with the tarball ``INSTALL`` docs file (#1957)
 - @atomicturtle - Retry a realtime integrity check when the file is still locked or briefly missing, so emptying a file alerts without waiting for the next edit (#1386)
 - @atomicturtle - Add Windows ``<localfile>`` wildcard expansion (``*`` / ``?``, including multi-segment paths) and rotate date-based locations when the full ``strftime`` name changes so ``%H`` / ``%M`` work (#1954)
 - @atomicturtle - [PR 2333](https://github.com/ossec/ossec-hids/pull/2333) - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is prefixed ``arch64:`` (collision-free). Default view is 32-bit regardless of agent bitness; unknown ``windows_registry`` attributes are rejected (#954)

@@ -5,6 +5,10 @@ EXTERNAL_JSON=external/cJSON/
 EXTERNAL_LUA=external/lua-5.4.7/
 EXTERNAL_ZLIB=external/zlib-1.3.1/
 EXTERNAL_PCRE2=external/pcre2-10.32/
+# Staging dir under EXTERNAL_PCRE2. Must not be named "install": the PCRE2
+# tarball ships an INSTALL docs file, which collides on case-insensitive
+# filesystems (macOS default) when configure --prefix=.../install (#1957).
+PCRE2_LOCAL=pcre2_local
 ZLIB_SYSTEM?=yes
 PCRE2_SYSTEM?=yes
 LUA_PLAT=posix
@@ -247,7 +251,7 @@ ifeq (${TARGET}, winagent)
 endif
 
 ifeq (${PCRE2_SYSTEM},no)
-	PCRE2_INCLUDE=-I./${EXTERNAL_PCRE2}/install/include/
+	PCRE2_INCLUDE=-I./${EXTERNAL_PCRE2}/${PCRE2_LOCAL}/include/
 	DEFINES+=${PCRE2_INCLUDE}
 	DEFINES+=-DPCRE2_STATIC
 else
@@ -786,7 +790,7 @@ $(error Do not use 'winagent' directly, use 'TARGET=winagent')
 endif
 .PHONY: winagent
 winagent:
-	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB} -I./${EXTERNAL_PCRE2}/install/include" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
+	${MAKE} ${WINDOWS_BINS} CFLAGS="-DCLIENT -DWIN32 -I./${EXTERNAL_ZLIB} -I./${EXTERNAL_PCRE2}/${PCRE2_LOCAL}/include" LDFLAGS="-lwsock32 -lwevtapi -lshlwapi -lcomctl32 -lws2_32"
 	#cd ${EXTERNAL_LUA}src/ && ${MAKE} CC=${MING_BASE}${CC} -f Makefile.mingw mingw
 	#cp ${EXTERNAL_LUA}src/ossec-lua.exe win32/
 	#cp ${EXTERNAL_LUA}src/ossec-luac.exe win32/
@@ -876,15 +880,15 @@ libcJSON.a: ${cjson_o}
 #### pcre2 ##########
 
 ifeq (${PCRE2_SYSTEM},no)
-libpcre2-8.a: ${EXTERNAL_PCRE2}/install/lib/libpcre2-8.a
+libpcre2-8.a: ${EXTERNAL_PCRE2}/${PCRE2_LOCAL}/lib/libpcre2-8.a
 	cp $< $@
 	${OSSEC_RANLIB} $@
 
-${EXTERNAL_PCRE2}/install/lib/libpcre2-8.a:
+${EXTERNAL_PCRE2}/${PCRE2_LOCAL}/lib/libpcre2-8.a:
 ifeq (${TARGET}, winagent)
 	cd ${EXTERNAL_PCRE2} && \
 	CC= ./configure \
-		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/install \
+		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/${PCRE2_LOCAL} \
 		${PCRE2_CONFIGURE_JIT} \
 		--disable-shared \
 		--enable-static \
@@ -893,7 +897,7 @@ ifeq (${TARGET}, winagent)
 else
 	cd ${EXTERNAL_PCRE2} && \
 	CC="${CC}" ./configure \
-		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/install \
+		--prefix=$(shell pwd)/${EXTERNAL_PCRE2}/${PCRE2_LOCAL} \
 		${PCRE2_CONFIGURE_JIT} \
 		--disable-shared \
 		--enable-static && \
