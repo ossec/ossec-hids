@@ -404,11 +404,149 @@ int realtime_pending_ms(void)
     return ((int)best);
 }
 
+#ifdef WIN32
+/* Overflow recovery is deferred out of RTCallBack so the alertable wait
+ * thread is not blocked on a recursive read_dir. Duplicate watches for
+ * the same directory are coalesced. */
+typedef struct _rt_ovf {
+    struct _rt_ovf *next;
+    char *dir;
+    int opts;
+} rt_ovf;
+
+static rt_ovf *rt_ovf_head = NULL;
+static OSHash *rt_ovf_hash = NULL;
+
+static int rt_path_under_dir(const char *path, const char *dir)
+{
+    size_t len;
+
+    if (path == NULL || dir == NULL || dir[0] == '\0') {
+        return (0);
+    }
+
+    len = strlen(dir);
+    while (len > 1 && (dir[len - 1] == '/' || dir[len - 1] == '\\')) {
+        len--;
+    }
+    if (strncasecmp(path, dir, len) != 0) {
+        return (0);
+    }
+    return (path[len] == '\0' || path[len] == '/' || path[len] == '\\');
+}
+
+static void rt_overflow_schedule(const char *dir, int opts)
+{
+    rt_ovf *entry;
+
+    if (dir == NULL || dir[0] == '\0') {
+        return;
+    }
+
+    if (rt_ovf_hash == NULL) {
+        rt_ovf_hash = OSHash_Create();
+        if (rt_ovf_hash == NULL) {
+            return;
+        }
+    }
+
+    if (OSHash_Get(rt_ovf_hash, dir) != NULL) {
+        return;
+    }
+
+    os_calloc(1, sizeof(*entry), entry);
+    os_strdup(dir, entry->dir);
+    entry->opts = opts;
+    if (OSHash_Add(rt_ovf_hash, entry->dir, entry) != 2) {
+        free(entry->dir);
+        free(entry);
+        return;
+    }
+    entry->next = rt_ovf_head;
+    rt_ovf_head = entry;
+}
+
+/* Queue cached paths under dir that are gone so realtime_pending_process
+ * can confirm deletes (read_dir only visits names that still exist). */
+static void rt_overflow_queue_missing(const char *dir)
+{
+    unsigned int i;
+    OSHashNode *curr;
+
+    if (syscheck.fp == NULL || dir == NULL) {
+        return;
+    }
+
+    for (i = 0; i <= syscheck.fp->rows; i++) {
+        for (curr = syscheck.fp->table[i]; curr != NULL; curr = curr->next) {
+            if (curr->key != NULL && rt_path_under_dir(curr->key, dir) &&
+                    rt_path_missing(curr->key)) {
+                realtime_enqueue(curr->key);
+            }
+        }
+    }
+}
+
+static void realtime_overflow_process(void)
+{
+    while (rt_ovf_head != NULL) {
+        rt_ovf *entry = rt_ovf_head;
+        int i;
+        int best = -1;
+        size_t best_len = 0;
+        int scan_opts = entry->opts & ~CHECK_REALTIME;
+        OSMatch *restriction = NULL;
+
+        rt_ovf_head = entry->next;
+        OSHash_Delete(rt_ovf_hash, entry->dir);
+
+        for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
+            size_t len = strlen(syscheck.dir[i]);
+            char next;
+
+            while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
+                               syscheck.dir[i][len - 1] == '\\')) {
+                len--;
+            }
+            if (len < best_len) {
+                continue;
+            }
+            if (strncasecmp(entry->dir, syscheck.dir[i], len) != 0) {
+                continue;
+            }
+            next = entry->dir[len];
+            if (next != '\0' && next != '/' && next != '\\') {
+                continue;
+            }
+            best_len = len;
+            best = i;
+        }
+        if (best >= 0) {
+            scan_opts = syscheck.opts[best] & ~CHECK_REALTIME;
+            restriction = syscheck.filerestrict[best];
+        }
+
+        /* Enumerate survivors, then queue missing cached paths for delete
+         * confirmation on the next realtime_pending_process pass. */
+        read_dir(entry->dir, scan_opts, restriction);
+        rt_overflow_queue_missing(entry->dir);
+
+        free(entry->dir);
+        free(entry);
+    }
+}
+#endif /* WIN32 */
+
 void realtime_pending_process(void)
 {
     rt_pend *entry;
     rt_pend *prev;
     rt_pend *next;
+
+#ifdef WIN32
+    /* Run deferred overflow recovery before per-path checksums. */
+    realtime_overflow_process();
+#endif
 
     prev = NULL;
     for (entry = rt_pend_head; entry != NULL; entry = next) {
@@ -674,45 +812,12 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
         } while (pinfo->NextEntryOffset != 0);
     }
 
-    /* Re-arm before any overflow walk so concurrent changes are not lost. */
     realtime_win32read(rtlocald);
 
     if (dwerror == ERROR_NOTIFY_ENUM_DIR || dwBytes == 0) {
-        int i;
-        int best = -1;
-        size_t best_len = 0;
-        int scan_opts = rtlocald->opts & ~CHECK_REALTIME;
-        OSMatch *restriction = NULL;
-
-        /* Win32 documents enumeration as recovery when notifications are
-         * dropped. Clear CHECK_REALTIME so read_dir does not call
-         * realtime_adddir again for every subdirectory. */
-        for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
-            size_t len = strlen(syscheck.dir[i]);
-            char next;
-
-            while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
-                               syscheck.dir[i][len - 1] == '\\')) {
-                len--;
-            }
-            if (len < best_len) {
-                continue;
-            }
-            if (strncasecmp(rtlocald->dir, syscheck.dir[i], len) != 0) {
-                continue;
-            }
-            next = rtlocald->dir[len];
-            if (next != '\0' && next != '/' && next != '\\') {
-                continue;
-            }
-            best_len = len;
-            best = i;
-        }
-        if (best >= 0) {
-            scan_opts = syscheck.opts[best] & ~CHECK_REALTIME;
-            restriction = syscheck.filerestrict[best];
-        }
-        read_dir(rtlocald->dir, scan_opts, restriction);
+        /* Defer enumeration + delete reconcile to the main loop so this
+         * APC does not block other watches (and so repeats coalesce). */
+        rt_overflow_schedule(rtlocald->dir, rtlocald->opts);
     }
 
     return;
