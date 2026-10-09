@@ -644,8 +644,7 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
     }
 
     if (dwerror == ERROR_NOTIFY_ENUM_DIR || dwBytes == 0) {
-        /* Overflow: buffer contents are incomplete; do not parse. Re-arm
-         * so later changes are still observed (events in this burst are lost). */
+        /* Overflow: buffer contents are incomplete; do not parse. */
         merror("%s: ERROR: real time buffer overflow on '%s' (error %lu).",
                ARGV0, rtlocald->dir, (unsigned long)dwerror);
     } else if (dwerror != ERROR_SUCCESS) {
@@ -675,7 +674,23 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
         } while (pinfo->NextEntryOffset != 0);
     }
 
+    /* Re-arm before any overflow walk so concurrent changes are not lost. */
     realtime_win32read(rtlocald);
+
+    if (dwerror == ERROR_NOTIFY_ENUM_DIR || dwBytes == 0) {
+        int i;
+        OSMatch *restriction = NULL;
+
+        /* Win32 documents enumeration as recovery when notifications are
+         * dropped; walk the watched tree to catch the missed batch. */
+        for (i = 0; syscheck.dir && syscheck.dir[i]; i++) {
+            if (strcmp(syscheck.dir[i], rtlocald->dir) == 0) {
+                restriction = syscheck.filerestrict[i];
+                break;
+            }
+        }
+        read_dir(rtlocald->dir, rtlocald->opts, restriction);
+    }
 
     return;
 }
