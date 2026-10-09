@@ -768,6 +768,7 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 #endif
     }
 
+    errno = 0;
     while ((entry = readdir(dp)) != NULL) {
         char *s_name;
 
@@ -806,6 +807,18 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 
         /* Check integrity of the file */
         read_file(f_name, opts, restriction);
+        errno = 0;
+    }
+
+    /* readdir() returns NULL on EOF and on error; distinguish via errno. */
+    if (errno != 0) {
+        merror("%s: WARN: Error reading directory: '%s': %s ",
+               ARGV0, dir_name, strerror(errno));
+        if (read_dir_track_complete) {
+            read_dir_incomplete = 1;
+        }
+        closedir(dp);
+        return (-1);
     }
 
     closedir(dp);
