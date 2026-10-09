@@ -629,18 +629,29 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
     snprintf(wdchar, 32, "%d", (int)overlap->Offset);
     rtlocald = OSHash_Get(syscheck.realtime->dirtb, wdchar);
     if (rtlocald == NULL) {
-        merror("%s: ERROR: real time call back called, but hash is empty.",
-               ARGV0);
+        merror("%s: ERROR: real time call back called, but hash has no "
+               "entry for watch '%s'.", ARGV0, wdchar);
         return;
     }
 
-    if (dwerror != ERROR_SUCCESS) {
-        merror("%s: ERROR: real time call back called, but error is set.",
-               ARGV0);
+    /* Closing / aborted watches must not re-arm ReadDirectoryChangesW. */
+    if (dwerror == ERROR_OPERATION_ABORTED ||
+            dwerror == ERROR_INVALID_HANDLE ||
+            dwerror == ERROR_NOTIFY_CLEANUP) {
+        merror("%s: ERROR: real time watch ended for '%s' (%lu).",
+               ARGV0, rtlocald->dir, (unsigned long)dwerror);
         return;
     }
 
-    if (dwBytes != 0) {
+    if (dwerror == ERROR_NOTIFY_ENUM_DIR || dwBytes == 0) {
+        /* Overflow: buffer contents are incomplete; do not parse. Re-arm
+         * so later changes are still observed (events in this burst are lost). */
+        merror("%s: ERROR: real time buffer overflow on '%s' (error %lu).",
+               ARGV0, rtlocald->dir, (unsigned long)dwerror);
+    } else if (dwerror != ERROR_SUCCESS) {
+        merror("%s: ERROR: real time call back error %lu on '%s'.",
+               ARGV0, (unsigned long)dwerror, rtlocald->dir);
+    } else {
         do {
             pinfo = (PFILE_NOTIFY_INFORMATION) &rtlocald->buffer[offset];
             offset += pinfo->NextEntryOffset;
@@ -662,11 +673,6 @@ void CALLBACK RTCallBack(DWORD dwerror, DWORD dwBytes, LPOVERLAPPED overlap)
              * this callback returns; closing the file is not a new event. */
             realtime_enqueue(final_path);
         } while (pinfo->NextEntryOffset != 0);
-    } else {
-        /* Empty completion usually means the change buffer overflowed and
-         * events were dropped. Re-arm the watch so realtime FIM continues. */
-        merror("%s: ERROR: real time call back called, but 0 bytes "
-               "(likely buffer overflow).", ARGV0);
     }
 
     realtime_win32read(rtlocald);
