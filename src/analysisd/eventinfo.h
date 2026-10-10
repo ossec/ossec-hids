@@ -24,6 +24,8 @@ typedef struct _Eventinfo {
     char *full_log;
     char *location;
     char *hostname;
+    /* OSSEC agent name extracted from "(agent) ip->path" locations (#1668). */
+    char *agent_name;
     char *program_name;
 
     /* Extracted from the decoders */
@@ -86,6 +88,8 @@ typedef struct _Eventinfo {
     #define EF_SEPARATE_LOG 0x004
     /* Async alert/archive/fw copy — skip sid/group list maintenance on free. */
     #define EF_ASYNC_COPY 0x008
+    /* agent_name was allocated (always owned when non-NULL). */
+    #define EF_FREE_AGENT_NAME 0x010
 
     /* Other internal variables */
     int matched;

@@ -259,7 +259,7 @@
   <rule id="594" level="5">
     <category>ossec</category>
     <if_sid>550</if_sid>
-    <hostname_pcre2>syscheck-registry</hostname_pcre2>
+    <location_pcre2>syscheck-registry</location_pcre2>
     <group>syscheck,</group>
     <description>Registry Integrity Checksum Changed</description>
   </rule>
@@ -267,7 +267,7 @@
   <rule id="595" level="5">
     <category>ossec</category>
     <if_sid>551</if_sid>
-    <hostname_pcre2>syscheck-registry</hostname_pcre2>
+    <location_pcre2>syscheck-registry</location_pcre2>
     <group>syscheck,</group>
     <description>Registry Integrity Checksum Changed Again (2nd time)</description>
   </rule>
@@ -275,7 +275,7 @@
   <rule id="596" level="5">
     <category>ossec</category>
     <if_sid>552</if_sid>
-    <hostname_pcre2>syscheck-registry</hostname_pcre2>
+    <location_pcre2>syscheck-registry</location_pcre2>
     <group>syscheck,</group>
     <description>Registry Integrity Checksum Changed Again (3rd time)</description>
   </rule>
@@ -283,7 +283,7 @@
   <rule id="597" level="5">
     <category>ossec</category>
     <if_sid>553</if_sid>
-    <hostname_pcre2>syscheck-registry</hostname_pcre2>
+    <location_pcre2>syscheck-registry</location_pcre2>
     <group>syscheck,</group>
     <description>Registry Entry Deleted. Unable to Retrieve Checksum</description>
   </rule>
@@ -291,7 +291,7 @@
   <rule id="598" level="5">
     <category>ossec</category>
     <if_sid>554</if_sid>
-    <hostname_pcre2>syscheck-registry</hostname_pcre2>
+    <location_pcre2>syscheck-registry</location_pcre2>
     <group>syscheck,</group>
     <description>Registry Entry Added to the System</description>
   </rule>

@@ -467,9 +467,15 @@ Eventinfo *analysisd_copy_event_for_log(const Eventinfo *lf)
     if (lf->location) {
         os_strdup(lf->location, cpy->location);
     }
+    if (lf->agent_name) {
+        os_strdup(lf->agent_name, cpy->agent_name);
+        cpy->flags |= EF_FREE_AGENT_NAME;
+    }
     if (lf->hostname) {
         if (lf->hostname == lf->location && cpy->location) {
             cpy->hostname = cpy->location;
+        } else if (lf->hostname == lf->agent_name && cpy->agent_name) {
+            cpy->hostname = cpy->agent_name;
         } else {
             os_strdup(lf->hostname, cpy->hostname);
             cpy->flags |= EF_FREE_HNAME;

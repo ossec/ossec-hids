@@ -627,7 +627,7 @@
   </rule>
 
   <rule id="2931" level="0">
-    <hostname_pcre2>yum\.log$</hostname_pcre2>
+    <location_pcre2>yum\.log$</location_pcre2>
     <pcre2>^Installed|^Updated|^Erased</pcre2>
     <description>Yum logs.</description>
   </rule>

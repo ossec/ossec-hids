@@ -546,12 +546,32 @@ int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_g
     /* Every message must be in the format
      * hostname->location or
      * (agent) ip->location.
+     *
+     * For agents, keep the syslog/device hostname parsed from the log line
+     * (when present) and store the OSSEC agent name separately (#1668).
+     * Previously lf->hostname was overwritten with the full location, so
+     * <hostname>PRIMUS</hostname> never matched agent-forwarded device logs.
      */
-
-    /* Set hostname for local messages */
     if (lf->location[0] == '(') {
-        /* Messages from an agent */
-        lf->hostname = lf->location;
+        const char *start = lf->location + 1;
+        const char *end = strchr(start, ')');
+
+        if (end && end > start) {
+            size_t n = (size_t)(end - start);
+            os_malloc(n + 1, lf->agent_name);
+            memcpy(lf->agent_name, start, n);
+            lf->agent_name[n] = '\0';
+            lf->flags |= EF_FREE_AGENT_NAME;
+        }
+
+        if (lf->hostname == NULL) {
+            if (lf->agent_name) {
+                os_strdup(lf->agent_name, lf->hostname);
+                lf->flags |= EF_FREE_HNAME;
+            } else {
+                lf->hostname = __shost;
+            }
+        }
     } else if (lf->hostname == NULL) {
         lf->hostname = __shost;
     }
@@ -579,7 +599,9 @@ int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_g
     if (!alert_only) {
         print_out("**Phase 1: Completed pre-decoding.");
         print_out("       full event: '%s'", lf->full_log);
+        print_out("       location: '%s'", lf->location);
         print_out("       hostname: '%s'", lf->hostname);
+        print_out("       agent_name: '%s'", lf->agent_name ? lf->agent_name : "");
         print_out("       program_name: '%s'", lf->program_name);
         print_out("       log: '%s'", lf->log);
     }

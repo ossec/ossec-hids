@@ -44,6 +44,8 @@ const OSConvertionMap conv_map[] = {
     {.old_element = "id", .new_element = "id_pcre2", .map = OS_CONVERT_MATCH},
     {.old_element = "status", .new_element = "status_pcre2", .map = OS_CONVERT_MATCH},
     {.old_element = "hostname", .new_element = "hostname_pcre2", .map = OS_CONVERT_MATCH},
+    {.old_element = "agent_name", .new_element = "agent_name_pcre2", .map = OS_CONVERT_MATCH},
+    {.old_element = "location", .new_element = "location_pcre2", .map = OS_CONVERT_MATCH},
     {.old_element = "extra_data", .new_element = "extra_data_pcre2", .map = OS_CONVERT_MATCH},
 };
 const struct option getopt_options[] = {

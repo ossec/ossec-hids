@@ -13,11 +13,9 @@
 void W_ParseJSON(cJSON* root, const Eventinfo* lf)
 {
 
-    // Parse hostname & Parse AGENTIP
-    if(lf->hostname) {
-        W_JSON_ParseHostname(root, lf->hostname);
-        W_JSON_ParseAgentIP(root, lf);
-    }
+    // Parse agent_name / hostname / agent IP (#1668)
+    W_JSON_ParseHostname(root, lf);
+    W_JSON_ParseAgentIP(root, lf);
     // Parse timestamp
     if(lf->year && (strnlen(lf->mon, 3) > 0) && lf->day && (strnlen(lf->hour, 2) > 0)) {
         W_JSON_ParseTimestamp(root, lf);
@@ -221,24 +219,34 @@ int add_groupCIS(cJSON* rule, char* group, int firstCIS)
 }
 
 
-// If hostname being with "(" means that alerts came from an agent, so we will remove the brakets
-// ** TODO ** Regex instead str_cut
-void W_JSON_ParseHostname(cJSON* root, char* hostname)
+/* Emit agent_name and hostname. After #1668, lf->agent_name holds the OSSEC
+ * agent identity and lf->hostname holds the device/log hostname (or agent
+ * name as fallback). Older builds stuffed "(agent) ip" into hostname. */
+void W_JSON_ParseHostname(cJSON* root, const Eventinfo* lf)
 {
-    if(hostname[0] == '(') {
-        char* search;
-        char string[MAX_STRING];
-        strncpy(string, hostname, MAX_STRING - 1);
-        int index;
-        search = strchr(string, ')');
-        if(search) {
-            index = (int)(search - string);
-            str_cut(string, index, -1);
-            str_cut(string, 0, 1);
-            cJSON_AddStringToObject(root, "agent_name", string);
+    if (lf->agent_name && lf->agent_name[0] != '\0') {
+        cJSON_AddStringToObject(root, "agent_name", lf->agent_name);
+    } else if (lf->hostname) {
+        if (lf->hostname[0] == '(') {
+            char *search;
+            char string[MAX_STRING];
+
+            strncpy(string, lf->hostname, MAX_STRING - 1);
+            string[MAX_STRING - 1] = '\0';
+            search = strchr(string, ')');
+            if (search) {
+                int index = (int)(search - string);
+                str_cut(string, index, -1);
+                str_cut(string, 0, 1);
+                cJSON_AddStringToObject(root, "agent_name", string);
+            }
+        } else {
+            cJSON_AddStringToObject(root, "agent_name", lf->hostname);
         }
-    } else {
-        cJSON_AddStringToObject(root, "agent_name", hostname);
+    }
+
+    if (lf->hostname && lf->hostname[0] != '\0' && lf->hostname[0] != '(') {
+        cJSON_AddStringToObject(root, "hostname", lf->hostname);
     }
 }
 // Parse timestamp
@@ -251,27 +259,39 @@ void W_JSON_ParseTimestamp(cJSON* root, const Eventinfo* lf)
 }
 
 
-// The IP of an agent usually comes in "hostname" field, we will extract it.
-// ** TODO ** Regex instead str_cut
+/* Agent IP lives in location "(agent) ip->path" (and historically in hostname). */
 void W_JSON_ParseAgentIP(cJSON* root, const Eventinfo* lf)
 {
-    if(lf->hostname[0] == '(') {
-        char* search;
-        char string[MAX_STRING];
-        strncpy(string, lf->hostname, MAX_STRING - 1);
-        int index;
-        search = strchr(string, ')');
-        if(search) {
-            index = (int)(search - string);
-            str_cut(string, 0, index);
-            str_cut(string, 0, 2);
-            search = strchr(string, '-');
-            index = (int)(search - string);
-            str_cut(string, index, -1);
-            cJSON_AddStringToObject(root, "agentip", string);
-        }
+    const char *src = NULL;
+    char *search;
+    char string[MAX_STRING];
+    int index;
 
+    if (lf->location && lf->location[0] == '(') {
+        src = lf->location;
+    } else if (lf->hostname && lf->hostname[0] == '(') {
+        src = lf->hostname;
+    } else {
+        return;
     }
+
+    strncpy(string, src, MAX_STRING - 1);
+    string[MAX_STRING - 1] = '\0';
+    search = strchr(string, ')');
+    if (!search) {
+        return;
+    }
+
+    index = (int)(search - string);
+    str_cut(string, 0, index);
+    str_cut(string, 0, 2);
+    search = strchr(string, '-');
+    if (!search) {
+        return;
+    }
+    index = (int)(search - string);
+    str_cut(string, index, -1);
+    cJSON_AddStringToObject(root, "agentip", string);
 }
  // The file location usually comes with more information about the alert (like hostname or ip) we will extract just the "/var/folder/file.log".
 void W_JSON_ParseLocation(cJSON* root, const Eventinfo* lf, int archives)
