@@ -28,9 +28,6 @@ static int os_numeric_ip_family(const char *ip);
 
 /* Unix socket -- not for windows */
 #ifndef WIN32
-static struct sockaddr_un n_us;
-static socklen_t us_l = sizeof(n_us);
-
 /* UNIX SOCKET */
 #ifndef SUN_LEN
 #define SUN_LEN(ptr) ((size_t) (((struct sockaddr_un *) 0)->sun_path)        \
@@ -292,6 +289,7 @@ OSNetInfo *OS_Bindportudp(char *_port, const char *_ip, int ipv6)
 /* Bind to a Unix domain, using DGRAM sockets */
 int OS_BindUnixDomain(const char *path, mode_t mode, int max_msg_size)
 {
+    struct sockaddr_un n_us;
     int len;
     int ossock = 0;
     socklen_t optlen = sizeof(len);
@@ -345,6 +343,7 @@ int OS_BindUnixDomain(const char *path, mode_t mode, int max_msg_size)
  */
 int OS_ConnectUnixDomain(const char *path, int max_msg_size)
 {
+    struct sockaddr_un n_us;
     int len;
     int ossock = 0;
     socklen_t optlen = sizeof(len);
@@ -657,7 +656,10 @@ int OS_RecvConnUDP(int socket, char *buffer, int buffer_size)
 /* Receive a message from a Unix socket */
 int OS_RecvUnix(int socket, int sizet, char *ret)
 {
+    struct sockaddr_un n_us;
+    socklen_t us_l = sizeof(n_us);
     ssize_t recvd;
+
     if ((recvd = recvfrom(socket, ret, sizet - 1, 0,
                           (struct sockaddr *)&n_us, &us_l)) < 0) {
         return (0);
