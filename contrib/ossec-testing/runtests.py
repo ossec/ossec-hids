@@ -62,13 +62,25 @@ class OssecTester(object):
                     stdin=subprocess.PIPE,
                     shell=False)
             vout = vp.communicate(log)[0]
-            expect = "dstuser: '%s'" % (user,)
-            if expect not in vout:
+            # The header user and the Account Name user are both printed.
+            # The last dstuser is the one the decoder kept.
+            last = None
+            marker = "dstuser: '"
+            for line in vout.splitlines():
+                idx = line.find(marker)
+                if idx < 0:
+                    continue
+                start = idx + len(marker)
+                end = line.find("'", start)
+                if end > start:
+                    last = line[start:end]
+            if last != user:
                 self._error = True
                 print ""
                 print "-" * 60
                 print "Failed: decoded user mismatch"
-                print "        Expected = %s" % (expect,)
+                print "        Expected = %s" % (user,)
+                print "        Last     = %s" % (last,)
                 print "        Section  = %s" % (section,)
                 print "        line name = %s" % (name,)
                 print " "
