@@ -28,6 +28,7 @@ Staging area for changes after the 4.4.0 tag. Rename this section to ``4.5.0`` (
 
 **Bug Fixes**
 
+- @atomicturtle - Give each Unix-socket bind, connect, and recv its own address so remoted's active-response bind cannot collide with the analysisd queue and exit with ``Address already in use``
 - @atomicturtle - Set Windows localfile ``glob_set`` only after a successful wildcard expansion so a failed first pattern does not wrap ``pl`` and abort config read (#1954)
 - @atomicturtle - Ship an agent-only logrotate for ``ossec.log``; agents do not run monitord (#704)
 - @atomicturtle - Skip Windows Subject machine accounts (``name$``) when decoding Account Name so 4624/4625 keep the logon user (#1959)
