@@ -28,6 +28,10 @@ Staging area for changes after the 4.4.0 tag. Rename this section to ``4.5.0`` (
 
 **Bug Fixes**
 
+- @atomicturtle - Set Windows localfile ``glob_set`` only after a successful wildcard expansion so a failed first pattern does not wrap ``pl`` and abort config read (#1954)
+- @atomicturtle - Ship an agent-only logrotate for ``ossec.log``; agents do not run monitord (#704)
+- @atomicturtle - Skip Windows Subject machine accounts (``name$``) when decoding Account Name so 4624/4625 keep the logon user (#1959)
+- @atomicturtle - Read the 4-character ``!+++`` FIM new-file marker in ``DB_ProcessFoundEntry`` and ``syscheck_control`` so create rows do not false-alert or lose the marker (#1831)
 - @atomicturtle - Stage bundled PCRE2 under ``pcre2_local/`` so macOS case-insensitive filesystems do not collide with the tarball ``INSTALL`` docs file (#1957)
 - @atomicturtle - Retry a realtime integrity check when the file is still locked or briefly missing, so emptying a file alerts without waiting for the next edit (#1386)
 - @atomicturtle - Add Windows ``<localfile>`` wildcard expansion (``*`` / ``?``, including multi-segment paths) and rotate date-based locations when the full ``strftime`` name changes so ``%H`` / ``%M`` work (#1954)

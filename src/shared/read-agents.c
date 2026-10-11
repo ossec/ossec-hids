@@ -172,6 +172,16 @@ static int _do_print_attrs_syscheck(const char *prev_attrs, const char *attrs, _
     return (0);
 }
 
+/* "!+++" is the new-file marker (#1831). analysisd retires a row by
+ * writing '#' over the first byte, so the history line is "#+++".
+ * Checksums never start with '+', so this does not match a 3-character
+ * counter (!++, !!+, !!!, !!?). */
+static int syscheck_is_new_marker(const char *buf)
+{
+    return ((buf[0] == '!' || buf[0] == '#') &&
+            strncmp(buf + 1, "+++", 3) == 0);
+}
+
 /* Print information about a specific file */
 static int _do_print_file_syscheck(FILE *fp, const char *fname, int update_counter,
                                    int csv_output, cJSON *json_output)
@@ -231,17 +241,21 @@ static int _do_print_file_syscheck(FILE *fp, const char *fname, int update_count
                 continue;
             }
 
-            /* Check the number of changes */
-            if (buf[1] == '!') {
-                number_changes = 2;
-                if (buf[2] == '!') {
-                    number_changes = 3;
-                } else if (buf[2] == '?') {
-                    number_changes = 4;
+            /* Prefix: "!+++" / "#+++" is 4 chars; otherwise 3. */
+            if (syscheck_is_new_marker(buf)) {
+                number_changes = 1;
+                changed_attrs = buf + 4;
+            } else {
+                if (buf[1] == '!') {
+                    number_changes = 2;
+                    if (buf[2] == '!') {
+                        number_changes = 3;
+                    } else if (buf[2] == '?') {
+                        number_changes = 4;
+                    }
                 }
+                changed_attrs = buf + 3;
             }
-
-            changed_attrs = buf + 3;
 
             changed_file_name = strchr(changed_attrs, '!');
             if (!changed_file_name) {
@@ -273,29 +287,37 @@ static int _do_print_file_syscheck(FILE *fp, const char *fname, int update_count
 
             /* Reset the values */
             if (update_counter) {
-                if (fsetpos(fp, &init_pos) != 0) {
+                const char *prefix = (update_counter == 2) ? "!!?" : "!++";
+                int write_ok = 0;
+
+                /* A 3-byte overwrite of "!+++" would leave the extra '+'
+                 * in the checksum ("!!?+..."). Rewrite the prefix and keep
+                 * the rest of the line; the old newline stays as a blank
+                 * line so the next record does not move. */
+                if (syscheck_is_new_marker(buf)) {
+                    char line[OS_MAXSTR + 1];
+                    size_t len = 0;
+
+                    if (fsetpos(fp, &init_pos) == 0 &&
+                            fgets(line, OS_MAXSTR, fp) != NULL) {
+                        len = strlen(line);
+                    }
+                    if (len >= 5 &&
+                            syscheck_is_new_marker(line) &&
+                            line[len - 1] == '\n' &&
+                            fsetpos(fp, &init_pos) == 0 &&
+                            fprintf(fp, "%s%s", prefix, line + 4) > 0) {
+                        write_ok = 1;
+                    }
+                } else if (fsetpos(fp, &init_pos) == 0 &&
+                           fprintf(fp, "%s", prefix) > 0) {
+                    write_ok = 1;
+                }
+
+                if (!write_ok) {
                     if (!(csv_output || json_output))
-                        printf("\n** ERROR: fsetpos failed (unable to update "
-                               "counter).\n");
+                        printf("\n** ERROR: unable to update counter.\n");
                     goto cleanup;
-                }
-
-                if (update_counter == 2) {
-                    if (fprintf(fp, "!!?") <= 0) {
-                        if (!(csv_output || json_output))
-                            printf("\n** ERROR: fputs failed (unable to update "
-                                   "counter).\n");
-                        goto cleanup;
-                    }
-                }
-
-                else {
-                    if (fprintf(fp, "!++") <= 0) {
-                        if (!(csv_output || json_output))
-                            printf("\n** ERROR: fputs failed (unable to update "
-                                   "counter).\n");
-                        goto cleanup;
-                    }
                 }
 
                 if (!(csv_output || json_output))
@@ -395,17 +417,27 @@ static int _do_print_syscheck(FILE *fp, __attribute__((unused)) int all_files, i
             /* Remove newline */
             buf[strlen(buf) - 1] = '\0';
 
-            /* Check the number of changes */
-            if (buf[1] == '!') {
-                number_changes = 2;
-                if (buf[2] == '!') {
-                    number_changes = 3;
-                } else if (buf[2] == '?') {
-                    number_changes = 4;
-                }
-            }
+            /* Prefix: "!+++" / "#+++" is 4 chars; otherwise 3. */
+            {
+                char *sum_start;
 
-            changed_file_name = strchr(buf + 3, '!');
+                if (syscheck_is_new_marker(buf)) {
+                    number_changes = 1;
+                    sum_start = buf + 4;
+                } else {
+                    if (buf[1] == '!') {
+                        number_changes = 2;
+                        if (buf[2] == '!') {
+                            number_changes = 3;
+                        } else if (buf[2] == '?') {
+                            number_changes = 4;
+                        }
+                    }
+                    sum_start = buf + 3;
+                }
+
+                changed_file_name = strchr(sum_start, '!');
+            }
             if (!changed_file_name) {
                 continue;
             }
