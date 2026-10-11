@@ -560,7 +560,10 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
                                 sk_db_entry *db_entry, int maintenance)
 {
     int p = 0;
-    char *saved_sum = sdb.buf + 3;
+    /* "!+++" marks new files reported as changed (#1831); classic rows use
+     * a 3-character change counter (!++, !!+, !!!, !!?). */
+    int new_marker = (strncmp(sdb.buf, "!+++", 4) == 0);
+    char *saved_sum = sdb.buf + (new_marker ? 4 : 3);
 
     /* Checksum match, we can just return and keep going */
     if (strcmp(saved_sum, c_sum) == 0) {
@@ -583,7 +586,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
 
 
     /* If we reached here, the checksum of the file has changed */
-    if (saved_sum[-3] == '!') {
+    if (!new_marker && saved_sum[-3] == '!') {
         p++;
         if (saved_sum[-2] == '!') {
             p++;

@@ -231,17 +231,21 @@ static int _do_print_file_syscheck(FILE *fp, const char *fname, int update_count
                 continue;
             }
 
-            /* Check the number of changes */
-            if (buf[1] == '!') {
-                number_changes = 2;
-                if (buf[2] == '!') {
-                    number_changes = 3;
-                } else if (buf[2] == '?') {
-                    number_changes = 4;
+            /* Prefix: "!+++" (new-as-changed) is 4 chars; otherwise 3. */
+            if (strncmp(buf, "!+++", 4) == 0) {
+                number_changes = 1;
+                changed_attrs = buf + 4;
+            } else {
+                if (buf[1] == '!') {
+                    number_changes = 2;
+                    if (buf[2] == '!') {
+                        number_changes = 3;
+                    } else if (buf[2] == '?') {
+                        number_changes = 4;
+                    }
                 }
+                changed_attrs = buf + 3;
             }
-
-            changed_attrs = buf + 3;
 
             changed_file_name = strchr(changed_attrs, '!');
             if (!changed_file_name) {
@@ -395,17 +399,27 @@ static int _do_print_syscheck(FILE *fp, __attribute__((unused)) int all_files, i
             /* Remove newline */
             buf[strlen(buf) - 1] = '\0';
 
-            /* Check the number of changes */
-            if (buf[1] == '!') {
-                number_changes = 2;
-                if (buf[2] == '!') {
-                    number_changes = 3;
-                } else if (buf[2] == '?') {
-                    number_changes = 4;
-                }
-            }
+            /* Prefix: "!+++" (new-as-changed) is 4 chars; otherwise 3. */
+            {
+                char *sum_start;
 
-            changed_file_name = strchr(buf + 3, '!');
+                if (strncmp(buf, "!+++", 4) == 0) {
+                    number_changes = 1;
+                    sum_start = buf + 4;
+                } else {
+                    if (buf[1] == '!') {
+                        number_changes = 2;
+                        if (buf[2] == '!') {
+                            number_changes = 3;
+                        } else if (buf[2] == '?') {
+                            number_changes = 4;
+                        }
+                    }
+                    sum_start = buf + 3;
+                }
+
+                changed_file_name = strchr(sum_start, '!');
+            }
             if (!changed_file_name) {
                 continue;
             }

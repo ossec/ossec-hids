@@ -26,7 +26,8 @@ class OssecTester(object):
         cmd += ['-U', "%s:%s:%s" % (rule, alert, decoder)]
         return cmd
 
-    def runTest(self, log, rule, alert, decoder, section, name, negate=False):
+    def runTest(self, log, rule, alert, decoder, section, name, negate=False,
+                 user=None):
         #print self.buildCmd(rule, alert, decoder)
         p = subprocess.Popen(
                 self.buildCmd(rule, alert, decoder),
@@ -47,6 +48,36 @@ class OssecTester(object):
             print "        line name = %s" % (name)
             print " "
             print std_out
+        elif user and not negate:
+            # Optional decoded-user check via a verbose logtest pass.
+            vcmd = ['%s/ossec-logtest' % (self._ossec_path), '-q', '-v']
+            if self._ossec_conf:
+                vcmd += ["-c", self._ossec_conf]
+            if self._base_dir:
+                vcmd += ["-D", self._base_dir]
+            vp = subprocess.Popen(
+                    vcmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    stdin=subprocess.PIPE,
+                    shell=False)
+            vout = vp.communicate(log)[0]
+            expect = "dstuser: '%s'" % (user,)
+            if expect not in vout:
+                self._error = True
+                print ""
+                print "-" * 60
+                print "Failed: decoded user mismatch"
+                print "        Expected = %s" % (expect,)
+                print "        Section  = %s" % (section,)
+                print "        line name = %s" % (name,)
+                print " "
+                print vout
+            elif self._debug:
+                print "Exit code= %s" % (p.returncode)
+                print std_out
+            else:
+                sys.stdout.write(".")
         elif self._debug:
             print "Exit code= %s" % (p.returncode)
             print std_out
@@ -67,6 +98,9 @@ class OssecTester(object):
                     rule = tGroup.get(t, "rule")
                     alert = tGroup.get(t, "alert")
                     decoder = tGroup.get(t, "decoder")
+                    user = None
+                    if tGroup.has_option(t, "user"):
+                        user = tGroup.get(t, "user")
                     for (name, value) in tGroup.items(t):
                         if name.startswith("log "):
                             if self._debug:
@@ -78,7 +112,7 @@ class OssecTester(object):
                             else:
                                 neg = False
                             self.runTest(value, rule, alert, decoder,
-                                         t, name, negate=neg)
+                                         t, name, negate=neg, user=user)
                 print ""
         if self._error:
             sys.exit(1)

@@ -403,6 +403,7 @@ touch ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/ossec.conf
 
 mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 install -m 0644 contrib/specs/ossec-hids.logrotate ${RPM_BUILD_ROOT}/etc/logrotate.d/%{name}
+install -m 0644 contrib/specs/ossec-hids-agent.logrotate ${RPM_BUILD_ROOT}/etc/logrotate.d/%{name}-agent
 install -m 0755 contrib/ossec-configure ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin/ossec-configure
 install -m 0644 etc/ossec-agent.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared/agent.conf
 install -m 0644 etc/ossec-agent.conf ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc/shared/agent.conf
@@ -661,6 +662,7 @@ fi
 %else
 %{_initrddir}/ossec-hids
 %endif
+%config(noreplace) /etc/logrotate.d/%{name}-agent
 %config(noreplace) %{_localstatedir}/ossec/etc/ossec-agent.conf
 %config(noreplace) %{_localstatedir}/ossec/etc/internal_options*
 %{_localstatedir}/ossec/etc/*.sample

@@ -1,0 +1,11 @@
+# Agent-only logrotate for OSSEC HIDS.
+# Agents do not run ossec-monitord, so ossec.log is not rotated in-process (#704).
+
+/var/ossec/logs/ossec.log
+{
+    missingok
+    notifempty
+    copytruncate
+    rotate 4
+    weekly
+}

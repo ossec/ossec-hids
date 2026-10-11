@@ -183,14 +183,11 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                 char **paths;
                 int g;
 
-                if (glob_set == 0) {
-                    glob_set = pl + 1;
-                }
-
                 paths = expand_win32_wildcards(node[i]->content);
                 if (!paths || !paths[0]) {
                     /* Same soft-fail as POSIX glob() != 0: keep the literal
                      * pattern so an empty directory does not abort the agent.
+                     * Do not set glob_set: failed expansion is a single entry.
                      */
                     merror(GLOB_ERROR, __local_name, node[i]->content);
                     if (paths) {
@@ -199,6 +196,10 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                     os_strdup(node[i]->content, logf[pl].file);
                     i++;
                     continue;
+                }
+
+                if (glob_set == 0) {
+                    glob_set = pl + 1;
                 }
 
                 for (g = 0; paths[g] != NULL; g++) {
@@ -224,16 +225,19 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                     strchr(node[i]->content, '[')) {
                 glob_t g;
 
-                /* Setting to the first entry of the glob */
-                if (glob_set == 0) {
-                    glob_set = pl + 1;
-                }
-
                 if (glob(node[i]->content, 0, NULL, &g) != 0) {
+                    /* Soft-fail: keep the literal pattern. Do not set
+                     * glob_set so validation does not pl-- on a single slot.
+                     */
                     merror(GLOB_ERROR, __local_name, node[i]->content);
                     os_strdup(node[i]->content, logf[pl].file);
                     i++;
                     continue;
+                }
+
+                /* First successful glob expansion marks the slot range. */
+                if (glob_set == 0) {
+                    glob_set = pl + 1;
                 }
 
                 /* Check for the last entry */
