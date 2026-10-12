@@ -34,6 +34,47 @@
 /* Global variables */
 BIO *bio_err;
 
+#ifndef SSL_OP_NO_RENEGOTIATION
+/* OpenSSL < 1.1.1 and older LibreSSL lack SSL_OP_NO_RENEGOTIATION.
+ * Track first-handshake completion in SSL ex_data: on OpenSSL 1.0.x,
+ * SSL_is_init_finished() is already false once SSL_CB_HANDSHAKE_START
+ * fires for a renegotiation, so it cannot gate the reject path.
+ */
+static int ssl_hs_done_idx = -1;
+
+static void ssl_reject_renegotiation(const SSL *ssl, int where, int ret)
+{
+    SSL *s = (SSL *)ssl;
+    int fd;
+
+    (void)ret;
+
+    if (ssl_hs_done_idx < 0) {
+        return;
+    }
+
+    if (where & SSL_CB_HANDSHAKE_DONE) {
+        if (SSL_set_ex_data(s, ssl_hs_done_idx, (void *)1) != 1) {
+            /* Cannot track completion; drop the connection rather than
+             * leave renegotiation unguarded. */
+            SSL_set_shutdown(s, SSL_SENT_SHUTDOWN | SSL_RECEIVED_SHUTDOWN);
+            fd = SSL_get_fd(s);
+            if (fd >= 0) {
+                shutdown(fd, SHUT_RDWR);
+            }
+        }
+        return;
+    }
+
+    if ((where & SSL_CB_HANDSHAKE_START) && SSL_get_ex_data(s, ssl_hs_done_idx)) {
+        SSL_set_shutdown(s, SSL_SENT_SHUTDOWN | SSL_RECEIVED_SHUTDOWN);
+        fd = SSL_get_fd(s);
+        if (fd >= 0) {
+            shutdown(fd, SHUT_RDWR);
+        }
+    }
+}
+#endif
 
 /* Create an SSL context. If certificate verification is requested
  * then load the file containing the CA chain and verify the certificate
@@ -161,8 +202,24 @@ SSL_CTX *get_ssl_context(const char *ciphers)
         goto CONTEXT_ERR;
     }
 
-    /* Explicitly set options and cipher list */
+    /* Explicitly set options and cipher list.
+     * Reject TLS renegotiation (GHSA-rr83-v9v7-jjhp). Prefer the OpenSSL
+     * 1.1.1+ option bit; fall back to an info callback on older libraries.
+     */
+#ifdef SSL_OP_NO_RENEGOTIATION
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_RENEGOTIATION);
+#else
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
+    if (ssl_hs_done_idx < 0) {
+        ssl_hs_done_idx = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+    }
+    if (ssl_hs_done_idx < 0) {
+        merror("%s: ERROR: Unable to allocate SSL ex_data index for "
+               "renegotiation rejection", ARGV0);
+        goto CONTEXT_ERR;
+    }
+    SSL_CTX_set_info_callback(ctx, ssl_reject_renegotiation);
+#endif
     if (!(SSL_CTX_set_cipher_list(ctx, ciphers))) {
         goto CONTEXT_ERR;
     }
