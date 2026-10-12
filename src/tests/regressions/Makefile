@@ -30,7 +30,8 @@ REGRESSION_BINS = \
 	issue_1953_xml_recursion \
 	issue_2100_authd_ssl \
 	multiline_underflow \
-	win_network_path
+	win_network_path \
+	checksum_short_message
 
 .PHONY: all check clean
 
@@ -114,12 +115,28 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
-# Build the reader without FORTIFY so a wrapped strncpy() stays a
-# call to strncpy. With _FORTIFY_SOURCE the call becomes
-# __strncpy_chk and the regression's length check never runs.
+checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
+	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-checksum.o
+	$(CC) $(CFLAGS) -Wno-implicit-fallthrough -I./os_crypto/blowfish -c os_crypto/blowfish/bf_op.c -o os_crypto/blowfish/bf_op-checksum.o
+	$(CC) $(CFLAGS) -Wno-implicit-fallthrough -I./os_crypto/blowfish -c os_crypto/blowfish/bf_enc.c -o os_crypto/blowfish/bf_enc-checksum.o
+	$(CC) $(CFLAGS) -Wno-implicit-fallthrough -I./os_crypto/blowfish -c os_crypto/blowfish/bf_skey.c -o os_crypto/blowfish/bf_skey-checksum.o
+	$(CC) $(CFLAGS) -I./os_crypto/md5 -c os_crypto/md5/md5.c -o os_crypto/md5/md5-checksum.o
+	$(CC) $(CFLAGS) -I./os_crypto/md5 -c os_crypto/md5/md5_op.c -o os_crypto/md5/md5_op-checksum.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/checksum_short_message.c \
+		os_crypto/shared/msgs-checksum.o \
+		os_crypto/blowfish/bf_op-checksum.o \
+		os_crypto/blowfish/bf_enc-checksum.o \
+		os_crypto/blowfish/bf_skey-checksum.o \
+		os_crypto/md5/md5-checksum.o \
+		os_crypto/md5/md5_op-checksum.o \
+		-lpthread
+
 win_network_path: tests/regressions/win_network_path.c shared/win_path.c
 	$(CC) $(CFLAGS) -o $@ tests/regressions/win_network_path.c shared/win_path.c
 
+# Build the reader without FORTIFY so a wrapped strncpy() stays a
+# call to strncpy. With _FORTIFY_SOURCE the call becomes
+# __strncpy_chk and the regression's length check never runs.
 multiline_underflow: tests/regressions/multiline_underflow.c logcollector/read_multiline.c
 	$(CC) $(CFLAGS) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fno-builtin-strncpy \
 		-I./logcollector -c logcollector/read_multiline.c -o logcollector/read_multiline-underflow.o
@@ -134,4 +151,10 @@ clean:
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
 		analysisd/eventinfo_list-1668.o \
 		analysisd/cleanevent-1814.o os_auth/ssl-2100.o \
-		logcollector/read_multiline-underflow.o
+		logcollector/read_multiline-underflow.o \
+		os_crypto/shared/msgs-checksum.o \
+		os_crypto/blowfish/bf_op-checksum.o \
+		os_crypto/blowfish/bf_enc-checksum.o \
+		os_crypto/blowfish/bf_skey-checksum.o \
+		os_crypto/md5/md5-checksum.o \
+		os_crypto/md5/md5_op-checksum.o
