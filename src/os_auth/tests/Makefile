@@ -19,4 +19,7 @@ auth_conn_drop_test.o: auth_conn_drop_test.c
 clean:
 	rm -f auth_conn_drop_test *.o
 
-.PHONY: clean
+check: auth_conn_drop_test
+	./auth_conn_drop_test
+
+.PHONY: clean check

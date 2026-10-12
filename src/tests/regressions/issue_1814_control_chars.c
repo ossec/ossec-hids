@@ -29,9 +29,11 @@
 _Config Config;
 __thread time_t c_time;
 OSDecoderInfo *NULL_Decoder = NULL;
-char *__shost = "localhost";
+char __shost[512] = "localhost";
 __thread int __crt_hour = 0;
 __thread int __crt_wday = 0;
+int alert_only = 0;
+int full_output = 0;
 
 EventNode *OS_GetLastEvent(void) {
     return NULL;

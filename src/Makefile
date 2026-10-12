@@ -1483,6 +1483,8 @@ test_coverage: build_tests
 regression:
 	${MAKE} -C shared/tests check
 	${MAKE} -f tests/regressions/Makefile check
+	${MAKE} -C os_maild/tests check
+	${MAKE} -C os_auth/tests check
 
 regression-clean:
 	${MAKE} -C shared/tests clean

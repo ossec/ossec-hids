@@ -62,14 +62,32 @@ void *read_multiline(int pos, int *rc, int drop_it)
 
         debug2("%s: DEBUG: Reading message: '%s'", ARGV0, str);
 
-        /* Add to buffer */
+        /* Append this line. buffer_size is a size_t, so
+         * OS_MAXSTR - buffer_size - 2 wraps once the accumulated
+         * text is near OS_MAXSTR and strncpy runs off the stack.
+         * Copy only the bytes still free in buffer.
+         */
         buffer_size = strlen(buffer);
-        if (buffer[0] != '\0') {
+        if (buffer[0] != '\0' && buffer_size < sizeof(buffer) - 1) {
             buffer[buffer_size] = ' ';
             buffer_size++;
+            buffer[buffer_size] = '\0';
         }
 
-        strncpy(buffer + buffer_size, str, OS_MAXSTR - buffer_size - 2);
+        if (buffer_size >= sizeof(buffer) - 1) {
+            __ms = 1;
+        } else {
+            size_t room = sizeof(buffer) - buffer_size - 1;
+            size_t str_len = strlen(str);
+
+            if (str_len > room) {
+                memcpy(buffer + buffer_size, str, room);
+                buffer[buffer_size + room] = '\0';
+                __ms = 1;
+            } else {
+                memcpy(buffer + buffer_size, str, str_len + 1);
+            }
+        }
 
         if (linesgot < linecount) {
             continue;
