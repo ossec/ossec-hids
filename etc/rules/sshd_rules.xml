@@ -103,7 +103,8 @@
     <description>Corrupted bytes on SSHD.</description>  
   </rule>
   
-  <rule id="5714" level="14" timeframe="120" frequency="1">
+  <rule id="5714" level="14" timeframe="120" frequency="0">
+    <if_sid>5700</if_sid>
     <if_matched_sid>5713</if_matched_sid>
     <pcre2>Local: crc32 compensation attack</pcre2>
     <description>SSH CRC-32 Compensation attack</description>
