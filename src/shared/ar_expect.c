@@ -44,6 +44,30 @@ const char *ar_pick_username(const char *dstuser, const char *srcuser)
     return NULL;
 }
 
+int ar_safe_argument(const char *value)
+{
+    const unsigned char *p;
+
+    if (value == NULL || value[0] == '\0' || value[0] == '-') {
+        return 0;
+    }
+    if (strcmp(value, ".") == 0 || strcmp(value, "..") == 0) {
+        return 0;
+    }
+
+    for (p = (const unsigned char *)value; *p != '\0'; p++) {
+        if ((*p >= '0' && *p <= '9') ||
+                (*p >= 'A' && *p <= 'Z') ||
+                (*p >= 'a' && *p <= 'z') ||
+                *p == '.' || *p == ':' || *p == '-' || *p == '_' || *p == '@') {
+            continue;
+        }
+        return 0;
+    }
+
+    return 1;
+}
+
 int ar_parse_expect(const char *expect_str)
 {
     int expect = 0;

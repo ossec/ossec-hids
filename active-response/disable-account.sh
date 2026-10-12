@@ -29,6 +29,14 @@ elif [ "x${USER}" = "xroot" ]; then
    exit 1;   
 fi
 
+# Account names only. A leading "-" would be another passwd/chuser option.
+case "${USER}" in
+    -*|.*|*[!A-Za-z0-9._@-]*)
+        echo "$0: Invalid username."
+        exit 1
+        ;;
+esac
+
 
 # We should run on linux and on SunOS the passwd -u/-l
 if [ "X${UNAME}" = "XLinux" -o "X${UNAME}" = "XSunOS" ]; then
@@ -79,7 +87,7 @@ fi
 
 
 # Execute the command
-${CMD} ${ARGS} ${USER}
+"${CMD}" "${ARGS}" "${USER}"
 
 exit 1;
 

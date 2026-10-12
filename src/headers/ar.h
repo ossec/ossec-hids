@@ -51,5 +51,13 @@ int ar_parse_expect(const char *expect_str);
  */
 const char *ar_pick_username(const char *dstuser, const char *srcuser);
 
+/**
+ * Active-response arguments are split on spaces and later expanded by
+ * shell scripts. Accept letters, digits, and the characters used by IP
+ * addresses, hostnames, and account names. Reject a leading "-" so the
+ * value cannot be read as a command option. Returns 1 if safe, else 0.
+ */
+int ar_safe_argument(const char *value);
+
 #endif /* __AR_H */
 
