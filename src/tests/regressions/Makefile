@@ -113,8 +113,14 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
+# Build the reader without FORTIFY so a wrapped strncpy() stays a
+# call to strncpy. With _FORTIFY_SOURCE the call becomes
+# __strncpy_chk and the regression's length check never runs.
 multiline_underflow: tests/regressions/multiline_underflow.c logcollector/read_multiline.c
-	$(CC) $(CFLAGS) -I./logcollector -o $@ tests/regressions/multiline_underflow.c logcollector/read_multiline.c
+	$(CC) $(CFLAGS) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fno-builtin-strncpy \
+		-I./logcollector -c logcollector/read_multiline.c -o logcollector/read_multiline-underflow.o
+	$(CC) $(CFLAGS) -I./logcollector -o $@ tests/regressions/multiline_underflow.c \
+		logcollector/read_multiline-underflow.o
 
 addagent/validate.o: addagent/validate.c
 	$(CC) $(CFLAGS) -c addagent/validate.c -o $@
@@ -123,4 +129,5 @@ clean:
 	rm -f $(REGRESSION_BINS) \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
 		analysisd/eventinfo_list-1668.o \
-		analysisd/cleanevent-1814.o os_auth/ssl-2100.o
+		analysisd/cleanevent-1814.o os_auth/ssl-2100.o \
+		logcollector/read_multiline-underflow.o

@@ -15,6 +15,7 @@
 void *read_multiline(int pos, int *rc, int drop_it)
 {
     int __ms = 0;
+    int truncated = 0;
     int linecount;
     int linesgot = 0;
     size_t buffer_size = 0;
@@ -65,7 +66,9 @@ void *read_multiline(int pos, int *rc, int drop_it)
         /* Append this line. buffer_size is a size_t, so
          * OS_MAXSTR - buffer_size - 2 wraps once the accumulated
          * text is near OS_MAXSTR and strncpy runs off the stack.
-         * Copy only the bytes still free in buffer.
+         * Copy only the bytes still free in buffer. __ms means the
+         * physical line had no newline; do not set it here or the
+         * drain below discards the next complete record.
          */
         buffer_size = strlen(buffer);
         if (buffer[0] != '\0' && buffer_size < sizeof(buffer) - 1) {
@@ -75,7 +78,10 @@ void *read_multiline(int pos, int *rc, int drop_it)
         }
 
         if (buffer_size >= sizeof(buffer) - 1) {
-            __ms = 1;
+            if (!truncated && !__ms) {
+                merror("%s: Large message size: '%s'", ARGV0, str);
+                truncated = 1;
+            }
         } else {
             size_t room = sizeof(buffer) - buffer_size - 1;
             size_t str_len = strlen(str);
@@ -83,7 +89,10 @@ void *read_multiline(int pos, int *rc, int drop_it)
             if (str_len > room) {
                 memcpy(buffer + buffer_size, str, room);
                 buffer[buffer_size + room] = '\0';
-                __ms = 1;
+                if (!__ms) {
+                    merror("%s: Large message size: '%s'", ARGV0, str);
+                }
+                truncated = 1;
             } else {
                 memcpy(buffer + buffer_size, str, str_len + 1);
             }
@@ -105,9 +114,11 @@ void *read_multiline(int pos, int *rc, int drop_it)
         }
 
         buffer[0] = '\0';
+        truncated = 0;
 
-
-        /* Incorrect message size */
+        /* Incorrect message size. Only an unfinished physical line
+         * leaves bytes in the file that have to be discarded.
+         */
         if (__ms) {
             merror("%s: Large message size: '%s'", ARGV0, str);
             while (fgets(str, OS_MAXSTR - 2, logff[pos].fp) != NULL) {
