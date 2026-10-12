@@ -25,7 +25,11 @@ Unrelease 4.5.0 changes
 - @atomicturtle - Extract User-Agent (and action/srcport) from default IIS W3C access logs (#989)
 - @atomicturtle - Allow silent Windows agent installs to skip IIS logging and integrity checking via `/IISLogging=no` and `/IntegrityChecking=no` (#1000)
 - @atomicturtle - Optional ``<report_new_files_as_changed>`` so post-baseline FIM creates are stored as ``!+++`` and listed by ``syscheck_control -i`` (#1831)
-- @atomicturtle - Disable TLS renegotiation in the shared authd/agent-auth ``get_ssl_context`` (``SSL_OP_NO_RENEGOTIATION``, with an info-callback fallback on older OpenSSL/LibreSSL) 
+
+**Security Fixes**
+
+- @atomicturtle - Guard empty syscheck filename stripping in ``GetAlertData`` so a crafted ``Integrity checksum changed for: '`` line cannot underflow the heap (CVE-2026-26204)
+- @atomicturtle - Disable TLS renegotiation in the shared authd/agent-auth ``get_ssl_context`` (``SSL_OP_NO_RENEGOTIATION``, with an info-callback fallback on older OpenSSL/LibreSSL) (#2100)
 
 **Bug Fixes**
 

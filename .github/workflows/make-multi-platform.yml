@@ -58,6 +58,8 @@ jobs:
           ./src/os_auth/tests/auth_conn_drop_test
           make -C src -f tests/regressions/Makefile issue_2100_authd_ssl
           ./src/issue_2100_authd_ssl
+          make -C src -f tests/regressions/Makefile getalert_empty_filename
+          ./src/getalert_empty_filename
 
   build-windows-agent:
     name: Windows agent (cross-compile)
