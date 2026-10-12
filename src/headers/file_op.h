@@ -71,6 +71,12 @@ char **expand_win32_wildcards(const char *path);
 
 int w_ref_parent_folder(const char *path);
 
+/* 1 when path is a UNC path (\\server, \\?\UNC\, \\.\pipe, or //server)
+ * or, on Windows, a drive letter that is currently a mapped network drive.
+ * \\?\C:\ is a local extended path and is allowed.
+ */
+int os_win_network_path(const char *path);
+
 void remove_control_characters(char *str);
 
 bool is_control_character(char c);

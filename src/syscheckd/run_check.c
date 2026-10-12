@@ -527,6 +527,14 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 
     path_opts = syscheck_opts_for_path(file_name, &path_matched);
 
+#ifdef WIN32
+    /* Refuse before stat() or the checksum read. Either one opens the path. */
+    if (os_win_network_path(file_name)) {
+        merror(WIN_NETPATH, ARGV0, file_name);
+        return (-2);
+    }
+#endif
+
     /* Stat the file */
 #ifdef WIN32
     return_error = (stat(file_name, &statbuf) < 0);

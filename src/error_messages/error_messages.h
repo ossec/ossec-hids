@@ -48,6 +48,7 @@
 #define CHDIR_ERROR   "%s(1133): ERROR: Unable to chdir to directory '%s' due to [(%d)-(%s)]."
 #define LINK_ERROR    "%s(1134): ERROR: Unable to link from '%s' to '%s' due to [(%d)-(%s)]."
 #define CHOWN_ERROR   "%s(1135): ERROR: Could not chown object '%s' due to [(%d)-(%s)]."
+#define WIN_NETPATH   "%s(1136): ERROR: Network path not allowed: '%s'."
 /* auditd support */
 #define FTELL_ERROR     "%s(1139): ERROR: Could not get position from file '%s' due to [(%d)-(%s)]."
 

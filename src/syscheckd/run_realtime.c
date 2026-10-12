@@ -1026,6 +1026,11 @@ int realtime_adddir(const char *dir, int opts)
     char wdchar[32 + 1];
     win32rtfim *rtlocald;
 
+    if (os_win_network_path(dir)) {
+        merror(WIN_NETPATH, ARGV0, dir);
+        return (0);
+    }
+
     if (!syscheck.realtime) {
         realtime_start();
     }

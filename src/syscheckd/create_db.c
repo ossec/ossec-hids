@@ -56,6 +56,14 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
     }
 
 #ifdef WIN32
+    /* Refuse before stat(). A UNC path or mapped drive authenticates
+     * the service account as soon as the path is opened.
+     */
+    if (os_win_network_path(file_name)) {
+        merror(WIN_NETPATH, ARGV0, file_name);
+        return (-1);
+    }
+
     /* Win32 does not have lstat */
     if (stat(file_name, &statbuf) < 0)
 #else
@@ -688,6 +696,19 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     struct dirent *entry;
 
     f_name[PATH_MAX + 1] = '\0';
+
+#ifdef WIN32
+    /* opendir() is FindFirstFile. Refuse before it contacts a
+     * UNC path or a mapped drive.
+     */
+    if (os_win_network_path(dir_name)) {
+        merror(WIN_NETPATH, ARGV0, dir_name);
+        if (read_dir_track_complete) {
+            read_dir_incomplete = 1;
+        }
+        return (-1);
+    }
+#endif
 
     /* Directory should be valid */
     if ((dir_size = strlen(dir_name)) > PATH_MAX) {

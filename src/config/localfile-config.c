@@ -172,6 +172,29 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                     os_strdup(newfile, node[i]->content);
                 }
             }
+            /* Drop the entry. Opening a UNC path or mapped drive here
+             * authenticates the service account to that server.
+             */
+            if (os_win_network_path(node[i]->content)) {
+                merror(WIN_NETPATH, __local_name, node[i]->content);
+                /* logformat may point into its allocation (multi-line
+                 * skips a prefix), so drop the entry without freeing it.
+                 */
+                if (logf[pl].command != logf[pl].file) {
+                    free(logf[pl].command);
+                }
+                free(logf[pl].file);
+                free(logf[pl].ffile);
+                free(logf[pl].alias);
+                free(logf[pl].query);
+                logf[pl].file = NULL;
+                logf[pl].command = NULL;
+                logf[pl].ffile = NULL;
+                logf[pl].logformat = NULL;
+                logf[pl].alias = NULL;
+                logf[pl].query = NULL;
+                return (0);
+            }
         #endif
 
             /* Glob / wildcard expansion (* and ?; '[' on Unix glob only).
