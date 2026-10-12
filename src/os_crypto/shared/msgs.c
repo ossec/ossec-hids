@@ -343,13 +343,20 @@ static char *CheckSum(char *msg, size_t length)
     os_md5 recvd_sum;
     os_md5 checksum;
 
-    /* Better way */
+    /* The first 32 bytes are the received digest. A shorter message
+     * must not be hashed: subtracting 32 from a small size_t wraps,
+     * and the hash then reads past the buffer.
+     */
+    if (length <= 32) {
+        return (NULL);
+    }
+
     strncpy(recvd_sum, msg, 32);
     recvd_sum[32] = '\0';
 
     msg += 32;
 
-    OS_MD5_Bytes(msg, (ssize_t)length - 32, checksum);
+    OS_MD5_Bytes(msg, length - 32, checksum);
 
     if (strncmp(checksum, recvd_sum, 32) != 0) {
         return (NULL);
