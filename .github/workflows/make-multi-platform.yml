@@ -56,6 +56,8 @@ jobs:
           ./src/os_maild/tests/maild_shutdown_gate_test
           make -C src/os_auth/tests auth_conn_drop_test
           ./src/os_auth/tests/auth_conn_drop_test
+          make -C src -f tests/regressions/Makefile issue_2100_authd_ssl
+          ./src/issue_2100_authd_ssl
 
   build-windows-agent:
     name: Windows agent (cross-compile)
