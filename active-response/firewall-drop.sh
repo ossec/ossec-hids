@@ -7,7 +7,7 @@
 # Author: Ahmet Ozturk (ipfilter and IPSec)
 # Author: Daniel B. Cid (iptables)
 # Author: cgzones
-# Last modified: Aug 04, 2026
+# Last modified: Oct 12, 2026
 #
 # Linux iptables: drops are inserted into a dedicated OSSEC chain (#678) so
 # configuration-management tools that purge unmanaged INPUT/FORWARD rules do
@@ -42,6 +42,102 @@ LOCK_PID="${PWD}/fw-drop/pid"
 IPV4F="/proc/sys/net/ipv4/ip_forward"
 IPV6F="/proc/sys/net/ipv6/conf/all/forwarding"
 
+# Bare IPv4 or IPv6. Shell metacharacters are rejected before any command runs.
+valid_ipv4()
+{
+    _v4=$1
+    case "${_v4}" in
+        .*) return 1;;
+        *.) return 1;;
+    esac
+    _n=0
+    _rest4=${_v4}
+
+    while [ -n "${_rest4}" ]; do
+        _oct=${_rest4%%.*}
+        case "${_rest4}" in
+            *.*) _rest4=${_rest4#*.};;
+            *) _rest4="";;
+        esac
+        case "${_oct}" in
+            0|[1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]) ;;
+            *) return 1;;
+        esac
+        _n=`expr ${_n} + 1`
+    done
+
+    [ "${_n}" -eq 4 ]
+}
+
+valid_ipv6()
+{
+    _v6=$1
+    case "${_v6}" in
+        *:::*|*::*::*) return 1;;
+        :[!:]*) return 1;;
+        *[!:]:) return 1;;
+        *::*) _compress=1;;
+        *) _compress=0;;
+    esac
+
+    _groups=0
+    _rest6=${_v6}
+    while [ -n "${_rest6}" ]; do
+        _grp=${_rest6%%:*}
+        case "${_rest6}" in
+            *:*) _rest6=${_rest6#*:};;
+            *) _rest6="";;
+        esac
+
+        if [ -z "${_grp}" ]; then
+            if [ "${_compress}" -eq 0 ]; then
+                return 1
+            fi
+            continue
+        fi
+
+        case "${_grp}" in
+            *.*)
+                if [ -n "${_rest6}" ]; then
+                    return 1
+                fi
+                valid_ipv4 "${_grp}" || return 1
+                _groups=`expr ${_groups} + 2`
+                ;;
+            [0-9A-Fa-f]|[0-9A-Fa-f][0-9A-Fa-f]|[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]|[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])
+                _groups=`expr ${_groups} + 1`
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    done
+
+    if [ "${_compress}" -eq 1 ]; then
+        [ "${_groups}" -lt 8 ]
+    else
+        [ "${_groups}" -eq 8 ]
+    fi
+}
+
+valid_ip()
+{
+    _ip=$1
+    case "${_ip}" in
+        ""|*[!0-9A-Fa-f.:]*) return 1;;
+    esac
+
+    _len=`expr "${_ip}" : '.*'`
+    if [ "${_len}" -gt 45 ]; then
+        return 1
+    fi
+
+    case "${_ip}" in
+        *:*) valid_ipv6 "${_ip}";;
+        *) valid_ipv4 "${_ip}";;
+    esac
+}
+
 LOCAL=`dirname $0`;
 cd $LOCAL
 cd ../
@@ -58,10 +154,14 @@ if [ "x${IP}" = "x" ]; then
    exit 1;
 fi
 
+if ! valid_ip "${IP}"; then
+    echo "`date` Unable to run active response (invalid IP)." >> ${LOG_FILE}
+    exit 1
+fi
+
 case "${IP}" in
-    *:* ) IPTABLES=$IP6TABLES;;
-    *.* ) IPTABLES=$IP4TABLES;;
-    * ) echo "`date` Unable to run active response (invalid IP: '${IP}')." >> ${LOG_FILE} && exit 1;;
+    *:*) IPTABLES=$IP6TABLES;;
+    *) IPTABLES=$IP4TABLES;;
 esac
 
 # This number should be more than enough (even if a hundred
@@ -183,9 +283,9 @@ fi
 # We should run on linux
 if [ "X${UNAME}" = "XLinux" ]; then
    if [ "x${ACTION}" = "xadd" ]; then
-      ARG="-I ${CHAIN} -s ${IP} -j DROP"
+      ARG="-I"
    else
-      ARG="-D ${CHAIN} -s ${IP} -j DROP"
+      ARG="-D"
    fi
 
    # Checking if iptables is present
@@ -202,7 +302,7 @@ if [ "X${UNAME}" = "XLinux" ]; then
    lock;
    ensure_ossec_chain
    while [ 1 ]; do
-        ${IPTABLES} ${ARG}
+        ${IPTABLES} ${ARG} "${CHAIN}" -s "${IP}" -j DROP
         RES=$?
         if [ $RES = 0 ]; then
             break;
@@ -236,18 +336,14 @@ elif [ "X${UNAME}" = "XFreeBSD" -o "X${UNAME}" = "XSunOS" -o "X${UNAME}" = "XNet
    fi
 
    if [ "x${ACTION}" = "xadd" ]; then
-      ARG1="\"@1 block out quick from any to ${IP}\""
-      ARG2="\"@1 block in quick from ${IP} to any\""
       IPFARG="${IPFILTER} -f -"
    else
-      ARG1="\"@1 block out quick from any to ${IP}\""
-      ARG2="\"@1 block in quick from ${IP} to any\""
       IPFARG="${IPFILTER} -rf -"
    fi
 
-   # Executing it
-   eval ${ECHO} ${ARG1}| ${IPFARG}
-   eval ${ECHO} ${ARG2}| ${IPFARG}
+   # Pass the rule as data. Do not eval it: the address is data, not shell.
+   ${ECHO} "@1 block out quick from any to ${IP}" | ${IPFARG}
+   ${ECHO} "@1 block in quick from ${IP} to any" | ${IPFARG}
 
    exit 0;
 
@@ -278,26 +374,24 @@ elif [ "X${UNAME}" = "XAIX" ]; then
   fi
 
   if [ "x${ACTION}" = "xadd" ]; then
-    ARG1=" -v 4 -a D -s ${IP} -m 255.255.255.255 -d 0.0.0.0 -M 0.0.0.0 -w B -D \"Access Denied by OSSEC-HIDS\""
     #Add filter to rule table
-    eval ${GENFILT} ${ARG1}
+    ${GENFILT} -v 4 -a D -s "${IP}" -m 255.255.255.255 -d 0.0.0.0 -M 0.0.0.0 -w B -D "Access Denied by OSSEC-HIDS"
 
     #Deactivate  and activate the filter rules.
-    eval ${MKFILT} -v 4 -d
-    eval ${MKFILT} -v 4 -u
+    ${MKFILT} -v 4 -d
+    ${MKFILT} -v 4 -u
   else
     # removing a specific rule is not so easy :(
-     eval ${LSFILT} -v 4 -O  | ${GREP} ${IP} |
+     ${LSFILT} -v 4 -O | ${GREP} -F "${IP}" |
      while read -r LINE
      do
          RULEID=`${ECHO} ${LINE} | cut -f 1 -d "|"`
          let RULEID=${RULEID}+1
-         ARG1=" -v 4 -n ${RULEID}"
-         eval ${RMFILT} ${ARG1}
+         ${RMFILT} -v 4 -n "${RULEID}"
      done
     #Deactivate  and activate the filter rules.
-    eval ${MKFILT} -v 4 -d
-    eval ${MKFILT} -v 4 -u
+    ${MKFILT} -v 4 -d
+    ${MKFILT} -v 4 -u
   fi
 
 else

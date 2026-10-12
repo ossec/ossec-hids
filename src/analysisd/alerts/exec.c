@@ -46,6 +46,16 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
             ip = lf->srcip;
         }
 
+        /* Shell metacharacters in srcip must not reach an active-response
+         * script. IPv6 colons are allowed; escaping them would change the
+         * address the firewall command receives.
+         */
+        if (!ar_safe_argument(ip)) {
+            merror("%s: Active response '%s' not executed: srcip is not a safe address or name.",
+                   ARGV0, ar->name);
+            return;
+        }
+
         /* Check if IP is to be ignored */
         if (Config.allow_list) {
             if (OS_IPFoundList(ip, Config.allow_list)) {
@@ -74,7 +84,16 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
     if (ar->ar_cmd->expect & USERNAME) {
         const char *uname = OS_ARUsername(lf);
         if (uname) {
-            user = uname;
+            /* A bad account name must not cancel a response that also
+             * blocks the source address. "-" is the existing placeholder
+             * and the account scripts reject it.
+             */
+            if (ar_safe_argument(uname)) {
+                user = uname;
+            } else {
+                merror("%s: Active response '%s': unsafe user name replaced with '-'.",
+                       ARGV0, ar->name);
+            }
         }
     }
 

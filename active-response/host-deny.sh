@@ -85,12 +85,19 @@ if [ "x${IP}" = "x" ]; then
 fi
 
 
-# Checking for invalid entries (lacking "." or ":", etc)
-echo "${IP}" | egrep "\.|\:" > /dev/null 2>&1
-if [ ! $? = 0 ]; then
-    echo "`date` Invalid ip/hostname entry: ${IP}" >> ${PWD}/../logs/active-responses.log
-    exit 1;
-fi
+# Hostname or address. Reject shell metacharacters and values with no "." or ":".
+case "${IP}" in
+    ""|-*|*[!A-Za-z0-9.:_-]*)
+        echo "`date` Invalid ip/hostname entry." >> ${PWD}/../logs/active-responses.log
+        exit 1
+        ;;
+    *[.:]*)
+        ;;
+    *)
+        echo "`date` Invalid ip/hostname entry." >> ${PWD}/../logs/active-responses.log
+        exit 1
+        ;;
+esac
 
 
 # Adding the ip to hosts.deny

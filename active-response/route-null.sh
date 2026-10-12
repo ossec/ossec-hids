@@ -29,6 +29,14 @@ if [ "x${IP}" = "x" ]; then
    exit 1;
 fi
 
+# Address characters only, so the value cannot become another route option.
+case "${IP}" in
+    ""|-*|*[!0-9A-Fa-f.:]*)
+        echo "`date` Invalid ip entry." >> ${PWD}/../logs/active-responses.log
+        exit 1
+        ;;
+esac
+
 # Match the loopback address to the version of the provided IP address
 LOOPBACK=127.0.0.1
 echo "${IP}" | grep "\:" > /dev/null 2>&1
@@ -39,12 +47,12 @@ fi
 # Adding the ip to null route
 if [ "x${ACTION}" = "xadd" ]; then
   if [ "X${UNAME}" = "XLinux" ]; then
-   route add ${IP} reject
+   route add "${IP}" reject
    exit 0;
   fi
 
   if [ "X${UNAME}" = "XFreeBSD" ]; then
-   route -q add ${IP} $LOOPBACK -blackhole
+   route -q add "${IP}" "${LOOPBACK}" -blackhole
    exit 0;
   fi
 
@@ -52,12 +60,12 @@ if [ "x${ACTION}" = "xadd" ]; then
 # be carefull not to remove your default route
 elif [ "x${ACTION}" = "xdelete" ]; then   
   if [ "X${UNAME}" = "XLinux" ]; then
-   route del ${IP} reject
+   route del "${IP}" reject
    exit 0;
   fi
 
   if [ "X${UNAME}" = "XFreeBSD" ]; then
-   route -q delete ${IP} $LOOPBACK -blackhole
+   route -q delete "${IP}" "${LOOPBACK}" -blackhole
    exit 0;
   fi
 
