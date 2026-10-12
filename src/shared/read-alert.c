@@ -505,8 +505,18 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 if (issyscheck == 1) {
                     if (strncmp(str, "Integrity checksum changed for: '", 33) == 0) {
                         filename = strdup(str + 33);
+                        /* Trailing quote strip: empty payload after the
+                         * opening quote makes strlen 0; do not underflow.
+                         * Treat a missing path as NULL like other alert fields. */
                         if (filename) {
-                            filename[strlen(filename) - 1] = '\0';
+                            size_t flen = strlen(filename);
+                            if (flen > 0) {
+                                filename[flen - 1] = '\0';
+                            }
+                            if (filename[0] == '\0') {
+                                free(filename);
+                                filename = NULL;
+                            }
                         }
                     }
                     issyscheck = 0;

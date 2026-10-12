@@ -29,6 +29,7 @@ REGRESSION_BINS = \
 	issue_1814_control_chars \
 	issue_1953_xml_recursion \
 	issue_2100_authd_ssl \
+	getalert_empty_filename \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message
@@ -114,6 +115,11 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 	$(CC) $(CFLAGS) -DLIBOPENSSL_ENABLED -o $@ tests/regressions/issue_2100_authd_ssl.c os_auth/ssl-2100.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+getalert_empty_filename: tests/regressions/getalert_empty_filename.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/getalert_empty_filename.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
 
 checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
 	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-checksum.o

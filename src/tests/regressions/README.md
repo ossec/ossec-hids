@@ -29,6 +29,7 @@
 #   - issue_1814_control_chars         strip controls, keep UTF-8
 #   - issue_1953_xml_recursion         OS_ReadXML recursion limit
 #   - issue_2100_authd_ssl             authd SSL context flags
+#   - getalert_empty_filename          GetAlertData empty syscheck path
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils
