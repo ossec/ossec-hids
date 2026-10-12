@@ -26,10 +26,16 @@
 #   - issue_2065_sender_counter        sender_counter isolated from agent 0 rids
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
 #   - jsonout_default                  jsonout_output on when the XML tag is omitted
+#   - issue_1814_control_chars         strip controls, keep UTF-8
+#   - issue_1953_xml_recursion         OS_ReadXML recursion limit
+#   - issue_2100_authd_ssl             authd SSL context flags
+#
+# Also invoked from `make regression` (own Makefiles):
+#   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils
+#   - src/os_auth/tests                auth connection drop
 #
 # Additional scripts without unified Make targets (manual / historical):
-#   issue_1814_control_chars.c, issue_1817_uaf_fix.c, issue_1818_syscheck_uaf.c,
-#   issue_1953_xml_recursion.c, issue_2056_repro_crash.c
+#   issue_1817_uaf_fix.c, issue_1818_syscheck_uaf.c, issue_2056_repro_crash.c
 #
 # Notes for new tests:
 #   - Define TLS time globals with `__thread` (`c_time`, `__crt_hour`, `__crt_wday`)

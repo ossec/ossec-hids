@@ -70,4 +70,10 @@ mail_utils_test.o: mail_utils_test.c
 clean:
 	rm -f mail_list_requeue_test sms_queue_test maild_shutdown_gate_test mail_utils_test *.o
 
-.PHONY: clean
+check: mail_list_requeue_test sms_queue_test maild_shutdown_gate_test mail_utils_test
+	./mail_list_requeue_test
+	./sms_queue_test
+	./maild_shutdown_gate_test
+	./mail_utils_test
+
+.PHONY: clean check

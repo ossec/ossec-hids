@@ -25,7 +25,11 @@ REGRESSION_BINS = \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	unmerge_path_traversal \
-	jsonout_default
+	jsonout_default \
+	issue_1814_control_chars \
+	issue_1953_xml_recursion \
+	issue_2100_authd_ssl \
+	multiline_underflow
 
 .PHONY: all check clean
 
@@ -91,10 +95,39 @@ jsonout_default: tests/regressions/jsonout_default.c analysisd/config.c config.a
 		-Wl,--start-group config.a shared.a os_regex.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
 
+issue_1814_control_chars: tests/regressions/issue_1814_control_chars.c analysisd/cleanevent.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -DTESTRULE -c analysisd/cleanevent.c -o analysisd/cleanevent-1814.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1814_control_chars.c \
+		analysisd/cleanevent-1814.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
+
+issue_1953_xml_recursion: tests/regressions/issue_1953_xml_recursion.c os_xml.a shared.a
+	$(CC) $(CFLAGS) -I./os_xml -o $@ tests/regressions/issue_1953_xml_recursion.c \
+		-Wl,--start-group os_xml.a shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c shared.a
+	$(CC) $(CFLAGS) -DLIBOPENSSL_ENABLED -c os_auth/ssl.c -o os_auth/ssl-2100.o
+	$(CC) $(CFLAGS) -DLIBOPENSSL_ENABLED -o $@ tests/regressions/issue_2100_authd_ssl.c os_auth/ssl-2100.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+# Build the reader without FORTIFY so a wrapped strncpy() stays a
+# call to strncpy. With _FORTIFY_SOURCE the call becomes
+# __strncpy_chk and the regression's length check never runs.
+multiline_underflow: tests/regressions/multiline_underflow.c logcollector/read_multiline.c
+	$(CC) $(CFLAGS) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fno-builtin-strncpy \
+		-I./logcollector -c logcollector/read_multiline.c -o logcollector/read_multiline-underflow.o
+	$(CC) $(CFLAGS) -I./logcollector -o $@ tests/regressions/multiline_underflow.c \
+		logcollector/read_multiline-underflow.o
+
 addagent/validate.o: addagent/validate.c
 	$(CC) $(CFLAGS) -c addagent/validate.c -o $@
 
 clean:
 	rm -f $(REGRESSION_BINS) \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
-		analysisd/eventinfo_list-1668.o
+		analysisd/eventinfo_list-1668.o \
+		analysisd/cleanevent-1814.o os_auth/ssl-2100.o \
+		logcollector/read_multiline-underflow.o

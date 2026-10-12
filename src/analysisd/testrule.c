@@ -27,6 +27,18 @@
 #include "analysisd.h"
 #include "fts.h"
 #include "cleanevent.h"
+#include "pipeline.h"
+#include "decoders/decoder.h"
+
+static int logtest_full_message = 0;
+
+static int logtest_is_queue_msg(const char *s)
+{
+    if (!s || s[0] < '0' || s[0] > '9' || s[1] != ':') {
+        return 0;
+    }
+    return strchr(s + 2, ':') != NULL;
+}
 
 /** Internal Functions **/
 void OS_ReadMSG(char *ut_str);
@@ -49,6 +61,8 @@ static void help_logtest(int status)
     print_out("                to increase the debug level.");
     print_out("    -t          Test configuration");
     print_out("    -a          Alerts output");
+    print_out("    -q          Quiet configuration messages");
+    print_out("    -F          Full queue message (do not force 1:stdin:)");
     print_out("    -v          Verbose (full) output/rule debugging");
     print_out("    -c <config> Configuration file to use (default: %s)", DEFAULTCPATH);
     print_out("    -D <dir>    Directory to chroot into (default: %s)", DEFAULTDIR);
@@ -87,7 +101,7 @@ int main(int argc, char **argv)
     geoipasn_ready = 0;
 #endif
 
-    while ((c = getopt(argc, argv, "VatvdhU:D:c:q")) != -1) {
+    while ((c = getopt(argc, argv, "VatvdhU:D:c:qF")) != -1) {
         switch (c) {
             case 'V':
                 print_version();
@@ -124,6 +138,9 @@ int main(int argc, char **argv)
                 break;
             case 'q':
                 quiet = 1;
+                break;
+            case 'F':
+                logtest_full_message = 1;
                 break;
             case 'v':
                 full_output = 1;
@@ -405,6 +422,11 @@ void OS_ReadMSG(char *ut_str)
         print_out("%s: Type one log per line.\n", ARGV0);
     }
 
+    if (logtest_full_message) {
+        SyscheckInit();
+        RootcheckInit();
+    }
+
     /* Daemon loop */
     while (1) {
         lf = (Eventinfo *)calloc(1, sizeof(Eventinfo));
@@ -416,23 +438,42 @@ void OS_ReadMSG(char *ut_str)
             ErrorExit(MEM_ERROR, ARGV0, errno, strerror(errno));
         }
 
-        /* Fix the msg */
-        snprintf(msg, 15, "1:stdin:");
+        /* Receive one line. Default behavior prefixes 1:stdin:.
+         * -F keeps a queue message (digit, colon, and another colon). */
+        if (logtest_full_message) {
+            if (!fgets(msg, OS_MAXSTR, stdin)) {
+                exit(exit_code);
+            }
+        } else {
+            snprintf(msg, 15, "1:stdin:");
+            if (!fgets(msg + 8, OS_MAXSTR - 8, stdin)) {
+                exit(exit_code);
+            }
+        }
 
-        /* Receive message from queue */
-        if (fgets(msg + 8, OS_MAXSTR - 8, stdin)) {
+        {
             RuleNode *rulenode_pt;
 
             /* Get the time we received the event */
             c_time = time(NULL);
 
-            /* Remov newline */
-            if (msg[strlen(msg) - 1] == '\n') {
+            /* Remove newline */
+            if (msg[0] != '\0' && msg[strlen(msg) - 1] == '\n') {
                 msg[strlen(msg) - 1] = '\0';
             }
 
-            /* Make sure we ignore blank lines */
-            if (strlen(msg) < 10) {
+            if (logtest_full_message) {
+                if (msg[0] == '\0') {
+                    Free_Eventinfo(lf);
+                    continue;
+                }
+                if (!logtest_is_queue_msg(msg)) {
+                    char wrapped[OS_MAXSTR + 1];
+                    snprintf(wrapped, sizeof(wrapped), "1:stdin:%s", msg);
+                    memcpy(msg, wrapped, strlen(wrapped) + 1);
+                }
+            } else if (strlen(msg) < 10) {
+                Free_Eventinfo(lf);
                 continue;
             }
 
@@ -456,11 +497,23 @@ void OS_ReadMSG(char *ut_str)
             currently_rule = NULL;
 
             /***  Run decoders ***/
-            /* Get log size */
-            lf->size = strlen(lf->log);
-
-            /* Decode event */
-            DecodeEvent(lf, NULL);
+            {
+                char mq = msg[0];
+                if (logtest_full_message &&
+                        (mq == SYSCHECK_MQ || mq == ROOTCHECK_MQ)) {
+                    lf = analysisd_decode_event(lf, mq, NULL);
+                    if (!lf) {
+                        continue;
+                    }
+                } else {
+                    lf->size = strlen(lf->log);
+                    DecodeEvent(lf, NULL);
+                }
+            }
+            if (!lf->decoder_info) {
+                Free_Eventinfo(lf);
+                continue;
+            }
 
             /* Run accumulator */
             if ( lf->decoder_info->accumulate == 1 ) {
@@ -633,9 +686,6 @@ void OS_ReadMSG(char *ut_str)
             if (lf->generated_rule == NULL) {
                 Free_Eventinfo(lf);
             }
-
-        } else {
-            exit(exit_code);
         }
     }
     exit(exit_code);
