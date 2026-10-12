@@ -29,7 +29,8 @@ REGRESSION_BINS = \
 	issue_1814_control_chars \
 	issue_1953_xml_recursion \
 	issue_2100_authd_ssl \
-	multiline_underflow
+	multiline_underflow \
+	win_network_path
 
 .PHONY: all check clean
 
@@ -116,6 +117,9 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
 # __strncpy_chk and the regression's length check never runs.
+win_network_path: tests/regressions/win_network_path.c shared/win_path.c
+	$(CC) $(CFLAGS) -o $@ tests/regressions/win_network_path.c shared/win_path.c
+
 multiline_underflow: tests/regressions/multiline_underflow.c logcollector/read_multiline.c
 	$(CC) $(CFLAGS) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fno-builtin-strncpy \
 		-I./logcollector -c logcollector/read_multiline.c -o logcollector/read_multiline-underflow.o

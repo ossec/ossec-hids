@@ -228,6 +228,14 @@ static int read_attr(syscheck_config *syscheck, const char *dirs, char **g_attrs
 #ifdef WIN32
         /* Canonicalize so realtime and scheduled scans share one path form. */
         os_normalize_path(tmp_dir);
+        /* Skip the directory. Opening it would authenticate the service
+         * account to a UNC path or mapped drive.
+         */
+        if (os_win_network_path(tmp_dir)) {
+            merror(WIN_NETPATH, __local_name, tmp_dir);
+            dir++;
+            continue;
+        }
 #endif
 
         /* Get the options */

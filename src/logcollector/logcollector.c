@@ -540,6 +540,15 @@ void LogCollectorStart()
 #else
                 HANDLE h1;
 
+                if (os_win_network_path(logff[i].file)) {
+                    fclose(logff[i].fp);
+                    CloseHandle(logff[i].h);
+                    logff[i].fp = NULL;
+                    merror(WIN_NETPATH, ARGV0, logff[i].file);
+                    logff[i].ign = 999;
+                    continue;
+                }
+
                 h1 = CreateFile(logff[i].file, GENERIC_READ,
                                 FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
                                 NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -738,6 +747,13 @@ int handle_file(int i, int do_fseek, int do_log)
 
 #else
     BY_HANDLE_FILE_INFORMATION lpFileInformation;
+
+    if (os_win_network_path(logff[i].file)) {
+        if (do_log == 1) {
+            merror(WIN_NETPATH, ARGV0, logff[i].file);
+        }
+        return (-1);
+    }
 
     logff[i].fp = NULL;
     logff[i].h = CreateFile(logff[i].file, GENERIC_READ,
