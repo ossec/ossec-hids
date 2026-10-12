@@ -24,6 +24,7 @@ REGRESSION_BINS = \
 	issue_2065_sender_counter \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
+	unmerge_path_traversal \
 	jsonout_default
 
 .PHONY: all check clean
@@ -76,6 +77,11 @@ issue_1668_agent_hostname: tests/regressions/issue_1668_agent_hostname.c \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o analysisd/eventinfo_list-1668.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
+
+unmerge_path_traversal: tests/regressions/unmerge_path_traversal.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/unmerge_path_traversal.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
 
 # GlobalConf lives in analysisd/config.c (defines _Config Config).
 # Link config.a from a current server build; do not also compile

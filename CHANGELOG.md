@@ -28,6 +28,7 @@ Staging area for changes after the 4.4.0 tag. Rename this section to ``4.5.0`` (
 
 **Bug Fixes**
 
+- @atomicturtle - Refuse merged-file entry names that contain ``..`` in ``UnmergeFiles`` so a crafted ``merged.mg`` cannot write outside the agent shared directory
 - @atomicturtle - Parent SSH CRC-32 rule 5714 on the sshd group and count one prior 5713, so the compensation line alerts instead of falling through to rule 1002
 - @atomicturtle - Give each Unix-socket bind, connect, and recv its own address so remoted's active-response bind cannot collide with the analysisd queue and exit with ``Address already in use``
 - @atomicturtle - Set Windows localfile ``glob_set`` only after a successful wildcard expansion so a failed first pattern does not wrap ``pl`` and abort config read (#1954)

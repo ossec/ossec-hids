@@ -565,12 +565,22 @@ int UnmergeFiles(const char *finalpath, const char *optdir)
             final_name[2048] = '\0';
         }
 
-        /* Open filename */
-        fp = fopen(final_name, "w");
-        if (!fp) {
+        /* Reject directory traversal in merged entry names so a crafted
+         * merged.mg cannot write outside optdir. Still consume the payload
+         * below so later entries stay aligned. */
+        if (w_ref_parent_folder(files) || w_ref_parent_folder(final_name)) {
+            merror("%s: ERROR: Unmerging '%s': refusing '%s' (path contains '..').",
+                   __local_name, finalpath, files);
             ret = 0;
-            merror("%s: ERROR: Unable to unmerge file '%s': %s",
-                   __local_name, final_name, strerror(errno));
+            fp = NULL;
+        } else {
+            /* Open filename */
+            fp = fopen(final_name, "w");
+            if (!fp) {
+                ret = 0;
+                merror("%s: ERROR: Unable to unmerge file '%s': %s",
+                       __local_name, final_name, strerror(errno));
+            }
         }
 
         if (files_size < sizeof(buf) - 1) {
