@@ -527,6 +527,14 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 
     path_opts = syscheck_opts_for_path(file_name, &path_matched);
 
+#ifdef WIN32
+    /* Refuse before stat() or the checksum read. Either one opens the path. */
+    if (os_win_network_path(file_name)) {
+        merror(WIN_NETPATH, ARGV0, file_name);
+        return (-2);
+    }
+#endif
+
     /* Stat the file */
 #ifdef WIN32
     return_error = (stat(file_name, &statbuf) < 0);
@@ -728,17 +736,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
              sha256sum == 0 ? "xxx" : sha256_sum);
 #else
     /* Never send CreateFile=/GetSecurityInfo= as a syscheck sum (#1581). */
-    HANDLE hFile;
-
-    if (os_win_network_path(file_name)) {
-        if (have_facl) {
-            fim_acl_free(&facl);
-        }
-        merror(WIN_NETPATH, ARGV0, file_name);
-        return -2;
-    }
-
-    hFile = CreateFile(file_name, GENERIC_READ,
+    HANDLE hFile = CreateFile(file_name, GENERIC_READ,
                               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {

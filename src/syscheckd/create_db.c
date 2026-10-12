@@ -56,6 +56,14 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
     }
 
 #ifdef WIN32
+    /* Refuse before stat(). A UNC path or mapped drive authenticates
+     * the service account as soon as the path is opened.
+     */
+    if (os_win_network_path(file_name)) {
+        merror(WIN_NETPATH, ARGV0, file_name);
+        return (-1);
+    }
+
     /* Win32 does not have lstat */
     if (stat(file_name, &statbuf) < 0)
 #else
@@ -354,12 +362,6 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                  * Never send CreateFile=/GetSecurityInfo= on the integrity
                  * channel (#1581); log and skip this file for the scan. */
                 alert_msg[OS_MAXSTR] = '\0';
-                if (os_win_network_path(file_name)) {
-                    merror(WIN_NETPATH, ARGV0, file_name);
-                    free(hash_full);
-                    free(acl_snap);
-                    return -1;
-                }
                 hFile = CreateFile(file_name, GENERIC_READ,
                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
