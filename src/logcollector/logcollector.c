@@ -541,9 +541,10 @@ void LogCollectorStart()
                 HANDLE h1;
 
                 if (os_win_network_path(logff[i].file)) {
+                    /* fclose of the _fdopen'd FILE* closes this handle. */
                     fclose(logff[i].fp);
-                    CloseHandle(logff[i].h);
                     logff[i].fp = NULL;
+                    logff[i].h = NULL;
                     merror(WIN_NETPATH, ARGV0, logff[i].file);
                     logff[i].ign = 999;
                     continue;

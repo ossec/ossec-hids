@@ -37,13 +37,18 @@ int os_win_network_path(const char *path)
     }
 
     /* \\server\share, \\?\UNC\..., \\.\pipe\..., and the // forms.
-     * \\?\C:\ is the local extended-length prefix.
+     * \\?\C:\ is a local extended path unless that drive is mapped.
      */
     if (os_path_sep(p[0]) && os_path_sep(p[1])) {
-        if (p[2] == '?' && os_path_sep(p[3]) && os_drive_letter(p[4]) && p[5] == ':') {
-            return (0);
+        if (!(p[2] == '?' && os_path_sep(p[3]) &&
+              os_drive_letter(p[4]) && p[5] == ':')) {
+            return (1);
         }
-        return (1);
+#ifndef WIN32
+        return (0);
+#else
+        p += 4;
+#endif
     }
 
 #ifdef WIN32
