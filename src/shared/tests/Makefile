@@ -8,7 +8,7 @@ TOP = ../..
 CFLAGS_COMMON = -g -Wall -I$(TOP)/headers -I$(TOP) -I$(TOP)/analysisd
 
 # Headless tests run by `check`. Interactive helpers stay under `legacy_helpers`.
-AUTO_TEST_BINS = thread_pool_test queue_op_test string_test fim_sum_test ar_expect_test fim_maint_test win_acl_test
+AUTO_TEST_BINS = thread_pool_test queue_op_test string_test fim_sum_test ar_expect_test fim_maint_test win_acl_test report_changes_ctrl_test
 LEGACY_HELPER_BINS = prime_test hash_test merge_test ip_test
 
 .PHONY: maketest check clean legacy_helpers
@@ -44,6 +44,13 @@ fim_maint_test: fim_maint_test.c $(TOP)/shared.a
 		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_regex.a $(TOP)/os_net.a \
 		$(TOP)/os_xml.a $(TOP)/os_zlib.a $(TOP)/libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
+
+# #2359: report_changes '\\n' must survive remove_control_characters().
+report_changes_ctrl_test: report_changes_ctrl_test.c $(TOP)/shared.a
+	$(CC) $(CFLAGS_COMMON) -DARGV0=\"report_changes_ctrl_test\" -o $@ \
+		report_changes_ctrl_test.c \
+		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
 
 # Interactive / argv-driven helpers (not part of automated check).
 legacy_helpers:
