@@ -83,5 +83,9 @@ void remove_control_characters(char *str);
  * report_changes / ACL framing). Other C0 and DEL are still removed. */
 void remove_control_characters_ex(char *str, int preserve_nl);
 
+/* True for local "syscheck" / "syscheck-registry", or the module after the
+ * last "->" in an agent location ("(name) ip->syscheck"). */
+int OS_IsSyscheckLocation(const char *location);
+
 bool is_control_character(char c);
 #endif /* __FILE_H */

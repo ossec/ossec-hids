@@ -1813,9 +1813,39 @@ bool is_control_character(char c) {
     return (uc <= 31) || (uc == 127);
 }
 
+int OS_IsSyscheckLocation(const char *location)
+{
+    const char *mod;
+    const char *p;
+    const char *arrow = NULL;
+
+    if (!location || *location == '\0') {
+        return (0);
+    }
+
+    /* Agent locations are "(name) ip->module". Use the last "->" so a
+     * crafted name containing "->" cannot select the wrong component. */
+    for (p = location; (p = strstr(p, "->")) != NULL; p += 2) {
+        arrow = p;
+    }
+
+    mod = arrow ? arrow + 2 : location;
+    if (strcmp(mod, SYSCHECK) == 0 || strcmp(mod, SYSCHECK_REG) == 0) {
+        return (1);
+    }
+
+    return (0);
+}
+
 void remove_control_characters_ex(char *str, int preserve_nl) {
-    int len = strlen(str);
+    int len;
     int i, j;
+
+    if (!str) {
+        return;
+    }
+
+    len = (int)strlen(str);
 
     for (i = 0, j = 0; i < len; i++) {
         char c = str[i];
