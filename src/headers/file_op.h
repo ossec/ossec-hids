@@ -79,5 +79,9 @@ int os_win_network_path(const char *path);
 
 void remove_control_characters(char *str);
 
+/* When preserve_nl is non-zero, '\\n' and '\\t' are kept (syscheck
+ * report_changes / ACL framing). Other C0 and DEL are still removed. */
+void remove_control_characters_ex(char *str, int preserve_nl);
+
 bool is_control_character(char c);
 #endif /* __FILE_H */

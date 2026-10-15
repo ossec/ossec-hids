@@ -76,8 +76,14 @@ int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_g
 
     os_strdup(msg, lf->location);
 
-    /*CVE-2020-8445 fix*/
-    remove_control_characters(pieces);
+    /* CVE-2020-8445: strip C0/DEL from the log body. Syscheck locations keep
+     * '\n'/'\\t' so report_changes (and ACL) framing survives DecodeSyscheck
+     * (#2359). */
+    {
+        int preserve_nl = (lf->location && strstr(lf->location, "syscheck") != NULL);
+
+        remove_control_characters_ex(pieces, preserve_nl);
+    }
 
     /* Get the log length */
     loglen = strlen(pieces) + 1;

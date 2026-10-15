@@ -1807,23 +1807,38 @@ int w_ref_parent_folder(const char * path) {
 }
 
 bool is_control_character(char c) {
-    return (c >= 0 && c <= 31) || c == 127 || c == '\n';
+    unsigned char uc = (unsigned char)c;
+
+    /* C0 controls and DEL. '\n' is included (uc == 10). */
+    return (uc <= 31) || (uc == 127);
 }
 
-void remove_control_characters(char *str) {
+void remove_control_characters_ex(char *str, int preserve_nl) {
     int len = strlen(str);
     int i, j;
 
     for (i = 0, j = 0; i < len; i++) {
-        if (!is_control_character(str[i])) {
-            str[j] = str[i];
-            j++;
+        char c = str[i];
+
+        /* Syscheck report_changes / Windows ACL text use '\n' as the
+         * path/diff separator (#2359). Keep tab too for diff bodies. */
+        if (preserve_nl && (c == '\n' || c == '\t')) {
+            str[j++] = c;
+            continue;
+        }
+
+        if (!is_control_character(c)) {
+            str[j++] = c;
         } else {
-            DEBUG_MSG("%s:DEBUG: control character removed: %d",ARGV0, str[i]);
+            DEBUG_MSG("%s:DEBUG: control character removed: %d", ARGV0, (unsigned char)c);
         }
     }
 
-    str[j] = '\0'; // Null-terminate the string after removing control characters
+    str[j] = '\0';
+}
+
+void remove_control_characters(char *str) {
+    remove_control_characters_ex(str, 0);
 }
 
 #ifdef WIN32
