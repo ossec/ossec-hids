@@ -20,6 +20,7 @@ REGRESSION_BINS = \
 	issue_1079_last_events_uaf \
 	issue_correlation_agent_shard \
 	issue_1748_sid_list_crash \
+	issue_group_list_uaf \
 	issue_1274_auth_ipv6_key \
 	issue_2065_sender_counter \
 	issue_1611_local_ip_bind \
@@ -59,6 +60,9 @@ issue_correlation_agent_shard: tests/regressions/issue_correlation_agent_shard.c
 
 issue_1748_sid_list_crash: tests/regressions/issue_1748_sid_list_crash.c $(EVENTINFO_OBJS) shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1748_sid_list_crash.c $(EVENTINFO_OBJS) $(BASIC_LIBS)
+
+issue_group_list_uaf: tests/regressions/issue_group_list_uaf.c $(EVENTINFO_OBJS) shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_group_list_uaf.c $(EVENTINFO_OBJS) $(BASIC_LIBS)
 
 issue_1274_auth_ipv6_key: tests/regressions/issue_1274_auth_ipv6_key.c addagent/validate.o shared.a os_crypto.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1274_auth_ipv6_key.c addagent/validate.o \
