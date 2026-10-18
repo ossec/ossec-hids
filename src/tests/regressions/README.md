@@ -31,6 +31,8 @@
 #   - issue_1953_xml_recursion         OS_ReadXML recursion limit
 #   - issue_2100_authd_ssl             authd SSL context flags
 #   - getalert_empty_filename          GetAlertData empty syscheck path
+#   - checksum_short_message           CheckSum rejects sub-digest lengths
+#   - issue_empty_ciphertext           ReadSecMSG rejects empty/oversized body
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

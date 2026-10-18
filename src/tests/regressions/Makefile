@@ -33,7 +33,8 @@ REGRESSION_BINS = \
 	getalert_empty_filename \
 	multiline_underflow \
 	win_network_path \
-	checksum_short_message
+	checksum_short_message \
+	issue_empty_ciphertext
 
 .PHONY: all check clean
 
@@ -141,6 +142,23 @@ checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/sha
 		os_crypto/md5/md5_op-checksum.o \
 		-lpthread
 
+# Same crypto objects as checksum_short_message (empty/oversized body → 1405).
+issue_empty_ciphertext: tests/regressions/issue_empty_ciphertext.c os_crypto/shared/msgs.c
+	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-empty.o
+	$(CC) $(CFLAGS) -Wno-implicit-fallthrough -I./os_crypto/blowfish -c os_crypto/blowfish/bf_op.c -o os_crypto/blowfish/bf_op-empty.o
+	$(CC) $(CFLAGS) -Wno-implicit-fallthrough -I./os_crypto/blowfish -c os_crypto/blowfish/bf_enc.c -o os_crypto/blowfish/bf_enc-empty.o
+	$(CC) $(CFLAGS) -Wno-implicit-fallthrough -I./os_crypto/blowfish -c os_crypto/blowfish/bf_skey.c -o os_crypto/blowfish/bf_skey-empty.o
+	$(CC) $(CFLAGS) -I./os_crypto/md5 -c os_crypto/md5/md5.c -o os_crypto/md5/md5-empty.o
+	$(CC) $(CFLAGS) -I./os_crypto/md5 -c os_crypto/md5/md5_op.c -o os_crypto/md5/md5_op-empty.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_empty_ciphertext.c \
+		os_crypto/shared/msgs-empty.o \
+		os_crypto/blowfish/bf_op-empty.o \
+		os_crypto/blowfish/bf_enc-empty.o \
+		os_crypto/blowfish/bf_skey-empty.o \
+		os_crypto/md5/md5-empty.o \
+		os_crypto/md5/md5_op-empty.o \
+		-lpthread
+
 win_network_path: tests/regressions/win_network_path.c shared/win_path.c
 	$(CC) $(CFLAGS) -o $@ tests/regressions/win_network_path.c shared/win_path.c
 
@@ -167,4 +185,10 @@ clean:
 		os_crypto/blowfish/bf_enc-checksum.o \
 		os_crypto/blowfish/bf_skey-checksum.o \
 		os_crypto/md5/md5-checksum.o \
-		os_crypto/md5/md5_op-checksum.o
+		os_crypto/md5/md5_op-checksum.o \
+		os_crypto/shared/msgs-empty.o \
+		os_crypto/blowfish/bf_op-empty.o \
+		os_crypto/blowfish/bf_enc-empty.o \
+		os_crypto/blowfish/bf_skey-empty.o \
+		os_crypto/md5/md5-empty.o \
+		os_crypto/md5/md5_op-empty.o
