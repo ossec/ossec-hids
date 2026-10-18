@@ -1,3 +1,22 @@
+**OSSEC changelog (4.4.1) <support@atomicorp.com>**
+
+**Release Maintainers**
+
+Scott R. Shinn (https://www.atomicorp.com)
+
+**Contributors on this release**
+
+- @atomicturtle
+
+**Release Notes**
+
+OSSEC 4.4.1 is a maintenance release on the v4.4.0 branch.
+
+**Bug Fixes**
+
+- @atomicturtle - [PR 2361](https://github.com/ossec/ossec-hids/pull/2361) - Preserve syscheck ``report_changes`` (and ACL) framing across the CVE-2020-8445 control-character strip so DecodeSyscheck can still split path from diff (#2359)
+
+
 **OSSEC changelog (4.4.0) <support@atomicorp.com>**
 
 **Release Maintainers**
