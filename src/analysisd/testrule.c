@@ -630,11 +630,16 @@ void OS_ReadMSG(char *ut_str)
                 if (currently_rule->group_prev_matched) {
                     unsigned int i = 0;
 
+                    os_calloc(currently_rule->group_prev_matched_sz,
+                              sizeof(OSListNode *), lf->group_nodes_to_delete);
                     while (i < currently_rule->group_prev_matched_sz) {
                         if (!OSList_AddData(
                                     currently_rule->group_prev_matched[i],
                                     lf)) {
                             merror("%s: Unable to add data to grp list.", ARGV0);
+                        } else {
+                            lf->group_nodes_to_delete[i] =
+                                currently_rule->group_prev_matched[i]->last_node;
                         }
                         i++;
                     }

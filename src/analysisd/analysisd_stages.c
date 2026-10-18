@@ -476,10 +476,15 @@ int analysisd_analyze_event(Eventinfo *lf)
         if (currently_rule->group_prev_matched) {
             unsigned int j = 0;
 
+            os_calloc(currently_rule->group_prev_matched_sz, sizeof(OSListNode *),
+                      lf->group_nodes_to_delete);
             os_mutex_lock(&currently_rule->mutex);
             while (j < currently_rule->group_prev_matched_sz) {
                 if (!OSList_AddData(currently_rule->group_prev_matched[j], lf)) {
                     merror("%s: Unable to add data to grp list.", ARGV0);
+                } else {
+                    lf->group_nodes_to_delete[j] =
+                        currently_rule->group_prev_matched[j]->last_node;
                 }
                 j++;
             }

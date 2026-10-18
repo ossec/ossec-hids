@@ -666,6 +666,7 @@ void Zero_Eventinfo(Eventinfo *lf)
 
     lf->generated_rule = NULL;
     lf->sid_node_to_delete = NULL;
+    lf->group_nodes_to_delete = NULL;
     lf->decoder_info = NULL_Decoder;
     lf->alert_last_events = NULL;
     lf->alert_id = 0;
@@ -886,19 +887,29 @@ void Free_Eventinfo(Eventinfo *lf)
 #endif
             }
             lf->sid_node_to_delete = NULL;
-        } else if (lf->generated_rule && lf->generated_rule->group_prev_matched) {
-            unsigned int i = 0;
+        }
+
+        /* Not else-if: the event can be on the sid list and on the group
+         * lists. Delete our own nodes; the oldest node of a group list may
+         * belong to an event that is still alive in another shard. */
+        if (lf->group_nodes_to_delete) {
+            if (lf->generated_rule) {
+                unsigned int i = 0;
 
 #ifndef WIN32
-            os_mutex_lock(&lf->generated_rule->mutex);
+                os_mutex_lock(&lf->generated_rule->mutex);
 #endif
-            while (i < lf->generated_rule->group_prev_matched_sz) {
-                OSList_DeleteOldestNode(lf->generated_rule->group_prev_matched[i]);
-                i++;
-            }
+                while (i < lf->generated_rule->group_prev_matched_sz) {
+                    OSList_DeleteThisNode(lf->generated_rule->group_prev_matched[i],
+                                          lf->group_nodes_to_delete[i]);
+                    i++;
+                }
 #ifndef WIN32
-            os_mutex_unlock(&lf->generated_rule->mutex);
+                os_mutex_unlock(&lf->generated_rule->mutex);
 #endif
+            }
+            free(lf->group_nodes_to_delete);
+            lf->group_nodes_to_delete = NULL;
         }
     }
 
