@@ -89,6 +89,14 @@ void OS_MoveRuleLastEvents(RuleInfo *rule, Eventinfo *lf)
 }
 
 
+/* The if_matched_sid / if_matched_group lists are shared between rules: the
+ * rule that fires appends to them (and trims the oldest node), the rules that
+ * watch it walk them and Free_Eventinfo unlinks from them, each from any
+ * rule-matching thread. No single rule->mutex covers all of that, so the
+ * lists have one lock of their own. Taken after rule->mutex, never before it.
+ */
+pthread_mutex_t prev_matched_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /* Search last times a signature fired
  * Will look for only that specific signature.
  */
@@ -100,6 +108,7 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
     OSListNode *lf_node;
 
     os_mutex_lock(&rule->mutex);
+    os_mutex_lock(&prev_matched_mutex);
 
     /* Set frequency to 0 */
     rule->__frequency = 0;
@@ -259,6 +268,7 @@ Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *rule)
     } while ((lf_node = lf_node->prev) != NULL);
 
 out:
+    os_mutex_unlock(&prev_matched_mutex);
     if (ret) {
         OS_MoveRuleLastEvents(rule, my_lf);
     }
@@ -277,6 +287,7 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
     OSListNode *lf_node;
 
     os_mutex_lock(&rule->mutex);
+    os_mutex_lock(&prev_matched_mutex);
 
     /* Set frequency to 0 */
     rule->__frequency = 0;
@@ -436,6 +447,7 @@ Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *rule)
     } while ((lf_node = lf_node->prev) != NULL);
 
 out:
+    os_mutex_unlock(&prev_matched_mutex);
     if (ret) {
         OS_MoveRuleLastEvents(rule, my_lf);
     }
@@ -700,6 +712,42 @@ void Free_Eventinfo(Eventinfo *lf)
         return;
     }
 
+    /* Correlation list maintenance belongs to the live event only — async
+     * alert/archive/fw copies must not prune shared group/sid lists.
+     * Unlink before anything else is freed: another rule-matching thread
+     * may still be reading this event through those lists.
+     * sid_node_to_delete is read under the list lock because the sid list
+     * clears it (Mark_EventNodeDelete) when it trims the oldest node. */
+    if (!(lf->flags & EF_ASYNC_COPY)) {
+        if (lf->sid_node_to_delete || lf->group_nodes_to_delete) {
+            os_mutex_lock(&prev_matched_mutex);
+            if (lf->sid_node_to_delete) {
+                if (lf->generated_rule) {
+                    OSList_DeleteThisNode(lf->generated_rule->sid_prev_matched,
+                                          lf->sid_node_to_delete);
+                }
+                lf->sid_node_to_delete = NULL;
+            }
+            /* Not else-if: the event can be on the sid list and on the group
+             * lists. Delete our own nodes; the oldest node of a group list may
+             * belong to an event that is still alive in another shard. */
+            if (lf->group_nodes_to_delete) {
+                if (lf->generated_rule) {
+                    unsigned int i = 0;
+
+                    while (i < lf->generated_rule->group_prev_matched_sz) {
+                        OSList_DeleteThisNode(lf->generated_rule->group_prev_matched[i],
+                                              lf->group_nodes_to_delete[i]);
+                        i++;
+                    }
+                }
+                free(lf->group_nodes_to_delete);
+                lf->group_nodes_to_delete = NULL;
+            }
+            os_mutex_unlock(&prev_matched_mutex);
+        }
+    }
+
     /* full_log is the owned allocation. log usually aliases into it
      * (CleanMSG dual buffer or syscheck log==full_log). Only free log when
      * EF_SEPARATE_LOG marks a distinct malloc. */
@@ -869,48 +917,6 @@ void Free_Eventinfo(Eventinfo *lf)
         }
         free(lf->alert_last_events);
         lf->alert_last_events = NULL;
-    }
-
-    /* Correlation list maintenance belongs to the live event only — async
-     * alert/archive/fw copies must not prune shared group/sid lists. */
-    if (!(lf->flags & EF_ASYNC_COPY)) {
-        /* Free node to delete */
-        if (lf->sid_node_to_delete) {
-            if (lf->generated_rule) {
-#ifndef WIN32
-                os_mutex_lock(&lf->generated_rule->mutex);
-#endif
-                OSList_DeleteThisNode(lf->generated_rule->sid_prev_matched,
-                                      lf->sid_node_to_delete);
-#ifndef WIN32
-                os_mutex_unlock(&lf->generated_rule->mutex);
-#endif
-            }
-            lf->sid_node_to_delete = NULL;
-        }
-
-        /* Not else-if: the event can be on the sid list and on the group
-         * lists. Delete our own nodes; the oldest node of a group list may
-         * belong to an event that is still alive in another shard. */
-        if (lf->group_nodes_to_delete) {
-            if (lf->generated_rule) {
-                unsigned int i = 0;
-
-#ifndef WIN32
-                os_mutex_lock(&lf->generated_rule->mutex);
-#endif
-                while (i < lf->generated_rule->group_prev_matched_sz) {
-                    OSList_DeleteThisNode(lf->generated_rule->group_prev_matched[i],
-                                          lf->group_nodes_to_delete[i]);
-                    i++;
-                }
-#ifndef WIN32
-                os_mutex_unlock(&lf->generated_rule->mutex);
-#endif
-            }
-            free(lf->group_nodes_to_delete);
-            lf->group_nodes_to_delete = NULL;
-        }
     }
 
     /* Check if we need to free program_name */

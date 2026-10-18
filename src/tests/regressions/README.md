@@ -23,6 +23,7 @@
 #                                      if_matched_sid cross-location
 #   - issue_1748_sid_list_crash        sid_prev_matched overflow + free callback
 #   - issue_group_list_uaf             Free_Eventinfo unlinks its group_prev_matched nodes
+#   - issue_prev_matched_race          if_matched_sid list lock across match threads
 #   - issue_1274_auth_ipv6_key         auth IPv6 key handling
 #   - issue_2065_sender_counter        sender_counter isolated from agent 0 rids
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
@@ -48,7 +49,7 @@
 # Correlation / shard semantics (pipeline rule_matching_threads > 1):
 #   - EventList history used by Search_LastEvents is **per location-hashed shard**.
 #   - Frequency/context that must span multiple agents should use if_matched_sid
-#     or if_matched_group (those lists remain global under rule->mutex).
+#     or if_matched_group (those lists remain global under prev_matched_mutex).
 #   - Migration checklist: inventory multi-agent frequency rules → convert to
 #     if_matched_sid/group → keep pure Search_LastEvents only for local correlation.
 #   - Ops: events_received, events_dropped*, alerts_dropped*, archives_dropped*,

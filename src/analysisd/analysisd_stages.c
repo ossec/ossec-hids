@@ -462,13 +462,13 @@ int analysisd_analyze_event(Eventinfo *lf)
         }
 
         if (currently_rule->sid_prev_matched) {
-            os_mutex_lock(&currently_rule->mutex);
+            os_mutex_lock(&prev_matched_mutex);
             if (!OSList_AddData(currently_rule->sid_prev_matched, lf)) {
                 merror("%s: Unable to add data to sig list.", ARGV0);
             } else {
                 lf->sid_node_to_delete = currently_rule->sid_prev_matched->last_node;
             }
-            os_mutex_unlock(&currently_rule->mutex);
+            os_mutex_unlock(&prev_matched_mutex);
         }
         /* Also feed group lists when present. Do not use else-if: rules like
          * 5710/5716 are watched by if_matched_sid (5712/5720) AND must still
@@ -478,7 +478,7 @@ int analysisd_analyze_event(Eventinfo *lf)
 
             os_calloc(currently_rule->group_prev_matched_sz, sizeof(OSListNode *),
                       lf->group_nodes_to_delete);
-            os_mutex_lock(&currently_rule->mutex);
+            os_mutex_lock(&prev_matched_mutex);
             while (j < currently_rule->group_prev_matched_sz) {
                 if (!OSList_AddData(currently_rule->group_prev_matched[j], lf)) {
                     merror("%s: Unable to add data to grp list.", ARGV0);
@@ -488,7 +488,7 @@ int analysisd_analyze_event(Eventinfo *lf)
                 }
                 j++;
             }
-            os_mutex_unlock(&currently_rule->mutex);
+            os_mutex_unlock(&prev_matched_mutex);
         }
 
         OS_AddEvent(lf);
