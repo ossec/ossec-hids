@@ -176,6 +176,10 @@ Eventinfo *Search_LastEvents(Eventinfo *lf, RuleInfo *currently_rule);
 Eventinfo *Search_LastSids(Eventinfo *my_lf, RuleInfo *currently_rule);
 Eventinfo *Search_LastGroups(Eventinfo *my_lf, RuleInfo *currently_rule);
 
+/* Protects every sid_prev_matched / group_prev_matched list (all rules).
+ * Taken after rule->mutex, never before it. */
+extern pthread_mutex_t prev_matched_mutex;
+
 /* Frequency rule context log samples (heap-owned copies) */
 void OS_SetRuleLastEvent(RuleInfo *rule, int idx, const char *log);
 void OS_FreeRuleLastEvents(RuleInfo *rule);

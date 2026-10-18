@@ -65,8 +65,7 @@ void OS_EventList_Destroy(EventList *list)
     }
 
     /* Unlink under the list lock; Free_Eventinfo after unlock so we never
-     * nest rule->mutex under list->mutex (Search_LastEvents takes the
-     * opposite order). */
+     * nest prev_matched_mutex under list->mutex. */
     os_mutex_lock(&list->mutex);
     node = list->first;
     list->first = NULL;
@@ -144,7 +143,7 @@ void OS_AddEvent_List(Eventinfo *lf, EventList *list)
                     list->first = NULL;
                 }
 
-                /* Defer Free_Eventinfo: it may lock generated_rule->mutex. */
+                /* Defer Free_Eventinfo: it may lock prev_matched_mutex. */
                 oldlast->prev = NULL;
                 oldlast->next = victims;
                 victims = oldlast;

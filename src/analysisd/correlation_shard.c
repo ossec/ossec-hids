@@ -8,7 +8,7 @@
  *
  * Location-hash shards isolate Search_LastEvents / EventList history per
  * agent location (or hostname). Cross-agent frequency/context must use
- * if_matched_sid / if_matched_group (global sid lists under rule->mutex).
+ * if_matched_sid / if_matched_group (global lists under prev_matched_mutex).
  * Stock brute-force rules that use if_matched_sid remain correct; pure
  * context+frequency rules only correlate within a single location shard.
  *

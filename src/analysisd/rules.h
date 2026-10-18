@@ -101,7 +101,8 @@ typedef struct _RuleInfo {
     char **last_events;
     int last_events_copied;
 
-    /* Protects firedtimes / last_events / prev_matched inserts under parallel matching. */
+    /* Protects firedtimes / last_events under parallel matching. The
+     * prev_matched lists are shared between rules: see prev_matched_mutex. */
     pthread_mutex_t mutex;
 
     /* Not an option in the rule */
