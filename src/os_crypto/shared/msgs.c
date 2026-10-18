@@ -392,6 +392,20 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
         return (NULL);
     }
 
+    /* Refuse a body that cannot hold a message. With nothing to decrypt,
+     * cleartext would still contain the previous datagram (from any agent)
+     * and be parsed, checksummed and counter-checked as this one's.
+     * buffer_size > OS_MAXSTR also catches the unsigned wrap from a
+     * datagram that ends right after the !id! prefix (recv_b - 1).
+     */
+    if (buffer_size == 0 || buffer_size > OS_MAXSTR) {
+        merror(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
+        return (NULL);
+    }
+
+    /* Only bytes produced by this decryption may select the format below */
+    cleartext[0] = '\0';
+
     /* Decrypt message */
     switch(keys->keyentries[id]->crypto_method){
         case W_METH_BLOWFISH:
@@ -402,6 +416,13 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
             }
             break;
         case W_METH_AES:
+            /* buffer_size still counts the leading "#AES"; the decrypt length
+             * is buffer_size-4. Reject before that subtraction so 1..3 cannot
+             * wrap to a multi-gigabyte length (OpenSSL was the only stop). */
+            if (buffer_size <= 4) {
+                merror(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
+                return (NULL);
+            }
             if (!OS_AES_Str(buffer, cleartext, keys->keyentries[id]->key,
                 buffer_size-4, OS_DECRYPT)) {
                 merror(ENCKEY_ERROR, __local_name, keys->keyentries[id]->ip->ip);
