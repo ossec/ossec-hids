@@ -26,10 +26,10 @@ date        !bash([^a.]|$|a([^n]|$|n([^s]|$))|\.([^b]|$|b([^a]|$)))|^/bin/sh|fil
 du          !w0rm|/prof|file\.h!
 df          !bash|^/bin/sh|file\.h|proc\.h|/dev/[^clurdv]|^/bin/.*sh!
 login       !elite|SucKIT|xlogin|vejeta|porcao|lets_log|sukasuk!
-passwd      !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[b-s,uvxz]!
+passwd      !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/([b-mo-s,uvxz]|n([^u]|$)|nu([^l]|$)|nul([^l]|$))!
 mingetty    !bash|Dimensioni|pacchetto!
-chfn        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[a-s,uvxz]!
-chsh        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[a-s,uvxz]!
+chfn        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/([a-mo-s,uvxz]|n([^u]|$)|nu([^l]|$)|nul([^l]|$))!
+chsh        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/([a-mo-s,uvxz]|n([^u]|$)|nu([^l]|$)|nul([^l]|$))!
 mail        !file\.h|proc\.h|/dev/[^nu]!
 su          !/dev/[d-s,abuvxz]|/dev/[A-D]|/dev/[F-Z]|/dev/[0-9]|satori|vejeta|conf\.inv!
 sudo        !satori|vejeta|conf\.inv!
