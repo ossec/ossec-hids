@@ -809,40 +809,6 @@ int mkstemp_ex(char *tmp_path)
     return (0);
 }
 
-#ifndef WIN32
-/* Open a log file for appending. Returns the descriptor, or -1 on error.
- * The logs directory belongs to the ossec user while root writes there too,
- * so a link or a special file left in place of the log must not decide
- * where root appends: only a regular file with a single name is accepted.
- */
-int open_log_append(const char *path)
-{
-    int fd;
-    struct stat st;
-
-#ifndef O_NOFOLLOW
-    /* Without O_NOFOLLOW we cannot refuse a planted symlink. */
-    (void)path;
-    errno = ENOTSUP;
-    return (-1);
-#else
-    fd = open(path, O_WRONLY | O_APPEND | O_CREAT | O_NOFOLLOW | O_NONBLOCK,
-              0660);
-    if (fd == -1) {
-        return (-1);
-    }
-
-    if (fstat(fd, &st) == -1 || !S_ISREG(st.st_mode) || st.st_nlink != 1) {
-        close(fd);
-        errno = ELOOP;
-        return (-1);
-    }
-
-    return (fd);
-#endif
-}
-#endif
-
 
 /* Get uname. Memory must be freed after use */
 char *getuname()
