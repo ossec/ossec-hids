@@ -30,6 +30,7 @@ REGRESSION_BINS = \
 	unmerge_path_traversal \
 	jsonout_default \
 	issue_1814_control_chars \
+	issue_cleanevent_date_oob \
 	issue_1953_xml_recursion \
 	issue_2100_authd_ssl \
 	getalert_empty_filename \
@@ -130,6 +131,16 @@ issue_1814_control_chars: tests/regressions/issue_1814_control_chars.c analysisd
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
 
+issue_cleanevent_date_oob: tests/regressions/issue_cleanevent_date_oob.c analysisd/cleanevent.c \
+		analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/cleanevent.c -o analysisd/cleanevent-8r0.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c -o analysisd/eventinfo-8r0.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-8r0.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_cleanevent_date_oob.c \
+		analysisd/cleanevent-8r0.o analysisd/eventinfo-8r0.o analysisd/eventinfo_list-8r0.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
+
 issue_1953_xml_recursion: tests/regressions/issue_1953_xml_recursion.c os_xml.a shared.a
 	$(CC) $(CFLAGS) -I./os_xml -o $@ tests/regressions/issue_1953_xml_recursion.c \
 		-Wl,--start-group os_xml.a shared.a os_regex.a -Wl,--end-group \
@@ -204,7 +215,10 @@ clean:
 		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o \
 		analysisd/eventinfo_list-1668oa.o \
 		analysisd/decoders/plugins/ossecalert_decoder-1668oa.o \
-		analysisd/cleanevent-1814.o os_auth/ssl-2100.o \
+		analysisd/cleanevent-1814.o \
+		analysisd/cleanevent-8r0.o analysisd/eventinfo-8r0.o \
+		analysisd/eventinfo_list-8r0.o \
+		os_auth/ssl-2100.o \
 		logcollector/read_multiline-underflow.o \
 		os_crypto/shared/msgs-checksum.o \
 		os_crypto/blowfish/bf_op-checksum.o \
