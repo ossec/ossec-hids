@@ -26,6 +26,7 @@ REGRESSION_BINS = \
 	issue_2065_sender_counter \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
+	issue_1668_ossecalert_hostname \
 	unmerge_path_traversal \
 	jsonout_default \
 	issue_1814_control_chars \
@@ -91,6 +92,20 @@ issue_1668_agent_hostname: tests/regressions/issue_1668_agent_hostname.c \
 	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-1668.o
 	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1668_agent_hostname.c \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o analysisd/eventinfo_list-1668.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
+
+issue_1668_ossecalert_hostname: tests/regressions/issue_1668_ossecalert_hostname.c \
+		analysisd/cleanevent.c analysisd/eventinfo.c analysisd/eventinfo_list.c \
+		analysisd/decoders/plugins/ossecalert_decoder.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/cleanevent.c -o analysisd/cleanevent-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c -o analysisd/eventinfo-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/decoders/plugins/ossecalert_decoder.c \
+		-o analysisd/decoders/plugins/ossecalert_decoder-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1668_ossecalert_hostname.c \
+		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o analysisd/eventinfo_list-1668oa.o \
+		analysisd/decoders/plugins/ossecalert_decoder-1668oa.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
 
@@ -182,6 +197,9 @@ clean:
 	rm -f $(REGRESSION_BINS) \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
 		analysisd/eventinfo_list-1668.o \
+		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o \
+		analysisd/eventinfo_list-1668oa.o \
+		analysisd/decoders/plugins/ossecalert_decoder-1668oa.o \
 		analysisd/cleanevent-1814.o os_auth/ssl-2100.o \
 		logcollector/read_multiline-underflow.o \
 		os_crypto/shared/msgs-checksum.o \
