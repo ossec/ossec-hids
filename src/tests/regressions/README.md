@@ -27,6 +27,8 @@
 #   - issue_1274_auth_ipv6_key         auth IPv6 key handling
 #   - issue_2065_sender_counter        sender_counter isolated from agent 0 rids
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
+#   - issue_1668_agent_hostname        agent name vs device hostname split
+#   - issue_1668_ossecalert_hostname   OSSECAlert decoder vs owned hostname (double free)
 #   - jsonout_default                  jsonout_output on when the XML tag is omitted
 #   - issue_1814_control_chars         strip controls, keep UTF-8
 #   - issue_cleanevent_date_oob        umlaut/Suricata date-probe bounds
@@ -35,6 +37,7 @@
 #   - getalert_empty_filename          GetAlertData empty syscheck path
 #   - checksum_short_message           CheckSum rejects sub-digest lengths
 #   - issue_empty_ciphertext           ReadSecMSG rejects empty/oversized body
+#   - issue_win_execd_cmd_injection    WinExecd AR args safe for cmd.exe
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

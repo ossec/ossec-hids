@@ -26,6 +26,7 @@ REGRESSION_BINS = \
 	issue_2065_sender_counter \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
+	issue_1668_ossecalert_hostname \
 	unmerge_path_traversal \
 	jsonout_default \
 	issue_1814_control_chars \
@@ -36,7 +37,8 @@ REGRESSION_BINS = \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
-	issue_empty_ciphertext
+	issue_empty_ciphertext \
+	issue_win_execd_cmd_injection
 
 .PHONY: all check clean
 
@@ -92,6 +94,20 @@ issue_1668_agent_hostname: tests/regressions/issue_1668_agent_hostname.c \
 	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-1668.o
 	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1668_agent_hostname.c \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o analysisd/eventinfo_list-1668.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
+
+issue_1668_ossecalert_hostname: tests/regressions/issue_1668_ossecalert_hostname.c \
+		analysisd/cleanevent.c analysisd/eventinfo.c analysisd/eventinfo_list.c \
+		analysisd/decoders/plugins/ossecalert_decoder.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/cleanevent.c -o analysisd/cleanevent-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c -o analysisd/eventinfo-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/decoders/plugins/ossecalert_decoder.c \
+		-o analysisd/decoders/plugins/ossecalert_decoder-1668oa.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1668_ossecalert_hostname.c \
+		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o analysisd/eventinfo_list-1668oa.o \
+		analysisd/decoders/plugins/ossecalert_decoder-1668oa.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
 
@@ -177,6 +193,9 @@ issue_empty_ciphertext: tests/regressions/issue_empty_ciphertext.c os_crypto/sha
 win_network_path: tests/regressions/win_network_path.c shared/win_path.c
 	$(CC) $(CFLAGS) -o $@ tests/regressions/win_network_path.c shared/win_path.c
 
+issue_win_execd_cmd_injection: tests/regressions/issue_win_execd_cmd_injection.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_win_execd_cmd_injection.c $(BASIC_LIBS)
+
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
 # __strncpy_chk and the regression's length check never runs.
@@ -193,6 +212,9 @@ clean:
 	rm -f $(REGRESSION_BINS) \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
 		analysisd/eventinfo_list-1668.o \
+		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o \
+		analysisd/eventinfo_list-1668oa.o \
+		analysisd/decoders/plugins/ossecalert_decoder-1668oa.o \
 		analysisd/cleanevent-1814.o \
 		analysisd/cleanevent-8r0.o analysisd/eventinfo-8r0.o \
 		analysisd/eventinfo_list-8r0.o \

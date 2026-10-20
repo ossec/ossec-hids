@@ -124,3 +124,21 @@ char *os_shell_escape(const char *src)
     return escaped_string;
 }
 
+/* The Windows AR responses are batch files, so cmd.exe parses the whole
+ * command line WinExecdRun() builds. Replace the characters it acts on
+ * even inside a quoted argument: '"' closes the quotes, '%' expands a
+ * variable, and a control character (CR/LF) ends the line.
+ */
+void OS_WinExecdCleanArg(char *arg)
+{
+    if (!arg) {
+        return;
+    }
+
+    for (; *arg != '\0'; arg++) {
+        if (*arg == '"' || *arg == '%' || is_control_character(*arg)) {
+            *arg = '_';
+        }
+    }
+}
+

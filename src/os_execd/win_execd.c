@@ -142,6 +142,11 @@ void WinExecdRun(char *exec_msg)
     *tmp_msg = '\0';
     tmp_msg++;
 
+    /* Nothing in the request may escape the quotes put around it */
+    OS_WinExecdCleanArg(cmd_user);
+    OS_WinExecdCleanArg(cmd_ip);
+    OS_WinExecdCleanArg(tmp_msg);
+
     /* Get the command to execute (valid name) */
     command = GetCommandbyName(name, &timeout_value);
     if (!command) {
