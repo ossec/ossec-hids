@@ -8,6 +8,7 @@ MAIL_LIST_TEST_OBJS = mail_list_requeue_test.o \
 	../mail_list.o \
 	../../shared/pthreads_op.o \
 	../../shared/debug_op.o \
+	../../shared/log_append.o \
 	../../shared/file_op.o \
 	../../shared/string_op.o
 
@@ -16,6 +17,7 @@ SMS_QUEUE_TEST_OBJS = sms_queue_test.o \
 	../mail_list.o \
 	../../shared/pthreads_op.o \
 	../../shared/debug_op.o \
+	../../shared/log_append.o \
 	../../shared/file_op.o \
 	../../shared/string_op.o \
 	../../shared/mem_op.o
@@ -25,6 +27,7 @@ MAILD_SHUTDOWN_GATE_TEST_OBJS = maild_shutdown_gate_test.o \
 	../mail_list.o \
 	../../shared/pthreads_op.o \
 	../../shared/debug_op.o \
+	../../shared/log_append.o \
 	../../shared/file_op.o \
 	../../shared/string_op.o \
 	../../shared/mem_op.o
