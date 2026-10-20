@@ -125,6 +125,14 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
     snprintf(oa_newlocation, 255, "%s|%s", lf->location, oa_location);
     free(lf->location);
     os_strdup(oa_newlocation, lf->location);
+    if (lf->flags & EF_FREE_HNAME) {
+        /* OS_CleanMSG gave us an owned hostname (agent name, #1668):
+         * release it before aliasing, or Free_Eventinfo frees
+         * lf->location twice.
+         */
+        free(lf->hostname);
+        lf->flags &= ~EF_FREE_HNAME;
+    }
     lf->hostname = lf->location;
 
 

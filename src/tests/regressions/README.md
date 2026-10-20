@@ -27,6 +27,8 @@
 #   - issue_1274_auth_ipv6_key         auth IPv6 key handling
 #   - issue_2065_sender_counter        sender_counter isolated from agent 0 rids
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
+#   - issue_1668_agent_hostname        agent name vs device hostname split
+#   - issue_1668_ossecalert_hostname   OSSECAlert decoder vs owned hostname (double free)
 #   - jsonout_default                  jsonout_output on when the XML tag is omitted
 #   - issue_1814_control_chars         strip controls, keep UTF-8
 #   - issue_1953_xml_recursion         OS_ReadXML recursion limit
