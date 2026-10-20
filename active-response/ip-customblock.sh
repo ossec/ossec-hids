@@ -14,8 +14,8 @@ cd ../
 PWD=`pwd`
 
 
-# Logging the call
-echo "`date` $0 $1 $2 $3 $4 $5" >> ${PWD}/../logs/active-responses.log
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5"
 
 
 # IP Address must be provided

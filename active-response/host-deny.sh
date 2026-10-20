@@ -74,8 +74,8 @@ unlock()
 }
 
 
-# Logging the call
-echo "`date` $0 $1 $2 $3 $4 $5" >> ${PWD}/../logs/active-responses.log
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5"
 
 
 # IP Address must be provided
@@ -88,13 +88,13 @@ fi
 # Hostname or address. Reject shell metacharacters and values with no "." or ":".
 case "${IP}" in
     ""|-*|*[!A-Za-z0-9.:_-]*)
-        echo "`date` Invalid ip/hostname entry." >> ${PWD}/../logs/active-responses.log
+        echo "`date` Invalid ip/hostname entry."
         exit 1
         ;;
     *[.:]*)
         ;;
     *)
-        echo "`date` Invalid ip/hostname entry." >> ${PWD}/../logs/active-responses.log
+        echo "`date` Invalid ip/hostname entry."
         exit 1
         ;;
 esac
@@ -105,7 +105,7 @@ if [ "x${ACTION}" = "xadd" ]; then
     # Looking for duplication
     IPKEY=$(grep -w "${IP}" /etc/hosts.deny)
     if [ ! -z "$IPKEY" ]; then
-        echo "IP ${IP} already exists on host.deny..." >> ${PWD}/../logs/active-responses.log
+        echo "IP ${IP} already exists on host.deny..."
         exit 1
     fi
     lock;

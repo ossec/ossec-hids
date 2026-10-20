@@ -32,9 +32,8 @@ cd $LOCAL
 cd ../
 
 FILENAME=$(basename "$0")
-LOGFILE="${PWD}/../logs/active-responses.log"
-
-echo "`date` $0 $1 $2 $3 $4 $5" >> ${LOGFILE}
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5"
 
 # Check for an action
 if [ "x${ACTION}" = "x" ]; then
@@ -52,21 +51,21 @@ fi
 case "${IS_REGIONAL}" in
         0 ) P_REGION="waf";;
         1 ) P_REGION="waf-regional";;
-        * ) echo "`date` Unable to run active response (invalid configuration parameter: IS_REGIONAL '${IS_REGIONAL}'" >> ${LOGFILE} && exit 1;;
+        * ) echo "`date` Unable to run active response (invalid configuration parameter: IS_REGIONAL '${IS_REGIONAL}'" && exit 1;;
 esac
 
 # Determining action
 case "${ACTION}" in
         add ) P_ACTION="INSERT";;
         delete ) P_ACTION="DELETE";;
-        * ) echo "`date` Unable to run active response (invalid argument Action: '${ACTION}'" >> ${LOGFILE} && exit 1;;
+        * ) echo "`date` Unable to run active response (invalid argument Action: '${ACTION}'" && exit 1;;
 esac
 
 # Determining IP type
 case "${IP}" in
         *:* ) IP="${IP}/128" && P_IPTYPE="IPV6";;
         *.* ) IP="${IP}/32" && P_IPTYPE="IPV4";;
-        * ) echo "`date` Unable to run active response (invalid argument IP: '${IP}')" >> ${LOGFILE} && exit 1;;
+        * ) echo "`date` Unable to run active response (invalid argument IP: '${IP}')" && exit 1;;
 esac
 
 P_CHGTKN="$(${AWS} ${P_REGION} get-change-token --region ${REGION} --output text)"
@@ -75,9 +74,8 @@ P_RESP="$(${AWS} ${P_REGION} update-ip-set --ip-set-id ${IPSETID} --change-token
 
 
 if [ "${P_RESP}" != "${P_CHGTKN}" ]; then
-        echo "`date` Failed to update waf ipset: '${P_ACTION} ${IP} ${P_RESP}'" >> ${LOGFILE}
+        echo "`date` Failed to update waf ipset: '${P_ACTION} ${IP} ${P_RESP}'"
         exit 1;
 fi
 
-echo "Action ${ACTION} on IP ${IP} succeed" >&1
-echo "`date` Action ${ACTION} on IP ${IP} succeed" >> ${LOGFILE}
+echo "`date` Action ${ACTION} on IP ${IP} succeed"

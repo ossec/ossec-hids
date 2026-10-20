@@ -53,6 +53,11 @@ int rename_ex(const char *source, const char *destination) __attribute__((nonnul
 /* Create temporary file */
 int mkstemp_ex(char *tmp_path) __attribute__((nonnull));
 
+#ifndef WIN32
+/* Open a log file for appending, refusing links and special files */
+int open_log_append(const char *path) __attribute__((nonnull));
+#endif
+
 /* Checks for Windows Vista */
 #ifdef WIN32
 int checkVista();

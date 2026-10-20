@@ -38,7 +38,8 @@ REGRESSION_BINS = \
 	win_network_path \
 	checksum_short_message \
 	issue_empty_ciphertext \
-	issue_win_execd_cmd_injection
+	issue_win_execd_cmd_injection \
+	issue_logs_symlink_nofollow
 
 .PHONY: all check clean
 
@@ -195,6 +196,11 @@ win_network_path: tests/regressions/win_network_path.c shared/win_path.c
 
 issue_win_execd_cmd_injection: tests/regressions/issue_win_execd_cmd_injection.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_win_execd_cmd_injection.c $(BASIC_LIBS)
+
+issue_logs_symlink_nofollow: tests/regressions/issue_logs_symlink_nofollow.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_logs_symlink_nofollow.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes

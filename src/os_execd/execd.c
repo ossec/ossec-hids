@@ -321,6 +321,12 @@ static void ExecdStart(int q)
             continue;
         }
 
+        /* The message is only split on spaces and its pieces end up in
+         * the logs: no argument may carry a newline or another control
+         * character
+         */
+        remove_control_characters(buffer);
+
         /* Current time */
         curr_time = time(0);
 

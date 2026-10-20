@@ -143,9 +143,8 @@ cd $LOCAL
 cd ../
 filename=$(basename "$0")
 
-LOG_FILE="${PWD}/../logs/active-responses.log"
-
-echo "`date` $0 $1 $2 $3 $4 $5" >> ${LOG_FILE}
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5"
 
 
 # Checking for an IP
@@ -155,7 +154,7 @@ if [ "x${IP}" = "x" ]; then
 fi
 
 if ! valid_ip "${IP}"; then
-    echo "`date` Unable to run active response (invalid IP)." >> ${LOG_FILE}
+    echo "`date` Unable to run active response (invalid IP)."
     exit 1
 fi
 
@@ -208,7 +207,7 @@ lock()
                 if [ "x${pid}" = "x${C_PID}" ]; then
                     # Unlocking and exiting
                     kill -9 ${C_PID}
-                    echo "`date` Killed process ${C_PID} holding lock." >> ${LOG_FILE}
+                    echo "`date` Killed process ${C_PID} holding lock."
                     kill="true"
                     unlock;
                     i=0;
@@ -218,7 +217,7 @@ lock()
             done
 
             if [ "x${kill}" = "xfalse" ]; then
-                echo "`date` Unable kill process ${C_PID} holding lock." >> ${LOG_FILE}
+                echo "`date` Unable kill process ${C_PID} holding lock."
                 # Unlocking and exiting
                 unlock;
                 exit 1;
@@ -308,7 +307,7 @@ if [ "X${UNAME}" = "XLinux" ]; then
             break;
         else
             COUNT=`expr $COUNT + 1`;
-            echo "`date` Unable to run (iptables returning != $RES): $COUNT - $0 $1 $2 $3 $4 $5" >> ${LOG_FILE}
+            echo "`date` Unable to run (iptables returning != $RES): $COUNT - $0 $1 $2 $3 $4 $5"
             sleep $COUNT;
 
             if [ $COUNT -gt 4 ]; then
