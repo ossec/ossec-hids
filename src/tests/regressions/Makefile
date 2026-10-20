@@ -35,7 +35,8 @@ REGRESSION_BINS = \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
-	issue_empty_ciphertext
+	issue_empty_ciphertext \
+	issue_win_execd_cmd_injection
 
 .PHONY: all check clean
 
@@ -165,6 +166,9 @@ issue_empty_ciphertext: tests/regressions/issue_empty_ciphertext.c os_crypto/sha
 
 win_network_path: tests/regressions/win_network_path.c shared/win_path.c
 	$(CC) $(CFLAGS) -o $@ tests/regressions/win_network_path.c shared/win_path.c
+
+issue_win_execd_cmd_injection: tests/regressions/issue_win_execd_cmd_injection.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_win_execd_cmd_injection.c $(BASIC_LIBS)
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
