@@ -99,7 +99,7 @@ int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_g
      * repair to only one slot so we can detect the correct date format in the next step
      * ex: Mär 02 17:30:52
      */
-    if (pieces[1] == (char) 195) {
+    if ((loglen > 3) && (pieces[1] == (char) 195)) {
         if (pieces[2] == (char) 164) {
             pieces[0] = '\0';
             pieces[1] = 'M';
@@ -405,7 +405,7 @@ int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_g
     /* Check for suricata (new) date format
      * ex: 01/28/1979-09:13:16.240702  [**]
      */
-    else if ( (loglen > 26) &&
+    else if ( (loglen > 28) &&
               (pieces[2] == '/') &&
               (pieces[5] == '/') &&
               (pieces[10] == '-') &&

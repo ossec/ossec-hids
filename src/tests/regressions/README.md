@@ -29,6 +29,7 @@
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
 #   - jsonout_default                  jsonout_output on when the XML tag is omitted
 #   - issue_1814_control_chars         strip controls, keep UTF-8
+#   - issue_cleanevent_date_oob        umlaut/Suricata date-probe bounds
 #   - issue_1953_xml_recursion         OS_ReadXML recursion limit
 #   - issue_2100_authd_ssl             authd SSL context flags
 #   - getalert_empty_filename          GetAlertData empty syscheck path
