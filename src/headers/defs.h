@@ -97,6 +97,7 @@ http://www.ossec.net/main/license/\n"
 #ifndef WIN32
 #define DEFAULTAR       "/etc/shared/ar.conf"
 #define AR_BINDIR       "/active-response/bin"
+#define AR_LOG          "/logs/active-responses.log"
 #define AGENTCONFIGINT  "/etc/shared/agent.conf"
 #define AGENTCONFIG     DEFAULTDIR "/etc/shared/agent.conf"
 #else
@@ -239,6 +240,7 @@ http://www.ossec.net/main/license/\n"
 #ifndef WIN32
 #define DEFAULTARPATH           DEFAULTDIR DEFAULTAR
 #define AR_BINDIRPATH           DEFAULTDIR AR_BINDIR
+#define AR_LOGPATH              DEFAULTDIR AR_LOG
 #define AGENTLESSDIRPATH        DEFAULTDIR AGENTLESSDIR
 #define AGENTLESSPASSPATH       DEFAULTDIR AGENTLESSPASS
 #define AGENTLESS_ENTRYDIRPATH  DEFAULTDIR AGENTLESS_ENTRYDIR

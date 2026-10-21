@@ -17,7 +17,7 @@ thread_pool_test: thread_pool_test.c
 	$(CC) -pthread $(CFLAGS_COMMON) -DARGV0=\"thread_pool_test\" \
 		-DTHREAD_POOL_TEST_HOOK -o $@ thread_pool_test.c \
 		../thread_pool.c ../pthreads_op.c ../mem_op.c ../debug_op.c \
-		../string_op.c ../file_op.c
+		../log_append.c ../string_op.c ../file_op.c
 
 queue_op_test: queue_op_test.c $(TOP)/shared.a
 	$(CC) -pthread $(CFLAGS_COMMON) -DARGV0=\"queue_op_test\" -o $@ \
@@ -57,12 +57,14 @@ legacy_helpers:
 	$(CC) -g -I$(TOP)/headers -I$(TOP) -DARGV0=\"prime_test\" -o prime_test \
 		prime_test.c ../math_op.c
 	$(CC) -g -I$(TOP)/headers -I$(TOP) -DARGV0=\"hash_test\" -o hash_test \
-		hash_test.c ../hash_op.c ../math_op.c ../debug_op.c ../mem_op.c
+		hash_test.c ../hash_op.c ../math_op.c ../debug_op.c ../log_append.c \
+		../mem_op.c
 	$(CC) -g -I$(TOP)/headers -I$(TOP) -DARGV0=\"merge_test\" -o merge_test \
-		merge_test.c ../file_op.c ../debug_op.c ../string_op.c ../mem_op.c
+		merge_test.c ../file_op.c ../debug_op.c ../log_append.c \
+		../string_op.c ../mem_op.c
 	$(CC) -g -I$(TOP)/headers -I$(TOP) -DARGV0=\"ip_test\" -o ip_test \
-		ip_test.c ../validate_op.c ../debug_op.c ../regex_op.c ../mem_op.c \
-		../string_op.c
+		ip_test.c ../validate_op.c ../debug_op.c ../log_append.c \
+		../regex_op.c ../mem_op.c ../string_op.c
 
 maketest: $(AUTO_TEST_BINS)
 

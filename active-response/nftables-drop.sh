@@ -46,9 +46,8 @@ cd $LOCAL
 cd ../
 filename=$(basename "$0")
 
-LOG_FILE="${PWD}/../logs/active-responses.log"
-
-echo "`date` $0 $1 $2 $3 $4 $5" >> ${LOG_FILE}
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5"
 
 
 # Checking for an IP
@@ -60,7 +59,7 @@ fi
 case "${IP}" in
     *:* ) RULE="element ${FAMILYIPV6} ${TABLEIPV6} ${SETIPV6} { ${IP} }";;
     *.* ) RULE="element ${FAMILYIPV4} ${TABLEIPV4} ${SETIPV4} { ${IP} }";;
-    * ) echo "`date` Unable to run active response (invalid IP: '${IP}')." >> ${LOG_FILE} && exit 1;;
+    * ) echo "`date` Unable to run active response (invalid IP: '${IP}')." && exit 1;;
 esac
 
 # This number should be more than enough (even if a hundred
@@ -107,7 +106,7 @@ lock()
                 if [ "x${pid}" = "x${C_PID}" ]; then
                     # Unlocking and exiting
                     kill -9 ${C_PID}
-                    echo "`date` Killed process ${C_PID} holding lock." >> ${LOG_FILE}
+                    echo "`date` Killed process ${C_PID} holding lock."
                     kill="true"
                     unlock;
                     i=0;
@@ -117,7 +116,7 @@ lock()
             done
 
             if [ "x${kill}" = "xfalse" ]; then
-                echo "`date` Unable kill process ${C_PID} holding lock." >> ${LOG_FILE}
+                echo "`date` Unable kill process ${C_PID} holding lock."
                 # Unlocking and exiting
                 unlock;
                 exit 1;
@@ -169,7 +168,7 @@ if [ "X${UNAME}" = "XLinux" ]; then
             break;
         else
             COUNT=`expr $COUNT + 1`;
-            echo "`date` Unable to run (nft returning $RES): $COUNT - $0 $1 $2 $3 $4 $5" >> ${LOG_FILE}
+            echo "`date` Unable to run (nft returning $RES): $COUNT - $0 $1 $2 $3 $4 $5"
             sleep $COUNT;
 
             if [ $COUNT -gt 4 ]; then

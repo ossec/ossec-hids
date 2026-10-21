@@ -22,7 +22,8 @@ LOCAL=`dirname $0`;
 cd $LOCAL
 cd ../
 PWD=`pwd`
-echo "`date` $0 $1 $2 $3 $4 $5 $6 $7 $8" >> ${PWD}/../logs/active-responses.log
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5 $6 $7 $8"
 ALERTTITLE=`grep -A 1 "$ALERTID" ${PWD}/../logs/alerts/alerts.log | tail -1`
 ALERTTEXT=`grep -A 10 "$ALERTID" ${PWD}/../logs/alerts/alerts.log | grep -v "Src IP: " | grep -v "User: " | grep "Rule: " -A 4 | sed '/^$/Q' | cut -c -139 | sed 's/\"//g'`
 
@@ -41,13 +42,13 @@ ls "`which curl`" > /dev/null 2>&1
 if [ ! $? = 0 ]; then
     ls "`which wget`" > /dev/null 2>&1
     if [ $? = 0 ]; then
-        wget --keep-session-cookies --post-data="${PAYLOAD}" ${SITE} 2>>${PWD}/../logs/active-responses.log
+        wget --keep-session-cookies --post-data="${PAYLOAD}" ${SITE}
         exit 0;
     fi
 else
-    curl -s -X POST --data-urlencode "payload=${PAYLOAD}" ${SITE} 2>>${PWD}/../logs/active-responses.log
+    curl -s -X POST --data-urlencode "payload=${PAYLOAD}" ${SITE}
     exit 0;
 fi
 
-echo "`date` $0: Unable to find curl or wget." >> ${PWD}/../logs/active-responses.log
+echo "`date` $0: Unable to find curl or wget."
 exit 1;

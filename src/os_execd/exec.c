@@ -170,6 +170,26 @@ void ExecCmd(char *const *cmd)
     /* Fork and leave it running */
     pid = fork();
     if (pid == 0) {
+        int fd;
+
+        /* The scripts log through stdout/stderr: the log lives in a
+         * directory owned by the ossec user, so root opens it here,
+         * refusing links, instead of each script doing ">> logs/..."
+         */
+        fd = open_log_append(AR_LOGPATH);
+        if (fd < 0) {
+            merror(FOPEN_ERROR, ARGV0, AR_LOGPATH, errno, strerror(errno));
+            fd = open("/dev/null", O_WRONLY);
+        }
+        if (fd >= 0) {
+            if (dup2(fd, STDOUT_FILENO) < 0 || dup2(fd, STDERR_FILENO) < 0) {
+                merror(FOPEN_ERROR, ARGV0, AR_LOGPATH, errno, strerror(errno));
+            }
+            if (fd > STDERR_FILENO) {
+                close(fd);
+            }
+        }
+
         if (execv(*cmd, cmd) < 0) {
             merror(EXEC_CMDERROR, ARGV0, *cmd, strerror(errno));
             exit(1);

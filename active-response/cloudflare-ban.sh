@@ -28,8 +28,8 @@ TOKEN='Cloudflare API Token'
 USER='cloudflareuser@email.com'
 MODE='block' # block or challenge
 
-# Logging the call
-echo "`date` $0 $1 $2 $3 $4 $5" >> /var/ossec/logs/active-responses.log
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5"
 
 # IP Address must be provided
 if [ "x${IP}" = "x" ]; then

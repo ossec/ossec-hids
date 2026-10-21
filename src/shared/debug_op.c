@@ -28,6 +28,31 @@ void WinSetError();
 #endif
 #endif
 
+#ifndef WIN32
+/* The log lives in a directory owned by the ossec user while root daemons
+ * write there too: refuse links and special files left in place of it
+ */
+static FILE *open_logfile(const char *path)
+{
+    int fd;
+    FILE *fp;
+
+    fd = open_log_append(path);
+    if (fd < 0) {
+        return (NULL);
+    }
+
+    fp = fdopen(fd, "a");
+    if (!fp) {
+        close(fd);
+    }
+
+    return (fp);
+}
+#else
+#define open_logfile(path) fopen(path, "a")
+#endif
+
 
 static void _log(const char *msg, va_list args)
 {
@@ -43,7 +68,7 @@ static void _log(const char *msg, va_list args)
 
     /* If under chroot, log directly to /logs/ossec.log */
     if (chroot_flag == 1) {
-        fp = fopen(LOGFILE, "a");
+        fp = open_logfile(LOGFILE);
     } else {
         char _logfile[256];
 #ifndef WIN32
@@ -51,7 +76,7 @@ static void _log(const char *msg, va_list args)
 #else
         snprintf(_logfile, 256, "%s", LOGFILE);
 #endif
-        fp = fopen(_logfile, "a");
+        fp = open_logfile(_logfile);
     }
 
     /* Maybe log to syslog if the log file is not available */

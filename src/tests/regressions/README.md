@@ -38,6 +38,7 @@
 #   - checksum_short_message           CheckSum rejects sub-digest lengths
 #   - issue_empty_ciphertext           ReadSecMSG rejects empty/oversized body
 #   - issue_win_execd_cmd_injection    WinExecd AR args safe for cmd.exe
+#   - issue_logs_symlink_nofollow      open_log_append refuses log symlinks
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

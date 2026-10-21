@@ -19,8 +19,8 @@ LOCK_PID="${PWD}/host-deny-lock/pid"
 
 UNAME=`uname`
 
-# Logging the call
-echo "`date` $0 $1 $2 $3 $4 $5" >> ${PWD}/../logs/active-responses.log
+# Logging the call (ossec-execd sends our stdout/stderr to logs/active-responses.log)
+echo "`date` $0 $1 $2 $3 $4 $5"
 
 
 # IP Address must be provided
@@ -32,7 +32,7 @@ fi
 # Address characters only, so the value cannot become another route option.
 case "${IP}" in
     ""|-*|*[!0-9A-Fa-f.:]*)
-        echo "`date` Invalid ip entry." >> ${PWD}/../logs/active-responses.log
+        echo "`date` Invalid ip entry."
         exit 1
         ;;
 esac
