@@ -13,6 +13,8 @@
 #include <dirent.h>
 #include <windows.h>
 
+#include "../rootcheck.h"
+
 /* ads_dump
  * Dumps every NTFS ADS found in a directory (recursive)
  */
@@ -32,7 +34,8 @@ int os_get_streams(char *full_path)
     HANDLE file_h;
     WIN32_STREAM_ID sid;
     void *context = NULL;
-    char stream_name[MAX_PATH + 1];
+    /* UTF-16 ":name:$DATA", sized as WIN32_FIND_STREAM_DATA.cStreamName */
+    char stream_name[OS_ADS_STREAM_NAME_BYTES];
     char final_name[MAX_PATH + 1];
     DWORD dwRead, shs, dw1, dw2;
 
@@ -64,8 +67,13 @@ int os_get_streams(char *full_path)
             break;
         }
 
-        stream_name[0] = '\0';
-        stream_name[MAX_PATH] = '\0';
+        /* Leave room for a wide NUL: BackupRead does not terminate the
+         * name and %S needs one. Stop if the name would not fit. */
+        if (sid.dwStreamNameSize > sizeof(stream_name) - sizeof(WCHAR)) {
+            break;
+        }
+
+        ZeroMemory(stream_name, sizeof(stream_name));
         if (BackupRead(file_h, (LPBYTE)stream_name,
                        sid.dwStreamNameSize,
                        &dwRead, FALSE, FALSE, &context)) {

@@ -10,6 +10,8 @@
 #ifndef __ROOTCHECK_H
 #define __ROOTCHECK_H
 
+#include <stddef.h>
+
 #include "list_op.h"
 #include "config/rootcheck-config.h"
 extern rkconfig rootcheck;
@@ -69,6 +71,24 @@ int os_string(char *file, char *regex);
 
 /* Check for NTFS ADS (Windows only) */
 int os_check_ads(const char *full_path);
+
+/*
+ * Byte capacity of the BackupRead destination for an NTFS stream name
+ * (UTF-16 ":name:$DATA"). Must hold the longest name NTFS returns
+ * ((1+255+6)*2 = 524). WIN32 builds use MAX_PATH/WCHAR; the host-side
+ * value matches Windows MAX_PATH=260 and 2-byte WCHAR for regressions.
+ *
+ * ANT-2026-R4SS008F: was MAX_PATH+1 (261), which overflowed for names
+ * longer than 123 characters.
+ */
+#ifdef WIN32
+#define OS_ADS_STREAM_NAME_BYTES ((MAX_PATH + 36) * sizeof(WCHAR))
+#else
+#define OS_ADS_STREAM_NAME_BYTES ((260 + 36) * 2)
+#endif
+
+/* 1 if nbytes fits in the ADS name buffer, else 0. */
+int os_ads_stream_name_fits(size_t nbytes);
 
 /* Get list of processes */
 OSList *os_get_process_list(void);

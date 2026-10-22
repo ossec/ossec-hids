@@ -40,7 +40,8 @@ REGRESSION_BINS = \
 	issue_empty_ciphertext \
 	issue_win_execd_cmd_injection \
 	issue_logs_symlink_nofollow \
-	issue_ar_location_injection
+	issue_ar_location_injection \
+	issue_ads_stream_overflow
 
 .PHONY: all check clean
 
@@ -207,6 +208,10 @@ issue_ar_location_injection: tests/regressions/issue_ar_location_injection.c sha
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ar_location_injection.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
+
+issue_ads_stream_overflow: tests/regressions/issue_ads_stream_overflow.c rootcheck/win-common.c
+	$(CC) $(CFLAGS) -I./rootcheck -o $@ tests/regressions/issue_ads_stream_overflow.c \
+		rootcheck/win-common.c
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
