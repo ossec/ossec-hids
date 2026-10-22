@@ -39,7 +39,8 @@ REGRESSION_BINS = \
 	checksum_short_message \
 	issue_empty_ciphertext \
 	issue_win_execd_cmd_injection \
-	issue_logs_symlink_nofollow
+	issue_logs_symlink_nofollow \
+	issue_ar_location_injection
 
 .PHONY: all check clean
 
@@ -199,6 +200,11 @@ issue_win_execd_cmd_injection: tests/regressions/issue_win_execd_cmd_injection.c
 
 issue_logs_symlink_nofollow: tests/regressions/issue_logs_symlink_nofollow.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_logs_symlink_nofollow.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+issue_ar_location_injection: tests/regressions/issue_ar_location_injection.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ar_location_injection.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 

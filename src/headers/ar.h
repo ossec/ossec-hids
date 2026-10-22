@@ -59,5 +59,20 @@ const char *ar_pick_username(const char *dstuser, const char *srcuser);
  */
 int ar_safe_argument(const char *value);
 
+/**
+ * Build the remoted active-response header that precedes the command.
+ * Layout: "<source> <FFF> " where FFF are ALL/REMOTE/SPECIFIC flags.
+ *
+ * For agent events (location starts with '('), only the manager-written
+ * "(name) ip" prefix up to "->" is used as <source>. Text after "->" is
+ * agent- or log-controlled and must not precede the flags (ANT-2026-PMMTS4QR).
+ * For manager-local events, <source> is the constant "[]".
+ *
+ * Returns 0 on success, -1 if an agent location has no "->" separator.
+ * On success, *out_hdr is a newly allocated string the caller must free.
+ */
+int OS_AR_FormatRemoteHdr(const char *location, char f_all, char f_remote,
+                          char f_specific, char **out_hdr);
+
 #endif /* __AR_H */
 

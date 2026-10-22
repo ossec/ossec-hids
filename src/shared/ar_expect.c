@@ -8,10 +8,15 @@
  */
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "ar.h"
+
+/* Match OS_SIZE_1024 without pulling shared.h (ar_expect_test links this file alone). */
+#define AR_REMOTE_HDR_BUFSZ 1025
+
 
 /* Case-insensitive compare without relying on strcasecmp (Windows). */
 static int ar_token_eq(const char *a, const char *b)
@@ -118,4 +123,48 @@ int ar_parse_expect(const char *expect_str)
 
     free(copy);
     return expect;
+}
+
+int OS_AR_FormatRemoteHdr(const char *location, char f_all, char f_remote,
+                          char f_specific, char **out_hdr)
+{
+    char buf[AR_REMOTE_HDR_BUFSZ];
+    char *hdr;
+    int n;
+
+    if (!location || !out_hdr) {
+        return -1;
+    }
+    *out_hdr = NULL;
+
+    /* remoted splits on spaces and reads the targets immediately after the
+     * source field. Only the manager-written "(name) ip" (cut at "->") may
+     * go there; text after "->" is agent- or log-controlled and may contain
+     * spaces (ANT-2026-PMMTS4QR). Manager-local events use a constant []. */
+    if (location[0] == '(') {
+        const char *source_end = strstr(location, "->");
+
+        if (!source_end) {
+            return -1;
+        }
+
+        n = snprintf(buf, sizeof(buf), "%.*s %c%c%c",
+                     (int)(source_end - location), location,
+                     f_all, f_remote, f_specific);
+    } else {
+        n = snprintf(buf, sizeof(buf), "(local_source) [] %c%c%c",
+                     f_all, f_remote, f_specific);
+    }
+
+    if (n < 0 || (size_t)n >= sizeof(buf)) {
+        return -1;
+    }
+
+    hdr = malloc((size_t)n + 1);
+    if (!hdr) {
+        return -1;
+    }
+    memcpy(hdr, buf, (size_t)n + 1);
+    *out_hdr = hdr;
+    return 0;
 }
