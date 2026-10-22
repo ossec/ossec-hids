@@ -27,7 +27,8 @@ int os_check_ads(const char *full_path)
     HANDLE file_h;
     WIN32_STREAM_ID sid;
     void *context = NULL;
-    char stream_name[MAX_PATH + 1];
+    /* UTF-16 ":name:$DATA", sized as WIN32_FIND_STREAM_DATA.cStreamName */
+    char stream_name[OS_ADS_STREAM_NAME_BYTES];
     char final_name[MAX_PATH + 1];
     DWORD dwRead, shs, dw1, dw2;
 
@@ -59,8 +60,13 @@ int os_check_ads(const char *full_path)
             break;
         }
 
+        /* Name size (bytes) comes from the file. BackupSeek cannot skip a
+         * name, so stop if it does not fit (ANT-2026-R4SS008F). */
+        if (!os_ads_stream_name_fits(sid.dwStreamNameSize)) {
+            break;
+        }
+
         stream_name[0] = '\0';
-        stream_name[MAX_PATH] = '\0';
         if (BackupRead(file_h, (LPBYTE)stream_name,
                        sid.dwStreamNameSize,
                        &dwRead, FALSE, FALSE, &context)) {
@@ -361,4 +367,10 @@ int is_registry(__attribute__((unused)) char *entry_name,
 }
 
 #endif /* !WIN32 */
+
+int os_ads_stream_name_fits(size_t nbytes)
+{
+    return (nbytes <= (size_t)OS_ADS_STREAM_NAME_BYTES);
+}
+
 
