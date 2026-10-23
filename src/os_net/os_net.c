@@ -291,7 +291,9 @@ int OS_BindUnixDomain(const char *path, mode_t mode, int max_msg_size)
 {
     struct sockaddr_un n_us;
     int len;
+    int rc;
     int ossock = 0;
+    mode_t old_umask;
     socklen_t optlen = sizeof(len);
 
     /* Make sure the path isn't there */
@@ -309,13 +311,19 @@ int OS_BindUnixDomain(const char *path, mode_t mode, int max_msg_size)
         return (OS_SOCKTERR);
     }
 
-    if (bind(ossock, (struct sockaddr *)&n_us, SUN_LEN(&n_us)) < 0) {
-        OS_CloseSocket(ossock);
-        return (OS_SOCKTERR);
-    }
+    /* Create the socket node with its final mode (ANT-2026-1EAZN37N).
+     * chmod(path) after bind() follows symlinks; queue dirs are
+     * group-writable and execd binds as root, so a raced link could
+     * widen a root-owned file. fchmodat(..., AT_SYMLINK_NOFOLLOW) is
+     * ENOTSUP on glibc < 2.32, and fchmod(sockfd) does not change the
+     * filesystem node on Linux. Same umask save/set/restore as
+     * monitord/manage_files.c; the window is one bind() syscall.
+     */
+    old_umask = umask(~mode & 0777);
+    rc = bind(ossock, (struct sockaddr *)&n_us, SUN_LEN(&n_us));
+    umask(old_umask);
 
-    /* Change permissions */
-    if (chmod(path, mode) < 0) {
+    if (rc < 0) {
         OS_CloseSocket(ossock);
         return (OS_SOCKTERR);
     }
