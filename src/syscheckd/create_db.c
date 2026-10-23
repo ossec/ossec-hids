@@ -691,6 +691,7 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     size_t dir_size;
     char f_name[PATH_MAX + 2];
     short is_nfs;
+    int warned_long = 0;
 
     DIR *dp;
     struct dirent *entry;
@@ -791,25 +792,27 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 
     errno = 0;
     while ((entry = readdir(dp)) != NULL) {
-        char *s_name;
-
         /* Ignore . and ..  */
         if ((strcmp(entry->d_name, ".") == 0) ||
                 (strcmp(entry->d_name, "..") == 0)) {
             continue;
         }
 
-        strncpy(f_name, dir_name, PATH_MAX);
-        s_name =  f_name;
-        s_name += dir_size;
-
-        /* Check if the file name is already null terminated */
-        if (*(s_name - 1) != '/') {
-            *s_name++ = '/';
+        /* Skip entries that do not fit; avoids unsigned wrap in the old
+         * PATH_MAX - dir_size - 2 strncpy size (ANT-2026-1UF4D24F). */
+        if (OS_SyscheckJoinEntryPath(f_name, sizeof(f_name), dir_name, dir_size,
+                                     entry->d_name) != 0) {
+            if (!warned_long) {
+                merror("%s: WARN: Path too long, skipping entries under '%s'",
+                       ARGV0, dir_name);
+                warned_long = 1;
+            }
+            if (read_dir_track_complete) {
+                read_dir_incomplete = 1;
+            }
+            errno = 0;
+            continue;
         }
-
-        *s_name = '\0';
-        strncpy(s_name, entry->d_name, PATH_MAX - dir_size - 2);
 
         /* Check if the file is a directory */
         if(opts & CHECK_NORECURSE) {
