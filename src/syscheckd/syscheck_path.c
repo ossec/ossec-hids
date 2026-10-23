@@ -1,4 +1,13 @@
-/* Path join helpers for syscheck directory walks (ANT-2026-1UF4D24F). */
+/* Copyright (C) 2026 Atomicorp, Inc.
+ * All rights reserved.
+ *
+ * This program is a free software; you can redistribute it
+ * and/or modify it under the terms of the GNU General Public
+ * License (version 2) as published by the FSF - Free Software
+ * Foundation.
+ *
+ * Path join helpers for syscheck directory walks (ANT-2026-1UF4D24F).
+ */
 
 #include "shared.h"
 #include "syscheck.h"
