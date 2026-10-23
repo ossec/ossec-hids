@@ -45,6 +45,7 @@
 #   - issue_syscheck_prefix_sum_size   sk_db_entry must not embed OS_MAXSTR
 #   - issue_bind_unix_chmod_race       BindUnixDomain must not chmod path (symlink race)
 #   - issue_read_dir_path_overflow     read_dir path join must not wrap near PATH_MAX
+#   - issue_ossecalert_field_injection ossecalert forward must sanitize ';' in fields
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

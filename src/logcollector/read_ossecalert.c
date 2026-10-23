@@ -10,6 +10,7 @@
 #include "shared.h"
 #include "headers/read-alert.h"
 #include "logcollector.h"
+#include "ossecalert_field.h"
 
 
 void *read_ossecalert(int pos, __attribute__((unused)) int *rc, int drop_it)
@@ -28,24 +29,33 @@ void *read_ossecalert(int pos, __attribute__((unused)) int *rc, int drop_it)
 
     memset(syslog_msg, '\0', OS_SIZE_2048 + 1);
 
-    /* Add source ip */
+    /* Keep ';' out of values: the central OSSECAlert decoder ends each
+     * field at the next ';' with no escape (ANT-2026-8TB11KJO). */
+    OS_OaCleanField(al_data->comment);
+    OS_OaCleanField(al_data->location);
+    OS_OaCleanField(al_data->srcip);
+    OS_OaCleanField(al_data->user);
+
+    /* Add source ip (cut so the closing ';' always fits) */
     if (!al_data->srcip ||
             ((al_data->srcip[0] == '(') &&
              (al_data->srcip[1] == 'n') &&
              (al_data->srcip[2] == 'o'))) {
         srcip_msg[0] = '\0';
-    } else {
-        snprintf(srcip_msg, 255, " srcip: %s;", al_data->srcip);
+    } else if (OS_OaFormatTaggedField(srcip_msg, sizeof(srcip_msg),
+                                      "srcip", al_data->srcip) != 0) {
+        srcip_msg[0] = '\0';
     }
 
-    /* Add username */
+    /* Add username (cut so the closing ';' always fits) */
     if (!al_data->user ||
             ((al_data->user[0] == '(') &&
              (al_data->user[1] == 'n') &&
              (al_data->user[2] == 'o'))) {
         user_msg[0] = '\0';
-    } else {
-        snprintf(user_msg, 255, " user: %s;", al_data->user);
+    } else if (OS_OaFormatTaggedField(user_msg, sizeof(user_msg),
+                                      "user", al_data->user) != 0) {
+        user_msg[0] = '\0';
     }
 
     if (al_data->log[1] == NULL) {
