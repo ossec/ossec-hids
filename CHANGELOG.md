@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Bound syscheck ``read_dir()`` path joins so a near-``PATH_MAX`` directory cannot wrap the entry ``strncpy`` size and crash ``ossec-syscheckd`` (ANT-2026-1UF4D24F); skip too-long entries and compose with ``snprintf``
 - @atomicturtle - Create Unix-domain queue sockets with their final mode via umask around ``bind()`` instead of a path ``chmod()`` afterwards, so a raced symlink in a group-writable queue dir cannot make root-owned files group-writable (ANT-2026-1EAZN37N)
 - @atomicturtle - Store analysisd syscheck index checksum prefixes on the heap instead of embedding ``OS_MAXSTR`` per file so one agent cannot pin ~6 KB of manager RAM per new path (ANT-2026-VUTSB5RB / #2373)
 - @atomicturtle - Fix Windows ``w_ref_parent_folder`` so a mixed ``\..`` / ``/..name`` path cannot bypass the active-response path check (ANT-2026-1IXHWDKW / CVE-2018-19666); reject path separators and ``..`` in merged.mg entry names on merge and unmerge

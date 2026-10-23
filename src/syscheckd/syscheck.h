@@ -36,6 +36,15 @@ int create_db(void);
 /* Check database for changes */
 int run_dbcheck(void);
 
+/* 1 if dir + optional '/' + name + NUL fits in PATH_MAX (ANT-2026-1UF4D24F).
+ * needs_sep: 1 when Join will insert a separator. */
+int OS_SyscheckEntryFits(size_t dir_size, size_t name_len, int needs_sep);
+
+/* Build dir/name into f_name. Returns 0 on success, -1 if too long. */
+int OS_SyscheckJoinEntryPath(char *f_name, size_t f_name_sz,
+                             const char *dir_name, size_t dir_size,
+                             const char *entry_name);
+
 /* Scan directory */
 int read_dir(const char *dir_name, int opts, OSMatch *restriction);
 

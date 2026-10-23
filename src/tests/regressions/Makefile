@@ -44,7 +44,8 @@ REGRESSION_BINS = \
 	issue_ads_stream_overflow \
 	issue_win_parent_folder \
 	issue_syscheck_prefix_sum_size \
-	issue_bind_unix_chmod_race
+	issue_bind_unix_chmod_race \
+	issue_read_dir_path_overflow
 
 .PHONY: all check clean
 
@@ -230,6 +231,11 @@ issue_bind_unix_chmod_race: tests/regressions/issue_bind_unix_chmod_race.c os_ne
 		-Wl,--wrap=bind \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
+
+issue_read_dir_path_overflow: tests/regressions/issue_read_dir_path_overflow.c \
+		syscheckd/syscheck_path.c
+	$(CC) $(CFLAGS) -I./syscheckd -o $@ tests/regressions/issue_read_dir_path_overflow.c \
+		syscheckd/syscheck_path.c
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
