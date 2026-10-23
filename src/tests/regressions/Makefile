@@ -46,7 +46,8 @@ REGRESSION_BINS = \
 	issue_syscheck_prefix_sum_size \
 	issue_bind_unix_chmod_race \
 	issue_read_dir_path_overflow \
-	issue_ossecalert_field_injection
+	issue_ossecalert_field_injection \
+	issue_prefilter_remote_cmd
 
 .PHONY: all check clean
 
@@ -242,6 +243,11 @@ issue_ossecalert_field_injection: tests/regressions/issue_ossecalert_field_injec
 		logcollector/ossecalert_field.c
 	$(CC) $(CFLAGS) -I./logcollector -o $@ tests/regressions/issue_ossecalert_field_injection.c \
 		logcollector/ossecalert_field.c
+
+issue_prefilter_remote_cmd: tests/regressions/issue_prefilter_remote_cmd.c \
+		config/syscheck_remote_cmd.c
+	$(CC) $(CFLAGS) -I./config -o $@ tests/regressions/issue_prefilter_remote_cmd.c \
+		config/syscheck_remote_cmd.c
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
