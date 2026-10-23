@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Fix Windows ``w_ref_parent_folder`` so a mixed ``\..`` / ``/..name`` path cannot bypass the active-response path check (ANT-2026-1IXHWDKW / CVE-2018-19666); reject path separators and ``..`` in merged.mg entry names on merge and unmerge
 - @atomicturtle - Guard empty syscheck filename stripping in ``GetAlertData`` so a crafted ``Integrity checksum changed for: '`` line cannot underflow the heap (CVE-2026-26204)
 - @atomicturtle - Disable TLS renegotiation in the shared authd/agent-auth ``get_ssl_context`` (``SSL_OP_NO_RENEGOTIATION``, with an info-callback fallback on older OpenSSL/LibreSSL) (#2100)
 

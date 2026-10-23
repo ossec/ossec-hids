@@ -76,6 +76,13 @@ char **expand_win32_wildcards(const char *path);
 
 int w_ref_parent_folder(const char *path);
 
+/**
+ * Same as w_ref_parent_folder(), but when win_seps is non-zero treat both
+ * '/' and '\\' as separators (Windows path rules). Used by host-side
+ * regressions of the WIN32 branch (ANT-2026-1IXHWDKW).
+ */
+int w_ref_parent_folder_ex(const char *path, int win_seps);
+
 /* 1 when path is a UNC path (\\server, \\?\UNC\, \\.\pipe, or //server)
  * or, on Windows, a drive letter that is currently a mapped network drive.
  * \\?\C:\ is a local extended path and is allowed.
