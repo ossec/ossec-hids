@@ -42,7 +42,8 @@ REGRESSION_BINS = \
 	issue_logs_symlink_nofollow \
 	issue_ar_location_injection \
 	issue_ads_stream_overflow \
-	issue_win_parent_folder
+	issue_win_parent_folder \
+	issue_syscheck_prefix_sum_size
 
 .PHONY: all check clean
 
@@ -218,6 +219,10 @@ issue_win_parent_folder: tests/regressions/issue_win_parent_folder.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_win_parent_folder.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
+
+issue_syscheck_prefix_sum_size: tests/regressions/issue_syscheck_prefix_sum_size.c \
+		analysisd/decoders/syscheck_db_entry.h headers/defs.h
+	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_syscheck_prefix_sum_size.c
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes

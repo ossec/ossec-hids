@@ -16,15 +16,11 @@
 #include "decoder.h"
 #include "fim_sum_op.h"
 #include "read-agents.h"
+#include "syscheck_db_entry.h"
 
 #ifdef SQLITE_ENABLED
 #include <sqlite3.h>
 #endif
-
-typedef struct _sk_db_entry {
-    fpos_t pos;
-    char prefix_sum[OS_MAXSTR + 1];
-} sk_db_entry;
 
 typedef struct __sdb {
     char buf[OS_MAXSTR + 1];
@@ -233,6 +229,15 @@ static int DB_IsMaintenance(int agent_id, const char *location)
     return on;
 }
 
+/* Keep a copy of the "+++sum" db line prefix in its index entry. One entry is
+ * kept per file name an agent reports, so only use the memory the sum needs. */
+static void DB_SetEntrySum(sk_db_entry *ent, const char *prefix_sum)
+{
+    free(ent->prefix_sum);
+    ent->prefix_sum = NULL;
+    os_strdup(prefix_sum, ent->prefix_sum);
+}
+
 /* Quietly comment the old DB line and append the new checksum (new baseline). */
 static int DB_QuietUpdate(const char *f_name, const char *c_sum, Eventinfo *lf,
                           FILE *fp, sk_db_entry *db_entry, int log_maint)
@@ -269,9 +274,7 @@ static int DB_QuietUpdate(const char *f_name, const char *c_sum, Eventinfo *lf,
     }
     if (db_entry) {
         db_entry->pos = new_pos;
-        strncpy(db_entry->prefix_sum, new_prefix,
-                sizeof(db_entry->prefix_sum) - 1);
-        db_entry->prefix_sum[sizeof(db_entry->prefix_sum) - 1] = '\0';
+        DB_SetEntrySum(db_entry, new_prefix);
     }
     if (log_maint && lf->location) {
         syscheck_maint_log_accept(lf->location, "modify", f_name);
@@ -517,8 +520,7 @@ static void DB_BuildIndex(int agent_id, FILE *fp)
         }
 
         ent->pos = line_pos;
-        strncpy(ent->prefix_sum, line_copy, OS_MAXSTR);
-        ent->prefix_sum[OS_MAXSTR] = '\0';
+        DB_SetEntrySum(ent, line_copy);
     }
 
     fseek(fp, 0, SEEK_SET);
@@ -664,8 +666,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         }
         if (db_entry) {
             db_entry->pos = new_pos;
-            memcpy(db_entry->prefix_sum, new_prefix, sizeof(db_entry->prefix_sum));
-            db_entry->prefix_sum[OS_MAXSTR] = '\0';
+            DB_SetEntrySum(db_entry, new_prefix);
         }
     }
 
@@ -1055,7 +1056,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             db_entry = (sk_db_entry *)OSHash_Get(sk_agent_index[agent_id], f_name);
         }
 
-        if (db_entry) {
+        if (db_entry && db_entry->prefix_sum) {
             strncpy(sdb.buf, db_entry->prefix_sum, OS_MAXSTR);
             sdb.buf[OS_MAXSTR] = '\0';
             sdb.init_pos = db_entry->pos;
@@ -1083,13 +1084,15 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                             DB_IsCompleted(agent_id));
         const char *row_fmt = mark_changed ? "!+++%s !%ld %s\n" : "+++%s !%ld %s\n";
         const char *pfx_fmt = mark_changed ? "!+++%s" : "+++%s";
+        char new_prefix[OS_MAXSTR + 1];
 
         fseek(fp, 0, SEEK_END);
         if (sk_agent_index[agent_id]) {
             sk_db_entry *db_entry = DB_GetOrCreateIndexEntry(agent_id, f_name);
 
             if (db_entry && fgetpos(fp, &db_entry->pos) == 0) {
-                snprintf(db_entry->prefix_sum, OS_MAXSTR, pfx_fmt, c_sum);
+                snprintf(new_prefix, sizeof(new_prefix), pfx_fmt, c_sum);
+                DB_SetEntrySum(db_entry, new_prefix);
             }
         }
 
