@@ -8,7 +8,7 @@ TOP = ../..
 CFLAGS_COMMON = -g -Wall -I$(TOP)/headers -I$(TOP) -I$(TOP)/analysisd
 
 # Headless tests run by `check`. Interactive helpers stay under `legacy_helpers`.
-AUTO_TEST_BINS = thread_pool_test queue_op_test string_test fim_sum_test ar_expect_test fim_maint_test win_acl_test report_changes_ctrl_test
+AUTO_TEST_BINS = thread_pool_test queue_op_test string_test fim_sum_test ar_expect_test fim_maint_test win_acl_test report_changes_ctrl_test nproc_test
 LEGACY_HELPER_BINS = prime_test hash_test merge_test ip_test
 
 .PHONY: maketest check clean legacy_helpers
@@ -51,6 +51,12 @@ report_changes_ctrl_test: report_changes_ctrl_test.c $(TOP)/shared.a
 		report_changes_ctrl_test.c \
 		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
+
+# #2373: cgroup-aware os_get_nproc (fixture + optional `expect N` for e2e/podman).
+# Link only nproc_op.c so the binary is easy to bind-mount into containers.
+nproc_test: nproc_test.c ../nproc_op.c ../../headers/nproc_op.h
+	$(CC) $(CFLAGS_COMMON) -DARGV0=\"nproc_test\" -o $@ \
+		nproc_test.c ../nproc_op.c
 
 # Interactive / argv-driven helpers (not part of automated check).
 legacy_helpers:
