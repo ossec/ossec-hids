@@ -565,11 +565,15 @@ int UnmergeFiles(const char *finalpath, const char *optdir)
             final_name[2048] = '\0';
         }
 
-        /* Reject directory traversal in merged entry names so a crafted
-         * merged.mg cannot write outside optdir. Still consume the payload
-         * below so later entries stay aligned. */
-        if (w_ref_parent_folder(files) || w_ref_parent_folder(final_name)) {
-            merror("%s: ERROR: Unmerging '%s': refusing '%s' (path contains '..').",
+        /* Reject directory traversal and path separators in merged entry
+         * names so a crafted merged.mg cannot write outside optdir or place
+         * files such as "..evil.cmd" for an ar.conf path bypass
+         * (ANT-2026-1IXHWDKW). Still consume the payload below so later
+         * entries stay aligned. */
+        if (strchr(files, '/') != NULL || strchr(files, '\\') != NULL ||
+                strstr(files, "..") != NULL ||
+                w_ref_parent_folder(files) || w_ref_parent_folder(final_name)) {
+            merror("%s: ERROR: Unmerging '%s': refusing '%s' (unsafe merged name).",
                    __local_name, finalpath, files);
             ret = 0;
             fp = NULL;
@@ -620,6 +624,51 @@ int UnmergeFiles(const char *finalpath, const char *optdir)
     return (ret);
 }
 
+/* Basename of a merge source path. On Windows treat '/' and '\\' as
+ * separators; on POSIX only '/' (backslash may be a filename byte). */
+static const char *merge_entry_basename(const char *files)
+{
+    const char *slash = strrchr(files, '/');
+
+#ifdef WIN32
+    {
+        const char *bslash = strrchr(files, '\\');
+        const char *tmpfile;
+
+        if (slash && bslash) {
+            tmpfile = (slash > bslash) ? slash : bslash;
+        } else if (slash) {
+            tmpfile = slash;
+        } else if (bslash) {
+            tmpfile = bslash;
+        } else {
+            return files;
+        }
+        return tmpfile + 1;
+    }
+#else
+    if (slash) {
+        return slash + 1;
+    }
+    return files;
+#endif
+}
+
+/* Entry names UnmergeFiles will refuse: empty, path seps, or ".." anywhere. */
+static int merge_entry_name_ok(const char *name)
+{
+    if (!name || name[0] == '\0') {
+        return 0;
+    }
+    if (strchr(name, '/') != NULL || strchr(name, '\\') != NULL) {
+        return 0;
+    }
+    if (strstr(name, "..") != NULL) {
+        return 0;
+    }
+    return 1;
+}
+
 int MergeAppendFile(const char *finalpath, const char *files)
 {
     size_t n = 0;
@@ -659,11 +708,13 @@ int MergeAppendFile(const char *finalpath, const char *files)
     fseek(fp, 0, SEEK_END);
     files_size = ftell(fp);
 
-    tmpfile = strrchr(files, '/');
-    if (tmpfile) {
-        tmpfile++;
-    } else {
-        tmpfile = files;
+    tmpfile = merge_entry_basename(files);
+    if (!merge_entry_name_ok(tmpfile)) {
+        merror("%s: ERROR: Unable to merge file '%s': unsafe entry name '%s'.",
+               __local_name, files, tmpfile);
+        fclose(fp);
+        fclose(finalfp);
+        return (0);
     }
     fprintf(finalfp, "!%ld %s\n", files_size, tmpfile);
 
@@ -686,7 +737,7 @@ int MergeFiles(const char *finalpath, char **files)
     size_t n = 0;
     long files_size = 0;
 
-    char *tmpfile;
+    const char *tmpfile;
     char buf[2048 + 1];
     FILE *fp;
     FILE *finalfp;
@@ -710,12 +761,15 @@ int MergeFiles(const char *finalpath, char **files)
         fseek(fp, 0, SEEK_END);
         files_size = ftell(fp);
 
-        /* Remove last entry */
-        tmpfile = strrchr(files[i], '/');
-        if (tmpfile) {
-            tmpfile++;
-        } else {
-            tmpfile = files[i];
+        /* Basename only; reject names UnmergeFiles would refuse. */
+        tmpfile = merge_entry_basename(files[i]);
+        if (!merge_entry_name_ok(tmpfile)) {
+            merror("%s: ERROR: Unable to merge file '%s': unsafe entry name '%s'.",
+                   __local_name, files[i], tmpfile);
+            fclose(fp);
+            i++;
+            ret = 0;
+            continue;
         }
 
         fprintf(finalfp, "!%ld %s\n", files_size, tmpfile);
@@ -1765,9 +1819,14 @@ void os_normalize_path(char *path)
 }
 #endif /* WIN32 */
 
-int w_ref_parent_folder(const char * path) {
-    const char * str;
-    char * ptr;
+int w_ref_parent_folder_ex(const char *path, int win_seps)
+{
+    const char *str;
+    const char *ptr;
+
+    if (!path) {
+        return 0;
+    }
 
     switch (path[0]) {
     case '\0':
@@ -1784,26 +1843,45 @@ int w_ref_parent_folder(const char * path) {
                 return 1;
 
             case '/':
-#ifdef WIN32
+                return 1;
+
             case '\\':
-#endif
+                if (win_seps) {
+                    return 1;
+                }
+                break;
+            }
+        }
+    }
+
+    if (win_seps) {
+        /* Walk every separator in order: searching "/.." before "\.." lets a
+         * trailing "/..name" hide any "\..\" that precedes it
+         * (ANT-2026-1IXHWDKW / CVE-2018-19666 bypass). */
+        for (str = path; (ptr = strpbrk(str, "/\\")) != NULL; str = ptr + 1) {
+            if (ptr[1] == '.' && ptr[2] == '.' &&
+                    (ptr[3] == '\0' || ptr[3] == '/' || ptr[3] == '\\')) {
+                return 1;
+            }
+        }
+    } else {
+        for (str = path; (ptr = strstr(str, "/..")) != NULL; str = ptr + 3) {
+            if (ptr[3] == '\0' || ptr[3] == '/') {
                 return 1;
             }
         }
     }
 
-#ifdef WIN32
-    for (str = path; ptr = strstr(str, "/.."), ptr || (ptr = strstr(str, "\\.."), ptr); str = ptr + 3) {
-        if (ptr[3] == '\0' || ptr[3] == '/' || ptr[3] == '\\') {
-#else
-    for (str = path; ptr = strstr(str, "/.."), ptr; str = ptr + 3) {
-        if (ptr[3] == '\0' || ptr[3] == '/') {
-#endif
-            return 1;
-        }
-    }
-
     return 0;
+}
+
+int w_ref_parent_folder(const char *path)
+{
+#ifdef WIN32
+    return w_ref_parent_folder_ex(path, 1);
+#else
+    return w_ref_parent_folder_ex(path, 0);
+#endif
 }
 
 bool is_control_character(char c) {
