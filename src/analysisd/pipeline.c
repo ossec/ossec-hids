@@ -184,18 +184,20 @@ static void analysisd_abs_timeout_ms(struct timespec *ts, int ms)
     }
 }
 
-/* Resolve thread count: 0 means auto = min(online CPUs, 32). */
+/* Resolve thread count: 0 means auto = min(effective CPUs, 32).
+ * Effective CPUs honor cgroup quotas / affinity (os_get_nproc), not raw
+ * host online count — important for Docker/Kubernetes (#2373). */
 static int analysisd_resolve_threads(const char *opt_name)
 {
     int n;
-    long cpus;
+    int cpus;
 
     n = getDefine_Int("analysisd", opt_name, 0, 32);
     if (n > 0) {
         return n;
     }
 
-    cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    cpus = os_get_nproc();
     if (cpus < 1) {
         cpus = 1;
     }
@@ -203,9 +205,9 @@ static int analysisd_resolve_threads(const char *opt_name)
         cpus = 32;
     }
 
-    verbose("%s: INFO: analysisd.%s=0; using %ld threads (CPU count).",
+    verbose("%s: INFO: analysisd.%s=0; using %d threads (CPU count).",
             ARGV0, opt_name, cpus);
-    return (int)cpus;
+    return cpus;
 }
 
 static int analysisd_resolve_queue_size(const char *opt_name)

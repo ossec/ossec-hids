@@ -194,6 +194,7 @@ extern const char *__local_name;
 #include "fs_op.h"
 #include "mem_op.h"
 #include "math_op.h"
+#include "nproc_op.h"
 #include "mq_op.h"
 #include "privsep_op.h"
 #include "pthreads_op.h"

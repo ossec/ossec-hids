@@ -384,6 +384,9 @@ int main_analysisd(int argc, char **argv)
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
     }
 
+    /* Snapshot effective CPUs before jail hides /proc and /sys (#2373). */
+    os_nproc_cache();
+
     /* Chroot */
     if (Privsep_Chroot(dir) < 0) {
         ErrorExit(CHROOT_ERROR, ARGV0, dir, errno, strerror(errno));

@@ -33,6 +33,7 @@ Unrelease 4.5.0 changes
 
 **Bug Fixes**
 
+- @atomicturtle - Size analysisd auto thread pools from cgroup CPU quota and scheduler affinity (``os_get_nproc``), not host ``sysconf(_SC_NPROCESSORS_ONLN)``, so Docker/Kubernetes CPU limits do not inflate memory (#2373)
 - @atomicturtle - Refuse merged-file entry names that contain ``..`` in ``UnmergeFiles`` so a crafted ``merged.mg`` cannot write outside the agent shared directory
 - @atomicturtle - Parent SSH CRC-32 rule 5714 on the sshd group and count one prior 5713, so the compensation line alerts instead of falling through to rule 1002
 - @atomicturtle - Give each Unix-socket bind, connect, and recv its own address so remoted's active-response bind cannot collide with the analysisd queue and exit with ``Address already in use``
