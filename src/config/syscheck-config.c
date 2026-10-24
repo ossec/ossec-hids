@@ -10,6 +10,7 @@
 #include "shared.h"
 #include "syscheck-config.h"
 #include "config.h"
+#include "syscheck_remote_cmd.h"
 
 
 int dump_syscheck_entry(syscheck_config *syscheck, const char *entry, int vals, int reg, const char *restrictfile)
@@ -901,6 +902,18 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
         } else if (strcmp(node[i]->element, xml_prefilter_cmd) == 0) {
             char cmd[OS_MAXSTR];
             struct stat statbuf;
+
+            /* Same gate as <localfile><command>: refuse manager-pushed
+             * commands unless logcollector.remote_commands is set
+             * (ANT-2026-D7ZVXNZP). */
+            if (!OS_SyscheckRemotePrefilterAllowed(syscheck->agent_cfg,
+                                                   syscheck->accept_remote)) {
+                merror("%s: Remote commands are not accepted from the manager. "
+                       "Ignoring '%s' on the agent.conf", __local_name,
+                       node[i]->element);
+                i++;
+                continue;
+            }
 
 #ifdef WIN32
             ExpandEnvironmentStrings(node[i]->content, cmd, sizeof(cmd) - 1);
