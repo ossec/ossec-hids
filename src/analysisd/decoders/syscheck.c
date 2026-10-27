@@ -78,11 +78,12 @@ char *extract_token(const char *s, char *delim, int position) {
     int count = 0;
     char tmp[OS_MAXSTR + 1];
     char *token;
+    char *saveptr = NULL;
     strncpy(tmp,s, OS_MAXSTR);
-    token = strtok(tmp, delim);
+    token = strtok_r(tmp, delim, &saveptr);
     while (token != NULL) {
         count++;
-        token = strtok(NULL, delim);
+        token = strtok_r(NULL, delim, &saveptr);
         if (count == position) {
             return(token);
         }
@@ -1120,10 +1121,11 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
         char *newfilemd5 = NULL;
         char *newfilesha1 = NULL;
         char *newfilesha256 = NULL;
+        char *saveptr = NULL;
 
         os_strdup(c_sum, newfilec_sum);
 
-        char *token = strtok(newfilec_sum, ":");
+        char *token = strtok_r(newfilec_sum, ":", &saveptr);
 
         int tok_count = 1;
 
@@ -1142,7 +1144,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
                 newfilesha256 = token;
             }
 
-            token = strtok(NULL, ":");
+            token = strtok_r(NULL, ":", &saveptr);
             tok_count++;
         }
 
