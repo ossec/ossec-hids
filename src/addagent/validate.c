@@ -70,28 +70,22 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
     os_md5 md2;
     char str1[STR_SIZE + 1];
     char str2[STR_SIZE + 1];
-    char *muname;
     char *finals;
     char nid[9] = { '\0' };
+    unsigned char random_data[64];
+    char rand_hex[129];
+    int i;
 
-    srandom_init();
-    muname = getuname();
-
-    snprintf(str1, STR_SIZE, "%d%s%d%s", (int)time(0), name, (int)random(), muname);
-    snprintf(str2, STR_SIZE, "%s%s%ld", ip, id, (long int)random());
-    OS_MD5_Str(str1, md1);
-    OS_MD5_Str(str2, md2);
-
-    free(muname);
-
+    /* Resolve id before deriving the key so the first MD5 half can include
+     * it the same way manage_agents / k_bulkload do.
+     */
     if (id == NULL) {
         int *arrayID;
-        int i;
-        arrayID=(int *)MapIDToBitArray();
+        arrayID = (int *)MapIDToBitArray();
         if (arrayID != NULL) {
-            /*Find first item in bit array which is not marked as allocated*/
-            for (i=0; i<MAX_AGENTS; i++) {
-                if(!TestBit(arrayID, i)) {
+            /* Find first item in bit array which is not marked as allocated */
+            for (i = 0; i < MAX_AGENTS; i++) {
+                if (!TestBit(arrayID, i)) {
                     snprintf(nid, 8, "%d", (i + AUTHD_FIRST_ID));
                     break;
                 }
@@ -101,13 +95,38 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
             if (i == MAX_AGENTS) {
                 return (NULL);
             }
-        }
-        else {
+        } else {
             return (NULL);
         }
 
         id = nid;
     }
+
+    /* Generate the key the same way manage_agents does: all secret material
+     * comes from cryptographically secure random bytes (randombytes_try reads
+     * the /dev/urandom FD opened by srandom_init before chroot). The previous
+     * construction hashed time/uname with two random() values seeded by a
+     * 32-bit srandom() seed, which an attacker can search exhaustively.
+     */
+    if (!randombytes_try(random_data, sizeof(random_data))) {
+        merror("Failed to generate secure random data for agent key");
+        return (NULL);
+    }
+
+    for (i = 0; i < 64; i++) {
+        sprintf(&rand_hex[i * 2], "%02x", random_data[i]);
+    }
+
+    /* First key component: name + ID + random data */
+    snprintf(str1, STR_SIZE, "%s%s%s", name, id, rand_hex);
+    OS_MD5_Str(str1, md1);
+
+    /* Second key component: IP + name + random data (offset) */
+    snprintf(str2, STR_SIZE, "%s%s%s", ip ? ip : "any", name, rand_hex + 64);
+    OS_MD5_Str(str2, md2);
+
+    memset_secure(random_data, 0, sizeof(random_data));
+    memset_secure(rand_hex, 0, sizeof(rand_hex));
 
     char authentication_file[2048 + 1];
     snprintf(authentication_file, 2048, "%s", AUTH_FILE);

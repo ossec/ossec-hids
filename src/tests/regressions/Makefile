@@ -53,7 +53,8 @@ REGRESSION_BINS = \
 	issue_hostname_path_traversal \
 	issue_str_cut_overflow \
 	issue_strtok_race \
-	issue_dnxhhf88_localfile_double_free
+	issue_dnxhhf88_localfile_double_free \
+	issue_m5jt0jcl_authd_key_rng
 
 .PHONY: all check clean
 
@@ -287,6 +288,17 @@ issue_strtok_race: tests/regressions/issue_strtok_race.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 
+issue_m5jt0jcl_authd_key_rng: \
+		tests/regressions/issue_m5jt0jcl_authd_key_rng.c \
+		addagent/validate.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DAUTH_FILE=\"client.keys\" -c addagent/validate.c \
+		-o addagent/validate-m5jt0jcl.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_m5jt0jcl_authd_key_rng.c \
+		addagent/validate-m5jt0jcl.o \
+		-Wl,--wrap=randombytes_try -Wl,--wrap=isChroot \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
 # Compile localfile-config.c into the binary so the harness does not depend
 # on a possibly stale config.a member from an earlier server build.
 issue_dnxhhf88_localfile_double_free: \
@@ -356,4 +368,5 @@ clean:
 		analysisd/decoders/plugins/ossecalert_decoder-ht.o \
 		analysisd/dodiff-ht.o \
 		analysisd/eventinfo-ht.o \
-		analysisd/eventinfo_list-ht.o
+		analysisd/eventinfo_list-ht.o \
+		addagent/validate-m5jt0jcl.o
