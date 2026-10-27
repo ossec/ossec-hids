@@ -47,7 +47,8 @@ REGRESSION_BINS = \
 	issue_bind_unix_chmod_race \
 	issue_read_dir_path_overflow \
 	issue_ossecalert_field_injection \
-	issue_prefilter_remote_cmd
+	issue_prefilter_remote_cmd \
+	issue_rootcheck_json_empty_name
 
 .PHONY: all check clean
 
@@ -248,6 +249,14 @@ issue_prefilter_remote_cmd: tests/regressions/issue_prefilter_remote_cmd.c \
 		config/syscheck_remote_cmd.c
 	$(CC) $(CFLAGS) -I./config -o $@ tests/regressions/issue_prefilter_remote_cmd.c \
 		config/syscheck_remote_cmd.c
+
+issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_name.c \
+		analysisd/format/json_extended.c libcJSON.a shared.a
+	$(CC) $(CFLAGS) -I./analysisd -I./external/cJSON -o $@ \
+		tests/regressions/issue_rootcheck_json_empty_name.c \
+		analysisd/format/json_extended.c \
+		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
