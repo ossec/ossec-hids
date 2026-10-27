@@ -118,9 +118,15 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
     oa_newlocation[255] = '\0';
     agent_file[OS_SIZE_1024] = '\0';
 
-    
-    snprintf(agent_file, OS_SIZE_1024, "%s/%s->%s",
-             AGENTINFO_DIR, lf->hostname, lf->location);
+    /* The hostname comes from the log line: it must not leave
+     * AGENTINFO_DIR or push the location out of the file name. */
+    if(snprintf(agent_file, OS_SIZE_1024, "%s/%s->%s",
+                AGENTINFO_DIR, lf->hostname, lf->location) >= OS_SIZE_1024 ||
+       w_ref_parent_folder(agent_file))
+    {
+        merror(INVALID_HOSTNAME, ARGV0, lf->hostname);
+        agent_file[0] = '\0';
+    }
 
     snprintf(oa_newlocation, 255, "%s|%s", lf->location, oa_location);
     free(lf->location);
@@ -138,7 +144,7 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
 
 
     /* Writting to the agent file */
-    fp = fopen(agent_file, "w");
+    fp = agent_file[0] ? fopen(agent_file, "w") : NULL;
     if(fp)
     {
         fprintf(fp, "%s\n", "Remote Syslog");
