@@ -48,7 +48,8 @@ REGRESSION_BINS = \
 	issue_read_dir_path_overflow \
 	issue_ossecalert_field_injection \
 	issue_prefilter_remote_cmd \
-	issue_rootcheck_json_empty_name
+	issue_rootcheck_json_empty_name \
+	issue_rootcheck_json_match_overflow
 
 .PHONY: all check clean
 
@@ -254,6 +255,14 @@ issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_na
 		analysisd/format/json_extended.c libcJSON.a shared.a
 	$(CC) $(CFLAGS) -I./analysisd -I./external/cJSON -o $@ \
 		tests/regressions/issue_rootcheck_json_empty_name.c \
+		analysisd/format/json_extended.c \
+		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+issue_rootcheck_json_match_overflow: tests/regressions/issue_rootcheck_json_match_overflow.c \
+		analysisd/format/json_extended.c libcJSON.a shared.a
+	$(CC) $(CFLAGS) -I./analysisd -I./external/cJSON -o $@ \
+		tests/regressions/issue_rootcheck_json_match_overflow.c \
 		analysisd/format/json_extended.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
