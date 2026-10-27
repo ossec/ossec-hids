@@ -77,6 +77,7 @@ int doDiff(RuleInfo *rule, const Eventinfo *lf)
     char *htpt = NULL;
     char flastfile[OS_SIZE_2048 + 1];
     char flastcontent[OS_SIZE_8192 + 1];
+    int flastsize;
     int result = 0;
 
 #ifndef WIN32
@@ -92,25 +93,32 @@ int doDiff(RuleInfo *rule, const Eventinfo *lf)
     /* Diff state is keyed by OSSEC agent (or local hostname). Prefer
      * agent_name after #1668 so device hostnames do not collide across agents. */
     if (lf->agent_name && lf->agent_name[0] != '\0') {
-        snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->agent_name,
-                 rule->sigid, DIFF_LAST_FILE);
+        flastsize = snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->agent_name,
+                             rule->sigid, DIFF_LAST_FILE);
     } else if (lf->hostname && lf->hostname[0] == '(') {
         htpt = strchr(lf->hostname, ')');
         if (htpt) {
             *htpt = '\0';
         }
-        snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->hostname + 1,
-                 rule->sigid, DIFF_LAST_FILE);
+        flastsize = snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->hostname + 1,
+                             rule->sigid, DIFF_LAST_FILE);
 
         if (htpt) {
             *htpt = ')';
         }
         htpt = NULL;
     } else if (lf->hostname) {
-        snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->hostname,
-                 rule->sigid, DIFF_LAST_FILE);
+        flastsize = snprintf(flastfile, OS_SIZE_2048, "%s/%s/%d/%s", DIFF_DIR, lf->hostname,
+                             rule->sigid, DIFF_LAST_FILE);
     } else {
         merror("%s: ERROR: unable to build diff path (no hostname).", ARGV0);
+        goto out;
+    }
+
+    /* The hostname comes from the log line: it must not leave DIFF_DIR
+     * or push the rule id and file name out of the path. */
+    if (flastsize >= OS_SIZE_2048 || w_ref_parent_folder(flastfile)) {
+        merror("%s: ERROR: invalid diff path: %s", ARGV0, flastfile);
         goto out;
     }
 

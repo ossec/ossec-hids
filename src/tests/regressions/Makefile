@@ -49,7 +49,8 @@ REGRESSION_BINS = \
 	issue_ossecalert_field_injection \
 	issue_prefilter_remote_cmd \
 	issue_rootcheck_json_empty_name \
-	issue_rootcheck_json_match_overflow
+	issue_rootcheck_json_match_overflow \
+	issue_hostname_path_traversal
 
 .PHONY: all check clean
 
@@ -267,6 +268,25 @@ issue_rootcheck_json_match_overflow: tests/regressions/issue_rootcheck_json_matc
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 
+# Relative queue paths so the harness can chdir into a temp tree.
+HT_PATH_CFLAGS = -DAGENTINFO_DIR=\"queue/agent-info\" -DDIFF_DIR=\"queue/diff\"
+issue_hostname_path_traversal: tests/regressions/issue_hostname_path_traversal.c \
+		analysisd/decoders/plugins/ossecalert_decoder.c \
+		analysisd/dodiff.c analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
+	$(CC) $(CFLAGS) $(HT_PATH_CFLAGS) -I./analysisd \
+		-c analysisd/decoders/plugins/ossecalert_decoder.c \
+		-o analysisd/decoders/plugins/ossecalert_decoder-ht.o
+	$(CC) $(CFLAGS) $(HT_PATH_CFLAGS) -I./analysisd \
+		-c analysisd/dodiff.c -o analysisd/dodiff-ht.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c -o analysisd/eventinfo-ht.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-ht.o
+	$(CC) $(CFLAGS) $(HT_PATH_CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_hostname_path_traversal.c \
+		analysisd/decoders/plugins/ossecalert_decoder-ht.o \
+		analysisd/dodiff-ht.o analysisd/eventinfo-ht.o analysisd/eventinfo_list-ht.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz
+
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
 # __strncpy_chk and the regression's length check never runs.
@@ -302,4 +322,8 @@ clean:
 		os_crypto/blowfish/bf_enc-empty.o \
 		os_crypto/blowfish/bf_skey-empty.o \
 		os_crypto/md5/md5-empty.o \
-		os_crypto/md5/md5_op-empty.o
+		os_crypto/md5/md5_op-empty.o \
+		analysisd/decoders/plugins/ossecalert_decoder-ht.o \
+		analysisd/dodiff-ht.o \
+		analysisd/eventinfo-ht.o \
+		analysisd/eventinfo_list-ht.o

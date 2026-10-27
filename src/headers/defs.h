@@ -117,8 +117,10 @@ http://www.ossec.net/main/license/\n"
 #define XML_DECODER     "/etc/decoder.xml"
 #define XML_LDECODER    "/etc/local_decoder.xml"
 
-/* Agent information location */
+/* Agent information location (overridable for regression harnesses). */
+#ifndef AGENTINFO_DIR
 #define AGENTINFO_DIR    "/queue/agent-info"
+#endif
 
 /* Syscheck directory */
 #define SYSCHECK_DIR    "/queue/syscheck"
@@ -129,8 +131,10 @@ http://www.ossec.net/main/license/\n"
 /* Backup of agent state before force-delete / remove */
 #define AGNBACKUP_DIR    "/backup/agents"
 
-/* Diff queue */
+/* Diff queue (overridable for regression harnesses). */
+#ifndef DIFF_DIR
 #define DIFF_DIR        "/queue/diff"
+#endif
 #define DIFF_DIR_PATH   DEFAULTDIR DIFF_DIR
 #define DIFF_NEW_FILE  "new-entry"
 #define DIFF_LAST_FILE "last-entry"
