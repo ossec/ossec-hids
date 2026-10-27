@@ -94,6 +94,7 @@ void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
 
     // Getting full log string
     strncpy(fullog, lf->full_log, MAX_STRING - 1);
+    fullog[MAX_STRING - 1] = '\0';
     // Searching regex — require a non-empty name so "{: 1.1}" is not a tag
     // (strtok would skip the leading ':' and leave no value token).
     regex_text = "\\{([A-Za-z0-9_]+: [A-Za-z0-9_., ]*)\\}";
@@ -157,6 +158,7 @@ void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
     cJSON_AddStringToObject(rule, "group", lf->generated_rule->group);
     cJSON_AddItemToObject(rule, "groups", groups = cJSON_CreateArray());
     strncpy(buffer, lf->generated_rule->group, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
 
     token = strtok(buffer, delim);
     while(token) {
@@ -308,6 +310,7 @@ void W_JSON_ParseLocation(cJSON* root, const Eventinfo* lf, int archives)
         char* search;
         char string[MAX_STRING];
         strncpy(string, lf->location, MAX_STRING - 1);
+        string[MAX_STRING - 1] = '\0';
         int index;
         search = strchr(string, '>');
         if(search) {
@@ -360,7 +363,13 @@ int match_regex(regex_t* r, const char* to_match, char* results[MAX_MATCHES])
             start = m[i].rm_so + (p - to_match);
             finish = m[i].rm_eo + (p - to_match);
             if(i > 0) {
-                sprintf(results[totalResults], "%.*s", (finish - start), to_match + start);
+                /* results[] holds MAX_MATCHES buffers of MAX_STRING_LESS
+                 * bytes: stop at the last slot and truncate the capture. */
+                if(totalResults >= MAX_MATCHES) {
+                    return totalResults;
+                }
+                snprintf(results[totalResults], MAX_STRING_LESS, "%.*s",
+                         (finish - start), to_match + start);
                 totalResults = totalResults + 1;
             }
 
