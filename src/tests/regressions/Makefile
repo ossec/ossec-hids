@@ -55,7 +55,8 @@ REGRESSION_BINS = \
 	issue_strtok_race \
 	issue_dnxhhf88_localfile_double_free \
 	issue_m5jt0jcl_authd_key_rng \
-	issue_mon246f3_execd_ar_overflow
+	issue_mon246f3_execd_ar_overflow \
+	issue_ud31vlyl_audit_oob
 
 .PHONY: all check clean
 
@@ -306,6 +307,22 @@ issue_mon246f3_execd_ar_overflow: \
 		-lpcre2-8 -lm -lpthread
 	rm -f os_execd/exec-mon246f3.c
 
+# Expose audit_send_msg and record final join index for the harness.
+issue_ud31vlyl_audit_oob: \
+		tests/regressions/issue_ud31vlyl_audit_oob.c \
+		logcollector/read_audit.c shared.a
+	sed -e 's/^static void audit_send_msg/size_t audit_last_n;\nvoid audit_send_msg/' \
+		-e 's/message\[n\] = '\''\\0'\'';/audit_last_n = n; message[n] = '\''\\0'\'';/' \
+		logcollector/read_audit.c > logcollector/read_audit-ud31vlyl.c
+	$(CC) $(CFLAGS) -I./logcollector -c logcollector/read_audit-ud31vlyl.c \
+		-o logcollector/read_audit-ud31vlyl.o
+	$(CC) $(CFLAGS) -I./logcollector -o $@ \
+		tests/regressions/issue_ud31vlyl_audit_oob.c \
+		logcollector/read_audit-ud31vlyl.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+	rm -f logcollector/read_audit-ud31vlyl.c
+
 issue_m5jt0jcl_authd_key_rng: \
 		tests/regressions/issue_m5jt0jcl_authd_key_rng.c \
 		addagent/validate.c shared.a os_crypto.a
@@ -389,4 +406,6 @@ clean:
 		analysisd/eventinfo_list-ht.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
-		os_execd/exec-mon246f3.c
+		os_execd/exec-mon246f3.c \
+		logcollector/read_audit-ud31vlyl.o \
+		logcollector/read_audit-ud31vlyl.c
