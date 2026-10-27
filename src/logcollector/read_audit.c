@@ -20,23 +20,28 @@ static void audit_send_msg(char **cache, int top, const char *file, int drop_it)
     size_t z;
     char message[OS_MAXSTR];
 
+    message[0] = '\0';
+
     for (i = 0; i < top; i++) {
         z = strlen(cache[i]);
 
-        if (n + z + 1 < OS_MAXSTR) {
-            if (n > 0)
+        /* Cap join length; only copied records advance n. Still free every
+         * cache entry. Same form as modsec_send_msg().
+         */
+        if (n + z + 1 < sizeof(message)) {
+            if (n > 0) {
                 message[n++] = ' ';
-            
-            strncpy(message + n, cache[i], z);
+            }
+            memcpy(message + n, cache[i], z);
+            n += z;
+            message[n] = '\0';
         }
 
-        n += z;
         free(cache[i]);
+        cache[i] = NULL;
     }
 
-    if (!drop_it) {
-        message[n] = '\0';
-
+    if (!drop_it && n > 0) {
         if (SendMSG(logr_queue, message, file, LOCALFILE_MQ) < 0) {
             merror(QUEUE_SEND, ARGV0);
 
