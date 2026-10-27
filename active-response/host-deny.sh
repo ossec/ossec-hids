@@ -8,6 +8,7 @@
 ACTION=$1
 USER=$2
 IP=$3
+ALERTID=$4
 
 LOCAL=`dirname $0`;
 cd $LOCAL
@@ -15,7 +16,11 @@ cd ../
 PWD=`pwd`
 LOCK="${PWD}/host-deny-lock"
 LOCK_PID="${PWD}/host-deny-lock/pid"
+# Entries written by "add" and not taken back yet ("<ip> <alert id>")
+ADDED="${PWD}/host-deny-added"
 UNAME=`uname`
+HOSTS_DENY="/etc/hosts.deny"
+HOSTS_ALLOW="/etc/hosts.allow"
 
 
 # This number should be more than enough (even if a hundred
@@ -102,21 +107,30 @@ esac
 
 # Adding the ip to hosts.deny
 if [ "x${ACTION}" = "xadd" ]; then
-    # Looking for duplication
-    IPKEY=$(grep -w "${IP}" /etc/hosts.deny)
+    # Remember the raw address for the add/delete record (before IPv6 brackets)
+    RAW_IP="${IP}"
+    # IPv6 entries are written in brackets
+    echo "${IP}" | grep "\:" > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        IP="[${IP}]"
+    fi
+    # Looking for duplication (the exact entry written below, not a pattern)
+    if [ "X$UNAME" = "XFreeBSD" ]; then
+        IPKEY=$(grep -F -x "ALL : ${IP} : deny" ${HOSTS_ALLOW})
+    else
+        IPKEY=$(grep -F -x "ALL:${IP}" ${HOSTS_DENY})
+    fi
     if [ ! -z "$IPKEY" ]; then
         echo "IP ${IP} already exists on host.deny..."
         exit 1
     fi
     lock;
-    echo "${IP}" | grep "\:" > /dev/null 2>&1
-    if [ $? = 0 ]; then
-        IP="[${IP}]"
-    fi
+    # Remembering the entry: "delete" only takes back what "add" wrote
+    printf '%s %s\n' "${RAW_IP}" "${ALERTID}" >> ${ADDED}
     if [ "X$UNAME" = "XFreeBSD" ]; then
-        echo "ALL : ${IP} : deny" >> /etc/hosts.allow
+        echo "ALL : ${IP} : deny" >> ${HOSTS_ALLOW}
     else
-        echo "ALL:${IP}" >> /etc/hosts.deny
+        echo "ALL:${IP}" >> ${HOSTS_DENY}
     fi
     unlock;
     exit 0;
@@ -125,21 +139,32 @@ if [ "x${ACTION}" = "xadd" ]; then
 # Deleting from hosts.deny
 elif [ "x${ACTION}" = "xdelete" ]; then
     lock;
+    # ossec-execd runs "delete" even if "add" found the entry already there
+    # (the administrator's, or another response's): only taking back what
+    # the "add" of the same alert wrote
+    grep -F -x -e "${IP} ${ALERTID}" ${ADDED} > /dev/null 2>&1
+    if [ ! $? = 0 ]; then
+        echo "IP ${IP} was not added by this alert, leaving it..."
+        unlock;
+        exit 0;
+    fi
     TMP_FILE=`mktemp ${PWD}/ossec-hosts.XXXXXXXXXX`
     if [ "X${TMP_FILE}" = "X" ]; then
         # Cheap fake tmpfile, but should be harder then no random data
         TMP_FILE="${PWD}/ossec-hosts.`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -1 `"
     fi
+    grep -v -F -x -e "${IP} ${ALERTID}" ${ADDED} > ${TMP_FILE}
+    cat ${TMP_FILE} > ${ADDED}
     echo "${IP}" | grep "\:" > /dev/null 2>&1
     if [ $? = 0 ]; then
-        IP="\[${IP}\]"
+        IP="[${IP}]"
     fi
     if [ "X$UNAME" = "XFreeBSD" ]; then
-        cat /etc/hosts.allow | grep -v "ALL : ${IP} : deny$"> ${TMP_FILE}
-        mv ${TMP_FILE} /etc/hosts.allow
+        cat ${HOSTS_ALLOW} | grep -F -x -v "ALL : ${IP} : deny"> ${TMP_FILE}
+        mv ${TMP_FILE} ${HOSTS_ALLOW}
     else
-        cat /etc/hosts.deny | grep -v "ALL:${IP}$"> ${TMP_FILE}
-        cat ${TMP_FILE} > /etc/hosts.deny
+        cat ${HOSTS_DENY} | grep -F -x -v "ALL:${IP}"> ${TMP_FILE}
+        cat ${TMP_FILE} > ${HOSTS_DENY}
         rm ${TMP_FILE}
     fi
     unlock;
