@@ -54,7 +54,8 @@ REGRESSION_BINS = \
 	issue_str_cut_overflow \
 	issue_strtok_race \
 	issue_dnxhhf88_localfile_double_free \
-	issue_m5jt0jcl_authd_key_rng
+	issue_m5jt0jcl_authd_key_rng \
+	issue_mon246f3_execd_ar_overflow
 
 .PHONY: all check clean
 
@@ -288,6 +289,23 @@ issue_strtok_race: tests/regressions/issue_strtok_race.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 
+# Open a cwd-local ar.conf (defs.h redefines DEFAULTARPATH). Compile at -O0
+# so a missing bound is more likely to show up in GetCommandbyName results.
+issue_mon246f3_execd_ar_overflow: \
+		tests/regressions/issue_mon246f3_execd_ar_overflow.c \
+		os_execd/exec.c shared.a
+	sed -e 's/fopen(DEFAULTARPATH/fopen("ar.conf"/g' \
+		-e 's/AR_BINDIRPATH/"active-response\/bin"/g' \
+		os_execd/exec.c > os_execd/exec-mon246f3.c
+	$(CC) $(CFLAGS) -O0 -I./os_execd -c os_execd/exec-mon246f3.c \
+		-o os_execd/exec-mon246f3.o
+	$(CC) $(CFLAGS) -I./os_execd -o $@ \
+		tests/regressions/issue_mon246f3_execd_ar_overflow.c \
+		os_execd/exec-mon246f3.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+	rm -f os_execd/exec-mon246f3.c
+
 issue_m5jt0jcl_authd_key_rng: \
 		tests/regressions/issue_m5jt0jcl_authd_key_rng.c \
 		addagent/validate.c shared.a os_crypto.a
@@ -369,4 +387,6 @@ clean:
 		analysisd/dodiff-ht.o \
 		analysisd/eventinfo-ht.o \
 		analysisd/eventinfo_list-ht.o \
-		addagent/validate-m5jt0jcl.o
+		addagent/validate-m5jt0jcl.o \
+		os_execd/exec-mon246f3.o \
+		os_execd/exec-mon246f3.c
