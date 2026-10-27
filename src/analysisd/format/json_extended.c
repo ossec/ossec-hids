@@ -76,6 +76,7 @@ void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
     const char* find_text;
     char* token;
     char* token2;
+    char* saveptr = NULL;
     char* results[MAX_MATCHES];
     int matches, i, j;
     const char delim[2] = ":";
@@ -104,9 +105,9 @@ void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
 
     if(matches > 0) {
         for(i = 0; i < matches; i++) {
-            /* strtok() skips leading delimiters, so a tag without a
+            /* strtok_r() skips leading delimiters, so a tag without a
              * name ("{: 1.1}") yields no name token at all. */
-            token = strtok(results[i], delim);
+            token = strtok_r(results[i], delim, &saveptr);
             if(!token)
                 continue;
 
@@ -115,15 +116,15 @@ void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
             for(j = 0; token[j]; j++) {
                 token[j] = tolower(token[j]);
             }
-            token = strtok(0, delim);
+            token = strtok_r(0, delim, &saveptr);
             if(token) {
                 trim(token);
-                token2 = strtok(token, delim2);
+                token2 = strtok_r(token, delim2, &saveptr);
                 while(token2) {
 
                     trim(token2);
                     cJSON_AddItemToArray(compliance, cJSON_CreateString(token2));
-                    token2 = strtok(0, delim2);
+                    token2 = strtok_r(0, delim2, &saveptr);
                 }
             }
         }
@@ -144,6 +145,7 @@ void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
     char delim[2];
     char buffer[MAX_STRING];
     char* token;
+    char* saveptr = NULL;
 
     firstPCI = firstCIS = 1;
     foundPCI = foundCIS = 0;
@@ -160,7 +162,7 @@ void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
     strncpy(buffer, lf->generated_rule->group, sizeof(buffer) - 1);
     buffer[sizeof(buffer) - 1] = '\0';
 
-    token = strtok(buffer, delim);
+    token = strtok_r(buffer, delim, &saveptr);
     while(token) {
         foundPCI = foundCIS = 0;
         foundPCI = add_groupPCI(rule, token, firstPCI);
@@ -175,7 +177,7 @@ void W_JSON_ParseGroups(cJSON* root, const Eventinfo* lf, int nested)
         if(!foundPCI && !foundCIS) {
             cJSON_AddItemToArray(groups, cJSON_CreateString(token));
         }
-        token = strtok(0, delim);
+        token = strtok_r(0, delim, &saveptr);
     }
 }
 
