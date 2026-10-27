@@ -56,7 +56,9 @@ REGRESSION_BINS = \
 	issue_dnxhhf88_localfile_double_free \
 	issue_m5jt0jcl_authd_key_rng \
 	issue_mon246f3_execd_ar_overflow \
-	issue_ud31vlyl_audit_oob
+	issue_ud31vlyl_audit_oob \
+	issue_fb1hyskp_pagerduty_alertlog \
+	issue_ant2026_ar_scripts
 
 .PHONY: all check clean
 
@@ -306,6 +308,27 @@ issue_mon246f3_execd_ar_overflow: \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 	rm -f os_execd/exec-mon246f3.c
+
+issue_fb1hyskp_pagerduty_alertlog: \
+		tests/regressions/issue_fb1hyskp_pagerduty_alertlog.sh \
+		../active-response/ossec-pagerduty.sh
+	@printf '%s\n' '#!/bin/sh' \
+		'exec bash "$$(dirname "$$0")/tests/regressions/issue_fb1hyskp_pagerduty_alertlog.sh" "$$@"' > $@
+	@chmod +x $@
+	./$@
+
+issue_ant2026_ar_scripts: \
+		tests/regressions/issue_ant2026_ar_scripts.sh \
+		../active-response/ossec-pagerduty.sh \
+		../active-response/ossec-slack.sh \
+		../active-response/ossec-tweeter.sh \
+		../active-response/host-deny.sh \
+		../active-response/firewalls/ipfw_mac.sh \
+		../active-response/cloudflare-ban.sh
+	@printf '%s\n' '#!/bin/sh' \
+		'exec bash "$$(dirname "$$0")/tests/regressions/issue_ant2026_ar_scripts.sh" "$$@"' > $@
+	@chmod +x $@
+	./$@
 
 # Expose audit_send_msg and record final join index for the harness.
 issue_ud31vlyl_audit_oob: \
