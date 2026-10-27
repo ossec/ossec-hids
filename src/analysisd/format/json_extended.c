@@ -94,23 +94,28 @@ void W_JSON_ParseRootcheck(cJSON* root, const Eventinfo* lf, int nested)
 
     // Getting full log string
     strncpy(fullog, lf->full_log, MAX_STRING - 1);
-    // Searching regex
-    regex_text = "\\{([A-Za-z0-9_]*: [A-Za-z0-9_., ]*)\\}";
+    // Searching regex — require a non-empty name so "{: 1.1}" is not a tag
+    // (strtok would skip the leading ':' and leave no value token).
+    regex_text = "\\{([A-Za-z0-9_]+: [A-Za-z0-9_., ]*)\\}";
     find_text = fullog;
     compile_regex(&r, regex_text);
     matches = match_regex(&r, find_text, results);
 
     if(matches > 0) {
         for(i = 0; i < matches; i++) {
+            /* strtok() skips leading delimiters, so a tag without a
+             * name ("{: 1.1}") yields no name token at all. */
             token = strtok(results[i], delim);
+            if(!token)
+                continue;
 
             trim(token);
             cJSON_AddItemToObject(rule, token, compliance = cJSON_CreateArray());
             for(j = 0; token[j]; j++) {
                 token[j] = tolower(token[j]);
             }
+            token = strtok(0, delim);
             if(token) {
-                token = strtok(0, delim);
                 trim(token);
                 token2 = strtok(token, delim2);
                 while(token2) {
@@ -383,9 +388,10 @@ void trim(char* s)
     char* p = s;
     int l = strlen(p);
 
-    while(isspace(p[l - 1]))
+    /* Guard l > 0: all-blank or empty tokens must not index p[-1]. */
+    while(l > 0 && isspace((unsigned char)p[l - 1]))
         p[--l] = 0;
-    while(*p && isspace(*p))
+    while(*p && isspace((unsigned char)*p))
         ++p, --l;
 
     memmove(s, p, l + 1);
