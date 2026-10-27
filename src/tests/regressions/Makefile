@@ -52,7 +52,8 @@ REGRESSION_BINS = \
 	issue_rootcheck_json_match_overflow \
 	issue_hostname_path_traversal \
 	issue_str_cut_overflow \
-	issue_strtok_race
+	issue_strtok_race \
+	issue_dnxhhf88_localfile_double_free
 
 .PHONY: all check clean
 
@@ -284,6 +285,17 @@ issue_strtok_race: tests/regressions/issue_strtok_race.c \
 		tests/regressions/issue_strtok_race.c \
 		analysisd/format/json_extended.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+# Compile localfile-config.c into the binary so the harness does not depend
+# on a possibly stale config.a member from an earlier server build.
+issue_dnxhhf88_localfile_double_free: \
+		tests/regressions/issue_dnxhhf88_localfile_double_free.c \
+		config/localfile-config.c shared.a
+	$(CC) $(CFLAGS) -I./config -o $@ \
+		tests/regressions/issue_dnxhhf88_localfile_double_free.c \
+		config/localfile-config.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 
 # Relative queue paths so the harness can chdir into a temp tree.
