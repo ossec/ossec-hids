@@ -25,12 +25,13 @@ static int  f_time_reading = 1;
 int ReadExecConfig()
 {
     int i = 0, j = 0, dup_entry = 0;
+    int full_warned = 0;
     FILE *fp;
     FILE *process_file;
     char buffer[OS_MAXSTR + 1];
 
     /* Clean up */
-    for (i = 0; i <= exec_size + 1; i++) {
+    for (i = 0; i <= MAX_AR; i++) {
         memset(exec_names[i], '\0', OS_FLSIZE + 1);
         memset(exec_cmd[i], '\0', OS_FLSIZE + 1);
         exec_timeout[i] = 0;
@@ -49,6 +50,10 @@ int ReadExecConfig()
         char *str_pt;
         char *tmp_str;
 
+        /* When the table is full, exec_names[MAX_AR] remains a valid
+         * scratch slot (arrays are MAX_AR+1) so a later duplicate can
+         * fill an earlier empty exec_cmd without growing exec_size.
+         */
         str_pt = buffer;
 
         /* Clean up the buffer */
@@ -125,6 +130,19 @@ int ReadExecConfig()
         }
 
         if (dup_entry) {
+            exec_cmd[exec_size][0] = '\0';
+            exec_names[exec_size][0] = '\0';
+            exec_timeout[exec_size] = 0;
+        } else if (exec_size >= MAX_AR) {
+            /* Table full: drop genuinely new names; keep scanning for
+             * duplicates that can revive empty command slots.
+             */
+            if (!full_warned) {
+                merror("%s: ERROR: More than %d active response commands in '%s'. "
+                       "Ignoring the remaining ones.",
+                       ARGV0, MAX_AR, DEFAULTARPATH);
+                full_warned = 1;
+            }
             exec_cmd[exec_size][0] = '\0';
             exec_names[exec_size][0] = '\0';
             exec_timeout[exec_size] = 0;
