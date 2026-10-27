@@ -261,7 +261,7 @@ void rk_append_file_hash(const char *file_path, char *dest, size_t dest_size)
     }
 
     if (stat(file_path, &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-        int md5sha1_ok = (OS_MD5_SHA1_File(file_path, NULL, md5, sha1, OS_BINARY) == 0);
+        int md5sha1_ok = (OS_MD5_SHA1_File(file_path, md5, sha1, OS_BINARY) == 0);
         int sha256_ok  = (OS_SHA256_File(file_path, sha256, OS_BINARY) == 0);
 
         snprintf(dest + used, dest_size - used,

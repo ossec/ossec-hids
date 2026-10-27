@@ -662,7 +662,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (sha1sum || md5sum || sha256sum) {
             /* Generate checksums of the file */
             if (sha1sum || md5sum) {
-                if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0) {
                     c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                 ARGV0, file_name, strerror(errno));
                     checksum_failed = 1;
@@ -689,7 +689,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
                 if (sha1sum || md5sum || sha256sum) {
                     /* Generate checksums of the file */
                     if (sha1sum || md5sum) {
-                        if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                        if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0) {
                             c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                         ARGV0, file_name, strerror(errno));
                             checksum_failed = 1;

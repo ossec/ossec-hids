@@ -10,8 +10,6 @@
 #include "shared.h"
 #include "syscheck-config.h"
 #include "config.h"
-#include "syscheck_remote_cmd.h"
-
 
 int dump_syscheck_entry(syscheck_config *syscheck, const char *entry, int vals, int reg, const char *restrictfile)
 {
@@ -900,43 +898,12 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
         } else if (strcmp(node[i]->element, xml_report_new_as_changed) == 0) {
             /* report_new_files_as_changed is read via Read_GlobalSK */
         } else if (strcmp(node[i]->element, xml_prefilter_cmd) == 0) {
-            char cmd[OS_MAXSTR];
-            struct stat statbuf;
-
-            /* Same gate as <localfile><command>: refuse manager-pushed
-             * commands unless logcollector.remote_commands is set
-             * (ANT-2026-D7ZVXNZP). */
-            if (!OS_SyscheckRemotePrefilterAllowed(syscheck->agent_cfg,
-                                                   syscheck->accept_remote)) {
-                merror("%s: Remote commands are not accepted from the manager. "
-                       "Ignoring '%s' on the agent.conf", __local_name,
-                       node[i]->element);
-                i++;
-                continue;
-            }
-
-#ifdef WIN32
-            ExpandEnvironmentStrings(node[i]->content, cmd, sizeof(cmd) - 1);
-#else
-            strncpy(cmd, node[i]->content, sizeof(cmd) - 1);
-#endif
-
-            if (strlen(cmd) > 0) {
-                char statcmd[OS_MAXSTR];
-                char *ix;
-                strncpy(statcmd, cmd, sizeof(statcmd) - 1);
-                if (NULL != (ix = strchr(statcmd, ' '))) {
-                    *ix = '\0';
-                }
-                if (stat(statcmd, &statbuf) == 0) {
-                    /* More checks needed (perms, owner, etc.) */
-                    os_calloc(1, strlen(cmd) + 1, syscheck->prefilter_cmd);
-                    strncpy(syscheck->prefilter_cmd, cmd, strlen(cmd));
-                } else {
-                    merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
-                    return (OS_INVALID);
-                }
-            }
+            /* Retired (ANT-2026-3VN001L2): prelink-era hash filter removed.
+             * Keep recognising the tag so upgrades do not fail the config;
+             * warn and ignore
+             * */
+            verbose("%s: WARN: The <%s> option is deprecated and no longer "
+                    "has any effect.", __local_name, node[i]->element);
         } else {
             merror(XML_INVELEM, __local_name, node[i]->element);
             return (OS_INVALID);

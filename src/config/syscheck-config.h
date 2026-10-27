@@ -89,11 +89,6 @@ typedef struct _config {
 
     rtfim *realtime;
 
-    char *prefilter_cmd;
-
-    int agent_cfg;                  /* set while reading the shared agent.conf */
-    int accept_remote;              /* accept commands from the shared agent.conf */
-
 } syscheck_config;
 
 int dump_syscheck_entry(syscheck_config *syscheck, const char *entry, int vals, int reg, const char *restrictfile) __attribute__((nonnull(1, 2)));

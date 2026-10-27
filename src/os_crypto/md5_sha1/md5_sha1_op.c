@@ -13,7 +13,7 @@
 #include "../sha1/sha.h"
 
 
-int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5output, os_sha1 sha1output, int mode)
+int OS_MD5_SHA1_File(const char *fname, os_md5 md5output, os_sha1 sha1output, int mode)
 {
     size_t n;
     FILE *fp;
@@ -29,23 +29,9 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
     sha1output[0] = '\0';
     buf[2048 + 1] = '\0';
 
-    /* Use prefilter_cmd if set */
-    if (prefilter_cmd == NULL) {
-        fp = fopen(fname, mode == OS_BINARY ? "rb" : "r");
-        if (!fp) {
-            return (-1);
-        }
-    } else {
-        char cmd[OS_MAXSTR];
-        size_t target_length = strlen(prefilter_cmd) + 1 + strlen(fname);
-        int res = snprintf(cmd, sizeof(cmd), "%s %s", prefilter_cmd, fname);
-        if (res < 0 || (unsigned int)res != target_length) {
-            return (-1);
-        }
-        fp = popen(cmd, "r");
-        if (!fp) {
-            return (-1);
-        }
+    fp = fopen(fname, mode == OS_BINARY ? "rb" : "r");
+    if (!fp) {
+        return (-1);
     }
 
     /* Initialize both hashes */
@@ -74,12 +60,6 @@ int OS_MD5_SHA1_File(const char *fname, const char *prefilter_cmd, os_md5 md5out
         sha1output += 2;
     }
 
-    /* Close it */
-    if (prefilter_cmd == NULL) {
-        fclose(fp);
-    } else {
-        pclose(fp);
-    }
-
+    fclose(fp);
     return (0);
 }

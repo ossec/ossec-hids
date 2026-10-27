@@ -6,7 +6,7 @@
  * License (version 2) as published by the FSF - Free Software
  * Foundation.
  *
- * Parity board (nested Wazuh analysisd vs Atomicorp):
+ * Parity board 
  * - Always-on multi-threaded pipeline on Linux (no pipeline_enabled gate).
  * - TLS regex_matching + match_data per decode/process worker
  *   (os_regex_set_thread_match), not process-global regex state.

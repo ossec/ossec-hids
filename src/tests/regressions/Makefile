@@ -47,7 +47,6 @@ REGRESSION_BINS = \
 	issue_bind_unix_chmod_race \
 	issue_read_dir_path_overflow \
 	issue_ossecalert_field_injection \
-	issue_prefilter_remote_cmd \
 	issue_rootcheck_json_empty_name \
 	issue_rootcheck_json_match_overflow \
 	issue_hostname_path_traversal \
@@ -58,7 +57,8 @@ REGRESSION_BINS = \
 	issue_mon246f3_execd_ar_overflow \
 	issue_ud31vlyl_audit_oob \
 	issue_fb1hyskp_pagerduty_alertlog \
-	issue_ant2026_ar_scripts
+	issue_ant2026_ar_scripts \
+	issue_3vn001l2_prefilter_retire
 
 .PHONY: all check clean
 
@@ -255,10 +255,14 @@ issue_ossecalert_field_injection: tests/regressions/issue_ossecalert_field_injec
 	$(CC) $(CFLAGS) -I./logcollector -o $@ tests/regressions/issue_ossecalert_field_injection.c \
 		logcollector/ossecalert_field.c
 
-issue_prefilter_remote_cmd: tests/regressions/issue_prefilter_remote_cmd.c \
-		config/syscheck_remote_cmd.c
-	$(CC) $(CFLAGS) -I./config -o $@ tests/regressions/issue_prefilter_remote_cmd.c \
-		config/syscheck_remote_cmd.c
+# ANT-2026-3VN001L2: prefilter_cmd retired (no popen sink).
+issue_3vn001l2_prefilter_retire: \
+		tests/regressions/issue_3vn001l2_prefilter_retire.c \
+		os_crypto/md5_sha1/md5_sha1_op.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_3vn001l2_prefilter_retire.c \
+		-Wl,--start-group shared.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
 
 issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_name.c \
 		analysisd/format/json_extended.c libcJSON.a shared.a
