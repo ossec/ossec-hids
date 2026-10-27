@@ -12,7 +12,6 @@
 
 /* Prototypes */
 int update_fname(int i);
-static int logformat_is_shared(int idx);
 static void clear_logreader_entry(int idx);
 static void logcollector_queue_send(const char *msg, const char *locmsg);
 
@@ -53,27 +52,6 @@ static void logcollector_queue_send(const char *msg, const char *locmsg)
     }
 }
 
-/* Return 1 if another logreader entry shares the same logformat pointer
- * (glob expansion assigns one logformat to multiple entries). */
-static int logformat_is_shared(int idx)
-{
-    int j = 0;
-
-    if (!logff[idx].logformat) {
-        return 0;
-    }
-
-    while (logff[j].file || logff[j].command || logff[j].logformat ||
-           logff[j].alias) {
-        if (j != idx && logff[j].logformat == logff[idx].logformat) {
-            return 1;
-        }
-        j++;
-    }
-
-    return 0;
-}
-
 /* Free heap allocations for a logreader entry that will not be monitored. */
 static void clear_logreader_entry(int idx)
 {
@@ -106,7 +84,7 @@ static void clear_logreader_entry(int idx)
         free(logff[idx].ffile);
     }
 
-    if (!logformat_is_shared(idx) && logff[idx].logformat) {
+    if (logff[idx].logformat) {
         free(logff[idx].logformat);
     }
 

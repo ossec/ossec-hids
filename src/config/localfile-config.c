@@ -177,14 +177,12 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
              */
             if (os_win_network_path(node[i]->content)) {
                 merror(WIN_NETPATH, __local_name, node[i]->content);
-                /* logformat may point into its allocation (multi-line
-                 * skips a prefix), so drop the entry without freeing it.
-                 */
                 if (logf[pl].command != logf[pl].file) {
                     free(logf[pl].command);
                 }
                 free(logf[pl].file);
                 free(logf[pl].ffile);
+                free(logf[pl].logformat);
                 free(logf[pl].alias);
                 free(logf[pl].query);
                 logf[pl].file = NULL;
@@ -364,34 +362,40 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
             } else if (strcmp(logf[pl].logformat, "multi-line_indented") == 0) {
             } else if (strncmp(logf[pl].logformat, "multi-line", 10) == 0) {
                 int x = 0;
-                logf[pl].logformat += 10;
+                char *lines = logf[pl].logformat + 10;
 
-                while (logf[pl].logformat[0] == ' ') {
-                    logf[pl].logformat++;
+                while (lines[0] == ' ') {
+                    lines++;
                 }
 
-                if (logf[pl].logformat[0] != ':') {
+                if (lines[0] != ':') {
                     merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                     return (OS_INVALID);
                 }
-                logf[pl].logformat++;
+                lines++;
 
-                while (*logf[pl].logformat == ' ') {
-                    logf[pl].logformat++;
+                while (*lines == ' ') {
+                    lines++;
                 }
 
-                while (logf[pl].logformat[x] >= '0' && logf[pl].logformat[x] <= '9') {
+                while (lines[x] >= '0' && lines[x] <= '9') {
                     x++;
                 }
 
-                while (logf[pl].logformat[x] == ' ') {
+                while (lines[x] == ' ') {
                     x++;
                 }
 
-                if (logf[pl].logformat[x] != '\0') {
+                if (lines[x] != '\0') {
                     merror(XML_VALUEERR, __local_name, node[i]->element, node[i]->content);
                     return (OS_INVALID);
                 }
+
+                /* Only the number of lines is kept. Move it to the start of
+                 * the string: logcollector frees this pointer when it drops
+                 * a duplicated entry.
+                 */
+                memmove(logf[pl].logformat, lines, strlen(lines) + 1);
             } else if (strcmp(logf[pl].logformat, EVENTLOG) == 0) {
             } else if (strcmp(logf[pl].logformat, EVENTCHANNEL) == 0) {
             } else {
@@ -425,7 +429,10 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
         /* The last entry is always null on glob */
         pl--;
 
-        /* Set format for all entries */
+        /* Set format for all entries. Every entry gets its own copy so
+         * logcollector can free a dropped duplicate without looking at the
+         * other entries of the glob.
+         */
         for (i = (glob_set - 1); i <= pl; i++) {
             /* Every entry must be valid */
             if (!logf[i].file) {
@@ -434,9 +441,17 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
             }
 
             if (logf[i].logformat == NULL) {
-                logf[i].logformat = format;
+                os_strdup(format, logf[i].logformat);
             }
 
+        }
+
+        /* A format given after the location sits on the empty slot that
+         * ends the list; it was copied to the entries above.
+         */
+        if (!logf[pl + 1].file && logf[pl + 1].logformat) {
+            free(logf[pl + 1].logformat);
+            logf[pl + 1].logformat = NULL;
         }
     }
 
