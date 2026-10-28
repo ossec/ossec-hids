@@ -63,7 +63,8 @@ REGRESSION_BINS = \
 	issue_96vsxf8b_diff_store_symlink \
 	issue_s3eu4a19_crawler_dns \
 	issue_ktgcyz58_getalert_headers \
-	issue_35jw8ghu_log_rollover
+	issue_35jw8ghu_log_rollover \
+	issue_rnce3so7_syslog_long_line
 
 .PHONY: all check clean
 
@@ -198,6 +199,16 @@ issue_35jw8ghu_log_rollover: \
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_35jw8ghu_log_rollover.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
+
+# ANT-2026-RNCE3SO7: read_syslog must truncate over-long lines (#913 follow-up).
+issue_rnce3so7_syslog_long_line: \
+		tests/regressions/issue_rnce3so7_syslog_long_line.c \
+		logcollector/read_syslog.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_rnce3so7_syslog_long_line.c \
+		logcollector/read_syslog.c \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
+		-Wl,--end-group -lpcre2-8 -lm -lpthread -lz
 
 checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
 	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-checksum.o

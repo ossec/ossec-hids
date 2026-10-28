@@ -787,8 +787,10 @@ int handle_file(int i, int do_fseek, int do_log)
 #endif
     }
 
-    /* Set ignore to zero */
+    /* Set ignore to zero; drop mid-line skip state — it applies only to the
+     * previous open of this path (ANT-2026-RNCE3SO7). */
     logff[i].ign = 0;
+    logff[i].skip_to_nl = 0;
     return (0);
 }
 
