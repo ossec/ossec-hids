@@ -16,6 +16,7 @@
 #include "analysisd/cleanevent.h"
 #include "analysisd/config.h"
 #include "analysisd/analysisd.h"
+#include "analysisd/accumulator.h"
 
 _Config Config;
 __thread time_t c_time;
@@ -40,6 +41,97 @@ static int expect_eq(const char *label, const char *got, const char *want)
         return 1;
     }
     return 0;
+}
+
+
+/* Parse msg, decode it as decoder/id with the given srcip, run Accumulate()
+ * and return the srcip the event ends up with (caller frees). */
+static char *accumulate_srcip(const char *msg, OSDecoderInfo *decoder,
+                              const char *id, const char *srcip)
+{
+    Eventinfo *lf;
+    char *buf;
+    char *got = NULL;
+
+    os_calloc(1, sizeof(*lf), lf);
+    Zero_Eventinfo(lf);
+
+    os_strdup(msg, buf);
+    if (OS_CleanMSG_ex(buf, lf, time(NULL), 0) != 0) {
+        printf("FAIL: OS_CleanMSG_ex failed for '%s'\n", msg);
+        free(buf);
+        Free_Eventinfo(lf);
+        return NULL;
+    }
+    free(buf);
+
+    lf->decoder_info = decoder;
+    os_strdup(id, lf->id);
+    if (srcip) {
+        os_strdup(srcip, lf->srcip);
+    }
+
+    Accumulate(lf);
+
+    if (lf->srcip) {
+        os_strdup(lf->srcip, got);
+    }
+    Free_Eventinfo(lf);
+    return got;
+}
+
+/* ANT-2026-ZQN8MYKG: two agents with the same device hostname and decoder id
+ * must not share accumulator state. */
+static int run_accumulate_case(void)
+{
+    OSDecoderInfo decoder;
+    char *got;
+    int failed = 0;
+
+    printf("--- accumulator keyed on agent, not log hostname ---\n");
+
+    memset(&decoder, 0, sizeof(decoder));
+    decoder.name = "openldap";
+
+    if (!Accumulate_Init()) {
+        printf("FAIL: Accumulate_Init\n");
+        return 1;
+    }
+
+    /* agent A seeds hostname ldap1 / conn 3000 with its own srcip */
+    got = accumulate_srcip(
+        "1:(agentA) 127.0.0.2->/var/log/slapd.log:"
+        "Oct 11 10:00:00 ldap1 slapd[20872]: conn=3000 fd=64 ACCEPT from IP=203.0.113.9:33957",
+        &decoder, "3000", "203.0.113.9");
+    free(got);
+
+    /* agent B's event for the same hostname/id carries no srcip of its own */
+    got = accumulate_srcip(
+        "1:(agentB) 127.0.0.3->/var/log/slapd.log:"
+        "Oct 11 10:00:01 ldap1 slapd[20872]: conn=3000 op=0 RESULT tag=97 err=49",
+        &decoder, "3000", NULL);
+    failed |= expect_eq("agentB srcip after agentA seed", got, NULL);
+    free(got);
+
+    /* the same agent still accumulates across its own lines */
+    got = accumulate_srcip(
+        "1:(agentB) 127.0.0.3->/var/log/slapd.log:"
+        "Oct 11 10:00:02 ldap1 slapd[20872]: conn=3001 fd=64 ACCEPT from IP=10.0.0.50:40000",
+        &decoder, "3001", "10.0.0.50");
+    free(got);
+    got = accumulate_srcip(
+        "1:(agentB) 127.0.0.3->/var/log/slapd.log:"
+        "Oct 11 10:00:03 ldap1 slapd[20872]: conn=3001 op=0 RESULT tag=97 err=49",
+        &decoder, "3001", NULL);
+    failed |= expect_eq("agentB srcip from own ACCEPT", got, "10.0.0.50");
+    free(got);
+
+    Accumulate_CleanUp();
+
+    if (!failed) {
+        printf("OK: accumulator entries are scoped per agent\n");
+    }
+    return failed;
 }
 
 static int run_case(const char *name, const char *msg,
@@ -124,6 +216,8 @@ int main(void)
         "PRIMUS",
         NULL,
         "/var/log/device.log");
+
+    failed |= run_accumulate_case();
 
     if (failed) {
         printf("\nFAIL: issue_1668_agent_hostname\n");

@@ -9,11 +9,14 @@
 
 /* Accumulator Functions which accumulate objects based on an ID.
  *
+ * Keys are agent_name + hostname + decoder + id (ANT-2026-ZQN8MYKG): agent
+ * identity from remoted, device hostname from the log line (#1668).
+ *
  * Pipeline process workers bind a private OSHash via analysisd_set_acm_store()
  * (TLS), so Accumulate runs lock-free per shard. Cross-shard accumulation for
- * the same hostname+decoder+id key is intentional non-sharing (rare). The
- * global store + accumulate_mutex remain for Accumulate_Init / serial paths
- * (testrule, non-pipeline) when TLS is unset.
+ * the same key is intentional non-sharing (rare). The global store +
+ * accumulate_mutex remain for Accumulate_Init / serial paths (testrule,
+ * non-pipeline) when TLS is unset.
  */
 
 #include <sys/time.h>
@@ -39,7 +42,9 @@ static __thread time_t tls_acm_purge_ts = 0;
 #define OS_ACM_PURGE_COUNT     200
 
 /* Accumulator Max Values */
-#define OS_ACM_MAXKEY 256
+/* agent_name (≤128) + hostname + decoder + id + separators; was 256 before
+ * ANT-2026-ZQN8MYKG added the agent prefix and truncated valid keys. */
+#define OS_ACM_MAXKEY 640
 #define OS_ACM_MAXELM 81
 
 typedef struct _OS_ACM_Store {
@@ -188,8 +193,13 @@ Eventinfo *Accumulate(Eventinfo *lf)
     gettimeofday(&tp, NULL);
     current_ts = tp.tv_sec;
 
-    result = snprintf(_key, OS_FLSIZE, "%s %s %s",
-                      lf->hostname,
+    /* Accumulator state is keyed by OSSEC agent as well as hostname: since
+     * #1668 lf->hostname is the syslog hostname parsed from the log line,
+     * which any agent can forge to seed the entries another agent's events
+     * will read srcip/dstuser from. Prefer agent_name as doDiff() does. */
+    result = snprintf(_key, sizeof(_key), "%s %s %s %s",
+                      lf->agent_name ? lf->agent_name : "",
+                      lf->hostname ? lf->hostname : "",
                       lf->decoder_info->name,
                       lf->id
                      );

@@ -110,12 +110,15 @@ issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a 
 		-lpcre2-8 -lm -lpthread -lz
 
 issue_1668_agent_hostname: tests/regressions/issue_1668_agent_hostname.c \
-		analysisd/cleanevent.c analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
+		analysisd/cleanevent.c analysisd/eventinfo.c analysisd/eventinfo_list.c \
+		analysisd/accumulator.c shared.a
 	$(CC) $(CFLAGS) -I./analysisd -c analysisd/cleanevent.c -o analysisd/cleanevent-1668.o
 	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c -o analysisd/eventinfo-1668.o
 	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-1668.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/accumulator.c -o analysisd/accumulator-1668.o
 	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1668_agent_hostname.c \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o analysisd/eventinfo_list-1668.o \
+		analysisd/accumulator-1668.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz
 
@@ -432,7 +435,7 @@ addagent/validate.o: addagent/validate.c
 clean:
 	rm -f $(REGRESSION_BINS) \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
-		analysisd/eventinfo_list-1668.o \
+		analysisd/eventinfo_list-1668.o analysisd/accumulator-1668.o \
 		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o \
 		analysisd/eventinfo_list-1668oa.o \
 		analysisd/decoders/plugins/ossecalert_decoder-1668oa.o \
