@@ -14,6 +14,7 @@
 /* Prototypes */
 static char *gen_diff_alert(const char *filename, time_t alert_diff_time) __attribute__((nonnull));
 static int seechanges_dupfile(const char *old, const char *current) __attribute__((nonnull));
+static int seechanges_safedir(const char *dir) __attribute__((nonnull));
 static int seechanges_createpath(const char *filename) __attribute__((nonnull));
 
 #ifdef USE_MAGIC
@@ -179,6 +180,31 @@ cleanup:
     return (1);
 }
 
+/* The diff store is written as root and by path name. A directory of it that
+ * is a link, or where another user can replace our entries, would let that
+ * user choose the files we write to.
+ */
+static int seechanges_safedir(const char *dir)
+{
+    struct stat st;
+
+    if (lstat(dir, &st) < 0 || !S_ISDIR(st.st_mode)) {
+        return (0);
+    }
+
+    if (st.st_uid != 0 && st.st_uid != geteuid()) {
+        return (0);
+    }
+
+    /* DIFF_DIR_PATH is shared with the ossec group: sticky bit required */
+    if ((st.st_mode & (S_IWGRP | S_IWOTH)) && !(st.st_mode & S_ISVTX)) {
+        return (0);
+    }
+
+    return (1);
+}
+
+/* Create the missing directories of the path and check the existing ones */
 static int seechanges_createpath(const char *filename)
 {
     char *buffer = NULL;
@@ -199,12 +225,24 @@ static int seechanges_createpath(const char *filename)
     while (1) {
         if (IsDir(newdir) != 0) {
 #ifndef WIN32
-            if (mkdir(newdir, 0770) == -1)
+            if (mkdir(newdir, 0750) == -1)
 #else
             if (mkdir(newdir) == -1)
 #endif
             {
                 merror(MKDIR_ERROR, ARGV0, newdir, errno, strerror(errno));
+                free(buffer);
+                return (0);
+            }
+        } else {
+            size_t diff_len = strlen(DIFF_DIR_PATH);
+
+            /* Only directories at or under DIFF_DIR_PATH (exact prefix). */
+            if (strncmp(newdir, DIFF_DIR_PATH, diff_len) == 0 &&
+                (newdir[diff_len] == '\0' || newdir[diff_len] == '/') &&
+                !seechanges_safedir(newdir)) {
+                merror("%s: ERROR: '%s' must be a directory that only root can "
+                       "change. Not using it for diffs.", ARGV0, newdir);
                 free(buffer);
                 return (0);
             }
@@ -262,9 +300,13 @@ char *seechanges_addfile(const char *filename)
         DIFF_LAST_FILE
     );
 
+    /* Everything below writes to the store by path name: make sure it is ours first */
+    if (!seechanges_createpath(old_location)) {
+        return (NULL);
+    }
+
     /* If the file is not there, rename new location to last location */
     if (OS_SHA256_File(old_location, sha256_old, OS_BINARY) != 0) {
-        seechanges_createpath(old_location);
         if (seechanges_dupfile(filename, old_location) != 1) {
             merror(RENAME_ERROR, ARGV0, filename, old_location, errno, strerror(errno));
         }

@@ -45,9 +45,13 @@ case "$1" in
 	chown ${USER}:${GROUP} ${DIR}/logs/ossec.log
 	chmod 664 ${DIR}/logs/ossec.log
 
-        chown -R ${USER}:${GROUP} ${DIR}/queue/diff
-        chmod -R 750 ${DIR}/queue/diff
-        chmod 740 ${DIR}/queue/diff/* > /dev/null 2>&1 || true
+        # Shared by the ossec group. ossec-syscheckd writes to local/ as root;
+        # sticky bit keeps ossec from replacing that directory.
+        mkdir -p ${DIR}/queue/diff/local
+        chown root:${GROUP} ${DIR}/queue/diff
+        chmod 1770 ${DIR}/queue/diff
+        chown -R root:root ${DIR}/queue/diff/local
+        chmod 750 ${DIR}/queue/diff/local
 
 	# For the etc dir
 	chmod 550 ${DIR}/etc

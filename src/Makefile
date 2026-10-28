@@ -529,7 +529,8 @@ endif
 	$(call INSTALL_CMD,0770,${OSSEC_USER},${OSSEC_GROUP}) -d ${PREFIX}/queue/alerts
 	$(call INSTALL_CMD,0750,${OSSEC_USER},${OSSEC_GROUP}) -d ${PREFIX}/queue/ossec
 	$(call INSTALL_CMD,0750,${OSSEC_USER},${OSSEC_GROUP}) -d ${PREFIX}/queue/syscheck
-	$(call INSTALL_CMD,0750,${OSSEC_USER},${OSSEC_GROUP}) -d ${PREFIX}/queue/diff
+	$(call INSTALL_CMD,1770,root,${OSSEC_GROUP}) -d ${PREFIX}/queue/diff
+	$(call INSTALL_CMD,0750,root,0) -d ${PREFIX}/queue/diff/local
 	$(call INSTALL_CMD,0550,root,${OSSEC_GROUP}) -d ${PREFIX}/backup
 	$(call INSTALL_CMD,0750,${OSSEC_USER},${OSSEC_GROUP}) -d ${PREFIX}/backup/agents
 

@@ -63,9 +63,19 @@ case "$1" in
 	chmod -R 750 ${DIR}/queue/rootcheck
 	chmod 740 ${DIR}/queue/rootcheck/* > /dev/null 2>&1 || true
 
-	chown -R ${USER}:${GROUP} ${DIR}/queue/diff
-	chmod -R 750 ${DIR}/queue/diff
-	chmod 740 ${DIR}/queue/diff/* > /dev/null 2>&1 || true
+	# Shared by the ossec group. ossec-syscheckd writes to local/ as root;
+	# sticky bit keeps ossec from replacing that directory.
+	mkdir -p ${DIR}/queue/diff/local
+	chown root:${GROUP} ${DIR}/queue/diff
+	chmod 1770 ${DIR}/queue/diff
+	chown -R root:root ${DIR}/queue/diff/local
+	chmod 750 ${DIR}/queue/diff/local
+	# analysisd/agentlessd keep state beside local/; restore ossec write
+	# after the earlier chmod -R 550 / chown root.
+	find ${DIR}/queue/diff -mindepth 1 -maxdepth 1 ! -name local -type d \
+	    -exec chown -R ${USER}:${GROUP} {} +
+	find ${DIR}/queue/diff -mindepth 1 -maxdepth 1 ! -name local -type d \
+	    -exec chmod -R 750 {} +
 
 	chown -R ${USER_REM}:${GROUP} ${DIR}/queue/agent-info
 	chmod -R 755 ${DIR}/queue/agent-info

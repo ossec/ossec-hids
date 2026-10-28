@@ -59,7 +59,8 @@ REGRESSION_BINS = \
 	issue_fb1hyskp_pagerduty_alertlog \
 	issue_ant2026_ar_scripts \
 	issue_3vn001l2_prefilter_retire \
-	issue_c186ep5n_nodiff_size
+	issue_c186ep5n_nodiff_size \
+	issue_96vsxf8b_diff_store_symlink
 
 .PHONY: all check clean
 
@@ -263,6 +264,17 @@ issue_3vn001l2_prefilter_retire: \
 	$(CC) $(CFLAGS) -o $@ \
 		tests/regressions/issue_3vn001l2_prefilter_retire.c \
 		-Wl,--start-group shared.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+# ANT-2026-96VSXF8B: refuse symlink / non-root report_changes store.
+# DEFAULTDIR="." so the harness can chdir into a temp tree for queue/diff.
+issue_96vsxf8b_diff_store_symlink: \
+		tests/regressions/issue_96vsxf8b_diff_store_symlink.c \
+		syscheckd/seechanges.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
+		tests/regressions/issue_96vsxf8b_diff_store_symlink.c \
+		syscheckd/seechanges.c \
+		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 
 issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_name.c \
