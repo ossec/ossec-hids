@@ -140,7 +140,7 @@ void OS_LogOutput(Eventinfo *lf)
         lf->dstuser == NULL ? "" : "\nUser: ",
         lf->dstuser == NULL ? "" : lf->dstuser,
 
-        lf->full_log);
+        (lf->full_log && lf->full_log[0]) ? lf->full_log : " ");
 
     /* Print the last events if present */
     {
@@ -149,7 +149,7 @@ void OS_LogOutput(Eventinfo *lf)
 
         if (lasts) {
             while (*lasts) {
-                printf("%s\n", *lasts);
+                printf("%s\n", ((*lasts)[0]) ? *lasts : " ");
                 lasts++;
             }
             if (!lf->alert_last_events && lf->generated_rule) {
@@ -230,12 +230,15 @@ void OS_Log(Eventinfo *lf)
                 lf->dstuser == NULL ? "" : "\nUser: ",
                 lf->dstuser == NULL ? "" : lf->dstuser,
 
-                lf->full_log);
+                /* Never emit an empty line inside a record: GetAlertData
+                 * treats a blank line as end-of-alert (ANT-2026-KTGCYZ58). */
+                (lf->full_log && lf->full_log[0]) ? lf->full_log : " ");
 
         /* Print the last events if present */
         if (lasts) {
             while (*lasts) {
-                fprintf(_aflog, "%s\n", *lasts);
+                fprintf(_aflog, "%s\n",
+                        ((*lasts)[0]) ? *lasts : " ");
                 lasts++;
             }
             if (!lf->alert_last_events && lf->generated_rule) {

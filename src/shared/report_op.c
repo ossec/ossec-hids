@@ -512,7 +512,8 @@ void os_ReportdStart(report_filter *r_filter)
             char *tmp_str;
             char **mgroup;
 
-            mgroup = OS_StrBreak(',', al_data->group, 32);
+            mgroup = al_data->group ? OS_StrBreak(',', al_data->group, 32)
+                                    : NULL;
             if (mgroup) {
                 while (*mgroup) {
                     tmp_str = *mgroup;
@@ -533,7 +534,7 @@ void os_ReportdStart(report_filter *r_filter)
                 }
 
                 //free(mgroup);
-            } else {
+            } else if (al_data->group) {
                 tmp_str = al_data->group;
                 while (*tmp_str == ' ') {
                     tmp_str++;

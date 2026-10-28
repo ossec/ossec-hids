@@ -61,7 +61,8 @@ REGRESSION_BINS = \
 	issue_3vn001l2_prefilter_retire \
 	issue_c186ep5n_nodiff_size \
 	issue_96vsxf8b_diff_store_symlink \
-	issue_s3eu4a19_crawler_dns
+	issue_s3eu4a19_crawler_dns \
+	issue_ktgcyz58_getalert_headers
 
 .PHONY: all check clean
 
@@ -180,6 +181,13 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 
 getalert_empty_filename: tests/regressions/getalert_empty_filename.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/getalert_empty_filename.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+# ANT-2026-KTGCYZ58: GetAlertData must not treat event text as headers.
+issue_ktgcyz58_getalert_headers: \
+		tests/regressions/issue_ktgcyz58_getalert_headers.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ktgcyz58_getalert_headers.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 
