@@ -543,7 +543,6 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
 
     syscheck_config *syscheck;
     syscheck = (syscheck_config *)configp;
-    unsigned int nodiff_size = 0;
 
     while (node[i]) {
         if (!node[i]->element) {
@@ -822,6 +821,12 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
 #endif
         /* Getting file/dir nodiff */
         } else if (strcmp(node[i]->element,xml_nodiff) == 0) {
+            /* Per-node index, same pattern as ign_size for <ignore>. A
+             * function-scope counter shared by nodiff and nodiff_regex left
+             * the first entry of one kind at a stale index in a fresh
+             * 2-slot array (silent drop or heap OOB; ANT-2026-C186EP5N). */
+            unsigned int nodiff_size = 0;
+
 #ifdef WIN32
             /* For Windows, we attempt to expand environment variables */
             char *new_nodiff = NULL;
