@@ -140,7 +140,7 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                 if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
                         if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
-                            if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                            if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0) {
                                 c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                             ARGV0, file_name, strerror(errno));
                                 checksum_failed = 1;
@@ -160,7 +160,7 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                 }
             } else {
                  if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
-                     if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0) {
+                     if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0) {
                         c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                     ARGV0, file_name, strerror(errno));
                         checksum_failed = 1;
@@ -179,7 +179,7 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
             }
 #else
             if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
-                if (OS_MD5_SHA1_File(file_name, syscheck.prefilter_cmd, mf_sum, sf_sum, OS_BINARY) < 0)
+                if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0)
                 {
                     c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                 ARGV0, file_name, strerror(errno));

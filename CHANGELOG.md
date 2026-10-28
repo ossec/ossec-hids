@@ -28,8 +28,8 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Retire ``<syscheck><prefilter_cmd>`` (prelink-era hash filter): ignore the tag with a warning so upgrades keep loading, and remove the ``popen()`` sink that let a crafted file name run as root (ANT-2026-3VN001L2; supersedes ANT-2026-D7ZVXNZP)
 - @atomicturtle - Give each ``<nodiff>`` node its own append index (like ``<ignore>``), so plain and ``sregex`` entries no longer share a stale counter that could heap-overflow or silently drop rules (ANT-2026-C186EP5N)
-- @atomicturtle - Refuse ``<syscheck><prefilter_cmd>`` from the manager-pushed ``agent.conf`` unless ``logcollector.remote_commands`` is set, matching ``<localfile><command>``, so shared config cannot run root commands on the agent (ANT-2026-D7ZVXNZP)
 - @atomicturtle - Sanitize ``;`` in ossecalert-forwarded alert fields and bound ``srcip``/``user`` so a logged username cannot inject a second ``srcip:`` on the central manager (ANT-2026-8TB11KJO)
 - @atomicturtle - Bound syscheck ``read_dir()`` path joins so a near-``PATH_MAX`` directory cannot wrap the entry ``strncpy`` size and crash ``ossec-syscheckd`` (ANT-2026-1UF4D24F); skip too-long entries and compose with ``snprintf``
 - @atomicturtle - Create Unix-domain queue sockets with their final mode via umask around ``bind()`` instead of a path ``chmod()`` afterwards, so a raced symlink in a group-writable queue dir cannot make root-owned files group-writable (ANT-2026-1EAZN37N)

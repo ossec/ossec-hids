@@ -41,10 +41,6 @@ int Read_Syscheck_Config(const char *cfgfile)
     syscheck.registry_arch  = NULL;
     syscheck.reg_fp         = NULL;
 #endif
-    syscheck.prefilter_cmd  = NULL;
-    syscheck.agent_cfg      = 0;
-    /* accept_remote is loaded in read_internal() before this runs. */
-
     debug2("%s: Reading Configuration [%s]", "syscheckd", cfgfile);
 
     /* Read config */
@@ -57,9 +53,7 @@ int Read_Syscheck_Config(const char *cfgfile)
 
     /* Read shared config */
     modules |= CAGENT_CONFIG;
-    syscheck.agent_cfg = 1;
     ReadConfig(modules, AGENTCONFIG, &syscheck, NULL);
-    syscheck.agent_cfg = 0;
 #endif
 
 #ifndef WIN32

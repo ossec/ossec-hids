@@ -9,7 +9,7 @@
 
 void usage(char **argv)
 {
-    printf("%s prefilter_cmd file str\n%s str string\n", argv[0], argv[0]);
+    printf("%s file <path>\n%s str string\n", argv[0], argv[0]);
     exit(1);
 }
 
@@ -18,19 +18,22 @@ int main(int argc, char **argv)
     os_md5 filesum1;
     os_sha1 filesum2;
 
-    if (argc < 4) {
+    if (argc < 3) {
         usage(argv);
     }
 
-    if (strcmp(argv[2], "file") == 0) {
-        OS_MD5_SHA1_File(argv[3], argv[1], filesum1, filesum2, OS_BINARY);
-    }
-
-    else {
+    if (strcmp(argv[1], "file") == 0) {
+        if (argc < 3) {
+            usage(argv);
+        }
+        if (OS_MD5_SHA1_File(argv[2], filesum1, filesum2, OS_BINARY) != 0) {
+            fprintf(stderr, "Unable to hash file: %s\n", argv[2]);
+            return (1);
+        }
+    } else {
         usage(argv);
     }
 
     printf("MD5Sha1Sum for \"%s\" is: %s - %s\n", argv[2], filesum1, filesum2);
     return (0);
 }
-

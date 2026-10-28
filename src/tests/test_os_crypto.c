@@ -147,43 +147,20 @@ START_TEST(test_md5sha1file)
     os_md5 md5buffer;
     os_sha1 sha1buffer;
 
-    ck_assert_int_eq(OS_MD5_SHA1_File(file_name, NULL, md5buffer, sha1buffer, OS_TEXT), 0);
+    ck_assert_int_eq(OS_MD5_SHA1_File(file_name, md5buffer, sha1buffer, OS_TEXT), 0);
 
     ck_assert_str_eq(md5buffer, string_md5);
     ck_assert_str_eq(sha1buffer, string_sha1);
 }
 END_TEST
 
-START_TEST(test_md5sha1cmdfile)
-{
-    const char *string = "teststring";
-    const char *string_md5 = "d67c5cbf5b01c9f91932e3b8def5e5f8";
-    const char *string_sha1 = "b8473b86d4c2072ca9b08bd28e373e8253e865c4";
-
-    /* create tmp file */
-    char file_name[256];
-    strncpy(file_name, "/tmp/tmp_file-XXXXXX", 256);
-    int fd = mkstemp(file_name);
-
-    write(fd, string, strlen(string));
-    close(fd);
-
-    os_md5 md5buffer;
-    os_sha1 sha1buffer;
-
-    ck_assert_int_eq(OS_MD5_SHA1_File(file_name, "cat ", md5buffer, sha1buffer, OS_TEXT), 0);
-
-    ck_assert_str_eq(md5buffer, string_md5);
-    ck_assert_str_eq(sha1buffer, string_sha1);
-}
-END_TEST
 
 START_TEST(test_md5sha1cmdfile_fail)
 {
     os_md5 md5buffer;
     os_sha1 sha1buffer;
 
-    ck_assert_int_eq(OS_MD5_SHA1_File("not_existing_file", NULL, md5buffer, sha1buffer, OS_TEXT), -1);
+    ck_assert_int_eq(OS_MD5_SHA1_File("not_existing_file", md5buffer, sha1buffer, OS_TEXT), -1);
 }
 END_TEST
 
@@ -209,7 +186,6 @@ Suite *test_suite(void)
 
     TCase *tc_md5sha1 = tcase_create("md5_sha1");
     tcase_add_test(tc_md5sha1, test_md5sha1file);
-    tcase_add_test(tc_md5sha1, test_md5sha1cmdfile);
     tcase_add_test(tc_md5sha1, test_md5sha1cmdfile_fail);
     tcase_set_timeout(tc_md5sha1, 7);
 
