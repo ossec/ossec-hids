@@ -6,20 +6,6 @@
  * License (version 2) as published by the FSF - Free Software
  * Foundation.
  *
- * Parity board 
- * - Always-on multi-threaded pipeline on Linux (no pipeline_enabled gate).
- * - TLS regex_matching + match_data per decode/process worker
- *   (os_regex_set_thread_match), not process-global regex state.
- * - Staged drain shutdown (input → decode → shard output → writers) with
- *   timed joins and fail-closed _exit(1); nested historically exit(1) early.
- * - No SCA / syscollector / w_* helpers from nested.
- * - Sharded EventList (one list + one decode-output queue per rule-matching
- *   thread) exceeds nested's single contended global EventList + mutex model.
- * - Ticket alert IDs via analysisd_claim_alert_id() for async alert writers.
- * - Async FTS writer (writer_queue_fts): match path updates memory under
- *   fts_mutex, enqueues a strdup'd line; FTS_Fprintf/Flush under fts_write_lock.
- * - Dual input demux (1 recv + N route workers) exceeds nested's single demux.
- * - Per-agent rootcheck FILE locks; hostinfo under process-wide mutex.
  */
 
 #ifndef WIN32

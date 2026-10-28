@@ -58,7 +58,8 @@ REGRESSION_BINS = \
 	issue_ud31vlyl_audit_oob \
 	issue_fb1hyskp_pagerduty_alertlog \
 	issue_ant2026_ar_scripts \
-	issue_3vn001l2_prefilter_retire
+	issue_3vn001l2_prefilter_retire \
+	issue_c186ep5n_nodiff_size
 
 .PHONY: all check clean
 
@@ -360,6 +361,19 @@ issue_m5jt0jcl_authd_key_rng: \
 		-Wl,--wrap=randombytes_try -Wl,--wrap=isChroot \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+# ANT-2026-C186EP5N: nodiff_size must be per <nodiff> node (like ign_size).
+# Compile syscheck-config.c into the binary so the harness does not depend on
+# a stale config.a member; pull the rest of config via config.a.
+# (syscheck_remote_cmd.c removed with prefilter_cmd retirement, ANT-2026-3VN001L2.)
+issue_c186ep5n_nodiff_size: \
+		tests/regressions/issue_c186ep5n_nodiff_size.c \
+		config/syscheck-config.c shared.a
+	$(CC) $(CFLAGS) -I./config -o $@ \
+		tests/regressions/issue_c186ep5n_nodiff_size.c \
+		config/syscheck-config.c \
+		-Wl,--start-group shared.a os_regex.a os_xml.a os_net.a config.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
 
 # Compile localfile-config.c into the binary so the harness does not depend
 # on a possibly stale config.a member from an earlier server build.
