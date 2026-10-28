@@ -164,7 +164,7 @@ void FreeAlertData(alert_data *al_data)
 /* Return alert data for the file specified */
 alert_data *GetAlertData(int flag, FILE *fp)
 {
-    int _r = 0, issyscheck = 0;
+    int _r = 0, issyscheck = 0, syscheck_alert = 0;
     size_t log_size = 0;
     char *p;
 
@@ -193,16 +193,46 @@ alert_data *GetAlertData(int flag, FILE *fp)
     char *dstgeoip = NULL;
 #endif
     int level = 0, rule = 0, srcport = 0, dstport = 0;
+    /* Optional headers appear at most once; a full_log that starts with the
+     * same prefix must become log text, not overwrite the real field.
+     */
+    int got_srcport = 0, got_dstport = 0;
 
-    char str[OS_BUFFER_SIZE + 1];
-    str[OS_BUFFER_SIZE] = '\0';
+    /* Big enough for the longest line analysisd writes (an OS_MAXSTR event) */
+    char str[OS_MAXSTR + 2];
+    int partial = 0;
 
-    while (fgets(str, OS_BUFFER_SIZE, fp) != NULL) {
-        /* End of alert */
-        if (strcmp(str, "\n") == 0 && log_size > 0) {
-            /* Found in here */
-            if (_r == 2) {
+    while (fgets(str, sizeof(str), fp) != NULL) {
+        /* The rest of a line that did not fit in str is event text, never a
+         * header: do not let it forge "Rule:", "Src IP:", "** Alert", etc.
+         * A lone "\n" after a split is still the record terminator — fall
+         * through to blank-line handling instead of skipping it.
+         */
+        if (partial) {
+            partial = (strchr(str, '\n') == NULL);
+            if (strcmp(str, "\n") != 0) {
+                continue;
+            }
+            partial = 0;
+        } else {
+            partial = (strchr(str, '\n') == NULL);
+        }
+
+        /* End of alert. Require real headers (group + comment) so a forged
+         * "** Alert" without " - <groups>" cannot return group == NULL.
+         */
+        if (strcmp(str, "\n") == 0) {
+            if (_r == 2 && group && comment) {
                 alert_data *al_data;
+
+                /* Every line was taken as a field: still end the record. */
+                if (log_size == 0) {
+                    os_realloc(log, 2 * sizeof(char *), log);
+                    os_strdup("", log[0]);
+                    log[1] = NULL;
+                    log_size = 1;
+                }
+
                 os_calloc(1, sizeof(alert_data), al_data);
                 al_data->alertid = alertid;
                 al_data->level = level;
@@ -236,11 +266,15 @@ alert_data *GetAlertData(int flag, FILE *fp)
 
                 return (al_data);
             }
-            _r = 0;
+
+            /* Do not carry a broken alert over to the next one */
+            goto l_error;
         }
 
-        /* Check for the header */
-        if (strncmp(ALERT_BEGIN, str, ALERT_BEGIN_SZ) == 0) {
+        /* Check for the header. Inside an alert (_r == 2) the event text
+         * follows the header lines, so a "** Alert" there is log data.
+         */
+        if (_r != 2 && strncmp(ALERT_BEGIN, str, ALERT_BEGIN_SZ) == 0) {
             char *m;
             size_t z = 0;
             p = str + ALERT_BEGIN_SZ + 1;
@@ -279,6 +313,7 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_clearnl(group, p);
                 if (group != NULL && strstr(group, "syscheck") != NULL) {
                     issyscheck = 1;
+                    syscheck_alert = 1;
                 }
             }
 
@@ -323,8 +358,9 @@ alert_data *GetAlertData(int flag, FILE *fp)
             log_size = 0;
             continue;
         } else if (_r == 2) {
-            /* Rule begin */
-            if (strncmp(RULE_BEGIN, str, RULE_BEGIN_SZ) == 0) {
+            /* Rule begin: the first line after the date, before any event text */
+            if (!comment && log_size == 0 &&
+                    strncmp(RULE_BEGIN, str, RULE_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + RULE_BEGIN_SZ;
@@ -364,64 +400,73 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 }
             }
 
-            /* srcip */
-            else if (strncmp(SRCIP_BEGIN, str, SRCIP_BEGIN_SZ) == 0) {
+            /* srcip and the other optional fields come before the event text;
+             * accept each prefix once so a matching full_log stays in log[].
+             */
+            else if (log_size == 0 && !srcip &&
+                    strncmp(SRCIP_BEGIN, str, SRCIP_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + SRCIP_BEGIN_SZ;
-                free(srcip);
                 os_strdup(p, srcip);
             }
 #ifdef LIBGEOIP_ENABLED
             /* GeoIP Source Location */
-            else if (strncmp(GEOIP_BEGIN_SRC, str, GEOIP_BEGIN_SRC_SZ) == 0) {
+            else if (log_size == 0 && !srcgeoip &&
+                    strncmp(GEOIP_BEGIN_SRC, str, GEOIP_BEGIN_SRC_SZ) == 0) {
                 os_clearnl(str, p);
                 p = str + GEOIP_BEGIN_SRC_SZ;
-                free(srcgeoip);
                 os_strdup(p, srcgeoip);
             }
 #endif
             /* srcport */
-            else if (strncmp(SRCPORT_BEGIN, str, SRCPORT_BEGIN_SZ) == 0) {
+            else if (log_size == 0 && !got_srcport &&
+                    strncmp(SRCPORT_BEGIN, str, SRCPORT_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + SRCPORT_BEGIN_SZ;
                 srcport = atoi(p);
+                got_srcport = 1;
             }
             /* dstip */
-            else if (strncmp(DSTIP_BEGIN, str, DSTIP_BEGIN_SZ) == 0) {
+            else if (log_size == 0 && !dstip &&
+                    strncmp(DSTIP_BEGIN, str, DSTIP_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + DSTIP_BEGIN_SZ;
-                free(dstip);
                 os_strdup(p, dstip);
             }
 #ifdef LIBGEOIP_ENABLED
             /* GeoIP Destination Location */
-            else if (strncmp(GEOIP_BEGIN_DST, str, GEOIP_BEGIN_DST_SZ) == 0) {
+            else if (log_size == 0 && !dstgeoip &&
+                    strncmp(GEOIP_BEGIN_DST, str, GEOIP_BEGIN_DST_SZ) == 0) {
                 os_clearnl(str, p);
                 p = str + GEOIP_BEGIN_DST_SZ;
-                free(dstgeoip);
                 os_strdup(p, dstgeoip);
             }
 #endif
             /* dstport */
-            else if (strncmp(DSTPORT_BEGIN, str, DSTPORT_BEGIN_SZ) == 0) {
+            else if (log_size == 0 && !got_dstport &&
+                    strncmp(DSTPORT_BEGIN, str, DSTPORT_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + DSTPORT_BEGIN_SZ;
                 dstport = atoi(p);
+                got_dstport = 1;
             }
             /* username */
-            else if (strncmp(USER_BEGIN, str, USER_BEGIN_SZ) == 0) {
+            else if (log_size == 0 && !user &&
+                    strncmp(USER_BEGIN, str, USER_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + USER_BEGIN_SZ;
-                free(user);
                 os_strdup(p, user);
             }
-            /* Old MD5 */
-            else if (strncmp(OLDMD5_BEGIN, str, OLDMD5_BEGIN_SZ) == 0) {
+            /* Syscheck metadata: only on syscheck-group alerts (after the
+             * first event line). On other alerts these prefixes are log text.
+             */
+            else if (syscheck_alert &&
+                    strncmp(OLDMD5_BEGIN, str, OLDMD5_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + OLDMD5_BEGIN_SZ;
@@ -429,7 +474,8 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_strdup(p, old_md5);
             }
             /* New MD5 */
-            else if (strncmp(NEWMD5_BEGIN, str, NEWMD5_BEGIN_SZ) == 0) {
+            else if (syscheck_alert &&
+                    strncmp(NEWMD5_BEGIN, str, NEWMD5_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + NEWMD5_BEGIN_SZ;
@@ -437,7 +483,8 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_strdup(p, new_md5);
             }
             /* Old SHA-1 */
-            else if (strncmp(OLDSHA1_BEGIN, str, OLDSHA1_BEGIN_SZ) == 0) {
+            else if (syscheck_alert &&
+                    strncmp(OLDSHA1_BEGIN, str, OLDSHA1_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + OLDSHA1_BEGIN_SZ;
@@ -445,7 +492,8 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_strdup(p, old_sha1);
             }
             /* New SHA-1 */
-            else if (strncmp(NEWSHA1_BEGIN, str, NEWSHA1_BEGIN_SZ) == 0) {
+            else if (syscheck_alert &&
+                    strncmp(NEWSHA1_BEGIN, str, NEWSHA1_BEGIN_SZ) == 0) {
                 os_clearnl(str, p);
 
                 p = str + NEWSHA1_BEGIN_SZ;
@@ -454,7 +502,8 @@ alert_data *GetAlertData(int flag, FILE *fp)
             }
          /* "9/19/2016 - Sivakumar Nellurandi - parsing additions" */
             /* File Size */
-            else if(strncmp(SIZE_BEGIN, str, SIZE_BEGIN_SZ) == 0)
+            else if (syscheck_alert &&
+                    strncmp(SIZE_BEGIN, str, SIZE_BEGIN_SZ) == 0)
             {
                 os_clearnl(str,p);
 
@@ -465,7 +514,8 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_strdup(p, file_size);
             }
             /* File Ownership */
-            else if(strncmp(OWNER_BEGIN, str, OWNER_BEGIN_SZ) == 0)
+            else if (syscheck_alert &&
+                    strncmp(OWNER_BEGIN, str, OWNER_BEGIN_SZ) == 0)
             {
                 os_clearnl(str,p);
 
@@ -476,7 +526,8 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_strdup(p, owner_chg);
             }
             /* File Group Ownership */
-            else if(strncmp(GROUP_BEGIN, str, GROUP_BEGIN_SZ) == 0)
+            else if (syscheck_alert &&
+                    strncmp(GROUP_BEGIN, str, GROUP_BEGIN_SZ) == 0)
             {
                 os_clearnl(str,p);
 
@@ -487,7 +538,8 @@ alert_data *GetAlertData(int flag, FILE *fp)
                 os_strdup(p, group_chg);
             }
             /* File Permissions */
-            else if(strncmp(PERM_BEGIN, str, PERM_BEGIN_SZ) == 0)
+            else if (syscheck_alert &&
+                    strncmp(PERM_BEGIN, str, PERM_BEGIN_SZ) == 0)
             {
                 os_clearnl(str,p);
 
@@ -533,6 +585,19 @@ alert_data *GetAlertData(int flag, FILE *fp)
 l_error:
         /* Free the memory */
         _r = 0;
+        partial = 0;
+        issyscheck = 0;
+        syscheck_alert = 0;
+        rule = 0;
+        level = 0;
+        srcport = 0;
+        dstport = 0;
+        got_srcport = 0;
+        got_dstport = 0;
+        if (alertid) {
+            free(alertid);
+            alertid = NULL;
+        }
         if (date) {
             free(date);
             date = NULL;
@@ -548,6 +613,10 @@ l_error:
         if (srcip) {
             free(srcip);
             srcip = NULL;
+        }
+        if (dstip) {
+            free(dstip);
+            dstip = NULL;
         }
 #ifdef LIBGEOIP_ENABLED
         if (srcgeoip) {

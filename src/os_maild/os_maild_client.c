@@ -269,9 +269,10 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
 
             /* Look for the group */
             if (Mail->gran_group[i]) {
-                if (OSMatch_Execute(al_data->group,
-                                    strlen(al_data->group),
-                                    Mail->gran_group[i])) {
+                if (al_data->group &&
+                        OSMatch_Execute(al_data->group,
+                                        strlen(al_data->group),
+                                        Mail->gran_group[i])) {
                     gr_set = 1;
                 } else {
                     i++;

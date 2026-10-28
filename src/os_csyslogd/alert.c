@@ -173,9 +173,10 @@ int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
 
     /* Look for the group */
     if (syslog_config->group) {
-        if (!OSMatch_Execute(al_data->group,
-                             strlen(al_data->group),
-                             syslog_config->group)) {
+        if (!al_data->group ||
+                !OSMatch_Execute(al_data->group,
+                                 strlen(al_data->group),
+                                 syslog_config->group)) {
             return (0);
         }
     }
