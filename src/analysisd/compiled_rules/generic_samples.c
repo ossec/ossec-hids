@@ -12,7 +12,6 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <netdb.h>
 #include <string.h>
 
 /* Note: If the rule fails to match it should return NULL.
@@ -134,7 +133,15 @@ void *is_simple_http_request(Eventinfo *lf)
     return (NULL);
 }
 
-/* Example 5: Checking if the source IP is from a valid bot */
+/* Example 5: Checking if the source IP is from a valid bot.
+ * Compiled rules run on the analysisd rule-matching threads, so they must
+ * never block: no DNS lookups here. The client address is checked only
+ * against a static prefix table. The reverse/forward googlebot lookup that
+ * used to follow held the thread for the resolver timeout on every 4xx
+ * line whose PTR query went unanswered, delaying and then dropping events
+ * of every other agent on that thread, and could never match anyway (it
+ * compared the resolved address with the whole log line).
+ */
 void *is_valid_crawler(Eventinfo *lf)
 {
     if((strncmp(lf->log, "72.14.",6) == 0)||  /* Feedfetcher-Google */
@@ -146,49 +153,6 @@ void *is_valid_crawler(Eventinfo *lf)
             (strncmp(lf->log, "67.195.", 7) == 0) /* Yahoo */
        ) {
         return (lf);
-    }
-
-    // In order to verify a googlebot crawler, Google recommends doing a
-    // reverse DNS lookup, and then a forward DNS lookup to verify that
-    //
-    // 1. The host is in the googlebot.com domain
-    // 2. The forward and reverse lookups match.
-    //
-    // https://support.google.com/webmasters/answer/80553
-
-    struct sockaddr_in sa;
-    char hostname[NI_MAXHOST];
-
-    sa.sin_family = AF_INET;
-    inet_aton(lf->log, &sa.sin_addr);
-
-    // Do the reverse DNS lookup
-    if (getnameinfo((struct sockaddr*)&sa, sizeof sa, hostname, sizeof hostname, NULL, 0, 0) == 0) {
-
-        // verify that the host is in the googlebot.com domain.
-        char *start = strstr(hostname, "googlebot.com");
-        if (start != NULL) {
-            struct addrinfo hints, *res, *p;
-            char ipstr[INET6_ADDRSTRLEN];
-
-            memset(&hints, 0, sizeof hints);
-            hints.ai_family = AF_INET;
-            hints.ai_socktype = SOCK_STREAM;
-
-            // Do the forward DNS lookup
-            if (getaddrinfo(hostname, NULL, &hints, &res) == 0) {
-                for (p = res; p != NULL; p = p->ai_next) {
-                    struct sockaddr_in *ipv4 = (struct sockaddr_in*)p->ai_addr;
-                    void *addr = &(ipv4->sin_addr);
-                    inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
-                    // Make sure the forward & reverse lookups match
-                    if (strcmp(ipstr, lf->log) == 0) {
-                        return(lf);
-                    }
-                }
-                freeaddrinfo(res);
-            }
-        }
     }
 
     return (NULL);

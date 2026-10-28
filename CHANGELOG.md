@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Drop the blocking reverse/forward DNS lookup from the ``is_valid_crawler`` compiled rule (31140): an unanswered PTR for a 4xx client address stalled an analysisd rule-matching thread for the resolver timeout per log line (ANT-2026-S3EU4A19)
 - @atomicturtle - Prefix analysisd accumulator keys with the OSSEC agent name (keeping the log hostname), so one agent cannot forge another agent's OpenLDAP ``srcip``/``user`` via a shared device hostname after #1668 (ANT-2026-ZQN8MYKG)
 - @atomicturtle - Make ``queue/diff`` sticky root:ossec with a root-owned ``local/``, and refuse ``report_changes`` store directories that are links or writable by others, so user ``ossec`` cannot plant symlinks that root ``ossec-syscheckd`` follows (ANT-2026-96VSXF8B)
 - @atomicturtle - Retire ``<syscheck><prefilter_cmd>`` (prelink-era hash filter): ignore the tag with a warning so upgrades keep loading, and remove the ``popen()`` sink that let a crafted file name run as root (ANT-2026-3VN001L2; supersedes ANT-2026-D7ZVXNZP)

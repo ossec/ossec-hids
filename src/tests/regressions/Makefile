@@ -60,7 +60,8 @@ REGRESSION_BINS = \
 	issue_ant2026_ar_scripts \
 	issue_3vn001l2_prefilter_retire \
 	issue_c186ep5n_nodiff_size \
-	issue_96vsxf8b_diff_store_symlink
+	issue_96vsxf8b_diff_store_symlink \
+	issue_s3eu4a19_crawler_dns
 
 .PHONY: all check clean
 
@@ -278,6 +279,18 @@ issue_96vsxf8b_diff_store_symlink: \
 		tests/regressions/issue_96vsxf8b_diff_store_symlink.c \
 		syscheckd/seechanges.c \
 		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+# ANT-2026-S3EU4A19: is_valid_crawler must not block on DNS.
+issue_s3eu4a19_crawler_dns: \
+		tests/regressions/issue_s3eu4a19_crawler_dns.c \
+		analysisd/compiled_rules/generic_samples.c \
+		analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_s3eu4a19_crawler_dns.c \
+		analysisd/compiled_rules/generic_samples.c \
+		analysisd/eventinfo.c analysisd/eventinfo_list.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 
 issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_name.c \
