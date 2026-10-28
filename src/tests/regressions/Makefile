@@ -62,7 +62,8 @@ REGRESSION_BINS = \
 	issue_c186ep5n_nodiff_size \
 	issue_96vsxf8b_diff_store_symlink \
 	issue_s3eu4a19_crawler_dns \
-	issue_ktgcyz58_getalert_headers
+	issue_ktgcyz58_getalert_headers \
+	issue_35jw8ghu_log_rollover
 
 .PHONY: all check clean
 
@@ -188,6 +189,13 @@ getalert_empty_filename: tests/regressions/getalert_empty_filename.c shared.a
 issue_ktgcyz58_getalert_headers: \
 		tests/regressions/issue_ktgcyz58_getalert_headers.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ktgcyz58_getalert_headers.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread
+
+# ANT-2026-35JW8GHU: forward-only day rollover + FileMon inode reopen.
+issue_35jw8ghu_log_rollover: \
+		tests/regressions/issue_35jw8ghu_log_rollover.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_35jw8ghu_log_rollover.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread
 

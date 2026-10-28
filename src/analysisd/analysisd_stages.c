@@ -133,10 +133,31 @@ void analysisd_set_time_context(Eventinfo *lf)
 
 int analysisd_handle_hour_rollover(Eventinfo *lf)
 {
+    /* Event time and wall clock of the last successful rollover. Keep them
+     * separate: lf->time can be slightly ahead of time(NULL), and comparing
+     * wall clock to event time would look like a setback and re-open rollback.
+     */
+    static time_t last_rollover_event = 0;
+    static time_t last_rollover_wall = 0;
+    time_t now;
+
 #ifndef WIN32
     os_mutex_lock(&hour_rollover_mutex);
 #endif
-    if (thishour != __crt_hour) {
+    /* lf->time is stamped at decode and the match shards drain independently,
+     * so an event older than the one that rolled the logs last can get here
+     * after it. Never roll back for such a late event (that would unlink the
+     * still empty file of the new day); only follow the clock if it was
+     * itself set back. Cap the stored event time so a far-future stamp cannot
+     * block later legitimate rollovers. */
+    now = time(NULL);
+    /* Ignore tiny NTP/VM jitter: only treat a real setback (>= 60s) as a
+     * clock rewind that may roll logs for an older lf->time. */
+    if (thishour != __crt_hour &&
+        (lf->time >= last_rollover_event ||
+         (last_rollover_wall > 0 && now + 60 < last_rollover_wall))) {
+        last_rollover_event = (lf->time <= now) ? lf->time : now;
+        last_rollover_wall = now;
         DumpLogstats();
         thishour = __crt_hour;
 

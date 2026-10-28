@@ -178,9 +178,38 @@ alert_data *Read_FileMon(file_queue *fileq, const struct tm *p, unsigned int tim
     /* Try up to timeout times to get an event. timeout 0: one non-blocking read. */
     attempts = (timeout == 0) ? 1u : timeout;
     while (i < attempts) {
+        if (!fileq->fp) {
+            break;
+        }
+
         al_data = GetAlertData(fileq->flags, fileq->fp);
         if (al_data) {
             return (al_data);
+        }
+
+        /* Empty read: if the path was replaced (analysisd unlinked an empty
+         * new-day file and recreated it), reopen from the start like
+         * jqueue_next() does for alerts.json. Check each attempt so we do
+         * not wait out the full timeout on a deleted inode. Always
+         * CRALERT_READ_ALL so we do not seek past alerts already written. */
+        if (!(fileq->flags & CRALERT_FP_SET)) {
+            struct stat st;
+
+            if (stat(fileq->file_name, &st) < 0 ||
+                    st.st_ino != fileq->f_status.st_ino ||
+                    st.st_dev != fileq->f_status.st_dev) {
+                debug1("%s: DEBUG: %s was replaced; reopening.", __local_name,
+                       fileq->file_name);
+                if (Handle_Queue(fileq, CRALERT_READ_ALL) == 1) {
+                    al_data = GetAlertData(fileq->flags, fileq->fp);
+                    if (al_data) {
+                        return (al_data);
+                    }
+                } else {
+                    /* No usable file; do not call GetAlertData on a NULL fp. */
+                    break;
+                }
+            }
         }
 
         i++;
