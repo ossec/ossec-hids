@@ -41,6 +41,9 @@ typedef struct _logreader {
     char *command;
     char *alias;
     char future;
+    /* Discard through the next newline after an over-long syslog read that
+     * hit EOF mid-line (ANT-2026-RNCE3SO7). */
+    char skip_to_nl;
     char *query;
 
     void *(*read)(int i, int *rc, int drop_it);

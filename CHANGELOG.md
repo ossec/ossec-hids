@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Fix ``read_syslog`` over-long line handling: drop the always-true ``strchr(str, '\\0')`` branch from #913, detect full reads by byte count, map embedded NULs to spaces, and skip mid-line remainders across polls so a long access-log field cannot inject a forged standalone event (ANT-2026-RNCE3SO7)
 - @atomicturtle - Roll analysisd daily logs forward only (ignore a match-shard event older than the last rollover unless the clock was set back), and reopen the alerts file in ``Read_FileMon`` when its path no longer names the open inode (as ``jqueue_next`` already does for JSON), so a late pre-midnight backlog cannot unlink today's empty alerts file and leave csyslogd/maild/dbd reading a deleted inode for the rest of the day (ANT-2026-35JW8GHU)
 - @atomicturtle - Stop ``GetAlertData`` from treating event text as alert headers (whole-line reads, headers only where ``OS_Log`` writes them, no blank line inside a record, and NULL ``group`` guards in csyslogd/maild/reportd), so a long access-log line or correlation previous-output cannot forge rule/level or crash output daemons (ANT-2026-KTGCYZ58)
 - @atomicturtle - Drop the blocking reverse/forward DNS lookup from the ``is_valid_crawler`` compiled rule (31140): an unanswered PTR for a 4xx client address stalled an analysisd rule-matching thread for the resolver timeout per log line (ANT-2026-S3EU4A19)

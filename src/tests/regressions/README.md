@@ -53,6 +53,7 @@
 #   - issue_s3eu4a19_crawler_dns       is_valid_crawler must not call DNS
 #   - issue_ktgcyz58_getalert_headers  GetAlertData must not parse event text as headers
 #   - issue_35jw8ghu_log_rollover      forward-only day rollover + FileMon inode reopen
+#   - issue_rnce3so7_syslog_long_line  read_syslog truncates long lines / keeps NULs
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils
