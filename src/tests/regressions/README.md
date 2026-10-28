@@ -48,6 +48,7 @@
 #   - issue_ossecalert_field_injection ossecalert forward must sanitize ';' in fields
 #   - issue_3vn001l2_prefilter_retire  retire prefilter_cmd (no popen sink)
 #   - issue_c186ep5n_nodiff_size       per-node nodiff_size (plain vs sregex)
+#   - issue_96vsxf8b_diff_store_symlink refuse unsafe report_changes queue/diff store
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Make ``queue/diff`` sticky root:ossec with a root-owned ``local/``, and refuse ``report_changes`` store directories that are links or writable by others, so user ``ossec`` cannot plant symlinks that root ``ossec-syscheckd`` follows (ANT-2026-96VSXF8B)
 - @atomicturtle - Retire ``<syscheck><prefilter_cmd>`` (prelink-era hash filter): ignore the tag with a warning so upgrades keep loading, and remove the ``popen()`` sink that let a crafted file name run as root (ANT-2026-3VN001L2; supersedes ANT-2026-D7ZVXNZP)
 - @atomicturtle - Give each ``<nodiff>`` node its own append index (like ``<ignore>``), so plain and ``sregex`` entries no longer share a stale counter that could heap-overflow or silently drop rules (ANT-2026-C186EP5N)
 - @atomicturtle - Sanitize ``;`` in ossecalert-forwarded alert fields and bound ``srcip``/``user`` so a logged username cannot inject a second ``srcip:`` on the central manager (ANT-2026-8TB11KJO)

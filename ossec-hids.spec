@@ -266,7 +266,7 @@ echo "DATE=\"`date`\""                        >> ossec-init.conf
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/lua/
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/lua/{native,compiled}
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/logs/{archives,alerts,firewall}
-%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/queue/{alerts,agentless,agent-info,diff,fts,ossec,rids,rootcheck,syscheck}
+%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/queue/{alerts,agentless,agent-info,diff/local,fts,ossec,rids,rootcheck,syscheck}
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/var/run
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/templates
@@ -285,7 +285,7 @@ echo "DATE=\"`date`\""                        >> ossec-init.conf
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/etc/shared
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/logs
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/lua/{native,compiled}
-%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/queue/{alerts,diff,ossec,rids,syscheck}
+%{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/queue/{alerts,diff/local,ossec,rids,syscheck}
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/tmp
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/var/run
 %{__mkdir_p} ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/ossec-agent/.ssh
@@ -646,7 +646,8 @@ fi
 %attr(550,root,root) %dir %{_localstatedir}/ossec/lua/*
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/queue
 %attr(770,ossec,ossec) %dir %{_localstatedir}/ossec/queue/ossec
-%attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/queue/diff
+%attr(1770,root,ossec) %dir %{_localstatedir}/ossec/queue/diff
+%attr(750,root,root) %dir %{_localstatedir}/ossec/queue/diff/local
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/var
 %attr(770,root,ossec) %dir %{_localstatedir}/ossec/var/run
 #%attr(550,root,root) %{_localstatedir}/ossec/bin/ossec-lua*
@@ -694,7 +695,8 @@ fi
 %attr(550,root,root) %dir %{_localstatedir}/ossec/ossec-agent/lua/*
 %attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/ossec-agent/logs
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/ossec-agent/queue/alerts
-%attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/ossec-agent/queue/diff
+%attr(1770,root,ossec) %dir %{_localstatedir}/ossec/ossec-agent/queue/diff
+%attr(750,root,root) %dir %{_localstatedir}/ossec/ossec-agent/queue/diff/local
 %attr(750,ossec,ossec) %dir %{_localstatedir}/ossec/ossec-agent/queue/ossec
 %attr(775,root,ossec) %dir %{_localstatedir}/ossec/ossec-agent/queue/rids
 %attr(550,root,ossec) %dir %{_localstatedir}/ossec/ossec-agent/queue/syscheck
