@@ -47,6 +47,7 @@
 #   - issue_read_dir_path_overflow     read_dir path join must not wrap near PATH_MAX
 #   - issue_ossecalert_field_injection ossecalert forward must sanitize ';' in fields
 #   - issue_prefilter_remote_cmd       refuse agent.conf prefilter_cmd unless opted in
+#   - issue_c186ep5n_nodiff_size       per-node nodiff_size (plain vs sregex)
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils
