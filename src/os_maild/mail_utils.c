@@ -115,3 +115,29 @@ int mail_safe_envelope_value(const char *src, char *dst, size_t dst_size)
     mail_sanitize_header_value(src, dst, dst_size);
     return (dst[0] != '\0') ? 0 : -1;
 }
+
+char *mail_subject_host_cut(char *location)
+{
+    char *subject_host;
+
+    if (!location) {
+        return (NULL);
+    }
+
+    /* Cut at the "->" separator itself. Searching for '>' alone and stepping
+     * back writes before the buffer when location starts with '>' (e.g. an ASL
+     * [Host ...] value, or a forged ** Alert location line). ANT-2026-H2JMYHXZ */
+    subject_host = strstr(location, "->");
+    if (subject_host) {
+        *subject_host = '\0';
+    }
+
+    return (subject_host);
+}
+
+void mail_subject_host_restore(char *cut)
+{
+    if (cut) {
+        *cut = '-';
+    }
+}
