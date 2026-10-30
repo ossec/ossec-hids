@@ -18,6 +18,8 @@ static int read_dev_dir(const char *dir_name);
 /* Global variables */
 static int _dev_errors;
 static int _dev_total;
+static int _dev_depth;
+static int _dev_depth_limited;
 
 
 static int read_dev_file(const char *file_name)
@@ -33,7 +35,22 @@ static int read_dev_file(const char *file_name)
 #ifdef DEBUG
         verbose("%s: Reading dir: %s\n", ARGV0, file_name);
 #endif
-        return (read_dev_dir(file_name));
+        /* Bound recursion so a deep tree cannot exhaust the stack */
+        if (_dev_depth >= MAX_DIR_DEPTH) {
+            if (!_dev_depth_limited) {
+                debug1("%s: DEBUG: Directory '%s' is %d or more levels deep. "
+                       "Not scanning it.", ARGV0, file_name, MAX_DIR_DEPTH);
+                _dev_depth_limited = 1;
+            }
+            return (0);
+        }
+
+        _dev_depth++;
+        {
+            int ret = read_dev_dir(file_name);
+            _dev_depth--;
+            return (ret);
+        }
     }
 
     else if (S_ISREG(statbuf.st_mode)) {
@@ -143,13 +160,19 @@ void check_rc_dev(const char *basedir)
 {
     char file_path[OS_SIZE_1024 + 1];
 
-    _dev_total = 0, _dev_errors = 0;
+    _dev_total = 0, _dev_errors = 0, _dev_depth = 0, _dev_depth_limited = 0;
     debug1("%s: DEBUG: Starting on check_rc_dev", ARGV0);
 
     snprintf(file_path, OS_SIZE_1024, "%s/dev", basedir);
 
     read_dev_dir(file_path);
-    if (_dev_errors == 0) {
+    if (_dev_depth_limited) {
+        char op_msg[OS_SIZE_1024 + 1];
+        snprintf(op_msg, OS_SIZE_1024, "/dev scan incomplete: directories "
+                 "%d or more levels deep were skipped. Analyzed %d files.",
+                 MAX_DIR_DEPTH, _dev_total);
+        notify_rk(ALERT_SYSTEM_CRIT, op_msg);
+    } else if (_dev_errors == 0) {
         char op_msg[OS_SIZE_1024 + 1];
         snprintf(op_msg, OS_SIZE_1024, "No problem detected on the /dev "
                  "directory. Analyzed %d files",

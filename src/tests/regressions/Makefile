@@ -68,7 +68,8 @@ REGRESSION_BINS = \
 	issue_rnce3so7_syslog_long_line \
 	issue_h2jmyhxz_maild_subject_underflow \
 	issue_3wkk50ne_oshash_collisions \
-	issue_8sti0q1e_syscheck_linear_miss
+	issue_8sti0q1e_syscheck_linear_miss \
+	issue_6wl10qqz_dir_depth
 
 .PHONY: all check clean
 
@@ -246,6 +247,19 @@ issue_8sti0q1e_syscheck_linear_miss: \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-6WL10QQZ: directory walks stop at MAX_DIR_DEPTH.
+# Rebuild common.c with a tiny limit so a short tree can prove the cap.
+issue_6wl10qqz_dir_depth: \
+		tests/regressions/issue_6wl10qqz_dir_depth.c \
+		rootcheck/common.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DMAX_DIR_DEPTH=8 -I./rootcheck \
+		-c rootcheck/common.c -o rootcheck/common-6wl.o
+	$(CC) $(CFLAGS) -DMAX_DIR_DEPTH=8 -I./rootcheck -o $@ \
+		tests/regressions/issue_6wl10qqz_dir_depth.c \
+		rootcheck/common-6wl.o \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
 	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-checksum.o
@@ -542,4 +556,5 @@ clean:
 		os_execd/exec-mon246f3.c \
 		logcollector/read_audit-ud31vlyl.o \
 		logcollector/read_audit-ud31vlyl.c \
-		analysisd/decoders/syscheck-8sti.o
+		analysisd/decoders/syscheck-8sti.o \
+		rootcheck/common-6wl.o

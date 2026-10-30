@@ -17,6 +17,8 @@ static int read_sys_dir(const char *dir_name, int do_read);
 /* Global variables */
 static int   _sys_errors;
 static int   _sys_total;
+static int   _sys_depth;
+static int   _sys_depth_limited;
 static dev_t did;
 static FILE *_wx;
 static FILE *_ww;
@@ -61,7 +63,22 @@ static int read_sys_file(const char *file_name, int do_read)
             return (0);
         }
 
-        return (read_sys_dir(file_name, do_read));
+        /* Bound recursion so a deep tree cannot exhaust the stack */
+        if (_sys_depth >= MAX_DIR_DEPTH) {
+            if (!_sys_depth_limited) {
+                debug1("%s: DEBUG: Directory '%s' is %d or more levels deep. "
+                       "Not scanning it.", ARGV0, file_name, MAX_DIR_DEPTH);
+                _sys_depth_limited = 1;
+            }
+            return (0);
+        }
+
+        _sys_depth++;
+        {
+            int ret = read_sys_dir(file_name, do_read);
+            _sys_depth--;
+            return (ret);
+        }
     }
 
     /* Check if the size from stats is the same as when we read the file */
@@ -353,6 +370,8 @@ void check_rc_sys(const char *basedir)
 
     _sys_errors = 0;
     _sys_total = 0;
+    _sys_depth = 0;
+    _sys_depth_limited = 0;
     did = 0; /* device id */
 
     snprintf(file_path, OS_SIZE_1024, "%s", basedir);
@@ -407,7 +426,13 @@ void check_rc_sys(const char *basedir)
         }
     }
 
-    if (_sys_errors == 0) {
+    if (_sys_depth_limited) {
+        char op_msg[OS_SIZE_1024 + 1];
+        snprintf(op_msg, OS_SIZE_1024, "System scan incomplete: directories "
+                 "%d or more levels deep were skipped. Analyzed %d files.",
+                 MAX_DIR_DEPTH, _sys_total);
+        notify_rk(ALERT_SYSTEM_CRIT, op_msg);
+    } else if (_sys_errors == 0) {
         char op_msg[OS_SIZE_1024 + 1];
         snprintf(op_msg, OS_SIZE_1024, "No problem found on the system."
                  " Analyzed %d files.", _sys_total);
