@@ -418,6 +418,7 @@ int rkcl_get_entry(FILE *fp, const char *msg, OSList *p_list)
                 char *pattern = NULL;
                 char *f_value = NULL;
                 char *dir = NULL;
+                int dir_incomplete = 0;
 
                 file = _rkcl_get_pattern(value);
                 if (!file) {
@@ -446,6 +447,7 @@ int rkcl_get_entry(FILE *fp, const char *msg, OSList *p_list)
                 }
 
                 while (dir) {
+                    int rc;
 
                     debug2("%s: Checking dir: %s", ARGV0, dir);
 
@@ -456,9 +458,13 @@ int rkcl_get_entry(FILE *fp, const char *msg, OSList *p_list)
                     else {
                         debug2("%s: DEBUG: %s => is_nfs=%d, skip_nfs=%d", ARGV0, dir, is_nfs, rootcheck.skip_nfs);
 
-                        if (rk_check_dir(dir, file, pattern)) {
+                        rc = rk_check_dir(dir, file, pattern);
+                        if (rc > 0) {
                             debug2("%s: DEBUG: Found dir.", ARGV0);
                             found = 1;
+                        } else if (rc < 0) {
+                            /* Depth-capped walk: not a definitive miss */
+                            dir_incomplete = 1;
                         }
                     }
 
@@ -475,6 +481,11 @@ int rkcl_get_entry(FILE *fp, const char *msg, OSList *p_list)
                     } else {
                         dir = NULL;
                     }
+                }
+
+                /* Negated dir checks must not treat a capped miss as a hit */
+                if (negate && dir_incomplete && !found) {
+                    negate = 0;
                 }
             }
 

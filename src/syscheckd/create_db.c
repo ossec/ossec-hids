@@ -686,6 +686,10 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
 static int read_dir_track_complete = 0;
 static int read_dir_incomplete = 0;
 
+/* Levels below the directory the current walk started at */
+static int read_dir_depth = 0;
+static int read_dir_depth_warned = 0;
+
 int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 {
     size_t dir_size;
@@ -714,6 +718,19 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     /* Directory should be valid */
     if ((dir_size = strlen(dir_name)) > PATH_MAX) {
         merror(NULL_ERROR, ARGV0);
+        if (read_dir_track_complete) {
+            read_dir_incomplete = 1;
+        }
+        return (-1);
+    }
+
+    /* Every level is a recursion, so do not follow a tree forever */
+    if (read_dir_depth >= MAX_DIR_DEPTH) {
+        if (!read_dir_depth_warned) {
+            merror("%s: WARN: Directory '%s' is %d or more levels deep. "
+                   "Not scanning it.", ARGV0, dir_name, MAX_DIR_DEPTH);
+            read_dir_depth_warned = 1;
+        }
         if (read_dir_track_complete) {
             read_dir_incomplete = 1;
         }
@@ -830,7 +847,9 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 
 
         /* Check integrity of the file */
+        read_dir_depth++;
         read_file(f_name, opts, restriction);
+        read_dir_depth--;
         errno = 0;
     }
 
@@ -858,6 +877,8 @@ int read_dir_complete(const char *dir_name, int opts, OSMatch *restriction)
 
     read_dir_track_complete = 1;
     read_dir_incomplete = 0;
+    read_dir_depth = 0;
+    read_dir_depth_warned = 0;
     rc = read_dir(dir_name, opts, restriction);
     read_dir_track_complete = 0;
 
@@ -873,6 +894,8 @@ int run_dbcheck()
 
     __counter = 0;
     while (syscheck.dir[i] != NULL) {
+        read_dir_depth = 0;
+        read_dir_depth_warned = 0;
         read_dir(syscheck.dir[i], syscheck.opts[i], syscheck.filerestrict[i]);
         i++;
     }
@@ -906,6 +929,8 @@ int create_db()
     /* Read all available directories */
     __counter = 0;
     do {
+        read_dir_depth = 0;
+        read_dir_depth_warned = 0;
         if (read_dir(syscheck.dir[i], syscheck.opts[i], syscheck.filerestrict[i]) == 0) {
             debug2("%s: Directory loaded from syscheck db: %s", ARGV0, syscheck.dir[i]);
         }

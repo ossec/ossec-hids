@@ -61,6 +61,19 @@ http://www.ossec.net/main/license/\n"
 #define MAX_AGENTS  256
 #endif
 
+/* Directory levels rootcheck and syscheck may descend. Walkers recurse once
+ * per level, so depth must not decide stack usage. Overridable for tests.
+ * Unix uses 256 (~4.5 MiB of an 8 MiB stack for the syscheck walk). Windows
+ * syscheck threads often have ~1 MiB stacks, so use a tighter default there.
+ */
+#ifndef MAX_DIR_DEPTH
+#ifdef WIN32
+#define MAX_DIR_DEPTH   32
+#else
+#define MAX_DIR_DEPTH   256
+#endif
+#endif
+
 /* First ID assigned by authd */
 #ifndef AUTHD_FIRST_ID
 #define AUTHD_FIRST_ID  1024

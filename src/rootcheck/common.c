@@ -32,12 +32,33 @@ static int _is_str_in_array(char *const *ar, const char *str)
 int rk_check_dir(const char *dir, const char *file, char *pattern)
 {
     int ret_code = 0;
+    int capped = 0;
     char f_name[PATH_MAX + 2];
     struct dirent *entry;
     struct stat statbuf_local;
     DIR *dp = NULL;
+    static int depth = 0;
+    static int depth_warned = 0;
 
     f_name[PATH_MAX + 1] = '\0';
+
+    /* Reset the once-per-walk warn flag on each top-level call */
+    if (depth == 0) {
+        depth_warned = 0;
+    }
+
+    /* Every level is a recursion, so do not follow a tree forever.
+     * Return -1 (incomplete) so callers do not treat a capped miss as a
+     * definitive "not found" (which would flip negated policy checks).
+     */
+    if (depth >= MAX_DIR_DEPTH) {
+        if (!depth_warned) {
+            debug1("%s: DEBUG: Directory '%s' is %d or more levels deep. "
+                   "Not checking it.", ARGV0, dir, MAX_DIR_DEPTH);
+            depth_warned = 1;
+        }
+        return (-1);
+    }
 
     dp = opendir(dir);
     if (!dp) {
@@ -45,6 +66,8 @@ int rk_check_dir(const char *dir, const char *file, char *pattern)
     }
 
     while ((entry = readdir(dp)) != NULL) {
+        int sub;
+
         /* Ignore . and ..  */
         if ((strcmp(entry->d_name, ".") == 0) ||
                 (strcmp(entry->d_name, "..") == 0)) {
@@ -73,15 +96,26 @@ int rk_check_dir(const char *dir, const char *file, char *pattern)
         /* Check if file is a directory */
         if (lstat(f_name, &statbuf_local) == 0) {
             if (S_ISDIR(statbuf_local.st_mode)) {
-                if (rk_check_dir(f_name, file, pattern)) {
+                depth++;
+                sub = rk_check_dir(f_name, file, pattern);
+                depth--;
+                if (sub > 0) {
                     ret_code = 1;
+                } else if (sub < 0) {
+                    capped = 1;
                 }
             }
         }
     }
 
     closedir(dp);
-    return (ret_code);
+    if (ret_code) {
+        return (1);
+    }
+    if (capped) {
+        return (-1);
+    }
+    return (0);
 
 }
 

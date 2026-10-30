@@ -42,6 +42,7 @@ int isfile_ondir(const char *file, const char *dir);
 
 int rk_check_file(char *file, char *pattern);
 
+/* Returns 1 if matched, 0 if not found, -1 if the walk was depth-capped. */
 int rk_check_dir(const char *dir, const char *file, char *pattern);
 
 /* Check if pattern is present on string */
