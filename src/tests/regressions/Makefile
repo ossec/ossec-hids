@@ -64,7 +64,8 @@ REGRESSION_BINS = \
 	issue_s3eu4a19_crawler_dns \
 	issue_ktgcyz58_getalert_headers \
 	issue_35jw8ghu_log_rollover \
-	issue_rnce3so7_syslog_long_line
+	issue_rnce3so7_syslog_long_line \
+	issue_h2jmyhxz_maild_subject_underflow
 
 .PHONY: all check clean
 
@@ -209,6 +210,14 @@ issue_rnce3so7_syslog_long_line: \
 		logcollector/read_syslog.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		-Wl,--end-group -lpcre2-8 -lm -lpthread -lz
+
+# ANT-2026-H2JMYHXZ: mail subject cut must not underflow on leading '>'.
+issue_h2jmyhxz_maild_subject_underflow: \
+		tests/regressions/issue_h2jmyhxz_maild_subject_underflow.c \
+		os_maild/mail_utils.c
+	$(CC) $(CFLAGS) -I./os_maild -o $@ \
+		tests/regressions/issue_h2jmyhxz_maild_subject_underflow.c \
+		os_maild/mail_utils.c
 
 checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
 	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-checksum.o

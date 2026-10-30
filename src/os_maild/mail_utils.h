@@ -35,4 +35,12 @@ int mail_append_address(char *buf, size_t cap, const char *addr);
 /* Copy envelope field into dst; returns 0 on success, -1 if CRLF or empty. */
 int mail_safe_envelope_value(const char *src, char *dst, size_t dst_size);
 
+/* Temporarily NUL-terminate location at the hostname->"path" separator for the
+ * mail subject. Returns a pointer that must be passed to
+ * mail_subject_host_restore() (or NULL if no cut was made). */
+char *mail_subject_host_cut(char *location);
+
+/* Restore the byte cleared by mail_subject_host_cut() (the '-' of "->"). */
+void mail_subject_host_restore(char *cut);
+
 #endif /* MAIL_UTILS_H */

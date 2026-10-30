@@ -9,6 +9,7 @@
 
 #include "shared.h"
 #include "maild.h"
+#include "mail_utils.h"
 #include "sms_queue.h"
 #ifdef LIBGEOIP_ENABLED
 #include "config/config.h"
@@ -140,12 +141,8 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
         }
     }
 
-    /* Subject */
-    subject_host = strchr(al_data->location, '>');
-    if (subject_host) {
-        subject_host--;
-        *subject_host = '\0';
-    }
+    /* Subject: hostname part of "hostname->location" (see mail_subject_host_cut). */
+    subject_host = mail_subject_host_cut(al_data->location);
 
     /* We have two subject options - full and normal */
     if (Mail->subject_full == 0) {
@@ -169,9 +166,7 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
 
 
     /* Fix subject back */
-    if (subject_host) {
-        *subject_host = '-';
-    }
+    mail_subject_host_restore(subject_host);
 
 #ifdef LIBGEOIP_ENABLED
     /* Get GeoIP information */
