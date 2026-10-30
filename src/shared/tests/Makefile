@@ -21,7 +21,7 @@ thread_pool_test: thread_pool_test.c
 
 queue_op_test: queue_op_test.c $(TOP)/shared.a
 	$(CC) -pthread $(CFLAGS_COMMON) -DARGV0=\"queue_op_test\" -o $@ \
-		queue_op_test.c $(TOP)/shared.a -lpthread
+		queue_op_test.c $(TOP)/shared.a -lpthread -lssl -lcrypto
 
 string_test: string_test.c
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"string_test\" -o $@ string_test.c ../string_op.c
@@ -32,7 +32,8 @@ fim_sum_test: fim_sum_test.c ../fim_sum_op.c ../../headers/fim_sum_op.h
 win_acl_test: win_acl_test.c ../../headers/win_acl_op.h $(TOP)/shared.a
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"win_acl_test\" -o $@ \
 		win_acl_test.c \
-		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_crypto.a -Wl,--end-group
+		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_crypto.a -Wl,--end-group \
+		-lssl -lcrypto
 
 ar_expect_test: ar_expect_test.c ../ar_expect.c ../../headers/ar.h
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"ar_expect_test\" -o $@ \
@@ -43,14 +44,14 @@ fim_maint_test: fim_maint_test.c $(TOP)/shared.a
 		fim_maint_test.c \
 		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_regex.a $(TOP)/os_net.a \
 		$(TOP)/os_xml.a $(TOP)/os_zlib.a $(TOP)/libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # #2359: report_changes '\\n' must survive remove_control_characters().
 report_changes_ctrl_test: report_changes_ctrl_test.c $(TOP)/shared.a
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"report_changes_ctrl_test\" -o $@ \
 		report_changes_ctrl_test.c \
 		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # #2373: cgroup-aware os_get_nproc (fixture + optional `expect N` for e2e/podman).
 # Link only nproc_op.c so the binary is easy to bind-mount into containers.
@@ -64,7 +65,8 @@ legacy_helpers:
 		prime_test.c ../math_op.c
 	$(CC) -g -I$(TOP)/headers -I$(TOP) -DARGV0=\"hash_test\" -o hash_test \
 		hash_test.c ../hash_op.c ../math_op.c ../debug_op.c ../log_append.c \
-		../mem_op.c
+		../mem_op.c ../randombytes.c ../string_op.c ../file_op.c \
+		-lssl -lcrypto
 	$(CC) -g -I$(TOP)/headers -I$(TOP) -DARGV0=\"merge_test\" -o merge_test \
 		merge_test.c ../file_op.c ../debug_op.c ../log_append.c \
 		../string_op.c ../mem_op.c

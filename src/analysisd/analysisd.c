@@ -379,6 +379,9 @@ int main_analysisd(int argc, char **argv)
     }
 #endif
 
+    /* Setup random before the chroot (seeds of the hash tables) */
+    srandom_init();
+
     /* Set the group */
     if (Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));

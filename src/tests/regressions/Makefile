@@ -14,7 +14,8 @@ CFLAGS += -DARGV0=\"ossec-analysisd\"
 
 EVENTINFO_OBJS = analysisd/eventinfo-live.o analysisd/eventinfo_list-live.o
 CORRELATION_OBJS = $(EVENTINFO_OBJS) analysisd/correlation_shard-live.o
-BASIC_LIBS = -Wl,--start-group shared.a os_regex.a -Wl,--end-group -lpcre2-8 -lm -lpthread
+# -lcrypto: OSHash_Create pulls randombytes via shared.a (ANT-2026-3WKK50NE).
+BASIC_LIBS = -Wl,--start-group shared.a os_regex.a -Wl,--end-group -lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 REGRESSION_BINS = \
 	issue_1079_last_events_uaf \
@@ -65,7 +66,8 @@ REGRESSION_BINS = \
 	issue_ktgcyz58_getalert_headers \
 	issue_35jw8ghu_log_rollover \
 	issue_rnce3so7_syslog_long_line \
-	issue_h2jmyhxz_maild_subject_underflow
+	issue_h2jmyhxz_maild_subject_underflow \
+	issue_3wkk50ne_oshash_collisions
 
 .PHONY: all check clean
 
@@ -112,7 +114,7 @@ issue_2065_sender_counter: tests/regressions/issue_2065_sender_counter.c os_cryp
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1611_local_ip_bind.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 issue_1668_agent_hostname: tests/regressions/issue_1668_agent_hostname.c \
 		analysisd/cleanevent.c analysisd/eventinfo.c analysisd/eventinfo_list.c \
@@ -125,7 +127,7 @@ issue_1668_agent_hostname: tests/regressions/issue_1668_agent_hostname.c \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o analysisd/eventinfo_list-1668.o \
 		analysisd/accumulator-1668.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 issue_1668_ossecalert_hostname: tests/regressions/issue_1668_ossecalert_hostname.c \
 		analysisd/cleanevent.c analysisd/eventinfo.c analysisd/eventinfo_list.c \
@@ -139,12 +141,12 @@ issue_1668_ossecalert_hostname: tests/regressions/issue_1668_ossecalert_hostname
 		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o analysisd/eventinfo_list-1668oa.o \
 		analysisd/decoders/plugins/ossecalert_decoder-1668oa.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 unmerge_path_traversal: tests/regressions/unmerge_path_traversal.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/unmerge_path_traversal.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # GlobalConf lives in analysisd/config.c (defines _Config Config).
 # Link config.a from a current server build; do not also compile
@@ -152,14 +154,14 @@ unmerge_path_traversal: tests/regressions/unmerge_path_traversal.c shared.a
 jsonout_default: tests/regressions/jsonout_default.c analysisd/config.c config.a shared.a
 	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/jsonout_default.c analysisd/config.c \
 		-Wl,--start-group config.a shared.a os_regex.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 issue_1814_control_chars: tests/regressions/issue_1814_control_chars.c analysisd/cleanevent.c shared.a
 	$(CC) $(CFLAGS) -I./analysisd -DTESTRULE -c analysisd/cleanevent.c -o analysisd/cleanevent-1814.o
 	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_1814_control_chars.c \
 		analysisd/cleanevent-1814.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 issue_cleanevent_date_oob: tests/regressions/issue_cleanevent_date_oob.c analysisd/cleanevent.c \
 		analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
@@ -169,12 +171,12 @@ issue_cleanevent_date_oob: tests/regressions/issue_cleanevent_date_oob.c analysi
 	$(CC) $(CFLAGS) -I./analysisd -o $@ tests/regressions/issue_cleanevent_date_oob.c \
 		analysisd/cleanevent-8r0.o analysisd/eventinfo-8r0.o analysisd/eventinfo_list-8r0.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 issue_1953_xml_recursion: tests/regressions/issue_1953_xml_recursion.c os_xml.a shared.a
 	$(CC) $(CFLAGS) -I./os_xml -o $@ tests/regressions/issue_1953_xml_recursion.c \
 		-Wl,--start-group os_xml.a shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c shared.a
 	$(CC) $(CFLAGS) -DLIBOPENSSL_ENABLED -c os_auth/ssl.c -o os_auth/ssl-2100.o
@@ -185,21 +187,21 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 getalert_empty_filename: tests/regressions/getalert_empty_filename.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/getalert_empty_filename.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-KTGCYZ58: GetAlertData must not treat event text as headers.
 issue_ktgcyz58_getalert_headers: \
 		tests/regressions/issue_ktgcyz58_getalert_headers.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ktgcyz58_getalert_headers.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-35JW8GHU: forward-only day rollover + FileMon inode reopen.
 issue_35jw8ghu_log_rollover: \
 		tests/regressions/issue_35jw8ghu_log_rollover.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_35jw8ghu_log_rollover.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-RNCE3SO7: read_syslog must truncate over-long lines (#913 follow-up).
 issue_rnce3so7_syslog_long_line: \
@@ -209,7 +211,7 @@ issue_rnce3so7_syslog_long_line: \
 		tests/regressions/issue_rnce3so7_syslog_long_line.c \
 		logcollector/read_syslog.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
-		-Wl,--end-group -lpcre2-8 -lm -lpthread -lz
+		-Wl,--end-group -lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # ANT-2026-H2JMYHXZ: mail subject cut must not underflow on leading '>'.
 issue_h2jmyhxz_maild_subject_underflow: \
@@ -218,6 +220,14 @@ issue_h2jmyhxz_maild_subject_underflow: \
 	$(CC) $(CFLAGS) -I./os_maild -o $@ \
 		tests/regressions/issue_h2jmyhxz_maild_subject_underflow.c \
 		os_maild/mail_utils.c
+
+# ANT-2026-3WKK50NE: OSHash must resist seed-independent Thue-Morse collisions.
+issue_3wkk50ne_oshash_collisions: \
+		tests/regressions/issue_3wkk50ne_oshash_collisions.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_3wkk50ne_oshash_collisions.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
 	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-checksum.o
@@ -261,12 +271,12 @@ issue_win_execd_cmd_injection: tests/regressions/issue_win_execd_cmd_injection.c
 issue_logs_symlink_nofollow: tests/regressions/issue_logs_symlink_nofollow.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_logs_symlink_nofollow.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_ar_location_injection: tests/regressions/issue_ar_location_injection.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ar_location_injection.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_ads_stream_overflow: tests/regressions/issue_ads_stream_overflow.c rootcheck/win-common.c
 	$(CC) $(CFLAGS) -I./rootcheck -o $@ tests/regressions/issue_ads_stream_overflow.c \
@@ -275,7 +285,7 @@ issue_ads_stream_overflow: tests/regressions/issue_ads_stream_overflow.c rootche
 issue_win_parent_folder: tests/regressions/issue_win_parent_folder.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_win_parent_folder.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_syscheck_prefix_sum_size: tests/regressions/issue_syscheck_prefix_sum_size.c \
 		analysisd/decoders/syscheck_db_entry.h headers/defs.h
@@ -285,7 +295,7 @@ issue_bind_unix_chmod_race: tests/regressions/issue_bind_unix_chmod_race.c os_ne
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_bind_unix_chmod_race.c \
 		-Wl,--wrap=bind \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 issue_read_dir_path_overflow: tests/regressions/issue_read_dir_path_overflow.c \
 		syscheckd/syscheck_path.c
@@ -304,7 +314,7 @@ issue_3vn001l2_prefilter_retire: \
 	$(CC) $(CFLAGS) -o $@ \
 		tests/regressions/issue_3vn001l2_prefilter_retire.c \
 		-Wl,--start-group shared.a os_crypto.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-96VSXF8B: refuse symlink / non-root report_changes store.
 # DEFAULTDIR="." so the harness can chdir into a temp tree for queue/diff.
@@ -315,7 +325,7 @@ issue_96vsxf8b_diff_store_symlink: \
 		tests/regressions/issue_96vsxf8b_diff_store_symlink.c \
 		syscheckd/seechanges.c \
 		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-S3EU4A19: is_valid_crawler must not block on DNS.
 issue_s3eu4a19_crawler_dns: \
@@ -327,7 +337,7 @@ issue_s3eu4a19_crawler_dns: \
 		analysisd/compiled_rules/generic_samples.c \
 		analysisd/eventinfo.c analysisd/eventinfo_list.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_name.c \
 		analysisd/format/json_extended.c libcJSON.a shared.a
@@ -335,7 +345,7 @@ issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_na
 		tests/regressions/issue_rootcheck_json_empty_name.c \
 		analysisd/format/json_extended.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_rootcheck_json_match_overflow: tests/regressions/issue_rootcheck_json_match_overflow.c \
 		analysisd/format/json_extended.c libcJSON.a shared.a
@@ -343,7 +353,7 @@ issue_rootcheck_json_match_overflow: tests/regressions/issue_rootcheck_json_matc
 		tests/regressions/issue_rootcheck_json_match_overflow.c \
 		analysisd/format/json_extended.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_str_cut_overflow: tests/regressions/issue_str_cut_overflow.c \
 		analysisd/format/json_extended.c libcJSON.a shared.a
@@ -351,7 +361,7 @@ issue_str_cut_overflow: tests/regressions/issue_str_cut_overflow.c \
 		tests/regressions/issue_str_cut_overflow.c \
 		analysisd/format/json_extended.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_strtok_race: tests/regressions/issue_strtok_race.c \
 		analysisd/format/json_extended.c libcJSON.a shared.a
@@ -359,7 +369,7 @@ issue_strtok_race: tests/regressions/issue_strtok_race.c \
 		tests/regressions/issue_strtok_race.c \
 		analysisd/format/json_extended.c \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # Open a cwd-local ar.conf (defs.h redefines DEFAULTARPATH). Compile at -O0
 # so a missing bound is more likely to show up in GetCommandbyName results.
@@ -375,7 +385,7 @@ issue_mon246f3_execd_ar_overflow: \
 		tests/regressions/issue_mon246f3_execd_ar_overflow.c \
 		os_execd/exec-mon246f3.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 	rm -f os_execd/exec-mon246f3.c
 
 issue_fb1hyskp_pagerduty_alertlog: \
@@ -412,7 +422,7 @@ issue_ud31vlyl_audit_oob: \
 		tests/regressions/issue_ud31vlyl_audit_oob.c \
 		logcollector/read_audit-ud31vlyl.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 	rm -f logcollector/read_audit-ud31vlyl.c
 
 issue_m5jt0jcl_authd_key_rng: \
@@ -437,7 +447,7 @@ issue_c186ep5n_nodiff_size: \
 		tests/regressions/issue_c186ep5n_nodiff_size.c \
 		config/syscheck-config.c \
 		-Wl,--start-group shared.a os_regex.a os_xml.a os_net.a config.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # Compile localfile-config.c into the binary so the harness does not depend
 # on a possibly stale config.a member from an earlier server build.
@@ -448,7 +458,7 @@ issue_dnxhhf88_localfile_double_free: \
 		tests/regressions/issue_dnxhhf88_localfile_double_free.c \
 		config/localfile-config.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # Relative queue paths so the harness can chdir into a temp tree.
 HT_PATH_CFLAGS = -DAGENTINFO_DIR=\"queue/agent-info\" -DDIFF_DIR=\"queue/diff\"
@@ -467,7 +477,7 @@ issue_hostname_path_traversal: tests/regressions/issue_hostname_path_traversal.c
 		analysisd/decoders/plugins/ossecalert_decoder-ht.o \
 		analysisd/dodiff-ht.o analysisd/eventinfo-ht.o analysisd/eventinfo_list-ht.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes

@@ -55,6 +55,7 @@
 #   - issue_35jw8ghu_log_rollover      forward-only day rollover + FileMon inode reopen
 #   - issue_rnce3so7_syslog_long_line  read_syslog truncates long lines / keeps NULs
 #   - issue_h2jmyhxz_maild_subject_underflow  mail subject cut no location[-1] write
+#   - issue_3wkk50ne_oshash_collisions        OSHash resists Thue-Morse key collisions
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

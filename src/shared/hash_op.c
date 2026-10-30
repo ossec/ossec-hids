@@ -11,7 +11,29 @@
 
 #include "shared.h"
 
+/* Largest prime below 2^32: the hash is a polynomial over this field */
+#define OSHASH_PRIME 4294967291U
+
+static int _os_genseed(OSHash *self) __attribute__((nonnull));
 static unsigned int _os_genhash(const OSHash *self, const char *key) __attribute__((nonnull));
+
+/* Choose the (secret) seed and multiplier of the hash.
+ * Returns 1 on success, 0 if no entropy is available (do not fall back to
+ * a time-based seed: that would let an attacker prepare collisions).
+ * Programs that chroot must call srandom_init() before creating tables.
+ */
+static int _os_genseed(OSHash *self)
+{
+    unsigned int secret[2];
+
+    if (!randombytes_try(secret, sizeof(secret))) {
+        return (0);
+    }
+
+    self->initial_seed = secret[0] % OSHASH_PRIME;
+    self->constant = 256 + (secret[1] % (OSHASH_PRIME - 256));
+    return (1);
+}
 
 
 /* Create hash
@@ -48,9 +70,11 @@ OSHash *OSHash_Create()
     }
 
     /* Get seed */
-    srandom((unsigned int)time(0));
-    self->initial_seed = os_getprime((unsigned)random() % self->rows);
-    self->constant = os_getprime((unsigned)random() % self->rows);
+    if (!_os_genseed(self)) {
+        free(self->table);
+        free(self);
+        return (NULL);
+    }
 
     return (self);
 }
@@ -85,18 +109,22 @@ void *OSHash_Free(OSHash *self)
 /* Generates hash for key */
 static unsigned int _os_genhash(const OSHash *self, const char *key)
 {
-    unsigned int hash_key = self->initial_seed;
+    unsigned long long hash_key = self->initial_seed;
 
     /* What we have here is a simple polynomial hash.
      * x0 * a^k-1 .. xk * a^k-k +1
+     * It is reduced modulo a prime (and not 2^32), so that two different
+     * keys of k bytes collide for at most k multipliers: colliding keys
+     * can't be prepared without knowing the multiplier.
      */
     while (*key) {
         hash_key *= self->constant;
-        hash_key += (unsigned int) * key;
+        hash_key += (unsigned char) * key;
+        hash_key %= OSHASH_PRIME;
         key++;
     }
 
-    return (hash_key);
+    return ((unsigned int)hash_key);
 }
 
 /* Set new size for hash
@@ -129,8 +157,9 @@ int OSHash_setSize(OSHash *self, unsigned int new_size)
     }
 
     /* New seed */
-    self->initial_seed = os_getprime((unsigned)random() % self->rows);
-    self->constant = os_getprime((unsigned)random() % self->rows);
+    if (!_os_genseed(self)) {
+        return (0);
+    }
 
     return (1);
 }
