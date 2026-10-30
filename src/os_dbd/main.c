@@ -201,6 +201,9 @@ int main(int argc, char **argv)
     verbose("%s: Connected to database '%s' at '%s'.",
             ARGV0, db_config.db, db_config.host);
 
+    /* Setup random before the chroot (seeds of the hash tables) */
+    srandom_init();
+
     /* Privilege separation */
     if (Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));

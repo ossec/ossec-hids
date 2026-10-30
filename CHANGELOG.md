@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Hash ``OSHash`` keys over a prime field and seed the multiplier from ``randombytes``, so a seed-independent Thue-Morse collision family can no longer force every FTS (and other) key into one chain (ANT-2026-3WKK50NE)
 - @atomicturtle - Cut the maild subject host at the ``->`` separator (not ``strchr('>')-1``), so a location that starts with ``>`` cannot write one byte before the heap string and abort ``ossec-maild`` (ANT-2026-H2JMYHXZ)
 - @atomicturtle - Fix ``read_syslog`` over-long line handling: drop the always-true ``strchr(str, '\\0')`` branch from #913, detect full reads by byte count, map embedded NULs to spaces, and skip mid-line remainders across polls so a long access-log field cannot inject a forged standalone event (ANT-2026-RNCE3SO7)
 - @atomicturtle - Roll analysisd daily logs forward only (ignore a match-shard event older than the last rollover unless the clock was set back), and reopen the alerts file in ``Read_FileMon`` when its path no longer names the open inode (as ``jqueue_next`` already does for JSON), so a late pre-midnight backlog cannot unlink today's empty alerts file and leave csyslogd/maild/dbd reading a deleted inode for the rest of the day (ANT-2026-35JW8GHU)

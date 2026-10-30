@@ -182,6 +182,9 @@ int main(int argc, char **argv)
         ErrorExit(USER_ERROR, ARGV0, user, group);
     }
 
+    /* Setup random before the chroot (OS_ReadKeys → OSHash seeds) */
+    srandom_init();
+
     /* Set the group */
     if (Privsep_SetGroup(gid) < 0) {
         ErrorExit(SETGID_ERROR, ARGV0, group, errno, strerror(errno));
