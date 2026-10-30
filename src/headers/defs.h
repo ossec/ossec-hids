@@ -122,8 +122,10 @@ http://www.ossec.net/main/license/\n"
 #define AGENTINFO_DIR    "/queue/agent-info"
 #endif
 
-/* Syscheck directory */
+/* Syscheck directory (overridable for regression harnesses). */
+#ifndef SYSCHECK_DIR
 #define SYSCHECK_DIR    "/queue/syscheck"
+#endif
 
 /* Rootcheck directory */
 #define ROOTCHECK_DIR    "/queue/rootcheck"

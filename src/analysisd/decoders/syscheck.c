@@ -66,6 +66,12 @@ static time_t sk_agent_maint_warn_last[MAX_AGENTS + 1];
 static char *sk_agent_ips[MAX_AGENTS + 1];
 static FILE *sk_agent_fps[MAX_AGENTS + 1];
 static OSHash *sk_agent_index[MAX_AGENTS + 1];
+/* Set when an entry could not be indexed, so an index miss proves nothing. */
+static int sk_agent_index_incomplete[MAX_AGENTS + 1];
+#ifdef OSSEC_SYSCHECK_TEST
+/* Count DB_SearchLinear entries for ANT-2026-8STI0Q1E regressions. */
+unsigned int __db_search_linear_calls;
+#endif
 #ifndef WIN32
 static pthread_mutex_t sk_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t sk_agent_mutex[MAX_AGENTS + 1];
@@ -147,6 +153,7 @@ void SyscheckInit()
             sk_agent_ips[i] = NULL;
             sk_agent_fps[i] = NULL;
             sk_agent_index[i] = NULL;
+            sk_agent_index_incomplete[i] = 0;
             sk_agent_cp[i][0] = '0';
             sk_agent_maint[i][0] = '?';
             sk_agent_maint_checked[i] = 0;
@@ -161,6 +168,7 @@ void SyscheckInit()
         sk_agent_ips[i] = NULL;
         sk_agent_fps[i] = NULL;
         sk_agent_index[i] = NULL;
+        sk_agent_index_incomplete[i] = 0;
         sk_agent_cp[i][0] = '0';
         sk_agent_maint[i][0] = '?';
         sk_agent_maint_checked[i] = 0;
@@ -494,9 +502,20 @@ static void DB_BuildIndex(int agent_id, FILE *fp)
     }
 
     fseek(fp, 0, SEEK_SET);
-    while (fgetpos(fp, &line_pos) == 0 && fgets(sdb.buf, OS_MAXSTR, fp) != NULL) {
+    for (;;) {
         char *fname;
         sk_db_entry *ent;
+        int pos_ok;
+
+        pos_ok = (fgetpos(fp, &line_pos) == 0);
+        if (!pos_ok) {
+            /* Positioning failed: remaining rows are not indexed. */
+            sk_agent_index_incomplete[agent_id] = 1;
+            break;
+        }
+        if (fgets(sdb.buf, OS_MAXSTR, fp) == NULL) {
+            break;
+        }
 
         if (sdb.buf[0] == '\n' || sdb.buf[0] == '#') {
             continue;
@@ -512,9 +531,11 @@ static void DB_BuildIndex(int agent_id, FILE *fp)
         if (!ent) {
             ent = (sk_db_entry *)calloc(1, sizeof(sk_db_entry));
             if (!ent) {
+                sk_agent_index_incomplete[agent_id] = 1;
                 continue;
             }
             if (OSHash_Add(sk_agent_index[agent_id], fname, ent) != 2) {
+                sk_agent_index_incomplete[agent_id] = 1;
                 free(ent);
                 continue;
             }
@@ -522,6 +543,11 @@ static void DB_BuildIndex(int agent_id, FILE *fp)
 
         ent->pos = line_pos;
         DB_SetEntrySum(ent, line_copy);
+    }
+
+    /* A read error leaves the tail of the file unindexed. */
+    if (ferror(fp)) {
+        sk_agent_index_incomplete[agent_id] = 1;
     }
 
     fseek(fp, 0, SEEK_SET);
@@ -544,10 +570,12 @@ static sk_db_entry *DB_GetOrCreateIndexEntry(int agent_id, const char *f_name)
 
     ent = (sk_db_entry *)calloc(1, sizeof(sk_db_entry));
     if (!ent) {
+        sk_agent_index_incomplete[agent_id] = 1;
         return (NULL);
     }
 
     if (OSHash_Add(sk_agent_index[agent_id], f_name, ent) != 2) {
+        sk_agent_index_incomplete[agent_id] = 1;
         free(ent);
         return (NULL);
     }
@@ -986,6 +1014,9 @@ static int DB_SearchLinear(const char *f_name, const char *c_sum, Eventinfo *lf,
     size_t sn_size;
     char *saved_name;
 
+#ifdef OSSEC_SYSCHECK_TEST
+    __db_search_linear_calls++;
+#endif
     fseek(fp, 0, SEEK_SET);
     while (fgetpos(fp, &sdb.init_pos) == 0 &&
            fgets(sdb.buf, OS_MAXSTR, fp) != NULL) {
@@ -1066,11 +1097,18 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             goto out;
         }
 
-        linear_rc = DB_SearchLinear(f_name, c_sum, lf, fp, agent_id,
-                                    maintenance);
-        if (linear_rc >= 0) {
-            result = linear_rc;
-            goto out;
+        /* The index holds every line of the file and is kept current under
+         * the agent lock, so a miss means the file is new. Do not re-read the
+         * whole database for it unless the index cannot be trusted (no index,
+         * incomplete build, or a key whose prefix_sum was never set). */
+        if (!sk_agent_index[agent_id] || sk_agent_index_incomplete[agent_id] ||
+                (db_entry && !db_entry->prefix_sum)) {
+            linear_rc = DB_SearchLinear(f_name, c_sum, lf, fp, agent_id,
+                                        maintenance);
+            if (linear_rc >= 0) {
+                result = linear_rc;
+                goto out;
+            }
         }
     }
 
@@ -1094,6 +1132,9 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
             if (db_entry && fgetpos(fp, &db_entry->pos) == 0) {
                 snprintf(new_prefix, sizeof(new_prefix), pfx_fmt, c_sum);
                 DB_SetEntrySum(db_entry, new_prefix);
+            } else if (db_entry) {
+                /* Row will still be written; index entry lacks prefix_sum. */
+                sk_agent_index_incomplete[agent_id] = 1;
             }
         }
 
@@ -1349,4 +1390,12 @@ int DecodeSyscheck(Eventinfo *lf)
     /* Search for file changes */
     return (DB_Search(f_name, c_sum, lf));
 }
+
+#ifdef OSSEC_SYSCHECK_TEST
+/* Test entry for ANT-2026-8STI0Q1E: call DB_Search after SyscheckInit. */
+int Syscheck_TestDBSearch(Eventinfo *lf, const char *f_name, const char *c_sum)
+{
+    return (DB_Search(f_name, c_sum, lf));
+}
+#endif
 

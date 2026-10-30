@@ -67,7 +67,8 @@ REGRESSION_BINS = \
 	issue_35jw8ghu_log_rollover \
 	issue_rnce3so7_syslog_long_line \
 	issue_h2jmyhxz_maild_subject_underflow \
-	issue_3wkk50ne_oshash_collisions
+	issue_3wkk50ne_oshash_collisions \
+	issue_8sti0q1e_syscheck_linear_miss
 
 .PHONY: all check clean
 
@@ -228,6 +229,23 @@ issue_3wkk50ne_oshash_collisions: \
 		tests/regressions/issue_3wkk50ne_oshash_collisions.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-8STI0Q1E: no linear integrity-DB scan on a healthy index miss.
+issue_8sti0q1e_syscheck_linear_miss: \
+		tests/regressions/issue_8sti0q1e_syscheck_linear_miss.c \
+		analysisd/decoders/syscheck.c shared.a
+	$(CC) $(CFLAGS) -DOSSEC_SYSCHECK_TEST \
+		-DSYSCHECK_DIR=\"queue/syscheck\" \
+		-I./analysisd -c analysisd/decoders/syscheck.c \
+		-o analysisd/decoders/syscheck-8sti.o
+	$(CC) $(CFLAGS) -DOSSEC_SYSCHECK_TEST \
+		-DSYSCHECK_DIR=\"queue/syscheck\" -I./analysisd -o $@ \
+		tests/regressions/issue_8sti0q1e_syscheck_linear_miss.c \
+		analysisd/decoders/syscheck-8sti.o \
+		shared/fim_sum_op.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
+		libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
 	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-checksum.o
@@ -523,4 +541,5 @@ clean:
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
 		logcollector/read_audit-ud31vlyl.o \
-		logcollector/read_audit-ud31vlyl.c
+		logcollector/read_audit-ud31vlyl.c \
+		analysisd/decoders/syscheck-8sti.o
