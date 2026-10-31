@@ -70,7 +70,8 @@ REGRESSION_BINS = \
 	issue_3wkk50ne_oshash_collisions \
 	issue_8sti0q1e_syscheck_linear_miss \
 	issue_6wl10qqz_dir_depth \
-	issue_2d3xma3w_decoder_field_leak
+	issue_2d3xma3w_decoder_field_leak \
+	issue_tzmhdq9m_decoder_info_race
 
 .PHONY: all check clean
 
@@ -261,6 +262,23 @@ issue_6wl10qqz_dir_depth: \
 		rootcheck/common-6wl.o \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-TZMHDQ9M: syscheck decoder_info id must stay stable after handoff.
+issue_tzmhdq9m_decoder_info_race: \
+		tests/regressions/issue_tzmhdq9m_decoder_info_race.c \
+		analysisd/decoders/syscheck.c shared.a
+	$(CC) $(CFLAGS) -DOSSEC_SYSCHECK_TEST \
+		-DSYSCHECK_DIR=\"queue/syscheck\" \
+		-I./analysisd -c analysisd/decoders/syscheck.c \
+		-o analysisd/decoders/syscheck-tzmh.o
+	$(CC) $(CFLAGS) -DOSSEC_SYSCHECK_TEST \
+		-DSYSCHECK_DIR=\"queue/syscheck\" -I./analysisd -o $@ \
+		tests/regressions/issue_tzmhdq9m_decoder_info_race.c \
+		analysisd/decoders/syscheck-tzmh.o \
+		shared/fim_sum_op.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
+		libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # ANT-2026-2D3XMA3W: *_FP setters free prior heap value on overwrite.
 issue_2d3xma3w_decoder_field_leak: \
@@ -572,4 +590,5 @@ clean:
 		logcollector/read_audit-ud31vlyl.c \
 		analysisd/decoders/syscheck-8sti.o \
 		rootcheck/common-6wl.o \
-		analysisd/decoders/decoder-2d3.o
+		analysisd/decoders/decoder-2d3.o \
+		analysisd/decoders/syscheck-tzmh.o

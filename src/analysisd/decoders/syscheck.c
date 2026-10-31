@@ -37,20 +37,13 @@ typedef struct __sdb {
 
     int db_err;
 
-    /* Ids for decoder */
-    int id1;
-    int id2;
-    int id3;
-    int idn;
-    int idd;
-
-    /* Syscheck rule */
+    /* Decoder of the event being decoded (one of sk_dec_*) */
     OSDecoderInfo  *syscheck_dec;
 
     /* File search variables */
     fpos_t init_pos;
 
-} _sdb; /* per-thread working buffers / decoder ids */
+} _sdb; /* per-thread working buffers */
 
 /* Per-thread comment/decode buffers (safe under parallel decode workers). */
 static __thread _sdb sdb;
@@ -68,6 +61,18 @@ static FILE *sk_agent_fps[MAX_AGENTS + 1];
 static OSHash *sk_agent_index[MAX_AGENTS + 1];
 /* Set when an entry could not be indexed, so an index miss proves nothing. */
 static int sk_agent_index_incomplete[MAX_AGENTS + 1];
+
+/*
+ * One decoder per syscheck event type. An event keeps pointing at its decoder
+ * after it left the decode thread (rule matching reads the id later on), so
+ * these are shared and never written once SyscheckInit() has created them.
+ */
+static OSDecoderInfo *sk_dec_mod;
+static OSDecoderInfo *sk_dec_mod2;
+static OSDecoderInfo *sk_dec_mod3;
+static OSDecoderInfo *sk_dec_new;
+static OSDecoderInfo *sk_dec_del;
+
 #ifdef OSSEC_SYSCHECK_TEST
 /* Count DB_SearchLinear entries for ANT-2026-8STI0Q1E regressions. */
 unsigned int __db_search_linear_calls;
@@ -77,6 +82,8 @@ static pthread_mutex_t sk_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t sk_agent_mutex[MAX_AGENTS + 1];
 static pthread_mutex_t sk_maint_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int sk_shared_ready = 0;
+#else
+static int sk_decoders_ready = 0;
 #endif
 
 /* Extract a token from a string */
@@ -112,6 +119,28 @@ int validate_md5(char *s) {
 }
 
 
+static OSDecoderInfo *SyscheckNewDecoder(const char *id_name)
+{
+    OSDecoderInfo *dec;
+
+    os_calloc(1, sizeof(OSDecoderInfo), dec);
+    dec->id = getDecoderfromlist(id_name);
+    dec->name = SYSCHECK_MOD;
+    dec->type = OSSEC_RL;
+    dec->fts = 0;
+
+    return (dec);
+}
+
+static void SyscheckCreateDecoders(void)
+{
+    sk_dec_mod = SyscheckNewDecoder(SYSCHECK_MOD);
+    sk_dec_mod2 = SyscheckNewDecoder(SYSCHECK_MOD2);
+    sk_dec_mod3 = SyscheckNewDecoder(SYSCHECK_MOD3);
+    sk_dec_new = SyscheckNewDecoder(SYSCHECK_NEW);
+    sk_dec_del = SyscheckNewDecoder(SYSCHECK_DEL);
+}
+
 /* Initialize the necessary information to process the syscheck information */
 void SyscheckInit()
 {
@@ -132,21 +161,8 @@ void SyscheckInit()
     memset(sdb.sha256, '\0', OS_FLSIZE + 1);
     memset(sdb.attrs, '\0', OS_FLSIZE + 1);
 
-    /* Create decoder (TLS — each worker owns its own) */
-    os_calloc(1, sizeof(OSDecoderInfo), sdb.syscheck_dec);
-    sdb.syscheck_dec->id = getDecoderfromlist(SYSCHECK_MOD);
-    sdb.syscheck_dec->name = SYSCHECK_MOD;
-    sdb.syscheck_dec->type = OSSEC_RL;
-    sdb.syscheck_dec->fts = 0;
-
-    sdb.id1 = getDecoderfromlist(SYSCHECK_MOD);
-    sdb.id2 = getDecoderfromlist(SYSCHECK_MOD2);
-    sdb.id3 = getDecoderfromlist(SYSCHECK_MOD3);
-    sdb.idn = getDecoderfromlist(SYSCHECK_NEW);
-    sdb.idd = getDecoderfromlist(SYSCHECK_DEL);
-
 #ifndef WIN32
-    /* Shared agent table + locks: once per process (workers each call Init). */
+    /* Shared agent table + locks + decoders: once per process (workers each call Init). */
     os_mutex_lock(&sk_table_mutex);
     if (!sk_shared_ready) {
         for (i = 0; i <= MAX_AGENTS; i++) {
@@ -160,6 +176,7 @@ void SyscheckInit()
             sk_agent_maint_warn_last[i] = 0;
             os_mutex_init(&sk_agent_mutex[i], NULL);
         }
+        SyscheckCreateDecoders();
         sk_shared_ready = 1;
     }
     os_mutex_unlock(&sk_table_mutex);
@@ -174,7 +191,13 @@ void SyscheckInit()
         sk_agent_maint_checked[i] = 0;
         sk_agent_maint_warn_last[i] = 0;
     }
+    if (!sk_decoders_ready) {
+        SyscheckCreateDecoders();
+        sk_decoders_ready = 1;
+    }
 #endif
+
+    sdb.syscheck_dec = sk_dec_mod;
 
     debug1("%s: SyscheckInit completed.", ARGV0);
     return;
@@ -631,19 +654,19 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
 
     /* Check the number of changes */
     if (!Config.syscheck_auto_ignore) {
-        sdb.syscheck_dec->id = sdb.id1;
+        sdb.syscheck_dec = sk_dec_mod;
     } else {
         switch (p) {
             case 0:
-                sdb.syscheck_dec->id = sdb.id1;
+                sdb.syscheck_dec = sk_dec_mod;
                 break;
 
             case 1:
-                sdb.syscheck_dec->id = sdb.id2;
+                sdb.syscheck_dec = sk_dec_mod2;
                 break;
 
             case 2:
-                sdb.syscheck_dec->id = sdb.id3;
+                sdb.syscheck_dec = sk_dec_mod3;
                 break;
 
             default:
@@ -701,7 +724,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
 
     /* File deleted */
     if (c_sum[0] == '-' && c_sum[1] == '1') {
-        sdb.syscheck_dec->id = sdb.idd;
+        sdb.syscheck_dec = sk_dec_del;
         snprintf(sdb.comment, OS_MAXSTR,
                  "File '%.756s' was deleted. Unable to retrieve "
                  "checksum.", f_name);
@@ -709,7 +732,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
 
     /* If file was re-added, do not compare changes */
     else if (saved_sum[0] == '-' && saved_sum[1] == '1') {
-        sdb.syscheck_dec->id = sdb.idn;
+        sdb.syscheck_dec = sk_dec_new;
         snprintf(sdb.comment, OS_MAXSTR,
                  "File '%.756s' was re-added.", f_name);
     }
@@ -1156,7 +1179,7 @@ static int DB_Search(const char *f_name, const char *c_sum, Eventinfo *lf)
     /* TODO: debugging this - Scott */
     /* if ((Config.syscheck_alert_new == 1) && (DB_IsCompleted(agent_id))) { */
     if (Config.syscheck_alert_new == 1)  {
-        sdb.syscheck_dec->id = sdb.idn;
+        sdb.syscheck_dec = sk_dec_new;
 
         char *newfilec_sum = NULL;
         char *newfilemd5 = NULL;
@@ -1396,6 +1419,41 @@ int DecodeSyscheck(Eventinfo *lf)
 int Syscheck_TestDBSearch(Eventinfo *lf, const char *f_name, const char *c_sum)
 {
     return (DB_Search(f_name, c_sum, lf));
+}
+
+/*
+ * ANT-2026-TZMHDQ9M: an Eventinfo that already holds decoder_info must not see
+ * that object's id change when the decode path handles a different event type.
+ * Returns 0 if stable, 1 if the held decoder was mutated (race still present).
+ */
+int Syscheck_TestDecoderInfoStable(void)
+{
+    Eventinfo lf;
+    OSDecoderInfo *held;
+    int held_id;
+
+    memset(&lf, 0, sizeof(lf));
+    SyscheckInit();
+
+    /* First event: integrity-changed */
+    sdb.syscheck_dec = sk_dec_mod;
+    lf.decoder_info = sdb.syscheck_dec;
+    held = lf.decoder_info;
+    held_id = held->id;
+
+    /* Next message on the same decode thread: new-entry (select other object) */
+    sdb.syscheck_dec = sk_dec_new;
+
+    if (held->id != held_id) {
+        return (1);
+    }
+    if (held == sdb.syscheck_dec) {
+        return (1);
+    }
+    if (lf.decoder_info != held) {
+        return (1);
+    }
+    return (0);
 }
 #endif
 

@@ -25,16 +25,17 @@
 
 /* Local variables */
 static int hi_err = 0;
-static int id_new = 0;
-static int id_mod = 0;
 static char _hi_buf[OS_MAXSTR + 1];
 static FILE *_hi_fp = NULL;
 #ifndef WIN32
 static pthread_mutex_t hostinfo_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-/* Hostinfo decoder */
-static OSDecoderInfo *hostinfo_dec = NULL;
+/* Hostinfo decoders, one per event type. Events keep pointing at theirs after
+ * they left the decode thread, so they are never written after HostinfoInit().
+ */
+static OSDecoderInfo *hostinfo_dec_new = NULL;
+static OSDecoderInfo *hostinfo_dec_mod = NULL;
 
 
 /* Check if the string matches */
@@ -70,14 +71,18 @@ void HostinfoInit()
 {
     hi_err = 0;
 
-    /* Zero decoder */
-    os_calloc(1, sizeof(OSDecoderInfo), hostinfo_dec);
-    hostinfo_dec->id = getDecoderfromlist(HOSTINFO_MOD);
-    hostinfo_dec->type = OSSEC_RL;
-    hostinfo_dec->name = HOSTINFO_MOD;
-    hostinfo_dec->fts = 0;
-    id_new = getDecoderfromlist(HOSTINFO_NEW);
-    id_mod = getDecoderfromlist(HOSTINFO_MOD);
+    /* Decoders once per process (never rewrite after first Init). */
+    if (hostinfo_dec_mod == NULL) {
+        os_calloc(1, sizeof(OSDecoderInfo), hostinfo_dec_mod);
+        hostinfo_dec_mod->id = getDecoderfromlist(HOSTINFO_MOD);
+        hostinfo_dec_mod->type = OSSEC_RL;
+        hostinfo_dec_mod->name = HOSTINFO_MOD;
+        hostinfo_dec_mod->fts = 0;
+
+        os_calloc(1, sizeof(OSDecoderInfo), hostinfo_dec_new);
+        *hostinfo_dec_new = *hostinfo_dec_mod;
+        hostinfo_dec_new->id = getDecoderfromlist(HOSTINFO_NEW);
+    }
 
     /* Open HOSTINFO_FILE */
     snprintf(_hi_buf, OS_SIZE_1024, "%s", HOSTINFO_FILE);
@@ -213,14 +218,11 @@ static int DecodeHostinfo_unlocked(Eventinfo *lf)
     fprintf(fp, "%s%s\n", ip, portss);
 
     /* Set decoder */
-    lf->decoder_info = hostinfo_dec;
-
-    /* Set comment */
     if (changed == 1) {
-        hostinfo_dec->id = id_mod;
+        lf->decoder_info = hostinfo_dec_mod;
         /* lf->generated_rule->last_events[0] = opened; */
     } else {
-        hostinfo_dec->id = id_new;
+        lf->decoder_info = hostinfo_dec_new;
     }
 
     return (1);
