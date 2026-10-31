@@ -16,8 +16,6 @@
 #include "alerts/alerts.h"
 #include "decoder.h"
 
-#define ROOTCHECK_DIR    "/queue/rootcheck"
-
 /* Local variables */
 static char *rk_agent_ips[MAX_AGENTS];
 static FILE *rk_agent_fps[MAX_AGENTS];
@@ -77,6 +75,23 @@ static FILE *RK_File(const char *agent, int *agent_id)
 {
     int i = 0;
     char rk_buf[OS_SIZE_1024 + 1];
+    const char *paren = strchr(agent, ')');
+    /* Remoted builds "(name) ip->module". Anchor after ')' so a name that
+     * itself contains "->" is not mistaken for remoted's separator; do not
+     * use the last "->" or "(name) ip->x->rootcheck" would take a slot.
+     */
+    const char *rk_name = paren ? strstr(paren, "->") : strstr(agent, "->");
+
+    /* Everything after remoted's "->" is chosen by the agent. Each distinct
+     * location takes one of MAX_AGENTS slots and an open database for good,
+     * so only the name rootcheck really sends gets one; otherwise one agent
+     * can fill the table.
+     */
+    if (rk_name && strcmp(rk_name + 2, ROOTCHECK_MOD) != 0) {
+        merror("%s: Ignoring rootcheck event from unexpected location '%s'.",
+               ARGV0, agent);
+        return (NULL);
+    }
 
     while (i < MAX_AGENTS && rk_agent_ips[i] != NULL) {
         if (strcmp(rk_agent_ips[i], agent) == 0) {
@@ -296,4 +311,47 @@ int DecodeRootcheck(Eventinfo *lf)
 #endif
     return result;
 }
+
+#ifdef OSSEC_ROOTCHECK_TEST
+/* ANT-2026-RBAKY685: how many rootcheck DB slots are currently allocated. */
+int Rootcheck_TestSlotCount(void)
+{
+    int i;
+    int n = 0;
+
+    for (i = 0; i < MAX_AGENTS; i++) {
+        if (rk_agent_ips[i] != NULL) {
+            n++;
+        }
+    }
+    return (n);
+}
+
+/*
+ * ANT-2026-RBAKY685: try RK_File for location under the same locking as
+ * DecodeRootcheck, without writing an entry. Returns 1 on open, 0 on refuse.
+ */
+int Rootcheck_TestOpenDB(const char *location)
+{
+    int agent_id = -1;
+    FILE *fp;
+
+#ifndef WIN32
+    os_mutex_lock(&rk_table_mutex);
+#endif
+    fp = RK_File(location, &agent_id);
+    if (!fp) {
+#ifndef WIN32
+        os_mutex_unlock(&rk_table_mutex);
+#endif
+        return (0);
+    }
+#ifndef WIN32
+    os_mutex_lock(&rk_agent_mutex[agent_id]);
+    os_mutex_unlock(&rk_table_mutex);
+    os_mutex_unlock(&rk_agent_mutex[agent_id]);
+#endif
+    return (1);
+}
+#endif
 

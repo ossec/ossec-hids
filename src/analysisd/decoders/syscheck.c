@@ -396,6 +396,24 @@ static void DB_SetCompleted(const Eventinfo *lf)
 static FILE *DB_File(const char *agent, int *agent_id)
 {
     int i = 0;
+    const char *paren = strchr(agent, ')');
+    /* Remoted builds "(name) ip->module". Anchor after ')' so a name that
+     * itself contains "->" is not mistaken for remoted's separator; do not
+     * use the last "->" or "(name) ip->x->syscheck" would take a slot.
+     */
+    const char *sk_name = paren ? strstr(paren, "->") : strstr(agent, "->");
+
+    /* Everything after remoted's "->" is chosen by the agent. Each distinct
+     * location takes one of MAX_AGENTS slots and an open database for good,
+     * so only the names syscheckd really sends get one; otherwise one agent
+     * can fill the table.
+     */
+    if (sk_name && strcmp(sk_name + 2, SYSCHECK) != 0 &&
+            strcmp(sk_name + 2, SYSCHECK_REG) != 0) {
+        merror("%s: Ignoring integrity event from unexpected location '%s'.",
+               ARGV0, agent);
+        return (NULL);
+    }
 
 #ifndef WIN32
     os_mutex_lock(&sk_table_mutex);
@@ -1419,6 +1437,42 @@ int DecodeSyscheck(Eventinfo *lf)
 int Syscheck_TestDBSearch(Eventinfo *lf, const char *f_name, const char *c_sum)
 {
     return (DB_Search(f_name, c_sum, lf));
+}
+
+/* ANT-2026-RBAKY685: how many integrity DB slots are currently allocated. */
+int Syscheck_TestSlotCount(void)
+{
+    int i;
+    int n = 0;
+
+    for (i = 0; i < MAX_AGENTS; i++) {
+        if (sk_agent_ips[i] != NULL) {
+            n++;
+        }
+    }
+    return (n);
+}
+
+/*
+ * ANT-2026-RBAKY685: try to open/allocate a DB for location and release the
+ * per-agent lock DB_File holds on success (callers normally unlock in
+ * DB_Search). Returns 1 if a FILE* was obtained, 0 otherwise.
+ */
+int Syscheck_TestOpenDB(const char *location)
+{
+    int agent_id = -1;
+    FILE *fp;
+
+    fp = DB_File(location, &agent_id);
+    if (!fp) {
+        return (0);
+    }
+#ifndef WIN32
+    if (agent_id >= 0) {
+        os_mutex_unlock(&sk_agent_mutex[agent_id]);
+    }
+#endif
+    return (1);
 }
 
 /*
