@@ -29,25 +29,12 @@ static pthread_mutex_t rk_agent_mutex[MAX_AGENTS];
 static int rk_agent_mutex_ready = 0;
 #endif
 
-/* Rootcheck decoder template (shared id/name/type). Per-thread copy holds fts. */
-static OSDecoderInfo *rootcheck_dec_tmpl = NULL;
-#ifndef WIN32
-static __thread OSDecoderInfo rk_dec_tls;
-static __thread int rk_dec_tls_ready = 0;
-#endif
-
-static OSDecoderInfo *rootcheck_decoder_for_event(void)
-{
-#ifndef WIN32
-    if (!rk_dec_tls_ready && rootcheck_dec_tmpl) {
-        rk_dec_tls = *rootcheck_dec_tmpl;
-        rk_dec_tls_ready = 1;
-    }
-    return &rk_dec_tls;
-#else
-    return rootcheck_dec_tmpl;
-#endif
-}
+/* Rootcheck decoders: one for entries already in the database and one, with
+ * FTS_DONE, for new entries. Events keep pointing at theirs after they left the
+ * decode thread, so they are never written after RootcheckInit().
+ */
+static OSDecoderInfo *rootcheck_dec = NULL;
+static OSDecoderInfo *rootcheck_dec_fts = NULL;
 
 /* Initialize the necessary information to process the rootcheck information */
 void RootcheckInit()
@@ -67,12 +54,18 @@ void RootcheckInit()
     rk_agent_mutex_ready = 1;
 #endif
 
-    /* Template decoder — workers use a TLS copy so fts is not shared. */
-    os_calloc(1, sizeof(OSDecoderInfo), rootcheck_dec_tmpl);
-    rootcheck_dec_tmpl->id = getDecoderfromlist(ROOTCHECK_MOD);
-    rootcheck_dec_tmpl->type = OSSEC_RL;
-    rootcheck_dec_tmpl->name = ROOTCHECK_MOD;
-    rootcheck_dec_tmpl->fts = 0;
+    /* Decoders once per process (never rewrite after first Init). */
+    if (rootcheck_dec == NULL) {
+        os_calloc(1, sizeof(OSDecoderInfo), rootcheck_dec);
+        rootcheck_dec->id = getDecoderfromlist(ROOTCHECK_MOD);
+        rootcheck_dec->type = OSSEC_RL;
+        rootcheck_dec->name = ROOTCHECK_MOD;
+        rootcheck_dec->fts = 0;
+
+        os_calloc(1, sizeof(OSDecoderInfo), rootcheck_dec_fts);
+        *rootcheck_dec_fts = *rootcheck_dec;
+        rootcheck_dec_fts->fts = FTS_DONE;
+    }
 
     debug1("%s: RootcheckInit completed.", ARGV0);
 
@@ -196,7 +189,6 @@ static int DecodeRootcheck_with_fp(Eventinfo *lf, FILE *fp)
     char *tmpstr;
     char rk_buf[OS_SIZE_4096 + 1];
     fpos_t fp_pos;
-    OSDecoderInfo *rk_dec = rootcheck_decoder_for_event();
 
     /* Zero rk_buf */
     rk_buf[0] = '\0';
@@ -231,8 +223,7 @@ static int DecodeRootcheck_with_fp(Eventinfo *lf, FILE *fp)
         if (rk_buf[0] != '!') {
             /* Cannot use strncmp to avoid errors with crafted files */
             if (strcmp(lf->log, rk_buf) == 0) {
-                rk_dec->fts = 0;
-                lf->decoder_info = rk_dec;
+                lf->decoder_info = rootcheck_dec;
                 rk_extract_hashes(lf);
                 return (1);
             }
@@ -250,8 +241,7 @@ static int DecodeRootcheck_with_fp(Eventinfo *lf, FILE *fp)
                     return (0);
                 }
                 fprintf(fp, "!%ld", (long int)lf->time);
-                rk_dec->fts = 0;
-                lf->decoder_info = rk_dec;
+                lf->decoder_info = rootcheck_dec;
                 rk_extract_hashes(lf);
                 return (1);
             }
@@ -269,9 +259,7 @@ static int DecodeRootcheck_with_fp(Eventinfo *lf, FILE *fp)
     fprintf(fp, "!%ld!%ld %s\n", (long int)lf->time, (long int)lf->time, lf->log);
     fflush(fp);
 
-    rk_dec->fts = 0;
-    rk_dec->fts |= FTS_DONE;
-    lf->decoder_info = rk_dec;
+    lf->decoder_info = rootcheck_dec_fts;
     rk_extract_hashes(lf);
     return (1);
 }
