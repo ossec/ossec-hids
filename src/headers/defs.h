@@ -140,8 +140,10 @@ http://www.ossec.net/main/license/\n"
 #define SYSCHECK_DIR    "/queue/syscheck"
 #endif
 
-/* Rootcheck directory */
+/* Rootcheck directory (overridable for regression harnesses). */
+#ifndef ROOTCHECK_DIR
 #define ROOTCHECK_DIR    "/queue/rootcheck"
+#endif
 
 /* Backup of agent state before force-delete / remove */
 #define AGNBACKUP_DIR    "/backup/agents"

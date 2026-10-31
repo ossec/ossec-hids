@@ -71,7 +71,8 @@ REGRESSION_BINS = \
 	issue_8sti0q1e_syscheck_linear_miss \
 	issue_6wl10qqz_dir_depth \
 	issue_2d3xma3w_decoder_field_leak \
-	issue_tzmhdq9m_decoder_info_race
+	issue_tzmhdq9m_decoder_info_race \
+	issue_rbaky685_syscheck_slot_exhaustion
 
 .PHONY: all check clean
 
@@ -275,6 +276,30 @@ issue_tzmhdq9m_decoder_info_race: \
 		-DSYSCHECK_DIR=\"queue/syscheck\" -I./analysisd -o $@ \
 		tests/regressions/issue_tzmhdq9m_decoder_info_race.c \
 		analysisd/decoders/syscheck-tzmh.o \
+		shared/fim_sum_op.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
+		libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-RBAKY685: forged locations must not take syscheck/rootcheck DB slots.
+issue_rbaky685_syscheck_slot_exhaustion: \
+		tests/regressions/issue_rbaky685_syscheck_slot_exhaustion.c \
+		analysisd/decoders/syscheck.c analysisd/decoders/rootcheck.c shared.a
+	$(CC) $(CFLAGS) -DOSSEC_SYSCHECK_TEST \
+		-DSYSCHECK_DIR=\"queue/syscheck\" \
+		-I./analysisd -c analysisd/decoders/syscheck.c \
+		-o analysisd/decoders/syscheck-rbaky.o
+	$(CC) $(CFLAGS) -DOSSEC_ROOTCHECK_TEST \
+		-DROOTCHECK_DIR=\"queue/rootcheck\" \
+		-I./analysisd -c analysisd/decoders/rootcheck.c \
+		-o analysisd/decoders/rootcheck-rbaky.o
+	$(CC) $(CFLAGS) -DOSSEC_SYSCHECK_TEST -DOSSEC_ROOTCHECK_TEST \
+		-DSYSCHECK_DIR=\"queue/syscheck\" \
+		-DROOTCHECK_DIR=\"queue/rootcheck\" \
+		-I./analysisd -o $@ \
+		tests/regressions/issue_rbaky685_syscheck_slot_exhaustion.c \
+		analysisd/decoders/syscheck-rbaky.o \
+		analysisd/decoders/rootcheck-rbaky.o \
 		shared/fim_sum_op.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		libcJSON.a -Wl,--end-group \
