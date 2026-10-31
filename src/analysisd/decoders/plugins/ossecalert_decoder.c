@@ -173,10 +173,12 @@ void *OSSECAlert_Decoder_Exec(Eventinfo *lf)
 
         if(strncmp(oa_val, "srcip: ", 7) == 0)
         {
+            free(lf->srcip);
             os_strdup(oa_val + 7, lf->srcip);
         }
         if(strncmp(oa_val, "user: ", 6) == 0)
         {
+            free(lf->dstuser);
             os_strdup(oa_val + 6, lf->dstuser);
         }
 

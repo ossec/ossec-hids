@@ -69,7 +69,8 @@ REGRESSION_BINS = \
 	issue_h2jmyhxz_maild_subject_underflow \
 	issue_3wkk50ne_oshash_collisions \
 	issue_8sti0q1e_syscheck_linear_miss \
-	issue_6wl10qqz_dir_depth
+	issue_6wl10qqz_dir_depth \
+	issue_2d3xma3w_decoder_field_leak
 
 .PHONY: all check clean
 
@@ -259,6 +260,19 @@ issue_6wl10qqz_dir_depth: \
 		tests/regressions/issue_6wl10qqz_dir_depth.c \
 		rootcheck/common-6wl.o \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-2D3XMA3W: *_FP setters free prior heap value on overwrite.
+issue_2d3xma3w_decoder_field_leak: \
+		tests/regressions/issue_2d3xma3w_decoder_field_leak.c \
+		analysisd/decoders/decoder.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/decoders/decoder.c \
+		-o analysisd/decoders/decoder-2d3.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_2d3xma3w_decoder_field_leak.c \
+		analysisd/decoders/decoder-2d3.o \
+		-Wl,--wrap=free \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 checksum_short_message: tests/regressions/checksum_short_message.c os_crypto/shared/msgs.c
@@ -557,4 +571,5 @@ clean:
 		logcollector/read_audit-ud31vlyl.o \
 		logcollector/read_audit-ud31vlyl.c \
 		analysisd/decoders/syscheck-8sti.o \
-		rootcheck/common-6wl.o
+		rootcheck/common-6wl.o \
+		analysisd/decoders/decoder-2d3.o
