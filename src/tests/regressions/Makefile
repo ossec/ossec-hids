@@ -72,7 +72,8 @@ REGRESSION_BINS = \
 	issue_6wl10qqz_dir_depth \
 	issue_2d3xma3w_decoder_field_leak \
 	issue_tzmhdq9m_decoder_info_race \
-	issue_rbaky685_syscheck_slot_exhaustion
+	issue_rbaky685_syscheck_slot_exhaustion \
+	issue_j9qhsfrd_fts_location_newline
 
 .PHONY: all check clean
 
@@ -279,6 +280,19 @@ issue_tzmhdq9m_decoder_info_race: \
 		shared/fim_sum_op.o \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-J9QHSFRD: newline in location must not forge FTS / alert lines.
+issue_j9qhsfrd_fts_location_newline: \
+		tests/regressions/issue_j9qhsfrd_fts_location_newline.c \
+		analysisd/cleanevent.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -DTESTRULE -c analysisd/cleanevent.c \
+		-o analysisd/cleanevent-j9qh.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_j9qhsfrd_fts_location_newline.c \
+		analysisd/cleanevent-j9qh.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
+		-Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # ANT-2026-RBAKY685: forged locations must not take syscheck/rootcheck DB slots.

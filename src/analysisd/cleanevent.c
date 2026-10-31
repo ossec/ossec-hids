@@ -67,6 +67,14 @@ int OS_CleanMSG_ex(char *msg, Eventinfo *lf, time_t recv_time, int update_time_g
     *pieces = '\0';
     pieces++;
 
+    /* The sender chooses the location as well as the log, and it is
+     * written to the same line-based files (alerts, archives, FTS queue),
+     * so strip control characters from it too (see CVE-2020-8445 below).
+     * Always strip newlines here — unlike the log body, location must never
+     * split an FTS/alert line (ANT-2026-J9QHSFRD).
+     */
+    remove_control_characters(msg);
+
     /* Proposed fix for CVE-2020-8664 */
     if (w_ref_parent_folder(msg) == 1) 
     {

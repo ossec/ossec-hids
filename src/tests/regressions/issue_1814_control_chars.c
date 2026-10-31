@@ -50,43 +50,54 @@ int main(void) {
     // - \x07 (bell, 7): Should be removed
     // - \x1B (ESC, 27): Should be removed (start of ANSI codes)
     // - \xC3\xA4 (ä, UTF-8): Should be PRESERVED
-    snprintf(msg, sizeof(msg), "1:agent1:Test message with \n, \x07 (bell), \x1B (ESC) and UTF-8 \xC3\xA4");
-    
+    // The location is chosen by the sender as well (ANT-2026-J9QHSFRD), so
+    // the same control-character rules apply to lf->location.
+    snprintf(msg, sizeof(msg),
+             "1:agent1\n\x07\x1B\xC3\xA4:Test message with \n, \x07 (bell), "
+             "\x1B (ESC) and UTF-8 \xC3\xA4");
+
     Eventinfo lf;
     memset(&lf, 0, sizeof(Eventinfo));
     c_time = time(NULL);
 
     printf("Original message: %s\n", msg);
-    
-    // OS_CleanMSG modifies msg in place (via pieces)
+
+    /* OS_CleanMSG modifies msg in place (via pieces) */
     if (OS_CleanMSG(msg, &lf) < 0) {
         printf("OS_CleanMSG returned error\n");
         return 1;
     }
 
     printf("Processed log: %s\n", lf.full_log);
+    printf("Processed location: %s\n", lf.location ? lf.location : "(null)");
 
-    // Check for newline
+    /* Check for newline */
     if (strchr(lf.full_log, '\n')) {
         printf("VULNERABLE: Newline found in processed log!\n");
         return 1;
     }
 
-    // Check for control char (bell)
+    /* Check for control char (bell) */
     if (strchr(lf.full_log, '\x07')) {
         printf("VULNERABLE: Control char \\x07 found in processed log!\n");
         return 1;
     }
 
-    // Check for ESC
+    /* Check for ESC */
     if (strchr(lf.full_log, '\x1B')) {
         printf("VULNERABLE: ESC char \\x1B found in processed log!\n");
         return 1;
     }
 
-    // Check for UTF-8 preservation (ä should remain)
+    /* Check for UTF-8 preservation (ä should remain) */
     if (!strstr(lf.full_log, "\xC3\xA4")) {
         printf("BROKEN: Valid UTF-8 characters were incorrectly removed!\n");
+        return 1;
+    }
+
+    /* Same checks for the location (ANT-2026-J9QHSFRD / FTS line injection) */
+    if (!lf.location || strcmp(lf.location, "agent1\xC3\xA4") != 0) {
+        printf("VULNERABLE: Control characters found in location!\n");
         return 1;
     }
 
