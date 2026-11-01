@@ -80,7 +80,8 @@ REGRESSION_BINS = \
 	issue_grfznie0_csyslog_spaces \
 	issue_dj9ev0kp_json_overlong \
 	issue_913_nul_in_log \
-	issue_k99okmjp_journald_rotation
+	issue_k99okmjp_journald_rotation \
+	issue_9hsm6ma8_long_line_pieces
 
 .PHONY: all check clean
 
@@ -353,6 +354,18 @@ issue_k99okmjp_journald_rotation: \
 		-I./tests/regressions/stubs -o $@ \
 		tests/regressions/issue_k99okmjp_journald_rotation.c \
 		logcollector/read_journald.c $(BASIC_LIBS)
+
+# ANT-2026-9HSM6MA8: ignore every piece of an over-long line until its newline.
+LONG_LINE_READERS = logcollector/read_djb_multilog.c logcollector/read_mysql_log.c \
+	logcollector/read_mssql_log.c logcollector/read_postgresql_log.c \
+	logcollector/read_multiline_indented.c
+
+issue_9hsm6ma8_long_line_pieces: \
+		tests/regressions/issue_9hsm6ma8_long_line_pieces.c \
+		$(LONG_LINE_READERS) shared.a
+	$(CC) $(CFLAGS) -I./logcollector -o $@ \
+		tests/regressions/issue_9hsm6ma8_long_line_pieces.c \
+		$(LONG_LINE_READERS) $(BASIC_LIBS)
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \

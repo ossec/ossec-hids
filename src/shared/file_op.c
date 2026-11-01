@@ -458,6 +458,21 @@ char *fgets_no_nul(char *str, int size, FILE *fp)
     return (str);
 }
 
+/* Discard through the next newline (or EOF). Used to finish ignoring an
+ * over-long line when its remainder arrives on a later poll. */
+int fdrain_to_newline(FILE *fp)
+{
+    char buf[OS_MAXSTR + 1];
+
+    buf[OS_MAXSTR] = '\0';
+    while (fgets_no_nul(buf, OS_MAXSTR - OS_LOG_HEADER, fp) != NULL) {
+        if (strchr(buf, '\n') != NULL) {
+            return (1);
+        }
+    }
+    return (0);
+}
+
 int CreatePID(const char *name, int pid)
 {
     char file[256];
