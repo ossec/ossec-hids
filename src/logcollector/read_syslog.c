@@ -38,21 +38,35 @@ static size_t read_syslog_line(char *str, size_t max_payload, FILE *fp)
     return (size_t)(p - str);
 }
 
-/* Discard through the next newline (or EOF). Returns 1 if a newline was
- * found, 0 if EOF ended the drain early. */
-static int drain_to_newline(FILE *fp)
+/* Discard through the next newline (or EOF), counting against the visit
+ * budget so a sparse hole cannot park the collector inside the drain. */
+static int drain_to_newline(FILE *fp, int drop_it)
 {
     char str[OS_MAXSTR + 1];
     size_t rbytes;
 
     str[OS_MAXSTR] = '\0';
 
-    while ((rbytes = read_syslog_line(str, (size_t)OS_MAXSTR - 2, fp)) > 0) {
+    while (logr_consume_line(drop_it) &&
+            (rbytes = read_syslog_line(str, (size_t)OS_MAXSTR - 2, fp)) > 0) {
         if (str[rbytes - 1] == '\n') {
             return 1;
         }
     }
     return 0;
+}
+
+/* True when the line has no non-whitespace payload. NUL holes become spaces
+ * via read_syslog_line(); forwarding them would flood analysisd. */
+static int syslog_line_blank(const char *s)
+{
+    while (*s != '\0') {
+        if (*s != ' ' && *s != '\t' && *s != '\r') {
+            return 0;
+        }
+        s++;
+    }
+    return 1;
 }
 
 /* Read syslog files */
@@ -71,10 +85,10 @@ void *read_syslog(int pos, int *rc, int drop_it)
      * so its remainder cannot become a forged standalone event
      * (ANT-2026-RNCE3SO7). */
     if (logff[pos].skip_to_nl) {
-        if (drain_to_newline(logff[pos].fp)) {
+        if (drain_to_newline(logff[pos].fp, drop_it)) {
             logff[pos].skip_to_nl = 0;
         } else {
-            /* Still no newline; try again next poll. */
+            /* Still no newline (or budget exhausted); try again next poll. */
             return (NULL);
         }
     }
@@ -82,7 +96,9 @@ void *read_syslog(int pos, int *rc, int drop_it)
     /* Get initial file location */
     fgetpos(logff[pos].fp, &fp_pos);
 
-    while ((rbytes = read_syslog_line(str, (size_t)SYSLOG_CHUNK, logff[pos].fp)) > 0) {
+    while (logr_consume_line(drop_it) &&
+            (rbytes = read_syslog_line(str, (size_t)SYSLOG_CHUNK,
+                                       logff[pos].fp)) > 0) {
         /* Complete line */
         if (str[rbytes - 1] == '\n') {
             str[rbytes - 1] = '\0';
@@ -121,8 +137,8 @@ void *read_syslog(int pos, int *rc, int drop_it)
 
         debug2("%s: DEBUG: Reading syslog message: '%s'", ARGV0, str);
 
-        /* Send message to queue */
-        if (drop_it == 0) {
+        /* Send message to queue (skip blank / former-NUL hole chunks). */
+        if (drop_it == 0 && !syslog_line_blank(str)) {
             if (SendMSG(logr_queue, str, logff[pos].file,
                         LOCALFILE_MQ) < 0) {
                 merror(QUEUE_SEND, ARGV0);
@@ -140,7 +156,7 @@ void *read_syslog(int pos, int *rc, int drop_it)
             snprintf(buf, OUTSIZE, "%s", str);
             merror("%s: Large message size(length=%d): '%s...'", ARGV0,
                    (int)strlen(str), buf);
-            if (!drain_to_newline(logff[pos].fp)) {
+            if (!drain_to_newline(logff[pos].fp, drop_it)) {
                 /* Remainder still being written; skip it on the next poll. */
                 logff[pos].skip_to_nl = 1;
                 break;

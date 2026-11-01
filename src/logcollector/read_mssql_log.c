@@ -50,7 +50,7 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
     /* Finish discarding an over-long line that hit EOF on the previous poll
      * (ANT-2026-9HSM6MA8). */
     if (logff[pos].skip_to_nl) {
-        if (fdrain_to_newline(logff[pos].fp)) {
+        if (logr_fdrain_to_newline(pos, drop_it)) {
             logff[pos].skip_to_nl = 0;
         } else {
             return (NULL);
@@ -60,7 +60,13 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
     /* Get new entry */
     for (;;) {
         fgetpos(logff[pos].fp, &fp_pos);
-        if (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) == NULL) {
+        if (logr_fgets(str, OS_MAXSTR - OS_LOG_HEADER, pos, drop_it) == NULL) {
+            /* Do not rewind over a mid-line discard; skip_to_nl resumes it. */
+            if (logr_budget_exhausted() && have_buffer_start &&
+                    !(need_clear && clear_was_full)) {
+                fsetpos(logff[pos].fp, &buffer_start);
+                wait_more = 1;
+            }
             break;
         }
         /* Get buffer size */

@@ -21,12 +21,23 @@ void *read_snortfull(int pos, int *rc, int drop_it)
     char *q;
     char str[OS_MAXSTR + 1];
     char f_msg[OS_MAXSTR + 1];
+    fpos_t alert_start;
+    int have_alert_start = 0;
 
     *rc = 0;
     str[OS_MAXSTR] = '\0';
     f_msg[OS_MAXSTR] = '\0';
 
-    while (fgets_no_nul(str, OS_MAXSTR, logff[pos].fp) != NULL) {
+    while (1) {
+        fpos_t line_start;
+
+        fgetpos(logff[pos].fp, &line_start);
+        if (logr_fgets(str, OS_MAXSTR, pos, drop_it) == NULL) {
+            if (logr_budget_exhausted() && have_alert_start) {
+                fsetpos(logff[pos].fp, &alert_start);
+            }
+            break;
+        }
         /* Remove \n at the end of the string */
         if ((q = strrchr(str, '\n')) != NULL) {
             *q = '\0';
@@ -37,6 +48,8 @@ void *read_snortfull(int pos, int *rc, int drop_it)
         /* First part of the message */
         if (p == NULL) {
             if (strncmp(str, "[**] [", 6) == 0) {
+                alert_start = line_start;
+                have_alert_start = 1;
                 strncpy(f_msg, str, OS_MAXSTR);
                 f_msg_size -= strlen(str) + 1;
                 p = one;
@@ -65,6 +78,7 @@ void *read_snortfull(int pos, int *rc, int drop_it)
 
                     /* Clean for next event */
                     p = NULL;
+                    have_alert_start = 0;
 
                     /* Send the message */
                     if (drop_it == 0) {
@@ -89,6 +103,7 @@ void *read_snortfull(int pos, int *rc, int drop_it)
                     strncat(f_msg, ++q, f_msg_size);
                     f_msg_size -= strlen(q) + 1;
                     p = NULL;
+                    have_alert_start = 0;
 
                     /* Send the message */
                     if (drop_it == 0) {

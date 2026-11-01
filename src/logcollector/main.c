@@ -118,6 +118,9 @@ int main(int argc, char **argv)
     open_file_attempts = getDefine_Int("logcollector", "open_attempts",
                                        2, 998);
 
+    /* Lines taken from one file before the others get their turn */
+    max_lines = getDefine_Int("logcollector", "max_lines", 0, 1000000);
+
     /* Exit if test config */
     if (test_config) {
         exit(0);

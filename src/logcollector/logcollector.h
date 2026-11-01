@@ -29,6 +29,13 @@ void LogCollectorStart(void) __attribute__((noreturn));
 /* Handle files */
 int handle_file(int i, int do_fseek, int do_log);
 
+/* Per-visit line budget for file readers (logcollector.max_lines). */
+void logr_begin_read(void);
+int logr_consume_line(int drop_it);
+int logr_budget_exhausted(void);
+char *logr_fgets(char *str, int size, int pos, int drop_it);
+int logr_fdrain_to_newline(int pos, int drop_it);
+
 /* Read syslog file */
 void *read_syslog(int pos, int *rc, int drop_it);
 
@@ -88,6 +95,7 @@ void *sd_read_journal(int pos, int *rc, int drop_it);
 extern int loop_timeout;
 extern int logr_queue;
 extern int open_file_attempts;
+extern int max_lines;
 extern logreader *logff;
 
 #endif /* __LOGREADER_H */

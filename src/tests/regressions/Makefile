@@ -83,7 +83,8 @@ REGRESSION_BINS = \
 	issue_k99okmjp_journald_rotation \
 	issue_9hsm6ma8_long_line_pieces \
 	issue_rer9koy9_popen_keep_command \
-	issue_1yeqlyn9_journald_field_bounds
+	issue_1yeqlyn9_journald_field_bounds \
+	issue_54azkai7_max_lines
 
 .PHONY: all check clean
 
@@ -222,10 +223,10 @@ issue_35jw8ghu_log_rollover: \
 # ANT-2026-RNCE3SO7: read_syslog must truncate over-long lines (#913 follow-up).
 issue_rnce3so7_syslog_long_line: \
 		tests/regressions/issue_rnce3so7_syslog_long_line.c \
-		logcollector/read_syslog.c shared.a
+		logcollector/read_syslog.c logcollector/logr_fgets.c shared.a
 	$(CC) $(CFLAGS) -o $@ \
 		tests/regressions/issue_rnce3so7_syslog_long_line.c \
-		logcollector/read_syslog.c \
+		logcollector/read_syslog.c logcollector/logr_fgets.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		-Wl,--end-group -lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
@@ -344,18 +345,20 @@ issue_dj9ev0kp_json_overlong: \
 NUL_READERS = logcollector/read_modsec_audit.c logcollector/read_audit.c \
 	logcollector/read_multiline.c logcollector/read_mysql_log.c
 
-issue_913_nul_in_log: tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) shared.a
+issue_913_nul_in_log: tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) \
+		logcollector/logr_fgets.c shared.a
 	$(CC) $(CFLAGS) -I./logcollector -o $@ \
-		tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) $(BASIC_LIBS)
+		tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) \
+		logcollector/logr_fgets.c $(BASIC_LIBS)
 
 # ANT-2026-K99OKMJP: journald reader must process inotify after rotation.
 issue_k99okmjp_journald_rotation: \
 		tests/regressions/issue_k99okmjp_journald_rotation.c \
-		logcollector/read_journald.c shared.a
+		logcollector/read_journald.c logcollector/logr_fgets.c shared.a
 	$(CC) $(CFLAGS) -DHAVE_SYSTEMD -I./logcollector \
 		-I./tests/regressions/stubs -o $@ \
 		tests/regressions/issue_k99okmjp_journald_rotation.c \
-		logcollector/read_journald.c $(BASIC_LIBS)
+		logcollector/read_journald.c logcollector/logr_fgets.c $(BASIC_LIBS)
 
 # ANT-2026-9HSM6MA8: ignore every piece of an over-long line until its newline.
 LONG_LINE_READERS = logcollector/read_djb_multilog.c logcollector/read_mysql_log.c \
@@ -364,10 +367,10 @@ LONG_LINE_READERS = logcollector/read_djb_multilog.c logcollector/read_mysql_log
 
 issue_9hsm6ma8_long_line_pieces: \
 		tests/regressions/issue_9hsm6ma8_long_line_pieces.c \
-		$(LONG_LINE_READERS) shared.a
+		$(LONG_LINE_READERS) logcollector/logr_fgets.c shared.a
 	$(CC) $(CFLAGS) -I./logcollector -o $@ \
 		tests/regressions/issue_9hsm6ma8_long_line_pieces.c \
-		$(LONG_LINE_READERS) $(BASIC_LIBS)
+		$(LONG_LINE_READERS) logcollector/logr_fgets.c $(BASIC_LIBS)
 
 # ANT-2026-RER9KOY9: failed popen must not permanently disable command monitors.
 issue_rer9koy9_popen_keep_command: \
@@ -381,11 +384,19 @@ issue_rer9koy9_popen_keep_command: \
 # ANT-2026-1YEQLYN9: journal field blobs are length-bounded, not C strings.
 issue_1yeqlyn9_journald_field_bounds: \
 		tests/regressions/issue_1yeqlyn9_journald_field_bounds.c \
-		logcollector/read_journald.c shared.a
+		logcollector/read_journald.c logcollector/logr_fgets.c shared.a
 	$(CC) $(CFLAGS) -DHAVE_SYSTEMD -I./logcollector \
 		-I./tests/regressions/stubs -o $@ \
 		tests/regressions/issue_1yeqlyn9_journald_field_bounds.c \
-		logcollector/read_journald.c $(BASIC_LIBS)
+		logcollector/read_journald.c logcollector/logr_fgets.c $(BASIC_LIBS)
+
+# ANT-2026-54AZKAI7: one file must not starve the others in a single visit.
+issue_54azkai7_max_lines: \
+		tests/regressions/issue_54azkai7_max_lines.c \
+		logcollector/read_syslog.c logcollector/logr_fgets.c shared.a
+	$(CC) $(CFLAGS) -I./logcollector -o $@ \
+		tests/regressions/issue_54azkai7_max_lines.c \
+		logcollector/read_syslog.c logcollector/logr_fgets.c $(BASIC_LIBS)
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \
@@ -627,7 +638,7 @@ issue_ant2026_ar_scripts: \
 # Expose audit_send_msg and record final join index for the harness.
 issue_ud31vlyl_audit_oob: \
 		tests/regressions/issue_ud31vlyl_audit_oob.c \
-		logcollector/read_audit.c shared.a
+		logcollector/read_audit.c logcollector/logr_fgets.c shared.a
 	sed -e 's/^static void audit_send_msg/size_t audit_last_n;\nvoid audit_send_msg/' \
 		-e 's/message\[n\] = '\''\\0'\'';/audit_last_n = n; message[n] = '\''\\0'\'';/' \
 		logcollector/read_audit.c > logcollector/read_audit-ud31vlyl.c
@@ -635,7 +646,7 @@ issue_ud31vlyl_audit_oob: \
 		-o logcollector/read_audit-ud31vlyl.o
 	$(CC) $(CFLAGS) -I./logcollector -o $@ \
 		tests/regressions/issue_ud31vlyl_audit_oob.c \
-		logcollector/read_audit-ud31vlyl.o \
+		logcollector/read_audit-ud31vlyl.o logcollector/logr_fgets.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 	rm -f logcollector/read_audit-ud31vlyl.c
@@ -697,11 +708,14 @@ issue_hostname_path_traversal: tests/regressions/issue_hostname_path_traversal.c
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes
 # __strncpy_chk and the regression's length check never runs.
-multiline_underflow: tests/regressions/multiline_underflow.c logcollector/read_multiline.c
+multiline_underflow: tests/regressions/multiline_underflow.c logcollector/read_multiline.c \
+		logcollector/logr_fgets.c
 	$(CC) $(CFLAGS) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fno-builtin-strncpy \
 		-I./logcollector -c logcollector/read_multiline.c -o logcollector/read_multiline-underflow.o
+	$(CC) $(CFLAGS) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 \
+		-I./logcollector -c logcollector/logr_fgets.c -o logcollector/logr_fgets-underflow.o
 	$(CC) $(CFLAGS) -I./logcollector -o $@ tests/regressions/multiline_underflow.c \
-		logcollector/read_multiline-underflow.o
+		logcollector/read_multiline-underflow.o logcollector/logr_fgets-underflow.o
 
 addagent/validate.o: addagent/validate.c
 	$(CC) $(CFLAGS) -c addagent/validate.c -o $@

@@ -31,10 +31,18 @@ void *read_multiline(int pos, int *rc, int drop_it)
 
     linecount = atoi(logff[pos].logformat);
 
+    if (logff[pos].skip_to_nl) {
+        if (logr_fdrain_to_newline(pos, drop_it)) {
+            logff[pos].skip_to_nl = 0;
+        } else {
+            return (NULL);
+        }
+    }
+
     /* Get initial file location */
     fgetpos(logff[pos].fp, &fp_pos);
 
-    while (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
+    while (logr_fgets(str, OS_MAXSTR - OS_LOG_HEADER, pos, drop_it) != NULL) {
         linesgot++;
 
         /* Get the last occurrence of \n */
@@ -115,23 +123,33 @@ void *read_multiline(int pos, int *rc, int drop_it)
 
         buffer[0] = '\0';
         truncated = 0;
+        linesgot = 0;
 
         /* Incorrect message size. Only an unfinished physical line
          * leaves bytes in the file that have to be discarded.
          */
         if (__ms) {
             merror("%s: Large message size: '%s'", ARGV0, str);
-            while (fgets_no_nul(str, OS_MAXSTR - 2, logff[pos].fp) != NULL) {
+            while (logr_fgets(str, OS_MAXSTR - 2, pos, drop_it) != NULL) {
                 /* Get the last occurrence of \n */
                 if ((p = strrchr(str, '\n')) != NULL) {
                     break;
                 }
+            }
+            if (logr_budget_exhausted()) {
+                logff[pos].skip_to_nl = 1;
+                break;
             }
             __ms = 0;
         }
 
         fgetpos(logff[pos].fp, &fp_pos);
         continue;
+    }
+
+    /* Budget cut an incomplete multiline group — retry from its start. */
+    if (logr_budget_exhausted() && linesgot > 0 && linesgot < linecount) {
+        fsetpos(logff[pos].fp, &fp_pos);
     }
 
     return (NULL);

@@ -61,7 +61,7 @@ void *read_audit(int pos, int *rc, int drop_it) {
     char *p;
     size_t z;
     long offset = ftell(logff[pos].fp);
-    
+
     if (offset < 0) {
         merror(FTELL_ERROR, ARGV0, logff[pos].file, errno, strerror(errno));
         return NULL;
@@ -69,16 +69,30 @@ void *read_audit(int pos, int *rc, int drop_it) {
 
     *rc = 0;
 
-    while (fgets_no_nul(buffer, OS_MAXSTR, logff[pos].fp)) {
+    if (logff[pos].skip_to_nl) {
+        if (logr_fdrain_to_newline(pos, drop_it)) {
+            logff[pos].skip_to_nl = 0;
+        } else {
+            return NULL;
+        }
+    }
+
+    while (logr_fgets(buffer, OS_MAXSTR, pos, drop_it)) {
         if ((p = strchr(buffer, '\n')))
             *p = '\0';
         else {
             if (strlen(buffer) == OS_MAXSTR - 1) {
                 // Message too large, discard line
-                while (fgets_no_nul(buffer, OS_MAXSTR, logff[pos].fp) && !strchr(buffer, '\n'));
+                while (logr_fgets(buffer, OS_MAXSTR, pos, drop_it) &&
+                       !strchr(buffer, '\n')) {
+                }
+                /* Budget or EOF mid-discard: finish through newline next visit. */
+                if (!strchr(buffer, '\n')) {
+                    logff[pos].skip_to_nl = 1;
+                }
             } else {
                 debug1("%s: Message not complete. Trying again: '%s'", ARGV0, buffer);
-                
+
                 if (fseek(logff[pos].fp, offset, SEEK_SET) < 0) {
                     merror(FSEEK_ERROR, ARGV0, logff[pos].file, errno, strerror(errno));
                     break;
@@ -94,7 +108,7 @@ void *read_audit(int pos, int *rc, int drop_it) {
             merror("%s: ERROR: discarding audit message because of invalid syntax", ARGV0);
             break;
         }
-        
+
         z = p - id;
 
         if (strncmp(id, header, z)) {
@@ -113,8 +127,16 @@ void *read_audit(int pos, int *rc, int drop_it) {
             else
                 cache[icache++] = strdup(buffer);
         }
+
+        offset = ftell(logff[pos].fp);
+        if (offset < 0) {
+            merror(FTELL_ERROR, ARGV0, logff[pos].file, errno, strerror(errno));
+            break;
+        }
     }
 
+    /* Same as EOF: forward what is cached. Rewinding an event larger than
+     * max_lines would stall the file forever. */
     if (icache > 0)
         audit_send_msg(cache, icache, logff[pos].file, drop_it);
 

@@ -32,7 +32,7 @@ void *read_mysql_log(int pos, int *rc, int drop_it)
     /* Finish discarding an over-long line that hit EOF on the previous poll
      * (ANT-2026-9HSM6MA8). */
     if (logff[pos].skip_to_nl) {
-        if (fdrain_to_newline(logff[pos].fp)) {
+        if (logr_fdrain_to_newline(pos, drop_it)) {
             logff[pos].skip_to_nl = 0;
         } else {
             return (NULL);
@@ -42,7 +42,7 @@ void *read_mysql_log(int pos, int *rc, int drop_it)
     /* Get new entry */
     for (;;) {
         fgetpos(logff[pos].fp, &fp_pos);
-        if (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) == NULL) {
+        if (logr_fgets(str, OS_MAXSTR - OS_LOG_HEADER, pos, drop_it) == NULL) {
             break;
         }
         /* Get buffer size */
