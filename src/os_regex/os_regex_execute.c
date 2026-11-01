@@ -49,7 +49,8 @@ const char *OSRegex_Execute_pcre2_match(const char *str, OSRegex *reg)
      */
     rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, strlen(str), 0, 0, match_data, NULL);
 
-    /* Check execution result */
+    /* Check execution result. Do not write reg->error here: compiled
+     * patterns are shared across analysisd matcher threads. */
     if (rc <= 0) {
         return NULL;
     }

@@ -115,8 +115,10 @@ int OSMatch_Compile(const char *pattern, OSMatch *reg, int flags)
         goto compile_error;
     }
 
-    flags_compile |= PCRE2_UTF;
-    flags_compile |= PCRE2_NO_UTF_CHECK;
+    /* Log data is not guaranteed to be valid UTF-8: match bytes, as the
+     * <pcre2> options do. In PCRE2_UTF mode pcre2_match() rejects the whole
+     * subject on the first malformed sequence, which callers see as "no
+     * match" (ANT-2026-9LQQ1BMS). */
     flags_compile |= (flags & OS_CASE_SENSITIVE) ? 0 : PCRE2_CASELESS;
     reg->regex = pcre2_compile((PCRE2_SPTR)pattern_pcre2, PCRE2_ZERO_TERMINATED, flags_compile,
                                &error, &erroroffset, NULL);

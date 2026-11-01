@@ -161,7 +161,7 @@ int OSPcre2_CouldBeOptimized(const char *pattern)
     PCRE2_SIZE erroroffset = 0;
     int should_be_optimized = 0;
 
-    preg = pcre2_compile(re, PCRE2_ZERO_TERMINATED, PCRE2_UTF | PCRE2_NO_UTF_CHECK, &error,
+    preg = pcre2_compile(re, PCRE2_ZERO_TERMINATED, 0, &error,
                          &erroroffset, NULL);
     md = pcre2_match_data_create_from_pattern(preg, NULL);
 
