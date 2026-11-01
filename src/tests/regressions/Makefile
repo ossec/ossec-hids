@@ -75,7 +75,8 @@ REGRESSION_BINS = \
 	issue_rbaky685_syscheck_slot_exhaustion \
 	issue_j9qhsfrd_fts_location_newline \
 	issue_pwed0r2h_demux_push_wait \
-	issue_4ojpklvk_fts_store_size
+	issue_4ojpklvk_fts_store_size \
+	issue_mqq5w9cu_ig_queue
 
 .PHONY: all check clean
 
@@ -293,6 +294,18 @@ issue_4ojpklvk_fts_store_size: \
 	$(CC) $(CFLAGS) -DTESTRULE -DOSSEC_FTS_TEST -I./analysisd -o $@ \
 		tests/regressions/issue_4ojpklvk_fts_store_size.c \
 		analysisd/fts-4ojp.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-MQQ5W9CU: ig-queue must drop oldest ignore records past ig_list_size.
+issue_mqq5w9cu_ig_queue: \
+		tests/regressions/issue_mqq5w9cu_ig_queue.c \
+		analysisd/fts.c shared.a
+	$(CC) $(CFLAGS) -DTESTRULE -DOSSEC_IG_TEST -I./analysisd \
+		-c analysisd/fts.c -o analysisd/fts-mqq5.o
+	$(CC) $(CFLAGS) -DTESTRULE -DOSSEC_IG_TEST -I./analysisd -o $@ \
+		tests/regressions/issue_mqq5w9cu_ig_queue.c \
+		analysisd/fts-mqq5.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
@@ -655,4 +668,5 @@ clean:
 		analysisd/cleanevent-j9qh.o \
 		analysisd/decoders/syscheck-rbaky.o \
 		analysisd/decoders/rootcheck-rbaky.o \
-		analysisd/fts-4ojp.o
+		analysisd/fts-4ojp.o \
+		analysisd/fts-mqq5.o
