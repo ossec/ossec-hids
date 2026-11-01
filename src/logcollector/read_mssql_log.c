@@ -32,9 +32,14 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
 {
     size_t str_len = 0;
     int need_clear = 0;
+    int clear_was_full = 0;
     char *p;
     char str[OS_MAXSTR + 1];
     char buffer[OS_MAXSTR + 1];
+    fpos_t fp_pos;
+    fpos_t buffer_start;
+    int have_buffer_start = 0;
+    int wait_more = 0;
 
     /* Zero buffer and str */
     buffer[0] = '\0';
@@ -42,8 +47,22 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
     str[OS_MAXSTR] = '\0';
     *rc = 0;
 
+    /* Finish discarding an over-long line that hit EOF on the previous poll
+     * (ANT-2026-9HSM6MA8). */
+    if (logff[pos].skip_to_nl) {
+        if (fdrain_to_newline(logff[pos].fp)) {
+            logff[pos].skip_to_nl = 0;
+        } else {
+            return (NULL);
+        }
+    }
+
     /* Get new entry */
-    while (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
+    for (;;) {
+        fgetpos(logff[pos].fp, &fp_pos);
+        if (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) == NULL) {
+            break;
+        }
         /* Get buffer size */
         str_len = strlen(str);
 
@@ -59,10 +78,26 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
             /* If need clear is set, we just get the line and ignore it */
             if (need_clear) {
                 need_clear = 0;
+                clear_was_full = 0;
                 continue;
             }
-        } else {
+        } else if (need_clear) {
+            /* Still in the middle of the line being ignored */
+            continue;
+        } else if (strlen(str) == (size_t)(OS_MAXSTR - OS_LOG_HEADER - 1)) {
             need_clear = 1;
+            clear_was_full = 1;
+        } else {
+            /* Incomplete line: rewind to the open record (or this line). */
+            if (have_buffer_start) {
+                fsetpos(logff[pos].fp, &buffer_start);
+                buffer[0] = '\0';
+                have_buffer_start = 0;
+            } else {
+                fsetpos(logff[pos].fp, &fp_pos);
+            }
+            wait_more = 1;
+            break;
         }
 
 #ifdef WIN32
@@ -100,6 +135,8 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
             /* If the saved message is empty, set it and continue */
             if (buffer[0] == '\0') {
                 strncpy(buffer, str, OS_MAXSTR);
+                buffer_start = fp_pos;
+                have_buffer_start = 1;
                 continue;
             }
 
@@ -109,6 +146,8 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
 
                 /* Store current one at the buffer */
                 strncpy(buffer, str, OS_MAXSTR);
+                buffer_start = fp_pos;
+                have_buffer_start = 1;
             }
         }
 
@@ -141,9 +180,13 @@ void *read_mssql_log(int pos, int *rc, int drop_it)
         continue;
     }
 
-    /* Send whatever is stored */
-    if (buffer[0] != '\0') {
+    /* Send whatever is stored (unless waiting for more of an open record). */
+    if (!wait_more && buffer[0] != '\0') {
         __send_mssql_msg(pos, drop_it, buffer);
+    }
+
+    if (need_clear && clear_was_full) {
+        logff[pos].skip_to_nl = 1;
     }
 
     return (NULL);

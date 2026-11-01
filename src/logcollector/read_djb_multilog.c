@@ -80,9 +80,11 @@ void *read_djbmultilog(int pos, int *rc, int drop_it)
 {
     size_t str_len = 0;
     int need_clear = 0;
+    int clear_was_full = 0;
     char *p;
     char str[OS_MAXSTR + 1];
     char buffer[OS_MAXSTR + 1];
+    fpos_t fp_pos;
 
     str[OS_MAXSTR] = '\0';
     *rc = 0;
@@ -92,8 +94,22 @@ void *read_djbmultilog(int pos, int *rc, int drop_it)
         return (NULL);
     }
 
+    /* Finish discarding an over-long line that hit EOF on the previous poll
+     * (ANT-2026-9HSM6MA8). */
+    if (logff[pos].skip_to_nl) {
+        if (fdrain_to_newline(logff[pos].fp)) {
+            logff[pos].skip_to_nl = 0;
+        } else {
+            return (NULL);
+        }
+    }
+
     /* Get new entry */
-    while (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
+    for (;;) {
+        fgetpos(logff[pos].fp, &fp_pos);
+        if (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) == NULL) {
+            break;
+        }
         /* Get buffer size */
         str_len = strlen(str);
 
@@ -104,10 +120,20 @@ void *read_djbmultilog(int pos, int *rc, int drop_it)
             /* If need_clear is set, we just get the line and ignore it */
             if (need_clear) {
                 need_clear = 0;
+                clear_was_full = 0;
                 continue;
             }
-        } else {
+        } else if (need_clear) {
+            /* Still in the middle of the line being ignored */
+            continue;
+        } else if (str_len == (size_t)(OS_MAXSTR - OS_LOG_HEADER - 1)) {
+            /* Full piece without newline: send the start, ignore the rest */
             need_clear = 1;
+            clear_was_full = 1;
+        } else {
+            /* Short incomplete line: wait for the writer to finish it */
+            fsetpos(logff[pos].fp, &fp_pos);
+            break;
         }
 
         /* Multilog messages have the following format:
@@ -174,6 +200,10 @@ void *read_djbmultilog(int pos, int *rc, int drop_it)
         }
 
         continue;
+    }
+
+    if (need_clear && clear_was_full) {
+        logff[pos].skip_to_nl = 1;
     }
 
     return (NULL);

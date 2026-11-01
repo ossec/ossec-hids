@@ -27,6 +27,9 @@ int IsDir(const char *file) __attribute__((nonnull));
 /* fgets() for files that may hold NUL bytes: they are stored as spaces */
 char *fgets_no_nul(char *str, int size, FILE *fp) __attribute__((nonnull));
 
+/* Discard bytes through the next newline (or EOF). 1 if newline seen, else 0. */
+int fdrain_to_newline(FILE *fp) __attribute__((nonnull));
+
 int CreatePID(const char *name, int pid) __attribute__((nonnull));
 
 char *GetRandomNoise();
