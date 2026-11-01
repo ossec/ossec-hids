@@ -433,6 +433,31 @@ int IsDir(const char *file)
     return (-1);
 }
 
+/* Same as fgets(), but the NUL bytes found in the file are stored as spaces,
+ * so the only NUL in str is the terminator: a log line with a NUL byte in it
+ * must not look like a line that is not completely written yet (issue #913)
+ */
+char *fgets_no_nul(char *str, int size, FILE *fp)
+{
+    int c;
+    char *p = str;
+
+    while (--size > 0 && (c = getc(fp)) != EOF) {
+        *p++ = (c == '\0') ? ' ' : (char) c;
+        if (c == '\n') {
+            break;
+        }
+    }
+    *p = '\0';
+
+    /* Match fgets(): error after a partial read is still a failed call. */
+    if (p == str || ferror(fp)) {
+        return (NULL);
+    }
+
+    return (str);
+}
+
 int CreatePID(const char *name, int pid)
 {
     char file[256];

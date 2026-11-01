@@ -78,7 +78,8 @@ REGRESSION_BINS = \
 	issue_4ojpklvk_fts_store_size \
 	issue_mqq5w9cu_ig_queue \
 	issue_grfznie0_csyslog_spaces \
-	issue_dj9ev0kp_json_overlong
+	issue_dj9ev0kp_json_overlong \
+	issue_913_nul_in_log
 
 .PHONY: all check clean
 
@@ -334,6 +335,14 @@ issue_dj9ev0kp_json_overlong: \
 		os_csyslogd/json-queue-dj9.o \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-WIHVHVO0 / #913: embedded NUL must not stall/drop log readers.
+NUL_READERS = logcollector/read_modsec_audit.c logcollector/read_audit.c \
+	logcollector/read_multiline.c logcollector/read_mysql_log.c
+
+issue_913_nul_in_log: tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) shared.a
+	$(CC) $(CFLAGS) -I./logcollector -o $@ \
+		tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) $(BASIC_LIBS)
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \

@@ -89,6 +89,13 @@ void ErrorExit(const char *msg, ...)
     exit(1);
 }
 
+/* Stand-in for shared fgets_no_nul(): this harness cannot link shared.a
+ * (duplicate debug1/merror/ErrorExit). NUL rewriting is out of scope here. */
+char *fgets_no_nul(char *str, int size, FILE *fp)
+{
+    return (fgets(str, size, fp));
+}
+
 static int run_reader(const char *text, int expect)
 {
     char path[] = "/tmp/ossec-multiline-XXXXXX";

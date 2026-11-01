@@ -12,6 +12,7 @@
 #ifndef __FILE_H
 #define __FILE_H
 
+#include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
 #define OS_PIDFILE "/var/run"
@@ -22,6 +23,9 @@ void OS_SetName(const char *name) __attribute__((nonnull));
 time_t File_DateofChange(const char *file) __attribute__((nonnull));
 
 int IsDir(const char *file) __attribute__((nonnull));
+
+/* fgets() for files that may hold NUL bytes: they are stored as spaces */
+char *fgets_no_nul(char *str, int size, FILE *fp) __attribute__((nonnull));
 
 int CreatePID(const char *name, int pid) __attribute__((nonnull));
 
