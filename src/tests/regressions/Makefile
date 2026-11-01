@@ -74,7 +74,8 @@ REGRESSION_BINS = \
 	issue_tzmhdq9m_decoder_info_race \
 	issue_rbaky685_syscheck_slot_exhaustion \
 	issue_j9qhsfrd_fts_location_newline \
-	issue_pwed0r2h_demux_push_wait
+	issue_pwed0r2h_demux_push_wait \
+	issue_4ojpklvk_fts_store_size
 
 .PHONY: all check clean
 
@@ -282,6 +283,18 @@ issue_tzmhdq9m_decoder_info_race: \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-4OJPKLVK: FTS store must drop oldest keys past fts_store_size.
+issue_4ojpklvk_fts_store_size: \
+		tests/regressions/issue_4ojpklvk_fts_store_size.c \
+		analysisd/fts.c shared.a
+	$(CC) $(CFLAGS) -DTESTRULE -DOSSEC_FTS_TEST -I./analysisd \
+		-c analysisd/fts.c -o analysisd/fts-4ojp.o
+	$(CC) $(CFLAGS) -DTESTRULE -DOSSEC_FTS_TEST -I./analysisd -o $@ \
+		tests/regressions/issue_4ojpklvk_fts_store_size.c \
+		analysisd/fts-4ojp.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \
@@ -641,4 +654,5 @@ clean:
 		analysisd/decoders/syscheck-tzmh.o \
 		analysisd/cleanevent-j9qh.o \
 		analysisd/decoders/syscheck-rbaky.o \
-		analysisd/decoders/rootcheck-rbaky.o
+		analysisd/decoders/rootcheck-rbaky.o \
+		analysisd/fts-4ojp.o

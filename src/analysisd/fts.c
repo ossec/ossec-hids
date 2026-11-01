@@ -26,18 +26,94 @@ extern os_queue *writer_queue_fts;
 
 /* Local variables */
 static unsigned int fts_minsize_for_str = 0;
+static int fts_store_size = 0;
 
 static OSList *fts_list = NULL;
+/* Every key in fts_store, oldest first; bounded, drops from fts_store too */
+static OSList *fts_store_list = NULL;
 static OSHash *fts_store = NULL;
+/* Records (kept, dropped or repeated) currently in FTS_QUEUE */
+static int fts_file_lines = 0;
 
 static FILE *fp_list = NULL;
 static FILE *fp_ignore = NULL;
 #ifndef WIN32
 static pthread_mutex_t fts_mutex = PTHREAD_MUTEX_INITIALIZER;
-/* File I/O only — keep separate from fts_mutex (in-memory hash/list). */
+/* File I/O only — keep separate from fts_mutex (in-memory hash/list).
+ * FTS_Compact() takes fts_mutex with this one held, never the other way. */
 static pthread_mutex_t fts_write_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
+
+/* Forget a FTS record (free function of fts_store_list, called when the
+ * list drops its oldest node). Caller holds fts_mutex.
+ */
+static void FTS_Free(void *data)
+{
+    OSHash_Delete(fts_store, (char *)data);
+    free(data);
+}
+
+/* Add a FTS record to memory. Caller holds fts_mutex.
+ * Returns 1 if it was not there yet, 0 otherwise
+ */
+static int FTS_Add(const char *_line)
+{
+    int result;
+    char *entry;
+
+    os_strdup(_line, entry);
+    result = OSHash_Add(fts_store, entry, entry);
+    if (result <= 1) {
+        free(entry);
+        if (result == 0) {
+            merror(LIST_ADD_ERROR, ARGV0);
+        }
+        return (0);
+    }
+
+    if (!OSList_AddData(fts_store_list, entry)) {
+        FTS_Free(entry);
+        return (0);
+    }
+
+    return (1);
+}
+
+/* Rewrite FTS_QUEUE from the records still in memory once the dropped and
+ * repeated ones make up half of it. Caller holds fts_write_lock (or the
+ * writer thread does not exist yet).
+ */
+static void FTS_Compact(void)
+{
+    OSListNode *fts_node;
+
+    if (fts_file_lines < 2 * fts_store_size) {
+        return;
+    }
+
+    fflush(fp_list);
+    if (ftruncate(fileno(fp_list), 0) == -1) {
+        merror("%s: ERROR: Unable to truncate '%s' due to [(%d)-(%s)].",
+               ARGV0, FTS_QUEUE, errno, strerror(errno));
+        return;
+    }
+    fseek(fp_list, 0, SEEK_SET);
+
+#ifndef WIN32
+    os_mutex_lock(&fts_mutex);
+#endif
+    fts_node = OSList_GetFirstNode(fts_store_list);
+    while (fts_node) {
+        fprintf(fp_list, "%s\n", (char *)fts_node->data);
+        fts_node = OSList_GetNextNode(fts_store_list);
+    }
+    fts_file_lines = fts_store_list->currently_size;
+#ifndef WIN32
+    os_mutex_unlock(&fts_mutex);
+#endif
+    fflush(fp_list);
+}
 
 void FTS_Fprintf(char *_line)
 {
@@ -50,6 +126,8 @@ void FTS_Fprintf(char *_line)
 #endif
     fseek(fp_list, 0, SEEK_END);
     fprintf(fp_list, "%s\n", _line);
+    fts_file_lines++;
+    FTS_Compact();
 #ifndef WIN32
     os_mutex_unlock(&fts_write_lock);
 #endif
@@ -109,6 +187,23 @@ int FTS_Init()
         merror(LIST_SIZE_ERROR, ARGV0);
         return (0);
     }
+    OSList_SetFreeDataPointer(fts_list, free);
+
+    /* Get maximum number of records kept (the oldest ones are dropped) */
+    fts_store_size = getDefine_Int("analysisd",
+                                   "fts_store_size",
+                                   1024, 1000000);
+
+    fts_store_list = OSList_Create();
+    if (!fts_store_list) {
+        merror(LIST_ERROR, ARGV0);
+        return (0);
+    }
+    if (!OSList_SetMaxSize(fts_store_list, fts_store_size)) {
+        merror(LIST_SIZE_ERROR, ARGV0);
+        return (0);
+    }
+    OSList_SetFreeDataPointer(fts_store_list, FTS_Free);
 
     /* Create fts list */
     fp_list = fopen(FTS_QUEUE, "r+");
@@ -151,12 +246,17 @@ int FTS_Init()
             *tmp_s = '\0';
         }
 
-        os_strdup(_line, tmp_s);
-        if (OSHash_Add(fts_store, tmp_s, tmp_s) <= 0) {
-            free(tmp_s);
-            merror(LIST_ADD_ERROR, ARGV0);
+        /* The newline of a record of the maximum size is read on its own */
+        if (*_line == '\0') {
+            continue;
         }
+
+        fts_file_lines++;
+        FTS_Add(_line);
     }
+#ifndef TESTRULE
+    FTS_Compact();
+#endif
 
     /* Create ignore list */
     fp_ignore = fopen(IG_QUEUE, "r+");
@@ -341,15 +441,13 @@ int FTS(Eventinfo *lf)
         }
 
         os_strdup(_line, line_for_list);
-        OSList_AddData(fts_list, line_for_list);
+        if (!OSList_AddData(fts_list, line_for_list)) {
+            free(line_for_list);
+        }
     }
 
     /* Store new entry */
-    if (line_for_list == NULL) {
-        os_strdup(_line, line_for_list);
-    }
-
-    if (OSHash_Add(fts_store, line_for_list, line_for_list) <= 1) {
+    if (!FTS_Add(_line)) {
         result = 0;
         goto out;
     }
@@ -409,3 +507,24 @@ out:
 
     return result;
 }
+
+#ifdef OSSEC_FTS_TEST
+/* ANT-2026-4OJPKLVK: how many keys are currently in fts_store. */
+int FTS_TestStoreCount(void)
+{
+    unsigned int i;
+    int n = 0;
+
+    if (!fts_store || !fts_store->table) {
+        return (0);
+    }
+    for (i = 0; i < fts_store->rows; i++) {
+        OSHashNode *node = fts_store->table[i];
+        while (node) {
+            n++;
+            node = node->next;
+        }
+    }
+    return (n);
+}
+#endif
