@@ -35,6 +35,15 @@ static OSHash *fts_store = NULL;
 /* Records (kept, dropped or repeated) currently in FTS_QUEUE */
 static int fts_file_lines = 0;
 
+/* Ignore list: the newest ig_list_size records, kept in memory so that
+ * IGnore() never has to scan the file. ig_file_lines counts the lines in
+ * IG_QUEUE (dropped records included) to know when to rewrite it.
+ */
+static int ig_list_size = 0;
+static int ig_file_lines = 0;
+static OSList *ig_list = NULL;
+static OSHash *ig_store = NULL;
+
 static FILE *fp_list = NULL;
 static FILE *fp_ignore = NULL;
 #ifndef WIN32
@@ -113,6 +122,69 @@ static void FTS_Compact(void)
     os_mutex_unlock(&fts_mutex);
 #endif
     fflush(fp_list);
+}
+
+/* Forget an ignore record (called by ig_list when it drops its oldest node) */
+static void IG_Free(void *data)
+{
+    OSHash_Delete(ig_store, (char *)data);
+    free(data);
+}
+
+/* Keep an ignore record in memory (must hold fts_mutex)
+ * Returns 1 if it is new, 0 if it was already there or could not be added
+ */
+static int IG_Add(const char *_line)
+{
+    int result;
+    char *entry;
+
+    os_strdup(_line, entry);
+    result = OSHash_Add(ig_store, entry, entry);
+    if (result <= 1) {
+        free(entry);
+        if (result == 0) {
+            merror(LIST_ADD_ERROR, ARGV0);
+        }
+        return (0);
+    }
+
+    /* A full list drops its oldest record through IG_Free */
+    if (!OSList_AddData(ig_list, entry)) {
+        IG_Free(entry);
+        return (0);
+    }
+
+    return (1);
+}
+
+/* Rewrite IG_QUEUE from the records still in memory once the dropped
+ * ones make up half of the file (must hold fts_mutex)
+ */
+static void IG_Compact(void)
+{
+    OSListNode *ig_node;
+
+    if (ig_file_lines < 2 * ig_list_size) {
+        return;
+    }
+
+    fflush(fp_ignore);
+    if (ftruncate(fileno(fp_ignore), 0) == -1) {
+        merror("%s: ERROR: Unable to truncate '%s' due to [(%d)-(%s)].",
+               ARGV0, IG_QUEUE, errno, strerror(errno));
+        return;
+    }
+    fseek(fp_ignore, 0, SEEK_SET);
+
+    ig_node = OSList_GetFirstNode(ig_list);
+    while (ig_node) {
+        fprintf(fp_ignore, "%s\n", (char *)ig_node->data);
+        ig_node = OSList_GetNextNode(ig_list);
+    }
+    fflush(fp_ignore);
+
+    ig_file_lines = ig_list->currently_size;
 }
 
 void FTS_Fprintf(char *_line)
@@ -205,6 +277,34 @@ int FTS_Init()
     }
     OSList_SetFreeDataPointer(fts_store_list, FTS_Free);
 
+    /* Create the ignore list and its store */
+    ig_list = OSList_Create();
+    if (!ig_list) {
+        merror(LIST_ERROR, ARGV0);
+        return (0);
+    }
+
+    ig_store = OSHash_Create();
+    if (!ig_store) {
+        merror(LIST_ERROR, ARGV0);
+        return (0);
+    }
+    if (!OSHash_setSize(ig_store, 2048)) {
+        merror(LIST_ERROR, ARGV0);
+        return (0);
+    }
+
+    /* Get ignore list size */
+    ig_list_size = getDefine_Int("analysisd",
+                                 "ig_list_size",
+                                 128, 1048576);
+
+    if (!OSList_SetMaxSize(ig_list, ig_list_size)) {
+        merror(LIST_SIZE_ERROR, ARGV0);
+        return (0);
+    }
+    OSList_SetFreeDataPointer(ig_list, IG_Free);
+
     /* Create fts list */
     fp_list = fopen(FTS_QUEUE, "r+");
     if (!fp_list) {
@@ -288,6 +388,34 @@ int FTS_Init()
         }
     }
 
+    /* Add content from the file to memory */
+    fseek(fp_ignore, 0, SEEK_SET);
+    while (fgets(_line, OS_FLSIZE , fp_ignore) != NULL) {
+        char *tmp_s;
+
+        /* Remove newlines */
+        tmp_s = strchr(_line, '\n');
+        if (tmp_s) {
+            *tmp_s = '\0';
+        } else {
+            /* Longer than one read: the rest of the line is not a record */
+            int c;
+
+            while ((c = fgetc(fp_ignore)) != EOF && c != '\n')
+                ;
+        }
+
+        ig_file_lines++;
+        if (*_line != '\0') {
+            IG_Add(_line);
+        }
+    }
+
+    /* Drop what an oversized file had beyond the list size (logtest only reads) */
+#ifndef TESTRULE
+    IG_Compact();
+#endif
+
     debug1("%s: DEBUG: FTSInit completed.", ARGV0);
 
     return (1);
@@ -296,12 +424,16 @@ int FTS_Init()
 /* Add a pattern to be ignored */
 void AddtoIGnore(Eventinfo *lf)
 {
+    char _line[OS_FLSIZE + 1];
+
+    _line[OS_FLSIZE] = '\0';
+
 #ifndef WIN32
     os_mutex_lock(&fts_mutex);
 #endif
     fseek(fp_ignore, 0, SEEK_END);
 
-#ifdef TESTRULE
+#if defined(TESTRULE) && !defined(OSSEC_IG_TEST)
 #ifndef WIN32
     os_mutex_unlock(&fts_mutex);
 #endif
@@ -309,23 +441,29 @@ void AddtoIGnore(Eventinfo *lf)
 #endif
 
     /* Assign the values to the FTS */
-    fprintf(fp_ignore, "%s %s %s %s %s %s %s %s\n",
-            (lf->decoder_info->name && (lf->generated_rule->ignore & FTS_NAME)) ?
-            lf->decoder_info->name : "",
-            (lf->id && (lf->generated_rule->ignore & FTS_ID)) ? lf->id : "",
-            (lf->dstuser && (lf->generated_rule->ignore & FTS_DSTUSER)) ?
-            lf->dstuser : "",
-            (lf->srcip && (lf->generated_rule->ignore & FTS_SRCIP)) ?
-            lf->srcip : "",
-            (lf->dstip && (lf->generated_rule->ignore & FTS_DSTIP)) ?
-            lf->dstip : "",
-            (lf->data && (lf->generated_rule->ignore & FTS_DATA)) ?
-            lf->data : "",
-            (lf->systemname && (lf->generated_rule->ignore & FTS_SYSTEMNAME)) ?
-            lf->systemname : "",
-            (lf->generated_rule->ignore & FTS_LOCATION) ? lf->location : "");
+    snprintf(_line, OS_FLSIZE, "%s %s %s %s %s %s %s %s",
+             (lf->decoder_info->name && (lf->generated_rule->ignore & FTS_NAME)) ?
+             lf->decoder_info->name : "",
+             (lf->id && (lf->generated_rule->ignore & FTS_ID)) ? lf->id : "",
+             (lf->dstuser && (lf->generated_rule->ignore & FTS_DSTUSER)) ?
+             lf->dstuser : "",
+             (lf->srcip && (lf->generated_rule->ignore & FTS_SRCIP)) ?
+             lf->srcip : "",
+             (lf->dstip && (lf->generated_rule->ignore & FTS_DSTIP)) ?
+             lf->dstip : "",
+             (lf->data && (lf->generated_rule->ignore & FTS_DATA)) ?
+             lf->data : "",
+             (lf->systemname && (lf->generated_rule->ignore & FTS_SYSTEMNAME)) ?
+             lf->systemname : "",
+             (lf->generated_rule->ignore & FTS_LOCATION) ? lf->location : "");
 
-    fflush(fp_ignore);
+    /* Only the records we do not have yet go to the file */
+    if (IG_Add(_line)) {
+        fprintf(fp_ignore, "%s\n", _line);
+        fflush(fp_ignore);
+        ig_file_lines++;
+        IG_Compact();
+    }
 #ifndef WIN32
     os_mutex_unlock(&fts_mutex);
 #endif
@@ -339,13 +477,12 @@ void AddtoIGnore(Eventinfo *lf)
 int IGnore(Eventinfo *lf)
 {
     char _line[OS_FLSIZE + 1];
-    char _fline[OS_FLSIZE + 1];
     int matched = 0;
 
     _line[OS_FLSIZE] = '\0';
 
     /* Assign the values to the FTS */
-    snprintf(_line, OS_FLSIZE, "%s %s %s %s %s %s %s %s\n",
+    snprintf(_line, OS_FLSIZE, "%s %s %s %s %s %s %s %s",
              (lf->decoder_info->name && (lf->generated_rule->ckignore & FTS_NAME)) ?
              lf->decoder_info->name : "",
              (lf->id && (lf->generated_rule->ckignore & FTS_ID)) ? lf->id : "",
@@ -361,22 +498,12 @@ int IGnore(Eventinfo *lf)
              lf->systemname : "",
              (lf->generated_rule->ckignore & FTS_LOCATION) ? lf->location : "");
 
-    _fline[OS_FLSIZE] = '\0';
-
 #ifndef WIN32
     os_mutex_lock(&fts_mutex);
 #endif
     /** Check if the ignore is present **/
-    /* Point to the beginning of the file */
-    fseek(fp_ignore, 0, SEEK_SET);
-    while (fgets(_fline, OS_FLSIZE , fp_ignore) != NULL) {
-        if (strcmp(_fline, _line) != 0) {
-            continue;
-        }
-
-        /* If we match, we can return 1 */
+    if (OSHash_Get(ig_store, _line)) {
         matched = 1;
-        break;
     }
 #ifndef WIN32
     os_mutex_unlock(&fts_mutex);
@@ -520,6 +647,27 @@ int FTS_TestStoreCount(void)
     }
     for (i = 0; i < fts_store->rows; i++) {
         OSHashNode *node = fts_store->table[i];
+        while (node) {
+            n++;
+            node = node->next;
+        }
+    }
+    return (n);
+}
+#endif
+
+#ifdef OSSEC_IG_TEST
+/* ANT-2026-MQQ5W9CU: how many keys are currently in ig_store. */
+int IG_TestStoreCount(void)
+{
+    unsigned int i;
+    int n = 0;
+
+    if (!ig_store || !ig_store->table) {
+        return (0);
+    }
+    for (i = 0; i < ig_store->rows; i++) {
+        OSHashNode *node = ig_store->table[i];
         while (node) {
             n++;
             node = node->next;
