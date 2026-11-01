@@ -84,7 +84,8 @@ REGRESSION_BINS = \
 	issue_9hsm6ma8_long_line_pieces \
 	issue_rer9koy9_popen_keep_command \
 	issue_1yeqlyn9_journald_field_bounds \
-	issue_54azkai7_max_lines
+	issue_54azkai7_max_lines \
+	issue_9lqq1bms_osregex_bytes
 
 .PHONY: all check clean
 
@@ -397,6 +398,12 @@ issue_54azkai7_max_lines: \
 	$(CC) $(CFLAGS) -I./logcollector -o $@ \
 		tests/regressions/issue_54azkai7_max_lines.c \
 		logcollector/read_syslog.c logcollector/logr_fgets.c $(BASIC_LIBS)
+
+# ANT-2026-9LQQ1BMS: classic OSRegex/OSMatch must match non-UTF-8 bytes.
+issue_9lqq1bms_osregex_bytes: \
+		tests/regressions/issue_9lqq1bms_osregex_bytes.c os_regex.a shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_9lqq1bms_osregex_bytes.c $(BASIC_LIBS)
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \

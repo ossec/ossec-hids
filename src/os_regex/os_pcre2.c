@@ -18,7 +18,8 @@ int OS_Pcre2(const char *pattern, const char *str)
     int r_code = 0;
     OSPcre2 reg;
 
-    if (OSPcre2_Compile(pattern, &reg, PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_CASELESS)) {
+    /* Byte patterns only — do not enable UTF or skip pattern validation. */
+    if (OSPcre2_Compile(pattern, &reg, PCRE2_CASELESS)) {
         if(OSPcre2_Execute(str, &reg)) {
             r_code = 1;
         }

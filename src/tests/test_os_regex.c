@@ -49,6 +49,9 @@ START_TEST(test_success_match1)
         {"^bin$|^shell$", "shell", ""},
         {"^bin$|^shell$|^ftp$", "shell", ""},
         {"^bin$|^shell$|^ftp$", "ftp", ""},
+        {"abc|cde", "caf\xc3\xa9 cde", "valid UTF-8 in the subject"},
+        {"abc|cde", "caf\xe9 cde", "invalid UTF-8 in the subject"},
+        {"abc|caf\xe9", "a caf\xe9 b", "invalid UTF-8 in the pattern"},
         {NULL, NULL, NULL}
     };
 
@@ -152,6 +155,11 @@ START_TEST(test_success_regex1)
         {"^\\S+ [(\\d+:\\d+:\\d+)] \\.+ (\\d+.\\d+.\\d+.\\d+)\\p*\\d* -> (\\d+.\\d+.\\d+.\\d+)\\p*", "snort: [1:590:12] RPC portmap ypserv request UDP [Classification: Decode of an RPC Query] [Priority: 2]: {UDP} 10.4.11.94:669 -> 10.4.3.20:111", ""},
         {"^\\S+ [(\\d+:\\d+:\\d+)] \\.+ (\\d+.\\d+.\\d+.\\d+)\\p*\\d* -> (\\d+.\\d+.\\d+.\\d+)\\p*", "snort: [1:590:12] RPC portmap ypserv request UDP [Classification: Decode of an RPC Query] [Priority: 2]: {UDP} 10.4.11.94:670 -> 10.4.3.20:111", ""},
         {"^\\S+ [(\\d+:\\d+:\\d+)] \\.+ (\\d+.\\d+.\\d+.\\d+)\\p*\\d* -> (\\d+.\\d+.\\d+.\\d+)\\p*", "snort: [1:1421:11] SNMP AgentX/tcp request [Classification: Attempted Information Leak] [Priority: 2]: {TCP} 10.4.12.26:37020 -> 10.4.10.231:705", ""},
+        {"from \\S+ agent", "from 1.2.3.4 agent 'caf\xc3\xa9'", "valid UTF-8 in the subject"},
+        {"from \\S+ agent", "from 1.2.3.4 agent 'caf\xe9'", "invalid UTF-8 in the subject"},
+        {"agent '\\S+'$", "from 1.2.3.4 agent 'caf\xe9'", "invalid UTF-8 in the matched text"},
+        {"agent '\\.+'$", "from 1.2.3.4 agent '\xff\xfe'", "invalid UTF-8 in the matched text"},
+        {"agent 'caf\xe9\\p", "from 1.2.3.4 agent 'caf\xe9'", "invalid UTF-8 in the pattern"},
         {NULL, NULL, NULL}
     };
 
@@ -381,6 +389,7 @@ START_TEST(test_regexextraction)
         { "from (\\S*\\d+.\\d+.\\d+.\\d\\d*\\d*)", "sshd[21576]: Illegal user web14 from ::ffff:212.227.60.55", "::ffff:212.227.60.55", NULL},
         { "^sshd[\\d+]: Accepted \\S+ for (\\S+) from (\\S+) port ", "sshd[21405]: Accepted password for root from 192.1.1.1 port 6023", "root", "192.1.1.1", NULL},
         { ": \\((\\S+)@(\\S+)\\) [", "pure-ftpd: (?@enigma.lab.ossec.net) [INFO] New connection from enigma.lab.ossec.net", "?", "enigma.lab.ossec.net", NULL},
+        { "user '(\\S+)' from (\\S+) ", "user 'ren\xe9' from 1.2.3.4 agent 'caf\xe9'", "ren\xe9", "1.2.3.4", NULL},
         {NULL, NULL, NULL}
     };
 

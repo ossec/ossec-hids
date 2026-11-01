@@ -46,6 +46,8 @@ int OSMatch_Execute_pcre2_match(const char *str, size_t str_len, OSMatch * reg)
     /* Prefer pcre2_match: uses JIT when available, interpreter otherwise (#2040). */
     rc = pcre2_match(reg->regex, (PCRE2_SPTR)str, str_len, 0, 0, match_data, NULL);
 
+    /* Do not write reg->error here: compiled patterns are shared across
+     * analysisd matcher threads. */
     return (rc >= 0);
 }
 

@@ -18,8 +18,7 @@
 
 /*
  * Flags analysisd passes to OSPcre2_Compile for <pcre2> and <match_pcre2>.
- * OS_Pcre2() also sets PCRE2_UTF and PCRE2_NO_UTF_CHECK; that result is
- * printed separately so the two calls can be compared.
+ * OS_Pcre2() uses the same CASELESS-only flags (byte matching; no UTF mode).
  */
 #define OSSEC_REGEX_PCRE2_FLAGS PCRE2_CASELESS
 
