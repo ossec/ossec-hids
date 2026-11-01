@@ -81,7 +81,8 @@ REGRESSION_BINS = \
 	issue_dj9ev0kp_json_overlong \
 	issue_913_nul_in_log \
 	issue_k99okmjp_journald_rotation \
-	issue_9hsm6ma8_long_line_pieces
+	issue_9hsm6ma8_long_line_pieces \
+	issue_rer9koy9_popen_keep_command
 
 .PHONY: all check clean
 
@@ -366,6 +367,15 @@ issue_9hsm6ma8_long_line_pieces: \
 	$(CC) $(CFLAGS) -I./logcollector -o $@ \
 		tests/regressions/issue_9hsm6ma8_long_line_pieces.c \
 		$(LONG_LINE_READERS) $(BASIC_LIBS)
+
+# ANT-2026-RER9KOY9: failed popen must not permanently disable command monitors.
+issue_rer9koy9_popen_keep_command: \
+		tests/regressions/issue_rer9koy9_popen_keep_command.c \
+		logcollector/read_command.c logcollector/read_fullcommand.c shared.a
+	$(CC) $(CFLAGS) -I./logcollector -o $@ \
+		tests/regressions/issue_rer9koy9_popen_keep_command.c \
+		logcollector/read_command.c logcollector/read_fullcommand.c \
+		$(BASIC_LIBS) -Wl,--wrap=popen -Wl,--wrap=pclose
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \

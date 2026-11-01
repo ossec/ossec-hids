@@ -26,10 +26,13 @@ void *read_command(int pos, int *rc, int drop_it)
 
     cmd_output = popen(logff[pos].command, "r");
     if (!cmd_output) {
-        merror("%s: ERROR: Unable to execute command: '%s'.",
-               ARGV0, logff[pos].command);
+        /* popen() only fails when the pipe or the shell process cannot be
+         * created right now (e.g. no free process slot). Keep the entry so
+         * it is tried again on the next interval (ANT-2026-RER9KOY9).
+         */
+        merror("%s: ERROR: Unable to execute command: '%s' due to [(%d)-(%s)].",
+               ARGV0, logff[pos].command, errno, strerror(errno));
 
-        logff[pos].command = NULL;
         return (NULL);
     }
 
