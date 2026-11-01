@@ -125,6 +125,8 @@ void *read_nmapg(int pos, int *rc, int drop_it)
 {
     int final_msg_s;
     int need_clear = 0;
+    int clear_was_full = 0;
+    fpos_t fp_pos;
 
     char str[OS_MAXSTR + 1];
     char final_msg[OS_MAXSTR + 1];
@@ -144,11 +146,24 @@ void *read_nmapg(int pos, int *rc, int drop_it)
     port[16] = '\0';
     proto[16] = '\0';
 
-    while (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
+    if (logff[pos].skip_to_nl) {
+        if (logr_fdrain_to_newline(pos, drop_it)) {
+            logff[pos].skip_to_nl = 0;
+        } else {
+            return (NULL);
+        }
+    }
+
+    while (1) {
+        fgetpos(logff[pos].fp, &fp_pos);
+        if (logr_fgets(str, OS_MAXSTR - OS_LOG_HEADER, pos, drop_it) == NULL) {
+            break;
+        }
         /* If need clear is set, we need to clear the line */
         if (need_clear) {
             if ((q = strchr(str, '\n')) != NULL) {
                 need_clear = 0;
+                clear_was_full = 0;
             }
             continue;
         }
@@ -156,8 +171,14 @@ void *read_nmapg(int pos, int *rc, int drop_it)
         /* Remove \n at the end of the string */
         if ((q = strchr(str, '\n')) != NULL) {
             *q = '\0';
-        } else {
+        } else if (strlen(str) == (size_t)(OS_MAXSTR - OS_LOG_HEADER - 1)) {
             need_clear = 1;
+            clear_was_full = 1;
+            continue;
+        } else {
+            /* Short incomplete line — wait for the writer. */
+            fsetpos(logff[pos].fp, &fp_pos);
+            break;
         }
 
         /* Do not get commented lines */
@@ -254,6 +275,11 @@ file_error:
         *rc = -1;
         return (NULL);
 
+    }
+
+    /* Visit ended mid-discard of an over-long line. */
+    if (need_clear && clear_was_full) {
+        logff[pos].skip_to_nl = 1;
     }
 
     return (NULL);

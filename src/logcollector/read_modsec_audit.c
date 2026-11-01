@@ -168,14 +168,26 @@ void *read_modsec_audit(int pos, int *rc, int drop_it)
         return NULL;
     }
 
-    while (fgets_no_nul(buffer, OS_MAXSTR, logff[pos].fp)) {
+    if (logff[pos].skip_to_nl) {
+        if (logr_fdrain_to_newline(pos, drop_it)) {
+            logff[pos].skip_to_nl = 0;
+        } else {
+            return NULL;
+        }
+    }
+
+    while (logr_fgets(buffer, OS_MAXSTR, pos, drop_it)) {
         if ((p = strchr(buffer, '\n')) != NULL) {
             *p = '\0';
         } else {
             if (strlen(buffer) == OS_MAXSTR - 1) {
                 /* Discard remainder of overlong line; do not treat as a marker. */
-                while (fgets_no_nul(buffer, OS_MAXSTR, logff[pos].fp) &&
+                while (logr_fgets(buffer, OS_MAXSTR, pos, drop_it) &&
                        !strchr(buffer, '\n')) {
+                }
+                if (!strchr(buffer, '\n')) {
+                    logff[pos].skip_to_nl = 1;
+                    break;
                 }
                 offset = ftell(logff[pos].fp);
                 continue;

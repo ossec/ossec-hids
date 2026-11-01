@@ -76,6 +76,7 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
     sd_journal *jrn = (sd_journal *) logff[pos].ptr;
     const char *unit = logff[pos].file;
     int ret;
+    int lines = 0;
     const char *jmsg = NULL;
     const char *jsrc = NULL;
     const char *jhst = NULL;
@@ -124,7 +125,10 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
                 ARGV0);
     }
 
-    while ((ret = sd_journal_next(jrn)) > 0) {
+    /* After max_lines entries the other sources get their turn; ret is 0
+     * then, as at the end of the journal, so it is not closed below. */
+    while ((ret = (max_lines == 0 || lines++ < max_lines) ?
+                  sd_journal_next(jrn) : 0) > 0) {
         ret = sd_journal_get_data(
             jrn,
             "SYSLOG_IDENTIFIER",

@@ -294,6 +294,7 @@ void LogCollectorStart()
              */
 #ifdef WIN32
             if (logff[i].fp) {
+                logr_begin_read();
                 logff[i].read(i, &r, 1);
             }
 #endif
@@ -381,6 +382,7 @@ void LogCollectorStart()
                     curr_time = time(0);
                     if ((curr_time - logff[i].size) >= logff[i].ign) {
                         logff[i].size = curr_time;
+                        logr_begin_read();
                         logff[i].read(i, &r, 0);
                     }
                 }
@@ -388,6 +390,7 @@ void LogCollectorStart()
                 /* Journald is polled every loop; it is not a file or command. */
                 else if (logff[i].read && logff[i].logformat &&
                          strcmp(logff[i].logformat, "journald") == 0) {
+                    logr_begin_read();
                     logff[i].read(i, &r, 0);
                 }
 #endif
@@ -413,6 +416,7 @@ void LogCollectorStart()
 #endif
 
             /* Finally, send to the function pointer to read it */
+            logr_begin_read();
             logff[i].read(i, &r, 0);
 
             /* Check for error */
@@ -455,6 +459,7 @@ void LogCollectorStart()
                         continue;
                     }
 #ifdef WIN32
+                    logr_begin_read();
                     logff[i].read(i, &r, 1);
 #endif
                 }
