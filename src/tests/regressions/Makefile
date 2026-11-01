@@ -73,7 +73,8 @@ REGRESSION_BINS = \
 	issue_2d3xma3w_decoder_field_leak \
 	issue_tzmhdq9m_decoder_info_race \
 	issue_rbaky685_syscheck_slot_exhaustion \
-	issue_j9qhsfrd_fts_location_newline
+	issue_j9qhsfrd_fts_location_newline \
+	issue_pwed0r2h_demux_push_wait
 
 .PHONY: all check clean
 
@@ -281,6 +282,13 @@ issue_tzmhdq9m_decoder_info_race: \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
+issue_pwed0r2h_demux_push_wait: \
+		tests/regressions/issue_pwed0r2h_demux_push_wait.c \
+		analysisd/pipeline_push_wait.h
+	$(CC) $(CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_pwed0r2h_demux_push_wait.c
 
 # ANT-2026-J9QHSFRD: newline in location must not forge FTS / alert lines.
 issue_j9qhsfrd_fts_location_newline: \
@@ -630,4 +638,7 @@ clean:
 		analysisd/decoders/syscheck-8sti.o \
 		rootcheck/common-6wl.o \
 		analysisd/decoders/decoder-2d3.o \
-		analysisd/decoders/syscheck-tzmh.o
+		analysisd/decoders/syscheck-tzmh.o \
+		analysisd/cleanevent-j9qh.o \
+		analysisd/decoders/syscheck-rbaky.o \
+		analysisd/decoders/rootcheck-rbaky.o
