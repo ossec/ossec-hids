@@ -34,7 +34,7 @@ void *read_multiline(int pos, int *rc, int drop_it)
     /* Get initial file location */
     fgetpos(logff[pos].fp, &fp_pos);
 
-    while (fgets(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
+    while (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
         linesgot++;
 
         /* Get the last occurrence of \n */
@@ -121,7 +121,7 @@ void *read_multiline(int pos, int *rc, int drop_it)
          */
         if (__ms) {
             merror("%s: Large message size: '%s'", ARGV0, str);
-            while (fgets(str, OS_MAXSTR - 2, logff[pos].fp) != NULL) {
+            while (fgets_no_nul(str, OS_MAXSTR - 2, logff[pos].fp) != NULL) {
                 /* Get the last occurrence of \n */
                 if ((p = strrchr(str, '\n')) != NULL) {
                     break;

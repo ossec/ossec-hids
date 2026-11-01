@@ -69,13 +69,13 @@ void *read_audit(int pos, int *rc, int drop_it) {
 
     *rc = 0;
 
-    while (fgets(buffer, OS_MAXSTR, logff[pos].fp)) {
+    while (fgets_no_nul(buffer, OS_MAXSTR, logff[pos].fp)) {
         if ((p = strchr(buffer, '\n')))
             *p = '\0';
         else {
             if (strlen(buffer) == OS_MAXSTR - 1) {
                 // Message too large, discard line
-                while (fgets(buffer, OS_MAXSTR, logff[pos].fp) && !strchr(buffer, '\n'));
+                while (fgets_no_nul(buffer, OS_MAXSTR, logff[pos].fp) && !strchr(buffer, '\n'));
             } else {
                 debug1("%s: Message not complete. Trying again: '%s'", ARGV0, buffer);
                 

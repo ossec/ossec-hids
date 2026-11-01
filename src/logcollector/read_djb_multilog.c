@@ -93,7 +93,7 @@ void *read_djbmultilog(int pos, int *rc, int drop_it)
     }
 
     /* Get new entry */
-    while (fgets(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
+    while (fgets_no_nul(str, OS_MAXSTR - OS_LOG_HEADER, logff[pos].fp) != NULL) {
         /* Get buffer size */
         str_len = strlen(str);
 

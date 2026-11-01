@@ -26,7 +26,7 @@ void *read_snortfull(int pos, int *rc, int drop_it)
     str[OS_MAXSTR] = '\0';
     f_msg[OS_MAXSTR] = '\0';
 
-    while (fgets(str, OS_MAXSTR, logff[pos].fp) != NULL) {
+    while (fgets_no_nul(str, OS_MAXSTR, logff[pos].fp) != NULL) {
         /* Remove \n at the end of the string */
         if ((q = strrchr(str, '\n')) != NULL) {
             *q = '\0';
