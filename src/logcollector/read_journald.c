@@ -3,6 +3,36 @@
 #include "logcollector.h"
 #include <systemd/sd-journal.h>
 
+/* Copy the value after the first '=' in a journal field blob of length len.
+ * sd_journal_get_data() returns a non-NUL-terminated mmap window; callers
+ * must not treat data as a C string or retain the pointer across another
+ * get_data() call. */
+static int journal_copy_value(char *dst, size_t dst_sz,
+                              const void *data, size_t len)
+{
+    const char *p;
+    const char *eq;
+    size_t vlen;
+
+    if (dst == NULL || dst_sz == 0 || data == NULL || len == 0) {
+        return -1;
+    }
+
+    p = (const char *)data;
+    eq = memchr(p, '=', len);
+    if (eq == NULL || eq == p) {
+        return -1;
+    }
+
+    vlen = len - (size_t)(eq - p) - 1;
+    if (vlen >= dst_sz) {
+        vlen = dst_sz - 1;
+    }
+    memcpy(dst, eq + 1, vlen);
+    dst[vlen] = '\0';
+    return 0;
+}
+
 void *prime_sd_journal(int pos) {
     int ret;
     sd_journal *jrn;
@@ -49,7 +79,9 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
     const char *jmsg = NULL;
     const char *jsrc = NULL;
     const char *jhst = NULL;
+    const char *msg_eq;
     size_t len;
+    size_t msg_vlen;
     struct timeval tv;
     uint64_t curr_timestamp;
     time_t nowtime;
@@ -57,6 +89,7 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
     char tmbuf[64];
     char final_msg[OS_MAXSTR];
     char sunitid[128];
+    char shost[128];
 
     (void)drop_it;
     *rc = 0;
@@ -98,13 +131,10 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
             (const void **)&jsrc,
             &len
         );
-        if (ret < 0 || jsrc == NULL) {
+        if (ret < 0 || jsrc == NULL ||
+                journal_copy_value(sunitid, sizeof(sunitid), jsrc, len) < 0) {
             continue;
         }
-
-        /* Strip off "SYSLOG_IDENTIFIER=" prefix for unit comparison inline. */
-        memset(sunitid, 0x00, sizeof(sunitid));
-        strncpy(sunitid, (jsrc + 18), sizeof(sunitid) - 1);
 
         if (strncmp(sunitid, unit, sizeof(sunitid)) != 0 &&
                 strncmp(unit, "all", 3) != 0 &&
@@ -113,12 +143,21 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
         }
 
         ret = sd_journal_get_data(jrn, "_HOSTNAME", (const void **)&jhst, &len);
-        if (ret < 0 || jhst == NULL) {
+        if (ret < 0 || jhst == NULL ||
+                journal_copy_value(shost, sizeof(shost), jhst, len) < 0) {
             continue;
         }
 
         ret = sd_journal_get_data(jrn, "MESSAGE", (const void **)&jmsg, &len);
-        if (ret < 0 || jmsg == NULL || len <= 8) {
+        if (ret < 0 || jmsg == NULL || len == 0) {
+            continue;
+        }
+        msg_eq = memchr(jmsg, '=', len);
+        if (msg_eq == NULL || msg_eq == jmsg) {
+            continue;
+        }
+        msg_vlen = len - (size_t)(msg_eq - jmsg) - 1;
+        if (msg_vlen == 0) {
             continue;
         }
 
@@ -146,10 +185,10 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
             sizeof(final_msg),
             "%s:00 %s %s: %.*s\n",
             tmbuf,
-            (char *)(jhst + 10),
+            shost,
             sunitid,
-            (int)(len - 8),
-            (char *)(jmsg + 8)
+            (int)msg_vlen,
+            msg_eq + 1
         );
 
         if (SendMSG(logr_queue, final_msg, "journald", LOCALFILE_MQ) < 0) {
