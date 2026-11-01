@@ -167,11 +167,11 @@ void jqueue_close(file_queue *queue)
 cJSON *jqueue_parse_json(file_queue *queue)
 {
     cJSON *object = NULL;
-    char buffer[OS_MAXSTR + 1];
+    char *buffer;
+    size_t size = OS_MAXSTR + 1;
+    size_t len = 0;
     long initial_pos;
-    long offset;
     const char *json_err = NULL;
-    char *nl;
 
     if (!queue || !queue->fp) {
         return NULL;
@@ -183,42 +183,43 @@ cJSON *jqueue_parse_json(file_queue *queue)
         return NULL;
     }
 
-    if (!fgets(buffer, (int)sizeof(buffer), queue->fp)) {
-        queue->flags = JQUEUE_READ_FAILED;
-        return NULL;
-    }
-
-    offset = ftell(queue->fp);
-    if (offset < 0) {
-        queue->flags = JQUEUE_READ_FAILED;
-        return NULL;
-    }
-
-    nl = strchr(buffer, '\n');
-    if (!nl) {
-        /* Incomplete line (still being written) or overlong record. */
-        if (offset - initial_pos >= (long)OS_MAXSTR) {
-            merror("%s: WARN: Overlong JSON alert read from '%s'.",
-                   __local_name, queue->file_name);
-            while (fgets(buffer, (int)sizeof(buffer), queue->fp)) {
-                if (strchr(buffer, '\n')) {
-                    break;
-                }
-            }
-            return NULL;
+    /* A record is not bounded by OS_MAXSTR: analysisd writes the log line
+     * as full_log and again in the decoded fields, all JSON-escaped. Read
+     * the whole line; OS_Alert_SendSyslog_JSON() already sends a compact
+     * stub for an alert that does not fit into one syslog message. */
+    os_malloc(size, buffer);
+    while (fgets(buffer + len, (int)(size - len), queue->fp)) {
+        len += strlen(buffer + len);
+        if (len < size - 1 || buffer[len - 1] == '\n') {
+            break;
         }
+        size += OS_MAXSTR;
+        os_realloc(buffer, size, buffer);
+    }
+
+    if (len == 0) {
+        free(buffer);
+        queue->flags = JQUEUE_READ_FAILED;
+        return NULL;
+    }
+
+    if (buffer[len - 1] != '\n') {
+        /* Incomplete line (still being written). */
+        free(buffer);
         if (fseek(queue->fp, initial_pos, SEEK_SET) != 0) {
             queue->flags = JQUEUE_READ_FAILED;
         }
         return NULL;
     }
 
-    *nl = '\0';
+    buffer[len - 1] = '\0';
     object = cJSON_ParseWithOpts(buffer, &json_err, 1);
     if (object && (!json_err || *json_err == '\0')) {
+        free(buffer);
         return object;
     }
 
+    free(buffer);
     cJSON_Delete(object);
     merror("%s: WARN: Invalid JSON alert read from '%s'.",
            __local_name, queue->file_name);
