@@ -76,7 +76,8 @@ REGRESSION_BINS = \
 	issue_j9qhsfrd_fts_location_newline \
 	issue_pwed0r2h_demux_push_wait \
 	issue_4ojpklvk_fts_store_size \
-	issue_mqq5w9cu_ig_queue
+	issue_mqq5w9cu_ig_queue \
+	issue_grfznie0_csyslog_spaces
 
 .PHONY: all check clean
 
@@ -307,6 +308,18 @@ issue_mqq5w9cu_ig_queue: \
 		tests/regressions/issue_mqq5w9cu_ig_queue.c \
 		analysisd/fts-mqq5.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-GRFZNIE0: default csyslog format needs two spaces before log text.
+issue_grfznie0_csyslog_spaces: \
+		tests/regressions/issue_grfznie0_csyslog_spaces.c \
+		os_csyslogd/alert.c shared.a
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON \
+		-c os_csyslogd/alert.c -o os_csyslogd/alert-grfz.o
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON -o $@ \
+		tests/regressions/issue_grfznie0_csyslog_spaces.c \
+		os_csyslogd/alert-grfz.o \
+		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
@@ -669,4 +682,5 @@ clean:
 		analysisd/decoders/syscheck-rbaky.o \
 		analysisd/decoders/rootcheck-rbaky.o \
 		analysisd/fts-4ojp.o \
-		analysisd/fts-mqq5.o
+		analysisd/fts-mqq5.o \
+		os_csyslogd/alert-grfz.o
