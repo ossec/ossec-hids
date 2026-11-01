@@ -85,7 +85,8 @@ REGRESSION_BINS = \
 	issue_rer9koy9_popen_keep_command \
 	issue_1yeqlyn9_journald_field_bounds \
 	issue_54azkai7_max_lines \
-	issue_9lqq1bms_osregex_bytes
+	issue_9lqq1bms_osregex_bytes \
+	issue_7me0g28i_decoder_redos
 
 .PHONY: all check clean
 
@@ -404,6 +405,12 @@ issue_9lqq1bms_osregex_bytes: \
 		tests/regressions/issue_9lqq1bms_osregex_bytes.c os_regex.a shared.a
 	$(CC) $(CFLAGS) -o $@ \
 		tests/regressions/issue_9lqq1bms_osregex_bytes.c $(BASIC_LIBS)
+
+# ANT-2026-7ME0G28I: windows1/barracuda-svf1 decoder patterns must not ReDoS.
+issue_7me0g28i_decoder_redos: \
+		tests/regressions/issue_7me0g28i_decoder_redos.c
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_7me0g28i_decoder_redos.c -lpcre2-8
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \
