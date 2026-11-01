@@ -2090,11 +2090,16 @@ Jan  8 19:32:41 tp.lan dropbear[15165]: Pubkey auth succeeded for 'root' with ke
   <program_name_pcre2>^WinEvtLog</program_name_pcre2>
 </decoder>
 
+<!-- Log name may contain ":" (e.g. a path); take the first STATUS(id):
+     with a lazy prefix. Source/user/domain stop at the next ":" — chained
+     greedy ".+: " pieces backtracked through every ": " of the message
+     text (cubic in their count) and gave up once the PCRE2 match limit
+     was hit. -->
 <decoder name="windows1">
   <type>windows</type>
   <parent>windows</parent>
-  <pcre2 offset="after_parent">^.+: ([A-Za-z0-9@_-]+?)\((\d+?)\): (.+): </pcre2>
-  <pcre2>(.+): .+: (\S+): </pcre2>
+  <pcre2 offset="after_parent">^(?:.+?): ([A-Za-z0-9@_-]+?)\((\d+?)\): ([^:]+): </pcre2>
+  <pcre2>([^:]+): [^:]+: (\S+): </pcre2>
   <order>status, id, extra_data, user, system_name</order>
   <fts>name, location, system_name</fts>
 </decoder>
@@ -2983,10 +2988,14 @@ Jul 26 13:57:56 mx1.example.org outbound/smtp: 127.0.0.1 1406297159-06f4a35b4df2
 
 <decoder name="barracuda-svf1">
   <parent>barracuda-svf-email</parent>
-  <prematch_pcre2>^\S+\[\S+\]|</prematch_pcre2>
+  <!-- Same bracket-safe classes as the pcre2 below: host token has no "[",
+       address has no brackets (avoids \S+/\[ choice points on prematch). -->
+  <prematch_pcre2>^[^\s\[]+\[[^\s\[\]]+\]|</prematch_pcre2>
   <prematch_pcre2>^\S+</prematch_pcre2>
-  <pcre2>^\S+\[(\S+)\] (\d+-[A-Za-z0-9@_-]+?-[A-Za-z0-9@_-]+) \d+ \d+ |</pcre2>
-  <pcre2>^(\S+) (\d+-[A-Za-z0-9@_-]+?-[A-Za-z0-9@_-]+) \d+ \d+ </pcre2>
+  <!-- Address between [] cannot contain brackets; middle id field cannot
+       contain "-" (avoids cubic backtracking on crafted syslog lines). -->
+  <pcre2>^[^\s\[]+\[([^\s\[\]]+)\] (\d+-[A-Za-z0-9@_]+-[A-Za-z0-9@_-]+) \d+ \d+ |</pcre2>
+  <pcre2>^(\S+) (\d+-[A-Za-z0-9@_]+-[A-Za-z0-9@_-]+) \d+ \d+ </pcre2>
   <order>srcip, id</order>
 </decoder>
 
