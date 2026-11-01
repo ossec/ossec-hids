@@ -73,6 +73,24 @@ void *sd_read_journal(int pos, int *rc, int drop_it) {
         unit = "all";
     }
 
+    /* Consume journal inotify events so files created after open (rotation /
+     * vacuum) are attached to this handle. Without this, sd_journal_next()
+     * stays at EOF on the archived file until logcollector restarts
+     * (ANT-2026-K99OKMJP). */
+    ret = sd_journal_process(jrn);
+    if (ret < 0) {
+        merror("%s: ERROR: Unable to process journal changes.", ARGV0);
+        sd_journal_close(jrn);
+        logff[pos].ptr = NULL;
+        logff[pos].fd = 0;
+        *rc = -1;
+        return (NULL);
+    }
+    if (ret == SD_JOURNAL_INVALIDATE) {
+        verbose("%s: INFO: Journal file set changed; continuing from current cursor.",
+                ARGV0);
+    }
+
     while ((ret = sd_journal_next(jrn)) > 0) {
         ret = sd_journal_get_data(
             jrn,

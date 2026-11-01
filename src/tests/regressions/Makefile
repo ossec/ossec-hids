@@ -79,7 +79,8 @@ REGRESSION_BINS = \
 	issue_mqq5w9cu_ig_queue \
 	issue_grfznie0_csyslog_spaces \
 	issue_dj9ev0kp_json_overlong \
-	issue_913_nul_in_log
+	issue_913_nul_in_log \
+	issue_k99okmjp_journald_rotation
 
 .PHONY: all check clean
 
@@ -343,6 +344,15 @@ NUL_READERS = logcollector/read_modsec_audit.c logcollector/read_audit.c \
 issue_913_nul_in_log: tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) shared.a
 	$(CC) $(CFLAGS) -I./logcollector -o $@ \
 		tests/regressions/issue_913_nul_in_log.c $(NUL_READERS) $(BASIC_LIBS)
+
+# ANT-2026-K99OKMJP: journald reader must process inotify after rotation.
+issue_k99okmjp_journald_rotation: \
+		tests/regressions/issue_k99okmjp_journald_rotation.c \
+		logcollector/read_journald.c shared.a
+	$(CC) $(CFLAGS) -DHAVE_SYSTEMD -I./logcollector \
+		-I./tests/regressions/stubs -o $@ \
+		tests/regressions/issue_k99okmjp_journald_rotation.c \
+		logcollector/read_journald.c $(BASIC_LIBS)
 
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \
