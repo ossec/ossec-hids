@@ -77,7 +77,8 @@ REGRESSION_BINS = \
 	issue_pwed0r2h_demux_push_wait \
 	issue_4ojpklvk_fts_store_size \
 	issue_mqq5w9cu_ig_queue \
-	issue_grfznie0_csyslog_spaces
+	issue_grfznie0_csyslog_spaces \
+	issue_dj9ev0kp_json_overlong
 
 .PHONY: all check clean
 
@@ -319,6 +320,18 @@ issue_grfznie0_csyslog_spaces: \
 	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON -o $@ \
 		tests/regressions/issue_grfznie0_csyslog_spaces.c \
 		os_csyslogd/alert-grfz.o \
+		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-DJ9EV0KP: overlong alerts.json records must still parse.
+issue_dj9ev0kp_json_overlong: \
+		tests/regressions/issue_dj9ev0kp_json_overlong.c \
+		os_csyslogd/json-queue.c shared.a
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON \
+		-c os_csyslogd/json-queue.c -o os_csyslogd/json-queue-dj9.o
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON -o $@ \
+		tests/regressions/issue_dj9ev0kp_json_overlong.c \
+		os_csyslogd/json-queue-dj9.o \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
@@ -683,4 +696,5 @@ clean:
 		analysisd/decoders/rootcheck-rbaky.o \
 		analysisd/fts-4ojp.o \
 		analysisd/fts-mqq5.o \
-		os_csyslogd/alert-grfz.o
+		os_csyslogd/alert-grfz.o \
+		os_csyslogd/json-queue-dj9.o
