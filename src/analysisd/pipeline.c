@@ -47,6 +47,7 @@
 #include "alerts/log.h"
 #include "alerts/getloglocation.h"
 #include "fts.h"
+#include "pipeline_push_wait.h"
 
 extern int hourly_events;
 extern FILE *_aflog;
@@ -326,6 +327,7 @@ static os_queue *analysisd_route_queue(char mq_prefix)
 static int analysisd_push_decoded(Eventinfo *lf)
 {
     unsigned int shard;
+    int wait_ms;
 
     if (!lf || !decode_queue_event_output || process_event_thread_count <= 0) {
         Free_Eventinfo(lf);
@@ -334,8 +336,10 @@ static int analysisd_push_decoded(Eventinfo *lf)
 
     shard = analysisd_shard_id(lf, (unsigned int)process_event_thread_count);
     analysisd_stamp_queue_in(lf);
+    wait_ms = analysisd_shard_typed_wait_ms(process_event_thread_count,
+                                            cfg_shard_push_wait_ms);
     if (analysisd_queue_push_wait(decode_queue_event_output[shard], lf,
-                                  cfg_shard_push_wait_ms) != 0) {
+                                  wait_ms) != 0) {
         Free_Eventinfo(lf);
         if (!atomic_load(&analysisd_shutting_down)) {
             analysisd_inc_shard_dropped();
@@ -1055,6 +1059,7 @@ static void *analysisd_input_demux_thread(void *arg)
 {
     char *copy;
     os_queue *queue;
+    int wait_ms;
 
     (void)arg;
     os_block_worker_signals();
@@ -1068,8 +1073,14 @@ static void *analysisd_input_demux_thread(void *arg)
             continue;
         }
 
+        /* Demux workers serve every message type, so a wait here holds up all
+         * of them. Only the log event queue may soak: syscheck, rootcheck and
+         * hostinfo decoders search per-agent databases whose size the agent
+         * controls, so a backlog there sheds that type alone.
+         */
         queue = analysisd_route_queue(copy[0]);
-        if (analysisd_queue_push_wait(queue, copy, cfg_demux_push_wait_ms) != 0) {
+        wait_ms = analysisd_demux_typed_wait_ms(copy[0], cfg_demux_push_wait_ms);
+        if (analysisd_queue_push_wait(queue, copy, wait_ms) != 0) {
             free(copy);
             analysisd_inc_dropped_events();
             analysisd_warn_dropped("demux->decode");
