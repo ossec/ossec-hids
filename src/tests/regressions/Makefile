@@ -92,7 +92,8 @@ REGRESSION_BINS = \
 	issue_5t5qgo1d_authd_agent_limit \
 	issue_zo60j6e9_authd_pass \
 	issue_rxuwsl9z_csyslog_escape \
-	issue_sint56ko_dbd_alertid_sqli
+	issue_sint56ko_dbd_alertid_sqli \
+	issue_snxgrhga_execd_null_deref
 
 .PHONY: all check clean
 
@@ -481,6 +482,18 @@ issue_rbaky685_syscheck_slot_exhaustion: \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
+# ANT-2026-SNXGRHGA: execd must not strcmp NULL IP on incomplete AR requests.
+issue_snxgrhga_execd_null_deref: \
+		tests/regressions/issue_snxgrhga_execd_null_deref.c \
+		os_execd/timeout_dup.c shared.a
+	$(CC) $(CFLAGS) -I./os_execd -c os_execd/timeout_dup.c \
+		-o os_execd/timeout_dup-snx.o
+	$(CC) $(CFLAGS) -I./os_execd -o $@ \
+		tests/regressions/issue_snxgrhga_execd_null_deref.c \
+		os_execd/timeout_dup-snx.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 # ANT-2026-SINT56KO: ossec-dbd must escape alertid (and tld/srcgeoip) for INSERT.
 issue_sint56ko_dbd_alertid_sqli: \
 		tests/regressions/issue_sint56ko_dbd_alertid_sqli.c \
@@ -826,6 +839,7 @@ addagent/validate.o: addagent/validate.c
 
 clean:
 	rm -f $(REGRESSION_BINS) config-pund.a \
+		os_execd/timeout_dup-snx.o \
 		os_dbd/alert-sint.o os_dbd/db_op-sint.o \
 		os_csyslogd/escape-rxu.o \
 		os_csyslogd/escape-grfz.o \

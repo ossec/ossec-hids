@@ -49,5 +49,9 @@ typedef struct _timeout_data {
 
 void FreeTimeoutEntry(timeout_data *timeout_entry);
 
+/* Returns 1 if request is incomplete or already on the timeout list. */
+int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
+                         time_t curr_time, OSHash *repeated_hash);
+
 #endif
 

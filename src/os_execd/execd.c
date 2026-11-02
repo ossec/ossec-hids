@@ -391,66 +391,9 @@ static void ExecdStart(int q)
             i++;
         }
 
-        /* Check if this command was already executed */
-        timeout_node = OSList_GetFirstNode(timeout_list);
-        added_before = 0;
-
-        /* Check for the username and IP argument */
-        if (!timeout_args[2] || !timeout_args[3]) {
-            added_before = 1;
-            merror("%s: Invalid number of arguments.", ARGV0);
-        }
-
-        while (timeout_node) {
-            timeout_data *list_entry;
-
-            list_entry = (timeout_data *)timeout_node->data;
-            if ((strcmp(list_entry->command[3], timeout_args[3]) == 0) &&
-                    (strcmp(list_entry->command[0], timeout_args[0]) == 0)) {
-                /* Means we executed this command before
-                 * and we don't need to add it again
-                 */
-                added_before = 1;
-
-                /* Update the timeout */
-                list_entry->time_of_addition = curr_time;
-
-                if (repeated_offenders_timeout[0] != 0 &&
-                        repeated_hash != NULL &&
-                        strncmp(timeout_args[3], "-", 1) != 0) {
-                    char *ntimes = NULL;
-                    char rkey[256];
-                    rkey[255] = '\0';
-                    snprintf(rkey, 255, "%s%s", list_entry->command[0],
-                             timeout_args[3]);
-
-                    if ((ntimes = (char *) OSHash_Get(repeated_hash, rkey))) {
-                        int ntimes_int = 0;
-                        int i2 = 0;
-                        int new_timeout = 0;
-                        ntimes_int = atoi(ntimes);
-                        while (repeated_offenders_timeout[i2] != 0) {
-                            i2++;
-                        }
-                        if (ntimes_int >= i2) {
-                            new_timeout = repeated_offenders_timeout[i2 - 1] * 60;
-                        } else {
-                            free(ntimes);       /* In hash_op.c, data belongs to caller */
-                            os_calloc(10, sizeof(char), ntimes);
-                            new_timeout = repeated_offenders_timeout[ntimes_int] * 60;
-                            ntimes_int++;
-                            snprintf(ntimes, 9, "%d", ntimes_int);
-                            OSHash_Update(repeated_hash, rkey, ntimes);
-                        }
-                        list_entry->time_to_block = new_timeout;
-                    }
-                }
-                break;
-            }
-
-            /* Continue with the next entry in timeout list*/
-            timeout_node = OSList_GetNextNode(timeout_list);
-        }
+        /* Check if this command was already executed (or incomplete). */
+        added_before = ExecdTimeoutDupCheck(timeout_list, timeout_args,
+                                            curr_time, repeated_hash);
 
         /* If it wasn't added before, do it now */
         if (!added_before) {

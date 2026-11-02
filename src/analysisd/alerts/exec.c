@@ -34,6 +34,7 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
     const char *user;
     char *filename = NULL;
     long alert_id;
+    int result;
 
     ip = user = "-";
     alert_id = lf->alert_id ? lf->alert_id : __crt_ftell;
@@ -113,16 +114,42 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
             goto cleanup;
         }
 
-        snprintf(exec_msg, OS_SIZE_1024,
-                 "%s %s %s %ld.%ld %d %s %s",
-                 ar->name,
-                 user,
-                 ip,
-                 (long int)lf->time,
-                 alert_id,
-                 lf->generated_rule->sigid,
-                 lf->location,
-                 filename ? filename : "-");
+        result = snprintf(exec_msg, OS_SIZE_1024,
+                          "%s %s %s %ld.%ld %d %s %s",
+                          ar->name,
+                          user,
+                          ip,
+                          (long int)lf->time,
+                          alert_id,
+                          lf->generated_rule->sigid,
+                          lf->location,
+                          filename ? filename : "-");
+
+        /* Prefer a complete name/user/IP over a clipped request. If only the
+         * trailing location/filename overflow, retry with placeholders so
+         * IP-based responses still run; if the prefix itself cannot fit
+         * (e.g. a ~1 KB user name), drop the request.
+         */
+        if (result < 0 || result >= OS_SIZE_1024) {
+            result = snprintf(exec_msg, OS_SIZE_1024,
+                              "%s %s %s %ld.%ld %d %s %s",
+                              ar->name,
+                              user,
+                              ip,
+                              (long int)lf->time,
+                              alert_id,
+                              lf->generated_rule->sigid,
+                              "-",
+                              "-");
+            if (result < 0 || result >= OS_SIZE_1024) {
+                merror("%s: Active response '%s' request too long. Ignoring it.",
+                       ARGV0, ar->name);
+                goto cleanup;
+            }
+            merror("%s: Active response '%s' location/filename truncated.",
+                   ARGV0, ar->name);
+        }
+
         if (execq < 1) {
             merror("%s: Error communicating with execd (q < 1).", ARGV0);
         }
@@ -150,18 +177,41 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
             goto cleanup;
         }
 
-        snprintf(exec_msg, OS_SIZE_1024,
-                 "%s %s %s %s %s %ld.%ld %d %s %s",
-                 ar_hdr,
-                 ar->agent_id != NULL ? ar->agent_id : "(null)",
-                 ar->name,
-                 user,
-                 ip,
-                 (long int)lf->time,
-                 alert_id,
-                 lf->generated_rule->sigid,
-                 lf->location,
-                 filename ? filename : "-");
+        result = snprintf(exec_msg, OS_SIZE_1024,
+                          "%s %s %s %s %s %ld.%ld %d %s %s",
+                          ar_hdr,
+                          ar->agent_id != NULL ? ar->agent_id : "(null)",
+                          ar->name,
+                          user,
+                          ip,
+                          (long int)lf->time,
+                          alert_id,
+                          lf->generated_rule->sigid,
+                          lf->location,
+                          filename ? filename : "-");
+
+        if (result < 0 || result >= OS_SIZE_1024) {
+            result = snprintf(exec_msg, OS_SIZE_1024,
+                              "%s %s %s %s %s %ld.%ld %d %s %s",
+                              ar_hdr,
+                              ar->agent_id != NULL ? ar->agent_id : "(null)",
+                              ar->name,
+                              user,
+                              ip,
+                              (long int)lf->time,
+                              alert_id,
+                              lf->generated_rule->sigid,
+                              "-",
+                              "-");
+            if (result < 0 || result >= OS_SIZE_1024) {
+                free(ar_hdr);
+                merror("%s: Active response '%s' request too long. Ignoring it.",
+                       ARGV0, ar->name);
+                goto cleanup;
+            }
+            merror("%s: Active response '%s' location/filename truncated.",
+                   ARGV0, ar->name);
+        }
         free(ar_hdr);
 
         if ((rc = OS_SendUnix(arq, exec_msg, 0)) < 0) {
