@@ -292,7 +292,7 @@ int main_analysisd(int argc, char **argv)
 
     /* Initialize Active response */
     AR_Init();
-    if (AR_ReadConfig(cfg) < 0) {
+    if (AR_ReadConfig(cfg, gid) < 0) {
         ErrorExit(CONFIG_ERROR, ARGV0, cfg);
     }
     debug1(ASINIT, ARGV0);
