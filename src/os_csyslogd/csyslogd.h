@@ -10,6 +10,8 @@
 #ifndef _CSYSLOGD_H
 #define _CSYSLOGD_H
 
+#include <stdbool.h>
+
 #include "config/csyslogd-config.h"
 #include "cJSON.h"
 
@@ -41,6 +43,10 @@ void OS_CSyslogD(SyslogConfig **syslog_config) __attribute__((noreturn));
 int field_add_int(char *dest, size_t size, const char *format, const int value );
 int field_add_string(char *dest, size_t size, const char *format, const char *value );
 int field_add_truncated(char *dest, size_t size, const char *format, const char *value,  int fmt_size );
+
+/* Escape helpers for CEF / Splunk serialisers (NULL cleans the buffer). */
+char *cefescape(const char *msg, const bool header);
+char *splunkescape(const char *msg);
 
 /** Global variables **/
 

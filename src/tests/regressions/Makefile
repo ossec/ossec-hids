@@ -90,7 +90,8 @@ REGRESSION_BINS = \
 	issue_pund7vet_ar_conf_symlink \
 	issue_myqz0org_ossec_alert_leak \
 	issue_5t5qgo1d_authd_agent_limit \
-	issue_zo60j6e9_authd_pass
+	issue_zo60j6e9_authd_pass \
+	issue_rxuwsl9z_csyslog_escape
 
 .PHONY: all check clean
 
@@ -326,12 +327,14 @@ issue_mqq5w9cu_ig_queue: \
 # ANT-2026-GRFZNIE0: default csyslog format needs two spaces before log text.
 issue_grfznie0_csyslog_spaces: \
 		tests/regressions/issue_grfznie0_csyslog_spaces.c \
-		os_csyslogd/alert.c shared.a
+		os_csyslogd/alert.c os_csyslogd/escape.c shared.a
 	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON \
 		-c os_csyslogd/alert.c -o os_csyslogd/alert-grfz.o
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON \
+		-c os_csyslogd/escape.c -o os_csyslogd/escape-grfz.o
 	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON -o $@ \
 		tests/regressions/issue_grfznie0_csyslog_spaces.c \
-		os_csyslogd/alert-grfz.o \
+		os_csyslogd/alert-grfz.o os_csyslogd/escape-grfz.o \
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
@@ -476,6 +479,18 @@ issue_rbaky685_syscheck_slot_exhaustion: \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-RXUWSL9Z: Splunk/CEF field escaping for csyslogd.
+issue_rxuwsl9z_csyslog_escape: \
+		tests/regressions/issue_rxuwsl9z_csyslog_escape.c \
+		os_csyslogd/escape.c shared.a
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON \
+		-c os_csyslogd/escape.c -o os_csyslogd/escape-rxu.o
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON -o $@ \
+		tests/regressions/issue_rxuwsl9z_csyslog_escape.c \
+		os_csyslogd/escape-rxu.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-ZO60J6E9: authd.pass blank line must not disable password check.
 issue_zo60j6e9_authd_pass: \
@@ -798,6 +813,8 @@ addagent/validate.o: addagent/validate.c
 
 clean:
 	rm -f $(REGRESSION_BINS) config-pund.a \
+		os_csyslogd/escape-rxu.o \
+		os_csyslogd/escape-grfz.o \
 		os_auth/auth_pass-zo60.o \
 		addagent/validate-5t5q.o \
 		analysisd/eventinfo-myqz.o analysisd/eventinfo_list-myqz.o \

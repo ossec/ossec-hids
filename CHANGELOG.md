@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Escape Splunk and CEF ``syslog_output`` fields in ``ossec-csyslogd``: strip ``"``, double ``\``, and turn CR/LF into spaces in Splunk ``key="value"`` values, and run ``src=``/``shost=``/``dhost=`` and hash extensions through ``cefescape()``, so logged usernames or addresses cannot inject extra SIEM key/value pairs (ANT-2026-RXUWSL9Z)
 - @atomicturtle - Skip the syscheck integrity-DB linear scan on an index miss when the per-agent hash index is complete (mark incomplete only on calloc/OSHash_Add/read failures), so one agent cannot stall analysisd by reporting new file names (ANT-2026-8STI0Q1E)
 - @atomicturtle - Hash ``OSHash`` keys over a prime field and seed the multiplier from ``randombytes``, so a seed-independent Thue-Morse collision family can no longer force every FTS (and other) key into one chain (ANT-2026-3WKK50NE)
 - @atomicturtle - Cut the maild subject host at the ``->`` separator (not ``strchr('>')-1``), so a location that starts with ``>`` cannot write one byte before the heap string and abort ``ossec-maild`` (ANT-2026-H2JMYHXZ)
