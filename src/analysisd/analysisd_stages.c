@@ -342,6 +342,10 @@ int analysisd_analyze_event(Eventinfo *lf)
             if (!lf->generated_rule) {
                 return 0;
             }
+            /* Decoder may set generated_rule before matching; EventList
+             * ownership is EF_LIST_RETAINED (set only in OS_AddEvent), so
+             * leave the pointer for archive metadata on level-0 / ignore
+             * exits that never reach OS_AddEvent. */
             currently_rule = lf->generated_rule;
         } else if (rulenode_pt->ruleinfo->category != lf->decoder_info->type) {
             continue;
@@ -519,10 +523,10 @@ int analysisd_analyze_event(Eventinfo *lf)
     if (Config.logall) {
 #ifndef WIN32
         if (writer_queue_archive) {
-            /* No rule matched: EventList will not retain lf — transfer ownership
-             * to the archive writer instead of deep-copying. Matched events keep
-             * a deep copy because OS_AddEvent still owns the live Eventinfo. */
-            if (lf->generated_rule == NULL) {
+            /* EventList did not retain lf — transfer ownership to the archive
+             * writer instead of deep-copying. Matched events keep a deep copy
+             * because OS_AddEvent still owns the live Eventinfo. */
+            if (!(lf->flags & EF_LIST_RETAINED)) {
                 if (os_queue_push_ex(writer_queue_archive, lf) == 0) {
                     owned_by_writer = 1;
                 } else {
@@ -554,11 +558,4 @@ int analysisd_analyze_event(Eventinfo *lf)
     }
 
     return owned_by_writer;
-}
-
-void analysisd_finish_event(Eventinfo *lf)
-{
-    if (lf && lf->generated_rule == NULL) {
-        Free_Eventinfo(lf);
-    }
 }

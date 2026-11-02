@@ -330,7 +330,7 @@ static int analysisd_push_decoded(Eventinfo *lf)
     int wait_ms;
 
     if (!lf || !decode_queue_event_output || process_event_thread_count <= 0) {
-        Free_Eventinfo(lf);
+        analysisd_finish_event(lf);
         return -1;
     }
 
@@ -340,7 +340,7 @@ static int analysisd_push_decoded(Eventinfo *lf)
                                             cfg_shard_push_wait_ms);
     if (analysisd_queue_push_wait(decode_queue_event_output[shard], lf,
                                   wait_ms) != 0) {
-        Free_Eventinfo(lf);
+        analysisd_finish_event(lf);
         if (!atomic_load(&analysisd_shutting_down)) {
             analysisd_inc_shard_dropped();
             analysisd_inc_dropped_events();

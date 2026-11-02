@@ -126,6 +126,7 @@ void OS_AddEvent_List(Eventinfo *lf, EventList *list)
 
         list->first = new_node;
         new_node->event = lf;
+        lf->flags |= EF_LIST_RETAINED;
 
         list->memoryused++;
 
@@ -165,6 +166,7 @@ void OS_AddEvent_List(Eventinfo *lf, EventList *list)
         list->first->prev = NULL;
         list->first->next = NULL;
         list->first->event = lf;
+        lf->flags |= EF_LIST_RETAINED;
         list->last = list->first;
         list->memoryused = 1;
     }
