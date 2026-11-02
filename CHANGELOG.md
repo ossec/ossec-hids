@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Escape ``alertid`` (and MySQL ``tld``/``srcgeoip``) in ``ossec-dbd`` ``OS_Alert_InsertDB`` like the other string columns, and bound ``alertid`` to the schema ``VARCHAR(30)``, so a forged ``** Alert`` line cannot inject SQL into the alert ``INSERT`` (ANT-2026-SINT56KO; srcip/dstip already escaped via ``sql_nullable_str``, cf. Wazuh GHSA-6j39-726h-fx6p)
 - @atomicturtle - Escape Splunk and CEF ``syslog_output`` fields in ``ossec-csyslogd``: strip ``"``, double ``\``, and turn CR/LF into spaces in Splunk ``key="value"`` values, and run ``src=``/``shost=``/``dhost=`` and hash extensions through ``cefescape()``, so logged usernames or addresses cannot inject extra SIEM key/value pairs (ANT-2026-RXUWSL9Z)
 - @atomicturtle - Skip the syscheck integrity-DB linear scan on an index miss when the per-agent hash index is complete (mark incomplete only on calloc/OSHash_Add/read failures), so one agent cannot stall analysisd by reporting new file names (ANT-2026-8STI0Q1E)
 - @atomicturtle - Hash ``OSHash`` keys over a prime field and seed the multiplier from ``randombytes``, so a seed-independent Thue-Morse collision family can no longer force every FTS (and other) key into one chain (ANT-2026-3WKK50NE)
