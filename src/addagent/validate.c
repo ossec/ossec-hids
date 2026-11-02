@@ -63,6 +63,65 @@ int *MapIDToBitArray()
     return arrayID;
 }
 
+/* Number of entries OS_ReadKeys() loads from the keys file */
+static int CountAgents(void)
+{
+    FILE *fp;
+    char line_read[OS_BUFFER_SIZE + 1];
+    line_read[OS_BUFFER_SIZE] = '\0';
+    int count = 0;
+
+    if (isChroot()) {
+        fp = fopen(AUTH_FILE, "r");
+    } else {
+        fp = fopen(KEYSFILE_PATH, "r");
+    }
+
+    if (!fp) {
+        return (0);
+    }
+
+    /* Match OS_ReadKeys() buffer size and field walk (id name ip key).
+     * After the third space the key may be empty — OS_ReadKeys still loads it.
+     */
+    while (fgets(line_read, OS_BUFFER_SIZE, fp) != NULL) {
+        char *tmp_str;
+
+        if (line_read[0] == '#' || line_read[0] == ' ') {
+            continue;
+        }
+
+        tmp_str = strchr(line_read, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        tmp_str++;
+
+        /* Removed entry */
+        if (*tmp_str == '#') {
+            continue;
+        }
+
+        /* name */
+        tmp_str = strchr(tmp_str, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+        tmp_str++;
+
+        /* ip — once the third separator exists, OS_ReadKeys counts the line */
+        tmp_str = strchr(tmp_str, ' ');
+        if (!tmp_str) {
+            continue;
+        }
+
+        count++;
+    }
+
+    fclose(fp);
+    return (count);
+}
+
 char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
 {
     FILE *fp;
@@ -75,6 +134,14 @@ char *OS_AddNewAgent(const char *name, const char *ip, const char *id)
     unsigned char random_data[64];
     char rand_hex[129];
     int i;
+
+    /* OS_ReadKeys() exits once the file holds MAX_AGENTS - 2 entries,
+     * so never write the entry that would take it there.
+     */
+    if (CountAgents() >= MAX_AGENTS - 3) {
+        merror(AG_MAX_ERROR, __local_name, MAX_AGENTS - 2);
+        return (NULL);
+    }
 
     /* Resolve id before deriving the key so the first MD5 half can include
      * it the same way manage_agents / k_bulkload do.

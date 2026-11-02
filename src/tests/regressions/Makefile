@@ -88,7 +88,8 @@ REGRESSION_BINS = \
 	issue_9lqq1bms_osregex_bytes \
 	issue_7me0g28i_decoder_redos \
 	issue_pund7vet_ar_conf_symlink \
-	issue_myqz0org_ossec_alert_leak
+	issue_myqz0org_ossec_alert_leak \
+	issue_5t5qgo1d_authd_agent_limit
 
 .PHONY: all check clean
 
@@ -475,6 +476,21 @@ issue_rbaky685_syscheck_slot_exhaustion: \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
+# ANT-2026-5T5QGO1D: OS_AddNewAgent refuses at OS_ReadKeys fatal threshold.
+# Small MAX_AGENTS keeps the fixture tiny; AUTH_FILE + wrap isChroot mimic authd.
+issue_5t5qgo1d_authd_agent_limit: \
+		tests/regressions/issue_5t5qgo1d_authd_agent_limit.c \
+		addagent/validate.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DMAX_AGENTS=8 -DAUTH_FILE=\"client.keys\" \
+		-c addagent/validate.c -o addagent/validate-5t5q.o
+	$(CC) $(CFLAGS) -DMAX_AGENTS=8 -DAUTH_FILE=\"client.keys\" -o $@ \
+		tests/regressions/issue_5t5qgo1d_authd_agent_limit.c \
+		addagent/validate-5t5q.o \
+		-Wl,--wrap=isChroot \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a \
+		os_zlib.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
 # ANT-2026-MYQZ0ORG: finish_event frees unless EF_LIST_RETAINED.
 issue_myqz0org_ossec_alert_leak: \
 		tests/regressions/issue_myqz0org_ossec_alert_leak.c \
@@ -770,6 +786,7 @@ addagent/validate.o: addagent/validate.c
 
 clean:
 	rm -f $(REGRESSION_BINS) config-pund.a \
+		addagent/validate-5t5q.o \
 		analysisd/eventinfo-myqz.o analysisd/eventinfo_list-myqz.o \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
 		analysisd/eventinfo_list-1668.o analysisd/accumulator-1668.o \
