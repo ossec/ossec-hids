@@ -91,7 +91,8 @@ REGRESSION_BINS = \
 	issue_myqz0org_ossec_alert_leak \
 	issue_5t5qgo1d_authd_agent_limit \
 	issue_zo60j6e9_authd_pass \
-	issue_rxuwsl9z_csyslog_escape
+	issue_rxuwsl9z_csyslog_escape \
+	issue_sint56ko_dbd_alertid_sqli
 
 .PHONY: all check clean
 
@@ -480,6 +481,18 @@ issue_rbaky685_syscheck_slot_exhaustion: \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
+# ANT-2026-SINT56KO: ossec-dbd must escape alertid (and tld/srcgeoip) for INSERT.
+issue_sint56ko_dbd_alertid_sqli: \
+		tests/regressions/issue_sint56ko_dbd_alertid_sqli.c \
+		os_dbd/alert.c os_dbd/db_op.c shared.a
+	$(CC) $(CFLAGS) -I./os_dbd -c os_dbd/alert.c -o os_dbd/alert-sint.o
+	$(CC) $(CFLAGS) -I./os_dbd -c os_dbd/db_op.c -o os_dbd/db_op-sint.o
+	$(CC) $(CFLAGS) -I./os_dbd -o $@ \
+		tests/regressions/issue_sint56ko_dbd_alertid_sqli.c \
+		os_dbd/alert-sint.o os_dbd/db_op-sint.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 # ANT-2026-RXUWSL9Z: Splunk/CEF field escaping for csyslogd.
 issue_rxuwsl9z_csyslog_escape: \
 		tests/regressions/issue_rxuwsl9z_csyslog_escape.c \
@@ -813,6 +826,7 @@ addagent/validate.o: addagent/validate.c
 
 clean:
 	rm -f $(REGRESSION_BINS) config-pund.a \
+		os_dbd/alert-sint.o os_dbd/db_op-sint.o \
 		os_csyslogd/escape-rxu.o \
 		os_csyslogd/escape-grfz.o \
 		os_auth/auth_pass-zo60.o \

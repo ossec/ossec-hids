@@ -139,6 +139,8 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     char dstip_sql[46 + 2 + 1];
     /* Bounded user literal so a huge dstuser cannot blow the INSERT (#1959). */
     char user_sql[512 + 1];
+    /* Schema alertid is VARCHAR(30); never pass a NULL pointer to '%s'. */
+    char alertid_sql[30 + 1];
     size_t room;
 
     /* Clear the memory before insert */
@@ -151,8 +153,23 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
     /* Destination Port */
     d_port = al_data->dstport;
 
-    /* Escape strings */
+    /* Escape strings. The alert id is read back from alerts.log like every
+     * other field, so it is not trusted to be analysisd's <epoch>.<offset>.
+     * srcip/dstip already go through sql_nullable_str() → osdb_escapestr()
+     */
     osdb_escapestr(al_data->location);
+    if (al_data->srcgeoip) {
+        /* MySQL tld column takes %.2s of srcgeoip; still must not carry '. */
+        osdb_escapestr(al_data->srcgeoip);
+    }
+
+    alertid_sql[0] = '\0';
+    if (al_data->alertid) {
+        osdb_escapestr(al_data->alertid);
+        strncpy(alertid_sql, al_data->alertid, sizeof(alertid_sql) - 1);
+        alertid_sql[sizeof(alertid_sql) - 1] = '\0';
+        osdb_cap_field(alertid_sql, sizeof(alertid_sql) - 1);
+    }
 
     user_sql[0] = '\0';
     if (al_data->user) {
@@ -226,7 +243,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                      (unsigned short)s_port,
                      dstip_sql,
                      (unsigned short)d_port,
-                     al_data->alertid,
+                     alertid_sql,
                      user_sql,
                      "",
                      al_data->srcgeoip ? al_data->srcgeoip : "");
@@ -245,7 +262,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                      (unsigned short)s_port,
                      dstip_sql,
                      (unsigned short)d_port,
-                     al_data->alertid,
+                     alertid_sql,
                      user_sql,
                      "");
         break;
@@ -283,7 +300,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                  (unsigned short)s_port,
                  dstip_sql,
                  (unsigned short)d_port,
-                 al_data->alertid,
+                 alertid_sql,
                  user_sql,
                  fulllog,
                  al_data->srcgeoip ? al_data->srcgeoip : "");
@@ -301,7 +318,7 @@ int OS_Alert_InsertDB(const alert_data *al_data, DBConfig *db_config)
                  (unsigned short)s_port,
                  dstip_sql,
                  (unsigned short)d_port,
-                 al_data->alertid,
+                 alertid_sql,
                  /* user is NOT NULL in schema — empty string, not SQL NULL */
                  user_sql,
                  fulllog);
