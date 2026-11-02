@@ -405,8 +405,8 @@ static void ExecdStart(int q)
                 char *ntimes;
                 char rkey[256];
                 rkey[255] = '\0';
-                snprintf(rkey, 255, "%s%s", timeout_args[0],
-                         timeout_args[3]);
+                snprintf(rkey, 255, "%s %s %s", timeout_args[0],
+                         timeout_args[2], timeout_args[3]);
 
                 if (repeated_hash != NULL) {
                     if ((ntimes = (char *) OSHash_Get(repeated_hash, rkey))) {
