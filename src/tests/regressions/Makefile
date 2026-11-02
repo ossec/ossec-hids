@@ -89,7 +89,8 @@ REGRESSION_BINS = \
 	issue_7me0g28i_decoder_redos \
 	issue_pund7vet_ar_conf_symlink \
 	issue_myqz0org_ossec_alert_leak \
-	issue_5t5qgo1d_authd_agent_limit
+	issue_5t5qgo1d_authd_agent_limit \
+	issue_zo60j6e9_authd_pass
 
 .PHONY: all check clean
 
@@ -476,6 +477,17 @@ issue_rbaky685_syscheck_slot_exhaustion: \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
+# ANT-2026-ZO60J6E9: authd.pass blank line must not disable password check.
+issue_zo60j6e9_authd_pass: \
+		tests/regressions/issue_zo60j6e9_authd_pass.c \
+		os_auth/auth_pass.c shared.a
+	$(CC) $(CFLAGS) -I./os_auth -c os_auth/auth_pass.c -o os_auth/auth_pass-zo60.o
+	$(CC) $(CFLAGS) -I./os_auth -o $@ \
+		tests/regressions/issue_zo60j6e9_authd_pass.c \
+		os_auth/auth_pass-zo60.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 # ANT-2026-5T5QGO1D: OS_AddNewAgent refuses at OS_ReadKeys fatal threshold.
 # Small MAX_AGENTS keeps the fixture tiny; AUTH_FILE + wrap isChroot mimic authd.
 issue_5t5qgo1d_authd_agent_limit: \
@@ -786,6 +798,7 @@ addagent/validate.o: addagent/validate.c
 
 clean:
 	rm -f $(REGRESSION_BINS) config-pund.a \
+		os_auth/auth_pass-zo60.o \
 		addagent/validate-5t5q.o \
 		analysisd/eventinfo-myqz.o analysisd/eventinfo_list-myqz.o \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
