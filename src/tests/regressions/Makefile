@@ -93,7 +93,8 @@ REGRESSION_BINS = \
 	issue_zo60j6e9_authd_pass \
 	issue_rxuwsl9z_csyslog_escape \
 	issue_sint56ko_dbd_alertid_sqli \
-	issue_snxgrhga_execd_null_deref
+	issue_snxgrhga_execd_null_deref \
+	issue_2lgojr12_execd_user_dup
 
 .PHONY: all check clean
 
@@ -494,6 +495,18 @@ issue_snxgrhga_execd_null_deref: \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
+# ANT-2026-2LGOJR12: user-keyed AR dup check must compare argv[2] (user).
+issue_2lgojr12_execd_user_dup: \
+		tests/regressions/issue_2lgojr12_execd_user_dup.c \
+		os_execd/timeout_dup.c shared.a
+	$(CC) $(CFLAGS) -I./os_execd -c os_execd/timeout_dup.c \
+		-o os_execd/timeout_dup-2lg.o
+	$(CC) $(CFLAGS) -I./os_execd -o $@ \
+		tests/regressions/issue_2lgojr12_execd_user_dup.c \
+		os_execd/timeout_dup-2lg.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 # ANT-2026-SINT56KO: ossec-dbd must escape alertid (and tld/srcgeoip) for INSERT.
 issue_sint56ko_dbd_alertid_sqli: \
 		tests/regressions/issue_sint56ko_dbd_alertid_sqli.c \
@@ -840,6 +853,7 @@ addagent/validate.o: addagent/validate.c
 clean:
 	rm -f $(REGRESSION_BINS) config-pund.a \
 		os_execd/timeout_dup-snx.o \
+		os_execd/timeout_dup-2lg.o \
 		os_dbd/alert-sint.o os_dbd/db_op-sint.o \
 		os_csyslogd/escape-rxu.o \
 		os_csyslogd/escape-grfz.o \

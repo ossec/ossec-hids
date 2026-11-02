@@ -14,7 +14,9 @@
 /* Walk the timeout list for a duplicate of timeout_args.
  * Returns 1 if the request is incomplete or already pending (caller must
  * not ExecCmd / re-add). Incomplete requests (missing user/IP) must not
- * strcmp NULL slots (ANT-2026-SNXGRHGA).
+ * strcmp NULL slots (ANT-2026-SNXGRHGA). Match script, user, and IP so
+ * user-keyed commands like disable-account (IP always '-') do not suppress
+ * other accounts (ANT-2026-2LGOJR12).
  */
 int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
                          time_t curr_time, OSHash *repeated_hash)
@@ -40,12 +42,13 @@ int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
 
         list_entry = (timeout_data *)timeout_node->data;
         if (!list_entry || !list_entry->command || !list_entry->command[0] ||
-                !list_entry->command[3]) {
+                !list_entry->command[2] || !list_entry->command[3]) {
             timeout_node = OSList_GetNextNode(timeout_list);
             continue;
         }
 
         if ((strcmp(list_entry->command[3], timeout_args[3]) == 0) &&
+                (strcmp(list_entry->command[2], timeout_args[2]) == 0) &&
                 (strcmp(list_entry->command[0], timeout_args[0]) == 0)) {
             added_before = 1;
             list_entry->time_of_addition = curr_time;
@@ -58,8 +61,8 @@ int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
                 char rkey[256];
 
                 rkey[255] = '\0';
-                snprintf(rkey, 255, "%s%s", list_entry->command[0],
-                         timeout_args[3]);
+                snprintf(rkey, 255, "%s %s %s", list_entry->command[0],
+                         timeout_args[2], timeout_args[3]);
 
                 if ((ntimes = (char *) OSHash_Get(repeated_hash, rkey))) {
                     int ntimes_int = 0;
