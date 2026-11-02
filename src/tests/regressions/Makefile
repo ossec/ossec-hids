@@ -86,7 +86,8 @@ REGRESSION_BINS = \
 	issue_1yeqlyn9_journald_field_bounds \
 	issue_54azkai7_max_lines \
 	issue_9lqq1bms_osregex_bytes \
-	issue_7me0g28i_decoder_redos
+	issue_7me0g28i_decoder_redos \
+	issue_pund7vet_ar_conf_symlink
 
 .PHONY: all check clean
 
@@ -412,6 +413,23 @@ issue_7me0g28i_decoder_redos: \
 	$(CC) $(CFLAGS) -o $@ \
 		tests/regressions/issue_7me0g28i_decoder_redos.c -lpcre2-8
 
+# ANT-2026-PUND7VET: ar.conf rewrite must not follow a group-planted symlink.
+# Rebuild active-response objects with a private DEFAULTDIR so the test never
+# touches a real /var/ossec tree; drop the stock active-response.o from config.a.
+PUND_DEFAULTDIR ?= /tmp/ossec-pund7vet-ar
+issue_pund7vet_ar_conf_symlink: \
+		tests/regressions/issue_pund7vet_ar_conf_symlink.c \
+		analysisd/active-response.c config/active-response.c \
+		config.a shared.a os_xml.a os_regex.a
+	@cp -f config.a config-pund.a
+	@$(AR) d config-pund.a active-response.o >/dev/null
+	$(CC) $(CFLAGS) -I./analysisd -DPUND_DEFAULTDIR=\"$(PUND_DEFAULTDIR)\" \
+		-DDEFAULTDIR=\"$(PUND_DEFAULTDIR)\" \
+		-o $@ tests/regressions/issue_pund7vet_ar_conf_symlink.c \
+		analysisd/active-response.c config/active-response.c \
+		-Wl,--start-group config-pund.a shared.a os_xml.a os_regex.a os_net.a \
+		-Wl,--end-group -lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 # ANT-2026-PWED0R2H: demux/shard must not soak on agent-controlled queues.
 issue_pwed0r2h_demux_push_wait: \
 		tests/regressions/issue_pwed0r2h_demux_push_wait.c \
@@ -735,7 +753,7 @@ addagent/validate.o: addagent/validate.c
 	$(CC) $(CFLAGS) -c addagent/validate.c -o $@
 
 clean:
-	rm -f $(REGRESSION_BINS) \
+	rm -f $(REGRESSION_BINS) config-pund.a \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
 		analysisd/eventinfo_list-1668.o analysisd/accumulator-1668.o \
 		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o \
