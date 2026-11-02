@@ -7,111 +7,10 @@
  * Foundation
  */
 
-#include <stdbool.h>
-
 #include "csyslogd.h"
 #include "cJSON.h"
 #include "config/config.h"
 #include "os_net/os_net.h"
-
-
-/* Escape CEF messages according to the standards */
-char *cefescape(const char *msg, const bool header)
-{
-    static char *buffer = NULL;
-    const char *ptr;
-    char *buffptr;
-    size_t size;
-    int needs_escape = 0;
-
-    /* Recycle the buffer */
-    if (buffer) {
-        os_free(buffer);
-        buffer = NULL;
-    }
-
-    /* Cleanup call */
-    if (NULL == msg) {
-        return NULL;
-    }
-
-    if (header && strchr(msg, '|')) {
-        needs_escape = 1;
-    }
-    if (!header && strchr(msg, '=')) {
-        needs_escape = 1;
-    }
-    if (strchr(msg, '\\') || strchr(msg, '\r') || strchr(msg, '\n')) {
-        needs_escape = 1;
-    }
-    if (!needs_escape) {
-        return (char *)msg;
-    }
-
-    /* Calculate the size of the escaped message
-     *
-     * In the header we replace \r and \n with a
-     * space, so there's no change in size.
-     */
-    ptr = msg;
-    size = 1;
-    while (*ptr) {
-        if (('\\' == *ptr) ||
-            (header && ('|' == *ptr)) ||
-            (!header && (
-                ('=' == *ptr) ||
-                ('\r' == *ptr) ||
-                ('\n' == *ptr)
-            )))
-        {
-            size += 2;
-        } else {
-            size += 1;
-        }
-        ptr++;
-    }
-
-    /* Allocate the new buffer and start escaping */
-    buffer = (char*) malloc(size);
-    buffer[size-1] = '\0';
-    ptr = msg;
-    buffptr = buffer;
-    while (*ptr) {
-        if ('\\' == *ptr) {
-            *buffptr = '\\';
-            *(buffptr + 1) = '\\';
-            buffptr += 2;
-        } else if ('\r' == *ptr) {
-            *buffptr = header ? ' ' : '\\';
-            buffptr++;
-            if (!header) {
-                *buffptr = 'r';
-                buffptr++;
-            }
-        } else if ('\n' == *ptr) {
-            *buffptr = header ? ' ' : '\\';
-            buffptr++;
-            if (!header) {
-                *buffptr = 'n';
-                buffptr++;
-            }
-        } else if (header && ('|' == *ptr)) {
-            *buffptr = '\\';
-            *(buffptr + 1) = '|';
-            buffptr += 2;
-        } else if (!header && ('=' == *ptr)) {
-            *buffptr = '\\';
-            *(buffptr + 1) = '=';
-            buffptr += 2;
-        } else {
-            *buffptr = *ptr;
-            buffptr++;
-        }
-        ptr++;
-    }
-
-    return buffer;
-}
 
 /* Send an alert via syslog
  * Returns 1 on success or 0 on error
@@ -271,12 +170,12 @@ int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
         field_add_string(syslog_msg, OS_CSYSLOG_MAX, "dvc=%s", cefescape(hostname, false));
         field_add_string(syslog_msg, OS_CSYSLOG_MAX, " cs1Label=Location cs1=%s", cefescape(al_data->location, false));
         field_add_string(syslog_msg, OS_CSYSLOG_MAX, " classification=%s", cefescape(al_data->group, false));
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " src=%s", al_data->srcip);
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " src=%s", cefescape(al_data->srcip, false));
         field_add_int(syslog_msg, OS_CSYSLOG_MAX, " dpt=%d", al_data->dstport);
         field_add_int(syslog_msg, OS_CSYSLOG_MAX, " spt=%d", al_data->srcport);
         field_add_string(syslog_msg, OS_CSYSLOG_MAX, " fname=%s", cefescape(al_data->filename, false));
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " dhost=%s", al_data->dstip);
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " shost=%s", al_data->srcip);
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " dhost=%s", cefescape(al_data->dstip, false));
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " shost=%s", cefescape(al_data->srcip, false));
         field_add_string(syslog_msg, OS_CSYSLOG_MAX, " suser=%s", cefescape(al_data->user, false));
         field_add_string(syslog_msg, OS_CSYSLOG_MAX, " dst=%s", cefescape(al_data->dstip, false));
 #ifdef LIBGEOIP_ENABLED
@@ -284,50 +183,53 @@ int OS_Alert_SendSyslog(alert_data *al_data, SyslogConfig *syslog_config)
         field_add_string(syslog_msg, OS_CSYSLOG_MAX, " cs5Label=DstCity cs5=%s", cefescape(al_data->dstgeoip, false));
 #endif
         if (al_data->new_md5 && al_data->new_sha1) {
-            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " cs2Label=OldMD5 cs2=%s", al_data->old_md5);
-            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " cs3Label=NewMD5 cs3=%s", al_data->new_md5);
-            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " oldFileHash=%s", al_data->old_sha1);
-            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " fhash=%s", al_data->new_sha1);
-            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " fileHash=%s", al_data->new_sha1);
+            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " cs2Label=OldMD5 cs2=%s", cefescape(al_data->old_md5, false));
+            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " cs3Label=NewMD5 cs3=%s", cefescape(al_data->new_md5, false));
+            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " oldFileHash=%s", cefescape(al_data->old_sha1, false));
+            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " fhash=%s", cefescape(al_data->new_sha1, false));
+            field_add_string(syslog_msg, OS_CSYSLOG_MAX, " fileHash=%s", cefescape(al_data->new_sha1, false));
         }
         field_add_truncated(syslog_msg, OS_CSYSLOG_MAX, " msg=%s", cefescape(logmsg, false), 2);
         cefescape(NULL,0);  /* Clean up the escaping buffer */
     } else if (syslog_config->format == SPLUNK_CSYSLOG) {
         /* Build a Splunk Style Key/Value string for logging */
         snprintf(syslog_msg, OS_CSYSLOG_MAX,
-                 "<%u>%s %s ossec: crit=%u id=%u description=\"%s\" component=\"%s\",",
+                 "<%u>%s %s ossec: crit=%u id=%u description=\"%s\"",
 
                  /* syslog header */
                  syslog_config->priority, tstamp, hostname,
 
                  /* OSSEC metadata */
-                 al_data->level, al_data->rule, al_data->comment,
-                 al_data->location
+                 al_data->level, al_data->rule, splunkescape(al_data->comment)
                 );
+        /* splunkescape() keeps one buffer, so location goes in a second call */
+        snprintf(syslog_msg + strlen(syslog_msg), OS_CSYSLOG_MAX - strlen(syslog_msg),
+                 " component=\"%s\",", splunkescape(al_data->location));
         /* Event specifics */
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " classification=\"%s\",", al_data->group);
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " classification=\"%s\",", splunkescape(al_data->group));
 
-        if (field_add_string(syslog_msg, OS_CSYSLOG_MAX, " src_ip=\"%s\",", al_data->srcip) > 0) {
+        if (field_add_string(syslog_msg, OS_CSYSLOG_MAX, " src_ip=\"%s\",", splunkescape(al_data->srcip)) > 0) {
             field_add_int(syslog_msg, OS_CSYSLOG_MAX, " src_port=%d,", al_data->srcport);
         }
 
 #ifdef LIBGEOIP_ENABLED
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " src_city=\"%s\",", al_data->srcgeoip);
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " dst_city=\"%s\",", al_data->dstgeoip);
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " src_city=\"%s\",", splunkescape(al_data->srcgeoip));
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " dst_city=\"%s\",", splunkescape(al_data->dstgeoip));
 #endif
 
-        if (field_add_string(syslog_msg, OS_CSYSLOG_MAX, " dst_ip=\"%s\",", al_data->dstip) > 0) {
+        if (field_add_string(syslog_msg, OS_CSYSLOG_MAX, " dst_ip=\"%s\",", splunkescape(al_data->dstip)) > 0) {
             field_add_int(syslog_msg, OS_CSYSLOG_MAX, " dst_port=%d,", al_data->dstport);
         }
 
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " file=\"%s\",", al_data->filename);
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " acct=\"%s\",", al_data->user);
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " md5_old=\"%s\",", al_data->old_md5);
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " md5_new=\"%s\",", al_data->new_md5);
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " sha1_old=\"%s\",", al_data->old_sha1);
-        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " sha1_new=\"%s\",", al_data->new_sha1);
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " file=\"%s\",", splunkescape(al_data->filename));
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " acct=\"%s\",", splunkescape(al_data->user));
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " md5_old=\"%s\",", splunkescape(al_data->old_md5));
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " md5_new=\"%s\",", splunkescape(al_data->new_md5));
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " sha1_old=\"%s\",", splunkescape(al_data->old_sha1));
+        field_add_string(syslog_msg, OS_CSYSLOG_MAX, " sha1_new=\"%s\",", splunkescape(al_data->new_sha1));
         /* Message */
-        field_add_truncated(syslog_msg, OS_CSYSLOG_MAX, " message=\"%s\"", logmsg, 2);
+        field_add_truncated(syslog_msg, OS_CSYSLOG_MAX, " message=\"%s\"", splunkescape(logmsg), 2);
+        splunkescape(NULL);  /* Clean up the escaping buffer */
     }
 
     if (csyslog_send(syslog_config, syslog_msg, strlen(syslog_msg)) == 0) {
