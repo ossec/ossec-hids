@@ -26,6 +26,7 @@
 #include <string.h>
 #include "shared.h"
 #include "check_cert.h"
+#include "auth_pass.h"
 
 #ifndef LIBOPENSSL_ENABLED
 
@@ -307,41 +308,30 @@ int main(int argc, char **argv)
     /* Checking if there is a custom password file */
     if (authpass != NULL && authenticate > 0) {
         FILE *fp;
+        char *parsed;
+
         fp = fopen(authpass, "r");
-        if(!fp) {
+        if (!fp) {
             fprintf(stderr, "Cannot open %s: %s\n", authpass, strerror(errno));
             exit(1);
         }
         buf[0] = '\0';
+        buf[4096] = '\0';
+        if (!fgets(buf, 4095, fp)) {
+            buf[0] = '\0';
+        }
+        fclose(fp);
 
-        if (fp) {
-            size_t len;
-
-            buf[4096] = '\0';
-            fgets(buf, 4095, fp);
-
-            /* Keep the password itself. A trailing newline is not part of it,
-             * and the password is not truncated to 32 characters. */
-            len = strlen(buf);
-            if (len > 2) {
-                while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
-                    buf[--len] = '\0';
-                }
-                if (buf[0] != '\0') {
-                    authpass = strdup(buf);
-                    if(!authpass) {
-                        fprintf(stderr, "Could not set the authpass: %s", strerror(errno));
-                        exit(1);
-                    }
-                    printf("INFO: Using specified password.\n");
-                } else {
-                    authpass = NULL;
-                }
-            } else {
-                authpass = NULL;
-            }
-
-            fclose(fp);
+        parsed = OS_AuthParsePassLine(buf);
+        if (parsed) {
+            authpass = parsed;
+            printf("INFO: Using specified password.\n");
+        } else {
+            /* Match ossec-authd: opened password file with no usable first
+             * line must not silently fall into insecure enrollment. */
+            fprintf(stderr, "ERROR: Empty or unusable password in %s\n",
+                    authpass);
+            exit(1);
         }
     }
     if (!authpass) {

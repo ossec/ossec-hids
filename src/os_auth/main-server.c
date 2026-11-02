@@ -24,6 +24,7 @@
 
 #include "auth.h"
 #include "auth_conn.h"
+#include "auth_pass.h"
 #include "os_crypto/md5/md5_op.h"
 
 /* Prototypes */
@@ -317,33 +318,31 @@ int main(int argc, char **argv)
     }
     
     if (use_pass) {
+        int passfile_opened = 0;
 
         /* Checking if there is a custom password file */
         fp = fopen(AUTHDPASS_PATH, "r");
         buf[0] = '\0';
         if (fp) {
+            passfile_opened = 1;
             buf[4096] = '\0';
-            char *ret = fgets(buf, 4095, fp);
-
-            if (ret && strlen(buf) > 2) {
-                size_t len = strlen(buf);
-
-                /* Remove a trailing newline only. A file with no newline
-                 * keeps every password character. */
-                while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
-                    buf[--len] = '\0';
-                }
-                if (buf[0] != '\0') {
-                    authpass = strdup(buf);
-                }
+            if (fgets(buf, 4095, fp)) {
+                authpass = OS_AuthParsePassLine(buf);
             }
-
             fclose(fp);
         }
 
-        if (buf[0] != '\0')
-            verbose("Accepting connections. Using password specified on file: %s",AUTHDPASS_PATH);
-        else {
+        if (OS_AuthUsingFilePassword(authpass, buf)) {
+            verbose("Accepting connections. Using password specified on file: %s",
+                    AUTHDPASS_PATH);
+        } else if (passfile_opened) {
+            /* File exists but first line is blank/whitespace — fail closed
+             * rather than silently disabling the password check or swapping
+             * in a random password the operator never saw. */
+            merror("%s: ERROR: Empty or unusable password in %s",
+                   ARGV0, AUTHDPASS_PATH);
+            exit(1);
+        } else {
             /* Getting temporary pass. */
             authpass = __generatetmppass();
             verbose("Accepting connections. Random password chosen for agent authentication: %s", authpass);

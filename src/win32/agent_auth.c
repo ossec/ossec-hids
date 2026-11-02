@@ -15,6 +15,7 @@
 #include "os_regex/os_regex.h"
 #include "defs.h"
 #include "addagent/manage_agents.h"
+#include "os_auth/auth_pass.h"
 
 #define IO_BUFFER_SIZE  0x10000
 
@@ -465,31 +466,32 @@ int main(int argc, char **argv)
     /* Checking if there is a custom password file */
     if (authpass == NULL) {
         FILE *fp;
+        char *parsed;
+
         fp = fopen(AUTHDPASS_PATH, "r");
         buf[0] = '\0';
 
         if (fp) {
             buf[4096] = '\0';
-            char *ret = fgets(buf, 4095, fp);
-
-            if (ret && strlen(buf) > 2) {
-                size_t len = strlen(buf);
-
-                while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
-                    buf[--len] = '\0';
-                }
-                if (buf[0] != '\0') {
-                    authpass = buf;
-                }
+            if (!fgets(buf, 4095, fp)) {
+                buf[0] = '\0';
             }
-
             fclose(fp);
-            printf("INFO: Using password specified on file: %s\n", AUTHDPASS_PATH);
+
+            parsed = OS_AuthParsePassLine(buf);
+            if (parsed) {
+                /* Keep the heap copy for the request; do not point at buf. */
+                authpass = parsed;
+                printf("INFO: Using password specified on file: %s\n",
+                       AUTHDPASS_PATH);
+            } else {
+                ErrorExit("%s: ERROR: Empty or unusable password in %s",
+                          ARGV0, AUTHDPASS_PATH);
+            }
         }
     }
     if (!authpass) {
         printf("WARN: No authentication password provided. Insecure mode started.\n");
-
     }
 
     // Connect to socket and init security context
