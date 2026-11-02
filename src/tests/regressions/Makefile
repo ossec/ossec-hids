@@ -87,7 +87,8 @@ REGRESSION_BINS = \
 	issue_54azkai7_max_lines \
 	issue_9lqq1bms_osregex_bytes \
 	issue_7me0g28i_decoder_redos \
-	issue_pund7vet_ar_conf_symlink
+	issue_pund7vet_ar_conf_symlink \
+	issue_myqz0org_ossec_alert_leak
 
 .PHONY: all check clean
 
@@ -474,6 +475,21 @@ issue_rbaky685_syscheck_slot_exhaustion: \
 		libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
+# ANT-2026-MYQZ0ORG: finish_event frees unless EF_LIST_RETAINED.
+issue_myqz0org_ossec_alert_leak: \
+		tests/regressions/issue_myqz0org_ossec_alert_leak.c \
+		analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c \
+		-o analysisd/eventinfo-myqz.o
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c \
+		-o analysisd/eventinfo_list-myqz.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_myqz0org_ossec_alert_leak.c \
+		analysisd/eventinfo-myqz.o analysisd/eventinfo_list-myqz.o \
+		-Wl,--wrap=free \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 # ANT-2026-2D3XMA3W: *_FP setters free prior heap value on overwrite.
 issue_2d3xma3w_decoder_field_leak: \
 		tests/regressions/issue_2d3xma3w_decoder_field_leak.c \
@@ -754,6 +770,7 @@ addagent/validate.o: addagent/validate.c
 
 clean:
 	rm -f $(REGRESSION_BINS) config-pund.a \
+		analysisd/eventinfo-myqz.o analysisd/eventinfo_list-myqz.o \
 		analysisd/cleanevent-1668.o analysisd/eventinfo-1668.o \
 		analysisd/eventinfo_list-1668.o analysisd/accumulator-1668.o \
 		analysisd/cleanevent-1668oa.o analysisd/eventinfo-1668oa.o \

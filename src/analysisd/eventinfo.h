@@ -93,6 +93,10 @@ typedef struct _Eventinfo {
     #define EF_ASYNC_COPY 0x008
     /* agent_name was allocated (always owned when non-NULL). */
     #define EF_FREE_AGENT_NAME 0x010
+    /* EventList holds this Eventinfo (set by OS_AddEvent). finish_event
+     * must not free when this is set — do not key ownership off
+     * generated_rule (ossec-alert decoder sets that before matching). */
+    #define EF_LIST_RETAINED 0x020
 
     /* Other internal variables */
     int matched;
@@ -192,6 +196,9 @@ void Zero_Eventinfo(Eventinfo *lf);
 
 /* Free the eventinfo structure */
 void Free_Eventinfo(Eventinfo *lf);
+
+/* Free unless EventList retained the event (EF_LIST_RETAINED). */
+void analysisd_finish_event(Eventinfo *lf);
 
 /* Add and event to the list of previous events */
 void OS_AddEvent(Eventinfo *lf);

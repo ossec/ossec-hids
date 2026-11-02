@@ -543,7 +543,8 @@ void OS_ReadMSG(char *ut_str)
                         break;
                     }
 
-                    /* Process the alert */
+                    /* Process the alert. Ownership uses EF_LIST_RETAINED
+                     * (set by OS_AddEvent), not generated_rule. */
                     currently_rule = lf->generated_rule;
                 }
 
@@ -691,7 +692,7 @@ void OS_ReadMSG(char *ut_str)
              * added to the stateful memory
              * -- message is free inside clean event --
              */
-            if (lf->generated_rule == NULL) {
+            if (!(lf->flags & EF_LIST_RETAINED)) {
                 Free_Eventinfo(lf);
             }
         }

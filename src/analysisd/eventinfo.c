@@ -948,3 +948,13 @@ void Free_Eventinfo(Eventinfo *lf)
     return;
 }
 
+/* Drop an event after analyze unless EventList retained it.
+ * Do not key ownership off generated_rule: the ossec-alert decoder sets
+ * that before matching, so level-0 / ignore exits would otherwise leak. */
+void analysisd_finish_event(Eventinfo *lf)
+{
+    if (lf && !(lf->flags & EF_LIST_RETAINED)) {
+        Free_Eventinfo(lf);
+    }
+}
+
