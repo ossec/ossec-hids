@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Release ``ossec-remoted`` syslog TCP workers from dead or idle clients: report EOF as 0, enable TCP keepalive (``TCP_KEEPIDLE`` = read timeout), stop retrying ``ETIMEDOUT``, and close a quiet connection only while the worker pool is exhausted so a queued sender can be served (ANT-2026-QY1SHLVV)
 - @atomicturtle - Bound ``ReadSecMSG`` zlib inflate to the room left in the receive buffer after ``!<id>!`` / ``#AES:`` prefixes (``buffer_max``), so an enrolled agent cannot write past ``ossec-remoted``'s stack ``buffer`` with an oversized compressed payload (ANT-2026-739QMECR)
 - @atomicturtle - Rate-limit ``ossec-remoted`` pre-auth rejection logging (denied IP, bad header, unknown ID, and ``ReadSecMSG`` decrypt/format failures): up to 20 lines per listener per minute plus a skipped-count summary, so an unauthenticated sender cannot fill ``logs/ossec.log`` (ANT-2026-JA2NXEW1)
 - @atomicturtle - Persist each agent's receive counter to ``queue/rids`` before ``OS_FreeKeys`` (``client.keys`` reload) and on orderly ``ossec-remoted`` shutdown, so a keyless ``!id!`` after a keys mtime change (or a restart) cannot rewind ``verify_msg_id`` and replay captured agent datagrams (ANT-2026-FBJ3LA25)

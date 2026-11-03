@@ -30,8 +30,9 @@ Tuning (internal_options.conf)
   (each worker serves one long-lived client connection; size this for your forwarder count)
 - remoted.syslog_tcp_max_tasks — max queued + active syslog TCP tasks per pool (backpressure)
 - remoted.syslog_tcp_read_timeout — socket read timeout (seconds) per syslog TCP client;
-  unblocks idle workers and allows shutdown drain when clients stay connected. Values above
-  the shutdown pool timeout (60 s) are clamped so workers can be joined during SIGTERM drain.
+  unblocks idle workers and allows shutdown drain when clients stay connected. Also the
+  quiet time before TCP keepalive probes start. Values above the shutdown pool timeout
+  (60 s) are clamped so workers can be joined during SIGTERM drain.
 
 How secured works
 -----------------
@@ -55,9 +56,16 @@ How syslog TCP works
 --------------------
 
 A bounded thread pool handles each accepted TCP client connection. Each worker holds
-one client socket until disconnect. When the pool is at capacity (worker_pool or
-max_tasks), new connections are closed (backpressure). Tune syslog_tcp_worker_pool to
-match the number of concurrent persistent forwarders you expect.
+one client socket until disconnect. When all workers are busy, new connections are
+queued up to max_tasks and closed beyond it (backpressure). Tune syslog_tcp_worker_pool
+to match the number of concurrent persistent forwarders you expect.
+
+A quiet client keeps its worker as long as the pool has room. Once clients are queued,
+a worker whose read times out may close its idle connection (at most one close per
+queued client) and take the next waiter. When the pool is at max_tasks with nothing
+queued, new accepts are refused and quiet clients stay until they send, close, or fail
+keepalive. TCP keepalive probes (3, 10 s apart) start after one read timeout without
+data, so a peer that vanished without FIN/RST is dropped even when the pool has room.
 
 How syslog UDP works
 --------------------
@@ -80,8 +88,9 @@ On SIGTERM/SIGHUP, remoted closes all listener sockets. Listener threads (detach
 when recv/accept fails on the closed FDs; they are not joined.
 
 Syslog TCP workers use a per-client read timeout (remoted.syslog_tcp_read_timeout) so
-blocked recv() calls return periodically. Workers exit when remoted_shutting_down is set
-or when the read times out on an idle connection.
+blocked recv() calls return periodically. Workers exit when remoted_shutting_down is set,
+when the peer closes or stops answering keepalive probes, or when the read times out on
+an idle connection while the pool is exhausted.
 
 remoted_wait_for_shutdown() first stores the agent receive counters (queue/rids) under the
 key write lock, so a restart does not rewind the replay check to the last periodic flush.

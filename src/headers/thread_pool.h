@@ -30,6 +30,9 @@ typedef struct thread_pool {
     int workers_started;
     int active_workers;
     int pending;
+    /* Idle workers that claimed a drop for a queued task; decremented when
+     * that waiter is dequeued. Caps concurrent idle closes to pending. */
+    int idle_drop_claims;
     int shutdown;
     thread_pool_drop_fn drop_fn;
     pthread_mutex_t mu;
@@ -60,6 +63,11 @@ int thread_pool_submit(thread_pool *pool, thread_pool_fn fn, void *arg);
 int thread_pool_try_submit(thread_pool *pool, thread_pool_fn fn, void *arg);
 
 int thread_pool_active(thread_pool *pool);
+
+/* Returns 1 if an idle worker should close to free a slot for a queued task.
+ * At most one claim per current waiter; each dequeue retires one claim so
+ * remaining waiters can still free a quiet connection. */
+int thread_pool_should_drop_idle(thread_pool *pool);
 
 /* Wait until no pending or active tasks. Returns 0 when idle, 1 on timeout, -1 on error. */
 int thread_pool_wait_idle(thread_pool *pool, int timeout_sec);
