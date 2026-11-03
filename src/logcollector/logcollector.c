@@ -500,26 +500,19 @@ void LogCollectorStart()
             if (logff[i].fp) {
 #ifndef WIN32
 
-		/* To help detect a file rollover, temporarily open the file a second time.
- 		 * Previously the fstat would work on "cached" file data, but this should
- 		 * ensure it's fresh when hardlinks are used (like alerts.log).
- 		 */
-		FILE *tf;
-		tf = fopen(logff[i].file, "r");
-		if(tf == NULL) {
-			merror(FOPEN_ERROR, ARGV0, logff[i].file, errno, strerror(errno));
-		}
-
-                else if ((fstat(fileno(tf), &tmp_stat)) == -1) {
-                    fclose(logff[i].fp);
-                    fclose(tf);
-                    logff[i].fp = NULL;
-
+                /* To help detect a file rollover, stat the name rather than
+                 * the open descriptor: the latter would only report the old
+                 * file when hardlinks are used (like alerts.log). The name
+                 * must not be opened for this: a FIFO put in place of the
+                 * log would block the whole daemon until it gets a writer.
+                 */
+                if (stat(logff[i].file, &tmp_stat) == -1) {
                     merror(FSTAT_ERROR, ARGV0, logff[i].file, errno, strerror(errno));
+                    /* tmp_stat is shared across entries; do not run inode/size
+                     * checks or the size update below with a stale result.
+                     */
+                    continue;
                 }
-		else if(fclose(tf) == EOF) {
-			merror("Closing the temporary file %s did not work (%d): %s", logff[i].file, errno, strerror(errno));
-		}
 #else
                 HANDLE h1;
 
@@ -704,15 +697,45 @@ int handle_file(int i, int do_fseek, int do_log)
 {
     int fd;
     struct stat stat_fd;
+#ifndef WIN32
+    /* Only a syslog-pipe entry may wait for the writer of a FIFO. */
+    int is_pipe = (strcmp(logff[i].logformat, "syslog-pipe") == 0);
+#endif
 
     /* We must be able to open the file, fseek and get the
      * time of change from it.
      */
 #ifndef WIN32
-    logff[i].fp = fopen(logff[i].file, "r");
+    /* Non-pipe formats use fopen_regular() (O_NONBLOCK|O_NOCTTY, then
+     * S_ISREG) so a FIFO or device planted in place of a log cannot stall
+     * the daemon in open() or steal a controlling tty. syslog-pipe keeps
+     * a blocking fopen() by design.
+     */
+    if (is_pipe) {
+        /* Blocking open (pipe may wait for a writer), but still O_NOCTTY
+         * so a mis-pointed TTY cannot become the controlling terminal.
+         */
+        int oflags = O_RDONLY;
+#ifdef O_NOCTTY
+        oflags |= O_NOCTTY;
+#endif
+        fd = open(logff[i].file, oflags);
+        logff[i].fp = NULL;
+        if (fd >= 0 && (logff[i].fp = fdopen(fd, "r")) == NULL) {
+            close(fd);
+        }
+    } else {
+        logff[i].fp = fopen_regular(logff[i].file);
+    }
     if (!logff[i].fp) {
         if (do_log == 1) {
-            merror(FOPEN_ERROR, ARGV0, logff[i].file, errno, strerror(errno));
+            if (!is_pipe && errno == EINVAL) {
+                merror("%s: ERROR: Not a regular file, ignoring it: '%s' "
+                       "(a FIFO needs log_format 'syslog-pipe').",
+                       ARGV0, logff[i].file);
+            } else {
+                merror(FOPEN_ERROR, ARGV0, logff[i].file, errno, strerror(errno));
+            }
         }
         return (-1);
     }

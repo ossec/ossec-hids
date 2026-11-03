@@ -94,7 +94,8 @@ REGRESSION_BINS = \
 	issue_rxuwsl9z_csyslog_escape \
 	issue_sint56ko_dbd_alertid_sqli \
 	issue_snxgrhga_execd_null_deref \
-	issue_2lgojr12_execd_user_dup
+	issue_2lgojr12_execd_user_dup \
+	issue_u9risggm_fopen_regular
 
 .PHONY: all check clean
 
@@ -504,6 +505,12 @@ issue_2lgojr12_execd_user_dup: \
 	$(CC) $(CFLAGS) -I./os_execd -o $@ \
 		tests/regressions/issue_2lgojr12_execd_user_dup.c \
 		os_execd/timeout_dup-2lg.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-U9RISGGM: fopen_regular must refuse FIFO/device without hanging.
+issue_u9risggm_fopen_regular: tests/regressions/issue_u9risggm_fopen_regular.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_u9risggm_fopen_regular.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 

@@ -63,6 +63,12 @@ int mkstemp_ex(char *tmp_path) __attribute__((nonnull));
 #ifndef WIN32
 /* Open a log file for appending, refusing links and special files */
 int open_log_append(const char *path) __attribute__((nonnull));
+
+/* Open for reading; only a regular file. Uses O_NONBLOCK|O_NOCTTY so a
+ * FIFO or device cannot hang the caller; clears O_NONBLOCK on success.
+ * Returns NULL with errno EINVAL when the path is not a regular file.
+ */
+FILE *fopen_regular(const char *path) __attribute__((nonnull));
 #endif
 
 /* Checks for Windows Vista */
