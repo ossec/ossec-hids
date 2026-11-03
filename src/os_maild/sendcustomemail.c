@@ -51,6 +51,7 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
 {
     FILE *sendmail = NULL;
     int socket = -1, i = 0;
+    int line_start;
     char *msg;
     char snd_msg[128];
     char buffer[2049];
@@ -331,12 +332,26 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         }
         return(0);
     }
+    /* No line of the report may be taken for the end of the message: SMTP
+     * wants a leading dot doubled (RFC 5321 4.5.2); a sendmail-like program
+     * stops at a line holding only a dot unless run with -i. fgets() may
+     * split a long line, so carry the line start across chunks. */
+    line_start = 1;
     while (fgets(buffer, 2048, fp) != NULL) {
         if (sendmail) {
-            fprintf(sendmail, "%s", buffer);
+            if (line_start && buffer[0] == '.' &&
+                (buffer[1] == '\r' || buffer[1] == '\n' || buffer[1] == '\0')) {
+                fprintf(sendmail, ". %s", buffer + 1);
+            } else {
+                fprintf(sendmail, "%s", buffer);
+            }
         } else {
+            if (line_start && buffer[0] == '.') {
+                OS_SendTCP(socket, ".");
+            }
             OS_SendTCP(socket, buffer);
         }
+        line_start = (strchr(buffer, '\n') != NULL);
     }
     fclose(fp);
 
