@@ -124,8 +124,11 @@ int OS_IsAllowedDynamicID(keystore *keys, const char *id, const char *srcip) __a
 typedef int (*os_secmsg_reject_log_fn)(void);
 void OS_SetSecMSGRejectLogFn(os_secmsg_reject_log_fn fn);
 
-/* Decrypt and decompress a remote message */
-char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *ip) __attribute((nonnull));
+/* Decrypt and decompress a remote message.
+ * buffer_max is the room left in buffer from the given pointer on, including
+ * the terminator: the message is inflated back into it.
+ */
+char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *ip) __attribute((nonnull));
 
 /* Create an OSSEC message (encrypt and compress) */
 size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, char *msg_encrypted, unsigned int id) __attribute((nonnull));

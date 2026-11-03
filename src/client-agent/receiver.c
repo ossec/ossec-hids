@@ -40,7 +40,7 @@ void *receive_msg()
         buffer[recv_b] = '\0';
 
         size_t final_size = 0;
-        tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
+        tmp_msg = ReadSecMSG(&keys, buffer, sizeof(buffer), cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
         if (tmp_msg == NULL) {
             merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
             /* Drain a queued burst, then one delay — not one second per

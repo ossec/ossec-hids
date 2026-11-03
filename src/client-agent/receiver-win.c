@@ -73,7 +73,7 @@ void *receiver_thread(__attribute__((unused)) void *none)
         rejected = 0;
         while ((recv_b = recv(agt->sock, buffer, OS_SIZE_1024, 0)) > 0) {
             /* Id of zero -- only one key allowed */
-            tmp_msg = ReadSecMSG(&keys, buffer, cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
+            tmp_msg = ReadSecMSG(&keys, buffer, sizeof(buffer), cleartext, 0, recv_b - 1, &final_size, agt->rip[agt->rip_id]);
             if (tmp_msg == NULL) {
                 merror(MSG_ERROR, ARGV0, agt->rip[agt->rip_id]);
                 /* Drain a queued burst, then one delay — not one second per

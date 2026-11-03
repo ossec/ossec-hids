@@ -407,28 +407,38 @@ static char *CheckSum(char *msg, size_t length)
     return (msg);
 }
 
-char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *srcip)
+char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *srcip)
 {
     unsigned int msg_global = 0;
     unsigned int msg_local = 0;
     char *f_msg;
 
-
-    if(strncmp(buffer, "#AES", 4)==0){
-        buffer+=4;
-        #ifndef CLIENT
-            keys->keyentries[id]->crypto_method = W_METH_AES;
-        #endif
+    /* The message is inflated back into buffer, so the room left in it
+     * (buffer_max) shrinks with every prefix byte stepped over here.
+     */
+    if (strncmp(buffer, "#AES", 4) == 0) {
+        if (buffer_max < 4) {
+            SECMSG_MERROR(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
+            return (NULL);
+        }
+        buffer += 4;
+        buffer_max -= 4;
+#ifndef CLIENT
+        keys->keyentries[id]->crypto_method = W_METH_AES;
+#endif
+    } else {
+#ifndef CLIENT
+        keys->keyentries[id]->crypto_method = W_METH_BLOWFISH;
+#endif
     }
-    else{
-        #ifndef CLIENT
-            keys->keyentries[id]->crypto_method = W_METH_BLOWFISH;
-        #endif
-    }
-
 
     if (*buffer == ':') {
+        if (buffer_max < 1) {
+            SECMSG_MERROR(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
+            return (NULL);
+        }
         buffer++;
+        buffer_max--;
     } else {
         SECMSG_MERROR(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
         return (NULL);
@@ -485,8 +495,12 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
             buffer_size--;
         }
 
-        /* Uncompress */
-        if (*final_size = os_zlib_uncompress(cleartext, buffer, buffer_size, OS_MAXSTR), !*final_size) {
+        /* Uncompress into what is left of buffer, keeping one byte for
+         * the terminator os_zlib_uncompress() appends (ANT-2026-739QMECR).
+         */
+        if (buffer_max < 1 ||
+            (*final_size = os_zlib_uncompress(cleartext, buffer, buffer_size,
+                                              buffer_max - 1), !*final_size)) {
             SECMSG_MERROR(UNCOMPRESS_ERR, __local_name);
             return (NULL);
         }
