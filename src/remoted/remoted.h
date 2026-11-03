@@ -26,6 +26,8 @@ typedef struct remoted_listener {
     socklen_t peer_size;
     pthread_mutex_t mq_mutex;
     thread_pool *syslog_tcp_pool;
+    time_t reject_last;            /* start of current reject-log window */
+    unsigned int reject_count;     /* rejections seen in that window */
 } remoted_listener;
 
 /** Function prototypes **/
@@ -87,6 +89,12 @@ int remoted_send_mq_msg(remoted_listener *listener, const char *msg,
 int remoted_send_syslog_msg(remoted_listener *listener, const char *msg,
                             const char *srcip);
 
+/* Rate limit logging of input rejected before authentication.
+ * Returns 1 if the caller should log the rejection, 0 if it was only counted.
+ * Uses remoted_self: call from the listener thread only.
+ */
+int remoted_log_reject(void);
+
 /** Global variables **/
 
 extern keystore keys;
@@ -100,6 +108,8 @@ extern volatile sig_atomic_t remoted_shutting_down;
 extern volatile sig_atomic_t remoted_force_exit;
 
 #define REMOTED_SHUTDOWN_POOL_TIMEOUT 60
+#define REMOTED_REJECT_LOG_INTERVAL 60
+#define REMOTED_REJECT_LOG_BURST 20
 
 void remoted_request_shutdown(int sig);
 void remoted_close_listeners(void);

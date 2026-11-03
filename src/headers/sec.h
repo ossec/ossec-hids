@@ -119,6 +119,11 @@ int OS_IsAllowedDynamicID(keystore *keys, const char *id, const char *srcip) __a
 
 /** Function prototypes -- send/recv messages **/
 
+/* Optional gate for ReadSecMSG failure logging (e.g. remoted_log_reject).
+ * NULL means always log (agent / tools). */
+typedef int (*os_secmsg_reject_log_fn)(void);
+void OS_SetSecMSGRejectLogFn(os_secmsg_reject_log_fn fn);
+
 /* Decrypt and decompress a remote message */
 char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *ip) __attribute((nonnull));
 

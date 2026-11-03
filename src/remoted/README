@@ -64,6 +64,15 @@ How syslog UDP works
 
 The listener thread receives datagrams and forwards them to analysisd (no worker pool).
 
+Rejection logging
+-----------------
+
+Input refused before authentication (source address not allowed, unknown agent ID, bad
+header, or decrypt/format failures from ReadSecMSG) can be sent by anyone who reaches the
+port. Each listener logs up to REMOTED_REJECT_LOG_BURST such rejections per
+REMOTED_REJECT_LOG_INTERVAL seconds, then reports how many it skipped
+(remoted_log_reject()). Cipher-policy rejections keep their own one-line-per-minute limit.
+
 Shutdown
 --------
 
