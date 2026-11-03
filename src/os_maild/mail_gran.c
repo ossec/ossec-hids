@@ -15,7 +15,7 @@
  * DONOTGROUP placeholders in mail->gran_set belong to a parked s_msg alert
  * (do_not_group), not to the batch just committed. Promote those to
  * FULL_FORMAT so the later if (s_msg) path can mail the held alert to its
- * granular recipient; clear every other entry. Matches pre-5220f105 / Wazuh.
+ * granular recipient; clear every other entry. 
  */
 void Mail_CommitGranClear(MailConfig *mail, int holding_s_msg)
 {

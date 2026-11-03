@@ -412,6 +412,11 @@ char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartex
     unsigned int msg_global = 0;
     unsigned int msg_local = 0;
     char *f_msg;
+    /* Cipher of this datagram. Only stored in the key entry once the
+     * message has been authenticated, so a forged frame cannot change
+     * the cipher CreateSecMSG() uses toward the agent (ANT-2026-2NLM3GPL).
+     */
+    crypt_method crypto_method = keys->keyentries[id]->crypto_method;
 
     /* The message is inflated back into buffer, so the room left in it
      * (buffer_max) shrinks with every prefix byte stepped over here.
@@ -424,11 +429,11 @@ char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartex
         buffer += 4;
         buffer_max -= 4;
 #ifndef CLIENT
-        keys->keyentries[id]->crypto_method = W_METH_AES;
+        crypto_method = W_METH_AES;
 #endif
     } else {
 #ifndef CLIENT
-        keys->keyentries[id]->crypto_method = W_METH_BLOWFISH;
+        crypto_method = W_METH_BLOWFISH;
 #endif
     }
 
@@ -459,7 +464,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartex
     cleartext[0] = '\0';
 
     /* Decrypt message */
-    switch(keys->keyentries[id]->crypto_method){
+    switch (crypto_method) {
         case W_METH_BLOWFISH:
             if (!OS_BF_Str(buffer, cleartext, keys->keyentries[id]->key,
                         buffer_size, OS_DECRYPT)) {
@@ -535,6 +540,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartex
             /* Update current counts */
             keys->keyentries[id]->global = msg_global;
             keys->keyentries[id]->local = msg_local;
+            keys->keyentries[id]->crypto_method = crypto_method;
             if (rcv_count >= _s_recv_flush) {
                 StoreCounter(keys, id, msg_global, msg_local);
                 rcv_count = 0;
@@ -553,6 +559,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartex
             /* Update current counts */
             keys->keyentries[id]->global = msg_global;
             keys->keyentries[id]->local = msg_local;
+            keys->keyentries[id]->crypto_method = crypto_method;
 
             if (rcv_count >= _s_recv_flush) {
                 StoreCounter(keys, id, msg_global, msg_local);
@@ -612,6 +619,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartex
             f_msg = strchr(f_msg, ':');
             if (f_msg) {
                 f_msg++;
+                keys->keyentries[id]->crypto_method = crypto_method;
                 *final_size = buffer_size - (f_msg - cleartext);
                 return (f_msg);
             } else {
@@ -631,6 +639,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, size_t buffer_max, char *cleartex
             f_msg = strchr(f_msg, ':');
             if (f_msg) {
                 f_msg++;
+                keys->keyentries[id]->crypto_method = crypto_method;
                 *final_size = buffer_size - (f_msg - cleartext);
                 return (f_msg);
             } else {
