@@ -12,8 +12,12 @@
 #include "remoted.h"
 
 #include <errno.h>
+#include <netinet/tcp.h>
 
 #define SYSLOG_TCP_READ_TIMEOUT_DEFAULT 30
+/* Keepalive probes sent to a client that stayed quiet for one read timeout */
+#define SYSLOG_TCP_KEEPALIVE_INTERVAL 10
+#define SYSLOG_TCP_KEEPALIVE_PROBES 3
 
 typedef struct syslog_client_arg {
     remoted_listener *listener;
@@ -30,15 +34,49 @@ static void syslog_set_client_timeout(int sock, int sec)
     (void)setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
+/* Probe a quiet client so one that vanished without FIN/RST releases its
+ * worker: recv() then fails with ECONNRESET or ETIMEDOUT. */
+static void syslog_set_client_keepalive(int sock, int idle_sec)
+{
+    int on = 1;
+
+    (void)setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
+    {
+        int interval = SYSLOG_TCP_KEEPALIVE_INTERVAL;
+        int probes = SYSLOG_TCP_KEEPALIVE_PROBES;
+
+#if defined(TCP_KEEPIDLE)
+        (void)setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &idle_sec, sizeof(idle_sec));
+#elif defined(__APPLE__) && defined(TCP_KEEPALIVE)
+        /* macOS: seconds idle before the first keepalive probe. Do not use
+         * TCP_KEEPALIVE on other platforms (e.g. older Solaris: milliseconds). */
+        (void)setsockopt(sock, IPPROTO_TCP, TCP_KEEPALIVE, &idle_sec, sizeof(idle_sec));
+#else
+        (void)idle_sec;
+#endif
+#if defined(TCP_KEEPINTVL)
+        (void)setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
+#else
+        (void)interval;
+#endif
+#if defined(TCP_KEEPCNT)
+        (void)setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &probes, sizeof(probes));
+#else
+        (void)probes;
+#endif
+    }
+}
+
+/* Returns the byte count, 0 when the peer closed the connection, or -1 with
+ * errno set (EAGAIN on read timeout). */
 static int syslog_recv_buffer(int sock, char *buffer, int sizet)
 {
     int retsize;
 
     if ((retsize = recv(sock, buffer, sizet - 1, 0)) > 0) {
         buffer[retsize] = '\0';
-        return (retsize);
     }
-    return (-1);
+    return (retsize);
 }
 
 /* Checks if an IP is not allowed */
@@ -105,13 +143,28 @@ static void *syslog_client_worker(void *arg)
             return NULL;
         }
 
-        if ((r_sz = syslog_recv_buffer(client_socket, buffer, OS_MAXSTR - 2)) < 0) {
+        if ((r_sz = syslog_recv_buffer(client_socket, buffer, OS_MAXSTR - 2)) <= 0) {
             if (remoted_shutting_down) {
                 close(client_socket);
                 return NULL;
             }
-            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ETIMEDOUT) {
-                continue;
+            /* Read timeout (ETIMEDOUT is not one: the keepalive probes went
+             * unanswered). A quiet client keeps its worker while nobody is
+             * waiting for one; claim at most one idle drop per queued client
+             * so a shared timeout wave cannot herd-close every forwarder. */
+            {
+                int drop = 0;
+
+                if (r_sz < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                    drop = thread_pool_should_drop_idle(listener->syslog_tcp_pool);
+                }
+                if (!syslog_tcp_should_close_on_recv(r_sz, errno, drop)) {
+                    continue;
+                }
+                if (drop) {
+                    merror("%s: WARN: Syslog TCP worker pool exhausted, closing idle connection from %s",
+                           ARGV0, srcip);
+                }
             }
             close(client_socket);
             return NULL;
@@ -259,6 +312,7 @@ void HandleSyslogTCP()
                 }
 
                 syslog_set_client_timeout(client_socket, tcp_read_timeout);
+                syslog_set_client_keepalive(client_socket, tcp_read_timeout);
 
                 os_calloc(1, sizeof(syslog_client_arg), client);
                 client->listener = remoted_self;

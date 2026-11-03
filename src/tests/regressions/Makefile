@@ -27,6 +27,7 @@ REGRESSION_BINS = \
 	issue_2065_sender_counter \
 	issue_fbj3la25_rids_counter_reload \
 	issue_ja2nxew1_reject_log \
+	issue_qy1shlvv_syslog_tcp_idle \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -158,6 +159,16 @@ issue_ja2nxew1_reject_log: tests/regressions/issue_ja2nxew1_reject_log.c \
 		tests/regressions/issue_ja2nxew1_reject_log.c remoted/reject_log.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+
+# ANT-2026-QY1SHLVV: syslog TCP workers must release idle/dead clients.
+issue_qy1shlvv_syslog_tcp_idle: tests/regressions/issue_qy1shlvv_syslog_tcp_idle.c \
+		remoted/syslog_tcp_idle.c shared.a
+	$(CC) $(CFLAGS) -I./remoted -o $@ \
+		tests/regressions/issue_qy1shlvv_syslog_tcp_idle.c remoted/syslog_tcp_idle.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1611_local_ip_bind.c \

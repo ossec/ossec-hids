@@ -45,6 +45,11 @@ static void *thread_pool_worker(void *arg)
             pool->tail = NULL;
         }
         pool->pending--;
+        /* A claim reserved one idle close for this waiter; retire it when
+         * the waiter is dequeued so remaining queued clients can claim. */
+        if (pool->idle_drop_claims > 0) {
+            pool->idle_drop_claims--;
+        }
         pool->active_workers++;
 
         os_mutex_unlock(&pool->mu);
@@ -73,6 +78,9 @@ static void thread_pool_flush_pending(thread_pool *pool)
         task = pool->head;
         pool->head = task->next;
         pool->pending--;
+        if (pool->idle_drop_claims > 0) {
+            pool->idle_drop_claims--;
+        }
         os_mutex_unlock(&pool->mu);
 
         if (pool->drop_fn && task->arg) {
@@ -84,6 +92,7 @@ static void thread_pool_flush_pending(thread_pool *pool)
     }
 
     pool->tail = NULL;
+    pool->idle_drop_claims = 0;
     os_mutex_unlock(&pool->mu);
 }
 
@@ -186,6 +195,24 @@ int thread_pool_active(thread_pool *pool)
     os_mutex_unlock(&pool->mu);
 
     return total;
+}
+
+int thread_pool_should_drop_idle(thread_pool *pool)
+{
+    int drop = 0;
+
+    if (!pool) {
+        return 0;
+    }
+
+    os_mutex_lock(&pool->mu);
+    if (pool->pending > pool->idle_drop_claims) {
+        pool->idle_drop_claims++;
+        drop = 1;
+    }
+    os_mutex_unlock(&pool->mu);
+
+    return drop;
 }
 
 int thread_pool_submit(thread_pool *pool, thread_pool_fn fn, void *arg)

@@ -89,6 +89,13 @@ int remoted_send_mq_msg(remoted_listener *listener, const char *msg,
 int remoted_send_syslog_msg(remoted_listener *listener, const char *msg,
                             const char *srcip);
 
+/* Syslog TCP idle/dead-client policy (ANT-2026-QY1SHLVV).
+ * After recv returned r_sz (<= 0) with errno err, return 1 to close the
+ * client socket or 0 to keep waiting. pool_should_drop is 1 when
+ * thread_pool_should_drop_idle() claimed a slot for a queued client.
+ */
+int syslog_tcp_should_close_on_recv(int r_sz, int err, int pool_should_drop);
+
 /* Rate limit logging of input rejected before authentication.
  * Returns 1 if the caller should log the rejection, 0 if it was only counted.
  * Uses remoted_self: call from the listener thread only.
