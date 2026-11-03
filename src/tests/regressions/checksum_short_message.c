@@ -83,7 +83,7 @@ static int try_message(keystore *keys, const char *key, unsigned int plain_len, 
 
     memset(cleartext, 0, sizeof(cleartext));
     last_error = NULL;
-    out = ReadSecMSG(keys, msg, cleartext, 0, plain_len, &final_size, "127.0.0.1");
+    out = ReadSecMSG(keys, msg, sizeof(msg), cleartext, 0, plain_len, &final_size, "127.0.0.1");
     /* 1406 is the checksum mismatch. A decrypt or format failure uses another code. */
     if (out != NULL || last_error == NULL || strstr(last_error, "(1406)") == NULL) {
         fprintf(stderr, "FAIL: length %u did not fail the checksum (error: %s)\n",

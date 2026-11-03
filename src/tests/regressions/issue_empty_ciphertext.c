@@ -92,8 +92,8 @@ static int expect_encsize(keystore *keys, unsigned int buffer_size,
     cleartext[sizeof(cleartext) - 1] = '\0';
     last_error = NULL;
 
-    out = ReadSecMSG(keys, msg, cleartext, 0, buffer_size, &final_size,
-                     "127.0.0.1");
+    out = ReadSecMSG(keys, msg, sizeof(msg), cleartext, 0, buffer_size,
+                     &final_size, "127.0.0.1");
     if (out != NULL || last_error == NULL ||
             strstr(last_error, "(1405)") == NULL) {
         fprintf(stderr,

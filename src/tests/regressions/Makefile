@@ -100,7 +100,8 @@ REGRESSION_BINS = \
 	issue_u9risggm_fopen_regular \
 	issue_x2iu8bsu_maild_donotgroup \
 	issue_czg2brko_maild_gran_split \
-	issue_rxknzj1n_smtp_dot_escape
+	issue_rxknzj1n_smtp_dot_escape \
+	issue_739qmecr_readsecmsg_uncompress
 
 .PHONY: all check clean
 
@@ -670,6 +671,16 @@ issue_empty_ciphertext: tests/regressions/issue_empty_ciphertext.c os_crypto/sha
 		os_crypto/blowfish/bf_skey-empty.o \
 		os_crypto/md5/md5-empty.o \
 		os_crypto/md5/md5_op-empty.o \
+		-lpthread
+
+# ANT-2026-739QMECR: ReadSecMSG uncompress limit must use remaining buffer room.
+# Stubs BF/AES/zlib in the test; only msgs.o is needed from crypto.
+issue_739qmecr_readsecmsg_uncompress: \
+		tests/regressions/issue_739qmecr_readsecmsg_uncompress.c \
+		os_crypto/shared/msgs.c
+	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-739q.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_739qmecr_readsecmsg_uncompress.c \
+		os_crypto/shared/msgs-739q.o \
 		-lpthread
 
 win_network_path: tests/regressions/win_network_path.c shared/win_path.c

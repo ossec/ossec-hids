@@ -275,8 +275,8 @@ void HandleSecure()
 
                 /* Decrypt the message */
                 size_t final_size = 0;
-                tmp_msg = ReadSecMSG(&keys, tmp_msg, cleartext_msg,
-                                     agentid, recv_b - 1, &final_size, srcip);
+                tmp_msg = ReadSecMSG(&keys, tmp_msg, sizeof(buffer) - (tmp_msg - buffer),
+                                     cleartext_msg, agentid, recv_b - 1, &final_size, srcip);
                 if (tmp_msg == NULL) {
                     /* If duplicated, a warning was already generated */
                     key_unlock();
