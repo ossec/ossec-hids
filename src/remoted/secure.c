@@ -15,8 +15,6 @@
 /* Handle secure connections */
 void HandleSecure()
 {
-    remoted_secure_listener = remoted_self;
-
     int agentid;
     char buffer[OS_MAXSTR + 1];
     char cleartext_msg[OS_MAXSTR + 1];
@@ -35,6 +33,11 @@ void HandleSecure()
 
     /* Initialize key mutex */
     keyupdate_init();
+
+    /* Published after the key lock exists: the shutdown path takes it
+     * to store the receive counters when this listener is set.
+     */
+    remoted_secure_listener = remoted_self;
 
     /* Initialize manager */
     manager_init(0);
@@ -59,13 +62,18 @@ void HandleSecure()
 
     verbose(AG_AX_AGENTS, ARGV0, MAX_AGENTS);
 
-    /* Read authentication keys */
+    /* Read authentication keys. Hold the key write lock across the load
+     * so shutdown cannot store unloaded 0:0 counters over a live rids file
+     * (ANT-2026-FBJ3LA25).
+     */
     verbose(ENC_READ, ARGV0);
 
+    key_lock_write();
     OS_ReadKeys(&keys);
 
     debug1("%s: DEBUG: OS_StartCounter.", ARGV0);
     OS_StartCounter(&keys);
+    key_unlock();
     debug1("%s: DEBUG: OS_StartCounter completed.", ARGV0);
 
     /* Set up peer size */

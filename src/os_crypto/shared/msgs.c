@@ -241,6 +241,25 @@ static void StoreCounter(const keystore *keys, int id, unsigned int global, unsi
     fflush(keys->keyentries[id]->fp);
 }
 
+/* Persist every agent's receive counter. ReadSecMSG only writes a rids
+ * file every recv_counter_flush accepted messages, so the in-memory
+ * counters must be stored before the keystore is freed (reload) or the
+ * daemon exits; otherwise OS_StartCounter reads back stale values and
+ * already accepted messages pass the replay check again.
+ * Caller must hold the key write lock in remoted.
+ */
+void OS_StoreAgentCounters(const keystore *keys)
+{
+    unsigned int i;
+
+    for (i = 0; i < keys->keysize; i++) {
+        if (keys->keyentries[i] && keys->keyentries[i]->fp) {
+            StoreCounter(keys, (int)i, keys->keyentries[i]->global,
+                         keys->keyentries[i]->local);
+        }
+    }
+}
+
 /* Reload the global and local count of events */
 static void ReloadCounter(keystore *keys, unsigned int id, const char * cid)
 {

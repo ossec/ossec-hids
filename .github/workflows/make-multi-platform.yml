@@ -63,6 +63,8 @@ jobs:
           ./src/getalert_empty_filename
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
+          make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload
+          ./src/issue_fbj3la25_rids_counter_reload
 
   build-windows-agent:
     name: Windows agent (cross-compile)

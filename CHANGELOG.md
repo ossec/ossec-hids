@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Persist each agent's receive counter to ``queue/rids`` before ``OS_FreeKeys`` (``client.keys`` reload) and on orderly ``ossec-remoted`` shutdown, so a keyless ``!id!`` after a keys mtime change (or a restart) cannot rewind ``verify_msg_id`` and replay captured agent datagrams (ANT-2026-FBJ3LA25)
 - @atomicturtle - Escape leading dots in ``ossec-maild`` / ``ossec-monitord`` mail bodies (RFC 5321 4.5.2 for native SMTP; ``. `` for sendmail-like pipes) so a lone ``.`` log line cannot end ``DATA`` early, drop later alerts in the batch, or turn them into SMTP commands (ANT-2026-RXKNZJ1N; ``USE_CURL=yes`` already safe)
 - @atomicturtle - Keep granular ``email_alerts`` matches per alert in ``ossec-maild`` and send one grouped mail per recipient set (``OS_SplitMailBatch``), so an ``event_location``/group/level recipient no longer receives other agents' alerts that share the same grouping window. One batch can become several SMTP transactions, each counted against ``email_maxperhour`` (ANT-2026-CZG2BRKO)
 - @atomicturtle - Keep ``do_not_group`` granular recipients when ``ossec-maild`` commits a waiting batch: restore the pre-pthread clear loop so parked ``DONOTGROUP`` marks become ``FULL_FORMAT`` instead of being wiped (ANT-2026-X2IU8BSU)

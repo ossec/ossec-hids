@@ -26,6 +26,7 @@
 #   - issue_prev_matched_race          if_matched_sid list lock across match threads
 #   - issue_1274_auth_ipv6_key         auth IPv6 key handling
 #   - issue_2065_sender_counter        sender_counter isolated from agent 0 rids
+#   - issue_fbj3la25_rids_counter_reload  agent rids stored before OS_FreeKeys (reload)
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
 #   - issue_1668_agent_hostname        agent name vs device hostname split;
 #                                      accumulator scoped per agent (ZQN8MYKG)

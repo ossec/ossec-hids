@@ -80,6 +80,16 @@ int remoted_wait_for_shutdown(void)
     time_t start = 0;
     time_t now;
 
+    /* Listeners are closed: store the agent receive counters so a restart
+     * does not rewind them past messages already accepted. The key lock
+     * is only initialized once the secure listener is up.
+     */
+    if (remoted_secure_listener) {
+        key_lock_write();
+        OS_StoreAgentCounters(&keys);
+        key_unlock();
+    }
+
     while (1) {
         if (remoted_force_exit) {
             merror("%s: Forced shutdown; dropping queued syslog TCP work.", ARGV0);

@@ -283,6 +283,12 @@ void OS_FreeKeys(keystore *keys)
     OSHash *hashid;
     OSHash *haship;
 
+    /* Store the receive counters before the files are closed: a reload
+     * reads them back in OS_StartCounter, and the periodic flush in
+     * ReadSecMSG may be up to recv_counter_flush messages behind.
+     */
+    OS_StoreAgentCounters(keys);
+
     _keysize = keys->keysize;
     keys->keysize = 0;
     hashid = keys->keyhash_id;
