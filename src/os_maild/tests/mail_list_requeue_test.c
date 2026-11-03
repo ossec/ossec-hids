@@ -7,7 +7,7 @@
  * Foundation.
  */
 
-/* Standalone test for OS_RequeueMailBatch ordering (no SMTP). */
+/* Standalone test for OS_RequeueMailBatch ordering and OS_SplitMailBatch (no SMTP). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -148,7 +148,39 @@ int main(void)
         }
     }
 
-    (void)i;
+    /* Split: only alerts with the same granular e-mail recipients stay together. */
+    {
+        char *gran_to[] = { "web1-admin", "pager", NULL };
+        const char *no_block[] = { "db1_a", "db1_sms", "db1_b" };
+        const char *web1[] = { "web1_a", "web1_b" };
+        const int marks[][2] = { { 0, 0 }, { FULL_FORMAT, 0 }, { 0, SMS_FORMAT },
+                                 { FULL_FORMAT, 0 }, { 0, 0 } };
+        MailNode *group;
+        MailNode *cur;
+
+        batch = chain_nodes("db1_a", "web1_a", "db1_sms");
+        batch->next->next->next = fake_node("web1_b");
+        batch->next->next->next->next = fake_node("db1_b");
+        for (cur = batch, i = 0; cur; cur = cur->next, i++) {
+            cur->mail->gran_set = (int *)calloc(2, sizeof(int));
+            assert(cur->mail->gran_set != NULL);
+            memcpy(cur->mail->gran_set, marks[i], sizeof(marks[i]));
+        }
+
+        for (i = 0; i < 2; i++) {
+            group = OS_SplitMailBatch(&batch, gran_to);
+            assert(drain_order_matches(group, i ? web1 : no_block, i ? 2 : 3));
+            while (group) {
+                MailNode *n = group;
+
+                group = group->next;
+                FreeMail(n);
+            }
+        }
+        assert(batch == NULL);
+        assert(OS_SplitMailBatch(&batch, gran_to) == NULL);
+    }
+
     printf("mail_list_requeue_test: OK\n");
     return (0);
 }

@@ -60,7 +60,7 @@ static void mail_append(char *buf, size_t buf_size, size_t *space,
 /* Receive a Message on the Mail queue */
 MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
 {
-    int i = 0, sms_set = 0, donotgroup = 0;
+    int i = 0, sms_set = 0, gran_n = 0;
     size_t body_size = OS_MAXSTR - 3;
     size_t log_size;
     char logs[OS_MAXSTR + 1];
@@ -211,12 +211,20 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
 #endif
     debug2("OS_RecvMailQ: mail->body[%s]", mail->body);
 
+    mail->level = al_data->level;
+
     os_mutex_lock(&mail_send_mu);
     Mail->priority = 0;
 
-    /* Live gran_set is batch-scoped until the main loop commits a send. */
-    /* Check for granular email configs */
+    /* Check for granular email configs. What matched is kept with the alert:
+     * the alerts it is grouped with must not reach its recipients.
+     */
     if (Mail->gran_to) {
+        while (Mail->gran_to[gran_n] != NULL) {
+            gran_n++;
+        }
+        os_calloc(gran_n + 1, sizeof(int), mail->gran_set);
+
         i = 0;
         while (Mail->gran_to[i] != NULL) {
             int gr_set = 0;
@@ -278,7 +286,7 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
             /* If we got here, everything matched. Set this e-mail to be used. */
             if (gr_set) {
                 if (Mail->gran_format[i] == SMS_FORMAT) {
-                    Mail->gran_set[i] = SMS_FORMAT;
+                    mail->gran_set[i] = SMS_FORMAT;
 
                     /* Set the SMS flag */
                     sms_set = 1;
@@ -286,33 +294,13 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
                     /* Options */
                     if (Mail->gran_format[i] == FORWARD_NOW) {
                         Mail->priority = 1;
-                        Mail->gran_set[i] = FULL_FORMAT;
                     } else if (Mail->gran_format[i] == DONOTGROUP) {
                         Mail->priority = DONOTGROUP;
-                        Mail->gran_set[i] = DONOTGROUP;
-                        donotgroup = 1;
-                    } else {
-                        Mail->gran_set[i] = FULL_FORMAT;
                     }
+                    mail->gran_set[i] = FULL_FORMAT;
                 }
             }
             i++;
-        }
-    }
-
-    /* If DONOTGROUP is set, we can't assign the new subject */
-    if (!donotgroup) {
-        /* Get highest level for alert */
-        if (_g_subject[0] != '\0') {
-            if (_g_subject_level < al_data->level) {
-                strncpy(_g_subject, mail->subject, SUBJECT_SIZE);
-                _g_subject[SUBJECT_SIZE] = '\0';
-                _g_subject_level = al_data->level;
-            }
-        } else {
-            strncpy(_g_subject, mail->subject, SUBJECT_SIZE);
-            _g_subject[SUBJECT_SIZE] = '\0';
-            _g_subject_level = al_data->level;
         }
     }
 
@@ -326,6 +314,10 @@ MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *Mail)
         os_calloc(1, sizeof(MailMsg), msg_sms_tmp);
         os_calloc(BODY_SIZE, sizeof(char), msg_sms_tmp->body);
         os_calloc(SUBJECT_SIZE, sizeof(char), msg_sms_tmp->subject);
+
+        /* The SMS recipients are the SMS_FORMAT marks of this alert */
+        os_calloc(gran_n + 1, sizeof(int), msg_sms_tmp->gran_set);
+        memcpy(msg_sms_tmp->gran_set, mail->gran_set, gran_n * sizeof(int));
 
         snprintf(msg_sms_tmp->subject, SUBJECT_SIZE - 1, SMS_SUBJECT,
                  al_data->level,

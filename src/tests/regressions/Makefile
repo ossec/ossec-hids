@@ -96,7 +96,8 @@ REGRESSION_BINS = \
 	issue_snxgrhga_execd_null_deref \
 	issue_2lgojr12_execd_user_dup \
 	issue_u9risggm_fopen_regular \
-	issue_x2iu8bsu_maild_donotgroup
+	issue_x2iu8bsu_maild_donotgroup \
+	issue_czg2brko_maild_gran_split
 
 .PHONY: all check clean
 
@@ -522,6 +523,16 @@ issue_x2iu8bsu_maild_donotgroup: \
 	$(CC) $(CFLAGS) -I./os_maild -o $@ \
 		tests/regressions/issue_x2iu8bsu_maild_donotgroup.c \
 		os_maild/mail_gran.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-CZG2BRKO: split grouped mail by per-alert FULL_FORMAT recipient set.
+issue_czg2brko_maild_gran_split: \
+		tests/regressions/issue_czg2brko_maild_gran_split.c \
+		os_maild/mail_list.c shared.a
+	$(CC) $(CFLAGS) -I./os_maild -o $@ \
+		tests/regressions/issue_czg2brko_maild_gran_split.c \
+		os_maild/mail_list.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
