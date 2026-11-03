@@ -97,7 +97,8 @@ REGRESSION_BINS = \
 	issue_2lgojr12_execd_user_dup \
 	issue_u9risggm_fopen_regular \
 	issue_x2iu8bsu_maild_donotgroup \
-	issue_czg2brko_maild_gran_split
+	issue_czg2brko_maild_gran_split \
+	issue_rxknzj1n_smtp_dot_escape
 
 .PHONY: all check clean
 
@@ -535,6 +536,14 @@ issue_czg2brko_maild_gran_split: \
 		os_maild/mail_list.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-RXKNZJ1N: SMTP / sendmail body must escape leading dots (RFC 5321).
+issue_rxknzj1n_smtp_dot_escape: \
+		tests/regressions/issue_rxknzj1n_smtp_dot_escape.c \
+		os_maild/mail_utils.c
+	$(CC) $(CFLAGS) -I./os_maild -o $@ \
+		tests/regressions/issue_rxknzj1n_smtp_dot_escape.c \
+		os_maild/mail_utils.c
 
 # ANT-2026-SINT56KO: ossec-dbd must escape alertid (and tld/srcgeoip) for INSERT.
 issue_sint56ko_dbd_alertid_sqli: \

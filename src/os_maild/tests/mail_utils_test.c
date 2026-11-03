@@ -119,6 +119,27 @@ static void test_append_address_rejects_crlf(void)
     assert(buf[0] == '\0');
 }
 
+static void test_escape_body_dots(void)
+{
+    char dst[64];
+    char small[6];
+
+    /* SMTP: every leading dot is doubled, also after a bare LF */
+    mail_escape_body_dots(".\r\na.b\r\n.\r\n.x\n.", dst, sizeof(dst), 1);
+    assert(strcmp(dst, "..\r\na.b\r\n..\r\n..x\n..") == 0);
+
+    /* Pipe: only a line that is nothing but a dot changes */
+    mail_escape_body_dots(".\r\na.b\r\n.\n.x\r\n..\r\n.", dst, sizeof(dst), 0);
+    assert(strcmp(dst, ". \r\na.b\r\n. \n.x\r\n..\r\n. ") == 0);
+
+    /* A dot that does not fit together with its escape is dropped */
+    mail_escape_body_dots("ab\r\n.\r\n", small, sizeof(small), 1);
+    assert(strcmp(small, "ab\r\n") == 0);
+
+    mail_escape_body_dots(NULL, dst, sizeof(dst), 1);
+    assert(dst[0] == '\0');
+}
+
 int main(void)
 {
     test_cc_guard_sms_only_null_to();
@@ -129,6 +150,7 @@ int main(void)
     test_append_address_comma_list();
     test_append_address_bounds();
     test_append_address_rejects_crlf();
+    test_escape_body_dots();
 
     printf("mail_utils_test: OK\n");
     return (0);

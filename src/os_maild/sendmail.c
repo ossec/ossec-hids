@@ -124,6 +124,27 @@ static int mail_safe_envelope(const char *src, char *dst, size_t dst_size,
     return (-1);
 }
 
+/* Write a message body to the sendmail pipe or the SMTP socket. Alert text
+ * sits on lines of its own, so a bare "." line of it would end the message
+ * and (SMTP) have the rest of the batch read as commands: escape it first.
+ */
+static void mail_send_body(FILE *sendmail, int socket, const char *body)
+{
+    size_t size = 2 * strlen(body) + 1;
+    char *escaped;
+
+    os_malloc(size, escaped);
+    mail_escape_body_dots(body, escaped, size, sendmail == NULL);
+
+    if (sendmail) {
+        fprintf(sendmail, "%s", escaped);
+    } else {
+        OS_SendTCP(socket, escaped);
+    }
+
+    free(escaped);
+}
+
 static int sms_build_to_headers(MailConfig *mail, const int *gran_override,
                                 char *final_to, size_t final_to_cap,
                                 int *crlf_warned)
@@ -395,7 +416,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
     if (sendmail) {
         fprintf(sendmail, "%s", snd_msg);
         fprintf(sendmail, ENDHEADER);
-        fprintf(sendmail, "%s", sms_msg->body);
+        mail_send_body(sendmail, socket, sms_msg->body);
 
         if (pclose(sendmail) == -1) {
             merror(WAITPID_ERROR, ARGV0, errno, strerror(errno));
@@ -403,7 +424,7 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
     } else {
         OS_SendTCP(socket, snd_msg);
         OS_SendTCP(socket, ENDHEADER);
-        OS_SendTCP(socket, sms_msg->body);
+        mail_send_body(sendmail, socket, sms_msg->body);
 
         OS_SendTCP(socket, ENDDATA);
         msg = OS_RecvTCP(socket, OS_SIZE_1024);
@@ -828,11 +849,7 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
 
     /* Send multiple emails together if we have to */
     do {
-        if (sendmail) {
-            fprintf(sendmail, "%s", mailmsg->mail->body);
-        } else {
-            OS_SendTCP(socket, mailmsg->mail->body);
-        }
+        mail_send_body(sendmail, socket, mailmsg->mail->body);
         mailmsg = mailmsg->next;
     } while (mailmsg);
 

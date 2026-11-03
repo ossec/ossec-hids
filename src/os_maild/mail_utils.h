@@ -43,4 +43,13 @@ char *mail_subject_host_cut(char *location);
 /* Restore the byte cleared by mail_subject_host_cut() (the '-' of "->"). */
 void mail_subject_host_restore(char *cut);
 
+/* Copy a message body into dst (dst_size bytes; 2 * strlen(src) + 1 always
+ * fits) so that no line of it can be taken for the end of the message.
+ * smtp != 0: a line starting with '.' gets a second one, which the server
+ * strips again (RFC 5321 4.5.2 transparency).
+ * smtp == 0: pipe to a sendmail-like program, which stops reading at a line
+ * holding only a '.' (unless run with -i) and strips nothing; that line
+ * becomes ". ". */
+void mail_escape_body_dots(const char *src, char *dst, size_t dst_size, int smtp);
+
 #endif /* MAIL_UTILS_H */

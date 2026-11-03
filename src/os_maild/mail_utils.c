@@ -141,3 +141,35 @@ void mail_subject_host_restore(char *cut)
         *cut = '-';
     }
 }
+
+void mail_escape_body_dots(const char *src, char *dst, size_t dst_size, int smtp)
+{
+    size_t j = 0;
+    int line_start = 1;
+
+    if (!dst || dst_size == 0) {
+        return;
+    }
+
+    if (!src) {
+        dst[0] = '\0';
+        return;
+    }
+
+    while (src[0] && j < dst_size - 1) {
+        if (line_start && src[0] == '.' &&
+            (smtp || src[1] == '\r' || src[1] == '\n' || src[1] == '\0')) {
+            /* Never emit the dot without its escape */
+            if (j + 2 > dst_size - 1) {
+                break;
+            }
+            dst[j++] = '.';
+            dst[j++] = smtp ? '.' : ' ';
+        } else {
+            dst[j++] = src[0];
+        }
+        line_start = (src[0] == '\n');
+        src++;
+    }
+    dst[j] = '\0';
+}
