@@ -123,7 +123,9 @@ void HandleSyslog()
 
                 /* Check if IP is allowed here */
                 if (OS_IPNotAllowed(srcip)) {
-                    merror(DENYIP_WARN, ARGV0, srcip);
+                    if (remoted_log_reject()) {
+                        merror(DENYIP_WARN, ARGV0, srcip);
+                    }
                     continue;
                 }
 

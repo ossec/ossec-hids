@@ -26,6 +26,7 @@ REGRESSION_BINS = \
 	issue_1274_auth_ipv6_key \
 	issue_2065_sender_counter \
 	issue_fbj3la25_rids_counter_reload \
+	issue_ja2nxew1_reject_log \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -148,6 +149,14 @@ issue_fbj3la25_rids_counter_reload: tests/regressions/issue_fbj3la25_rids_counte
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_fbj3la25_rids_counter_reload.c \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+# ANT-2026-JA2NXEW1: remoted pre-auth rejection logging must burst-limit.
+issue_ja2nxew1_reject_log: tests/regressions/issue_ja2nxew1_reject_log.c \
+		remoted/reject_log.c shared.a
+	$(CC) $(CFLAGS) -I./remoted -o $@ \
+		tests/regressions/issue_ja2nxew1_reject_log.c remoted/reject_log.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1611_local_ip_bind.c \

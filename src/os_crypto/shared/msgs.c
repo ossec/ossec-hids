@@ -47,6 +47,29 @@ static unsigned int _s_recv_flush = 0;
 
 static int _s_verify_counter = 1;
 
+/* Remoted installs remoted_log_reject here so decrypt/format failures cannot
+ * flood ossec.log (ANT-2026-JA2NXEW1). NULL = always log (agent / tools). */
+static os_secmsg_reject_log_fn secmsg_reject_log_fn = NULL;
+
+void OS_SetSecMSGRejectLogFn(os_secmsg_reject_log_fn fn)
+{
+    secmsg_reject_log_fn = fn;
+}
+
+static int secmsg_may_log_reject(void)
+{
+    if (!secmsg_reject_log_fn) {
+        return (1);
+    }
+    return (secmsg_reject_log_fn());
+}
+
+#define SECMSG_MERROR(...) do { \
+        if (secmsg_may_log_reject()) { \
+            merror(__VA_ARGS__); \
+        } \
+    } while (0)
+
 
 /* Crypto methods function */
 int doEncryptByMethod(const char *input, char *output, const char *charkey,
@@ -407,7 +430,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
     if (*buffer == ':') {
         buffer++;
     } else {
-        merror(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
+        SECMSG_MERROR(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
         return (NULL);
     }
 
@@ -418,7 +441,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
      * datagram that ends right after the !id! prefix (recv_b - 1).
      */
     if (buffer_size == 0 || buffer_size > OS_MAXSTR) {
-        merror(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
+        SECMSG_MERROR(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
         return (NULL);
     }
 
@@ -430,7 +453,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
         case W_METH_BLOWFISH:
             if (!OS_BF_Str(buffer, cleartext, keys->keyentries[id]->key,
                         buffer_size, OS_DECRYPT)) {
-                merror(ENCKEY_ERROR, __local_name, keys->keyentries[id]->ip->ip);
+                SECMSG_MERROR(ENCKEY_ERROR, __local_name, keys->keyentries[id]->ip->ip);
                 return (NULL);
             }
             break;
@@ -439,12 +462,12 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
              * is buffer_size-4. Reject before that subtraction so 1..3 cannot
              * wrap to a multi-gigabyte length (OpenSSL was the only stop). */
             if (buffer_size <= 4) {
-                merror(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
+                SECMSG_MERROR(ENCSIZE_ERROR, __local_name, keys->keyentries[id]->id);
                 return (NULL);
             }
             if (!OS_AES_Str(buffer, cleartext, keys->keyentries[id]->key,
                 buffer_size-4, OS_DECRYPT)) {
-                merror(ENCKEY_ERROR, __local_name, keys->keyentries[id]->ip->ip);
+                SECMSG_MERROR(ENCKEY_ERROR, __local_name, keys->keyentries[id]->ip->ip);
                 return (NULL);
             }
             break;
@@ -464,14 +487,14 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
 
         /* Uncompress */
         if (*final_size = os_zlib_uncompress(cleartext, buffer, buffer_size, OS_MAXSTR), !*final_size) {
-            merror(UNCOMPRESS_ERR, __local_name);
+            SECMSG_MERROR(UNCOMPRESS_ERR, __local_name);
             return (NULL);
         }
 
         /* Check checksum */
 
         if (f_msg = CheckSum(buffer, *final_size), !f_msg) {
-            merror(ENCSUM_ERROR, __local_name, keys->keyentries[id]->ip->ip);
+            SECMSG_MERROR(ENCSUM_ERROR, __local_name, keys->keyentries[id]->ip->ip);
             return (NULL);
         }
 
@@ -484,7 +507,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
 
         /* Check for the right message format */
         if (*f_msg != ':') {
-            merror(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
+            SECMSG_MERROR(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
             return (NULL);
         }
         f_msg++;
@@ -527,15 +550,17 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
 
         /* Check if it is a duplicated message */
         if (msg_global == keys->keyentries[id]->global) {
-            /* Warn about duplicated messages */
-            debug1("Duplicate error:  global: %u, local: %u, "
-                "saved global: %u, saved local:%u",
-                msg_global,
-                msg_local,
-                keys->keyentries[id]->global,
-                keys->keyentries[id]->local);
-
-            merror(ENCTIME_ERROR, __local_name, keys->keyentries[id]->name);
+            /* One gate for debug1 + merror so debug logging cannot bypass
+             * the remoted reject limiter (ANT-2026-JA2NXEW1). */
+            if (secmsg_may_log_reject()) {
+                debug1("Duplicate error:  global: %u, local: %u, "
+                    "saved global: %u, saved local:%u",
+                    msg_global,
+                    msg_local,
+                    keys->keyentries[id]->global,
+                    keys->keyentries[id]->local);
+                merror(ENCTIME_ERROR, __local_name, keys->keyentries[id]->name);
+            }
             return (NULL);
         }
     }
@@ -552,7 +577,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
         cleartext++;
         f_msg = CheckSum(cleartext, buffer_size);
         if (f_msg == NULL) {
-            merror(ENCSUM_ERROR, __local_name, keys->keyentries[id]->ip->ip);
+            SECMSG_MERROR(ENCSUM_ERROR, __local_name, keys->keyentries[id]->ip->ip);
             return (NULL);
         }
 
@@ -576,7 +601,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
                 *final_size = buffer_size - (f_msg - cleartext);
                 return (f_msg);
             } else {
-                merror(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
+                SECMSG_MERROR(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
                 return (NULL);
             }
         }
@@ -595,7 +620,7 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
                 *final_size = buffer_size - (f_msg - cleartext);
                 return (f_msg);
             } else {
-                merror(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
+                SECMSG_MERROR(ENCFORMAT_ERROR, __local_name, keys->keyentries[id]->id);
                 return (NULL);
             }
         }
@@ -607,18 +632,19 @@ char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned
         }
 
         /* Warn about duplicated message */
-        debug1("Duplicate error:  msg_count: %u, time: %u, "
-               "saved count: %u, saved_time:%u",
-               msg_count,
-               msg_time,
-               keys->keyentries[id]->local,
-               keys->keyentries[id]->global);
-
-        merror(ENCTIME_ERROR, __local_name, keys->keyentries[id]->name);
+        if (secmsg_may_log_reject()) {
+            debug1("Duplicate error:  msg_count: %u, time: %u, "
+                   "saved count: %u, saved_time:%u",
+                   msg_count,
+                   msg_time,
+                   keys->keyentries[id]->local,
+                   keys->keyentries[id]->global);
+            merror(ENCTIME_ERROR, __local_name, keys->keyentries[id]->name);
+        }
         return (NULL);
     }
 
-    merror(ENCKEY_ERROR, __local_name, srcip);
+    SECMSG_MERROR(ENCKEY_ERROR, __local_name, srcip);
     return (NULL);
 }
 

@@ -151,6 +151,8 @@ int remoted_bind_listener(int position)
     listener->m_queue = -1;
     listener->peer_size = 0;
     listener->syslog_tcp_pool = NULL;
+    listener->reject_last = 0;
+    listener->reject_count = 0;
     os_mutex_init(&listener->mq_mutex, NULL);
 
     /* If syslog connection and allowips is not defined, exit */

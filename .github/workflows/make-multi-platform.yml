@@ -65,6 +65,8 @@ jobs:
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload
           ./src/issue_fbj3la25_rids_counter_reload
+          make -C src -f tests/regressions/Makefile issue_ja2nxew1_reject_log
+          ./src/issue_ja2nxew1_reject_log
 
   build-windows-agent:
     name: Windows agent (cross-compile)

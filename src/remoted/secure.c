@@ -39,6 +39,11 @@ void HandleSecure()
      */
     remoted_secure_listener = remoted_self;
 
+    /* Throttle ReadSecMSG decrypt/format failure lines with the same
+     * per-listener burst limiter used for DENYIP / bad-header rejects.
+     */
+    OS_SetSecMSGRejectLogFn(remoted_log_reject);
+
     /* Initialize manager */
     manager_init(0);
 
@@ -157,7 +162,9 @@ void HandleSecure()
 
                     if (*tmp_msg != '!') {
                         key_unlock();
-                        merror(ENCFORMAT_ERROR, __local_name, srcip);
+                        if (remoted_log_reject()) {
+                            merror(ENCFORMAT_ERROR, __local_name, srcip);
+                        }
                         continue;
                     }
 
@@ -173,11 +180,15 @@ void HandleSecure()
                             agentid = OS_IsAllowedDynamicID(&keys, buffer + 1, srcip);
                             if (agentid == -1) {
                                 key_unlock();
-                                merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
+                                if (remoted_log_reject()) {
+                                    merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
+                                }
                                 continue;
                             }
                         } else {
-                            merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
+                            if (remoted_log_reject()) {
+                                merror(ENC_IP_ERROR, ARGV0, buffer + 1, srcip);
+                            }
                             continue;
                         }
                     }
@@ -190,11 +201,15 @@ void HandleSecure()
                             agentid = OS_IsAllowedIP(&keys, srcip);
                             if (agentid == -1) {
                                 key_unlock();
-                                merror(DENYIP_WARN, ARGV0, srcip);
+                                if (remoted_log_reject()) {
+                                    merror(DENYIP_WARN, ARGV0, srcip);
+                                }
                                 continue;
                             }
                         } else {
-                            merror(DENYIP_WARN, ARGV0, srcip);
+                            if (remoted_log_reject()) {
+                                merror(DENYIP_WARN, ARGV0, srcip);
+                            }
                             continue;
                         }
                     }
