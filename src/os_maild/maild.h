@@ -86,6 +86,12 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
 /* MailConfig is read by worker threads after startup; treat as immutable unless
  * hot-reload is added (then snapshot smtp server and auth into worker args). */
 
+/* After committing a send batch: clear live gran_set, but promote any
+ * DONOTGROUP marks that belong to a parked s_msg alert to FULL_FORMAT.
+ * holding_s_msg is non-zero when such an alert is held.
+ */
+void Mail_CommitGranClear(MailConfig *mail, int holding_s_msg);
+
 /* Held while updating live gran_set / _g_subject and during send */
 extern pthread_mutex_t mail_send_mu;
 int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *idsname, char *fname, const struct tm *p);
