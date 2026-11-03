@@ -95,7 +95,8 @@ REGRESSION_BINS = \
 	issue_sint56ko_dbd_alertid_sqli \
 	issue_snxgrhga_execd_null_deref \
 	issue_2lgojr12_execd_user_dup \
-	issue_u9risggm_fopen_regular
+	issue_u9risggm_fopen_regular \
+	issue_x2iu8bsu_maild_donotgroup
 
 .PHONY: all check clean
 
@@ -511,6 +512,16 @@ issue_2lgojr12_execd_user_dup: \
 # ANT-2026-U9RISGGM: fopen_regular must refuse FIFO/device without hanging.
 issue_u9risggm_fopen_regular: tests/regressions/issue_u9risggm_fopen_regular.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_u9risggm_fopen_regular.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-X2IU8BSU: batch commit must promote held DONOTGROUP marks, not wipe them.
+issue_x2iu8bsu_maild_donotgroup: \
+		tests/regressions/issue_x2iu8bsu_maild_donotgroup.c \
+		os_maild/mail_gran.c shared.a
+	$(CC) $(CFLAGS) -I./os_maild -o $@ \
+		tests/regressions/issue_x2iu8bsu_maild_donotgroup.c \
+		os_maild/mail_gran.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 

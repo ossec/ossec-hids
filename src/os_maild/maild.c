@@ -835,17 +835,11 @@ static void OS_Run(MailConfig *mail)
 
             mail_spawn_fail_streak = 0;
 
-            /* Commit batch: clear grouped subject and live granular routing state. */
+            /* Commit batch: clear grouped subject and live granular routing. */
             os_mutex_lock(&mail_send_mu);
             _g_subject[0] = '\0';
             _g_subject_level = 0;
-            if (mail->gran_to && mail->gran_set) {
-                i = 0;
-                while (mail->gran_to[i] != NULL) {
-                    mail->gran_set[i] = 0;
-                    i++;
-                }
-            }
+            Mail_CommitGranClear(mail, s_msg != NULL);
             os_mutex_unlock(&mail_send_mu);
 
 snd_check_hour:
