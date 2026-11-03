@@ -102,7 +102,8 @@ REGRESSION_BINS = \
 	issue_x2iu8bsu_maild_donotgroup \
 	issue_czg2brko_maild_gran_split \
 	issue_rxknzj1n_smtp_dot_escape \
-	issue_739qmecr_readsecmsg_uncompress
+	issue_739qmecr_readsecmsg_uncompress \
+	issue_2nlm3gpl_crypto_method_auth
 
 .PHONY: all check clean
 
@@ -693,6 +694,18 @@ issue_739qmecr_readsecmsg_uncompress: \
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_739qmecr_readsecmsg_uncompress.c \
 		os_crypto/shared/msgs-739q.o \
 		-lpthread
+
+
+# ANT-2026-2NLM3GPL: ReadSecMSG must not store crypto_method until auth.
+# Stubs BF/AES/zlib in the test; only msgs.o is needed from crypto.
+issue_2nlm3gpl_crypto_method_auth: \
+		tests/regressions/issue_2nlm3gpl_crypto_method_auth.c \
+		os_crypto/shared/msgs.c
+	$(CC) $(CFLAGS) -c os_crypto/shared/msgs.c -o os_crypto/shared/msgs-2nlm.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_2nlm3gpl_crypto_method_auth.c \
+		os_crypto/shared/msgs-2nlm.o \
+		-lpthread
+
 
 win_network_path: tests/regressions/win_network_path.c shared/win_path.c
 	$(CC) $(CFLAGS) -o $@ tests/regressions/win_network_path.c shared/win_path.c

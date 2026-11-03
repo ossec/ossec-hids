@@ -71,6 +71,8 @@ jobs:
           ./src/issue_739qmecr_readsecmsg_uncompress
           make -C src -f tests/regressions/Makefile issue_qy1shlvv_syslog_tcp_idle
           ./src/issue_qy1shlvv_syslog_tcp_idle
+          make -C src -f tests/regressions/Makefile issue_2nlm3gpl_crypto_method_auth
+          ./src/issue_2nlm3gpl_crypto_method_auth
 
   build-windows-agent:
     name: Windows agent (cross-compile)
