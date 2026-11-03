@@ -57,6 +57,8 @@
 typedef struct _MailMsg {
     char *subject;
     char *body;
+    unsigned int level; /* Alert level (highest one gives the grouped subject) */
+    int *gran_set;      /* Granular blocks this alert matched, one entry per gran_to */
 } MailMsg;
 
 typedef struct _MailNode MailNode;
@@ -71,13 +73,15 @@ int MailConf(int test_config, const char *cfgfile, MailConfig *Mail) __attribute
 MailMsg *OS_RecvMailQ(file_queue *fileq, struct tm *p, MailConfig *mail)
     __attribute__((nonnull));
 
-/* Send SMS to granular recipients marked SMS_FORMAT (gran_override may be NULL). */
+/* Send SMS to granular recipients marked SMS_FORMAT in gran_set_override
+ * (sms_msg->gran_set; may be NULL). */
 int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
                const int *gran_set_override) __attribute__((nonnull(1, 2, 3)));
 
 /* Send an email from a detached batch (oldest first via MailNode->next).
- * gran_set_override may be NULL to use mail->gran_set.
- * group_subject/group_subject_level: snapshotted grouped subject (level 0 or empty = per-message).
+ * Every alert of the batch goes to every recipient marked FULL_FORMAT in
+ * gran_set_override, so pass one OS_SplitMailBatch() group and its gran_set.
+ * group_subject/group_subject_level: grouped subject (level 0 or empty = per-message).
  * Frees all batch nodes. */
 int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
                 const int *gran_set_override, const char *group_subject,
@@ -92,16 +96,12 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
  */
 void Mail_CommitGranClear(MailConfig *mail, int holding_s_msg);
 
-/* Held while updating live gran_set / _g_subject and during send */
+/* Held while updating mail->priority and while detaching/requeueing a batch */
 extern pthread_mutex_t mail_send_mu;
 int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, char *idsname, char *fname, const struct tm *p);
 
 /* Mail timeout used by the file-queue */
 extern unsigned int mail_timeout;
-
-/* Global var for highest level on mail subjects */
-extern unsigned int   _g_subject_level;
-extern char _g_subject[SUBJECT_SIZE + 2];
 
 #endif
 

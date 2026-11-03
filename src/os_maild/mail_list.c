@@ -206,6 +206,50 @@ void OS_RequeueMailBatch(MailNode *batch)
     }
 }
 
+/* SMS_FORMAT marks are left out: they do not add e-mail recipients */
+static int same_gran_recipients(const MailMsg *a, const MailMsg *b, char **gran_to)
+{
+    int i;
+
+    if (!gran_to || !a->gran_set || !b->gran_set) {
+        return (a->gran_set == b->gran_set);
+    }
+
+    for (i = 0; gran_to[i] != NULL; i++) {
+        if ((a->gran_set[i] == FULL_FORMAT) != (b->gran_set[i] == FULL_FORMAT)) {
+            return (0);
+        }
+    }
+
+    return (1);
+}
+
+MailNode *OS_SplitMailBatch(MailNode **batch, char **gran_to)
+{
+    MailNode *group = *batch;
+    MailNode *group_tail = group;
+    MailNode **rest = batch;
+    MailNode *n;
+
+    if (!group) {
+        return (NULL);
+    }
+
+    for (n = group->next; n; n = n->next) {
+        if (same_gran_recipients(group->mail, n->mail, gran_to)) {
+            group_tail->next = n;
+            group_tail = n;
+        } else {
+            *rest = n;
+            rest = &n->next;
+        }
+    }
+    group_tail->next = NULL;
+    *rest = NULL;
+
+    return (group);
+}
+
 void FreeMailMsg(MailMsg *ml)
 {
     if (ml == NULL) {
@@ -220,6 +264,7 @@ void FreeMailMsg(MailMsg *ml)
         free(ml->body);
     }
 
+    free(ml->gran_set);
     free(ml);
 }
 
@@ -237,6 +282,7 @@ void FreeMail(MailNode *ml)
         free(ml->mail->body);
     }
 
+    free(ml->mail->gran_set);
     free(ml->mail);
     free(ml);
 }

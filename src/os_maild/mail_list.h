@@ -35,6 +35,10 @@ MailNode *OS_DrainMailListUnlocked(void);
 /* Re-insert a detached batch (oldest first via ->next). mail_list_mu must be held. */
 void OS_RequeueMailBatch(MailNode *batch);
 
+/* Detach from *batch (oldest first via ->next) its first alert and all the others
+ * that matched the same granular e-mail recipients. The rest stays in *batch. */
+MailNode *OS_SplitMailBatch(MailNode **batch, char **gran_to) __attribute__((nonnull(1)));
+
 void OS_MailListLock(void);
 void OS_MailListUnlock(void);
 

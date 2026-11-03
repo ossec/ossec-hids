@@ -22,16 +22,10 @@
 
 /* Global variables */
 unsigned int mail_timeout;
-unsigned int   _g_subject_level;
-char _g_subject[SUBJECT_SIZE + 2];
 
 typedef struct mail_worker_arg {
     MailConfig *mail;
     struct tm tm_copy;
-    char subject[SUBJECT_SIZE + 2];
-    unsigned int subject_level;
-    int gran_count;
-    int *gran_set_snap;
     MailNode *batch;
 } mail_worker_arg;
 
@@ -39,8 +33,6 @@ typedef struct sms_worker_arg {
     MailConfig *mail;
     struct tm tm_copy;
     MailMsg *sms_msg;
-    int gran_count;
-    int *gran_set_snap;
 } sms_worker_arg;
 
 static pthread_mutex_t mail_workers_mu;
@@ -64,43 +56,10 @@ static void maild_HandleSIG(int sig);
 static void mail_spawn_backoff(void);
 static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fileq);
 
-/* Returns 0 on success, -1 on allocation failure. */
-static int mail_snapshot_gran(MailConfig *mail, int **gran_set_snap, int *gran_count)
-{
-    int n = 0;
-
-    *gran_set_snap = NULL;
-    *gran_count = 0;
-
-    if (!mail->gran_to || !mail->gran_set) {
-        return (0);
-    }
-
-    while (mail->gran_to[n] != NULL) {
-        n++;
-    }
-
-    if (n == 0) {
-        return (0);
-    }
-
-    *gran_count = n;
-    *gran_set_snap = (int *)calloc((size_t)n, sizeof(int));
-    if (!*gran_set_snap) {
-        merror(MEM_ERROR, ARGV0, errno, strerror(errno));
-        *gran_count = 0;
-        return (-1);
-    }
-    memcpy(*gran_set_snap, mail->gran_set, (size_t)n * sizeof(int));
-    return (0);
-}
-
-static void mail_worker_finished(int sent_ok)
+static void mail_worker_finished(int sent)
 {
     os_mutex_lock(&mail_workers_mu);
-    if (sent_ok) {
-        mails_sent_this_hour++;
-    }
+    mails_sent_this_hour += sent;
     mail_active_workers--;
     if (mail_active_workers == 0 && mail_hour_rollover_pending) {
         mails_sent_this_hour = 0;
@@ -166,28 +125,12 @@ static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fil
         sms_work->mail = mail;
         memcpy(&sms_work->tm_copy, p, sizeof(struct tm));
         sms_work->sms_msg = sms_msg;
-        sms_work->gran_count = 0;
-        sms_work->gran_set_snap = NULL;
-
-        os_mutex_lock(&mail_send_mu);
-        if (mail_snapshot_gran(mail, &sms_work->gran_set_snap,
-                               &sms_work->gran_count) < 0) {
-            os_mutex_unlock(&mail_send_mu);
-            os_mutex_lock(&mail_workers_mu);
-            mail_active_workers--;
-            os_mutex_unlock(&mail_workers_mu);
-            OS_SmsRequeueFront(sms_msg);
-            free(sms_work);
-            return;
-        }
-        os_mutex_unlock(&mail_send_mu);
 
         if (CreateThread(sms_send_worker, sms_work) != 0) {
             os_mutex_lock(&mail_workers_mu);
             mail_active_workers--;
             os_mutex_unlock(&mail_workers_mu);
             OS_SmsRequeueFront(sms_work->sms_msg);
-            free(sms_work->gran_set_snap);
             free(sms_work);
             merror(THREAD_ERROR, ARGV0);
             return;
@@ -212,24 +155,10 @@ static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fil
         os_calloc(1, sizeof(mail_worker_arg), work);
         work->mail = mail;
         memcpy(&work->tm_copy, p, sizeof(struct tm));
-        work->gran_count = 0;
-        work->gran_set_snap = NULL;
         work->batch = NULL;
 
         os_mutex_lock(&mail_send_mu);
         OS_MailListLock();
-        work->subject_level = _g_subject_level;
-        memcpy(work->subject, _g_subject, SUBJECT_SIZE + 2);
-        if (mail_snapshot_gran(mail, &work->gran_set_snap, &work->gran_count) < 0) {
-            OS_MailListUnlock();
-            os_mutex_unlock(&mail_send_mu);
-            os_mutex_lock(&mail_workers_mu);
-            mail_active_workers--;
-            os_mutex_unlock(&mail_workers_mu);
-            free(work);
-            return;
-        }
-
         batch = OS_DrainMailListUnlocked();
         work->batch = batch;
         OS_MailListUnlock();
@@ -239,7 +168,6 @@ static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fil
             os_mutex_lock(&mail_workers_mu);
             mail_active_workers--;
             os_mutex_unlock(&mail_workers_mu);
-            free(work->gran_set_snap);
             free(work);
             return;
         }
@@ -253,7 +181,6 @@ static void maild_shutdown_drain(MailConfig *mail, struct tm *p, file_queue *fil
             os_mutex_lock(&mail_workers_mu);
             mail_active_workers--;
             os_mutex_unlock(&mail_workers_mu);
-            free(work->gran_set_snap);
             free(work);
             merror(THREAD_ERROR, ARGV0);
             return;
@@ -495,36 +422,47 @@ static void *mail_send_worker(void *arg)
     MailConfig *mail = work->mail;
     struct tm tm_copy = work->tm_copy;
     char subject[SUBJECT_SIZE + 2];
-    unsigned int subject_level = work->subject_level;
-    int gran_count = work->gran_count;
-    int *gran_set_snap = work->gran_set_snap;
     MailNode *batch = work->batch;
-    const int *gran_override = NULL;
+    int sent = 0;
 
     os_block_worker_signals();
 
-    memcpy(subject, work->subject, SUBJECT_SIZE + 2);
     free(work);
 
-    if (!batch) {
-        free(gran_set_snap);
-        mail_worker_finished(0);
-        return NULL;
+    /* One e-mail per set of granular recipients: a recipient only gets the
+     * alerts (and the subject of an alert) that matched its email_alerts block.
+     */
+    while (batch) {
+        MailNode *group = OS_SplitMailBatch(&batch, mail->gran_to);
+        MailNode *highest = group;
+        MailNode *n;
+        unsigned int subject_level;
+        int *gran_set;
+
+        for (n = group->next; n; n = n->next) {
+            if (highest->mail->level < n->mail->level) {
+                highest = n;
+            }
+        }
+
+        /* OS_Sendmail frees the group */
+        strncpy(subject, highest->mail->subject, SUBJECT_SIZE);
+        subject[SUBJECT_SIZE] = '\0';
+        subject_level = highest->mail->level;
+        gran_set = group->mail->gran_set;
+        group->mail->gran_set = NULL;
+
+        if (OS_Sendmail(mail, &tm_copy, group, gran_set, subject,
+                        subject_level) < 0) {
+            merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
+        } else {
+            sent++;
+        }
+
+        free(gran_set);
     }
 
-    if (gran_count > 0 && gran_set_snap) {
-        gran_override = gran_set_snap;
-    }
-
-    if (OS_Sendmail(mail, &tm_copy, batch, gran_override, subject,
-                    subject_level) < 0) {
-        merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
-        mail_worker_finished(0);
-    } else {
-        mail_worker_finished(1);
-    }
-
-    free(gran_set_snap);
+    mail_worker_finished(sent);
 
     return NULL;
 }
@@ -535,18 +473,11 @@ static void *sms_send_worker(void *arg)
     MailConfig *mail = work->mail;
     struct tm tm_copy = work->tm_copy;
     MailMsg *sms_msg = work->sms_msg;
-    int gran_count = work->gran_count;
-    int *gran_set_snap = work->gran_set_snap;
-    const int *gran_override = NULL;
 
     os_block_worker_signals();
     free(work);
 
-    if (gran_count > 0 && gran_set_snap) {
-        gran_override = gran_set_snap;
-    }
-
-    if (OS_Sendsms(mail, &tm_copy, sms_msg, gran_override) < 0) {
+    if (OS_Sendsms(mail, &tm_copy, sms_msg, sms_msg->gran_set) < 0) {
         merror(SNDMAIL_ERROR, ARGV0, mail->smtpserver);
         OS_SmsRequeueFront(sms_msg);
         mail_worker_finished(0);
@@ -554,8 +485,6 @@ static void *sms_send_worker(void *arg)
         FreeMailMsg(sms_msg);
         mail_worker_finished(1);
     }
-
-    free(gran_set_snap);
 
     return NULL;
 }
@@ -599,10 +528,6 @@ static void OS_Run(MailConfig *mail)
 
     /* Set default timeout */
     mail_timeout = DEFAULT_TIMEOUT;
-
-    /* Clear global variables */
-    _g_subject_level = 0;
-    memset(_g_subject, '\0', SUBJECT_SIZE + 2);
 
     while (1) {
         tm = time(NULL);
@@ -705,33 +630,17 @@ static void OS_Run(MailConfig *mail)
                     sms_work->mail = mail;
                     memcpy(&sms_work->tm_copy, p, sizeof(struct tm));
                     sms_work->sms_msg = sms_msg;
-                    sms_work->gran_count = 0;
-                    sms_work->gran_set_snap = NULL;
 
-                    os_mutex_lock(&mail_send_mu);
-                    if (mail_snapshot_gran(mail, &sms_work->gran_set_snap,
-                                           &sms_work->gran_count) < 0) {
-                        os_mutex_unlock(&mail_send_mu);
+                    if (CreateThread(sms_send_worker, sms_work) != 0) {
                         os_mutex_lock(&mail_workers_mu);
                         mail_active_workers--;
                         os_mutex_unlock(&mail_workers_mu);
-                        OS_SmsRequeueFront(sms_msg);
+                        OS_SmsRequeueFront(sms_work->sms_msg);
                         free(sms_work);
+                        merror(THREAD_ERROR, ARGV0);
+                        mail_spawn_backoff();
                     } else {
-                        os_mutex_unlock(&mail_send_mu);
-
-                        if (CreateThread(sms_send_worker, sms_work) != 0) {
-                            os_mutex_lock(&mail_workers_mu);
-                            mail_active_workers--;
-                            os_mutex_unlock(&mail_workers_mu);
-                            OS_SmsRequeueFront(sms_work->sms_msg);
-                            free(sms_work->gran_set_snap);
-                            free(sms_work);
-                            merror(THREAD_ERROR, ARGV0);
-                            mail_spawn_backoff();
-                        } else {
-                            mail_spawn_fail_streak = 0;
-                        }
+                        mail_spawn_fail_streak = 0;
                     }
                 }
             } else if (sms_deferred) {
@@ -783,25 +692,10 @@ static void OS_Run(MailConfig *mail)
             os_calloc(1, sizeof(mail_worker_arg), work);
             work->mail = mail;
             memcpy(&work->tm_copy, p, sizeof(struct tm));
-            work->gran_count = 0;
-            work->gran_set_snap = NULL;
             work->batch = NULL;
 
             os_mutex_lock(&mail_send_mu);
             OS_MailListLock();
-            work->subject_level = _g_subject_level;
-            memcpy(work->subject, _g_subject, SUBJECT_SIZE + 2);
-            if (mail_snapshot_gran(mail, &work->gran_set_snap,
-                                   &work->gran_count) < 0) {
-                OS_MailListUnlock();
-                os_mutex_unlock(&mail_send_mu);
-                os_mutex_lock(&mail_workers_mu);
-                mail_active_workers--;
-                os_mutex_unlock(&mail_workers_mu);
-                free(work);
-                goto snd_check_hour;
-            }
-
             batch = OS_DrainMailListUnlocked();
             work->batch = batch;
 
@@ -812,7 +706,6 @@ static void OS_Run(MailConfig *mail)
                 os_mutex_lock(&mail_workers_mu);
                 mail_active_workers--;
                 os_mutex_unlock(&mail_workers_mu);
-                free(work->gran_set_snap);
                 free(work);
                 goto snd_check_hour;
             }
@@ -826,7 +719,6 @@ static void OS_Run(MailConfig *mail)
                 os_mutex_lock(&mail_workers_mu);
                 mail_active_workers--;
                 os_mutex_unlock(&mail_workers_mu);
-                free(work->gran_set_snap);
                 free(work);
                 merror(THREAD_ERROR, ARGV0);
                 mail_spawn_backoff();
@@ -834,13 +726,6 @@ static void OS_Run(MailConfig *mail)
             }
 
             mail_spawn_fail_streak = 0;
-
-            /* Commit batch: clear grouped subject and live granular routing. */
-            os_mutex_lock(&mail_send_mu);
-            _g_subject[0] = '\0';
-            _g_subject_level = 0;
-            Mail_CommitGranClear(mail, s_msg != NULL);
-            os_mutex_unlock(&mail_send_mu);
 
 snd_check_hour:
             /* If we sent everything */
@@ -860,19 +745,6 @@ snd_check_hour:
 
         /* Saved message for the do_not_group option */
         if (s_msg) {
-            /* Set the remaining do no group to full format */
-            os_mutex_lock(&mail_send_mu);
-            if (mail->gran_to) {
-                i = 0;
-                while (mail->gran_to[i] != NULL) {
-                    if (mail->gran_set[i] == DONOTGROUP) {
-                        mail->gran_set[i] = FULL_FORMAT;
-                    }
-                    i++;
-                }
-            }
-            os_mutex_unlock(&mail_send_mu);
-
             OS_AddMailtoList(s_msg);
 
             s_msg = NULL;
