@@ -90,6 +90,9 @@ void OS_StartCounter(keystore *keys) __attribute((nonnull));
  */
 void OS_StoreSenderCounter(const keystore *keys, unsigned int global, unsigned int local) __attribute((nonnull));
 
+/* Persist every agent's receive counter to its rids file (reload/shutdown) */
+void OS_StoreAgentCounters(const keystore *keys) __attribute((nonnull));
+
 /* Close the dedicated sender-counter FILE* (locks the sender mutex) */
 void OS_CloseSenderCounter(keystore *keys) __attribute((nonnull));
 

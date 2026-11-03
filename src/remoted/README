@@ -74,7 +74,9 @@ Syslog TCP workers use a per-client read timeout (remoted.syslog_tcp_read_timeou
 blocked recv() calls return periodically. Workers exit when remoted_shutting_down is set
 or when the read times out on an idle connection.
 
-remoted_wait_for_shutdown() polls syslog TCP thread pools until no active or queued tasks
+remoted_wait_for_shutdown() first stores the agent receive counters (queue/rids) under the
+key write lock, so a restart does not rewind the replay check to the last periodic flush.
+It then polls syslog TCP thread pools until no active or queued tasks
 remain, or until a 60 s timeout, then destroys pools via remoted_destroy_tcp_pools().
 Secure and UDP listener threads are not explicitly joined; process exit follows pool drain
 (or timeout).

@@ -25,6 +25,7 @@ REGRESSION_BINS = \
 	issue_prev_matched_race \
 	issue_1274_auth_ipv6_key \
 	issue_2065_sender_counter \
+	issue_fbj3la25_rids_counter_reload \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -139,6 +140,12 @@ issue_1274_auth_ipv6_key: tests/regressions/issue_1274_auth_ipv6_key.c addagent/
 
 issue_2065_sender_counter: tests/regressions/issue_2065_sender_counter.c os_crypto.a shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_2065_sender_counter.c \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+# ANT-2026-FBJ3LA25: persist agent rids before OS_FreeKeys (reload/shutdown).
+issue_fbj3la25_rids_counter_reload: tests/regressions/issue_fbj3la25_rids_counter_reload.c os_crypto.a shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_fbj3la25_rids_counter_reload.c \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
