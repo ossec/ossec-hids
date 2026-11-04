@@ -16,6 +16,8 @@
 /* Prototypes */
 static int _is_str_in_array(char *const *ar, const char *str);
 static int _rk_check_file(char *file, char *pattern, int is_list);
+static int _rk_check_dir(DIR *parent, const char *name, const char *dir,
+                          const char *file, char *pattern);
 
 
 /* Check if the specified string is already in the array */
@@ -30,7 +32,90 @@ static int _is_str_in_array(char *const *ar, const char *str)
     return (0);
 }
 
+/* The owner of a directory we are reading can rename it, or put a symlink
+ * in its place, while we walk it: the path of an entry then leads somewhere
+ * else, and lstat() only refuses to follow the last component of a path.
+ * So look the entry 'name' up in 'parent', the open directory it was read
+ * from, via fstatat() with AT_SYMLINK_NOFOLLOW on dirfd(parent). Prefer
+ * that whenever parent and name are set -- fstatat/openat only need the
+ * basename, even when the joined 'path' buffer was truncated at PATH_MAX.
+ * 'path' is used on Windows, and when there is no parent (directories a
+ * scan starts at).
+ */
+int rk_lstat_entry(DIR *parent, const char *name, const char *path,
+                    struct stat *statbuf)
+{
+#ifndef WIN32
+    if (parent && name) {
+        return (fstatat(dirfd(parent), name, statbuf, AT_SYMLINK_NOFOLLOW));
+    }
+#else
+    (void)parent;
+    (void)name;
+#endif
+
+    return (lstat(path, statbuf));
+}
+
+/* Same as above, to open an entry (and not whatever a link in its place
+ * points to). O_NOFOLLOW is always added to 'flags' on the openat() path.
+ */
+int rk_open_entry(DIR *parent, const char *name, const char *path, int flags)
+{
+#ifndef WIN32
+    if (parent && name) {
+#ifdef O_CLOEXEC
+        return (openat(dirfd(parent), name, flags | O_NOFOLLOW | O_CLOEXEC));
+#else
+        return (openat(dirfd(parent), name, flags | O_NOFOLLOW));
+#endif
+    }
+#else
+    (void)parent;
+    (void)name;
+#endif
+
+    return (open(path, flags));
+}
+
+/* Same as above, for an entry that is itself a directory */
+DIR *rk_opendir_entry(DIR *parent, const char *name, const char *path)
+{
+#ifndef WIN32
+    if (parent && name) {
+        int fd;
+        DIR *dp;
+
+        fd = rk_open_entry(parent, name, path, O_RDONLY | O_DIRECTORY);
+        if (fd < 0) {
+            return (NULL);
+        }
+
+        dp = fdopendir(fd);
+        if (!dp) {
+            close(fd);
+        }
+
+        return (dp);
+    }
+#else
+    (void)parent;
+    (void)name;
+#endif
+
+    return (opendir(path));
+}
+
 int rk_check_dir(const char *dir, const char *file, char *pattern)
+{
+    return (_rk_check_dir(NULL, NULL, dir, file, pattern));
+}
+
+/* 'dir' is the entry 'name' of the already-open 'parent', unless this is
+ * where the walk starts (parent == NULL, e.g. from rk_check_dir()).
+ */
+static int _rk_check_dir(DIR *parent, const char *name, const char *dir,
+                          const char *file, char *pattern)
 {
     int ret_code = 0;
     int capped = 0;
@@ -61,7 +146,7 @@ int rk_check_dir(const char *dir, const char *file, char *pattern)
         return (-1);
     }
 
-    dp = opendir(dir);
+    dp = rk_opendir_entry(parent, name, dir);
     if (!dp) {
         return (0);
     }
@@ -99,10 +184,10 @@ int rk_check_dir(const char *dir, const char *file, char *pattern)
         }
 
         /* Check if file is a directory */
-        if (lstat(f_name, &statbuf_local) == 0) {
+        if (rk_lstat_entry(dp, entry->d_name, f_name, &statbuf_local) == 0) {
             if (S_ISDIR(statbuf_local.st_mode)) {
                 depth++;
-                sub = rk_check_dir(f_name, file, pattern);
+                sub = _rk_check_dir(dp, entry->d_name, f_name, file, pattern);
                 depth--;
                 if (sub > 0) {
                     ret_code = 1;

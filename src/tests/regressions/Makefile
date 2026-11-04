@@ -103,6 +103,8 @@ REGRESSION_BINS = \
 	issue_1hue1bmj_ossecalert_drain \
 	issue_9uqvlix8_ifconfig_inject \
 	issue_cdykrrho_comma_dir \
+	issue_w5qjuux2_symlink_race \
+	issue_ae2i21jq_pid_sleep \
 	issue_b5y9piu1_policy_owner \
 	issue_x2iu8bsu_maild_donotgroup \
 	issue_czg2brko_maild_gran_split \
@@ -577,6 +579,27 @@ issue_cdykrrho_comma_dir: \
 		rootcheck/common.c \
 		-Wl,--start-group shared.a os_regex.a os_crypto.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-W5QJUUX2: rootcheck must look entries up relative to the open
+# parent DIR (fstatat/openat/fdopendir, O_NOFOLLOW/AT_SYMLINK_NOFOLLOW)
+# instead of by path, so a renamed-to-symlink-ring directory cannot divert
+# the walker or hang it.
+issue_w5qjuux2_symlink_race: \
+		tests/regressions/issue_w5qjuux2_symlink_race.c \
+		rootcheck/common.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -I./rootcheck -o $@ \
+		tests/regressions/issue_w5qjuux2_symlink_race.c \
+		rootcheck/common.c \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-AE2I21JQ: PID-scan sleep budget.
+issue_ae2i21jq_pid_sleep: \
+		tests/regressions/issue_ae2i21jq_pid_sleep.c \
+		rootcheck/rk_pid_budget.c
+	$(CC) $(CFLAGS) -I./rootcheck -o $@ \
+		tests/regressions/issue_ae2i21jq_pid_sleep.c \
+		rootcheck/rk_pid_budget.c
 
 # ANT-2026-1HUE1BMJ: ossecalert must drain every alert in one poll.
 issue_1hue1bmj_ossecalert_drain: \

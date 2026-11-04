@@ -46,6 +46,11 @@ extern const struct file_system_type network_file_systems[];
 
 short IsNFS(const char *file)  __attribute__((nonnull));
 short skipFS(const char *file)  __attribute__((nonnull));
+/* Same checks against an already-open directory fd (dirfd), so a path
+ * renamed to a symlink ring after opendir() cannot make the test fail
+ * open and skip the link-count alert (ANT-2026-W5QJUUX2). */
+short IsNFS_fd(int fd);
+short skipFS_fd(int fd);
 
 #endif
 

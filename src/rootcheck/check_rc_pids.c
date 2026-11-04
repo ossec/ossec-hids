@@ -98,6 +98,9 @@ static void loop_all_pids(const char *ps, pid_t max_pid, int *_errors, int *_tot
     int _proc_stat  = 0;
     int _proc_read  = 0;
     int _proc_chdir = 0;
+#ifdef OSSECHIDS
+    int _paused = 0;
+#endif
 
     pid_t i = 1;
     pid_t my_pid;
@@ -171,16 +174,28 @@ static void loop_all_pids(const char *ps, pid_t max_pid, int *_errors, int *_tot
             }
         }
 
-        /* If we are run in the context of OSSEC-HIDS, sleep here (no rush) */
-#ifdef OSSECHIDS
-        debug1("%s: DEBUG: pause for %u", ARGV0, rootcheck.tsleep);
-        sleep(rootcheck.tsleep);
-#endif
-
         /* Everything fine, move on */
         if (_ps0 && _kill0 && _gsid0 && _gpid0 && _proc_stat && _proc_read) {
             continue;
         }
+
+        /* A thread is not listed in /proc or by ps(1), but is not hidden */
+        if (!noproc && _kill0 && _gsid0 && _gpid0 && _proc_stat && !_proc_read &&
+                check_rc_readproc((int)i)) {
+            continue;
+        }
+
+        /* Pause only for a PID that does not add up (as check_rc_ports
+         * does for ports), and at most sleep_after times per scan, so a
+         * local user's idle threads cannot stall realtime FIM for
+         * rootcheck.sleep seconds each (ANT-2026-AE2I21JQ).
+         */
+#ifdef OSSECHIDS
+        if (rk_pid_budget_take(&_paused, rootcheck.sleep_after)) {
+            debug1("%s: DEBUG: pause for %u", ARGV0, rootcheck.tsleep);
+            sleep(rootcheck.tsleep);
+        }
+#endif
 
         /*
          * If our kill or getsid system call got the PID but ps(1) did not,

@@ -93,6 +93,7 @@ int rootcheck_init(int test_config)
 
 #ifdef OSSECHIDS
     rootcheck.tsleep = (unsigned int) getDefine_Int("rootcheck", "sleep", 0, 64);
+    rootcheck.sleep_after = getDefine_Int("rootcheck", "sleep_after", 1, 9999);
 #endif
 
 #ifdef WIN32

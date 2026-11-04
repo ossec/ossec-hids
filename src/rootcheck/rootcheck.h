@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include "list_op.h"
 #include "config/rootcheck-config.h"
@@ -45,6 +46,20 @@ int rk_check_file(char *file, char *pattern);
 
 /* Returns 1 if matched, 0 if not found, -1 if the walk was depth-capped. */
 int rk_check_dir(const char *dir, const char *file, char *pattern);
+
+/* lstat()/open()/opendir() the entry 'name' (full path 'path') of the open
+ * directory 'parent' via fstatat()/openat()/fdopendir() with
+ * AT_SYMLINK_NOFOLLOW/O_NOFOLLOW on dirfd(parent), instead of going through
+ * 'path' again from the root: a directory we are walking can be renamed or
+ * swapped for a symlink between opendir() and the lstat()/open() of one of
+ * its entries, and lstat() only refuses to follow the last path component.
+ * 'parent' may be NULL (the directories a scan starts at, or Windows),
+ * in which case these fall back to the plain path-based calls.
+ */
+int rk_lstat_entry(DIR *parent, const char *name, const char *path,
+                    struct stat *statbuf);
+int rk_open_entry(DIR *parent, const char *name, const char *path, int flags);
+DIR *rk_opendir_entry(DIR *parent, const char *name, const char *path);
 
 /* Check if pattern is present on string */
 int pt_matches(const char *str, char *pattern);
@@ -125,6 +140,9 @@ void check_rc_winapps(FILE *fp, OSList *p_list);
 void check_rc_dev(const char *basedir);
 void check_rc_sys(const char *basedir);
 void check_rc_pids(void);
+
+/* Cap PID-scan pauses per rootcheck pass (ANT-2026-AE2I21JQ). */
+int rk_pid_budget_take(int *paused, int limit);
 
 /* Verify if "pid" is in the proc directory */
 int check_rc_readproc(int pid);

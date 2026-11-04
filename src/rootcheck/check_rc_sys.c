@@ -11,8 +11,10 @@
 #include "rootcheck.h"
 
 /* Prototypes */
-static int read_sys_file(const char *file_name, int do_read);
-static int read_sys_dir(const char *dir_name, int do_read);
+static int read_sys_file(DIR *parent, const char *name,
+                          const char *file_name, int do_read);
+static int read_sys_dir(DIR *parent, const char *name,
+                         const char *dir_name, int do_read);
 
 /* Global variables */
 static int   _sys_errors;
@@ -25,7 +27,11 @@ static FILE *_ww;
 static FILE *_suid;
 
 
-static int read_sys_file(const char *file_name, int do_read)
+/* 'file_name' is the path of the entry 'name' of the open directory
+ * 'parent' (NULL at the directories a scan starts at; see rk_lstat_entry()).
+ */
+static int read_sys_file(DIR *parent, const char *name,
+                          const char *file_name, int do_read)
 {
     struct stat statbuf;
 
@@ -35,7 +41,7 @@ static int read_sys_file(const char *file_name, int do_read)
     /* Check for NTFS ADS on Windows */
     os_check_ads(file_name);
 #endif
-    if (lstat(file_name, &statbuf) < 0) {
+    if (rk_lstat_entry(parent, name, file_name, &statbuf) < 0) {
 #ifndef WIN32
         char op_msg[OS_SIZE_1024 + 1];
         snprintf(op_msg, OS_SIZE_1024, "Anomaly detected in file '%s'. "
@@ -75,7 +81,7 @@ static int read_sys_file(const char *file_name, int do_read)
 
         _sys_depth++;
         {
-            int ret = read_sys_dir(file_name, do_read);
+            int ret = read_sys_dir(parent, name, file_name, do_read);
             _sys_depth--;
             return (ret);
         }
@@ -89,15 +95,18 @@ static int read_sys_file(const char *file_name, int do_read)
         long int total = 0;
 
         /* O_NONBLOCK: a FIFO planted after lstat must not park syscheckd
-         * (ANT-2026-KZAJSOET). MinGW has no O_NONBLOCK. */
+         * (ANT-2026-KZAJSOET). MinGW has no O_NONBLOCK. rk_open_entry()
+         * also opens via openat()/O_NOFOLLOW on dirfd(parent) when there
+         * is one, so a path swapped after the lstat above cannot hand us
+         * a different file either (ANT-2026-W5QJUUX2). */
 #ifndef WIN32
-        fd = open(file_name, O_RDONLY | O_NONBLOCK
+        fd = rk_open_entry(parent, name, file_name, O_RDONLY | O_NONBLOCK
 #ifdef O_NOCTTY
                   | O_NOCTTY
 #endif
-                  , 0);
+                  );
 #else
-        fd = open(file_name, O_RDONLY, 0);
+        fd = rk_open_entry(parent, name, file_name, O_RDONLY);
 #endif
 
         /* It may not necessarily open. Confirm the opened object is still
@@ -120,7 +129,7 @@ static int read_sys_file(const char *file_name, int do_read)
                 } else if (total != statbuf.st_size) {
                     struct stat statbuf2;
 
-                    if ((lstat(file_name, &statbuf2) == 0) &&
+                    if ((rk_lstat_entry(parent, name, file_name, &statbuf2) == 0) &&
                             (total != statbuf2.st_size) &&
                             (statbuf.st_size == statbuf2.st_size)) {
                         char op_msg[OS_SIZE_2048 + 1];
@@ -176,7 +185,11 @@ static int read_sys_file(const char *file_name, int do_read)
     return (0);
 }
 
-static int read_sys_dir(const char *dir_name, int do_read)
+/* 'dir_name' is the entry 'name' of the open directory 'parent' (NULL at
+ * the directories a scan starts at, see check_rc_sys()/rk_lstat_entry()).
+ */
+static int read_sys_dir(DIR *parent, const char *name,
+                         const char *dir_name, int do_read)
 {
     int i = 0;
     unsigned int entry_count = 0;
@@ -210,21 +223,10 @@ static int read_sys_dir(const char *dir_name, int do_read)
         i = 0;
     }
 
-    /* Should we check for NFS? */
-    if(rootcheck.skip_nfs)
-    {
-        is_nfs = IsNFS(dir_name);
-        if(is_nfs != 0)
-        {
-            // Error will be -1, and 1 means skipped
-            return(is_nfs);
-        }
-    }
-
     /* Getting the number of nodes. The total number on opendir
      * must be the same
      */
-    if(lstat(dir_name, &statbuf) < 0)
+    if(rk_lstat_entry(parent, name, dir_name, &statbuf) < 0)
     {
         return(-1);
     }
@@ -255,7 +257,7 @@ static int read_sys_dir(const char *dir_name, int do_read)
 #endif
 
     /* Open the directory */
-    dp = opendir(dir_name);
+    dp = rk_opendir_entry(parent, name, dir_name);
     if (!dp) {
         if ((strcmp(dir_name, "") == 0) &&
                 (dp = opendir("/"))) {
@@ -264,6 +266,28 @@ static int read_sys_dir(const char *dir_name, int do_read)
             return (-1);
         }
     }
+
+#ifndef WIN32
+    /* Classify the FS on the open dirfd so a path swapped for a symlink
+     * ring after opendir() cannot make skip_nfs / skipFS fail-open
+     * (ANT-2026-W5QJUUX2).
+     */
+    if (rootcheck.skip_nfs) {
+        is_nfs = IsNFS_fd(dirfd(dp));
+        if (is_nfs != 0) {
+            closedir(dp);
+            return (is_nfs);
+        }
+    }
+#else
+    if (rootcheck.skip_nfs) {
+        is_nfs = IsNFS(dir_name);
+        if (is_nfs != 0) {
+            closedir(dp);
+            return (is_nfs);
+        }
+    }
+#endif
 
     /* Read every entry in the directory */
     while ((entry = readdir(dp)) != NULL) {
@@ -285,7 +309,7 @@ static int read_sys_dir(const char *dir_name, int do_read)
         }
 
         /* Check if file is a directory */
-        if (lstat(f_name, &statbuf_local) == 0) {
+        if (rk_lstat_entry(dp, entry->d_name, f_name, &statbuf_local) == 0) {
             /* On all the systems except Darwin, the
              * link count is only increased on directories
              */
@@ -328,11 +352,15 @@ static int read_sys_dir(const char *dir_name, int do_read)
             continue;
         }
 
-        read_sys_file(f_name, do_read);
+        read_sys_file(dp, entry->d_name, f_name, do_read);
     }
 
     /* skip further test because the FS cant deliver the stats (btrfs link count always is 1) */
+#ifndef WIN32
+    skip_fs = skipFS_fd(dirfd(dp));
+#else
     skip_fs = skipFS(dir_name);
+#endif
     if(skip_fs != 0)
     {
         // Error will be -1, and 1 means skipped
@@ -349,7 +377,10 @@ static int read_sys_dir(const char *dir_name, int do_read)
         struct stat statbuf2;
         char op_msg[OS_SIZE_1024 + 1];
 
-        if ((lstat(dir_name, &statbuf2) == 0) &&
+        /* dp is still open here: fstat its fd directly instead of looking
+         * 'dir_name' up again by path (ANT-2026-W5QJUUX2).
+         */
+        if ((fstat(dirfd(dp), &statbuf2) == 0) &&
                 (statbuf2.st_nlink != entry_count)) {
             snprintf(op_msg, OS_SIZE_1024, "Files hidden inside directory "
                      "'%s'. Link count does not match number of files "
@@ -411,7 +442,7 @@ void check_rc_sys(const char *basedir)
 #ifndef WIN32
         snprintf(file_path, 3, "%s", "/");
 #endif
-        read_sys_dir(file_path, rootcheck.readall);
+        read_sys_dir(NULL, NULL, file_path, rootcheck.readall);
     } else {
         /* Scan only specific directories */
         int _i;
@@ -435,10 +466,10 @@ void check_rc_sys(const char *basedir)
             snprintf(file_path, OS_SIZE_1024, "%s%s",
                      basedir,
                      dirs_to_scan[_i]);
-            read_sys_dir(file_path, rootcheck.readall);
+            read_sys_dir(NULL, NULL, file_path, rootcheck.readall);
 
 #else
-            read_sys_dir(dirs_to_scan[_i], rootcheck.readall);
+            read_sys_dir(NULL, NULL, dirs_to_scan[_i], rootcheck.readall);
 #endif
 
             _i++;
