@@ -169,7 +169,11 @@ int rk_check_file(char *file, char *pattern)
             full_negate = pt_check_negate(pattern);
             /* Check for content in the file */
             debug1("checking file: %s", file);
+#ifndef WIN32
+            fp = fopen_regular(file);
+#else
             fp = fopen(file, "r");
+#endif
             if (fp) {
 
                 debug1(" starting new file: %s", file);
@@ -519,6 +523,7 @@ int is_file(char *file_name)
     DIR *dp = NULL;
 
 #ifndef WIN32
+    int fd = -1;
     char curr_dir[1024];
     char *file_dirname;
     char *file_basename;
@@ -596,14 +601,30 @@ int is_file(char *file_name)
         ret = 1;
     }
 #endif /* WIN32 */
-    /* Trying other calls */
-    if ( (stat(file_name, &statbuf) < 0) &&
+    /* Trying other calls. Each one looks the name up again and the
+     * directory may be writable by other users (e.g. /tmp), so the
+     * open must not block: a FIFO swapped in at that point would
+     * otherwise wait for a writer forever (ANT-2026-KZAJSOET).
+     */
+    if ((stat(file_name, &statbuf) < 0) &&
 #ifndef WIN32
             (access(file_name, F_OK) < 0) &&
+            ((fd = open(file_name, O_RDONLY | O_NONBLOCK
+#ifdef O_NOCTTY
+                        | O_NOCTTY
 #endif
+                        )) < 0)) {
+#else
             ((fp = fopen(file_name, "r")) == NULL)) {
+#endif
         return (ret);
     }
+
+#ifndef WIN32
+    if (fd >= 0) {
+        close(fd);
+    }
+#endif
 
     if (fp) {
         fclose(fp);

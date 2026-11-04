@@ -88,31 +88,50 @@ static int read_sys_file(const char *file_name, int do_read)
         ssize_t nr;
         long int total = 0;
 
+        /* O_NONBLOCK: a FIFO planted after lstat must not park syscheckd
+         * (ANT-2026-KZAJSOET). MinGW has no O_NONBLOCK. */
+#ifndef WIN32
+        fd = open(file_name, O_RDONLY | O_NONBLOCK
+#ifdef O_NOCTTY
+                  | O_NOCTTY
+#endif
+                  , 0);
+#else
         fd = open(file_name, O_RDONLY, 0);
+#endif
 
-        /* It may not necessarily open */
+        /* It may not necessarily open. Confirm the opened object is still
+         * a regular file so a FIFO swapped in after lstat is not read
+         * (and cannot keep the read loop busy) (ANT-2026-KZAJSOET).
+         */
         if (fd >= 0) {
-            while ((nr = read(fd, buf, sizeof(buf))) > 0) {
-                total += nr;
-            }
-            close(fd);
+            struct stat opened_st;
 
-            if (strcmp(file_name, "/dev/bus/usb/.usbfs/devices") == 0) {
-                /* Ignore .usbfs/devices */
-            } else if (total != statbuf.st_size) {
-                struct stat statbuf2;
+            if (fstat(fd, &opened_st) < 0 || !S_ISREG(opened_st.st_mode)) {
+                close(fd);
+            } else {
+                while ((nr = read(fd, buf, sizeof(buf))) > 0) {
+                    total += nr;
+                }
+                close(fd);
 
-                if ((lstat(file_name, &statbuf2) == 0) &&
-                        (total != statbuf2.st_size) &&
-                        (statbuf.st_size == statbuf2.st_size)) {
-                    char op_msg[OS_SIZE_2048 + 1];
-                    snprintf(op_msg, OS_SIZE_2048, "Anomaly detected in file "
-                             "'%s'. File size doesn't match what we found. "
-                             "Possible kernel level rootkit.",
-                             file_name);
-                    rk_append_file_hash(file_name, op_msg, sizeof(op_msg));
-                    notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
-                    _sys_errors++;
+                if (strcmp(file_name, "/dev/bus/usb/.usbfs/devices") == 0) {
+                    /* Ignore .usbfs/devices */
+                } else if (total != statbuf.st_size) {
+                    struct stat statbuf2;
+
+                    if ((lstat(file_name, &statbuf2) == 0) &&
+                            (total != statbuf2.st_size) &&
+                            (statbuf.st_size == statbuf2.st_size)) {
+                        char op_msg[OS_SIZE_2048 + 1];
+                        snprintf(op_msg, OS_SIZE_2048, "Anomaly detected in file "
+                                 "'%s'. File size doesn't match what we found. "
+                                 "Possible kernel level rootkit.",
+                                 file_name);
+                        rk_append_file_hash(file_name, op_msg, sizeof(op_msg));
+                        notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
+                        _sys_errors++;
+                    }
                 }
             }
         }

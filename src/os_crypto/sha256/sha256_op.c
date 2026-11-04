@@ -3,6 +3,7 @@
 
 #include "sha256_op.h"
 #include "headers/defs.h"
+#include "headers/file_op.h"
 
 /* Local SHA-256 implementation */
 #include "sha256.h"
@@ -18,7 +19,14 @@ int OS_SHA256_File(const char *fname, os_sha256 output, int mode)
     memset(output, 0, 65);
     buf[2049] = '\0';
 
+    /* User-controlled paths (report_changes / FIM): refuse FIFO/device
+     * without blocking (ANT-2026-KZAJSOET). */
+#ifndef WIN32
+    (void)mode;
+    fp = fopen_regular(fname);
+#else
     fp = fopen(fname, mode == OS_BINARY ? "rb" : "r");
+#endif
     if (!fp) {
         return (-1);
     }

@@ -73,6 +73,8 @@ jobs:
           ./src/issue_qy1shlvv_syslog_tcp_idle
           make -C src -f tests/regressions/Makefile issue_2nlm3gpl_crypto_method_auth
           ./src/issue_2nlm3gpl_crypto_method_auth
+          make -C src -f tests/regressions/Makefile issue_kzajsoet_syscheck_fifo
+          ./src/issue_kzajsoet_syscheck_fifo
 
   build-windows-agent:
     name: Windows agent (cross-compile)

@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Stop ``ossec-syscheckd`` from hanging on a FIFO planted under ``report_changes`` / FIM / rootcheck paths: ``OS_SHA256_File`` / ``OS_MD5_SHA1_File`` / ``seechanges_dupfile`` / ``rk_check_file`` / ``os_string`` use ``fopen_regular()``, ``seechanges_addfile`` refuses non-regular files, and ``is_file`` / ``read_sys_file`` open with ``O_NONBLOCK`` (ANT-2026-KZAJSOET)
 - @atomicturtle - Store an agent's ``crypto_method`` in ``ReadSecMSG`` only after the datagram authenticates, so an unauthenticated ``!id!:`` / ``#AES:`` frame cannot flip manager-to-agent AES/Blowfish framing and drop AR / ``agent_control`` / ``merged.mg`` until the next keep-alive (ANT-2026-2NLM3GPL)
 - @atomicturtle - Release ``ossec-remoted`` syslog TCP workers from dead or idle clients: report EOF as 0, enable TCP keepalive (``TCP_KEEPIDLE`` = read timeout), stop retrying ``ETIMEDOUT``, and close a quiet connection only while the worker pool is exhausted so a queued sender can be served (ANT-2026-QY1SHLVV)
 - @atomicturtle - Bound ``ReadSecMSG`` zlib inflate to the room left in the receive buffer after ``!<id>!`` / ``#AES:`` prefixes (``buffer_max``), so an enrolled agent cannot write past ``ossec-remoted``'s stack ``buffer`` with an oversized compressed payload (ANT-2026-739QMECR)

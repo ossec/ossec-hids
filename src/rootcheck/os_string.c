@@ -113,6 +113,7 @@ struct exec {
 
 #include "headers/defs.h"
 #include "headers/debug_op.h"
+#include "headers/file_op.h"
 #include "headers/regex_op.h"
 
 #include "error_messages/error_messages.h"
@@ -163,8 +164,12 @@ int os_string(char *file, char *regex)
         return (0);
     }
 
-    /* Open the file */
+    /* Open the file. Refuse FIFO/device without blocking (ANT-2026-KZAJSOET). */
+#ifndef WIN32
+    oss.fp = fopen_regular(file);
+#else
     oss.fp = fopen(file, "r");
+#endif
     if (!oss.fp) {
         free(bfr);
         return (0);
