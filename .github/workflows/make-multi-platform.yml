@@ -77,6 +77,10 @@ jobs:
           ./src/issue_kzajsoet_syscheck_fifo
           make -C src -f tests/regressions/Makefile issue_1hue1bmj_ossecalert_drain
           ./src/issue_1hue1bmj_ossecalert_drain
+          make -C src -f tests/regressions/Makefile issue_9uqvlix8_ifconfig_inject
+          ./src/issue_9uqvlix8_ifconfig_inject
+          make -C src -f tests/regressions/Makefile issue_cdykrrho_comma_dir
+          ./src/issue_cdykrrho_comma_dir
 
   build-windows-agent:
     name: Windows agent (cross-compile)

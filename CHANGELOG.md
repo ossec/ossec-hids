@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Shell-quote kernel-reported interface names in rootcheck ``run_ifconfig()`` (and refuse empty / leading-``-`` names) so ``CAP_NET_ADMIN`` cannot inject commands through ``system(ifconfig …)`` (ANT-2026-9UQVLIX8); do not split ``readdir()`` paths at ``,`` in ``rk_check_dir()`` so a directory named ``,`` cannot recurse forever (ANT-2026-CDYKRRHO)
 - @atomicturtle - Drain every complete alert from ``alerts.log`` in one ``ossec-logcollector`` poll for ``<log_format>ossecalert</log_format>`` (hybrid forwarder), so a burst cannot leave unread records that are lost on day rotation; still honor ``logcollector.max_lines`` per visit (ANT-2026-1HUE1BMJ)
 - @atomicturtle - Stop ``ossec-syscheckd`` from hanging on a FIFO planted under ``report_changes`` / FIM / rootcheck paths: ``OS_SHA256_File`` / ``OS_MD5_SHA1_File`` / ``seechanges_dupfile`` / ``rk_check_file`` / ``os_string`` use ``fopen_regular()``, ``seechanges_addfile`` refuses non-regular files, and ``is_file`` / ``read_sys_file`` open with ``O_NONBLOCK`` (ANT-2026-KZAJSOET)
 - @atomicturtle - Store an agent's ``crypto_method`` in ``ReadSecMSG`` only after the datagram authenticates, so an unauthenticated ``!id!:`` / ``#AES:`` frame cannot flip manager-to-agent AES/Blowfish framing and drop AR / ``agent_control`` / ``merged.mg`` until the next keep-alive (ANT-2026-2NLM3GPL)
