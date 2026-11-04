@@ -81,6 +81,10 @@ jobs:
           ./src/issue_9uqvlix8_ifconfig_inject
           make -C src -f tests/regressions/Makefile issue_cdykrrho_comma_dir
           ./src/issue_cdykrrho_comma_dir
+          make -C src -f tests/regressions/Makefile issue_w5qjuux2_symlink_race
+          ./src/issue_w5qjuux2_symlink_race
+          make -C src -f tests/regressions/Makefile issue_ae2i21jq_pid_sleep
+          ./src/issue_ae2i21jq_pid_sleep
           make -C src -f tests/regressions/Makefile issue_b5y9piu1_policy_owner
           ./src/issue_b5y9piu1_policy_owner
 

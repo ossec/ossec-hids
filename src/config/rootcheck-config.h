@@ -34,6 +34,8 @@ typedef struct _rkconfig {
 
 #ifdef OSSECHIDS
     unsigned int tsleep;
+    /* Cap PID-scan pauses per rootcheck pass (ANT-2026-AE2I21JQ) */
+    int sleep_after;
 #endif /* OSSECHIDS */
 
     int time;
