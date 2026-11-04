@@ -148,7 +148,11 @@ case "$1" in
 	chmod 440 ${DIR}/etc/client.keys >/dev/null 2>&1 || true
 	chmod 550 ${DIR}/etc
 	chmod 770 ${DIR}/etc/shared
-	chmod 660 ${DIR}/etc/shared/*
+	# Rootcheck policy texts must not be group-writable (ANT-2026-B5Y9PIU1);
+	# chown above already sets root:ossec. Leave agent.conf and other
+	# shared files at 660 so group ossec can still update them.
+	chmod 640 ${DIR}/etc/shared/*.txt >/dev/null 2>&1 || true
+	chmod 660 ${DIR}/etc/shared/agent.conf >/dev/null 2>&1 || true
 	chmod 550 ${DIR}/agentless/*
 	chmod 700 ${DIR}/.ssh
 

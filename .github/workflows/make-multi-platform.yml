@@ -81,6 +81,8 @@ jobs:
           ./src/issue_9uqvlix8_ifconfig_inject
           make -C src -f tests/regressions/Makefile issue_cdykrrho_comma_dir
           ./src/issue_cdykrrho_comma_dir
+          make -C src -f tests/regressions/Makefile issue_b5y9piu1_policy_owner
+          ./src/issue_b5y9piu1_policy_owner
 
   build-windows-agent:
     name: Windows agent (cross-compile)

@@ -568,7 +568,13 @@ endif
 endif
 
 	$(call INSTALL_CMD,0770,root,${OSSEC_GROUP}) -d ${PREFIX}/etc/shared
+# An agent gets new versions from the manager (written by ossec-agentd).
+# Everywhere else, rootcheck only uses policies that belong to root.
+ifeq (${TARGET},agent)
 	$(call INSTALL_CMD,0640,${OSSEC_USER},${OSSEC_GROUP}) rootcheck/db/*.txt ${PREFIX}/etc/shared/
+else
+	$(call INSTALL_CMD,0640,root,${OSSEC_GROUP}) rootcheck/db/*.txt ${PREFIX}/etc/shared/
+endif
 
 	$(call INSTALL_CMD,0550,root,${OSSEC_GROUP}) -d ${PREFIX}/active-response
 	$(call INSTALL_CMD,0550,root,${OSSEC_GROUP}) -d ${PREFIX}/active-response/bin
