@@ -132,6 +132,11 @@ void check_rc_ports(void);
 void check_open_ports(void);
 void check_rc_if(void);
 
+#ifndef WIN32
+/* Quote a kernel-reported interface name for a single shell word. */
+int rk_shell_quote_ifname(const char *ifname, char *out, size_t out_sz);
+#endif
+
 int Read_Rootcheck_Config(const char *cfgfile);
 
 /* Global variables */

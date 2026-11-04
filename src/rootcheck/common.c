@@ -15,6 +15,7 @@
 
 /* Prototypes */
 static int _is_str_in_array(char *const *ar, const char *str);
+static int _rk_check_file(char *file, char *pattern, int is_list);
 
 
 /* Check if the specified string is already in the array */
@@ -77,17 +78,21 @@ int rk_check_dir(const char *dir, const char *file, char *pattern)
         /* Create new file + path string */
         snprintf(f_name, PATH_MAX + 1, "%s/%s", dir, entry->d_name);
 
-        /* Check if the read entry matches the provided file name */
+        /* Check if the read entry matches the provided file name.
+         * Pass is_list=0: a readdir() name is one path even with a comma
+         * in it, and we still need the intact buffer for lstat/recursion
+         * (ANT-2026-CDYKRRHO).
+         */
         if (strncasecmp(file, "r:", 2) == 0) {
             if (OS_Regex(file + 2, entry->d_name)) {
-                if (rk_check_file(f_name, pattern)) {
+                if (_rk_check_file(f_name, pattern, 0)) {
                     ret_code = 1;
                 }
             }
         } else {
             /* ... otherwise try without regex */
             if (OS_Match2(file, entry->d_name)) {
-                if (rk_check_file(f_name, pattern)) {
+                if (_rk_check_file(f_name, pattern, 0)) {
                     ret_code = 1;
                 }
             }
@@ -119,7 +124,16 @@ int rk_check_dir(const char *dir, const char *file, char *pattern)
 
 }
 
+/* The file comes from a policy entry: a comma separated list of files */
 int rk_check_file(char *file, char *pattern)
+{
+    return (_rk_check_file(file, pattern, 1));
+}
+
+/* A name read from a directory is a single file, even with a comma in it,
+ * and rk_check_dir() still needs it afterwards: only split (and change) a list.
+ */
+static int _rk_check_file(char *file, char *pattern, int is_list)
 {
     char *split_file;
     int full_negate = 0;
@@ -132,7 +146,7 @@ int rk_check_file(char *file, char *pattern)
     }
 
     /* Check if the file is divided */
-    split_file = strchr(file, ',');
+    split_file = is_list ? strchr(file, ',') : NULL;
     if (split_file) {
         *split_file = '\0';
         split_file++;

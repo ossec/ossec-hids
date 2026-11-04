@@ -33,6 +33,40 @@
 /* Prototypes */
 static int run_ifconfig(const char *ifconfig);
 
+/* The name is not trusted: whoever may configure the network chooses it
+ * and the kernel accepts shell metacharacters in interface names and
+ * alias labels. It must reach the shell as one quoted word, and ifconfig
+ * must not take it for an option (ANT-2026-9UQVLIX8).
+ */
+int rk_shell_quote_ifname(const char *ifname, char *out, size_t out_sz)
+{
+    size_t n = 0;
+
+    if (ifname == NULL || out == NULL || out_sz < 3) {
+        return (0);
+    }
+    if (*ifname == '\0' || *ifname == '-') {
+        return (0);
+    }
+
+    /* Nothing is special between single quotes but the quote itself */
+    out[n++] = '\'';
+    for (; *ifname != '\0'; ifname++) {
+        /* Room for an escaped quote, the closing quote and the NUL */
+        if (n + 6 > out_sz) {
+            return (0);
+        }
+        if (*ifname == '\'') {
+            memcpy(out + n, "'\\''", 4);
+            n += 4;
+        } else {
+            out[n++] = *ifname;
+        }
+    }
+    out[n++] = '\'';
+    out[n] = '\0';
+    return (1);
+}
 
 /* Execute the ifconfig command
  * Returns 1 if the interface is in promiscuous mode
@@ -40,8 +74,13 @@ static int run_ifconfig(const char *ifconfig);
 static int run_ifconfig(const char *ifconfig)
 {
     char nt[OS_SIZE_1024 + 1];
+    char name[(IFNAMSIZ * 4) + 3];
 
-    snprintf(nt, OS_SIZE_1024, IFCONFIG, ifconfig);
+    if (rk_shell_quote_ifname(ifconfig, name, sizeof(name)) != 1) {
+        return (0);
+    }
+
+    snprintf(nt, OS_SIZE_1024, IFCONFIG, name);
     if (system(nt) == 0) {
         return (1);
     }

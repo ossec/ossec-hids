@@ -101,6 +101,8 @@ REGRESSION_BINS = \
 	issue_u9risggm_fopen_regular \
 	issue_kzajsoet_syscheck_fifo \
 	issue_1hue1bmj_ossecalert_drain \
+	issue_9uqvlix8_ifconfig_inject \
+	issue_cdykrrho_comma_dir \
 	issue_x2iu8bsu_maild_donotgroup \
 	issue_czg2brko_maild_gran_split \
 	issue_rxknzj1n_smtp_dot_escape \
@@ -549,6 +551,24 @@ issue_u9risggm_fopen_regular: tests/regressions/issue_u9risggm_fopen_regular.c s
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-KZAJSOET: hash helpers must refuse FIFO without hanging.
+# ANT-2026-9UQVLIX8: ifconfig interface names must be shell-quoted.
+issue_9uqvlix8_ifconfig_inject: \
+		tests/regressions/issue_9uqvlix8_ifconfig_inject.c \
+		rootcheck/check_rc_if.c shared.a
+	$(CC) $(CFLAGS) -I./rootcheck -o $@ \
+		tests/regressions/issue_9uqvlix8_ifconfig_inject.c \
+		rootcheck/check_rc_if.c $(BASIC_LIBS)
+
+# ANT-2026-CDYKRRHO: readdir paths must not be split at commas.
+issue_cdykrrho_comma_dir: \
+		tests/regressions/issue_cdykrrho_comma_dir.c \
+		rootcheck/common.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -I./rootcheck -o $@ \
+		tests/regressions/issue_cdykrrho_comma_dir.c \
+		rootcheck/common.c \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
 # ANT-2026-1HUE1BMJ: ossecalert must drain every alert in one poll.
 issue_1hue1bmj_ossecalert_drain: \
 		tests/regressions/issue_1hue1bmj_ossecalert_drain.c \
