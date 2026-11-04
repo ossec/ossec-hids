@@ -35,6 +35,7 @@ const struct file_system_type skip_file_systems[] = {
     {.name=NULL, .f_type=0, .flag=0}
 };
 
+#if !defined(WIN32) && (defined(Linux) || defined(FreeBSD) || defined(OpenBSD))
 static short match_fs_type(const struct file_system_type *table,
                            const struct statfs *stfs)
 {
@@ -51,6 +52,7 @@ static short match_fs_type(const struct file_system_type *table,
     }
     return (0);
 }
+#endif
 
 short IsNFS_fd(int fd)
 {
