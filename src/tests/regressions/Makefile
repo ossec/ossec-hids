@@ -100,6 +100,7 @@ REGRESSION_BINS = \
 	issue_2lgojr12_execd_user_dup \
 	issue_u9risggm_fopen_regular \
 	issue_kzajsoet_syscheck_fifo \
+	issue_1hue1bmj_ossecalert_drain \
 	issue_x2iu8bsu_maild_donotgroup \
 	issue_czg2brko_maild_gran_split \
 	issue_rxknzj1n_smtp_dot_escape \
@@ -548,6 +549,16 @@ issue_u9risggm_fopen_regular: tests/regressions/issue_u9risggm_fopen_regular.c s
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-KZAJSOET: hash helpers must refuse FIFO without hanging.
+# ANT-2026-1HUE1BMJ: ossecalert must drain every alert in one poll.
+issue_1hue1bmj_ossecalert_drain: \
+		tests/regressions/issue_1hue1bmj_ossecalert_drain.c \
+		logcollector/read_ossecalert.c logcollector/ossecalert_field.c \
+		logcollector/logr_fgets.c shared.a
+	$(CC) $(CFLAGS) -I./logcollector -o $@ \
+		tests/regressions/issue_1hue1bmj_ossecalert_drain.c \
+		logcollector/read_ossecalert.c logcollector/ossecalert_field.c \
+		logcollector/logr_fgets.c $(BASIC_LIBS)
+
 issue_kzajsoet_syscheck_fifo: tests/regressions/issue_kzajsoet_syscheck_fifo.c \
 		shared.a os_crypto.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_kzajsoet_syscheck_fifo.c \

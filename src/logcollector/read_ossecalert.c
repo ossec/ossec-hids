@@ -13,18 +13,25 @@
 #include "ossecalert_field.h"
 
 
-void *read_ossecalert(int pos, __attribute__((unused)) int *rc, int drop_it)
+/* Forward the next alert of the file. Returns 0 if there is none. */
+static int read_next_ossecalert(int pos, int drop_it)
 {
     alert_data *al_data;
     char user_msg[256];
     char srcip_msg[256];
     char syslog_msg[OS_SIZE_2048 + 1];
+    fpos_t fp_pos;
 
-    *rc = 0;
-
+    /* GetAlertData() does not rewind a torn trailing record. Save the
+     * offset so a drain that hits EOF mid-alert leaves those bytes for
+     * the next poll (same pattern as read_syslog / read_multiline).
+     */
+    fgetpos(logff[pos].fp, &fp_pos);
     al_data = GetAlertData(0, logff[pos].fp);
     if (!al_data) {
-        return (NULL);
+        fsetpos(logff[pos].fp, &fp_pos);
+        clearerr(logff[pos].fp);
+        return (0);
     }
 
     memset(syslog_msg, '\0', OS_SIZE_2048 + 1);
@@ -77,14 +84,14 @@ void *read_ossecalert(int pos, __attribute__((unused)) int *rc, int drop_it)
             tmp_msg = os_LoadString(tmp_msg, "\n");
             if (tmp_msg == NULL) {
                 FreeAlertData(al_data);
-                return (NULL);
+                return (0);
             }
             j++;
         }
 
         if (tmp_msg == NULL) {
             FreeAlertData(al_data);
-            return (NULL);
+            return (0);
         }
 
         if (strlen(tmp_msg) > 1596) {
@@ -118,6 +125,24 @@ void *read_ossecalert(int pos, __attribute__((unused)) int *rc, int drop_it)
         }
     }
 
-    return (NULL);
+    return (1);
 }
 
+/* Read OSSEC alert files */
+void *read_ossecalert(int pos, int *rc, int drop_it)
+{
+    *rc = 0;
+
+    /* Forward every available alert, as the line readers do: the daemon
+     * loop only calls us once per loop_timeout. Count each alert against
+     * logcollector.max_lines so one alerts.log cannot starve the rest
+     * (ANT-2026-1HUE1BMJ / ANT-2026-54AZKAI7).
+     */
+    while (logr_consume_line(drop_it)) {
+        if (!read_next_ossecalert(pos, drop_it)) {
+            break;
+        }
+    }
+
+    return (NULL);
+}
