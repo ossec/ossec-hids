@@ -149,7 +149,11 @@ static int seechanges_dupfile(const char *old, const char *current)
 
     buf[2048] = '\0';
 
+#ifndef WIN32
+    fpr = fopen_regular(old);
+#else
     fpr = fopen(old, "r");
+#endif
     if (!fpr) {
         return (0);
     }
@@ -280,6 +284,17 @@ char *seechanges_addfile(const char *filename)
     os_sha256 sha256_old;
     os_sha256 sha256_new;
     int status = -1;
+    struct stat statbuf;
+
+    /* Only regular files (or links to them) have content to diff. Whoever
+     * can write the monitored directory chooses what is at this path, and
+     * a FIFO would block the daemon in fopen() below (ANT-2026-KZAJSOET).
+     * Hash helpers also use fopen_regular() so a swap after this check
+     * cannot hang either.
+     */
+    if (stat(filename, &statbuf) < 0 || !S_ISREG(statbuf.st_mode)) {
+        return (NULL);
+    }
 
     old_location[OS_MAXSTR] = '\0';
     tmp_location[OS_MAXSTR] = '\0';

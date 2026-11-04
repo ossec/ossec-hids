@@ -29,7 +29,14 @@ int OS_MD5_SHA1_File(const char *fname, os_md5 md5output, os_sha1 sha1output, in
     sha1output[0] = '\0';
     buf[2048 + 1] = '\0';
 
+    /* User-controlled paths (FIM / rootcheck): refuse FIFO/device without
+     * blocking (ANT-2026-KZAJSOET). */
+#ifndef WIN32
+    (void)mode;
+    fp = fopen_regular(fname);
+#else
     fp = fopen(fname, mode == OS_BINARY ? "rb" : "r");
+#endif
     if (!fp) {
         return (-1);
     }
