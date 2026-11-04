@@ -11,6 +11,7 @@
 #define __ROOTCHECK_H
 
 #include <stddef.h>
+#include <sys/stat.h>
 
 #include "list_op.h"
 #include "config/rootcheck-config.h"
@@ -136,6 +137,20 @@ void check_rc_if(void);
 /* Quote a kernel-reported interface name for a single shell word. */
 int rk_shell_quote_ifname(const char *ifname, char *out, size_t out_sz);
 #endif
+
+/* Open rootkit_files / rootkit_trojans / system_audit policy files.
+ * On the manager/local build, refuse non-root or group/other-writable
+ * policies and do not follow symlinks (ANT-2026-B5Y9PIU1).
+ */
+FILE *rk_fopen_policy(const char *file);
+
+/* Descriptor/stat check used by rk_fopen_policy() on manager/local builds. */
+int rk_policy_stat_ok(const struct stat *st);
+
+/* Set when rk_fopen_policy() refused a present file for policy reasons
+ * (already logged); callers should not emit a generic "No … file" error.
+ */
+extern int rk_fopen_policy_refused;
 
 int Read_Rootcheck_Config(const char *cfgfile);
 

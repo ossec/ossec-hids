@@ -115,10 +115,12 @@ void run_rk_check()
             merror("%s: No rootcheck_files file configured.", ARGV0);
 #endif
         } else {
-            fp = fopen(rootcheck.rootkit_files, "r");
+            fp = rk_fopen_policy(rootcheck.rootkit_files);
             if (!fp) {
-                merror("%s: No rootcheck_files file: '%s'", ARGV0,
-                       rootcheck.rootkit_files);
+                if (!rk_fopen_policy_refused) {
+                    merror("%s: No rootcheck_files file: '%s'", ARGV0,
+                           rootcheck.rootkit_files);
+                }
             }
 
             else {
@@ -136,10 +138,12 @@ void run_rk_check()
             merror("%s: No rootcheck_trojans file configured.", ARGV0);
 #endif
         } else {
-            fp = fopen(rootcheck.rootkit_trojans, "r");
+            fp = rk_fopen_policy(rootcheck.rootkit_trojans);
             if (!fp) {
-                merror("%s: No rootcheck_trojans file: '%s'", ARGV0,
-                       rootcheck.rootkit_trojans);
+                if (!rk_fopen_policy_refused) {
+                    merror("%s: No rootcheck_trojans file: '%s'", ARGV0,
+                           rootcheck.rootkit_trojans);
+                }
             } else {
 #ifndef HPUX
                 check_rc_trojans(rootcheck.basedir, fp);
@@ -215,10 +219,12 @@ void run_rk_check()
 
             i = 0;
             while (rootcheck.unixaudit[i]) {
-                fp = fopen(rootcheck.unixaudit[i], "r");
+                fp = rk_fopen_policy(rootcheck.unixaudit[i]);
                 if (!fp) {
-                    merror("%s: No unixaudit file: '%s'", ARGV0,
-                           rootcheck.unixaudit[i]);
+                    if (!rk_fopen_policy_refused) {
+                        merror("%s: No unixaudit file: '%s'", ARGV0,
+                               rootcheck.unixaudit[i]);
+                    }
                 } else {
                     /* Run unix audit */
                     check_rc_unixaudit(fp, plist);

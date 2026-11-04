@@ -103,6 +103,7 @@ REGRESSION_BINS = \
 	issue_1hue1bmj_ossecalert_drain \
 	issue_9uqvlix8_ifconfig_inject \
 	issue_cdykrrho_comma_dir \
+	issue_b5y9piu1_policy_owner \
 	issue_x2iu8bsu_maild_donotgroup \
 	issue_czg2brko_maild_gran_split \
 	issue_rxknzj1n_smtp_dot_escape \
@@ -551,6 +552,14 @@ issue_u9risggm_fopen_regular: tests/regressions/issue_u9risggm_fopen_regular.c s
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-KZAJSOET: hash helpers must refuse FIFO without hanging.
+# ANT-2026-B5Y9PIU1: refuse non-root / group-writable rootcheck policies.
+issue_b5y9piu1_policy_owner: \
+		tests/regressions/issue_b5y9piu1_policy_owner.c \
+		rootcheck/rk_policy_open.c shared.a
+	$(CC) $(CFLAGS) -DOSSECHIDS -I./rootcheck -o $@ \
+		tests/regressions/issue_b5y9piu1_policy_owner.c \
+		rootcheck/rk_policy_open.c $(BASIC_LIBS)
+
 # ANT-2026-9UQVLIX8: ifconfig interface names must be shell-quoted.
 issue_9uqvlix8_ifconfig_inject: \
 		tests/regressions/issue_9uqvlix8_ifconfig_inject.c \

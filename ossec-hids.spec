@@ -376,7 +376,8 @@ popd
 
 
 install -m 0755 active-response/*.sh ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/active-response/bin
-install -m 0644 src/rootcheck/db/*.txt ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared
+# Mode only here; %attr(640,root,ossec) below sets ownership (ANT-2026-B5Y9PIU1)
+install -m 0640 src/rootcheck/db/*.txt ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/etc/shared
 install -m 0644 src/os_dbd/mysql.schema ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0644 src/os_dbd/postgresql.schema ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0644 src/os_dbd/upgrade-agent-1363-mysql.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
@@ -721,6 +722,7 @@ fi
 %config(noreplace) %{_localstatedir}/ossec/etc/internal_options*
 %config(noreplace) /etc/sysconfig/ossec-authd
 %attr(640,ossec,ossec) %config(noreplace) %{_localstatedir}/ossec/etc/shared/agent.conf
+%attr(640,root,ossec) %config(noreplace) %{_localstatedir}/ossec/etc/shared/*txt
 %config(noreplace) %{_localstatedir}/ossec/etc/shared/*
 %dir %{_datadir}/ossec/contrib
 %{_datadir}/ossec/*
