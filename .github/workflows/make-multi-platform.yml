@@ -30,7 +30,7 @@ jobs:
           dnf install -y dnf-plugins-core
           dnf config-manager --set-enabled crb || true
           dnf install -y gcc make openssl-devel pcre2-devel zlib-devel \
-            systemd-devel libevent-devel
+            systemd-devel libevent-devel diffutils
           dnf install -y file-devel || true
           if [ "${{ matrix.use_curl }}" = "yes" ]; then
             dnf install -y libcurl-devel

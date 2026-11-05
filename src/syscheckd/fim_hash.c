@@ -71,7 +71,6 @@ int c_hash_entry(DIR *parent, const char *name, const char *file_name,
                  os_md5 mf_sum, os_sha1 sf_sum, os_sha256 sha256_sum)
 {
     int fd;
-    int flags;
     struct stat opened;
     FILE *fp;
 
@@ -80,17 +79,27 @@ int c_hash_entry(DIR *parent, const char *name, const char *file_name,
         return (c_hash_stream(file_name, NULL, st, mf_sum, sf_sum, sha256_sum));
     }
 
+    /* MinGW has no O_NONBLOCK or fcntl. A FIFO cannot block open() there. */
+#ifndef WIN32
     fd = fim_open_entry(parent, name, file_name, O_RDONLY | O_NONBLOCK);
+#else
+    fd = fim_open_entry(parent, name, file_name, O_RDONLY);
+#endif
     if (fd < 0 || fstat(fd, &opened) < 0 || !S_ISREG(opened.st_mode)) {
         if (fd >= 0) {
             close(fd);
         }
         return (c_hash_stream(file_name, NULL, st, mf_sum, sf_sum, sha256_sum));
     }
-    flags = fcntl(fd, F_GETFL);
-    if (flags != -1 && (flags & O_NONBLOCK)) {
-        (void)fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+#ifndef WIN32
+    {
+        int flags = fcntl(fd, F_GETFL);
+
+        if (flags != -1 && (flags & O_NONBLOCK)) {
+            (void)fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+        }
     }
+#endif
     fp = fdopen(fd, "r");
     if (fp == NULL) {
         close(fd);
@@ -106,7 +115,6 @@ int c_hash_entry_follow(DIR *parent, const char *name, const char *file_name,
                         os_md5 mf_sum, os_sha1 sf_sum, os_sha256 sha256_sum)
 {
     int fd;
-    int flags;
     struct stat opened;
     FILE *fp;
 
@@ -127,10 +135,15 @@ int c_hash_entry_follow(DIR *parent, const char *name, const char *file_name,
         return (0);
     }
 
-    flags = fcntl(fd, F_GETFL);
-    if (flags != -1 && (flags & O_NONBLOCK)) {
-        (void)fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+#ifndef WIN32
+    {
+        int flags = fcntl(fd, F_GETFL);
+
+        if (flags != -1 && (flags & O_NONBLOCK)) {
+            (void)fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+        }
     }
+#endif
     fp = fdopen(fd, "r");
     if (fp == NULL) {
         close(fd);
