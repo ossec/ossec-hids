@@ -477,6 +477,7 @@ int CreatePID(const char *name, int pid)
 {
     char file[256];
     FILE *fp;
+    int fd;
 
     if (isChroot()) {
         snprintf(file, 255, "%s/%s-%d.pid", OS_PIDFILE, name, pid);
@@ -485,19 +486,45 @@ int CreatePID(const char *name, int pid)
                  OS_PIDFILE, name, pid);
     }
 
-    fp = fopen(file, "a");
+    /* var/run is group writable, so never write through a name that is
+     * already there (it could be a symlink planted by the ossec group).
+     * Nothing alive can own a pid file with our pid: drop any leftover
+     * and create the file anew. O_EXCL fails instead of following links
+     * (ANT-2026-1O4BCXPR). */
+    unlink(file);
+    {
+        int oflags = O_WRONLY | O_CREAT | O_EXCL;
+#ifdef O_NOFOLLOW
+        oflags |= O_NOFOLLOW;
+#endif
+        fd = open(file, oflags, 0640);
+    }
+    if (fd < 0) {
+        return (-1);
+    }
+
+    fp = fdopen(fd, "w");
     if (!fp) {
+        close(fd);
+        unlink(file);
         return (-1);
     }
 
     fprintf(fp, "%d\n", pid);
 
-    if (chmod(file, 0640) != 0) {
+#ifndef WIN32
+    /* On the descriptor, not the path, and regardless of umask. */
+    if (fchmod(fd, 0640) != 0) {
         fclose(fp);
+        unlink(file);
         return (-1);
     }
+#endif
 
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        unlink(file);
+        return (-1);
+    }
 
     return (0);
 }
