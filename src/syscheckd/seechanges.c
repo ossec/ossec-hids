@@ -7,6 +7,9 @@
  * Foundation
  */
 
+#include <errno.h>
+#include <fcntl.h>
+
 #include "shared.h"
 #include "os_crypto/sha256/sha256_op.h"
 #include "syscheck.h"
@@ -140,6 +143,55 @@ static char *gen_diff_alert(const char *filename, time_t alert_diff_time)
     return (strdup(diff_alert));
 }
 
+/* Remove a last-entry that is a symlink or already larger than the diff
+ * cap. unlink() on a symlink removes the link, not its target. */
+static void seechanges_reclaim_snapshot(const char *path)
+{
+#ifndef WIN32
+    struct stat snap;
+
+    if (lstat(path, &snap) < 0) {
+        return;
+    }
+    if (S_ISLNK(snap.st_mode)) {
+        (void)unlink(path);
+        return;
+    }
+    if (S_ISREG(snap.st_mode) && syscheck.diff_max_size > 0 &&
+            snap.st_size > 0 &&
+            (size_t)snap.st_size > syscheck.diff_max_size) {
+        (void)unlink(path);
+    }
+#else
+    (void)path;
+#endif
+}
+
+#ifndef WIN32
+/* Create or replace the snapshot without following a symlink at the
+ * final path. A planted last-entry link must not be truncated. */
+static FILE *seechanges_open_dest(const char *path)
+{
+    int fd;
+    FILE *fp;
+
+    fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0640);
+    if (fd < 0 && errno == ELOOP) {
+        if (unlink(path) == 0) {
+            fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0640);
+        }
+    }
+    if (fd < 0) {
+        return (NULL);
+    }
+    fp = fdopen(fd, "w");
+    if (!fp) {
+        close(fd);
+    }
+    return (fp);
+}
+#endif
+
 static int seechanges_dupfile(const char *old, const char *current)
 {
     size_t n;
@@ -160,7 +212,23 @@ static int seechanges_dupfile(const char *old, const char *current)
         return (0);
     }
 
+#ifndef WIN32
+    if (syscheck.diff_max_size > 0) {
+        struct stat srcst;
+
+        if (fstat(fileno(fpr), &srcst) == 0 && srcst.st_size > 0 &&
+                (size_t)srcst.st_size > syscheck.diff_max_size) {
+            fclose(fpr);
+            return (0);
+        }
+    }
+#endif
+
+#ifndef WIN32
+    fpw = seechanges_open_dest(current);
+#else
     fpw = fopen(current, "w");
+#endif
     if (!fpw) {
         fclose(fpr);
         return (0);
@@ -173,10 +241,21 @@ static int seechanges_dupfile(const char *old, const char *current)
     }
 #endif
 
-    do {
-        buf[n] = '\0';
-        fwrite(buf, n, 1, fpw);
-    } while ((n = fread(buf, 1, 2048, fpr)) > 0);
+    {
+        size_t copied = 0;
+
+        do {
+            copied += n;
+            if (syscheck.diff_max_size > 0 && copied > syscheck.diff_max_size) {
+                fclose(fpr);
+                fclose(fpw);
+                unlink(current);
+                return (0);
+            }
+            buf[n] = '\0';
+            fwrite(buf, n, 1, fpw);
+        } while ((n = fread(buf, 1, 2048, fpr)) > 0);
+    }
 
 #ifdef USE_MAGIC
 cleanup:
@@ -322,8 +401,37 @@ char *seechanges_addfile(const char *filename)
         return (NULL);
     }
 
-    /* If the file is not there, create the first snapshot */
-    if (OS_SHA256_File(old_location, sha256_old, OS_BINARY) != 0) {
+    /* Diff copies use a smaller cap than checksums, so one sparse file
+     * cannot write a gigabyte of zeros into queue/diff (ANT-2026-J8XF7LCX).
+     * st_size 0 still reaches the copy loop, which counts bytes.
+     * Drop an already-expanded snapshot so a pre-cap copy does not stay
+     * on disk while the live file remains over the limit. */
+    if (syscheck.diff_max_size > 0 && statbuf.st_size > 0 &&
+            (size_t)statbuf.st_size > syscheck.diff_max_size) {
+        seechanges_reclaim_snapshot(old_location);
+        debug1("%s: DEBUG: '%s' is over the diff size limit.", ARGV0, filename);
+        return (NULL);
+    }
+
+    /* Hash the stored snapshot with the same byte cap. A last-entry
+     * written before the cap (or a sparse one) must not be read to EOF. */
+#ifndef WIN32
+    if (OS_SHA256_File_nofollow_max(old_location, sha256_old, OS_BINARY,
+                                    syscheck.diff_max_size) != 0) {
+#else
+    if (OS_SHA256_File_max(old_location, sha256_old, OS_BINARY,
+                           syscheck.diff_max_size) != 0) {
+#endif
+        if (errno == EFBIG) {
+            /* Drop the oversized snapshot so the next scan does not
+             * re-read it up to the cap. A st_size of 0 would not match
+             * the reclaim size check, so unlink here as well. */
+            (void)unlink(old_location);
+        } else {
+            /* Symlink last-entry (ELOOP): remove the link before the
+             * copy, which must not truncate the link target. */
+            seechanges_reclaim_snapshot(old_location);
+        }
         if (seechanges_dupfile(filename, old_location) != 1) {
             merror("%s: ERROR: Unable to create snapshot for %s", ARGV0, filename);
         }
@@ -332,14 +440,18 @@ char *seechanges_addfile(const char *filename)
 
     /* Hash the live path the same way we snapshot it (nofollow). */
 #ifndef WIN32
-    if (OS_SHA256_File_nofollow(filename, sha256_new, OS_BINARY) != 0) {
-        return (NULL);
-    }
+    if (OS_SHA256_File_nofollow_max(filename, sha256_new, OS_BINARY,
+                                    syscheck.diff_max_size) != 0) {
 #else
-    if (OS_SHA256_File(filename, sha256_new, OS_BINARY) != 0) {
+    if (OS_SHA256_File_max(filename, sha256_new, OS_BINARY,
+                           syscheck.diff_max_size) != 0) {
+#endif
+        if (errno == EFBIG) {
+            merror("%s: ERROR: '%s' is over the diff size limit.",
+                   ARGV0, filename);
+        }
         return (NULL);
     }
-#endif
 
     /* If they match, keep the old file and remove the new */
     if (strcmp(sha256_new, sha256_old) == 0) {

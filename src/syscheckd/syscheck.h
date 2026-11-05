@@ -111,6 +111,11 @@ char *seechanges_addfile(const char *filename) __attribute__((nonnull));
  */
 int c_read_file(const char *file_name, const char *oldsum, char *newsum) __attribute__((nonnull));
 
+#include "os_crypto/md5_sha1/md5_sha1_op.h"
+/* 0 hashed, 1 over syscheck.file_max_size (sums are xxx), -1 unreadable. */
+int c_hash_file(const char *file_name, const struct stat *st,
+                os_md5 mf_sum, os_sha1 sf_sum, os_sha256 sha256_sum);
+
 int send_syscheck_msg(const char *msg) __attribute__((nonnull));
 int send_rootcheck_msg(const char *msg) __attribute__((nonnull));
 

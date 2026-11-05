@@ -277,8 +277,19 @@ static int _rk_check_file(char *file, char *pattern, int is_list)
 
                 debug1(" starting new file: %s", file);
                 buf[OS_SIZE_2048] = '\0';
+                {
+                unsigned int lines = 0;
                 while (fgets(buf, OS_SIZE_2048, fp) != NULL) {
                     char *nbuf;
+
+                    /* st_size does not bound procfs or a file that grows.
+                     * Stop so one link cannot stall the scan. */
+                    if (++lines > MAX_RK_READ_LINES) {
+                        merror("%s: WARN: File too long, not checked to the "
+                               "end: '%s'", ARGV0, file);
+                        full_negate = 0;
+                        break;
+                    }
 
                     /* Remove end of line */
                     nbuf = strchr(buf, '\n');
@@ -333,6 +344,7 @@ static int _rk_check_file(char *file, char *pattern, int is_list)
                         full_negate = 0;
                         break;
                     }
+                }
                 }
 
                 fclose(fp);
@@ -397,15 +409,17 @@ void rk_append_file_hash(const char *file_path, char *dest, size_t dest_size)
         return;
     }
 
-    if (stat(file_path, &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
-        int md5sha1_ok = (OS_MD5_SHA1_File(file_path, md5, sha1, OS_BINARY) == 0);
-        int sha256_ok  = (OS_SHA256_File(file_path, sha256, OS_BINARY) == 0);
+    if (stat(file_path, &statbuf) == 0 && S_ISREG(statbuf.st_mode) &&
+            (rootcheck.file_max_size == 0 || statbuf.st_size <= 0 ||
+             (size_t)statbuf.st_size <= rootcheck.file_max_size)) {
+        int ok = (OS_MD5_SHA1_SHA256_File(file_path, md5, sha1, sha256,
+                                          OS_BINARY, rootcheck.file_max_size) == 0);
 
         snprintf(dest + used, dest_size - used,
                  " MD5=%s SHA1=%s SHA256=%s",
-                 md5sha1_ok ? md5    : "n/a",
-                 md5sha1_ok ? sha1   : "n/a",
-                 sha256_ok  ? sha256 : "n/a");
+                 ok ? md5    : "n/a",
+                 ok ? sha1   : "n/a",
+                 ok ? sha256 : "n/a");
     } else {
         snprintf(dest + used, dest_size - used,
                  " MD5=n/a SHA1=n/a SHA256=n/a");

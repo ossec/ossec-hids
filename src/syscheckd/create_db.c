@@ -139,62 +139,25 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
                 struct stat statbuf_lnk;
                 if (stat(file_name, &statbuf_lnk) == 0) {
                     if (S_ISREG(statbuf_lnk.st_mode)) {
-                        if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
-                            if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0) {
-                                c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
-                                            ARGV0, file_name, strerror(errno));
-                                checksum_failed = 1;
-                                strncpy(mf_sum, "xxx", 4);
-                                strncpy(sf_sum, "xxx", 4);
-                            }
-                        }
-                        if (opts & CHECK_SHA256SUM) {
-                            if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                                c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
-                                            ARGV0, file_name, strerror(errno));
-                                checksum_failed = 1;
-                                strncpy(sha256_sum, "xxx", 4);
-                            }
+                        if (c_hash_file(file_name, &statbuf_lnk, mf_sum, sf_sum, sha256_sum) < 0) {
+                            c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                        ARGV0, file_name, strerror(errno));
+                            checksum_failed = 1;
                         }
                     }
                 }
             } else {
-                 if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
-                     if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0) {
-                        c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
-                                    ARGV0, file_name, strerror(errno));
-                        checksum_failed = 1;
-                        strncpy(mf_sum, "xxx", 4);
-                        strncpy(sf_sum, "xxx", 4);
-                     }
-                 }
-                 if (opts & CHECK_SHA256SUM) {
-                    if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                        c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
-                                    ARGV0, file_name, strerror(errno));
-                        checksum_failed = 1;
-                        strncpy(sha256_sum, "xxx", 4);
-                    }
-                 }
-            }
-#else
-            if ((opts & CHECK_MD5SUM) || (opts & CHECK_SHA1SUM)) {
-                if (OS_MD5_SHA1_File(file_name, mf_sum, sf_sum, OS_BINARY) < 0)
-                {
+                if (c_hash_file(file_name, &statbuf, mf_sum, sf_sum, sha256_sum) < 0) {
                     c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                 ARGV0, file_name, strerror(errno));
                     checksum_failed = 1;
-                    strncpy(mf_sum, "xxx", 4);
-                    strncpy(sf_sum, "xxx", 4);
                 }
             }
-            if (opts & CHECK_SHA256SUM) {
-                if (OS_SHA256_File(file_name, sha256_sum, OS_BINARY) < 0) {
-                    c_read_warn("%s: WARN: Unable to read file '%s' for sha256: %s",
-                                ARGV0, file_name, strerror(errno));
-                    checksum_failed = 1;
-                    strncpy(sha256_sum, "xxx", 4);
-                }
+#else
+            if (c_hash_file(file_name, &statbuf, mf_sum, sf_sum, sha256_sum) < 0) {
+                c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                            ARGV0, file_name, strerror(errno));
+                checksum_failed = 1;
             }
 #endif
 

@@ -66,6 +66,7 @@ REGRESSION_BINS = \
 	issue_c186ep5n_nodiff_size \
 	issue_96vsxf8b_diff_store_symlink \
 	issue_2138nb95_report_changes_symlink \
+	issue_j8xf7lcx_file_max_size \
 	issue_s3eu4a19_crawler_dns \
 	issue_ktgcyz58_getalert_headers \
 	issue_35jw8ghu_log_rollover \
@@ -852,6 +853,16 @@ issue_2138nb95_report_changes_symlink: \
 	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
 		tests/regressions/issue_2138nb95_report_changes_symlink.c \
 		syscheckd/seechanges.c \
+		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-J8XF7LCX: whole-file reads stop at a byte cap.
+issue_j8xf7lcx_file_max_size: \
+		tests/regressions/issue_j8xf7lcx_file_max_size.c \
+		syscheckd/seechanges.c syscheckd/fim_hash.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
+		tests/regressions/issue_j8xf7lcx_file_max_size.c \
+		syscheckd/seechanges.c syscheckd/fim_hash.c \
 		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
