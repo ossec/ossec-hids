@@ -80,6 +80,7 @@ int rootcheck_init(int test_config)
     rootcheck.readall = 0;
     rootcheck.disabled = 0;
     rootcheck.skip_nfs = 0;
+    rootcheck.file_max_size = (size_t)1024 * 1024 * 1024;
     rootcheck.alert_msg = NULL;
     rootcheck.time = ROOTCHECK_WAIT;
 
@@ -94,6 +95,7 @@ int rootcheck_init(int test_config)
 #ifdef OSSECHIDS
     rootcheck.tsleep = (unsigned int) getDefine_Int("rootcheck", "sleep", 0, 64);
     rootcheck.sleep_after = getDefine_Int("rootcheck", "sleep_after", 1, 9999);
+    rootcheck.file_max_size = (size_t) getDefine_Int("syscheck", "file_max_size", 0, 4095) * 1024 * 1024;
 #endif
 
 #ifdef WIN32

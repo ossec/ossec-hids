@@ -92,7 +92,7 @@ static int read_sys_file(DIR *parent, const char *name,
         char buf[OS_SIZE_1024];
         int fd;
         ssize_t nr;
-        long int total = 0;
+        size_t total = 0;
 
         /* O_NONBLOCK: a FIFO planted after lstat must not park syscheckd
          * (ANT-2026-KZAJSOET). MinGW has no O_NONBLOCK. rk_open_entry()
@@ -118,19 +118,31 @@ static int read_sys_file(DIR *parent, const char *name,
 
             if (fstat(fd, &opened_st) < 0 || !S_ISREG(opened_st.st_mode)) {
                 close(fd);
+            } else if (rootcheck.file_max_size > 0 && statbuf.st_size > 0 &&
+                       (size_t)statbuf.st_size > rootcheck.file_max_size) {
+                /* Sparse or huge file: do not read it to EOF. */
+                close(fd);
             } else {
+                int over = 0;
+
                 while ((nr = read(fd, buf, sizeof(buf))) > 0) {
-                    total += nr;
+                    total += (size_t)nr;
+                    if (rootcheck.file_max_size > 0 &&
+                            total > rootcheck.file_max_size) {
+                        over = 1;
+                        break;
+                    }
                 }
                 close(fd);
-
-                if (strcmp(file_name, "/dev/bus/usb/.usbfs/devices") == 0) {
-                    /* Ignore .usbfs/devices */
-                } else if (total != statbuf.st_size) {
+                /* Grew past the cap (or st_size was a lie): skip the size
+                 * comparison so a short read is not an alert. */
+                if (!over &&
+                        strcmp(file_name, "/dev/bus/usb/.usbfs/devices") != 0 &&
+                        (off_t)total != statbuf.st_size) {
                     struct stat statbuf2;
 
                     if ((rk_lstat_entry(parent, name, file_name, &statbuf2) == 0) &&
-                            (total != statbuf2.st_size) &&
+                            ((off_t)total != statbuf2.st_size) &&
                             (statbuf.st_size == statbuf2.st_size)) {
                         char op_msg[OS_SIZE_2048 + 1];
                         snprintf(op_msg, OS_SIZE_2048, "Anomaly detected in file "
@@ -251,6 +263,12 @@ static int read_sys_dir(DIR *parent, const char *name,
             break;
         }
         i++;
+    }
+    /* /dev/shm is world-writable. Reading every file there lets a local
+     * user stall the scan with a sparse file. Name checks still run.
+     * <readall>yes</readall> opts back in (ANT-2026-J8XF7LCX). */
+    if (strcmp(dir_name, "/dev/shm") == 0 || strcmp(dir_name, "/run/shm") == 0) {
+        do_read = rootcheck.readall;
     }
 #else
     do_read = 0;

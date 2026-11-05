@@ -31,6 +31,8 @@ typedef struct _rkconfig {
     int readall;
     int disabled;
     short skip_nfs;
+    /* Same byte cap as syscheck.file_max_size (0 = no limit). */
+    size_t file_max_size;
 
 #ifdef OSSECHIDS
     unsigned int tsleep;

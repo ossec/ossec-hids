@@ -53,6 +53,10 @@ static void read_internal(int debug_level)
 {
     syscheck.tsleep = (unsigned int) getDefine_Int("syscheck", "sleep", 0, 64);
     syscheck.sleep_after = getDefine_Int("syscheck", "sleep_after", 1, 9999);
+    /* Megabytes. 0 disables the cap. */
+    syscheck.file_max_size = (size_t) getDefine_Int("syscheck", "file_max_size", 0, 4095) * 1024 * 1024;
+    /* Kilobytes. Smaller than file_max_size: diff copies expand holes. */
+    syscheck.diff_max_size = (size_t) getDefine_Int("syscheck", "diff_max_size", 0, 1048576) * 1024;
 
     /* Check current debug_level
      * Command line setting takes precedence

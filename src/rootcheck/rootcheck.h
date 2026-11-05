@@ -25,6 +25,9 @@ extern rkconfig rootcheck;
 /* Maximum files to search on the whole system */
 #define MAX_RK_SYS      512
 
+/* Maximum lines of a policy file read for a pattern (ANT-2026-J8XF7LCX). */
+#define MAX_RK_READ_LINES   100000
+
 /* rk_types */
 #define ALERT_OK                0
 #define ALERT_SYSTEM_ERR        1

@@ -89,6 +89,8 @@ jobs:
           ./src/issue_b5y9piu1_policy_owner
           make -C src -f tests/regressions/Makefile issue_2138nb95_report_changes_symlink
           ./src/issue_2138nb95_report_changes_symlink
+          make -C src -f tests/regressions/Makefile issue_j8xf7lcx_file_max_size
+          ./src/issue_j8xf7lcx_file_max_size
 
   build-windows-agent:
     name: Windows agent (cross-compile)

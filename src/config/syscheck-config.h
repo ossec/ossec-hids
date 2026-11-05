@@ -50,6 +50,10 @@ typedef struct _rtfim {
 typedef struct _config {
     unsigned int tsleep;            /* sleep for sometime for daemon to settle */
     int sleep_after;
+    /* Checksums stop after this many bytes (0 = no limit). ANT-2026-J8XF7LCX */
+    size_t file_max_size;
+    /* report_changes copies stop after this many bytes (0 = no limit). */
+    size_t diff_max_size;
     int rootcheck;                  /* set to 0 when rootcheck is disabled */
     int disabled;                   /* is syscheck disabled? */
     int scan_on_start;
