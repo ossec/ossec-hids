@@ -74,12 +74,11 @@ int OS_MD5_SHA1_File(const char *fname, os_md5 md5output, os_sha1 sha1output, in
     return (0);
 }
 
-int OS_MD5_SHA1_SHA256_File(const char *fname, os_md5 md5output, os_sha1 sha1output,
-                            os_sha256 sha256output, int mode, size_t max_size)
+int OS_MD5_SHA1_SHA256_Fp(FILE *fp, os_md5 md5output, os_sha1 sha1output,
+                          os_sha256 sha256output, size_t max_size)
 {
     size_t n;
     size_t total = 0;
-    FILE *fp;
     unsigned char buf[2048 + 2];
     unsigned char sha1_digest[SHA_DIGEST_LENGTH];
     unsigned char md5_digest[16];
@@ -93,16 +92,6 @@ int OS_MD5_SHA1_SHA256_File(const char *fname, os_md5 md5output, os_sha1 sha1out
     sha256output[0] = '\0';
     buf[2048 + 1] = '\0';
 
-#ifndef WIN32
-    (void)mode;
-    fp = fopen_regular(fname);
-#else
-    fp = fopen(fname, mode == OS_BINARY ? "rb" : "r");
-#endif
-    if (!fp) {
-        return (-1);
-    }
-
     MD5Init(&md5_ctx);
     SHA1_Init(&sha1_ctx);
     os_SHA256_Init(&sha256_ctx);
@@ -111,7 +100,6 @@ int OS_MD5_SHA1_SHA256_File(const char *fname, os_md5 md5output, os_sha1 sha1out
         if (max_size > 0) {
             total += n;
             if (total > max_size) {
-                fclose(fp);
                 md5output[0] = '\0';
                 sha1output[0] = '\0';
                 sha256output[0] = '\0';
@@ -142,6 +130,26 @@ int OS_MD5_SHA1_SHA256_File(const char *fname, os_md5 md5output, os_sha1 sha1out
         sha256output += 2;
     }
 
-    fclose(fp);
     return (0);
+}
+
+int OS_MD5_SHA1_SHA256_File(const char *fname, os_md5 md5output, os_sha1 sha1output,
+                            os_sha256 sha256output, int mode, size_t max_size)
+{
+    FILE *fp;
+    int rc;
+
+#ifndef WIN32
+    (void)mode;
+    fp = fopen_regular(fname);
+#else
+    fp = fopen(fname, mode == OS_BINARY ? "rb" : "r");
+#endif
+    if (!fp) {
+        return (-1);
+    }
+
+    rc = OS_MD5_SHA1_SHA256_Fp(fp, md5output, sha1output, sha256output, max_size);
+    fclose(fp);
+    return (rc);
 }

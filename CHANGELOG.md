@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Look each syscheck directory entry up on the directory that was opened (``fstatat``/``openat``/``fdopendir`` with ``O_NOFOLLOW``), and do not follow a symlink below a configured directory on the realtime path, so a local user cannot redirect the walk onto root-only files (ANT-2026-MBH20U16)
 - @atomicturtle - Stop ``ossec-syscheckd`` from hashing or fully reading a file past ``syscheck.file_max_size`` (default 1024 MB; one MD5+SHA-1+SHA-256 pass) and from copying a ``report_changes`` snapshot past ``syscheck.diff_max_size`` (default 10 MB). Rootcheck policy reads stop after 100000 lines, and ``/dev/shm`` is not read unless ``<readall>`` is set, so one sparse file cannot stall FIM and rootcheck (ANT-2026-J8XF7LCX)
 - @atomicturtle - Open ``report_changes`` snapshots and live-file hashes via a per-component ``openat(O_NOFOLLOW)`` walk (``fopen_regular_nofollow`` / ``OS_SHA256_File_nofollow``), and refuse leaf symlinks in ``seechanges_addfile``, so a local user cannot redirect diffs at a root-only file through a leaf or parent symlink (ANT-2026-2138NB95)
 - @atomicturtle - Pause rootcheck's hidden-process scan only for PIDs that do not add up (and at most ``rootcheck.sleep_after`` times per pass, default 32), so idle threads cannot stall realtime FIM for ``rootcheck.sleep`` seconds each (ANT-2026-AE2I21JQ); look up directory entries via ``fstatat``/``openat``/``fdopendir`` on the open parent so a local user cannot hang the scan with a symlink ring (ANT-2026-W5QJUUX2)

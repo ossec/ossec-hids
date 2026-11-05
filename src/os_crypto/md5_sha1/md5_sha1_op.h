@@ -24,4 +24,9 @@ int OS_MD5_SHA1_SHA256_File(const char *fname, os_md5 md5output, os_sha1 sha1out
                             os_sha256 sha256output, int mode, size_t max_size)
 __attribute((nonnull(1, 2, 3, 4)));
 
+/* Hash an open stream. Does not close fp. max_size 0 means no cap. */
+int OS_MD5_SHA1_SHA256_Fp(FILE *fp, os_md5 md5output, os_sha1 sha1output,
+                          os_sha256 sha256output, size_t max_size)
+__attribute((nonnull(1, 2, 3, 4)));
+
 #endif

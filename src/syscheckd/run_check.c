@@ -539,13 +539,15 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #ifdef WIN32
     return_error = (stat(file_name, &statbuf) < 0);
 #else
-    return_error = (lstat(file_name, &statbuf) < 0);
+    return_error = (fim_lstat_monitored(file_name, &statbuf) < 0);
 #endif
     if (return_error)
     {
         /* Only treat missing paths as deletions; other metadata errors
-         * (EACCES, etc.) must not look like "file deleted". */
-        if (errno == ENOENT || errno == ENOTDIR) {
+         * (EACCES, etc.) must not look like "file deleted". A symlink
+         * below the configured directory is the same as a missing path
+         * (ANT-2026-MBH20U16). */
+        if (errno == ENOENT || errno == ENOTDIR || errno == ELOOP) {
             char alert_msg[PATH_MAX+4];
 
             /* The realtime queue may see the path vanish between its own
@@ -674,7 +676,7 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
         if (stat(file_name, &statbuf_lnk) == 0) {
             if (S_ISREG(statbuf_lnk.st_mode)) {
                 if (sha1sum || md5sum || sha256sum) {
-                    if (c_hash_file(file_name, &statbuf_lnk, mf_sum, sf_sum, sha256_sum) < 0) {
+                    if (c_hash_file_follow(file_name, &statbuf_lnk, mf_sum, sf_sum, sha256_sum) < 0) {
                         c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                     ARGV0, file_name, strerror(errno));
                         checksum_failed = 1;
