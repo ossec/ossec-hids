@@ -39,6 +39,7 @@ REGRESSION_BINS = \
 	issue_2100_authd_ssl \
 	getalert_empty_filename \
 	issue_1o4bcxpr_createpid \
+	issue_ave66yb6_report_store \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -258,6 +259,14 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 
 getalert_empty_filename: tests/regressions/getalert_empty_filename.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/getalert_empty_filename.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-AVE66YB6: daily report top-entry tables must not be quadratic
+# in the number of distinct locations.
+issue_ave66yb6_report_store: \
+		tests/regressions/issue_ave66yb6_report_store.c shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ave66yb6_report_store.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 

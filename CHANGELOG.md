@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - File daily-report top entries in hash tables and sort each table once, and grow the kept-alert array geometrically, so a day of distinct locations, users, or source addresses cannot stall ``ossec-monitord`` after midnight (ANT-2026-AVE66YB6)
 - @atomicturtle - Create ``var/run`` pid files with ``O_EXCL`` and ``fchmod`` the descriptor, so a process in group ``ossec`` cannot make a root daemon append to or ``chmod`` an arbitrary file through a symlink planted in the group-writable pid directory (ANT-2026-1O4BCXPR)
 - @atomicturtle - Keep one ``report_changes`` snapshot per file and stop copying once ``queue/diff`` reaches ``syscheck.diff_quota_size`` (default 1 GiB). ``state.*`` and ``diff.*`` are removed after the alert is read, and a deleted file's snapshot is removed with it, so ``report_changes`` cannot fill the disk (ANT-2026-4T9F7XIQ)
 - @atomicturtle - Look each syscheck directory entry up on the directory that was opened (``fstatat``/``openat``/``fdopendir`` with ``O_NOFOLLOW``), and do not follow a symlink below a configured directory on the realtime path, so a local user cannot redirect the walk onto root-only files (ANT-2026-MBH20U16)

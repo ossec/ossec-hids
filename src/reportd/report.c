@@ -61,6 +61,10 @@ int main(int argc, char **argv)
     /* Set the name */
     OS_SetName(ARGV0);
 
+    /* os_ReportdStart() prints through r_filter.fp. Leave it NULL so a
+     * stdin report goes to stderr instead of an uninitialized FILE*. */
+    memset(&r_filter, 0, sizeof(r_filter));
+
     r_filter.group = NULL;
     r_filter.rule = NULL;
     r_filter.level = NULL;

@@ -30,7 +30,7 @@ jobs:
           dnf install -y dnf-plugins-core
           dnf config-manager --set-enabled crb || true
           dnf install -y gcc make openssl-devel pcre2-devel zlib-devel \
-            systemd-devel libevent-devel
+            systemd-devel libevent-devel diffutils
           dnf install -y file-devel || true
           if [ "${{ matrix.use_curl }}" = "yes" ]; then
             dnf install -y libcurl-devel
@@ -63,6 +63,8 @@ jobs:
           ./src/getalert_empty_filename
           make -C src -f tests/regressions/Makefile issue_1o4bcxpr_createpid
           ./src/issue_1o4bcxpr_createpid
+          make -C src -f tests/regressions/Makefile issue_ave66yb6_report_store
+          ./src/issue_ave66yb6_report_store
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload
