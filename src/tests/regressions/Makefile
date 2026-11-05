@@ -40,6 +40,7 @@ REGRESSION_BINS = \
 	getalert_empty_filename \
 	issue_1o4bcxpr_createpid \
 	issue_ave66yb6_report_store \
+	issue_wi6tbpfx_cdb_value \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -268,6 +269,15 @@ issue_ave66yb6_report_store: \
 		tests/regressions/issue_ave66yb6_report_store.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ave66yb6_report_store.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-WI6TBPFX: address_match_key_value must NUL-terminate the CDB value.
+issue_wi6tbpfx_cdb_value: \
+		tests/regressions/issue_wi6tbpfx_cdb_value.c analysisd/lists_list.c cdb.a shared.a
+	$(CC) $(CFLAGS) -I./analysisd -c analysisd/lists_list.c -o analysisd/lists_list-wi6.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_wi6tbpfx_cdb_value.c \
+		analysisd/lists_list-wi6.o \
+		-Wl,--start-group cdb.a shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-1O4BCXPR: CreatePID must not follow a symlink in var/run.
@@ -1109,6 +1119,7 @@ clean:
 		analysisd/dodiff-ht.o \
 		analysisd/eventinfo-ht.o \
 		analysisd/eventinfo_list-ht.o \
+		analysisd/lists_list-wi6.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
