@@ -115,6 +115,31 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum) __attri
 /* 0 hashed, 1 over syscheck.file_max_size (sums are xxx), -1 unreadable. */
 int c_hash_file(const char *file_name, const struct stat *st,
                 os_md5 mf_sum, os_sha1 sf_sum, os_sha256 sha256_sum);
+/* Like c_hash_file, but follow a symlink in the final path component. */
+int c_hash_file_follow(const char *file_name, const struct stat *st,
+                       os_md5 mf_sum, os_sha1 sf_sum, os_sha256 sha256_sum);
+/* Hash the entry `name` of an already-open directory, not `path`. */
+int c_hash_entry(DIR *parent, const char *name, const char *file_name,
+                 const struct stat *st,
+                 os_md5 mf_sum, os_sha1 sf_sum, os_sha256 sha256_sum);
+/* Follow a symlink entry of parent. Does not re-walk `file_name`. */
+int c_hash_entry_follow(DIR *parent, const char *name, const char *file_name,
+                        const struct stat *st,
+                        os_md5 mf_sum, os_sha1 sf_sum, os_sha256 sha256_sum);
+
+/* Look up `name` in the directory `parent` was opened on. A NULL parent
+ * falls back to `path` (Windows, and callers with no directory fd). */
+int fim_lstat_entry(DIR *parent, const char *name, const char *path,
+                    struct stat *st);
+int fim_open_entry(DIR *parent, const char *name, const char *path, int flags);
+/* Follow a symlink leaf of parent. Does not re-walk path. */
+int fim_open_entry_follow(DIR *parent, const char *name, const char *path);
+DIR *fim_opendir_entry(DIR *parent, const char *name, const char *path);
+/* lstat that does not follow a symlink below a configured directory. */
+int fim_lstat_monitored(const char *path, struct stat *st);
+/* Open a regular file under a configured directory. follow_leaf follows
+ * only the final component. */
+FILE *fim_fopen_monitored(const char *path, int follow_leaf);
 
 int send_syscheck_msg(const char *msg) __attribute__((nonnull));
 int send_rootcheck_msg(const char *msg) __attribute__((nonnull));

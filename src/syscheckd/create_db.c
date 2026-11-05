@@ -23,9 +23,29 @@
 /* Global variables */
 static int __counter = 0;
 
+/* When set, any opendir failure in this tree marks the walk incomplete
+ * so callers (overflow delete reconcile) can refuse mass-delete recovery.
+ * Single-threaded syscheck only: not re-entrant / not safe across threads. */
+static int read_dir_track_complete = 0;
+static int read_dir_incomplete = 0;
+
+/* Levels below the directory the current walk started at */
+static int read_dir_depth = 0;
+static int read_dir_depth_warned = 0;
+
+static int read_file_at(DIR *parent, const char *entry_name,
+                        const char *file_name, int opts, OSMatch *restriction);
+static int read_dir_on(DIR *dp, const char *dir_name, int opts,
+                       OSMatch *restriction);
+
+int read_file(const char *file_name, int opts, OSMatch *restriction)
+{
+    return (read_file_at(NULL, NULL, file_name, opts, restriction));
+}
 
 /* Read and generate the integrity data of a file */
-int read_file(const char *file_name, int opts, OSMatch *restriction)
+static int read_file_at(DIR *parent, const char *entry_name,
+                        const char *file_name, int opts, OSMatch *restriction)
 {
     char *buf;
     char sha1s;
@@ -67,10 +87,15 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
     /* Win32 does not have lstat */
     if (stat(file_name, &statbuf) < 0)
 #else
-    if (lstat(file_name, &statbuf) < 0)
+    if (parent != NULL && entry_name != NULL) {
+        if (fim_lstat_entry(parent, entry_name, file_name, &statbuf) < 0) {
+            goto stat_failed;
+        }
+    } else if (fim_lstat_monitored(file_name, &statbuf) < 0)
 #endif
     {
-        if(errno == ENOTDIR){
+stat_failed:
+        if (errno == ENOTDIR || errno == ELOOP) {
 		/*Deletion message sending*/
 		char alert_msg[PATH_MAX+4];
 		alert_msg[PATH_MAX + 3] = '\0';
@@ -97,6 +122,29 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
         if (GetFileAttributes(file_name) & FILE_ATTRIBUTE_REPARSE_POINT) {
             merror("%s: WARN: Links are not supported: '%s'", ARGV0, file_name);
             return (-1);
+        }
+#endif
+#ifndef WIN32
+        if (parent != NULL && entry_name != NULL) {
+            DIR *child = fim_opendir_entry(parent, entry_name, file_name);
+
+            if (child == NULL) {
+                if (errno == ELOOP || errno == ENOTDIR || errno == ENOENT) {
+                    char alert_msg[PATH_MAX + 4];
+
+                    alert_msg[PATH_MAX + 3] = '\0';
+                    snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+                    send_syscheck_msg(alert_msg);
+                    return (0);
+                }
+                merror("%s: WARN: Error opening directory: '%s': %s ",
+                       ARGV0, file_name, strerror(errno));
+                if (read_dir_track_complete) {
+                    read_dir_incomplete = 1;
+                }
+                return (-1);
+            }
+            return (read_dir_on(child, file_name, opts, restriction));
         }
 #endif
         return (read_dir(file_name, opts, restriction));
@@ -136,18 +184,36 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
             /* If it is a link, check if dest is valid */
 #ifndef WIN32
             if (S_ISLNK(statbuf.st_mode)) {
-                struct stat statbuf_lnk;
-                if (stat(file_name, &statbuf_lnk) == 0) {
-                    if (S_ISREG(statbuf_lnk.st_mode)) {
-                        if (c_hash_file(file_name, &statbuf_lnk, mf_sum, sf_sum, sha256_sum) < 0) {
-                            c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
-                                        ARGV0, file_name, strerror(errno));
-                            checksum_failed = 1;
+                if (parent != NULL && entry_name != NULL) {
+                    if (c_hash_entry_follow(parent, entry_name, file_name,
+                                            &statbuf, mf_sum, sf_sum,
+                                            sha256_sum) < 0) {
+                        c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                    ARGV0, file_name, strerror(errno));
+                        checksum_failed = 1;
+                    }
+                } else {
+                    struct stat statbuf_lnk;
+                    if (stat(file_name, &statbuf_lnk) == 0) {
+                        if (S_ISREG(statbuf_lnk.st_mode)) {
+                            if (c_hash_file_follow(file_name, &statbuf_lnk, mf_sum, sf_sum, sha256_sum) < 0) {
+                                c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
+                                            ARGV0, file_name, strerror(errno));
+                                checksum_failed = 1;
+                            }
                         }
                     }
                 }
             } else {
-                if (c_hash_file(file_name, &statbuf, mf_sum, sf_sum, sha256_sum) < 0) {
+                int hash_rc;
+
+                if (parent != NULL && entry_name != NULL) {
+                    hash_rc = c_hash_entry(parent, entry_name, file_name, &statbuf,
+                                           mf_sum, sf_sum, sha256_sum);
+                } else {
+                    hash_rc = c_hash_file(file_name, &statbuf, mf_sum, sf_sum, sha256_sum);
+                }
+                if (hash_rc < 0) {
                     c_read_warn("%s: WARN: Unable to read file '%s' for checksum: %s",
                                 ARGV0, file_name, strerror(errno));
                     checksum_failed = 1;
@@ -643,27 +709,10 @@ int read_file(const char *file_name, int opts, OSMatch *restriction)
     return (0);
 }
 
-/* When set, any opendir failure in this tree marks the walk incomplete
- * so callers (overflow delete reconcile) can refuse mass-delete recovery.
- * Single-threaded syscheck only: not re-entrant / not safe across threads. */
-static int read_dir_track_complete = 0;
-static int read_dir_incomplete = 0;
-
-/* Levels below the directory the current walk started at */
-static int read_dir_depth = 0;
-static int read_dir_depth_warned = 0;
-
 int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 {
-    size_t dir_size;
-    char f_name[PATH_MAX + 2];
     short is_nfs;
-    int warned_long = 0;
-
     DIR *dp;
-    struct dirent *entry;
-
-    f_name[PATH_MAX + 1] = '\0';
 
 #ifdef WIN32
     /* opendir() is FindFirstFile. Refuse before it contacts a
@@ -679,7 +728,7 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
 #endif
 
     /* Directory should be valid */
-    if ((dir_size = strlen(dir_name)) > PATH_MAX) {
+    if (strlen(dir_name) > PATH_MAX) {
         merror(NULL_ERROR, ARGV0);
         if (read_dir_track_complete) {
             read_dir_incomplete = 1;
@@ -758,6 +807,47 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
         return (-1);
     }
 
+    return (read_dir_on(dp, dir_name, opts, restriction));
+}
+
+static int read_dir_on(DIR *dp, const char *dir_name, int opts,
+                       OSMatch *restriction)
+{
+    size_t dir_size;
+    char f_name[PATH_MAX + 2];
+    int warned_long = 0;
+    struct dirent *entry;
+
+    f_name[PATH_MAX + 1] = '\0';
+    dir_size = strlen(dir_name);
+
+    /* Nested directories enter here without going through read_dir(),
+     * which is where the depth cap and NFS skip used to run. */
+    if (read_dir_depth >= MAX_DIR_DEPTH) {
+        if (!read_dir_depth_warned) {
+            merror("%s: WARN: Directory '%s' is %d or more levels deep. "
+                   "Not scanning it.", ARGV0, dir_name, MAX_DIR_DEPTH);
+            read_dir_depth_warned = 1;
+        }
+        if (read_dir_track_complete) {
+            read_dir_incomplete = 1;
+        }
+        closedir(dp);
+        return (-1);
+    }
+
+    if (syscheck.skip_nfs) {
+        short is_nfs = IsNFS(dir_name);
+
+        if (is_nfs != 0) {
+            if (read_dir_track_complete) {
+                read_dir_incomplete = 1;
+            }
+            closedir(dp);
+            return (is_nfs);
+        }
+    }
+
     /* Check for real time flag */
     if (opts & CHECK_REALTIME) {
 #if defined(INOTIFY_ENABLED) || defined(WIN32)
@@ -774,7 +864,8 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
     while ((entry = readdir(dp)) != NULL) {
         /* Ignore . and ..  */
         if ((strcmp(entry->d_name, ".") == 0) ||
-                (strcmp(entry->d_name, "..") == 0)) {
+                (strcmp(entry->d_name, "..") == 0) ||
+                strchr(entry->d_name, '/') != NULL) {
             continue;
         }
 
@@ -797,7 +888,7 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
         /* Check if the file is a directory */
         if(opts & CHECK_NORECURSE) {
             struct stat recurse_sb;
-            if((stat(f_name, &recurse_sb)) < 0) {
+            if (fim_lstat_entry(dp, entry->d_name, f_name, &recurse_sb) < 0) {
                 merror("%s: ERR: Cannot stat %s: %s", ARGV0, f_name, strerror(errno));
             } else {
                 switch (recurse_sb.st_mode & S_IFMT) {
@@ -809,9 +900,10 @@ int read_dir(const char *dir_name, int opts, OSMatch *restriction)
         }
 
 
-        /* Check integrity of the file */
+        /* Check integrity of the file. The entry is resolved on dp, not
+         * by rebuilding the path from / (ANT-2026-MBH20U16). */
         read_dir_depth++;
-        read_file(f_name, opts, restriction);
+        read_file_at(dp, entry->d_name, f_name, opts, restriction);
         read_dir_depth--;
         errno = 0;
     }
