@@ -67,8 +67,16 @@ int open_log_append(const char *path) __attribute__((nonnull));
 /* Open for reading; only a regular file. Uses O_NONBLOCK|O_NOCTTY so a
  * FIFO or device cannot hang the caller; clears O_NONBLOCK on success.
  * Returns NULL with errno EINVAL when the path is not a regular file.
+ * Follows intermediate and leaf symbolic links (same as open/fopen).
  */
 FILE *fopen_regular(const char *path) __attribute__((nonnull));
+
+/* Like fopen_regular(), but resolves the path one component at a time with
+ * openat(O_NOFOLLOW): a symlink as any component (parent or leaf) is
+ * refused (errno ELOOP). Used by report_changes snapshots so a local user
+ * cannot redirect the copy at a root-only file (ANT-2026-2138NB95).
+ */
+FILE *fopen_regular_nofollow(const char *path) __attribute__((nonnull));
 #endif
 
 /* Checks for Windows Vista */

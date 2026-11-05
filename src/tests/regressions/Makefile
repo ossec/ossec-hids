@@ -65,6 +65,7 @@ REGRESSION_BINS = \
 	issue_3vn001l2_prefilter_retire \
 	issue_c186ep5n_nodiff_size \
 	issue_96vsxf8b_diff_store_symlink \
+	issue_2138nb95_report_changes_symlink \
 	issue_s3eu4a19_crawler_dns \
 	issue_ktgcyz58_getalert_headers \
 	issue_35jw8ghu_log_rollover \
@@ -840,6 +841,16 @@ issue_96vsxf8b_diff_store_symlink: \
 		syscheckd/seechanges.c shared.a os_crypto.a
 	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
 		tests/regressions/issue_96vsxf8b_diff_store_symlink.c \
+		syscheckd/seechanges.c \
+		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-2138NB95: report_changes snapshots must not follow symlinks.
+issue_2138nb95_report_changes_symlink: \
+		tests/regressions/issue_2138nb95_report_changes_symlink.c \
+		syscheckd/seechanges.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
+		tests/regressions/issue_2138nb95_report_changes_symlink.c \
 		syscheckd/seechanges.c \
 		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
