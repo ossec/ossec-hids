@@ -150,7 +150,9 @@ static int seechanges_dupfile(const char *old, const char *current)
     buf[2048] = '\0';
 
 #ifndef WIN32
-    fpr = fopen_regular(old);
+    /* Component walk with O_NOFOLLOW so a leaf or parent symlink cannot
+     * redirect the snapshot at a root-only file (ANT-2026-2138NB95). */
+    fpr = fopen_regular_nofollow(old);
 #else
     fpr = fopen(old, "r");
 #endif
@@ -286,13 +288,13 @@ char *seechanges_addfile(const char *filename)
     int status = -1;
     struct stat statbuf;
 
-    /* Only regular files (or links to them) have content to diff. Whoever
-     * can write the monitored directory chooses what is at this path, and
-     * a FIFO would block the daemon in fopen() below (ANT-2026-KZAJSOET).
-     * Hash helpers also use fopen_regular() so a swap after this check
-     * cannot hang either.
+    /* Refuse a leaf symlink (lstat). Parent-component symlinks are still
+     * followed by lstat/stat; those are refused when hashing and copying
+     * via fopen_regular_nofollow() (ANT-2026-2138NB95). FIFO / device
+     * refusal remains in the open helper (ANT-2026-KZAJSOET).
      */
-    if (stat(filename, &statbuf) < 0 || !S_ISREG(statbuf.st_mode)) {
+    if (lstat(filename, &statbuf) < 0 || !S_ISREG(statbuf.st_mode)) {
+        debug1("%s: DEBUG: Not a regular file, no diff for '%s'.", ARGV0, filename);
         return (NULL);
     }
 
@@ -320,18 +322,24 @@ char *seechanges_addfile(const char *filename)
         return (NULL);
     }
 
-    /* If the file is not there, rename new location to last location */
+    /* If the file is not there, create the first snapshot */
     if (OS_SHA256_File(old_location, sha256_old, OS_BINARY) != 0) {
         if (seechanges_dupfile(filename, old_location) != 1) {
-            merror(RENAME_ERROR, ARGV0, filename, old_location, errno, strerror(errno));
+            merror("%s: ERROR: Unable to create snapshot for %s", ARGV0, filename);
         }
         return (NULL);
     }
 
-    /* Get sha256sum of the new file */
+    /* Hash the live path the same way we snapshot it (nofollow). */
+#ifndef WIN32
+    if (OS_SHA256_File_nofollow(filename, sha256_new, OS_BINARY) != 0) {
+        return (NULL);
+    }
+#else
     if (OS_SHA256_File(filename, sha256_new, OS_BINARY) != 0) {
         return (NULL);
     }
+#endif
 
     /* If they match, keep the old file and remove the new */
     if (strcmp(sha256_new, sha256_old) == 0) {
@@ -357,6 +365,11 @@ char *seechanges_addfile(const char *filename)
 
     if (seechanges_dupfile(filename, old_location) != 1) {
         merror("%s: ERROR: Unable to create snapshot for %s", ARGV0, filename);
+        /* Restore last-entry so a nofollow refusal does not strand the store */
+        if (rename(tmp_location, old_location) < 0) {
+            merror("%s: ERROR: Unable to restore %s after failed snapshot: %s",
+                   ARGV0, old_location, strerror(errno));
+        }
         return (NULL);
     }
 
@@ -420,12 +433,12 @@ char *seechanges_addfile(const char *filename)
         goto cleanup;
     }
 
-    if (is_nodiff((filename))) {
+    if (is_nodiff(filename)) {
         /* Dont leak sensible data with a diff hanging around */
         FILE *fdiff;
-        char* nodiff_message = "<Diff truncated because nodiff option>";
+        char *nodiff_message = "<Diff truncated because nodiff option>";
         fdiff = fopen(diff_location, "w");
-        if (!fdiff){
+        if (!fdiff) {
             merror("%s: ERROR: Unable to open file for writing `%s`", ARGV0, diff_location);
             goto cleanup;
         }
@@ -457,7 +470,7 @@ char *seechanges_addfile(const char *filename)
 
         /* Success */
         status = 0;
-    };
+    }
 
 cleanup:
     if ((unlink(old_tmp)) < 0) {
