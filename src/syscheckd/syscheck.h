@@ -104,6 +104,9 @@ void c_read_defer_missing_alert(int defer);
 /* Process the content of the file changes */
 char *seechanges_addfile(const char *filename) __attribute__((nonnull));
 
+/* Drop the report_changes snapshot for a path that is gone. */
+void seechanges_delfile(const char *filename) __attribute__((nonnull));
+
 /* Get checksum changes.
  * Returns 0 on success, -1 if missing (delete alerted, unless the
  * realtime queue deferred it), -2 if metadata or checksum read failed

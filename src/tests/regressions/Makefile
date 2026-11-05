@@ -67,6 +67,7 @@ REGRESSION_BINS = \
 	issue_96vsxf8b_diff_store_symlink \
 	issue_2138nb95_report_changes_symlink \
 	issue_j8xf7lcx_file_max_size \
+	issue_4t9f7xiq_diff_store \
 	issue_mbh20u16_dirfd_walk \
 	issue_s3eu4a19_crawler_dns \
 	issue_ktgcyz58_getalert_headers \
@@ -864,6 +865,16 @@ issue_j8xf7lcx_file_max_size: \
 	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
 		tests/regressions/issue_j8xf7lcx_file_max_size.c \
 		syscheckd/seechanges.c syscheckd/fim_hash.c syscheckd/fim_dir.c \
+		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-4T9F7XIQ: one snapshot per file, and a cap on the diff store.
+issue_4t9f7xiq_diff_store: \
+		tests/regressions/issue_4t9f7xiq_diff_store.c \
+		syscheckd/seechanges.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
+		tests/regressions/issue_4t9f7xiq_diff_store.c \
+		syscheckd/seechanges.c \
 		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 

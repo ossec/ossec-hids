@@ -730,6 +730,9 @@ void realtime_pending_process(void)
                     prev = entry;
                     continue;
                 }
+#ifndef WIN32
+                seechanges_delfile(entry->path);
+#endif
                 if (syscheck.fp != NULL) {
                     oldsum = OSHash_Delete(syscheck.fp, entry->path);
                     free(oldsum);

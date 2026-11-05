@@ -101,6 +101,9 @@ stat_failed:
 		alert_msg[PATH_MAX + 3] = '\0';
 		snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
 		send_syscheck_msg(alert_msg);
+#ifndef WIN32
+		seechanges_delfile(file_name);
+#endif
 		return (0);
 	} else if (errno == ENOENT) {
 		/* Common under realtime CREATE for short-lived files (#1792). */
@@ -135,6 +138,7 @@ stat_failed:
                     alert_msg[PATH_MAX + 3] = '\0';
                     snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
                     send_syscheck_msg(alert_msg);
+                    seechanges_delfile(file_name);
                     return (0);
                 }
                 merror("%s: WARN: Error opening directory: '%s': %s ",
