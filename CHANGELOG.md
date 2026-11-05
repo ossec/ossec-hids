@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Keep one ``report_changes`` snapshot per file and stop copying once ``queue/diff`` reaches ``syscheck.diff_quota_size`` (default 1 GiB). ``state.*`` and ``diff.*`` are removed after the alert is read, and a deleted file's snapshot is removed with it, so ``report_changes`` cannot fill the disk (ANT-2026-4T9F7XIQ)
 - @atomicturtle - Look each syscheck directory entry up on the directory that was opened (``fstatat``/``openat``/``fdopendir`` with ``O_NOFOLLOW``), and do not follow a symlink below a configured directory on the realtime path, so a local user cannot redirect the walk onto root-only files (ANT-2026-MBH20U16)
 - @atomicturtle - Stop ``ossec-syscheckd`` from hashing or fully reading a file past ``syscheck.file_max_size`` (default 1024 MB; one MD5+SHA-1+SHA-256 pass) and from copying a ``report_changes`` snapshot past ``syscheck.diff_max_size`` (default 10 MB). Rootcheck policy reads stop after 100000 lines, and ``/dev/shm`` is not read unless ``<readall>`` is set, so one sparse file cannot stall FIM and rootcheck (ANT-2026-J8XF7LCX)
 - @atomicturtle - Open ``report_changes`` snapshots and live-file hashes via a per-component ``openat(O_NOFOLLOW)`` walk (``fopen_regular_nofollow`` / ``OS_SHA256_File_nofollow``), and refuse leaf symlinks in ``seechanges_addfile``, so a local user cannot redirect diffs at a root-only file through a leaf or parent symlink (ANT-2026-2138NB95)

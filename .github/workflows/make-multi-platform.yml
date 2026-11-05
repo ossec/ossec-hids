@@ -93,6 +93,8 @@ jobs:
           ./src/issue_j8xf7lcx_file_max_size
           make -C src -f tests/regressions/Makefile issue_mbh20u16_dirfd_walk
           ./src/issue_mbh20u16_dirfd_walk
+          make -C src -f tests/regressions/Makefile issue_4t9f7xiq_diff_store
+          ./src/issue_4t9f7xiq_diff_store
 
   build-windows-agent:
     name: Windows agent (cross-compile)

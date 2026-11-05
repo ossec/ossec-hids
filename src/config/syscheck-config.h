@@ -54,6 +54,7 @@ typedef struct _config {
     size_t file_max_size;
     /* report_changes copies stop after this many bytes (0 = no limit). */
     size_t diff_max_size;
+    size_t diff_quota_size;
     int rootcheck;                  /* set to 0 when rootcheck is disabled */
     int disabled;                   /* is syscheck disabled? */
     int scan_on_start;
