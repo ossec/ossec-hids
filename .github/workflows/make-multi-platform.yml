@@ -61,6 +61,8 @@ jobs:
           ./src/issue_2100_authd_ssl
           make -C src -f tests/regressions/Makefile getalert_empty_filename
           ./src/getalert_empty_filename
+          make -C src -f tests/regressions/Makefile issue_1o4bcxpr_createpid
+          ./src/issue_1o4bcxpr_createpid
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload

@@ -38,6 +38,7 @@ REGRESSION_BINS = \
 	issue_1953_xml_recursion \
 	issue_2100_authd_ssl \
 	getalert_empty_filename \
+	issue_1o4bcxpr_createpid \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -257,6 +258,14 @@ issue_2100_authd_ssl: tests/regressions/issue_2100_authd_ssl.c os_auth/ssl.c sha
 
 getalert_empty_filename: tests/regressions/getalert_empty_filename.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/getalert_empty_filename.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-1O4BCXPR: CreatePID must not follow a symlink in var/run.
+issue_1o4bcxpr_createpid: \
+		tests/regressions/issue_1o4bcxpr_createpid.c shared/file_op.c shared.a
+	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -o $@ \
+		tests/regressions/issue_1o4bcxpr_createpid.c shared/file_op.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
