@@ -34,13 +34,13 @@ typedef struct _report_filter {
     const char *files;
     char *filename;
 
-    OSStore *top_user;
-    OSStore *top_srcip;
-    OSStore *top_level;
-    OSStore *top_rule;
-    OSStore *top_group;
-    OSStore *top_location;
-    OSStore *top_files;
+    OSHash *top_user;
+    OSHash *top_srcip;
+    OSHash *top_level;
+    OSHash *top_rule;
+    OSHash *top_group;
+    OSHash *top_location;
+    OSHash *top_files;
 
     int related_user;
     int related_file;
@@ -58,7 +58,7 @@ typedef struct _report_filter {
 
 int  os_report_configfilter(const char *filter_by, const char *filter_value,
                             report_filter *r_filter, int arg_type) __attribute__((nonnull(3)));
-void os_report_printtop(FILE *out, void *topstore, const char *hname,
+void os_report_printtop(FILE *out, void *tophash, const char *hname,
                         int print_related) __attribute__((nonnull(2, 3)));
 void os_ReportdStart(report_filter *r_filter) __attribute__((nonnull));
 

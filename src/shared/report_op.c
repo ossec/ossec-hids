@@ -12,14 +12,15 @@
 /* Helper functions */
 static void l_print_out(FILE *out, const char *msg, ...)
     __attribute__((format(printf, 2, 3))) __attribute__((nonnull(2)));
-static void *_os_report_sort_compare(void *d1, void *d2) __attribute__((nonnull));
+static int _os_report_sort_compare(const void *d1, const void *d2) __attribute__((nonnull));
 static void _os_header_print(FILE *out, int t, const char *hname) __attribute__((nonnull(3)));
 static int _os_report_str_int_compare(const char *str, int id) __attribute__((nonnull));
 static int _os_report_check_filters(const alert_data *al_data, const report_filter *r_filter) __attribute__((nonnull));
 static int _report_filter_value(const char *filter_by, int prev_filter) __attribute__((nonnull));
 static int _os_report_print_related(FILE *out, int print_related, OSList *st_data)
     __attribute__((nonnull(3)));
-static int _os_report_add_tostore(const char *key, OSStore *top, void *data) __attribute__((nonnull(1, 2)));
+static int _os_report_add_tostore(const char *key, OSHash *top, void *data) __attribute__((nonnull(1, 2)));
+static void _os_report_free_store(OSHash *top) __attribute__((nonnull));
 
 
 static void l_print_out(FILE *out, const char *msg, ...)
@@ -37,19 +38,21 @@ static void l_print_out(FILE *out, const char *msg, ...)
     va_end(args);
 }
 
-/* Sort function used by OSStore sort
- * Returns if d1 > d2
+/* More alerts first. Equal counts stay in key order, which is what the
+ * old OSStore (inserted by strcmp, then insertion-sorted by count) printed.
  */
-static void *_os_report_sort_compare(void *d1, void *d2)
+static int _os_report_sort_compare(const void *d1, const void *d2)
 {
-    OSList *d1l = (OSList *)d1;
-    OSList *d2l = (OSList *)d2;
+    const OSHashNode *d1n = *(OSHashNode *const *)d1;
+    const OSHashNode *d2n = *(OSHashNode *const *)d2;
+    const OSList *d1l = (const OSList *)d1n->data;
+    const OSList *d2l = (const OSList *)d2n->data;
 
-    if (d1l->currently_size > d2l->currently_size) {
-        return (d1l);
+    if (d1l->currently_size != d2l->currently_size) {
+        return ((d1l->currently_size > d2l->currently_size) ? -1 : 1);
     }
 
-    return (NULL);
+    return (strcmp(d1n->key, d2n->key));
 }
 
 /* Print output header */
@@ -187,73 +190,54 @@ static int _report_filter_value(const char *filter_by, int prev_filter)
     }
 }
 
-/* Print related entries */
+/* Print related entries. The first time a value is seen is the one printed. */
 static int _os_report_print_related(FILE *out, int print_related, OSList *st_data)
 {
     OSListNode *list_entry;
-    alert_data *list_aldata;
     alert_data *saved_aldata;
+    OSHash *printed;
+    const char *value;
+    char value_int[16];
+
+    printed = OSHash_Create();
+    if (!printed ||
+            !OSHash_setSize(printed, (unsigned int)st_data->currently_size)) {
+        merror(MEM_ERROR, __local_name, errno, strerror(errno));
+        if (printed) {
+            /* setSize() stores realloc's NULL on failure. */
+            if (printed->table) {
+                OSHash_Free(printed);
+            } else {
+                free(printed);
+            }
+        }
+        return (0);
+    }
 
     list_entry = OSList_GetFirstNode(st_data);
     while (list_entry) {
         saved_aldata = (alert_data *)list_entry->data;
+        value = NULL;
 
-        /* Remove duplicates */
-        list_entry = list_entry->prev;
-        while (list_entry) {
-            if (print_related & REPORT_REL_LOCATION) {
-                list_aldata = (alert_data *)list_entry->data;
-                if (strcmp(list_aldata->location, saved_aldata->location) == 0) {
-                    break;
-                }
-            }
-
-            else if (print_related & REPORT_REL_GROUP) {
-                list_aldata = (alert_data *)list_entry->data;
-                if (strcmp(list_aldata->group, saved_aldata->group) == 0) {
-                    break;
-                }
-            }
-
-            else if (print_related & REPORT_REL_RULE) {
-                list_aldata = (alert_data *)list_entry->data;
-                if (list_aldata->rule == saved_aldata->rule) {
-                    break;
-                }
-            }
-
-            else if (print_related & REPORT_REL_USER) {
-                list_aldata = (alert_data *)list_entry->data;
-                if (list_aldata->user == NULL || saved_aldata->user == NULL) {
-                } else if (strcmp(list_aldata->user, saved_aldata->user) == 0) {
-                    break;
-                }
-            }
-
-            else if (print_related & REPORT_REL_SRCIP) {
-                list_aldata = (alert_data *)list_entry->data;
-                if (list_aldata->srcip == NULL || saved_aldata->srcip == NULL) {
-                } else if (strcmp(list_aldata->srcip, saved_aldata->srcip) == 0) {
-                    break;
-                }
-            }
-
-            else if (print_related & REPORT_REL_LEVEL) {
-                list_aldata = (alert_data *)list_entry->data;
-                if (list_aldata->level == saved_aldata->level) {
-                    break;
-                }
-            } else if (print_related & REPORT_REL_FILE) {
-                list_aldata = (alert_data *)list_entry->data;
-                if (list_aldata->filename == NULL || saved_aldata->filename == NULL) {
-                } else if (strcmp(list_aldata->filename, saved_aldata->filename) == 0) {
-                    break;
-                }
-            }
-            list_entry = list_entry->prev;
+        if (print_related & REPORT_REL_LOCATION) {
+            value = saved_aldata->location;
+        } else if (print_related & REPORT_REL_GROUP) {
+            value = saved_aldata->group;
+        } else if (print_related & REPORT_REL_RULE) {
+            snprintf(value_int, sizeof(value_int), "%d", saved_aldata->rule);
+            value = value_int;
+        } else if (print_related & REPORT_REL_USER) {
+            value = saved_aldata->user;
+        } else if (print_related & REPORT_REL_SRCIP) {
+            value = saved_aldata->srcip;
+        } else if (print_related & REPORT_REL_LEVEL) {
+            snprintf(value_int, sizeof(value_int), "%u", saved_aldata->level);
+            value = value_int;
+        } else if (print_related & REPORT_REL_FILE) {
+            value = saved_aldata->filename;
         }
 
-        if (!list_entry) {
+        if (value && OSHash_Add(printed, value, saved_aldata) == 2) {
             if (print_related & REPORT_REL_LOCATION) {
                 l_print_out(out, "   location: '%s'", saved_aldata->location);
             } else if (print_related & REPORT_REL_GROUP) {
@@ -274,16 +258,18 @@ static int _os_report_print_related(FILE *out, int print_related, OSList *st_dat
         list_entry = OSList_GetNextNode(st_data);
     }
 
+    OSHash_Free(printed);
     return (0);
 }
 
-/* Add the entry to the hash */
-static int _os_report_add_tostore(const char *key, OSStore *top, void *data)
+/* Add the entry to the hash. A lookup replaces the old sorted-list walk
+ * (ANT-2026-AVE66YB6). */
+static int _os_report_add_tostore(const char *key, OSHash *top, void *data)
 {
     OSList *top_list;
+    int added;
 
-    /* Add data to the hash */
-    top_list = (OSList *) OSStore_Get(top, key);
+    top_list = (OSList *) OSHash_Get(top, key);
     if (top_list) {
         OSList_AddData(top_list, data);
     } else {
@@ -294,45 +280,78 @@ static int _os_report_add_tostore(const char *key, OSStore *top, void *data)
         }
         OSList_AddData(top_list, data);
 
-        OSStore_Put(top, key, top_list);
+        added = OSHash_Add(top, key, top_list);
+        if (added != 2) {
+            while (top_list->first_node) {
+                OSList_DeleteOldestNode(top_list);
+            }
+            free(top_list);
+            if (added == 0) {
+                merror(MEM_ERROR, __local_name, errno, strerror(errno));
+            }
+            return (0);
+        }
     }
 
     return (1);
 }
 
-void os_report_printtop(FILE *out, void *topstore_pt, const char *hname, int print_related)
+void os_report_printtop(FILE *out, void *tophash_pt, const char *hname, int print_related)
 {
     int dopdout = 0;
-    OSStore *topstore = (OSStore *)topstore_pt;
-    OSStoreNode *next_node;
+    unsigned int i;
+    size_t top_size = 0;
+    size_t top_pos = 0;
+    OSHash *tophash = (OSHash *)tophash_pt;
+    OSHashNode *next_node;
+    OSHashNode **top_nodes;
 
-    next_node = OSStore_GetFirstNode(topstore);
-    while (next_node) {
-        OSList *st_data = (OSList *)next_node->data;
-        char *lkey = (char *)next_node->key;
+    if (!tophash || !tophash->table) {
+        return;
+    }
 
-        /* With location we leave more space to be clearer */
-        if (!print_related) {
-            if (strlen(lkey) > 76) {
-                lkey[74] = '.';
-                lkey[75] = '.';
-                lkey[76] = '\0';
-            }
+    for (i = 0; i <= tophash->rows; i++) {
+        for (next_node = tophash->table[i]; next_node; next_node = next_node->next) {
+            top_size++;
+        }
+    }
+    if (top_size == 0) {
+        return;
+    }
+    os_calloc(top_size, sizeof(OSHashNode *), top_nodes);
+    for (i = 0; i <= tophash->rows; i++) {
+        for (next_node = tophash->table[i]; next_node; next_node = next_node->next) {
+            top_nodes[top_pos++] = next_node;
+        }
+    }
+    qsort(top_nodes, top_size, sizeof(OSHashNode *), _os_report_sort_compare);
 
-            if (!dopdout) {
-                _os_header_print(out, print_related, hname);
-                dopdout = 1;
-            }
-            l_print_out(out, "%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
+    for (top_pos = 0; top_pos < top_size; top_pos++) {
+        OSList *st_data;
+        char lkey[76 + 1];
+
+        next_node = top_nodes[top_pos];
+        st_data = (OSList *)next_node->data;
+
+        /* Copy, then mark a key longer than the column. The stored key
+         * stays intact; the old code truncated it in place. */
+        if (snprintf(lkey, sizeof(lkey), "%s", next_node->key) > 76) {
+            lkey[74] = '.';
+            lkey[75] = '.';
         }
 
-        /* Print each destination */
-        else {
+        if (!print_related) {
             if (!dopdout) {
                 _os_header_print(out, print_related, hname);
                 dopdout = 1;
             }
-            l_print_out(out, "%-78s|%-8d|", (char *)next_node->key, st_data->currently_size);
+            l_print_out(out, "%-78s|%-8d|", lkey, st_data->currently_size);
+        } else {
+            if (!dopdout) {
+                _os_header_print(out, print_related, hname);
+                dopdout = 1;
+            }
+            l_print_out(out, "%-78s|%-8d|", lkey, st_data->currently_size);
 
             if (print_related & REPORT_REL_LOCATION) {
                 _os_report_print_related(out, REPORT_REL_LOCATION, st_data);
@@ -356,15 +375,44 @@ void os_report_printtop(FILE *out, void *topstore_pt, const char *hname, int pri
                 _os_report_print_related(out, REPORT_REL_FILE, st_data);
             }
         }
-
-        next_node = next_node->next;
     }
+
+    free(top_nodes);
 
     if (dopdout == 1) {
         l_print_out(out, " ");
         l_print_out(out, " ");
     }
     return;
+}
+
+/* Free the hash and the per-key lists. OSHash_Free() does not free data. */
+static void _os_report_free_store(OSHash *top)
+{
+    unsigned int i;
+    OSHashNode *curr_node;
+    OSList *top_list;
+
+    if (!top->table) {
+        free(top);
+        return;
+    }
+
+    for (i = 0; i <= top->rows; i++) {
+        for (curr_node = top->table[i]; curr_node; curr_node = curr_node->next) {
+            top_list = (OSList *)curr_node->data;
+            if (!top_list) {
+                continue;
+            }
+            while (top_list->first_node) {
+                OSList_DeleteOldestNode(top_list);
+            }
+            free(top_list);
+            curr_node->data = NULL;
+        }
+    }
+
+    OSHash_Free(top);
 }
 
 static void _os_report_free_stores(report_filter *r_filter)
@@ -374,31 +422,31 @@ static void _os_report_free_stores(report_filter *r_filter)
     }
 
     if (r_filter->top_user) {
-        OSStore_Free(r_filter->top_user);
+        _os_report_free_store(r_filter->top_user);
         r_filter->top_user = NULL;
     }
     if (r_filter->top_srcip) {
-        OSStore_Free(r_filter->top_srcip);
+        _os_report_free_store(r_filter->top_srcip);
         r_filter->top_srcip = NULL;
     }
     if (r_filter->top_level) {
-        OSStore_Free(r_filter->top_level);
+        _os_report_free_store(r_filter->top_level);
         r_filter->top_level = NULL;
     }
     if (r_filter->top_rule) {
-        OSStore_Free(r_filter->top_rule);
+        _os_report_free_store(r_filter->top_rule);
         r_filter->top_rule = NULL;
     }
     if (r_filter->top_group) {
-        OSStore_Free(r_filter->top_group);
+        _os_report_free_store(r_filter->top_group);
         r_filter->top_group = NULL;
     }
     if (r_filter->top_location) {
-        OSStore_Free(r_filter->top_location);
+        _os_report_free_store(r_filter->top_location);
         r_filter->top_location = NULL;
     }
     if (r_filter->top_files) {
-        OSStore_Free(r_filter->top_files);
+        _os_report_free_store(r_filter->top_files);
         r_filter->top_files = NULL;
     }
 }
@@ -407,6 +455,8 @@ void os_ReportdStart(report_filter *r_filter)
 {
     int alerts_processed = 0;
     int alerts_filtered = 0;
+    int data_size = 0;
+    int i;
     char *first_alert = NULL;
     char *last_alert = NULL;
     alert_data **data_to_clean = NULL;
@@ -439,14 +489,14 @@ void os_ReportdStart(report_filter *r_filter)
         fileq->fp = stdin;
     }
 
-    /* Create top hashes */
-    r_filter->top_user = OSStore_Create();
-    r_filter->top_srcip = OSStore_Create();
-    r_filter->top_level = OSStore_Create();
-    r_filter->top_rule = OSStore_Create();
-    r_filter->top_group = OSStore_Create();
-    r_filter->top_location = OSStore_Create();
-    r_filter->top_files = OSStore_Create();
+    /* Create top hashes. Sized to the kept alerts after the file is read. */
+    r_filter->top_user = OSHash_Create();
+    r_filter->top_srcip = OSHash_Create();
+    r_filter->top_level = OSHash_Create();
+    r_filter->top_rule = OSHash_Create();
+    r_filter->top_group = OSHash_Create();
+    r_filter->top_location = OSHash_Create();
+    r_filter->top_files = OSHash_Create();
 
     if (!r_filter->top_user || !r_filter->top_srcip || !r_filter->top_level || !r_filter->top_rule
             || !r_filter->top_group || !r_filter->top_location || !r_filter->top_files) {
@@ -474,8 +524,31 @@ void os_ReportdStart(report_filter *r_filter)
             continue;
         }
 
-        alerts_filtered++;
-        data_to_clean = (alert_data **) os_AddPtArray(al_data, (void **)data_to_clean);
+        /* Keep the alert. Grow geometrically: os_AddPtArray() recounts
+         * the whole array on every append (ANT-2026-AVE66YB6). */
+        if (alerts_filtered + 2 > data_size) {
+            data_size = data_size ? data_size * 2 : 1024;
+            os_realloc(data_to_clean, (size_t)data_size * sizeof(alert_data *),
+                       data_to_clean);
+        }
+        data_to_clean[alerts_filtered++] = al_data;
+        data_to_clean[alerts_filtered] = NULL;
+    }
+
+    if (alerts_filtered > 0 &&
+            (!OSHash_setSize(r_filter->top_user, (unsigned int)alerts_filtered) ||
+             !OSHash_setSize(r_filter->top_srcip, (unsigned int)alerts_filtered) ||
+             !OSHash_setSize(r_filter->top_level, (unsigned int)alerts_filtered) ||
+             !OSHash_setSize(r_filter->top_rule, (unsigned int)alerts_filtered) ||
+             !OSHash_setSize(r_filter->top_group, (unsigned int)alerts_filtered) ||
+             !OSHash_setSize(r_filter->top_location, (unsigned int)alerts_filtered) ||
+             !OSHash_setSize(r_filter->top_files, (unsigned int)alerts_filtered))) {
+        merror(MEM_ERROR, __local_name, errno, strerror(errno));
+        goto cleanup;
+    }
+
+    for (i = 0; i < alerts_filtered; i++) {
+        al_data = data_to_clean[i];
 
         /* Set first and last alert for summary */
         if (!first_alert) {
@@ -511,9 +584,11 @@ void os_ReportdStart(report_filter *r_filter)
         {
             char *tmp_str;
             char **mgroup;
+            char **mgroup_orig;
 
             mgroup = al_data->group ? OS_StrBreak(',', al_data->group, 32)
                                     : NULL;
+            mgroup_orig = mgroup;
             if (mgroup) {
                 while (*mgroup) {
                     tmp_str = *mgroup;
@@ -532,8 +607,7 @@ void os_ReportdStart(report_filter *r_filter)
                     free(*mgroup);
                     mgroup++;
                 }
-
-                //free(mgroup);
+                free(mgroup_orig);
             } else if (al_data->group) {
                 tmp_str = al_data->group;
                 while (*tmp_str == ' ') {
@@ -590,14 +664,6 @@ void os_ReportdStart(report_filter *r_filter)
     l_print_out(out, " ");
     l_print_out(out, " ");
 
-    OSStore_Sort(r_filter->top_srcip, _os_report_sort_compare);
-    OSStore_Sort(r_filter->top_user,  _os_report_sort_compare);
-    OSStore_Sort(r_filter->top_level, _os_report_sort_compare);
-    OSStore_Sort(r_filter->top_group, _os_report_sort_compare);
-    OSStore_Sort(r_filter->top_location, _os_report_sort_compare);
-    OSStore_Sort(r_filter->top_rule, _os_report_sort_compare);
-    OSStore_Sort(r_filter->top_files, _os_report_sort_compare);
-
     os_report_printtop(out, r_filter->top_srcip, "Source ip", 0);
     os_report_printtop(out, r_filter->top_user, "Username", 0);
     os_report_printtop(out, r_filter->top_level, "Level", 0);
@@ -637,7 +703,7 @@ void os_ReportdStart(report_filter *r_filter)
 
     /* If we have to dump the alerts */
     if (data_to_clean) {
-        int i = 0;
+        i = 0;
 
         if (r_filter->show_alerts) {
             l_print_out(out, "Log dump:");
@@ -656,6 +722,16 @@ void os_ReportdStart(report_filter *r_filter)
     }
 
     cleanup:
+    if (data_to_clean) {
+        int j = 0;
+
+        while (data_to_clean[j]) {
+            FreeAlertData(data_to_clean[j]);
+            j++;
+        }
+        free(data_to_clean);
+        data_to_clean = NULL;
+    }
     _os_report_free_stores(r_filter);
 
     if (fileq->fp && fileq->fp != stdin) {
