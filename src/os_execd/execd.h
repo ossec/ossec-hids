@@ -49,6 +49,11 @@ typedef struct _timeout_data {
 
 void FreeTimeoutEntry(timeout_data *timeout_entry);
 
+/* 1 if ip is a literal address and dst holds its canonical text.
+ * Host names, "-", CIDR, and a leading "!" return 0.
+ */
+int CanonicalIP(const char *ip, char *dst, size_t dstlen);
+
 /* Returns 1 if request is incomplete or already on the timeout list. */
 int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
                          time_t curr_time, OSHash *repeated_hash);

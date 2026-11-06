@@ -58,6 +58,7 @@ REGRESSION_BINS = \
 	issue_5z4ox04e_agent_info_symlink \
 	issue_c82ab02v_location_id \
 	issue_see999rq_srcip_quote \
+	issue_pttdw7pw_ipv6_case \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1237,6 +1238,18 @@ issue_see999rq_srcip_quote: \
 		tests/regressions/issue_see999rq_srcip_quote.c \
 		os_dbd/alert-see.o os_dbd/db_op-see.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-PTTDW7PW: two spellings of one IPv6 address are one block.
+issue_pttdw7pw_ipv6_case: \
+		tests/regressions/issue_pttdw7pw_ipv6_case.c \
+		os_execd/execd.c shared.a
+	$(CC) $(CFLAGS) -Dmain=execd_main -c os_execd/execd.c -o os_execd/execd-ptt.o
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_pttdw7pw_ipv6_case.c \
+		os_execd/execd-ptt.o \
+		os_execd/exec.c os_execd/config.c os_execd/timeout_dup.c \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_crypto.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-5Z4OX04E: ossec-dbd must not follow an agent-info symlink.

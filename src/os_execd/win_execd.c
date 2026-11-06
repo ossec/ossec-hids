@@ -104,6 +104,7 @@ void WinExecdRun(char *exec_msg)
     char *cmd_user;
     char *cmd_ip;
     char buffer[OS_MAXSTR + 1];
+    char canon[INET6_ADDRSTRLEN];
 
     timeout_data *timeout_entry;
 
@@ -146,6 +147,10 @@ void WinExecdRun(char *exec_msg)
     OS_WinExecdCleanArg(cmd_user);
     OS_WinExecdCleanArg(cmd_ip);
     OS_WinExecdCleanArg(tmp_msg);
+
+    if (CanonicalIP(cmd_ip, canon, sizeof(canon))) {
+        cmd_ip = canon;
+    }
 
     /* Get the command to execute (valid name) */
     command = GetCommandbyName(name, &timeout_value);
