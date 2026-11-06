@@ -183,7 +183,31 @@ int check_hostname(ASN1_STRING *cert_astr, const char *manager)
 
 /* Determine whether a string found in a subject alt name or common name
  * field matches the manager's IP address specified on the command line.
+ * OpenSSL 3+ / 4 leave ASN1_STRING opaque, so the bytes come from the
+ * accessors rather than the struct fields.
  */
+static int asn1_ip_match(const ASN1_STRING *cert_astr, const void *addr, int addr_len)
+{
+    const unsigned char *data;
+    int length;
+
+    if (cert_astr == NULL || addr == NULL || addr_len <= 0) {
+        return 0;
+    }
+
+    length = ASN1_STRING_length(cert_astr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    data = ASN1_STRING_get0_data(cert_astr);
+#else
+    data = ASN1_STRING_data((ASN1_STRING *)cert_astr);
+#endif
+    if (data == NULL || length != addr_len) {
+        return 0;
+    }
+
+    return memcmp(data, addr, (size_t)addr_len) == 0;
+}
+
 int check_ipaddr(const ASN1_STRING *cert_astr, const char *manager)
 {
     struct sockaddr_in iptest;
@@ -193,11 +217,11 @@ int check_ipaddr(const ASN1_STRING *cert_astr, const char *manager)
     memset(&iptest6, 0, sizeof(iptest6));
 
     if (inet_pton(AF_INET, manager, &iptest.sin_addr) == 1) {
-        if (cert_astr->length == 4 && !memcmp(cert_astr->data, (const void *)&iptest.sin_addr, 4)) {
+        if (asn1_ip_match(cert_astr, &iptest.sin_addr, 4)) {
             return VERIFY_TRUE;
         }
     } else if (inet_pton(AF_INET6, manager, &iptest6.sin6_addr) == 1) {
-        if (cert_astr->length == 16 && !memcmp(cert_astr->data, (const void *)&iptest6.sin6_addr, 16)) {
+        if (asn1_ip_match(cert_astr, &iptest6.sin6_addr, 16)) {
             return VERIFY_TRUE;
         }
     }

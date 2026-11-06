@@ -196,11 +196,24 @@ SSL_CTX *get_ssl_context(const char *ciphers)
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
 
-    /* Create our context */
+    /* Create our context. TLS 1.2 only: newer OpenSSL has no
+     * TLSv1_2_method(), so use TLS_method() and clamp the versions.
+     */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    sslmeth = TLS_method();
+#else
     sslmeth = TLSv1_2_method();
+#endif
     if (!(ctx = SSL_CTX_new(sslmeth))) {
         goto CONTEXT_ERR;
     }
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    if (SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION) != 1 ||
+            SSL_CTX_set_max_proto_version(ctx, TLS1_2_VERSION) != 1) {
+        merror("%s: ERROR: Unable to restrict SSL context to TLS 1.2", ARGV0);
+        goto CONTEXT_ERR;
+    }
+#endif
 
     /* Explicitly set options and cipher list.
      * Reject TLS renegotiation (GHSA-rr83-v9v7-jjhp). Prefer the OpenSSL

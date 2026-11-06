@@ -14,6 +14,7 @@ Unrelease 4.5.0 changes
 
 **General**
 
+- @atomicturtle - Build ``ossec-authd`` with OpenSSL 4. The certificate IP check uses the ASN.1 string accessors, and the SSL context is TLS 1.2 through ``TLS_method()`` because ``TLSv1_2_method()`` is gone
 - @atomicturtle - Keep the device hostname from agent-forwarded syslog lines for ``<hostname>`` matching; expose the OSSEC agent as ``agent_name`` / ``<agent_name>``, match log paths with ``<location>`` / ``<location_pcre2>``, and keep JSON/diff keyed on the agent identity (#1668)
 - @atomicturtle - Follow-up fixes from review of the 4.4.0 changes: Solaris ``ginstall`` is required up front, remoted reads ``notify_time`` at startup, date-based logcollector reopen honors the open-attempt limit, Windows wildcard paths stay literal, the agent-table upgrade constraint is limited to ``agent``, the Windows install ACL is reset before the allow-list, ``agent-auth`` accepts either path separator, and realtime FIM stops retrying a file that stays unreadable
 - @atomicturtle - Rotate ``ossec.log`` on the daily monitord pass into ``logs/ossec/YYYY/Mon/ossec-DD.log``, then sign and compress it with the alert logs. Drop it from logrotate so ``copytruncate`` no longer races that file (#704)
