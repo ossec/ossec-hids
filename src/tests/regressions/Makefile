@@ -41,6 +41,7 @@ REGRESSION_BINS = \
 	issue_1o4bcxpr_createpid \
 	issue_ave66yb6_report_store \
 	issue_wi6tbpfx_cdb_value \
+	issue_wjnd95he_win_wildcard \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -279,6 +280,14 @@ issue_wi6tbpfx_cdb_value: \
 		analysisd/lists_list-wi6.o \
 		-Wl,--start-group cdb.a shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-WJND95HE: an ANSI '?' from FindFirstFile must not be expanded again.
+issue_wjnd95he_win_wildcard: \
+		tests/regressions/issue_wjnd95he_win_wildcard.c shared/file_op.c
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -DWIN32_WILDCARD_HOST_TEST \
+		-c shared/file_op.c -o shared/file_op-wjnd.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_wjnd95he_win_wildcard.c \
+		shared/file_op-wjnd.o -Wl,--gc-sections
 
 # ANT-2026-1O4BCXPR: CreatePID must not follow a symlink in var/run.
 issue_1o4bcxpr_createpid: \
@@ -1120,6 +1129,7 @@ clean:
 		analysisd/eventinfo-ht.o \
 		analysisd/eventinfo_list-ht.o \
 		analysisd/lists_list-wi6.o \
+		shared/file_op-wjnd.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \

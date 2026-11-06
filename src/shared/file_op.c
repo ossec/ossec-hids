@@ -2016,7 +2016,22 @@ void remove_control_characters(char *str) {
     remove_control_characters_ex(str, 0);
 }
 
-#ifdef WIN32
+#if defined(WIN32) || defined(WIN32_WILDCARD_HOST_TEST)
+#ifndef WIN32
+/* Host regression supplies the ANSI find API. The real agent includes
+ * windows.h and calls FindFirstFileA. */
+#include <stdint.h>
+typedef void *HANDLE;
+typedef struct {
+    char cFileName[260];
+    unsigned int dwFileAttributes;
+} WIN32_FIND_DATA;
+#define FILE_ATTRIBUTE_DIRECTORY 0x00000010u
+#define INVALID_HANDLE_VALUE ((HANDLE)(intptr_t)-1)
+HANDLE FindFirstFile(const char *pattern, WIN32_FIND_DATA *data);
+int FindNextFile(HANDLE handle, WIN32_FIND_DATA *data);
+int FindClose(HANDLE handle);
+#endif
 /* Skip the \\?\ (or //?/) extended-length prefix; its '?' is not a wildcard. */
 static size_t win_skip_ext_prefix(const char *path)
 {
@@ -2167,6 +2182,22 @@ char **expand_win32_wildcards(const char *path)
                         strcmp(find_data.cFileName, "..") == 0) {
                     continue;
                 }
+                /* The agent is built without UNICODE, so FindFirstFileA
+                 * returns '?' for a character the code page cannot hold.
+                 * Windows file names cannot contain '*' or '?'. Putting such
+                 * a name back on the pending list makes it a pattern that
+                 * matches itself on every round. The expanded path is a
+                 * char* opened with the ANSI API, so a wide-character
+                 * enumeration would still be unable to open the file.
+                 * The '?' in a \\?\ prefix is not part of cFileName;
+                 * win_wildcard_pos() already ignores that prefix.
+                 */
+                if (strpbrk(find_data.cFileName, "*?")) {
+                    merror("%s: WARN: Ignoring '%s' found by pattern '%s': name "
+                           "not representable in the ANSI code page.",
+                           __local_name, find_data.cFileName, pattern);
+                    continue;
+                }
                 /* Need a directory if more path remains after this component */
                 if (next_glob &&
                         !(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
@@ -2196,4 +2227,4 @@ char **expand_win32_wildcards(const char *path)
         }
     }
 }
-#endif /* WIN32 */
+#endif /* WIN32 || WIN32_WILDCARD_HOST_TEST */
