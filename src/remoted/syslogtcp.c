@@ -111,6 +111,18 @@ static void syslog_client_drop_pending(void *arg)
     free(client);
 }
 
+typedef struct {
+    remoted_listener *listener;
+    const char *srcip;
+} syslog_send_ctx;
+
+static int syslog_worker_send(const char *msg, void *ctx)
+{
+    syslog_send_ctx *send_ctx = (syslog_send_ctx *)ctx;
+
+    return remoted_send_syslog_msg(send_ctx->listener, msg, send_ctx->srcip);
+}
+
 /* Handle each client connection in a worker thread */
 static void *syslog_client_worker(void *arg)
 {
@@ -118,24 +130,22 @@ static void *syslog_client_worker(void *arg)
     remoted_listener *listener = client->listener;
     int client_socket = client->client_socket;
     char srcip[IPSIZE + 1];
-    int sb_size = OS_MAXSTR;
+    size_t sb_used = 0;
     int r_sz = 0;
+    syslog_send_ctx send_ctx;
 
-    char buffer[OS_MAXSTR + 2];
     char storage_buffer[OS_MAXSTR + 2];
-    char tmp_buffer[OS_MAXSTR + 2];
-
-    char *buffer_pt = NULL;
 
     strncpy(srcip, client->srcip, IPSIZE);
     srcip[IPSIZE] = '\0';
     free(client);
 
+    send_ctx.listener = listener;
+    send_ctx.srcip = srcip;
+
     os_block_worker_signals();
 
-    memset(buffer, '\0', OS_MAXSTR + 2);
     memset(storage_buffer, '\0', OS_MAXSTR + 2);
-    memset(tmp_buffer, '\0', OS_MAXSTR + 2);
 
     while (1) {
         if (remoted_shutting_down) {
@@ -143,7 +153,16 @@ static void *syslog_client_worker(void *arg)
             return NULL;
         }
 
-        if ((r_sz = syslog_recv_buffer(client_socket, buffer, OS_MAXSTR - 2)) <= 0) {
+        /* A line that fills the whole buffer without a newline is dropped */
+        if (sb_used >= OS_MAXSTR - 2) {
+            merror("%s: Full buffer receiving from: '%s'", ARGV0, srcip);
+            sb_used = 0;
+            storage_buffer[0] = '\0';
+        }
+
+        /* Append behind the incomplete line kept from the previous recv() */
+        if ((r_sz = syslog_recv_buffer(client_socket, storage_buffer + sb_used,
+                                       OS_MAXSTR - (int)sb_used)) <= 0) {
             if (remoted_shutting_down) {
                 close(client_socket);
                 return NULL;
@@ -170,64 +189,23 @@ static void *syslog_client_worker(void *arg)
             return NULL;
         }
 
-        buffer_pt = strchr(buffer, '\n');
-        if (!buffer_pt) {
-            if ((sb_size - r_sz) <= 2) {
-                merror("%s: Full buffer receiving from: '%s'", ARGV0, srcip);
-                sb_size = OS_MAXSTR;
-                storage_buffer[0] = '\0';
-                continue;
+        /* Map embedded NULs to spaces so strchr/strlen framing cannot drop
+         * later complete lines (same as read_syslog / ANT-2026-RNCE3SO7). */
+        {
+            int i;
+
+            for (i = 0; i < r_sz; i++) {
+                if (storage_buffer[sb_used + (size_t)i] == '\0') {
+                    storage_buffer[sb_used + (size_t)i] = ' ';
+                }
             }
-
-            strncat(storage_buffer, buffer, sb_size);
-            sb_size -= r_sz;
-            continue;
         }
+        sb_used += (size_t)r_sz;
 
-        if (*(buffer_pt + 1) != '\0') {
-            *buffer_pt = '\0';
-            buffer_pt++;
-            strncpy(tmp_buffer, buffer_pt, OS_MAXSTR);
-        }
-
-        if ((sb_size - r_sz) <= 2) {
-            merror("%s: Full buffer receiving from: '%s'.", ARGV0, srcip);
-            sb_size = OS_MAXSTR;
-            storage_buffer[0] = '\0';
-            tmp_buffer[0] = '\0';
-            continue;
-        }
-
-        strncat(storage_buffer, buffer, sb_size);
-
-        buffer_pt = strchr(storage_buffer, '\r');
-        if (buffer_pt) {
-            *buffer_pt = '\0';
-        }
-
-        if (storage_buffer[0] == '<') {
-            buffer_pt = strchr(storage_buffer + 1, '>');
-            if (buffer_pt) {
-                buffer_pt++;
-            } else {
-                buffer_pt = storage_buffer;
-            }
-        } else {
-            buffer_pt = storage_buffer;
-        }
-
-        if (remoted_send_syslog_msg(listener, buffer_pt, srcip) < 0) {
+        if (syslog_tcp_drain_complete_lines(storage_buffer, &sb_used,
+                                            syslog_worker_send, &send_ctx) < 0) {
             close(client_socket);
             return NULL;
-        }
-
-        if (tmp_buffer[0] != '\0') {
-            strncpy(storage_buffer, tmp_buffer, OS_MAXSTR);
-            sb_size = OS_MAXSTR - (strlen(storage_buffer) + 1);
-            tmp_buffer[0] = '\0';
-        } else {
-            storage_buffer[0] = '\0';
-            sb_size = OS_MAXSTR;
         }
     }
 }
