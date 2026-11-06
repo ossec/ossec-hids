@@ -103,6 +103,8 @@ jobs:
           ./src/issue_see999rq_srcip_quote
           make -C src -f tests/regressions/Makefile issue_pttdw7pw_ipv6_case
           ./src/issue_pttdw7pw_ipv6_case
+          make -C src -f tests/regressions/Makefile issue_z12l5byr_filename_split
+          ./src/issue_z12l5byr_filename_split
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload

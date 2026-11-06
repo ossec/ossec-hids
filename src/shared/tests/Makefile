@@ -23,8 +23,11 @@ queue_op_test: queue_op_test.c $(TOP)/shared.a
 	$(CC) -pthread $(CFLAGS_COMMON) -DARGV0=\"queue_op_test\" -o $@ \
 		queue_op_test.c $(TOP)/shared.a -lpthread -lssl -lcrypto
 
-string_test: string_test.c
-	$(CC) $(CFLAGS_COMMON) -DARGV0=\"string_test\" -o $@ string_test.c ../string_op.c
+string_test: string_test.c ../string_op.c $(TOP)/shared.a
+	$(CC) $(CFLAGS_COMMON) -DARGV0=\"string_test\" -o $@ \
+		string_test.c ../string_op.c \
+		-Wl,--start-group $(TOP)/shared.a $(TOP)/os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 fim_sum_test: fim_sum_test.c ../fim_sum_op.c ../../headers/fim_sum_op.h
 	$(CC) $(CFLAGS_COMMON) -DARGV0=\"fim_sum_test\" -o $@ fim_sum_test.c ../fim_sum_op.c
