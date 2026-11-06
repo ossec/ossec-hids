@@ -22,6 +22,9 @@ char *os_strip_char(const char *source, char remove) __attribute__((nonnull));
 /* Escape a list of characters with a backslash */
 char *os_shell_escape(const char *src);
 
+/* Find a character that os_shell_escape() did not put a backslash before */
+char *os_shell_escape_strchr(char *str, char c) __attribute__((nonnull));
+
 /* Neutralise characters that let cmd.exe break out of a quoted AR argument
  * ('"', '%', and C0/DEL controls). Used by Windows WinExecdRun(). */
 void OS_WinExecdCleanArg(char *arg);

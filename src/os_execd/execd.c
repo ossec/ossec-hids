@@ -413,7 +413,10 @@ static void ExecdStart(int q)
             cmd_args[i] = tmp_msg;
             cmd_args[i + 1] = NULL;
 
-            tmp_msg = strchr(tmp_msg, ' ');
+            /* A space with a backslash before it belongs to the argument.
+             * os_shell_escape() writes that backslash for a file name.
+             */
+            tmp_msg = os_shell_escape_strchr(tmp_msg, ' ');
             if (!tmp_msg) {
                 timeout_args[i] = strdup(cmd_args[i]);
                 timeout_args[i + 1] = NULL;

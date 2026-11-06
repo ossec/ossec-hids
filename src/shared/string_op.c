@@ -124,6 +124,23 @@ char *os_shell_escape(const char *src)
     return escaped_string;
 }
 
+/* strchr() for text that went through os_shell_escape(): a character with
+ * a backslash before it is part of the text and is not found. A backslash
+ * that is itself escaped does not protect the character after it.
+ */
+char *os_shell_escape_strchr(char *str, char c)
+{
+    for (; *str; str++) {
+        if (*str == '\\' && str[1]) {
+            str++;
+        } else if (*str == c) {
+            return str;
+        }
+    }
+
+    return NULL;
+}
+
 /* The Windows AR responses are batch files, so cmd.exe parses the whole
  * command line WinExecdRun() builds. Replace the characters it acts on
  * even inside a quoted argument: '"' closes the quotes, '%' expands a

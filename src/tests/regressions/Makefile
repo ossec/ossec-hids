@@ -59,6 +59,7 @@ REGRESSION_BINS = \
 	issue_c82ab02v_location_id \
 	issue_see999rq_srcip_quote \
 	issue_pttdw7pw_ipv6_case \
+	issue_z12l5byr_filename_split \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1250,6 +1251,17 @@ issue_pttdw7pw_ipv6_case: \
 		os_execd/execd-ptt.o \
 		os_execd/exec.c os_execd/config.c os_execd/timeout_dup.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-Z12L5BYR: an escaped space in a filename stays one argument.
+# string_op.c is compiled ahead of shared.a so the helper under test wins.
+issue_z12l5byr_filename_split: \
+		tests/regressions/issue_z12l5byr_filename_split.c \
+		shared/string_op.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_z12l5byr_filename_split.c \
+		shared/string_op.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-5Z4OX04E: ossec-dbd must not follow an agent-info symlink.

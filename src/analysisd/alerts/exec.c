@@ -100,6 +100,18 @@ void OS_Exec(int execq, int arq, const Eventinfo *lf, const active_response *ar)
 
     /* Get filename */
     if (lf->filename && (ar->ar_cmd->expect & FILENAME)) {
+        size_t loc_len = strlen(lf->location);
+
+        /* execd does not split the request at a space that has a backslash
+         * before it. The location is not escaped, so one that ends in a
+         * backslash would join with the file name.
+         */
+        if (loc_len && lf->location[loc_len - 1] == '\\') {
+            merror("%s: Active response request for '%s' has an invalid "
+                   "location. Ignoring it.", ARGV0, ar->name);
+            return;
+        }
+
         filename = os_shell_escape(lf->filename);
     }
 
