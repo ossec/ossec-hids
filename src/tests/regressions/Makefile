@@ -47,6 +47,7 @@ REGRESSION_BINS = \
 	issue_dxpirjgm_realtime_dir_replace \
 	issue_16qlz097_realtime_rename \
 	issue_zno1mxtc_eventlog_dll_cache \
+	issue_5bg289fd_bmpstring_cn \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -365,6 +366,18 @@ issue_zno1mxtc_eventlog_dll_cache: \
 		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-5BG289FD: decode a certificate name before comparing it.
+issue_5bg289fd_bmpstring_cn: \
+		tests/regressions/issue_5bg289fd_bmpstring_cn.c \
+		os_auth/check_cert.c shared.a
+	$(CC) $(CFLAGS) -DLIBOPENSSL_ENABLED -I./os_auth \
+		-c os_auth/check_cert.c -o os_auth/check_cert-5bg.o
+	$(CC) $(CFLAGS) -DLIBOPENSSL_ENABLED -I./os_auth -o $@ \
+		tests/regressions/issue_5bg289fd_bmpstring_cn.c \
+		os_auth/check_cert-5bg.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # ANT-2026-1O4BCXPR: CreatePID must not follow a symlink in var/run.
 issue_1o4bcxpr_createpid: \
@@ -1216,6 +1229,7 @@ clean:
 		shared/fim_sum_op-dxp.o \
 		syscheckd/run_realtime-16q.o \
 		logcollector/read_win_el-zno.o \
+		os_auth/check_cert-5bg.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \

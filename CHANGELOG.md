@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Decode a certificate common name to UTF-8 before ``agent-auth -v`` compares it with the manager host name. ``asn1_to_cstr()`` was copying the raw content bytes, so a BMPString or UniversalString whose bytes spelled the host name was accepted. An IA5String, PrintableString, or UTF8String host name is unchanged (ANT-2026-5BG289FD)
 - @atomicturtle - Stop the Windows event-log message-DLL cache from storing a new entry for every letter-case spelling of one installed source. ``el_getEventDLL()`` still opens the registry with the name as written, and stops storing new entries after 4096. The extra key copy in that cache and in the Vista security descriptions is no longer leaked (ANT-2026-ZNO1MXTC)
 - @atomicturtle - Update the inotify watch path when a realtime directory is renamed. The watch follows the inode, so ``realtime_adddir()`` was keeping the first name it stored and later events were built under a path that no longer exists. A stored name that still reaches the same directory, such as a symlink, is left as it is (ANT-2026-16QLZ097)
 - @atomicturtle - When realtime syscheck finds a directory where it had cached a file, report the file deleted and scan the directory. ``c_read_file()`` was reporting that directory as a changed file, so files created inside it were invisible to realtime FIM until the next scheduled scan. The ``report_changes`` snapshot for the old file is removed with that deletion, before the new directory is scanned (ANT-2026-DXPIRJGM)
