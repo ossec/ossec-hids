@@ -69,6 +69,8 @@ jobs:
           ./src/issue_wi6tbpfx_cdb_value
           make -C src -f tests/regressions/Makefile issue_wjnd95he_win_wildcard
           ./src/issue_wjnd95he_win_wildcard
+          make -C src -f tests/regressions/Makefile issue_u64thxi1_ipv6_disconnect
+          ./src/issue_u64thxi1_ipv6_disconnect
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload
