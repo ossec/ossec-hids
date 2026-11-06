@@ -660,6 +660,60 @@ void LogCollectorStart()
     }
 }
 
+/* Read lines appended since the last poll before a date-based name is
+ * replaced. One reader call can return after a single record, so repeat
+ * until the file position stops moving. logff[i].file is still the old
+ * name, which is the location analysisd records.
+ */
+static void read_remaining(int i)
+{
+    struct stat st;
+    off_t limit = 0;
+    long prev;
+    long now;
+    int rc = 0;
+    int spins;
+    int cap;
+    int have_limit = 0;
+
+    if (!logff[i].fp || !logff[i].read) {
+        return;
+    }
+
+    /* Stop at the size from this moment. A file that keeps growing
+     * would hold the daemon here, and bytes appended after this point
+     * stay in the old file when it is closed. max_lines is the same
+     * per-visit cap the normal poll uses.
+     */
+    if (fstat(fileno(logff[i].fp), &st) == 0) {
+        limit = st.st_size;
+        have_limit = 1;
+    }
+
+    clearerr(logff[i].fp);
+    logr_begin_read();
+    prev = ftell(logff[i].fp);
+    cap = (max_lines > 0) ? max_lines : 100000;
+    for (spins = 0; spins < cap; spins++) {
+        if (prev < 0 || (have_limit && (off_t)prev >= limit)) {
+            break;
+        }
+        logff[i].read(i, &rc, 0);
+        if (logr_budget_exhausted()) {
+            break;
+        }
+        now = ftell(logff[i].fp);
+        if (now < 0 || now <= prev || (have_limit && (off_t)now >= limit)) {
+            break;
+        }
+        prev = now;
+    }
+
+    /* An over-long line left this set for the next read of the same
+     * file. The next read is a different file. */
+    logff[i].skip_to_nl = 0;
+}
+
 int update_fname(int i)
 {
     struct tm *p;
@@ -680,6 +734,8 @@ int update_fname(int i)
 
     /* Update the filename */
     if (strcmp(lfile, logff[i].file) != 0) {
+        read_remaining(i);
+
         os_free(logff[i].file);
 
         os_strdup(lfile, logff[i].file);
