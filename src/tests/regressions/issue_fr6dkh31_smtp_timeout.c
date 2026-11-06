@@ -97,12 +97,18 @@ static int make_connected_pair(int *client, int *peer)
 static int file_has(const char *path, const char *needle)
 {
     FILE *fp;
+    char alt[256];
     char buf[4096];
     size_t n;
     size_t need = strlen(needle);
     size_t keep = 0;
 
+    /* CI runs the binary from the repo root; local make runs it from src/. */
     fp = fopen(path, "r");
+    if (!fp) {
+        snprintf(alt, sizeof(alt), "src/%s", path);
+        fp = fopen(alt, "r");
+    }
     if (!fp) {
         return (0);
     }
