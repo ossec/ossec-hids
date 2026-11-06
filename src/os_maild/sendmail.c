@@ -24,6 +24,7 @@
 
 /* Default values used to connect */
 #define SMTP_DEFAULT_PORT   "25"
+#define SMTP_IO_TIMEOUT_SEC 60      /* Max wait for one SMTP reply or write */
 #define MAILFROM            "Mail From: <%s>\r\n"
 #define RCPTTO              "Rcpt To: <%s>\r\n"
 #define DATAMSG             "DATA\r\n"
@@ -238,6 +239,16 @@ int OS_Sendsms(MailConfig *mail, struct tm *p, MailMsg *sms_msg,
         socket = OS_ConnectTCP(SMTP_DEFAULT_PORT, mail->smtpserver);
         if (socket < 0) {
             return (socket);
+        }
+
+        /* A relay that accepts and then stays silent must not hold the
+         * sender thread forever: a timed-out read fails like any other.
+         */
+        if (OS_SetSocketTimeout(socket, SMTP_IO_TIMEOUT_SEC) < 0) {
+            merror("%s: ERROR: Unable to set SMTP socket timeout: %s",
+                   ARGV0, strerror(errno));
+            close(socket);
+            return (OS_INVALID);
         }
 
         msg = OS_RecvTCP(socket, OS_SIZE_1024);
@@ -563,6 +574,16 @@ int OS_Sendmail(MailConfig *mail, struct tm *p, MailNode *batch,
         socket = OS_ConnectTCP(SMTP_DEFAULT_PORT, mail->smtpserver);
         if (socket < 0) {
             mail_send_fail(socket);
+        }
+
+        /* A relay that accepts and then stays silent must not hold the
+         * sender thread forever: a timed-out read fails like any other.
+         */
+        if (OS_SetSocketTimeout(socket, SMTP_IO_TIMEOUT_SEC) < 0) {
+            merror("%s: ERROR: Unable to set SMTP socket timeout: %s",
+                   ARGV0, strerror(errno));
+            close(socket);
+            mail_send_fail(OS_INVALID);
         }
 
         /* Receive the banner */

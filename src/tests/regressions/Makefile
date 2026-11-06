@@ -61,6 +61,7 @@ REGRESSION_BINS = \
 	issue_pttdw7pw_ipv6_case \
 	issue_z12l5byr_filename_split \
 	issue_8wbhq0qf_timeout_readd \
+	issue_fr6dkh31_smtp_timeout \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1276,6 +1277,16 @@ issue_8wbhq0qf_timeout_readd: \
 		os_execd/exec.c os_execd/config.c os_execd/timeout_dup.c \
 		shared/string_op.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_crypto.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-FR6DKH31: SMTP sockets must not wait forever on a silent relay.
+issue_fr6dkh31_smtp_timeout: \
+		tests/regressions/issue_fr6dkh31_smtp_timeout.c \
+		os_net/os_net.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_fr6dkh31_smtp_timeout.c \
+		os_net/os_net.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-5Z4OX04E: ossec-dbd must not follow an agent-info symlink.

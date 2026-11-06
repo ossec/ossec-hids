@@ -107,6 +107,8 @@ jobs:
           ./src/issue_z12l5byr_filename_split
           make -C src -f tests/regressions/Makefile issue_8wbhq0qf_timeout_readd
           ./src/issue_8wbhq0qf_timeout_readd
+          make -C src -f tests/regressions/Makefile issue_fr6dkh31_smtp_timeout
+          ./src/issue_fr6dkh31_smtp_timeout
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload

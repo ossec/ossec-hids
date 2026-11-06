@@ -20,6 +20,7 @@
 
 /* Default values used to connect */
 #define SMTP_DEFAULT_PORT   "25"
+#define SMTP_IO_TIMEOUT_SEC 60      /* Max wait for one SMTP reply or write */
 #define HELOMSG             "Helo notify.ossec.net\r\n"
 #define MAILFROM            "Mail From: <%s>\r\n"
 #define RCPTTO              "Rcpt To: <%s>\r\n"
@@ -104,6 +105,14 @@ int OS_SendCustomEmail(char **to, char *subject, char *smtpserver, char *from, c
         socket = OS_ConnectTCP(SMTP_DEFAULT_PORT, smtpserver);
         if (socket < 0) {
             return (socket);
+        }
+
+        /* Do not wait forever on a relay that accepts and then stays silent */
+        if (OS_SetSocketTimeout(socket, SMTP_IO_TIMEOUT_SEC) < 0) {
+            merror("%s: ERROR: Unable to set SMTP socket timeout: %s",
+                   ARGV0, strerror(errno));
+            close(socket);
+            return (OS_INVALID);
         }
 
         /* Receive the banner */
