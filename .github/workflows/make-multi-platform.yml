@@ -83,6 +83,8 @@ jobs:
           ./src/issue_5bg289fd_bmpstring_cn
           make -C src -f tests/regressions/Makefile issue_r3zy7cwm_field_null_decoder
           ./src/issue_r3zy7cwm_field_null_decoder
+          make -C src -f tests/regressions/Makefile issue_q0uytpgc_udp_newline
+          ./src/issue_q0uytpgc_udp_newline
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload

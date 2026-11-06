@@ -243,8 +243,9 @@ int csyslog_connect(SyslogConfig *cfg)
     return 0;
 }
 
-/* Send one framed alert. TCP/TLS append a trailing newline (RFC 6587).
- * Embedded CR/LF in the payload are flattened so one alert stays one frame.
+/* Send one framed alert. Every transport flattens embedded CR/LF so one
+ * alert cannot be split into extra records. TCP/TLS append a trailing
+ * newline (RFC 6587). UDP does not: the datagram is the record.
  * On failure, reconnect once and retry. Returns 0 on success, -1 on failure.
  */
 int csyslog_send(SyslogConfig *cfg, const char *msg, size_t len)
@@ -252,34 +253,30 @@ int csyslog_send(SyslogConfig *cfg, const char *msg, size_t len)
     char framed[OS_CSYSLOG_MAX + 2];
     const char *out;
     size_t out_len;
+    size_t i;
     int attempt;
 
     if (!cfg || !msg) {
         return -1;
     }
 
-    if (cfg->protocol == CSYSLOG_TCP) {
-        size_t i;
-
-        if (len >= OS_CSYSLOG_MAX) {
-            merror("%s: WARN: syslog_output TCP message truncated from %zu to %d bytes.",
-                   ARGV0, len, OS_CSYSLOG_MAX - 1);
-            len = OS_CSYSLOG_MAX - 1;
-        }
-        memcpy(framed, msg, len);
-        for (i = 0; i < len; i++) {
-            if (framed[i] == '\n' || framed[i] == '\r') {
-                framed[i] = ' ';
-            }
-        }
-        framed[len] = '\n';
-        framed[len + 1] = '\0';
-        out = framed;
-        out_len = len + 1;
-    } else {
-        out = msg;
-        out_len = len;
+    if (len >= OS_CSYSLOG_MAX) {
+        merror("%s: WARN: syslog_output message truncated from %zu to %d bytes.",
+               ARGV0, len, OS_CSYSLOG_MAX - 1);
+        len = OS_CSYSLOG_MAX - 1;
     }
+    memcpy(framed, msg, len);
+    for (i = 0; i < len; i++) {
+        if (framed[i] == '\n' || framed[i] == '\r') {
+            framed[i] = ' ';
+        }
+    }
+    if (cfg->protocol == CSYSLOG_TCP) {
+        framed[len++] = '\n';
+    }
+    framed[len] = '\0';
+    out = framed;
+    out_len = len;
 
     for (attempt = 0; attempt < 2; attempt++) {
         if (cfg->socket < 0) {
