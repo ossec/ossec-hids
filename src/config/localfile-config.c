@@ -18,6 +18,16 @@ static void init_empty_logreader(logreader *lr)
     lr->ign = 360;
 }
 
+/* One wildcard must not add an unbounded number of open files.
+ * Unset means the shipped default. */
+static int wildcard_file_cap(const logreader_config *log_config)
+{
+    if (!log_config || log_config->max_wildcard_files <= 0) {
+        return 256;
+    }
+    return log_config->max_wildcard_files;
+}
+
 #ifdef WIN32
 /* True if path has a real * / ? wildcard (ignore '?' in a \\?\ prefix). */
 static int localfile_has_win_wildcard(const char *path)
@@ -223,7 +233,16 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                     glob_set = pl + 1;
                 }
 
+                int cap = wildcard_file_cap(log_config);
+
                 for (g = 0; paths[g] != NULL; g++) {
+                    if (g >= cap) {
+                        merror(GLOB_MAXFILES, __local_name, node[i]->content, cap);
+                        for (; paths[g] != NULL; g++) {
+                            free(paths[g]);
+                        }
+                        break;
+                    }
                     /* Expanded names are real files. A '%' in the filename
                      * is literal (for example 100%done.log), not a strftime
                      * template. The template lives on the configured location.
@@ -273,7 +292,14 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
                 }
 
 
+                int cap = wildcard_file_cap(log_config);
+
                 while (g.gl_pathv[glob_offset] != NULL) {
+                    if (glob_offset >= cap) {
+                        merror(GLOB_MAXFILES, __local_name, node[i]->content, cap);
+                        break;
+                    }
+
                     /* Check for strftime on globs too */
                     if (strchr(g.gl_pathv[glob_offset], '%')) {
                         struct tm *p;

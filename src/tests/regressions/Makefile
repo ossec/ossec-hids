@@ -53,6 +53,7 @@ REGRESSION_BINS = \
 	issue_9q8lr4ny_syslog_placeholder \
 	issue_nceh7rb6_json_rotate_flag \
 	issue_ygx1kkkt_dated_log_tail \
+	issue_9knxmd94_wildcard_cap \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1206,6 +1207,16 @@ issue_c186ep5n_nodiff_size: \
 		tests/regressions/issue_c186ep5n_nodiff_size.c \
 		config/syscheck-config.c \
 		-Wl,--start-group shared.a os_regex.a os_xml.a os_net.a config.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-9KNXMD94: one wildcard location cannot add unbounded files.
+issue_9knxmd94_wildcard_cap: \
+		tests/regressions/issue_9knxmd94_wildcard_cap.c \
+		config/localfile-config.c shared.a
+	$(CC) $(CFLAGS) -I./config -o $@ \
+		tests/regressions/issue_9knxmd94_wildcard_cap.c \
+		config/localfile-config.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # Compile localfile-config.c into the binary so the harness does not depend

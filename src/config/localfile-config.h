@@ -55,6 +55,8 @@ typedef struct _logreader {
 typedef struct _logreader_config {
     int agent_cfg;
     int accept_remote;
+    /* Max names one wildcard <location> may add. 0 means unset. */
+    int max_wildcard_files;
     logreader *config;
 } logreader_config;
 

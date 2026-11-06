@@ -137,6 +137,13 @@ int main(int argc, char **argv)
         logff[1].logformat = NULL;
 
         merror(NO_FILE, ARGV0);
+    } else {
+        int nfiles = 0;
+
+        while (logff[nfiles].file || logff[nfiles].command) {
+            nfiles++;
+        }
+        logcollector_raise_nofile(nfiles);
     }
 
     /* Start signal handler */

@@ -35,6 +35,7 @@
 //#define PIPE_ERROR    "%s(1120): ERROR: Pipe error."
 #define GLOB_ERROR    "%s(1121): ERROR: Glob error. Invalid pattern: '%s'."
 #define GLOB_NFOUND   "%s(1122): ERROR: No file found by pattern: '%s'."
+#define GLOB_MAXFILES "%s(1954): ERROR: Too many files found by pattern: '%s'. Only the first %d are monitored (logcollector.max_wildcard_files)."
 #define UNLINK_ERROR  "%s(1123): ERROR: Unable to delete file: '%s'."
 #define RENAME_ERROR  "%s(1124): ERROR: Could not rename file '%s' to '%s' due to [(%d)-(%s)]."
 #define INT_ERROR     "%s(1125): ERROR: Internal error (undefined)."
