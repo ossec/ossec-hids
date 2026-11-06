@@ -10,6 +10,10 @@
 #include "shared.h"
 #include "logcollector.h"
 
+#ifndef WIN32
+#include <sys/resource.h>
+#endif
+
 /* Prototypes */
 int update_fname(int i);
 static void clear_logreader_entry(int idx);
@@ -746,6 +750,54 @@ int update_fname(int i)
     }
 
     return (0);
+}
+
+/* Raise the soft open-file limit so the files this process will keep
+ * open, plus the queue, the log, and command pipes, fit. One wildcard is
+ * already capped; several wildcard blocks can still pass that cap.
+ */
+void logcollector_raise_nofile(int nfiles)
+{
+#ifndef WIN32
+    struct rlimit rl;
+    rlim_t need;
+    rlim_t hard;
+
+    if (nfiles < 0) {
+        nfiles = 0;
+    }
+    need = (rlim_t)nfiles + 128;
+    if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
+        return;
+    }
+    if (rl.rlim_cur >= need) {
+        return;
+    }
+
+    hard = rl.rlim_max;
+    if (hard < need) {
+        rl.rlim_max = need;
+    }
+    rl.rlim_cur = need;
+    if (setrlimit(RLIMIT_NOFILE, &rl) == 0) {
+        return;
+    }
+
+    /* Stay inside the hard limit this process is allowed to use. */
+    if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
+        return;
+    }
+    if (rl.rlim_cur < hard) {
+        rl.rlim_cur = hard;
+        if (setrlimit(RLIMIT_NOFILE, &rl) == 0) {
+            return;
+        }
+    }
+    merror("%s: WARN: Unable to raise the open-file limit to %llu (%s).",
+           ARGV0, (unsigned long long)need, strerror(errno));
+#else
+    (void)nfiles;
+#endif
 }
 
 /* Open, get the fileno, seek to the end and update mtime */

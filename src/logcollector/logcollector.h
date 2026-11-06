@@ -29,6 +29,9 @@ void LogCollectorStart(void) __attribute__((noreturn));
 /* Handle files */
 int handle_file(int i, int do_fseek, int do_log);
 
+/* Raise RLIMIT_NOFILE to cover nfiles plus a reserve for the queue and log. */
+void logcollector_raise_nofile(int nfiles);
+
 /* Per-visit line budget for file readers (logcollector.max_lines). */
 void logr_begin_read(void);
 int logr_consume_line(int drop_it);

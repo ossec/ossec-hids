@@ -12,6 +12,8 @@
 #include "config/config.h"
 #include "logcollector/logcollector.h"
 
+#include <limits.h>
+
 #undef ARGV0
 #define ARGV0 "verify-agent-conf"
 
@@ -75,6 +77,8 @@ int main(int argc, char **argv)
     modules |= CLOCALFILE;
     modules |= CAGENT_CONFIG;
     log_config.config = NULL;
+    /* Syntax check only. Do not drop names a running agent would monitor. */
+    log_config.max_wildcard_files = INT_MAX;
     if (ReadConfig(modules, ar, &log_config, NULL) < 0) {
         return (OS_INVALID);
     }

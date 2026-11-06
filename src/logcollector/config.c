@@ -22,6 +22,8 @@ int LogCollectorConfig(const char *cfgfile, int accept_remote)
     log_config.config = NULL;
     log_config.agent_cfg = 0;
     log_config.accept_remote = accept_remote;
+    log_config.max_wildcard_files = getDefine_Int("logcollector",
+                                  "max_wildcard_files", 1, 100000);
 
     if (ReadConfig(modules, cfgfile, &log_config, NULL) < 0) {
         return (OS_INVALID);
