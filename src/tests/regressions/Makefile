@@ -48,6 +48,7 @@ REGRESSION_BINS = \
 	issue_16qlz097_realtime_rename \
 	issue_zno1mxtc_eventlog_dll_cache \
 	issue_5bg289fd_bmpstring_cn \
+	issue_r3zy7cwm_field_null_decoder \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -376,6 +377,20 @@ issue_5bg289fd_bmpstring_cn: \
 	$(CC) $(CFLAGS) -DLIBOPENSSL_ENABLED -I./os_auth -o $@ \
 		tests/regressions/issue_5bg289fd_bmpstring_cn.c \
 		os_auth/check_cert-5bg.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-R3ZY7CWM: a <field> rule must not read a missing decoder table.
+issue_r3zy7cwm_field_null_decoder: \
+		tests/regressions/issue_r3zy7cwm_field_null_decoder.c \
+		analysisd/analysisd.c shared.a
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./analysisd \
+		-Dmain=r3z_unused_main \
+		-c analysisd/analysisd.c -o analysisd/analysisd-r3z.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_r3zy7cwm_field_null_decoder.c \
+		analysisd/analysisd-r3z.o \
+		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
@@ -1230,6 +1245,7 @@ clean:
 		syscheckd/run_realtime-16q.o \
 		logcollector/read_win_el-zno.o \
 		os_auth/check_cert-5bg.o \
+		analysisd/analysisd-r3z.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
