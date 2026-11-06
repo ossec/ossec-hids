@@ -34,7 +34,7 @@ extern int repeated_offenders_timeout[];
 void WinExecdRun(char *exec_msg);
 int ReadExecConfig(void);
 char *GetCommandbyName(const char *name, int *timeout) __attribute__((nonnull));
-void ExecCmd(char *const *cmd) __attribute__((nonnull));
+pid_t ExecCmd(char *const *cmd) __attribute__((nonnull));
 void ExecCmd_Win32(char *cmd);
 int ExecdConfig(const char *cfgfile) __attribute__((nonnull));
 int WinExecd_Start(void);
@@ -45,6 +45,7 @@ typedef struct _timeout_data {
     time_t time_of_addition;
     int time_to_block;
     char **command;
+    pid_t delete_pid;   /* The "delete" command, once it has been started */
 } timeout_data;
 
 void FreeTimeoutEntry(timeout_data *timeout_entry);
@@ -54,9 +55,22 @@ void FreeTimeoutEntry(timeout_data *timeout_entry);
  */
 int CanonicalIP(const char *ip, char *dst, size_t dstlen);
 
-/* Returns 1 if request is incomplete or already on the timeout list. */
+/* Start "delete" for entries that have timed out. An entry stays on the
+ * list, with delete_pid set, until that child is reaped.
+ */
+int ExecdTimeoutLaunchDeletes(OSList *timeout_list, time_t now,
+                              int *childcount);
+
+/* Drop the entry whose delete_pid is pid. Returns 1 if one was removed. */
+int ExecdTimeoutReapDelete(OSList *timeout_list, pid_t pid);
+
+/* Returns 1 if request is incomplete or already on the timeout list.
+ * childcount, when not NULL, is decremented if this call waits out a
+ * "delete" that was still running for the same command and address.
+ */
 int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
-                         time_t curr_time, OSHash *repeated_hash);
+                         time_t curr_time, OSHash *repeated_hash,
+                         int *childcount);
 
 #endif
 

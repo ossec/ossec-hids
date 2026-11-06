@@ -63,7 +63,7 @@ static void check_different_users_same_dash_ip(void)
     args[3] = "-";
     args[4] = NULL;
 
-    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL);
+    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL, NULL);
     CHECK(added == 0,
           "bob is not treated as a duplicate of pending carol");
 }
@@ -87,7 +87,7 @@ static void check_same_user_still_duplicate(void)
     args[3] = "-";
     args[4] = NULL;
 
-    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL);
+    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL, NULL);
     CHECK(added == 1, "same user+IP remains a duplicate");
 }
 
@@ -109,11 +109,11 @@ static void check_ip_keyed_unaffected(void)
     args[2] = "-";
     args[3] = "203.0.113.7";
     args[4] = NULL;
-    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL);
+    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL, NULL);
     CHECK(added == 1, "same IP still duplicates for address-keyed AR");
 
     args[3] = "198.51.100.9";
-    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL);
+    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL, NULL);
     CHECK(added == 0, "different IP is not a duplicate");
 }
 

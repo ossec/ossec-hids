@@ -60,8 +60,15 @@ static void execd_shutdown(int sig)
 
         list_entry = (timeout_data *)timeout_node->data;
 
-        ExecCmd(list_entry->command);
-        wait(&status);
+        /* Timed out entries may have their "delete" running already */
+        if (list_entry->delete_pid > 0) {
+            while (waitpid(list_entry->delete_pid, &status, 0) < 0 &&
+                    errno == EINTR) {
+            }
+        } else {
+            ExecCmd(list_entry->command);
+            wait(&status);
+        }
 
         /* Delete current node - already sets the pointer to next */
         OSList_DeleteCurrentlyNode(timeout_list);
@@ -176,33 +183,6 @@ int main(int argc, char **argv)
 
 #endif
 
-/* Free the timeout entry
- * Must be called after popping it from the timeout list
- */
-void FreeTimeoutEntry(timeout_data *timeout_entry)
-{
-    char **tmp_str;
-
-    if (!timeout_entry) {
-        return;
-    }
-
-    tmp_str = timeout_entry->command;
-
-    /* Clear the command arguments */
-    if (tmp_str) {
-        while (*tmp_str) {
-            os_free(*tmp_str);
-            *tmp_str = NULL;
-            tmp_str++;
-        }
-        os_free(timeout_entry->command);
-        timeout_entry->command = NULL;
-    }
-
-    free(timeout_entry);
-}
-
 /* One spelling for a literal address. Host names, "-", CIDR, and a
  * leading "!" are left for the caller to use unchanged. pf stores the
  * parsed address, so 2001:DB8::7 and 2001:db8::7 must not be two blocks.
@@ -241,6 +221,38 @@ int CanonicalIP(const char *ip, char *dst, size_t dstlen)
 }
 
 #ifndef WIN32
+
+/* Start "delete" for entries that have timed out. The entry stays listed
+ * until that child is reaped, so an "add" for the same command and address
+ * cannot run beside it.
+ */
+int ExecdTimeoutLaunchDeletes(OSList *timeout_list, time_t now,
+                              int *childcount)
+{
+    OSListNode *node;
+
+    if (!timeout_list) {
+        return (0);
+    }
+
+    node = OSList_GetFirstNode(timeout_list);
+    while (node) {
+        timeout_data *entry;
+
+        entry = (timeout_data *)node->data;
+        if (entry && entry->delete_pid <= 0 &&
+                (now - entry->time_of_addition) > entry->time_to_block) {
+            entry->delete_pid = ExecCmd(entry->command);
+            if (entry->delete_pid > 0 && childcount) {
+                (*childcount)++;
+            }
+        }
+
+        node = OSList_GetNextNode(timeout_list);
+    }
+
+    return (0);
+}
 
 /* Main function on the execd. Does all the data receiving, etc. */
 static void ExecdStart(int q)
@@ -301,36 +313,18 @@ static void ExecdStart(int q)
             /* Child completed if wp > 0 */
             else {
                 childcount--;
+                /* If it was a "delete", its entry is done with */
+                ExecdTimeoutReapDelete(timeout_list, (pid_t)wp);
             }
         }
 
         /* Get current time */
         curr_time = time(0);
 
-        /* Check if there is any timed out command to execute */
-        timeout_node = OSList_GetFirstNode(timeout_list);
-        while (timeout_node) {
-            timeout_data *list_entry;
-
-            list_entry = (timeout_data *)timeout_node->data;
-
-            /* Timed out */
-            if ((curr_time - list_entry->time_of_addition) >
-                    list_entry->time_to_block) {
-                ExecCmd(list_entry->command);
-
-                /* Delete current node - already sets the pointer to next */
-                OSList_DeleteCurrentlyNode(timeout_list);
-                timeout_node = OSList_GetCurrentlyNode(timeout_list);
-
-                /* Clear the memory */
-                FreeTimeoutEntry(list_entry);
-
-                childcount++;
-            } else {
-                timeout_node = OSList_GetNextNode(timeout_list);
-            }
-        }
+        /* Check if there is any timed out command to execute.
+         * The entry stays on the list until its "delete" has finished.
+         */
+        ExecdTimeoutLaunchDeletes(timeout_list, curr_time, &childcount);
 
         /* Set timeout to EXECD_TIMEOUT */
         socket_timeout.tv_sec = EXECD_TIMEOUT;
@@ -446,7 +440,8 @@ static void ExecdStart(int q)
 
         /* Check if this command was already executed (or incomplete). */
         added_before = ExecdTimeoutDupCheck(timeout_list, timeout_args,
-                                            curr_time, repeated_hash);
+                                            curr_time, repeated_hash,
+                                            &childcount);
 
         /* If it wasn't added before, do it now */
         if (!added_before) {

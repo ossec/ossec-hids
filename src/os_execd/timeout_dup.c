@@ -11,6 +11,30 @@
 #include "list_op.h"
 #include "execd.h"
 
+/* Free the timeout entry. Must be called after popping it from the list. */
+void FreeTimeoutEntry(timeout_data *timeout_entry)
+{
+    char **tmp_str;
+
+    if (!timeout_entry) {
+        return;
+    }
+
+    tmp_str = timeout_entry->command;
+
+    if (tmp_str) {
+        while (*tmp_str) {
+            os_free(*tmp_str);
+            *tmp_str = NULL;
+            tmp_str++;
+        }
+        os_free(timeout_entry->command);
+        timeout_entry->command = NULL;
+    }
+
+    free(timeout_entry);
+}
+
 /* Walk the timeout list for a duplicate of timeout_args.
  * Returns 1 if the request is incomplete or already pending (caller must
  * not ExecCmd / re-add). Incomplete requests (missing user/IP) must not
@@ -19,7 +43,8 @@
  * other accounts (ANT-2026-2LGOJR12).
  */
 int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
-                         time_t curr_time, OSHash *repeated_hash)
+                         time_t curr_time, OSHash *repeated_hash,
+                         int *childcount)
 {
     OSListNode *timeout_node;
     int added_before = 0;
@@ -50,6 +75,31 @@ int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
         if ((strcmp(list_entry->command[3], timeout_args[3]) == 0) &&
                 (strcmp(list_entry->command[2], timeout_args[2]) == 0) &&
                 (strcmp(list_entry->command[0], timeout_args[0]) == 0)) {
+            /* It timed out and its "delete" is still running. Let that
+             * finish before the command is added again. Only this request
+             * waits; the entry is no longer an active block. Windows runs
+             * each command synchronously and does not record a pid.
+             */
+#ifndef WIN32
+            if (list_entry->delete_pid > 0) {
+                pid_t got;
+
+                do {
+                    got = waitpid(list_entry->delete_pid, NULL, 0);
+                } while (got < 0 && errno == EINTR);
+
+                if (got > 0 && childcount && *childcount > 0) {
+                    (*childcount)--;
+                }
+
+                OSList_DeleteCurrentlyNode(timeout_list);
+                FreeTimeoutEntry(list_entry);
+                return (0);
+            }
+#else
+            (void)childcount;
+#endif
+
             added_before = 1;
             list_entry->time_of_addition = curr_time;
 
@@ -93,4 +143,30 @@ int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
     }
 
     return (added_before);
+}
+
+/* Drop the entry whose "delete" pid has just been collected. */
+int ExecdTimeoutReapDelete(OSList *timeout_list, pid_t pid)
+{
+    OSListNode *node;
+
+    if (!timeout_list || pid <= 0) {
+        return (0);
+    }
+
+    node = OSList_GetFirstNode(timeout_list);
+    while (node) {
+        timeout_data *entry;
+
+        entry = (timeout_data *)node->data;
+        if (entry && entry->delete_pid == pid) {
+            OSList_DeleteCurrentlyNode(timeout_list);
+            FreeTimeoutEntry(entry);
+            return (1);
+        }
+
+        node = OSList_GetNextNode(timeout_list);
+    }
+
+    return (0);
 }
