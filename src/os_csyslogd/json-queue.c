@@ -177,6 +177,11 @@ cJSON *jqueue_parse_json(file_queue *queue)
         return NULL;
     }
 
+    /* This flag describes only the read about to happen. The rotation and
+     * truncation paths return a failed read without clearing it, and the
+     * next call would then delete a good alert. */
+    queue->flags = 0;
+
     initial_pos = ftell(queue->fp);
     if (initial_pos < 0) {
         queue->flags = JQUEUE_READ_FAILED;
