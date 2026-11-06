@@ -142,9 +142,12 @@ alert_data *Read_FileMon(file_queue *fileq, const struct tm *p, unsigned int tim
     unsigned int attempts;
     alert_data *al_data;
 
-    /* If the file queue is not available, try to access it */
+    /* If the file queue is not available, try to access it.
+     * Read from the start: this file is newer than the reader (it did
+     * not exist on the last attempt). Flag 0 seeks to the end and drops
+     * alerts already written. Init_FileQueue() still tails on startup. */
     if (!fileq->fp) {
-        if (Handle_Queue(fileq, 0) != 1) {
+        if (Handle_Queue(fileq, CRALERT_READ_ALL) != 1) {
             if (timeout > 0) {
                 file_sleep();
             }
@@ -164,7 +167,9 @@ alert_data *Read_FileMon(file_queue *fileq, const struct tm *p, unsigned int tim
             /* Get latest file */
             GetFile_Queue(fileq);
 
-            if (Handle_Queue(fileq, 0) != 1) {
+            /* Read from the start. Flag 0 seeks to the end, so alerts
+             * analysisd wrote before this reader switched days are lost. */
+            if (Handle_Queue(fileq, CRALERT_READ_ALL) != 1) {
                 if (timeout > 0) {
                     file_sleep();
                 }
