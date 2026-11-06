@@ -183,6 +183,20 @@ void OS_CSyslogD(SyslogConfig **syslog_config)
     }
 }
 
+/* Values the decoders write when a field is unset. Match the whole string:
+ * a character-by-character test also dropped real users and hosts such as
+ * anna and inn.example.org, and read past a short value.
+ */
+static int field_is_placeholder(const char *value)
+{
+    if (value == NULL) {
+        return 1;
+    }
+
+    return (strcmp(value, "(none)") == 0 ||
+            strcmp(value, "(no user)") == 0);
+}
+
 /* Format Field for output */
 int field_add_string(char *dest, size_t size, const char *format, const char *value )
 {
@@ -206,13 +220,7 @@ int field_add_string(char *dest, size_t size, const char *format, const char *va
         return -1;
     }
 
-    if (value != NULL &&
-            (
-                ((value[0] != '(') && (value[1] != 'n') && (value[2] != 'o')) ||
-                ((value[0] != '(') && (value[1] != 'u') && (value[2] != 'n')) ||
-                ((value[0] != 'u') && (value[1] != 'n') && (value[4] != 'k'))
-            )
-       ) {
+    if (!field_is_placeholder(value)) {
         lim = sizeof(buffer);
         if (lim > dest_sz) {
             lim = dest_sz;
@@ -265,11 +273,7 @@ int field_add_truncated(char *dest, size_t size, const char *format, const char 
         field_sz = available_sz - fmt_len + (size_t)fmt_size;
     }
 
-    if (
-        ((value[0] != '(') && (value[1] != 'n') && (value[2] != 'o')) ||
-        ((value[0] != '(') && (value[1] != 'u') && (value[2] != 'n')) ||
-        ((value[0] != 'u') && (value[1] != 'n') && (value[4] != 'k'))
-       ) {
+    if (!field_is_placeholder(value)) {
 
         if ( (truncated = (char *) malloc(field_sz + 1)) != NULL ) {
             if ( total_sz > available_sz ) {
