@@ -42,6 +42,7 @@ REGRESSION_BINS = \
 	issue_ave66yb6_report_store \
 	issue_wi6tbpfx_cdb_value \
 	issue_wjnd95he_win_wildcard \
+	issue_u64thxi1_ipv6_disconnect \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -288,6 +289,27 @@ issue_wjnd95he_win_wildcard: \
 		-c shared/file_op.c -o shared/file_op-wjnd.o
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_wjnd95he_win_wildcard.c \
 		shared/file_op-wjnd.o -Wl,--gc-sections
+
+# ANT-2026-U64THXI1: IPv6 disconnect location must survive the queue split.
+issue_u64thxi1_ipv6_disconnect: \
+		tests/regressions/issue_u64thxi1_ipv6_disconnect.c \
+		monitord/monitor_agents.c analysisd/cleanevent.c \
+		analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./monitord \
+		-c monitord/monitor_agents.c -o monitord/monitor_agents-u64.o
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./analysisd \
+		-c analysisd/cleanevent.c -o analysisd/cleanevent-u64.o
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./analysisd \
+		-c analysisd/eventinfo.c -o analysisd/eventinfo-u64.o
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./analysisd \
+		-c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-u64.o
+	$(CC) $(CFLAGS) -I./analysisd -o $@ \
+		tests/regressions/issue_u64thxi1_ipv6_disconnect.c \
+		monitord/monitor_agents-u64.o analysisd/cleanevent-u64.o \
+		analysisd/eventinfo-u64.o analysisd/eventinfo_list-u64.o \
+		-Wl,--gc-sections \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # ANT-2026-1O4BCXPR: CreatePID must not follow a symlink in var/run.
 issue_1o4bcxpr_createpid: \
@@ -1130,6 +1152,10 @@ clean:
 		analysisd/eventinfo_list-ht.o \
 		analysisd/lists_list-wi6.o \
 		shared/file_op-wjnd.o \
+		monitord/monitor_agents-u64.o \
+		analysisd/cleanevent-u64.o \
+		analysisd/eventinfo-u64.o \
+		analysisd/eventinfo_list-u64.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \

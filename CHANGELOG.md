@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Report an agent disconnect as ``(name) ip->ossec-monitord`` so an IPv6 address is not cut at its first colon. Rule 504 now fires for an agent enrolled with an IPv6 address, and the alert is attributed to that agent. The location string changes for every agent, from ``name-ip->ossec-monitord`` to ``(name) ip->ossec-monitord`` (ANT-2026-U64THXI1)
 - @atomicturtle - Skip a Windows wildcard ``<location>`` name that ``FindFirstFileA`` returns with ``*`` or ``?`` in it. The agent is built without ``UNICODE``, so a character outside the ANSI code page comes back as ``?`` and the expansion feeds that name back in as another pattern, hanging logcollector at service start. Those names cannot be opened through the ANSI API. A ``\\?\`` prefix is still not a wildcard (ANT-2026-WJND95HE)
 - @atomicturtle - NUL-terminate the CDB value copied by ``address_match_key_value`` (``calloc(vlen + 1)`` in both the exact-address and subnet lookups), so an anchored ``check_value`` is compared against the list entry and not the byte after the allocation (ANT-2026-WI6TBPFX)
 - @atomicturtle - File daily-report top entries in hash tables and sort each table once, and grow the kept-alert array geometrically, so a day of distinct locations, users, or source addresses cannot stall ``ossec-monitord`` after midnight (ANT-2026-AVE66YB6)

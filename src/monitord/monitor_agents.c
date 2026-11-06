@@ -11,6 +11,34 @@
 #include "monitord.h"
 #include "read-agents.h"
 
+/* Queue location for an agent-disconnect event. agent is "<name>-<address>".
+ * The queue message is "id:location:message" and analysisd ends the location
+ * at the first ':' unless it is "(name) ip->...". An address, a CIDR, and
+ * "any" contain no '-', so the last '-' is the split already used by
+ * delete_agentinfo(). A name that is not in that form uses the plain
+ * program location from before 4.1.0.
+ */
+void monitor_disconnect_location(const char *agent, const char *prog,
+                                 char *out, size_t outsz)
+{
+    const char *agent_ip;
+
+    if (outsz == 0) {
+        return;
+    }
+    out[0] = '\0';
+    if (!agent || !prog) {
+        return;
+    }
+
+    agent_ip = strrchr(agent, '-');
+    if (agent_ip && agent_ip > agent && agent_ip[1] != '\0') {
+        snprintf(out, outsz, "(%.*s) %s->%s",
+                 (int)(agent_ip - agent), agent, agent_ip + 1, prog);
+    } else {
+        snprintf(out, outsz, "%s", prog);
+    }
+}
 
 void monitor_agents()
 {
@@ -48,7 +76,8 @@ void monitor_agents()
             snprintf(str, OS_SIZE_1024 - 1, OS_AG_DISCON, *cr_agents);
 
             char refined_location[OS_SIZE_1024 + 1];
-            snprintf(refined_location, OS_SIZE_1024, "%s->%s", *cr_agents, ARGV0);
+            monitor_disconnect_location(*cr_agents, ARGV0,
+                                        refined_location, sizeof(refined_location));
 
             if (SendMSG(mond.a_queue, str, refined_location,
                         LOCALFILE_MQ) < 0) {
