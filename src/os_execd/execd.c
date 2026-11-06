@@ -203,6 +203,43 @@ void FreeTimeoutEntry(timeout_data *timeout_entry)
     free(timeout_entry);
 }
 
+/* One spelling for a literal address. Host names, "-", CIDR, and a
+ * leading "!" are left for the caller to use unchanged. pf stores the
+ * parsed address, so 2001:DB8::7 and 2001:db8::7 must not be two blocks.
+ */
+int CanonicalIP(const char *ip, char *dst, size_t dstlen)
+{
+    os_ip parsed;
+    char canon[INET6_ADDRSTRLEN];
+    size_t n;
+
+    if (!ip || !dst || dstlen == 0) {
+        return (0);
+    }
+    if (ip[0] == '\0' || ip[0] == '!' || strcmp(ip, "-") == 0 || strchr(ip, '/')) {
+        return (0);
+    }
+
+    memset(&parsed, 0, sizeof(parsed));
+    if (OS_IsValidIP(ip, &parsed) != 1) {
+        free(parsed.ip);
+        return (0);
+    }
+    if (satop((struct sockaddr *)&parsed.ss, canon, sizeof(canon)) != 0 ||
+            canon[0] == '\0') {
+        free(parsed.ip);
+        return (0);
+    }
+    free(parsed.ip);
+
+    n = strlen(canon);
+    if (n + 1 > dstlen) {
+        return (0);
+    }
+    memcpy(dst, canon, n + 1);
+    return (1);
+}
+
 #ifndef WIN32
 
 /* Main function on the execd. Does all the data receiving, etc. */
@@ -389,6 +426,19 @@ static void ExecdStart(int q)
             timeout_args[i + 1] = NULL;
 
             i++;
+        }
+
+        /* One spelling before the list compare, the repeated-offender
+         * key, the add command, and the stored delete. */
+        if (timeout_args[3]) {
+            char canon[INET6_ADDRSTRLEN];
+
+            if (CanonicalIP(timeout_args[3], canon, sizeof(canon)) &&
+                    strcmp(timeout_args[3], canon) != 0) {
+                free(timeout_args[3]);
+                os_strdup(canon, timeout_args[3]);
+            }
+            cmd_args[3] = timeout_args[3];
         }
 
         /* Check if this command was already executed (or incomplete). */
