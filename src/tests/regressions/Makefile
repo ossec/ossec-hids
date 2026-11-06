@@ -45,6 +45,7 @@ REGRESSION_BINS = \
 	issue_u64thxi1_ipv6_disconnect \
 	issue_7odkfi8f_alert_day_read \
 	issue_dxpirjgm_realtime_dir_replace \
+	issue_16qlz097_realtime_rename \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -334,6 +335,19 @@ issue_dxpirjgm_realtime_dir_replace: \
 	$(CC) $(CFLAGS) -I./syscheckd -o $@ \
 		tests/regressions/issue_dxpirjgm_realtime_dir_replace.c \
 		syscheckd/run_realtime-dxp.o shared/fim_sum_op-dxp.o \
+		-Wl,--gc-sections \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-16QLZ097: a renamed directory keeps the watch on its new path.
+issue_16qlz097_realtime_rename: \
+		tests/regressions/issue_16qlz097_realtime_rename.c \
+		syscheckd/run_realtime.c shared.a
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -DINOTIFY_ENABLED -I./syscheckd \
+		-c syscheckd/run_realtime.c -o syscheckd/run_realtime-16q.o
+	$(CC) $(CFLAGS) -DINOTIFY_ENABLED -I./syscheckd -o $@ \
+		tests/regressions/issue_16qlz097_realtime_rename.c \
+		syscheckd/run_realtime-16q.o \
 		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
@@ -1186,6 +1200,7 @@ clean:
 		shared/file-queue-7odk.o \
 		syscheckd/run_realtime-dxp.o \
 		shared/fim_sum_op-dxp.o \
+		syscheckd/run_realtime-16q.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \

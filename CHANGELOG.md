@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Update the inotify watch path when a realtime directory is renamed. The watch follows the inode, so ``realtime_adddir()`` was keeping the first name it stored and later events were built under a path that no longer exists. A stored name that still reaches the same directory, such as a symlink, is left as it is (ANT-2026-16QLZ097)
 - @atomicturtle - When realtime syscheck finds a directory where it had cached a file, report the file deleted and scan the directory. ``c_read_file()`` was reporting that directory as a changed file, so files created inside it were invisible to realtime FIM until the next scheduled scan. The ``report_changes`` snapshot for the old file is removed with that deletion, before the new directory is scanned (ANT-2026-DXPIRJGM)
 - @atomicturtle - Read a newly opened daily alerts file from the start in ``Read_FileMon()``. ``csyslogd``, ``maild``, and ``dbd`` were seeking to the end when the day changed or the file was not open yet, so alerts written in that window were never mailed, forwarded, or stored. A daemon start still tails the file (ANT-2026-7ODKFI8F)
 - @atomicturtle - Report an agent disconnect as ``(name) ip->ossec-monitord`` so an IPv6 address is not cut at its first colon. Rule 504 now fires for an agent enrolled with an IPv6 address, and the alert is attributed to that agent. The location string changes for every agent, from ``name-ip->ossec-monitord`` to ``(name) ip->ossec-monitord`` (ANT-2026-U64THXI1)

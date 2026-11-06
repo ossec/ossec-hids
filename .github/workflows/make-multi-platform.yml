@@ -75,6 +75,8 @@ jobs:
           ./src/issue_7odkfi8f_alert_day_read
           make -C src -f tests/regressions/Makefile issue_dxpirjgm_realtime_dir_replace
           ./src/issue_dxpirjgm_realtime_dir_replace
+          make -C src -f tests/regressions/Makefile issue_16qlz097_realtime_rename
+          ./src/issue_16qlz097_realtime_rename
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload
