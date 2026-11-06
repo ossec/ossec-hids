@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <limits.h>
@@ -40,8 +41,42 @@ int realtime_checksumfile(const char *file_name) __attribute__((nonnull));
 int realtime_checksumfile(const char *file_name)
 {
     char *buf;
+    struct stat statbuf;
 
     buf = (char *) OSHash_Get(syscheck.fp, file_name);
+
+    /* Directories are never cached, so a cached path that is a directory
+     * now means the file was replaced (rm f; mkdir f) faster than the
+     * delete could be confirmed. c_read_file() would report it as a
+     * changed file; only read_file() below scans and watches it. Report
+     * the deletion and continue as a new path. */
+#ifdef WIN32
+    if (buf != NULL && stat(file_name, &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+#else
+    if (buf != NULL && lstat(file_name, &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+#endif
+    {
+        char alert_msg[PATH_MAX + 4];
+
+        alert_msg[PATH_MAX + 3] = '\0';
+        snprintf(alert_msg, PATH_MAX + 4, "-1 %s", file_name);
+        /* Keep the cache entry if delivery fails so the next event for
+         * this name can still report the deletion. */
+        if (send_syscheck_msg(alert_msg) == 0) {
+#ifndef WIN32
+            /* Before read_file(). The diff store names this path as a
+             * directory, so a later delete would also drop snapshots for
+             * files inside the new directory. */
+            seechanges_delfile(file_name);
+#endif
+            free(OSHash_Delete(syscheck.fp, file_name));
+        } else {
+            merror("%s: WARN: Failed to send syscheck delete for '%s'. "
+                   "Deletion will be retried on the next event.", ARGV0, file_name);
+        }
+        buf = NULL;
+    }
+
     if (buf != NULL) {
         char c_sum[OS_MAXSTR + 1];
 
