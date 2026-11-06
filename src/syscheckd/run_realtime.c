@@ -833,6 +833,19 @@ int realtime_start()
     return (1);
 }
 
+/* The name stored for a watch still leads to the directory just watched
+ * under dir (same inode, including through a symlink). */
+static int rt_watch_name_valid(const char *odir, const char *dir)
+{
+    struct stat ost, nst;
+
+    if (stat(odir, &ost) < 0 || stat(dir, &nst) < 0) {
+        return (0);
+    }
+
+    return (ost.st_dev == nst.st_dev && ost.st_ino == nst.st_ino);
+}
+
 /* Add a directory to real time checking */
 int realtime_adddir(const char *dir, __attribute__((unused)) int opts)
 {
@@ -865,11 +878,15 @@ int realtime_adddir(const char *dir, __attribute__((unused)) int opts)
                    "monitoring: '%s'. %d %s", ARGV0, dir, wd, strerror(errno));
         } else {
             char wdchar[32 + 1];
+            char *odir;
+
             wdchar[32] = '\0';
             snprintf(wdchar, 32, "%d", wd);
 
+            odir = (char *)OSHash_Get(syscheck.realtime->dirtb, wdchar);
+
             /* Entry not present */
-            if (!OSHash_Get(syscheck.realtime->dirtb, wdchar)) {
+            if (!odir) {
                 char *ndir;
 
                 ndir = strdup(dir);
@@ -880,6 +897,27 @@ int realtime_adddir(const char *dir, __attribute__((unused)) int opts)
                 OSHash_Add(syscheck.realtime->dirtb, wdchar, ndir);
                 debug1("%s: DEBUG: Directory added for real time monitoring: "
                        "'%s'.", ARGV0, ndir);
+            }
+            /* A watch follows the inode, so a renamed directory keeps its
+             * descriptor. Store the new name, or every later event in it
+             * is built with the old one. A stored name that still leads
+             * to this directory (a link to it) is kept, so a link swapped
+             * in during the walk cannot take over the entry. */
+            else if (strcmp(odir, dir) != 0 && !rt_watch_name_valid(odir, dir)) {
+                char *ndir;
+
+                ndir = strdup(dir);
+                if (ndir == NULL) {
+                    ErrorExit("%s: ERROR: Out of memory. Exiting.", ARGV0);
+                }
+
+                if (OSHash_Update(syscheck.realtime->dirtb, wdchar, ndir) == 1) {
+                    debug1("%s: DEBUG: Directory renamed for real time "
+                           "monitoring: '%s' -> '%s'.", ARGV0, odir, ndir);
+                    free(odir);
+                } else {
+                    free(ndir);
+                }
             }
         }
     }
