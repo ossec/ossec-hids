@@ -381,6 +381,7 @@ install -m 0640 src/rootcheck/db/*.txt ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/
 install -m 0644 src/os_dbd/mysql.schema ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0644 src/os_dbd/postgresql.schema ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0644 src/os_dbd/upgrade-agent-1363-mysql.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
+install -m 0644 src/os_dbd/upgrade-location-id-mysql.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0644 src/os_dbd/upgrade-agent-1363-postgresql.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0644 src/os_dbd/convert-db-ipv6.sql ${RPM_BUILD_ROOT}%{_datadir}/ossec/contrib
 install -m 0550 src/init/ossec-{client,server}.sh ${RPM_BUILD_ROOT}%{_localstatedir}/ossec/bin
@@ -776,6 +777,7 @@ fi
 %{_localstatedir}/ossec/bin/ossec-dbd
 %{_datadir}/ossec/contrib/mysql.schema
 %{_datadir}/ossec/contrib/upgrade-agent-1363-mysql.sql
+%{_datadir}/ossec/contrib/upgrade-location-id-mysql.sql
 %{_datadir}/ossec/contrib/convert-db-ipv6.sql
 
 %files postgres

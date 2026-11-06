@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS  alert_ipv6
     rule_id         MEDIUMINT   UNSIGNED NOT NULL,
     level           TINYINT     UNSIGNED,
     timestamp       INT         UNSIGNED NOT NULL,
-    location_id     SMALLINT    UNSIGNED NOT NULL,
+    location_id     INT         UNSIGNED NOT NULL,
     src_ip          VARCHAR(46),
     dst_ip          VARCHAR(46),
     src_port        SMALLINT    UNSIGNED,
