@@ -44,6 +44,7 @@ REGRESSION_BINS = \
 	issue_wjnd95he_win_wildcard \
 	issue_u64thxi1_ipv6_disconnect \
 	issue_7odkfi8f_alert_day_read \
+	issue_dxpirjgm_realtime_dir_replace \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -319,6 +320,21 @@ issue_7odkfi8f_alert_day_read: \
 		-c shared/file-queue.c -o shared/file-queue-7odk.o
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_7odkfi8f_alert_day_read.c \
 		shared/file-queue-7odk.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-DXPIRJGM: a directory that replaced a known file is scanned.
+issue_dxpirjgm_realtime_dir_replace: \
+		tests/regressions/issue_dxpirjgm_realtime_dir_replace.c \
+		syscheckd/run_realtime.c shared/fim_sum_op.c shared.a
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./syscheckd \
+		-c syscheckd/run_realtime.c -o syscheckd/run_realtime-dxp.o
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections \
+		-c shared/fim_sum_op.c -o shared/fim_sum_op-dxp.o
+	$(CC) $(CFLAGS) -I./syscheckd -o $@ \
+		tests/regressions/issue_dxpirjgm_realtime_dir_replace.c \
+		syscheckd/run_realtime-dxp.o shared/fim_sum_op-dxp.o \
+		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
@@ -1168,6 +1184,8 @@ clean:
 		analysisd/eventinfo-u64.o \
 		analysisd/eventinfo_list-u64.o \
 		shared/file-queue-7odk.o \
+		syscheckd/run_realtime-dxp.o \
+		shared/fim_sum_op-dxp.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
