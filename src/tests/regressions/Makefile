@@ -28,6 +28,7 @@ REGRESSION_BINS = \
 	issue_fbj3la25_rids_counter_reload \
 	issue_ja2nxew1_reject_log \
 	issue_qy1shlvv_syslog_tcp_idle \
+	issue_2bepxi8w_syslog_tcp_frame \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -203,6 +204,16 @@ issue_qy1shlvv_syslog_tcp_idle: tests/regressions/issue_qy1shlvv_syslog_tcp_idle
 		remoted/syslog_tcp_idle.c shared.a
 	$(CC) $(CFLAGS) -I./remoted -o $@ \
 		tests/regressions/issue_qy1shlvv_syslog_tcp_idle.c remoted/syslog_tcp_idle.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-2BEPXI8W: TCP syslog must drain every complete line per recv.
+issue_2bepxi8w_syslog_tcp_frame: \
+		tests/regressions/issue_2bepxi8w_syslog_tcp_frame.c \
+		remoted/syslog_tcp_frame.c shared.a
+	$(CC) $(CFLAGS) -I./remoted -o $@ \
+		tests/regressions/issue_2bepxi8w_syslog_tcp_frame.c \
+		remoted/syslog_tcp_frame.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 

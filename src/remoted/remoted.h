@@ -96,6 +96,15 @@ int remoted_send_syslog_msg(remoted_listener *listener, const char *msg,
  */
 int syslog_tcp_should_close_on_recv(int r_sz, int err, int pool_should_drop);
 
+/* Drain every complete TCP syslog line from storage_buffer, strip CR and
+ * leading <PRI>, and keep any incomplete tail at the front. send_fn returns
+ * <0 to stop. Returns 0 on success or -1 if send_fn failed.
+ * ANT-2026-2BEPXI8W.
+ */
+int syslog_tcp_drain_complete_lines(char *storage_buffer, size_t *sb_used,
+                                    int (*send_fn)(const char *msg, void *ctx),
+                                    void *ctx);
+
 /* Rate limit logging of input rejected before authentication.
  * Returns 1 if the caller should log the rejection, 0 if it was only counted.
  * Uses remoted_self: call from the listener thread only.
