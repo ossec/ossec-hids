@@ -28,6 +28,7 @@ Unrelease 4.5.0 changes
 
 **Security Fixes**
 
+- @atomicturtle - Flatten CR and LF in every ``syslog_output`` alert, including UDP. TCP already replaced them with spaces so one alert stayed one frame; UDP sent the breaks, and a receiver that splits a datagram at newlines could store a line the manager never raised. UDP does not add a trailing newline. Receivers that relied on the line breaks inside a UDP ``default`` or ``splunk`` message, present since 3.4.0, now see spaces (ANT-2026-Q0UYTPGC)
 - @atomicturtle - Do not match a ``<field>`` rule when the decoder has no field table. ``OS_CheckIfRuleMatch()`` read ``fields[]`` for every such rule, and that table exists only for a decoder with ``<order>``, so one log line stopped ``ossec-analysisd``. A decoder that has the named field still matches (ANT-2026-R3ZY7CWM)
 - @atomicturtle - Decode a certificate common name to UTF-8 before ``agent-auth -v`` compares it with the manager host name. ``asn1_to_cstr()`` was copying the raw content bytes, so a BMPString or UniversalString whose bytes spelled the host name was accepted. An IA5String, PrintableString, or UTF8String host name is unchanged (ANT-2026-5BG289FD)
 - @atomicturtle - Stop the Windows event-log message-DLL cache from storing a new entry for every letter-case spelling of one installed source. ``el_getEventDLL()`` still opens the registry with the name as written, and stops storing new entries after 4096. The extra key copy in that cache and in the Vista security descriptions is no longer leaked (ANT-2026-ZNO1MXTC)

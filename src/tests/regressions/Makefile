@@ -49,6 +49,7 @@ REGRESSION_BINS = \
 	issue_zno1mxtc_eventlog_dll_cache \
 	issue_5bg289fd_bmpstring_cn \
 	issue_r3zy7cwm_field_null_decoder \
+	issue_q0uytpgc_udp_newline \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -393,6 +394,18 @@ issue_r3zy7cwm_field_null_decoder: \
 		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-Q0UYTPGC: flatten CR/LF in a UDP syslog_output alert.
+issue_q0uytpgc_udp_newline: \
+		tests/regressions/issue_q0uytpgc_udp_newline.c \
+		os_csyslogd/csyslog_send.c shared.a
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON \
+		-c os_csyslogd/csyslog_send.c -o os_csyslogd/csyslog_send-q0u.o
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON -o $@ \
+		tests/regressions/issue_q0uytpgc_udp_newline.c \
+		os_csyslogd/csyslog_send-q0u.o \
+		-Wl,--start-group shared.a os_regex.a os_net.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-1O4BCXPR: CreatePID must not follow a symlink in var/run.
 issue_1o4bcxpr_createpid: \
@@ -1246,6 +1259,7 @@ clean:
 		logcollector/read_win_el-zno.o \
 		os_auth/check_cert-5bg.o \
 		analysisd/analysisd-r3z.o \
+		os_csyslogd/csyslog_send-q0u.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
