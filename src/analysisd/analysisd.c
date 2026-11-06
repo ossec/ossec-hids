@@ -979,7 +979,13 @@ RuleInfo *OS_CheckIfRuleMatch(Eventinfo *lf, RuleNode *curr_node)
     }
 
     /* Check for dynamic fields */
-   
+    if (rule->fields[0]) {
+        /* Only decoders with an <order> have a fields table. */
+        if (!lf->decoder_info->fields) {
+            return (NULL);
+        }
+    }
+
     for (i = 0; i < Config.decoder_order_size && rule->fields[i]; i++) {
         int j;
         
