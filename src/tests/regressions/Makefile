@@ -43,6 +43,7 @@ REGRESSION_BINS = \
 	issue_wi6tbpfx_cdb_value \
 	issue_wjnd95he_win_wildcard \
 	issue_u64thxi1_ipv6_disconnect \
+	issue_7odkfi8f_alert_day_read \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -310,6 +311,16 @@ issue_u64thxi1_ipv6_disconnect: \
 		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-7ODKFI8F: a newly opened alerts file is read from the start.
+issue_7odkfi8f_alert_day_read: \
+		tests/regressions/issue_7odkfi8f_alert_day_read.c shared/file-queue.c shared.a
+	$(CC) $(CFLAGS) -DDEFAULTDIR='"/tmp/ossec-7odkfi8f"' \
+		-c shared/file-queue.c -o shared/file-queue-7odk.o
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_7odkfi8f_alert_day_read.c \
+		shared/file-queue-7odk.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-1O4BCXPR: CreatePID must not follow a symlink in var/run.
 issue_1o4bcxpr_createpid: \
@@ -1156,6 +1167,7 @@ clean:
 		analysisd/cleanevent-u64.o \
 		analysisd/eventinfo-u64.o \
 		analysisd/eventinfo_list-u64.o \
+		shared/file-queue-7odk.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
