@@ -99,6 +99,8 @@ jobs:
           ./src/issue_5z4ox04e_agent_info_symlink
           make -C src -f tests/regressions/Makefile issue_c82ab02v_location_id
           ./src/issue_c82ab02v_location_id
+          make -C src -f tests/regressions/Makefile issue_see999rq_srcip_quote
+          ./src/issue_see999rq_srcip_quote
           make -C src -f tests/regressions/Makefile issue_rxknzj1n_smtp_dot_escape
           ./src/issue_rxknzj1n_smtp_dot_escape
           make -C src -f tests/regressions/Makefile issue_fbj3la25_rids_counter_reload

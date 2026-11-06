@@ -57,6 +57,7 @@ REGRESSION_BINS = \
 	issue_ajjellsq_db_symlink \
 	issue_5z4ox04e_agent_info_symlink \
 	issue_c82ab02v_location_id \
+	issue_see999rq_srcip_quote \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1225,6 +1226,18 @@ issue_9knxmd94_wildcard_cap: \
 # ANT-2026-C82AB02V: MySQL location.id must not be a 16-bit counter.
 issue_c82ab02v_location_id: tests/regressions/issue_c82ab02v_location_id.c
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_c82ab02v_location_id.c
+
+# ANT-2026-SEE999RQ: a long srcip/dstip must not drop the SQL closing quote.
+issue_see999rq_srcip_quote: \
+		tests/regressions/issue_see999rq_srcip_quote.c \
+		os_dbd/alert.c os_dbd/db_op.c shared.a
+	$(CC) $(CFLAGS) -I./os_dbd -c os_dbd/alert.c -o os_dbd/alert-see.o
+	$(CC) $(CFLAGS) -I./os_dbd -c os_dbd/db_op.c -o os_dbd/db_op-see.o
+	$(CC) $(CFLAGS) -I./os_dbd -o $@ \
+		tests/regressions/issue_see999rq_srcip_quote.c \
+		os_dbd/alert-see.o os_dbd/db_op-see.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-5Z4OX04E: ossec-dbd must not follow an agent-info symlink.
 # KEYS_FILE and AGENTINFO_DIR point at the harness tree.

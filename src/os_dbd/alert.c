@@ -21,18 +21,22 @@ static int __DBInsertLocation(const char *location, const DBConfig *db_config) _
  * single-quoted literal. Escapes the field in place when present (same
  * allow-list path as other os_dbd inserts).
  *
- * out must hold at least strlen(field) + 3 bytes when field is non-NULL
- * (quotes + NUL). IP fields use INET6_ADDRSTRLEN-scale buffers.
+ * A longer field is cut to outlen - 3 bytes so the closing quote always
+ * fits. The srcip/dstip buffers are 49 bytes, which keeps 46 characters,
+ * the width of those columns.
  */
 static void sql_nullable_str(char *out, size_t outlen, char *field)
 {
+    int keep;
+
     if (!field) {
         snprintf(out, outlen, "NULL");
         return;
     }
 
     osdb_escapestr(field);
-    snprintf(out, outlen, "'%s'", field);
+    keep = (outlen > 3) ? (int)(outlen - 3) : 0;
+    snprintf(out, outlen, "'%.*s'", keep, field);
 }
 
 
