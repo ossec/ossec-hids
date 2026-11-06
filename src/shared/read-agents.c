@@ -1008,10 +1008,55 @@ const char *syscheck_maint_list_tag(const syscheck_maint_info *info)
     return "Maint";
 }
 
+/* Empty an agent database without following a link planted in the
+ * ossec-owned queue directory. manage_agents still runs as root here.
+ * No O_CREAT: a missing name is left missing. A hard link shares its
+ * inode with another name, so it is left alone as well.
+ */
+static void _empty_db_file(const char *path)
+{
+#if defined(WIN32)
+    FILE *fp;
+
+    fp = fopen(path, "w");
+    if (fp) {
+        fclose(fp);
+    }
+#elif defined(O_NOFOLLOW)
+    int fd;
+    struct stat st;
+
+    fd = open(path, O_WRONLY | O_NOFOLLOW | O_NONBLOCK);
+    if (fd < 0) {
+        return;
+    }
+    if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_nlink == 1) {
+        if (ftruncate(fd, 0) < 0) {
+            merror("%s: ERROR: Cannot truncate %s: %s", __local_name, path,
+                   strerror(errno));
+        }
+    }
+    close(fd);
+#else
+    /* No way to refuse a symlink at open time. Do not create a missing
+     * name, and do not open anything that is not already one regular file.
+     */
+    struct stat st;
+    FILE *fp;
+
+    if (lstat(path, &st) != 0 || !S_ISREG(st.st_mode) || st.st_nlink != 1) {
+        return;
+    }
+    fp = fopen(path, "w");
+    if (fp) {
+        fclose(fp);
+    }
+#endif
+}
+
 /* Delete syscheck db */
 int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
 {
-    FILE *fp;
     char tmp_file[513];
 
     tmp_file[512] = '\0';
@@ -1022,13 +1067,10 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
-    if (fp) {
-        fclose(fp);
-    }
+    _empty_db_file(tmp_file);
 
     if (full_delete) {
-        if ((unlink(tmp_file)) < 0) {
+        if ((unlink(tmp_file)) < 0 && errno != ENOENT) {
             merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file, strerror(errno));
         }
     }
@@ -1039,11 +1081,8 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
-    if (fp) {
-        fclose(fp);
-    }
-    if ((unlink(tmp_file)) < 0) {
+    _empty_db_file(tmp_file);
+    if ((unlink(tmp_file)) < 0 && errno != ENOENT) {
         merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file, strerror(errno));
     }
 
@@ -1060,12 +1099,9 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
-    if (fp) {
-        fclose(fp);
-    }
+    _empty_db_file(tmp_file);
     if (full_delete) {
-        if ((unlink(tmp_file)) < 0) {
+        if ((unlink(tmp_file)) < 0 && errno != ENOENT) {
             merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file, strerror(errno));
         }
     }
@@ -1076,11 +1112,8 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
-    if (fp) {
-        fclose(fp);
-    }
-    if ((unlink(tmp_file)) < 0) {
+    _empty_db_file(tmp_file);
+    if ((unlink(tmp_file)) < 0 && errno != ENOENT) {
         merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file, strerror(errno));
     }
 
@@ -1090,7 +1123,6 @@ int delete_syscheck(const char *sk_name, const char *sk_ip, int full_delete)
 /* Delete rootcheck db */
 int delete_rootcheck(const char *sk_name, const char *sk_ip, int full_delete)
 {
-    FILE *fp;
     char tmp_file[513];
 
     tmp_file[512] = '\0';
@@ -1101,13 +1133,10 @@ int delete_rootcheck(const char *sk_name, const char *sk_ip, int full_delete)
              sk_name,
              sk_ip);
 
-    fp = fopen(tmp_file, "w");
-    if (fp) {
-        fclose(fp);
-    }
+    _empty_db_file(tmp_file);
 
     if (full_delete) {
-        if ((unlink(tmp_file)) < 0) {
+        if ((unlink(tmp_file)) < 0 && errno != ENOENT) {
             merror("%s: ERROR: Cannot unlink %s: %s", __local_name, tmp_file, strerror(errno));
         }
     }

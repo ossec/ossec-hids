@@ -54,6 +54,7 @@ REGRESSION_BINS = \
 	issue_nceh7rb6_json_rotate_flag \
 	issue_ygx1kkkt_dated_log_tail \
 	issue_9knxmd94_wildcard_cap \
+	issue_ajjellsq_db_symlink \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1218,6 +1219,22 @@ issue_9knxmd94_wildcard_cap: \
 		config/localfile-config.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-AJJELLSQ: delete_syscheck/delete_rootcheck must not follow a
+# symlink (or hard link) when emptying an agent database. Compile
+# read-agents.c here so SYSCHECK_DIR/ROOTCHECK_DIR point at the harness
+# tree instead of the installed /queue paths.
+issue_ajjellsq_db_symlink: \
+		tests/regressions/issue_ajjellsq_db_symlink.c \
+		shared/read-agents.c shared.a
+	$(CC) $(CFLAGS) \
+		-DSYSCHECK_DIR=\"/tmp/ossec-ajjellsq/syscheck\" \
+		-DROOTCHECK_DIR=\"/tmp/ossec-ajjellsq/rootcheck\" \
+		-o $@ \
+		tests/regressions/issue_ajjellsq_db_symlink.c \
+		shared/read-agents.c \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_crypto.a libcJSON.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
 # Compile localfile-config.c into the binary so the harness does not depend
 # on a possibly stale config.a member from an earlier server build.
