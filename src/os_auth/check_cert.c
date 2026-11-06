@@ -290,35 +290,37 @@ int label_match(const label *label1, const label *label2)
 }
 
 /* Convert an ASN1 string which may not be null terminated into a
- * standard null terminated string. Also check for embedded null
- * characters.
+ * standard null terminated string. The string is decoded to UTF-8
+ * according to its ASN1 type first: a common name may be a BMPString
+ * or UniversalString, whose raw content bytes are not characters and
+ * must not be compared as such. Also check for embedded null characters.
  */
 char *asn1_to_cstr(ASN1_STRING *astr)
 {
-    unsigned int astr_len = 0;
-    char *tmp = NULL;
+    int astr_len = 0;
+    unsigned char *tmp = NULL;
     char *cstr = NULL;
 
-    if (!(astr_len = (unsigned int) ASN1_STRING_length(astr))) {
-        return NULL;
-    }
-
-    if (!(tmp = (char *)ASN1_STRING_data(astr))) {
+    if ((astr_len = ASN1_STRING_to_UTF8(&tmp, astr)) <= 0) {
+        OPENSSL_free(tmp);
         return NULL;
     }
 
     /* Verify that the string does not contain embedded null characters.
      */
-    if (memchr(tmp, '\0', astr_len)) {
+    if (memchr(tmp, '\0', (size_t) astr_len)) {
+        OPENSSL_free(tmp);
         return NULL;
     }
 
-    if ((cstr = (char *) malloc(astr_len + 1)) == NULL) {
+    if ((cstr = (char *) malloc((size_t) astr_len + 1)) == NULL) {
+        OPENSSL_free(tmp);
         return NULL;
     }
 
-    memcpy(cstr, tmp, astr_len);
+    memcpy(cstr, tmp, (size_t) astr_len);
     cstr[astr_len] = '\0';
+    OPENSSL_free(tmp);
 
     return cstr;
 }
