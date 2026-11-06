@@ -7,9 +7,6 @@
  * Foundation
  */
 
-#include <errno.h>
-#include <sys/wait.h>
-
 #include "shared.h"
 #include "list_op.h"
 #include "execd.h"
@@ -80,8 +77,10 @@ int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
                 (strcmp(list_entry->command[0], timeout_args[0]) == 0)) {
             /* It timed out and its "delete" is still running. Let that
              * finish before the command is added again. Only this request
-             * waits; the entry is no longer an active block.
+             * waits; the entry is no longer an active block. Windows runs
+             * each command synchronously and does not record a pid.
              */
+#ifndef WIN32
             if (list_entry->delete_pid > 0) {
                 pid_t got;
 
@@ -97,6 +96,9 @@ int ExecdTimeoutDupCheck(OSList *timeout_list, char **timeout_args,
                 FreeTimeoutEntry(list_entry);
                 return (0);
             }
+#else
+            (void)childcount;
+#endif
 
             added_before = 1;
             list_entry->time_of_addition = curr_time;
