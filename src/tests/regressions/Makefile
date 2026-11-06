@@ -50,6 +50,7 @@ REGRESSION_BINS = \
 	issue_5bg289fd_bmpstring_cn \
 	issue_r3zy7cwm_field_null_decoder \
 	issue_q0uytpgc_udp_newline \
+	issue_9q8lr4ny_syslog_placeholder \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -394,6 +395,19 @@ issue_r3zy7cwm_field_null_decoder: \
 		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-9Q8LR4NY: do not drop a real syslog field that looks like anna.
+issue_9q8lr4ny_syslog_placeholder: \
+		tests/regressions/issue_9q8lr4ny_syslog_placeholder.c \
+		os_csyslogd/csyslogd.c shared.a
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./os_csyslogd -I./external/cJSON \
+		-c os_csyslogd/csyslogd.c -o os_csyslogd/csyslogd-9q8.o
+	$(CC) $(CFLAGS) -I./os_csyslogd -I./external/cJSON -o $@ \
+		tests/regressions/issue_9q8lr4ny_syslog_placeholder.c \
+		os_csyslogd/csyslogd-9q8.o \
+		-Wl,--gc-sections \
+		-Wl,--start-group shared.a os_regex.a os_net.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-Q0UYTPGC: flatten CR/LF in a UDP syslog_output alert.
 issue_q0uytpgc_udp_newline: \
@@ -1260,6 +1274,7 @@ clean:
 		os_auth/check_cert-5bg.o \
 		analysisd/analysisd-r3z.o \
 		os_csyslogd/csyslog_send-q0u.o \
+		os_csyslogd/csyslogd-9q8.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
