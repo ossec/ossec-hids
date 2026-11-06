@@ -10,6 +10,27 @@
 #include "shared.h"
 #include "logcollector.h"
 
+#if defined(WIN32) || defined(WIN32_EL_HOST_TEST)
+
+#if defined(WIN32_EL_HOST_TEST) && !defined(WIN32)
+typedef void *HKEY;
+typedef unsigned long DWORD;
+typedef unsigned char *LPBYTE;
+typedef DWORD *LPDWORD;
+typedef long LONG;
+
+#define HKEY_LOCAL_MACHINE ((HKEY)1)
+#define KEY_ALL_ACCESS 0
+#define ERROR_SUCCESS 0
+#define MAX_PATH 260
+
+LONG RegOpenKeyEx(HKEY hKey, const char *lpSubKey, DWORD ulOptions,
+                  DWORD samDesired, HKEY *phkResult);
+LONG RegQueryValueEx(HKEY hKey, const char *lpValueName, LPDWORD lpReserved,
+                     LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData);
+LONG RegCloseKey(HKEY hKey);
+#endif
+
 #ifdef WIN32
 
 #define BUFFER_SIZE 2048*256
@@ -32,9 +53,17 @@ typedef struct _os_el {
 os_el el[9];
 int el_last = 0;
 void *vista_sec_id_hash = NULL;
+#endif
 void *dll_hash = NULL;
 
+/* One installed source is one registry key. Letter-case spellings of that
+ * name must not add an entry per event. A few thousand covers the sources
+ * on a host; past this the lookup still returns the DLL path, uncached. */
+#define EL_DLL_HASH_MAX 4096
+static unsigned int el_dll_hash_count = 0;
 
+
+#ifdef WIN32
 /* Start the event logging for each el */
 int startEL(char *app, os_el *el)
 {
@@ -107,6 +136,7 @@ char *el_getCategory(int category_id)
     }
     return (cat);
 }
+#endif /* WIN32 */
 
 /* Returns the event */
 char *el_getEventDLL(char *evt_name, char *source, char *event)
@@ -142,17 +172,21 @@ char *el_getEventDLL(char *evt_name, char *source, char *event)
         RegCloseKey(key);
         return (NULL);
     } else {
-        /* Adding to memory */
-        char *skey;
-        char *sval;
+        /* Adding to memory. The hash copies the key. Do not fold
+         * keyname: that string is what RegOpenKeyEx() just opened, and a
+         * byte-wise tolower() would change a trail byte on a double-byte
+         * code page. */
+        if (el_dll_hash_count < EL_DLL_HASH_MAX) {
+            char *sval;
 
-        skey = strdup(keyname + 42);
-        sval = strdup(event);
-
-        if (skey && sval) {
-            OSHash_Add(dll_hash, skey, sval);
-        } else {
-            merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+            sval = strdup(event);
+            if (sval == NULL) {
+                merror(MEM_ERROR, ARGV0, errno, strerror(errno));
+            } else if (OSHash_Add(dll_hash, keyname + 42, sval) == 2) {
+                el_dll_hash_count++;
+            } else {
+                free(sval);
+            }
         }
     }
 
@@ -160,6 +194,7 @@ char *el_getEventDLL(char *evt_name, char *source, char *event)
     return (event);
 }
 
+#ifdef WIN32
 /* Returns a descriptive message of the event - Vista only */
 char *el_vista_getMessage(int evt_id_int, LPTSTR *el_sstring)
 {
@@ -541,7 +576,6 @@ void win_read_vista_sec()
 
     /* Read the whole file and add it to memory */
     while (fgets(buf, OS_MAXSTR, fp) != NULL) {
-        char *key;
         char *desc;
 
         /* Get the last occurrence of \n */
@@ -564,17 +598,17 @@ void win_read_vista_sec()
             p++;
         }
 
-        /* Allocate memory */
+        /* Allocate memory. The hash copies the key. */
         desc = strdup(p);
-        key = strdup(buf);
-        if (!key || !desc) {
-            merror("%s: ERROR: Invalid entry on the Vista security "
-                   "description.", ARGV0);
+        if (desc == NULL) {
+            merror(MEM_ERROR, ARGV0, errno, strerror(errno));
             continue;
         }
 
         /* Insert on hash */
-        OSHash_Add(vista_sec_id_hash, key, desc);
+        if (OSHash_Add(vista_sec_id_hash, buf, desc) != 2) {
+            free(desc);
+        }
     }
 
     fclose(fp);
@@ -623,5 +657,6 @@ void win_readel()
     }
 }
 
-#endif
+#endif /* WIN32 */
+#endif /* WIN32 || WIN32_EL_HOST_TEST */
 
