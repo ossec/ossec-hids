@@ -55,6 +55,7 @@ REGRESSION_BINS = \
 	issue_ygx1kkkt_dated_log_tail \
 	issue_9knxmd94_wildcard_cap \
 	issue_ajjellsq_db_symlink \
+	issue_5z4ox04e_agent_info_symlink \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1217,6 +1218,25 @@ issue_9knxmd94_wildcard_cap: \
 	$(CC) $(CFLAGS) -I./config -o $@ \
 		tests/regressions/issue_9knxmd94_wildcard_cap.c \
 		config/localfile-config.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-5Z4OX04E: ossec-dbd must not follow an agent-info symlink.
+# KEYS_FILE and AGENTINFO_DIR point at the harness tree.
+issue_5z4ox04e_agent_info_symlink: \
+		tests/regressions/issue_5z4ox04e_agent_info_symlink.c \
+		os_dbd/agent.c os_dbd/db_op.c shared.a
+	$(CC) $(CFLAGS) -I./os_dbd \
+		-DKEYS_FILE=\"/tmp/ossec-5z4ox04e/client.keys\" \
+		-DAGENTINFO_DIR=\"/tmp/ossec-5z4ox04e/agent-info\" \
+		-c os_dbd/agent.c -o os_dbd/agent-5z4.o
+	$(CC) $(CFLAGS) -I./os_dbd -c os_dbd/db_op.c -o os_dbd/db_op-5z4.o
+	$(CC) $(CFLAGS) -I./os_dbd \
+		-DKEYS_FILE=\"/tmp/ossec-5z4ox04e/client.keys\" \
+		-DAGENTINFO_DIR=\"/tmp/ossec-5z4ox04e/agent-info\" \
+		-o $@ \
+		tests/regressions/issue_5z4ox04e_agent_info_symlink.c \
+		os_dbd/agent-5z4.o os_dbd/db_op-5z4.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 

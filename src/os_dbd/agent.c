@@ -132,6 +132,10 @@ static int __Agent_Upsert(const DBConfig *db_config, const char *name, const cha
  * "uname - OSSEC ...". The file mtime is the last keepalive.
  * Returns 1 when the keepalive file exists. *have_body is set when the
  * first line was read.
+ *
+ * The directory belongs to ossecr and this process runs as root. A symlink
+ * or a second link must not be followed: stat/fopen would copy a root-only
+ * file into the agent table. A FIFO would stall the refresh.
  */
 static int __Agent_ReadInfo(const char *name, const char *ip, char *version, size_t version_len,
                             char *information, size_t information_len,
@@ -158,16 +162,30 @@ static int __Agent_ReadInfo(const char *name, const char *ip, char *version, siz
     }
 
     snprintf(path, sizeof(path), "%s/%s-%s", AGENTINFO_DIR, name, ip_file);
+#ifndef WIN32
+    /* Open first. Mode, link count, and mtime come from this descriptor,
+     * so a name swapped in queue/agent-info cannot pair one file's time
+     * with another's contents. fopen_regular_nofollow() refuses a symlink
+     * and does not block on a FIFO. */
+    fp = fopen_regular_nofollow(path);
+    if (!fp) {
+        return (0);
+    }
+    if (fstat(fileno(fp), &st) < 0 || !S_ISREG(st.st_mode) || st.st_nlink != 1) {
+        fclose(fp);
+        return (0);
+    }
+#else
     if (stat(path, &st) < 0) {
         return (0);
     }
-    if (st.st_mtime > 0) {
-        *last_contact = (unsigned int)st.st_mtime;
-    }
-
     fp = fopen(path, "r");
     if (!fp) {
         return (1);
+    }
+#endif
+    if (st.st_mtime > 0) {
+        *last_contact = (unsigned int)st.st_mtime;
     }
 
     if (!fgets(buf, sizeof(buf), fp)) {

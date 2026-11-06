@@ -225,12 +225,16 @@ http://www.ossec.net/main/license/\n"
 
 /* Authentication keys file */
 #ifndef WIN32
+#ifndef KEYS_FILE
 #define KEYS_FILE       "/etc/client.keys"
+#endif
 #define AUTHD_PASS      "/etc/authd.pass"
 #define KEYSFILE_PATH   DEFAULTDIR KEYS_FILE
 #define AUTHDPASS_PATH  DEFAULTDIR AUTHD_PASS
 #else
+#ifndef KEYS_FILE
 #define KEYS_FILE       "client.keys"
+#endif
 #define KEYSFILE_PATH   KEYS_FILE
 #define AUTHD_PASS      "authd.pass"
 #define AUTHDPASS_PATH  AUTHD_PASS
