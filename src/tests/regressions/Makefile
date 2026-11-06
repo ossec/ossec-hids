@@ -62,6 +62,7 @@ REGRESSION_BINS = \
 	issue_z12l5byr_filename_split \
 	issue_8wbhq0qf_timeout_readd \
 	issue_fr6dkh31_smtp_timeout \
+	issue_m3w3ljeq_report_leak \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -289,6 +290,17 @@ getalert_empty_filename: tests/regressions/getalert_empty_filename.c shared.a
 issue_ave66yb6_report_store: \
 		tests/regressions/issue_ave66yb6_report_store.c shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_ave66yb6_report_store.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-M3W3LJEQ: a daily report must not leak per alert in monitord.
+# report_op.c is compiled ahead of shared.a so the helper under test wins.
+issue_m3w3ljeq_report_leak: \
+		tests/regressions/issue_m3w3ljeq_report_leak.c \
+		shared/report_op.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_m3w3ljeq_report_leak.c \
+		shared/report_op.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 

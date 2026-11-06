@@ -65,6 +65,8 @@ jobs:
           ./src/issue_1o4bcxpr_createpid
           make -C src -f tests/regressions/Makefile issue_ave66yb6_report_store
           ./src/issue_ave66yb6_report_store
+          make -C src -f tests/regressions/Makefile issue_m3w3ljeq_report_leak
+          ./src/issue_m3w3ljeq_report_leak
           make -C src -f tests/regressions/Makefile issue_wi6tbpfx_cdb_value
           ./src/issue_wi6tbpfx_cdb_value
           make -C src -f tests/regressions/Makefile issue_wjnd95he_win_wildcard
