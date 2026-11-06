@@ -52,6 +52,7 @@ REGRESSION_BINS = \
 	issue_q0uytpgc_udp_newline \
 	issue_9q8lr4ny_syslog_placeholder \
 	issue_nceh7rb6_json_rotate_flag \
+	issue_ygx1kkkt_dated_log_tail \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -396,6 +397,21 @@ issue_r3zy7cwm_field_null_decoder: \
 		-Wl,--gc-sections \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+# ANT-2026-YGX1KKKT: read a date-based log before its name changes.
+issue_ygx1kkkt_dated_log_tail: \
+		tests/regressions/issue_ygx1kkkt_dated_log_tail.c \
+		logcollector/logcollector.c logcollector/logr_fgets.c shared.a
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -I./logcollector \
+		-c logcollector/logcollector.c -o logcollector/logcollector-ygx.o
+	$(CC) $(CFLAGS) -I./logcollector \
+		-c logcollector/logr_fgets.c -o logcollector/logr_fgets-ygx.o
+	$(CC) $(CFLAGS) -I./logcollector -o $@ \
+		tests/regressions/issue_ygx1kkkt_dated_log_tail.c \
+		logcollector/logcollector-ygx.o logcollector/logr_fgets-ygx.o \
+		-Wl,--gc-sections \
+		-Wl,--start-group shared.a os_regex.a os_net.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-NCEH7RB6: do not drop the first JSON alert after rotation.
 issue_nceh7rb6_json_rotate_flag: \
@@ -1289,6 +1305,8 @@ clean:
 		os_csyslogd/csyslog_send-q0u.o \
 		os_csyslogd/csyslogd-9q8.o \
 		os_csyslogd/json-queue-nceh.o \
+		logcollector/logcollector-ygx.o \
+		logcollector/logr_fgets-ygx.o \
 		addagent/validate-m5jt0jcl.o \
 		os_execd/exec-mon246f3.o \
 		os_execd/exec-mon246f3.c \
