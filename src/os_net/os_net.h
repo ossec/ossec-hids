@@ -136,5 +136,10 @@ int OS_CloseSocket(int socket);
 /* Set a socket to be non-blocking */
 int setnonblock(int fd);
 
+/* Bound blocking send()/recv() on a socket to the given number of seconds.
+ * Returns 0 on success, else -1
+ */
+int OS_SetSocketTimeout(int socket, int seconds);
+
 #endif /* __OS_NET_H */
 

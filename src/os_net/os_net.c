@@ -946,5 +946,24 @@ int setnonblock(int fd) {
 
     return 0;
 }
+
+/* Bound blocking send()/recv() on a socket to 'seconds'.
+ * A read or write that waits longer fails with EAGAIN, so callers that
+ * already handle a failed OS_RecvTCP()/OS_SendTCP() are released.
+ * Returns 0 on success, -1 if either option could not be set.
+ */
+int OS_SetSocketTimeout(int socket, int seconds)
+{
+    struct timeval tv;
+
+    tv.tv_sec = seconds;
+    tv.tv_usec = 0;
+    if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0 ||
+            setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
+        return (-1);
+    }
+
+    return (0);
+}
 #endif //WIN32
 
