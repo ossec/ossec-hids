@@ -179,9 +179,10 @@ char *GetCommandbyName(const char *name, int *timeout)
 #ifndef WIN32
 
 /* Execute command given. Must be a argv** NULL terminated.
- * Prints error to log message in case of problems
+ * Prints error to log message in case of problems.
+ * Returns the pid of the child (left running), or -1 if fork failed.
  */
-void ExecCmd(char *const *cmd)
+pid_t ExecCmd(char *const *cmd)
 {
     pid_t pid;
 
@@ -216,7 +217,7 @@ void ExecCmd(char *const *cmd)
         exit(0);
     }
 
-    return;
+    return (pid);
 }
 
 #else

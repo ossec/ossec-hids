@@ -60,6 +60,7 @@ REGRESSION_BINS = \
 	issue_see999rq_srcip_quote \
 	issue_pttdw7pw_ipv6_case \
 	issue_z12l5byr_filename_split \
+	issue_8wbhq0qf_timeout_readd \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1262,6 +1263,19 @@ issue_z12l5byr_filename_split: \
 		tests/regressions/issue_z12l5byr_filename_split.c \
 		shared/string_op.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-8WBHQ0QF: a timed-out block stays listed until its delete exits.
+issue_8wbhq0qf_timeout_readd: \
+		tests/regressions/issue_8wbhq0qf_timeout_readd.c \
+		os_execd/execd.c os_execd/timeout_dup.c shared.a
+	$(CC) $(CFLAGS) -Dmain=execd_main -c os_execd/execd.c -o os_execd/execd-8wb.o
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_8wbhq0qf_timeout_readd.c \
+		os_execd/execd-8wb.o \
+		os_execd/exec.c os_execd/config.c os_execd/timeout_dup.c \
+		shared/string_op.c \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_crypto.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
 # ANT-2026-5Z4OX04E: ossec-dbd must not follow an agent-info symlink.

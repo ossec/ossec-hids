@@ -99,7 +99,7 @@ static int child_survives_incomplete_with_pending(void)
         args[3] = NULL;
         args[4] = NULL;
 
-        added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL);
+        added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL, NULL);
         /* Incomplete must be treated as dropped (added_before). */
         if (added != 1) {
             _exit(3);
@@ -143,7 +143,7 @@ static void check_complete_still_matches(void)
     args[3] = "203.0.113.7";
     args[4] = NULL;
 
-    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL);
+    added = ExecdTimeoutDupCheck(list, args, time(NULL), NULL, NULL);
     CHECK(added == 1, "duplicate complete request is detected");
 }
 
