@@ -56,6 +56,7 @@ REGRESSION_BINS = \
 	issue_9knxmd94_wildcard_cap \
 	issue_ajjellsq_db_symlink \
 	issue_5z4ox04e_agent_info_symlink \
+	issue_c82ab02v_location_id \
 	multiline_underflow \
 	win_network_path \
 	checksum_short_message \
@@ -1220,6 +1221,10 @@ issue_9knxmd94_wildcard_cap: \
 		config/localfile-config.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-C82AB02V: MySQL location.id must not be a 16-bit counter.
+issue_c82ab02v_location_id: tests/regressions/issue_c82ab02v_location_id.c
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_c82ab02v_location_id.c
 
 # ANT-2026-5Z4OX04E: ossec-dbd must not follow an agent-info symlink.
 # KEYS_FILE and AGENTINFO_DIR point at the harness tree.
