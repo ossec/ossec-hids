@@ -30,6 +30,7 @@ REGRESSION_BINS = \
 	issue_qy1shlvv_syslog_tcp_idle \
 	issue_2bepxi8w_syslog_tcp_frame \
 	issue_0uftkhqj_rootcheck_path_hashes \
+	issue_583m5xox_winreg_stack \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -233,6 +234,26 @@ issue_0uftkhqj_rootcheck_path_hashes: \
 		analysisd/decoders/rootcheck-0uft.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-583M5XOX: recursive registry walk must not keep ~38 KB frames.
+# Compile win-registry.c against the Linux WIN32 stand-in with -fstack-usage
+# and require os_winreg_querykey's frame under 4 KB.
+issue_583m5xox_winreg_stack: \
+		tests/regressions/issue_583m5xox_winreg_stack.c \
+		syscheckd/win-registry.c \
+		tests/regressions/winreg_standin/windows.h
+	$(CC) -g -O2 -w -fstack-usage -DCLIENT -DWIN32 -DARGV0=\"ossec-agent\" \
+		-I./tests/regressions/winreg_standin -I./ -I./headers \
+		-c syscheckd/win-registry.c \
+		-o tests/regressions/win-registry-583.o
+	@frame=$$(awk -F'\t' '/:os_winreg_querykey\t/ { print $$2; exit }' \
+		tests/regressions/win-registry-583.su); \
+	if [ -z "$$frame" ]; then \
+		echo "FAIL: os_winreg_querykey missing from stack-usage output"; \
+		exit 1; \
+	fi; \
+	$(CC) $(CFLAGS) -DQUERYKEY_FRAME=$$frame -o $@ \
+		tests/regressions/issue_583m5xox_winreg_stack.c
 
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a

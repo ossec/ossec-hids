@@ -127,6 +127,8 @@ jobs:
           ./src/issue_2bepxi8w_syslog_tcp_frame
           make -C src -f tests/regressions/Makefile issue_0uftkhqj_rootcheck_path_hashes
           ./src/issue_0uftkhqj_rootcheck_path_hashes
+          make -C src -f tests/regressions/Makefile issue_583m5xox_winreg_stack
+          ./src/issue_583m5xox_winreg_stack
           make -C src -f tests/regressions/Makefile issue_2nlm3gpl_crypto_method_auth
           ./src/issue_2nlm3gpl_crypto_method_auth
           make -C src -f tests/regressions/Makefile issue_kzajsoet_syscheck_fifo
