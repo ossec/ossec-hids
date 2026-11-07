@@ -24,6 +24,14 @@ int fim_sum_data_offset(const char *hash_entry);
  * Ignores anything after the first newline (local ACL snapshot). */
 int fim_sum_has_real_change(const char *old_sum, const char *new_sum);
 
+/* The sum to compare and store when new_sum follows old_sum: new_sum itself,
+ * or a copy in buf whose "xxx" hash fields are filled with the real hash
+ * old_sum holds in the same field. fim_sum_has_real_change() ignores
+ * placeholder transitions, so a placeholder must never replace a stored hash:
+ * real A -> xxx -> real B would go unnoticed. ANT-2026-YO3OMSC0. */
+const char *fim_sum_keep_hashes(const char *old_sum, const char *new_sum,
+                                char *buf, size_t buflen);
+
 /* 1 if sum portions (before newline) are identical. */
 int fim_sum_equal(const char *a, const char *b);
 

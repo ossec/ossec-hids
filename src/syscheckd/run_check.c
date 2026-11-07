@@ -656,7 +656,6 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
 #else
     (void)attrs;
     (void)acl;
-    (void)sum_off;
     (void)path_opts;
     (void)path_matched;
 #endif
@@ -809,6 +808,18 @@ int c_read_file(const char *file_name, const char *oldsum, char *newsum)
     }
     free(st_uid);
 #endif
+
+    /* No hash this time (e.g. a link whose target is gone): carry the last
+     * known one, or the next real hash would have nothing to compare to.
+     * ANT-2026-YO3OMSC0. */
+    {
+        char kept_sum[OS_MAXSTR];
+
+        if (fim_sum_keep_hashes(oldsum + sum_off, newsum,
+                                kept_sum, sizeof(kept_sum)) == kept_sum) {
+            snprintf(newsum, OS_MAXSTR, "%s", kept_sum);
+        }
+    }
 
     return (0);
 }
