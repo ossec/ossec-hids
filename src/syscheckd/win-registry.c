@@ -223,7 +223,7 @@ os_winreg_queryvalues(HKEY hKey, char *full_key_name, int arch,
     /* Clear the values for value_size and data_size */
     value_buffer[MAX_VALUE_NAME] = '\0';
     data_buffer[MAX_VALUE_NAME] = '\0';
-    checksum_fp = fopen(SYS_REG_TMP, "w");
+    checksum_fp = fopen(SYS_REG_TMP, "wb");
     if (!checksum_fp) {
         printf(FOPEN_ERROR, ARGV0, SYS_REG_TMP, errno, strerror(errno));
         return;
@@ -281,10 +281,12 @@ os_winreg_queryvalues(HKEY hKey, char *full_key_name, int arch,
         }
     }
 
-    /* Generate checksum of the values */
+    /* Generate checksum of the values. Value names and strings may hold any
+     * byte, and in text mode a Ctrl-Z (0x1a) ends the file. ANT-2026-QL3RS46Y.
+     */
     fclose(checksum_fp);
 
-    if (OS_MD5_SHA1_File(SYS_REG_TMP, mf_sum, sf_sum, OS_TEXT) == -1) {
+    if (OS_MD5_SHA1_File(SYS_REG_TMP, mf_sum, sf_sum, OS_BINARY) == -1) {
         merror(FOPEN_ERROR, ARGV0, SYS_REG_TMP, errno, strerror(errno));
         return;
     }
@@ -465,9 +467,12 @@ void os_winreg_check()
     /* Zero ig_count before checking */
     ig_count = 1;
 
-    /* Check if the registry fp is open */
+    /* Check if the registry fp is open (binary, as key names may hold a
+     * Ctrl-Z too and the entries after it would never be read back).
+     * ANT-2026-QL3RS46Y.
+     */
     if (syscheck.reg_fp == NULL) {
-        syscheck.reg_fp = fopen(SYS_WIN_REG, "w+");
+        syscheck.reg_fp = fopen(SYS_WIN_REG, "w+b");
         if (!syscheck.reg_fp) {
             merror(FOPEN_ERROR, ARGV0, SYS_WIN_REG, errno, strerror(errno));
             return;

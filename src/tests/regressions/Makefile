@@ -32,6 +32,7 @@ REGRESSION_BINS = \
 	issue_0uftkhqj_rootcheck_path_hashes \
 	issue_583m5xox_winreg_stack \
 	issue_si19uf16_winreg_path_trunc \
+	issue_ql3rs46y_winreg_ctrlz \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -263,6 +264,15 @@ issue_si19uf16_winreg_path_trunc: \
 	$(CC) $(CFLAGS) -I./syscheckd -o $@ \
 		tests/regressions/issue_si19uf16_winreg_path_trunc.c \
 		syscheckd/winreg_path.c
+
+# ANT-2026-QL3RS46Y: registry checksum temp/DB must use binary mode.
+issue_ql3rs46y_winreg_ctrlz: \
+		tests/regressions/issue_ql3rs46y_winreg_ctrlz.c \
+		syscheckd/win-registry.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_ql3rs46y_winreg_ctrlz.c \
+		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
