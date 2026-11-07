@@ -29,6 +29,7 @@ REGRESSION_BINS = \
 	issue_ja2nxew1_reject_log \
 	issue_qy1shlvv_syslog_tcp_idle \
 	issue_2bepxi8w_syslog_tcp_frame \
+	issue_0uftkhqj_rootcheck_path_hashes \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -214,6 +215,22 @@ issue_2bepxi8w_syslog_tcp_frame: \
 	$(CC) $(CFLAGS) -I./remoted -o $@ \
 		tests/regressions/issue_2bepxi8w_syslog_tcp_frame.c \
 		remoted/syslog_tcp_frame.c \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# ANT-2026-0UFTKHQJ: rootcheck path/hashes must not come from inside the name.
+issue_0uftkhqj_rootcheck_path_hashes: \
+		tests/regressions/issue_0uftkhqj_rootcheck_path_hashes.c \
+		analysisd/decoders/rootcheck.c shared.a
+	$(CC) $(CFLAGS) -DOSSEC_ROOTCHECK_TEST \
+		-DROOTCHECK_DIR=\"queue/rootcheck\" \
+		-I./analysisd -c analysisd/decoders/rootcheck.c \
+		-o analysisd/decoders/rootcheck-0uft.o
+	$(CC) $(CFLAGS) -DOSSEC_ROOTCHECK_TEST \
+		-DROOTCHECK_DIR=\"queue/rootcheck\" \
+		-I./analysisd -o $@ \
+		tests/regressions/issue_0uftkhqj_rootcheck_path_hashes.c \
+		analysisd/decoders/rootcheck-0uft.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
