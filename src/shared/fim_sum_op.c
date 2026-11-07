@@ -206,6 +206,68 @@ int fim_sum_has_real_change(const char *old_sum, const char *new_sum)
     return (0);
 }
 
+const char *fim_sum_keep_hashes(const char *old_sum, const char *new_sum,
+                                char *buf, size_t buflen)
+{
+    char old_buf[1024];
+    char new_buf[1024];
+    char *of[10];
+    char *nf[10];
+    int oc, nc, i;
+    int kept = 0;
+    int written;
+    size_t olen, nlen;
+    size_t used = 0;
+
+    if (!old_sum || !new_sum || !buf) {
+        return (new_sum);
+    }
+
+    olen = fim_sum_data_len(old_sum);
+    nlen = fim_sum_data_len(new_sum);
+    if (olen >= sizeof(old_buf) || nlen >= sizeof(new_buf)) {
+        return (new_sum);
+    }
+
+    memcpy(old_buf, old_sum, olen);
+    old_buf[olen] = '\0';
+    memcpy(new_buf, new_sum, nlen);
+    new_buf[nlen] = '\0';
+
+    oc = fim_split_sum(old_buf, of, 10);
+    nc = fim_split_sum(new_buf, nf, 10);
+    if (oc < 6 || nc < 6) {
+        return (new_sum);
+    }
+
+    /* md5, sha1, optional sha256 */
+    for (i = 4; i < oc && i < nc && i < 7; i++) {
+        if (fim_hash_is_placeholder(nf[i]) && !fim_hash_is_placeholder(of[i])) {
+            nf[i] = of[i];
+            kept = 1;
+        }
+    }
+    if (!kept) {
+        return (new_sum);
+    }
+
+    /* Rebuild the sum, then whatever followed it (local ACL snapshot) */
+    for (i = 0; i < nc; i++) {
+        written = snprintf(buf + used, buflen - used, "%s%s",
+                           i > 0 ? ":" : "", nf[i]);
+        if (written < 0 || (size_t)written >= buflen - used) {
+            return (new_sum);
+        }
+        used += (size_t)written;
+    }
+    written = snprintf(buf + used, buflen - used, "%s", new_sum + nlen);
+    if (written < 0 || (size_t)written >= buflen - used) {
+        return (new_sum);
+    }
+
+    return (buf);
+}
+
 int fim_sum_get_field(const char *sum, int index, char *buf, size_t buflen)
 {
     char tmp[1024];

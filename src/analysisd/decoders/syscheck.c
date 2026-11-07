@@ -636,6 +636,11 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
      * a 3-character change counter (!++, !!+, !!!, !!?). */
     int new_marker = (strncmp(sdb.buf, "!+++", 4) == 0);
     char *saved_sum = sdb.buf + (new_marker ? 4 : 3);
+    char kept_sum[OS_MAXSTR + 1];
+
+    /* Where the agent has no hash (xxx), carry the last known one, or the
+     * next real hash would have nothing to compare to. ANT-2026-YO3OMSC0. */
+    c_sum = fim_sum_keep_hashes(saved_sum, c_sum, kept_sum, sizeof(kept_sum));
 
     /* Checksum match, we can just return and keep going */
     if (strcmp(saved_sum, c_sum) == 0) {
@@ -643,7 +648,7 @@ static int DB_ProcessFoundEntry(const char *f_name, const char *c_sum,
         return (0);
     }
 
-    /* Placeholder-only hash transitions (xxx <-> real) are not integrity
+    /* Placeholder-only hash transitions (xxx -> real) are not integrity
      * events; update the DB quietly so future scans stay clean (#1590/#1704). */
     if (!fim_sum_has_real_change(saved_sum, c_sum)) {
         return DB_QuietUpdate(f_name, c_sum, lf, fp, db_entry, 0);

@@ -75,6 +75,36 @@ int main(void)
     expect_int("fim_sum_equal false",
                fim_sum_equal("0:0:0:0:a:b:c", "0:0:0:0:a:b:d"), 0);
 
+    /* A placeholder never replaces a known hash (real A -> xxx -> real B).
+     * ANT-2026-YO3OMSC0. */
+    {
+        char buf[64];
+        const char *placeholders = "0:0:0:0:xxx:xxx:xxx";
+        const char *real = "0:0:0:0:aaa:bbb:ccc";
+        const char *kept;
+
+        kept = fim_sum_keep_hashes(real, placeholders, buf, sizeof(buf));
+        expect_int("real to xxx keeps old hashes", strcmp(kept, real), 0);
+        expect_int("next real hash is a change",
+                   fim_sum_has_real_change(kept, "0:0:0:0:ddd:eee:fff"), 1);
+
+        kept = fim_sum_keep_hashes("0:0:0:0:aaa:bbb:xxx",
+                                   "9:0:0:0:xxx:xxx:fff:32:acl\nsnap",
+                                   buf, sizeof(buf));
+        expect_int("hashes kept per field, rest untouched",
+                   strcmp(kept, "9:0:0:0:aaa:bbb:fff:32:acl\nsnap"), 0);
+
+        expect_int("xxx to real untouched",
+                   fim_sum_keep_hashes(placeholders, real,
+                                       buf, sizeof(buf)) == real, 1);
+        expect_int("re-added after delete untouched",
+                   fim_sum_keep_hashes("-1", placeholders,
+                                       buf, sizeof(buf)) == placeholders, 1);
+        expect_int("no room untouched",
+                   fim_sum_keep_hashes(real, placeholders,
+                                       buf, 19) == placeholders, 1);
+    }
+
     {
         char abuf[128];
         fim_win_attrs_str(0x22, abuf, sizeof(abuf)); /* HIDDEN|ARCHIVE */
