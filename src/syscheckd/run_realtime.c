@@ -421,7 +421,7 @@ void realtime_enqueue(const char *file_name)
     rt_pend_head = entry;
 }
 
-#ifdef WIN32
+#if defined(INOTIFY_ENABLED) || defined(WIN32)
 static int realtime_overflow_pending(void);
 #endif
 
@@ -431,7 +431,7 @@ int realtime_pending_ms(void)
     unsigned long long best = 0;
     int have = 0;
 
-#ifdef WIN32
+#if defined(INOTIFY_ENABLED) || defined(WIN32)
     /* Keep the main loop tight while overflow recoveries remain. */
     if (realtime_overflow_pending()) {
         return (0);
@@ -455,10 +455,19 @@ int realtime_pending_ms(void)
     return ((int)best);
 }
 
-#ifdef WIN32
+#if defined(INOTIFY_ENABLED) || defined(WIN32)
 /* Overflow recovery is deferred out of RTCallBack so the alertable wait
  * thread is not blocked on a recursive read_dir. Duplicate watches for
- * the same directory are coalesced. */
+ * the same directory are coalesced. inotify (IN_Q_OVERFLOW) defers it the
+ * same way so the kernel queue is drained between tree walks. */
+#ifdef WIN32
+#define rt_path_ncmp    strncasecmp
+#define rt_path_sep(c)  ((c) == '/' || (c) == '\\')
+#else
+#define rt_path_ncmp    strncmp
+#define rt_path_sep(c)  ((c) == '/')
+#endif
+
 typedef struct _rt_ovf {
     struct _rt_ovf *next;
     char *dir;
@@ -478,13 +487,15 @@ static int rt_path_under_dir(const char *path, const char *dir)
     }
 
     len = strlen(dir);
-    while (len > 1 && (dir[len - 1] == '/' || dir[len - 1] == '\\')) {
+    while (len > 1 && rt_path_sep(dir[len - 1])) {
         len--;
     }
-    if (strncasecmp(path, dir, len) != 0) {
+    if (rt_path_ncmp(path, dir, len) != 0) {
         return (0);
     }
-    return (path[len] == '\0' || path[len] == '/' || path[len] == '\\');
+    /* Only "/" still ends in a separator here. */
+    return (path[len] == '\0' || rt_path_sep(path[len]) ||
+            rt_path_sep(dir[len - 1]));
 }
 
 /* Longest-prefix match against configured syscheck directories. */
@@ -498,18 +509,17 @@ static int rt_ovf_cfg_for_dir(const char *dir)
         size_t len = strlen(syscheck.dir[i]);
         char next;
 
-        while (len > 1 && (syscheck.dir[i][len - 1] == '/' ||
-                           syscheck.dir[i][len - 1] == '\\')) {
+        while (len > 1 && rt_path_sep(syscheck.dir[i][len - 1])) {
             len--;
         }
         if (len < best_len) {
             continue;
         }
-        if (strncasecmp(dir, syscheck.dir[i], len) != 0) {
+        if (rt_path_ncmp(dir, syscheck.dir[i], len) != 0) {
             continue;
         }
         next = dir[len];
-        if (next != '\0' && next != '/' && next != '\\') {
+        if (next != '\0' && !rt_path_sep(next)) {
             continue;
         }
         best_len = len;
@@ -518,7 +528,7 @@ static int rt_ovf_cfg_for_dir(const char *dir)
     return (best);
 }
 
-/* Recovery always strips CHECK_REALTIME; compare the rest.
+/* CHECK_REALTIME does not change what recovery reads; compare the rest.
  * A non-recursive ancestor walk does not cover child directories.
  * Different configured dirs (opts/restrict) must not cover each other. */
 static int rt_ovf_compatible(const rt_ovf *a, int opts_b, int cfg_b)
@@ -674,11 +684,16 @@ static void realtime_overflow_process(void)
 
     rt_ovf_head = entry->next;
     OSHash_Delete(rt_ovf_hash, entry->dir);
-    scan_opts = entry->opts & ~CHECK_REALTIME;
+    scan_opts = entry->opts;
     if (entry->cfg >= 0 && syscheck.dir && syscheck.dir[entry->cfg]) {
-        scan_opts = syscheck.opts[entry->cfg] & ~CHECK_REALTIME;
+        scan_opts = syscheck.opts[entry->cfg];
         restriction = syscheck.filerestrict[entry->cfg];
     }
+#ifdef WIN32
+    /* The watch covers the subtree. inotify watches do not: keep the flag
+     * there so a directory whose IN_CREATE was lost gets its watch. */
+    scan_opts &= ~CHECK_REALTIME;
+#endif
 
     /* Only reconcile deletes after a complete enumeration. A failed
      * open (offline share, transient path) must not look like a mass
@@ -698,7 +713,7 @@ static int realtime_overflow_pending(void)
 {
     return (rt_ovf_head != NULL);
 }
-#endif /* WIN32 */
+#endif /* INOTIFY_ENABLED || WIN32 */
 
 void realtime_pending_process(void)
 {
@@ -706,7 +721,7 @@ void realtime_pending_process(void)
     rt_pend *prev;
     rt_pend *next;
 
-#ifdef WIN32
+#if defined(INOTIFY_ENABLED) || defined(WIN32)
     /* Run deferred overflow recovery before per-path checksums. */
     realtime_overflow_process();
 #endif
@@ -942,6 +957,21 @@ int realtime_process()
         buf[len] = '\0';
         while (i < (size_t) len) {
             event = (struct inotify_event *) (void *) &buf[i];
+
+            /* The kernel queue filled up and events were dropped. The
+             * queue is shared by all watches, so any of them may have
+             * lost changes: walk every realtime directory again. */
+            if (event->mask & IN_Q_OVERFLOW) {
+                int j;
+
+                merror("%s: ERROR: real time queue overflow (inotify events "
+                       "were lost). Rescanning real time directories.", ARGV0);
+                for (j = 0; syscheck.dir && syscheck.dir[j] != NULL; j++) {
+                    if (syscheck.opts[j] & CHECK_REALTIME) {
+                        rt_overflow_schedule(syscheck.dir[j], syscheck.opts[j]);
+                    }
+                }
+            }
 
             if (event->len) {
                 char wdchar[32 + 1];

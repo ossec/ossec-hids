@@ -133,6 +133,8 @@ jobs:
           ./src/issue_si19uf16_winreg_path_trunc
           make -C src -f tests/regressions/Makefile issue_ql3rs46y_winreg_ctrlz
           ./src/issue_ql3rs46y_winreg_ctrlz
+          make -C src -f tests/regressions/Makefile issue_ncimijxh_inotify_overflow
+          ./src/issue_ncimijxh_inotify_overflow
           make -C src -f tests/regressions/Makefile issue_2nlm3gpl_crypto_method_auth
           ./src/issue_2nlm3gpl_crypto_method_auth
           make -C src -f tests/regressions/Makefile issue_kzajsoet_syscheck_fifo
