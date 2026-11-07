@@ -940,6 +940,59 @@ int realtime_adddir(const char *dir, __attribute__((unused)) int opts)
     return (1);
 }
 
+/* The kernel dropped events, and the IN_IGNORED of a removed directory may
+ * have been among them: forget every path no longer behind its descriptor. */
+static void realtime_purge_dirtb(void)
+{
+    unsigned int i;
+    OSHash *dirtb;
+    OSHashNode *curr;
+    OSHashNode *next;
+
+    if (syscheck.realtime == NULL || syscheck.realtime->dirtb == NULL ||
+            syscheck.realtime->fd < 0) {
+        return;
+    }
+
+    dirtb = syscheck.realtime->dirtb;
+    for (i = 0; i <= dirtb->rows; i++) {
+        for (curr = dirtb->table[i]; curr != NULL; curr = next) {
+            int wd;
+            int oldwd = atoi(curr->key);
+            char *dir;
+            char wdchar[32 + 1];
+
+            next = curr->next;
+            wdchar[32] = '\0';
+
+            /* A directory that is still watched answers with its own
+             * descriptor (inotify_add_watch returns the existing one) */
+            wd = inotify_add_watch(syscheck.realtime->fd,
+                                   (char *)curr->data,
+                                   REALTIME_MONITOR_FLAGS);
+            if (wd == oldwd) {
+                continue;
+            }
+
+            /* Deleted, or renamed away: the old watch, if it is still
+             * alive, follows the inode and not this path. */
+            inotify_rm_watch(syscheck.realtime->fd, oldwd);
+            snprintf(wdchar, 32, "%d", oldwd);
+            dir = (char *)OSHash_Delete(dirtb, wdchar);
+
+            /* A new directory has the name now: keep watching it */
+            if (wd >= 0) {
+                snprintf(wdchar, 32, "%d", wd);
+                if (dir && !OSHash_Get(dirtb, wdchar)) {
+                    OSHash_Add(dirtb, wdchar, dir);
+                    continue;
+                }
+            }
+            free(dir);
+        }
+    }
+}
+
 /* Process events in the real time queue */
 int realtime_process()
 {
@@ -956,11 +1009,30 @@ int realtime_process()
     } else if (len > 0) {
         buf[len] = '\0';
         while (i < (size_t) len) {
+            char wdchar[32 + 1];
+            char *dir;
+
             event = (struct inotify_event *) (void *) &buf[i];
+
+            wdchar[32] = '\0';
+            snprintf(wdchar, 32, "%d", event->wd);
+
+            /* Last event of a watch (directory deleted or unmounted). The
+             * kernel does not reuse the descriptor: drop its path from
+             * the table, or every removed directory leaks its entry. */
+            if (event->mask & IN_IGNORED) {
+                dir = (char *)OSHash_Delete(syscheck.realtime->dirtb, wdchar);
+                if (dir) {
+                    debug1("%s: DEBUG: Directory removed from real time "
+                           "monitoring: '%s'.", ARGV0, dir);
+                    free(dir);
+                }
+            }
 
             /* The kernel queue filled up and events were dropped. The
              * queue is shared by all watches, so any of them may have
-             * lost changes: walk every realtime directory again. */
+             * lost changes: walk every realtime directory again, and
+             * drop dirtb entries whose IN_IGNORED may have been lost. */
             if (event->mask & IN_Q_OVERFLOW) {
                 int j;
 
@@ -971,20 +1043,16 @@ int realtime_process()
                         rt_overflow_schedule(syscheck.dir[j], syscheck.opts[j]);
                     }
                 }
+                realtime_purge_dirtb();
             }
 
-            if (event->len) {
-                char wdchar[32 + 1];
+            dir = (char *)OSHash_Get(syscheck.realtime->dirtb, wdchar);
+            if (event->len && dir) {
                 char final_name[MAX_LINE + 1];
 
-                wdchar[32] = '\0';
                 final_name[MAX_LINE] = '\0';
 
-                snprintf(wdchar, 32, "%d", event->wd);
-
-                snprintf(final_name, MAX_LINE, "%s/%s",
-                         (char *)OSHash_Get(syscheck.realtime->dirtb, wdchar),
-                         event->name);
+                snprintf(final_name, MAX_LINE, "%s/%s", dir, event->name);
                 /* Delay the read so a vim replace is not seen as a delete.
                  * The daemon loop drains the queue; do not sleep here. */
                 realtime_enqueue(final_name);
