@@ -139,6 +139,8 @@ jobs:
           ./src/issue_odwfehac_dirtb_leak
           make -C src -f tests/regressions/Makefile issue_ch7fo833_long_path_trunc
           ./src/issue_ch7fo833_long_path_trunc
+          make -C src -f tests/regressions/Makefile issue_fznf7ml7_diff_hash_leak
+          ./src/issue_fznf7ml7_diff_hash_leak
           make -C src -f tests/regressions/Makefile issue_2nlm3gpl_crypto_method_auth
           ./src/issue_2nlm3gpl_crypto_method_auth
           make -C src -f tests/regressions/Makefile issue_kzajsoet_syscheck_fifo
