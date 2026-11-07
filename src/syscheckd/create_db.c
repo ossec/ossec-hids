@@ -488,8 +488,7 @@ stat_failed:
                      opts & CHECK_SHA1SUM ? sf_sum : "xxx",
                      opts & CHECK_SHA256SUM ? sha256_sum : "xxx");
 
-            alert_msg[916] = '\0';
-            snprintf(alert_msg, 916, "%ld:%d:%d:%d:%s:%s:%s %s",
+            snprintf(alert_msg, OS_MAXSTR, "%ld:%d:%d:%d:%s:%s:%s %s",
                      opts & CHECK_SIZE ? (long)statbuf.st_size : 0,
                      opts & CHECK_PERM ? (int)statbuf.st_mode : 0,
                      opts & CHECK_OWNER ? (int)statbuf.st_uid : 0,
@@ -624,10 +623,10 @@ stat_failed:
                                 free(fullalert);
                                 fullalert = NULL;
                             } else {
-                                snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
+                                snprintf(alert_msg, OS_MAXSTR, "%s %s", c_sum, file_name);
                             }
                         } else {
-                            snprintf(alert_msg, 916, "%s %s", c_sum, file_name);
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s", c_sum, file_name);
                         }
                         #endif
                         if (send_syscheck_msg(alert_msg) != 0) {

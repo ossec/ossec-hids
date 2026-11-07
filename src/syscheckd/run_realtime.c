@@ -140,10 +140,10 @@ int realtime_checksumfile(const char *file_name)
                             free(fullalert);
                             fullalert = NULL;
                         } else {
-                            snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                            snprintf(alert_msg, OS_MAXSTR, "%s %s", c_sum, file_name);
                         }
                     } else {
-                        snprintf(alert_msg, 912, "%s %s", c_sum, file_name);
+                        snprintf(alert_msg, OS_MAXSTR, "%s %s", c_sum, file_name);
                     }
                     #endif
                     if (send_syscheck_msg(alert_msg) != 0) {
