@@ -191,11 +191,128 @@ char *os_winreg_sethkey(char *reg_entry)
     return (ret);
 }
 
+/* Hash the values of a key and notify if it changed. Kept apart from
+ * os_winreg_querykey() because that one recurses once per key level (Windows
+ * allows 512) and the RegEnumValue buffers are far too large for every frame
+ * of it; this function does not recurse, so they only live on the stack once.
+ * ANT-2026-583M5XOX.
+ */
+static void __attribute__((noinline))
+os_winreg_queryvalues(HKEY hKey, char *full_key_name, int arch,
+                      DWORD value_count)
+{
+    int rc;
+    DWORD i, j;
+
+    /* Variables for RegEnumValue */
+    TCHAR value_buffer[MAX_VALUE_NAME + 1];
+    TCHAR data_buffer[MAX_VALUE_NAME + 1];
+    DWORD value_size;
+    DWORD data_size;
+
+    /* Data type for RegEnumValue */
+    DWORD data_type = 0;
+
+    /* md5 and sha1 sum */
+    os_md5 mf_sum;
+    os_sha1 sf_sum;
+    FILE *checksum_fp;
+    char *mt_data;
+
+    /* Clear the values for value_size and data_size */
+    value_buffer[MAX_VALUE_NAME] = '\0';
+    data_buffer[MAX_VALUE_NAME] = '\0';
+    checksum_fp = fopen(SYS_REG_TMP, "w");
+    if (!checksum_fp) {
+        printf(FOPEN_ERROR, ARGV0, SYS_REG_TMP, errno, strerror(errno));
+        return;
+    }
+
+    /* Get each value */
+    for (i = 0; i < value_count; i++) {
+        value_size = MAX_VALUE_NAME;
+        data_size = MAX_VALUE_NAME;
+
+        value_buffer[0] = '\0';
+        data_buffer[0] = '\0';
+
+        rc = RegEnumValue(hKey, i, value_buffer, &value_size,
+                          NULL, &data_type, (LPBYTE)data_buffer, &data_size);
+
+        /* No more values available */
+        if (rc != ERROR_SUCCESS) {
+            break;
+        }
+
+        /* Check if no value name is specified */
+        if (value_buffer[0] == '\0') {
+            value_buffer[0] = '@';
+            value_buffer[1] = '\0';
+        }
+
+        /* Write value name and data in the file (for checksum later) */
+        fprintf(checksum_fp, "%s=", value_buffer);
+        switch (data_type) {
+            case REG_SZ:
+            case REG_EXPAND_SZ:
+                fprintf(checksum_fp, "%s\n", data_buffer);
+                break;
+            case REG_MULTI_SZ:
+                /* Print multiple strings */
+                mt_data = data_buffer;
+
+                while (*mt_data) {
+                    fprintf(checksum_fp, "%s ", mt_data);
+                    mt_data += strlen(mt_data) + 1;
+                }
+                fprintf(checksum_fp, "\n");
+                break;
+            case REG_DWORD:
+                fprintf(checksum_fp, "%08x\n", (unsigned int)*data_buffer);
+                break;
+            default:
+                for (j = 0; j < data_size; j++) {
+                    fprintf(checksum_fp, "%02x",
+                            (unsigned int)data_buffer[j]);
+                }
+                fprintf(checksum_fp, "\n");
+                break;
+        }
+    }
+
+    /* Generate checksum of the values */
+    fclose(checksum_fp);
+
+    if (OS_MD5_SHA1_File(SYS_REG_TMP, mf_sum, sf_sum, OS_TEXT) == -1) {
+        merror(FOPEN_ERROR, ARGV0, SYS_REG_TMP, errno, strerror(errno));
+        return;
+    }
+
+    /* Look for tagged key on the reg db */
+    {
+        char tagged_key[MAX_KEY + 16];
+        os_winreg_arch_key(tagged_key, sizeof(tagged_key),
+                           full_key_name, arch);
+
+        if (os_winreg_changed(tagged_key, mf_sum, sf_sum)) {
+            char reg_changed[SYS_REG_MSG_SIZE + 1];
+            snprintf(reg_changed, sizeof(reg_changed),
+                     "0:0:0:0:%s:%s %s",
+                     mf_sum, sf_sum, tagged_key);
+
+            /* Notify server */
+            notify_registry(reg_changed, 0);
+        }
+    }
+
+    ig_count++;
+}
+
 /* Query the key and get all its values */
 void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
 {
     int rc;
-    DWORD i, j;
+    DWORD i;
 
     /* QueryInfo and EnumKey variables */
     TCHAR sub_key_name_b[MAX_KEY_LENGTH + 2];
@@ -208,15 +325,6 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
 
     /* Number of values */
     DWORD value_count;
-
-    /* Variables for RegEnumValue */
-    TCHAR value_buffer[MAX_VALUE_NAME + 1];
-    TCHAR data_buffer[MAX_VALUE_NAME + 1];
-    DWORD value_size;
-    DWORD data_size;
-
-    /* Data type for RegEnumValue */
-    DWORD data_type = 0;
 
     /* Initializing the memory for some variables */
     class_name_b[0] = '\0';
@@ -237,6 +345,13 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
 
     /* Check if we have sub keys */
     if (subkey_count) {
+        char *new_key;
+        char *new_key_full;
+
+        /* Live across the recursive call, so allocated rather than on the stack */
+        os_calloc(MAX_KEY + 2, sizeof(char), new_key);
+        os_calloc(MAX_KEY + 2, sizeof(char), new_key_full);
+
         /* Open each subkey and call open_key */
         for (i = 0; i < subkey_count; i++) {
             sub_key_name_s = MAX_KEY_LENGTH;
@@ -245,11 +360,6 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
 
             /* Checking for the rc */
             if (rc == ERROR_SUCCESS) {
-                char new_key[MAX_KEY + 2];
-                char new_key_full[MAX_KEY + 2];
-                new_key[MAX_KEY + 1] = '\0';
-                new_key_full[MAX_KEY + 1] = '\0';
-
                 if (p_key) {
                     snprintf(new_key, MAX_KEY,
                              "%s\\%s", p_key, sub_key_name_b);
@@ -265,103 +375,14 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
                 os_winreg_open_key(new_key, new_key_full, arch);
             }
         }
+
+        free(new_key);
+        free(new_key_full);
     }
 
     /* Get values (if available) */
     if (value_count) {
-        /* md5 and sha1 sum */
-        os_md5 mf_sum;
-        os_sha1 sf_sum;
-        FILE *checksum_fp;
-        char *mt_data;
-
-        /* Clear the values for value_size and data_size */
-        value_buffer[MAX_VALUE_NAME] = '\0';
-        data_buffer[MAX_VALUE_NAME] = '\0';
-        checksum_fp = fopen(SYS_REG_TMP, "w");
-        if (!checksum_fp) {
-            printf(FOPEN_ERROR, ARGV0, SYS_REG_TMP, errno, strerror(errno));
-            return;
-        }
-
-        /* Get each value */
-        for (i = 0; i < value_count; i++) {
-            value_size = MAX_VALUE_NAME;
-            data_size = MAX_VALUE_NAME;
-
-            value_buffer[0] = '\0';
-            data_buffer[0] = '\0';
-
-            rc = RegEnumValue(hKey, i, value_buffer, &value_size,
-                              NULL, &data_type, (LPBYTE)data_buffer, &data_size);
-
-            /* No more values available */
-            if (rc != ERROR_SUCCESS) {
-                break;
-            }
-
-            /* Check if no value name is specified */
-            if (value_buffer[0] == '\0') {
-                value_buffer[0] = '@';
-                value_buffer[1] = '\0';
-            }
-
-            /* Write value name and data in the file (for checksum later) */
-            fprintf(checksum_fp, "%s=", value_buffer);
-            switch (data_type) {
-                case REG_SZ:
-                case REG_EXPAND_SZ:
-                    fprintf(checksum_fp, "%s\n", data_buffer);
-                    break;
-                case REG_MULTI_SZ:
-                    /* Print multiple strings */
-                    mt_data = data_buffer;
-
-                    while (*mt_data) {
-                        fprintf(checksum_fp, "%s ", mt_data);
-                        mt_data += strlen(mt_data) + 1;
-                    }
-                    fprintf(checksum_fp, "\n");
-                    break;
-                case REG_DWORD:
-                    fprintf(checksum_fp, "%08x\n", (unsigned int)*data_buffer);
-                    break;
-                default:
-                    for (j = 0; j < data_size; j++) {
-                        fprintf(checksum_fp, "%02x",
-                                (unsigned int)data_buffer[j]);
-                    }
-                    fprintf(checksum_fp, "\n");
-                    break;
-            }
-        }
-
-        /* Generate checksum of the values */
-        fclose(checksum_fp);
-
-        if (OS_MD5_SHA1_File(SYS_REG_TMP, mf_sum, sf_sum, OS_TEXT) == -1) {
-            merror(FOPEN_ERROR, ARGV0, SYS_REG_TMP, errno, strerror(errno));
-            return;
-        }
-
-        /* Look for tagged key on the reg db */
-        {
-            char tagged_key[MAX_KEY + 16];
-            os_winreg_arch_key(tagged_key, sizeof(tagged_key),
-                               full_key_name, arch);
-
-            if (os_winreg_changed(tagged_key, mf_sum, sf_sum)) {
-                char reg_changed[SYS_REG_MSG_SIZE + 1];
-                snprintf(reg_changed, sizeof(reg_changed),
-                         "0:0:0:0:%s:%s %s",
-                         mf_sum, sf_sum, tagged_key);
-
-                /* Notify server */
-                notify_registry(reg_changed, 0);
-            }
-        }
-
-        ig_count++;
+        os_winreg_queryvalues(hKey, full_key_name, arch, value_count);
     }
 }
 

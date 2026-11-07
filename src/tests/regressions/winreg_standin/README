@@ -1,0 +1,3 @@
+Linux stand-in Windows SDK headers for compiling syscheckd/win-registry.c
+on the host (ANT-2026-583M5XOX stack-usage regression). Enough names and
+prototypes for a -c build; not a runtime registry emulator.
