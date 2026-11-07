@@ -35,6 +35,7 @@ REGRESSION_BINS = \
 	issue_ql3rs46y_winreg_ctrlz \
 	issue_ncimijxh_inotify_overflow \
 	issue_odwfehac_dirtb_leak \
+	issue_ch7fo833_long_path_trunc \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -288,6 +289,13 @@ issue_odwfehac_dirtb_leak: \
 		tests/regressions/issue_odwfehac_dirtb_leak.c shared.a
 	$(CC) $(CFLAGS) -o $@ \
 		tests/regressions/issue_odwfehac_dirtb_leak.c \
+		$(BASIC_LIBS) -lz -lssl -lcrypto
+
+# ANT-2026-CH7FO833: Unix FIM alerts must keep paths longer than ~757 chars.
+issue_ch7fo833_long_path_trunc: \
+		tests/regressions/issue_ch7fo833_long_path_trunc.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_ch7fo833_long_path_trunc.c \
 		$(BASIC_LIBS) -lz -lssl -lcrypto
 
 
