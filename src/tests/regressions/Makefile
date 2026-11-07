@@ -33,6 +33,7 @@ REGRESSION_BINS = \
 	issue_583m5xox_winreg_stack \
 	issue_si19uf16_winreg_path_trunc \
 	issue_ql3rs46y_winreg_ctrlz \
+	issue_ncimijxh_inotify_overflow \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -273,6 +274,13 @@ issue_ql3rs46y_winreg_ctrlz: \
 		tests/regressions/issue_ql3rs46y_winreg_ctrlz.c \
 		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
+
+# ANT-2026-NCIMIJXH: inotify IN_Q_OVERFLOW must schedule deferred recovery.
+issue_ncimijxh_inotify_overflow: \
+		tests/regressions/issue_ncimijxh_inotify_overflow.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_ncimijxh_inotify_overflow.c \
+		$(BASIC_LIBS) -lz -lssl -lcrypto
 
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
