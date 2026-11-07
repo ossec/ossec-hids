@@ -44,10 +44,16 @@ static int read_sys_file(DIR *parent, const char *name,
     if (rk_lstat_entry(parent, name, file_name, &statbuf) < 0) {
 #ifndef WIN32
         char op_msg[OS_SIZE_1024 + 1];
-        snprintf(op_msg, OS_SIZE_1024, "Anomaly detected in file '%s'. "
-                 "Hidden from stats, but showing up on readdir. "
-                 "Possible kernel level rootkit.",
-                 file_name);
+        if (snprintf(op_msg, OS_SIZE_1024, "Anomaly detected in file '%s'. "
+                     "Hidden from stats, but showing up on readdir. "
+                     "Possible kernel level rootkit.",
+                     file_name) >= OS_SIZE_1024) {
+            /* The decoder finds the end of the name by the end of the
+             * message, which must not be part of a name that did not fit.
+             * ANT-2026-0UFTKHQJ.
+             */
+            memcpy(op_msg + OS_SIZE_1024 - 4, "...", 3);
+        }
         notify_rk(ALERT_ROOTKIT_FOUND, op_msg);
         _sys_errors++;
 #endif

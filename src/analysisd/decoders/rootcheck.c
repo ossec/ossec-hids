@@ -149,20 +149,90 @@ static FILE *RK_File(const char *agent, int *agent_id)
     return (NULL);
 }
 
+/* A value as written by rk_append_file_hash: "n/a" or a digest of len hex digits */
+static int rk_is_hash(const char *val, size_t len)
+{
+    return (strcmp(val, "n/a") == 0 ||
+            (strlen(val) == len && strspn(val, "0123456789abcdef") == len));
+}
+
 /* Parse MD5/SHA1/SHA256 values appended by rk_append_file_hash into lf.
  * Also extracts the detected file path into lf->filename.
  * All rootcheck alert messages share the pattern: file 'PATH'
+ *
+ * PATH is sent as it is on disk, so it may itself hold quotes and text that
+ * looks like the rest of the message. Nothing is therefore searched for from
+ * the start of PATH on: the hashes are the last thing in the message and must
+ * fill it up to its end, and PATH ends where the fixed text in front of them
+ * (or in front of the end of the message) starts.
+ * ANT-2026-0UFTKHQJ.
  */
 static void rk_extract_hashes(Eventinfo *lf)
 {
+    /* The fixed text that follows a PATH read from the file system */
+    static const char *const after_path[] = {
+        "'.",
+        "'. File size doesn't match what we found. "
+        "Possible kernel level rootkit.",
+        "'. Hidden from stats, but showing up on readdir. "
+        "Possible kernel level rootkit.",
+        NULL
+    };
     const char *p;
-    char val[65];
+    const char *hashes = NULL;
+    char md5[65];
+    char sha1[65];
+    char sha256[65];
+    int trojan;
+    int used = 0;
+
+    /* Only these messages carry a path. Any other one may hold the
+     * patterns below inside a path of its own.
+     */
+    trojan = (strncmp(lf->log, "Trojaned version of file '", 26) == 0);
+    if (!trojan && strncmp(lf->log, "Rootkit '", 9) != 0 &&
+            strncmp(lf->log, "Anomaly detected in file '", 26) != 0) {
+        return;
+    }
+
+    /* The hashes are appended last: only the last " MD5=" can be theirs, and
+     * only if a complete triple follows it up to the end of the message. A
+     * message that did not fit the sender's buffer ends in a lone space.
+     */
+    for (p = strstr(lf->log, " MD5="); p; p = strstr(p + 1, " MD5=")) {
+        hashes = p;
+    }
+    if (hashes && (sscanf(hashes, " MD5=%64s SHA1=%64s SHA256=%64s%n",
+                          md5, sha1, sha256, &used) != 3 ||
+                   hashes[used] != '\0' || !rk_is_hash(md5, 32) ||
+                   !rk_is_hash(sha1, 40) || !rk_is_hash(sha256, 64))) {
+        hashes = NULL;
+    }
 
     /* Extract file path from message (pattern: file 'PATH') */
     p = strstr(lf->log, " file '");
     if (p) {
         const char *start = p + 7;
-        const char *end = strchr(start, '\'');
+        const char *end = NULL;
+
+        if (trojan) {
+            /* PATH comes from the trojans database; free text follows it */
+            end = strchr(start, '\'');
+        } else {
+            const char *text_end = hashes ? hashes : start + strlen(start);
+            int i;
+
+            for (i = 0; after_path[i]; i++) {
+                size_t len = strlen(after_path[i]);
+
+                if ((size_t)(text_end - start) > len &&
+                        strncmp(text_end - len, after_path[i], len) == 0) {
+                    end = text_end - len;
+                    break;
+                }
+            }
+        }
+
         if (end && end > start) {
             size_t len = (size_t)(end - start);
             lf->filename = (char *)malloc(len + 1);
@@ -173,25 +243,26 @@ static void rk_extract_hashes(Eventinfo *lf)
         }
     }
 
-    p = strstr(lf->log, " MD5=");
-    if (p && sscanf(p + 5, "%64s", val) == 1 && strcmp(val, "n/a") != 0 && strlen(val) == 32) {
+    if (!hashes) {
+        return;
+    }
+
+    if (strcmp(md5, "n/a") != 0) {
         free(lf->md5_after);
         lf->md5_after = NULL;
-        os_strdup(val, lf->md5_after);
+        os_strdup(md5, lf->md5_after);
     }
 
-    p = strstr(lf->log, " SHA1=");
-    if (p && sscanf(p + 6, "%64s", val) == 1 && strcmp(val, "n/a") != 0 && strlen(val) == 40) {
+    if (strcmp(sha1, "n/a") != 0) {
         free(lf->sha1_after);
         lf->sha1_after = NULL;
-        os_strdup(val, lf->sha1_after);
+        os_strdup(sha1, lf->sha1_after);
     }
 
-    p = strstr(lf->log, " SHA256=");
-    if (p && sscanf(p + 8, "%64s", val) == 1 && strcmp(val, "n/a") != 0 && strlen(val) == 64) {
+    if (strcmp(sha256, "n/a") != 0) {
         free(lf->sha256_after);
         lf->sha256_after = NULL;
-        os_strdup(val, lf->sha256_after);
+        os_strdup(sha256, lf->sha256_after);
     }
 }
 
@@ -313,6 +384,12 @@ int DecodeRootcheck(Eventinfo *lf)
 }
 
 #ifdef OSSEC_ROOTCHECK_TEST
+/* ANT-2026-0UFTKHQJ: drive rk_extract_hashes() from the regression. */
+void Rootcheck_TestExtractHashes(Eventinfo *lf)
+{
+    rk_extract_hashes(lf);
+}
+
 /* ANT-2026-RBAKY685: how many rootcheck DB slots are currently allocated. */
 int Rootcheck_TestSlotCount(void)
 {
