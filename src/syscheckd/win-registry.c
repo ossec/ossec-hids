@@ -14,6 +14,7 @@
 #include "os_crypto/md5/md5_op.h"
 #include "os_crypto/sha1/sha1_op.h"
 #include "os_crypto/md5_sha1/md5_sha1_op.h"
+#include "winreg_path.h"
 
 /* Default values */
 #define MAX_KEY_LENGTH   255
@@ -360,15 +361,12 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
 
             /* Checking for the rc */
             if (rc == ERROR_SUCCESS) {
-                if (p_key) {
-                    snprintf(new_key, MAX_KEY,
-                             "%s\\%s", p_key, sub_key_name_b);
-                    snprintf(new_key_full, MAX_KEY,
-                             "%s\\%s", full_key_name, sub_key_name_b);
-                } else {
-                    snprintf(new_key, MAX_KEY, "%s", sub_key_name_b);
-                    snprintf(new_key_full, MAX_KEY,
-                             "%s\\%s", full_key_name, sub_key_name_b);
+                if (os_winreg_build_subkey_paths(new_key, new_key_full,
+                                                 MAX_KEY, p_key,
+                                                 full_key_name,
+                                                 sub_key_name_b) < 0) {
+                    merror(SK_REG_LONG, ARGV0, full_key_name, sub_key_name_b);
+                    continue;
                 }
 
                 /* Open subkey */

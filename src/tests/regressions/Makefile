@@ -31,6 +31,7 @@ REGRESSION_BINS = \
 	issue_2bepxi8w_syslog_tcp_frame \
 	issue_0uftkhqj_rootcheck_path_hashes \
 	issue_583m5xox_winreg_stack \
+	issue_si19uf16_winreg_path_trunc \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -254,6 +255,14 @@ issue_583m5xox_winreg_stack: \
 	fi; \
 	$(CC) $(CFLAGS) -DQUERYKEY_FRAME=$$frame -o $@ \
 		tests/regressions/issue_583m5xox_winreg_stack.c
+
+# ANT-2026-SI19UF16: truncated registry subkey paths must not be opened.
+issue_si19uf16_winreg_path_trunc: \
+		tests/regressions/issue_si19uf16_winreg_path_trunc.c \
+		syscheckd/winreg_path.c syscheckd/winreg_path.h
+	$(CC) $(CFLAGS) -I./syscheckd -o $@ \
+		tests/regressions/issue_si19uf16_winreg_path_trunc.c \
+		syscheckd/winreg_path.c
 
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a

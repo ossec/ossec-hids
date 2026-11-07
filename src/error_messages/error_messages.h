@@ -113,6 +113,7 @@
 #define SK_INV_ATTR     "%s(1703): ERROR: Invalid attribute '%s' for directory option."
 #define SK_INV_OPT      "%s(1704): ERROR: Invalid option '%s' for attribute '%s'"
 #define SK_NO_DB        "%s(1705): ERROR: No integrity database found at '%s'."
+#define SK_REG_LONG     "%s(1706): ERROR: Registry key path too long, ignoring it: '%s\\%s'."
 #define SK_INV_MSG      "%s(1755): ERROR: Invalid syscheck message received."
 #define SK_DUP          "%s(1756): ERROR: Duplicated directory given: '%s'."
 #define SK_INV_REG      "%s(1757): ERROR: Invalid syscheck registry entry: '%s'."
