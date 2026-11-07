@@ -962,38 +962,43 @@ char *seechanges_addfile(const char *filename)
 
     new_date_of_change = File_DateofChange(old_location);
 
-    /* Create file names */
+    /* Create file names. They end up on the diff command line, which every
+     * local user can read in the process list, so they must not be derived
+     * from the file content (the sha256 sums). The process id is enough to
+     * keep them unique: only this daemon creates entries in the tmp dir.
+     */
     snprintf(
         old_tmp,
         OS_MAXSTR,
-        "%s/%s/syscheck-changes-%s-%d",
+        "%s/%s/syscheck-changes-%d-old",
         DEFAULTDIR,
         TMP_DIR,
-        sha256_old,
-        (int)old_date_of_change
+        (int)getpid()
     );
 
     snprintf(
         new_tmp,
         OS_MAXSTR,
-        "%s/%s/syscheck-changes-%s-%d",
+        "%s/%s/syscheck-changes-%d-new",
         DEFAULTDIR,
         TMP_DIR,
-        sha256_new,
-        (int)new_date_of_change
+        (int)getpid()
     );
 
     snprintf(
         diff_tmp,
         OS_MAXSTR,
-        "%s/%s/syscheck-changes-%s-%d-%s-%d",
+        "%s/%s/syscheck-changes-%d-diff",
         DEFAULTDIR,
         TMP_DIR,
-        sha256_old,
-        (int)old_date_of_change,
-        sha256_new,
-        (int)new_date_of_change
+        (int)getpid()
     );
+
+    /* Remove leftovers of a killed process that had the same pid */
+    unlink(old_tmp);
+    unlink(new_tmp);
+    unlink(diff_tmp);
+
     /* Create diff location */
     snprintf(
         diff_location,

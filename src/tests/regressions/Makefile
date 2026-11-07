@@ -36,6 +36,7 @@ REGRESSION_BINS = \
 	issue_ncimijxh_inotify_overflow \
 	issue_odwfehac_dirtb_leak \
 	issue_ch7fo833_long_path_trunc \
+	issue_fznf7ml7_diff_hash_leak \
 	issue_1611_local_ip_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
@@ -297,6 +298,16 @@ issue_ch7fo833_long_path_trunc: \
 	$(CC) $(CFLAGS) -o $@ \
 		tests/regressions/issue_ch7fo833_long_path_trunc.c \
 		$(BASIC_LIBS) -lz -lssl -lcrypto
+
+# ANT-2026-FZNF7ML7: report_changes tmp names must not embed content hashes.
+issue_fznf7ml7_diff_hash_leak: \
+		tests/regressions/issue_fznf7ml7_diff_hash_leak.c \
+		syscheckd/seechanges.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -DDEFAULTDIR=\".\" -I./syscheckd -o $@ \
+		tests/regressions/issue_fznf7ml7_diff_hash_leak.c \
+		syscheckd/seechanges.c \
+		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -ldl
 
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
