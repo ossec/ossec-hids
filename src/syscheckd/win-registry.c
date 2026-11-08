@@ -32,8 +32,15 @@ HKEY sub_tree;
 int ig_count = 0;
 int run_count = 0;
 
+/* Tagged keys successfully hashed during the current os_winreg_check().
+ * Entries in syscheckregistry.db that are still monitored but absent from
+ * this set are candidates for Rule 597 deletion alerts. */
+static OSHash *reg_seen = NULL;
+
 /* Prototypes */
 void os_winreg_open_key(char *subkey, char *fullkey_name, int arch);
+char *os_winreg_sethkey(char *reg_entry);
+int notify_registry(char *msg, int send_now);
 
 /* DB/alert identity: 32-bit view stays untagged (legacy baseline compatible).
  * 64-bit view uses a reserved "arch64:" prefix. A trailing " [x64]" suffix can
@@ -48,6 +55,244 @@ static void os_winreg_arch_key(char *out, size_t n, const char *path, int arch)
     } else {
         snprintf(out, n, "%s", path);
     }
+}
+
+/* Reset the per-scan "seen" set. */
+static void os_winreg_seen_begin(void)
+{
+    if (reg_seen != NULL) {
+        OSHash_Free(reg_seen);
+        reg_seen = NULL;
+    }
+    reg_seen = OSHash_Create();
+    if (reg_seen != NULL) {
+        (void)OSHash_setSize(reg_seen, 2048);
+    }
+}
+
+static void os_winreg_seen_mark(const char *tagged_key)
+{
+    if (reg_seen == NULL || tagged_key == NULL || tagged_key[0] == '\0') {
+        return;
+    }
+    if (OSHash_Get(reg_seen, tagged_key) == NULL) {
+        (void)OSHash_Add(reg_seen, tagged_key, (void *)1);
+    }
+}
+
+static int os_winreg_seen_has(const char *tagged_key)
+{
+    return (reg_seen != NULL && tagged_key != NULL &&
+            OSHash_Get(reg_seen, tagged_key) != NULL);
+}
+
+/* full_path is under configured root (case-insensitive; trailing '\\' ok). */
+static int os_winreg_under_root(const char *full_path, const char *root)
+{
+    size_t len;
+
+    if (full_path == NULL || root == NULL || root[0] == '\0') {
+        return (0);
+    }
+
+    len = strlen(root);
+    while (len > 1 && root[len - 1] == '\\') {
+        len--;
+    }
+    if (strncasecmp(full_path, root, len) != 0) {
+        return (0);
+    }
+    return (full_path[len] == '\0' || full_path[len] == '\\');
+}
+
+/* Strip optional arch64: tag. Sets *arch_out and *path_out into tagged. */
+static void os_winreg_untag(const char *tagged, int *arch_out,
+                            const char **path_out)
+{
+    if (strncmp(tagged, "arch64:", 7) == 0) {
+        *arch_out = ARCH_64BIT;
+        *path_out = tagged + 7;
+    } else {
+        *arch_out = ARCH_32BIT;
+        *path_out = tagged;
+    }
+}
+
+/* 1 if tagged key matches a configured <windows_registry> entry+arch. */
+static int os_winreg_is_monitored(const char *tagged)
+{
+    int arch;
+    const char *path;
+    int i;
+
+    os_winreg_untag(tagged, &arch, &path);
+
+    for (i = 0; syscheck.registry && syscheck.registry[i] != NULL; i++) {
+        int cfg_arch;
+
+        if (syscheck.registry[i][0] == '\0') {
+            continue;
+        }
+        cfg_arch = (syscheck.registry_arch &&
+                    syscheck.registry_arch[i] == ARCH_64BIT)
+                   ? ARCH_64BIT : ARCH_32BIT;
+        if (cfg_arch != arch) {
+            continue;
+        }
+        if (os_winreg_under_root(path, syscheck.registry[i])) {
+            return (1);
+        }
+    }
+    return (0);
+}
+
+/* 1 if the key can still be opened (or status is uncertain). 0 if gone. */
+static int os_winreg_key_present(const char *full_path, int arch)
+{
+    char path_copy[MAX_KEY + 1];
+    char *rk;
+    HKEY oshkey;
+    HKEY saved_tree = sub_tree;
+    REGSAM access;
+    LONG rc;
+
+    if (full_path == NULL || full_path[0] == '\0' ||
+            strlen(full_path) >= sizeof(path_copy)) {
+        return (1);
+    }
+
+    memcpy(path_copy, full_path, strlen(full_path) + 1);
+    rk = os_winreg_sethkey(path_copy);
+    if (sub_tree == NULL) {
+        sub_tree = saved_tree;
+        return (1);
+    }
+
+    access = KEY_READ |
+             ((arch == ARCH_64BIT) ? KEY_WOW64_64KEY : KEY_WOW64_32KEY);
+    rc = RegOpenKeyEx(sub_tree, rk ? rk : "", 0, access, &oshkey);
+    sub_tree = saved_tree;
+
+    if (rc == ERROR_SUCCESS) {
+        RegCloseKey(oshkey);
+        return (1);
+    }
+    if (rc == ERROR_FILE_NOT_FOUND || rc == ERROR_PATH_NOT_FOUND) {
+        return (0);
+    }
+    /* Access denied / transient: do not treat as a deletion. */
+    return (1);
+}
+
+/* After a full registry walk, emit -1 for monitored DB keys that are gone
+ * and rewrite syscheckregistry.db without them (Antigravity Defect 7). */
+static void os_winreg_reconcile_missing(void)
+{
+    char buf[SYS_REG_MSG_SIZE + 1];
+    char **keep = NULL;
+    size_t nkeep = 0;
+    size_t cap = 0;
+    size_t i;
+
+    if (syscheck.reg_fp == NULL) {
+        return;
+    }
+
+    fseek(syscheck.reg_fp, 0, SEEK_SET);
+    while (fgets(buf, sizeof(buf), syscheck.reg_fp) != NULL) {
+        char *nl;
+        char *sp;
+        char *dup;
+        int arch;
+        const char *path;
+        int keep_line = 0;
+
+        if (buf[0] == '#' || buf[0] == ' ' || buf[0] == '\n') {
+            continue;
+        }
+
+        nl = strchr(buf, '\n');
+        if (nl != NULL) {
+            *nl = '\0';
+        }
+
+        sp = strchr(buf, ' ');
+        if (sp == NULL || sp[1] == '\0') {
+            continue;
+        }
+
+        if (os_winreg_seen_has(sp + 1)) {
+            keep_line = 1;
+        } else if (!os_winreg_is_monitored(sp + 1)) {
+            /* Removed from config: drop quietly, do not alert. */
+            keep_line = 0;
+        } else {
+            os_winreg_untag(sp + 1, &arch, &path);
+            if (os_winreg_key_present(path, arch)) {
+                /* Still present (e.g. empty key skipped by value scan). */
+                keep_line = 1;
+            } else {
+                char del_msg[SYS_REG_MSG_SIZE + 1];
+
+                del_msg[SYS_REG_MSG_SIZE] = '\0';
+                snprintf(del_msg, sizeof(del_msg), "-1 %s", sp + 1);
+                notify_registry(del_msg, 1);
+                keep_line = 0;
+            }
+        }
+
+        if (!keep_line) {
+            continue;
+        }
+
+        if (nkeep >= cap) {
+            size_t ncap = (cap == 0) ? 32 : (cap * 2);
+            char **nk = (char **)realloc(keep, ncap * sizeof(char *));
+
+            if (nk == NULL) {
+                merror("%s: WARN: Unable to allocate registry DB rewrite "
+                       "list; leaving database unchanged.", ARGV0);
+                for (i = 0; i < nkeep; i++) {
+                    free(keep[i]);
+                }
+                free(keep);
+                return;
+            }
+            keep = nk;
+            cap = ncap;
+        }
+
+        dup = strdup(buf);
+        if (dup == NULL) {
+            merror("%s: WARN: Unable to duplicate registry DB line; "
+                   "leaving database unchanged.", ARGV0);
+            for (i = 0; i < nkeep; i++) {
+                free(keep[i]);
+            }
+            free(keep);
+            return;
+        }
+        keep[nkeep++] = dup;
+    }
+
+    /* Rewrite without deleted / demoted entries. */
+    fclose(syscheck.reg_fp);
+    syscheck.reg_fp = fopen(SYS_WIN_REG, "w+b");
+    if (syscheck.reg_fp == NULL) {
+        merror(FOPEN_ERROR, ARGV0, SYS_WIN_REG, errno, strerror(errno));
+        for (i = 0; i < nkeep; i++) {
+            free(keep[i]);
+        }
+        free(keep);
+        return;
+    }
+
+    for (i = 0; i < nkeep; i++) {
+        fprintf(syscheck.reg_fp, "%s\n", keep[i]);
+        free(keep[i]);
+    }
+    free(keep);
+    fflush(syscheck.reg_fp);
 }
 
 /* OS is 64-bit (WoW64 host), not merely that this agent binary is 64-bit. */
@@ -297,6 +542,9 @@ os_winreg_queryvalues(HKEY hKey, char *full_key_name, int arch,
         os_winreg_arch_key(tagged_key, sizeof(tagged_key),
                            full_key_name, arch);
 
+        /* Always record presence so a later pass can spot deletions. */
+        os_winreg_seen_mark(tagged_key);
+
         if (os_winreg_changed(tagged_key, mf_sum, sf_sum)) {
             char reg_changed[SYS_REG_MSG_SIZE + 1];
             snprintf(reg_changed, sizeof(reg_changed),
@@ -469,15 +717,21 @@ void os_winreg_check()
 
     /* Check if the registry fp is open (binary, as key names may hold a
      * Ctrl-Z too and the entries after it would never be read back).
-     * ANT-2026-QL3RS46Y.
+     * ANT-2026-QL3RS46Y. Prefer r+b so prior runs survive process restart
+     * and deleted keys can still be reconciled (Antigravity Defect 7).
      */
     if (syscheck.reg_fp == NULL) {
-        syscheck.reg_fp = fopen(SYS_WIN_REG, "w+b");
+        syscheck.reg_fp = fopen(SYS_WIN_REG, "r+b");
+        if (!syscheck.reg_fp) {
+            syscheck.reg_fp = fopen(SYS_WIN_REG, "w+b");
+        }
         if (!syscheck.reg_fp) {
             merror(FOPEN_ERROR, ARGV0, SYS_WIN_REG, errno, strerror(errno));
             return;
         }
     }
+
+    os_winreg_seen_begin();
 
     /* Get sub class and a valid registry entry */
     while (syscheck.registry[i] != NULL) {
@@ -521,6 +775,9 @@ void os_winreg_check()
         i++;
         sleep(syscheck.tsleep * 5);
     }
+
+    /* Report monitored keys that vanished since the last complete walk. */
+    os_winreg_reconcile_missing();
 
     /* Notify of db completed */
     if (run_count > 1) {

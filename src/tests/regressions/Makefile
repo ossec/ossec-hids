@@ -101,6 +101,7 @@ REGRESSION_BINS = \
 	issue_3wkk50ne_oshash_collisions \
 	issue_8sti0q1e_syscheck_linear_miss \
 	issue_fim_periodic_delete \
+	issue_fim_registry_delete \
 	issue_6wl10qqz_dir_depth \
 	issue_2d3xma3w_decoder_field_leak \
 	issue_tzmhdq9m_decoder_info_race \
@@ -445,6 +446,14 @@ issue_7odkfi8f_alert_day_read: \
 		-c shared/file-queue.c -o shared/file-queue-7odk.o
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_7odkfi8f_alert_day_read.c \
 		shared/file-queue-7odk.o \
+		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# Antigravity Defect 7: registry FIM emits -1 for deleted keys (Rule 597).
+issue_fim_registry_delete: \
+		tests/regressions/issue_fim_registry_delete.c shared.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_fim_registry_delete.c \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
