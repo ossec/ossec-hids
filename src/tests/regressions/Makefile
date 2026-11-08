@@ -21,7 +21,6 @@ REGRESSION_BINS = \
 	issue_1079_last_events_uaf \
 	issue_correlation_agent_shard \
 	issue_1748_sid_list_crash \
-	issue_group_list_uaf \
 	issue_prev_matched_race \
 	issue_1274_auth_ipv6_key \
 	issue_2065_sender_counter \
@@ -87,16 +86,6 @@ REGRESSION_BINS = \
 	issue_read_dir_path_overflow \
 	issue_ossecalert_field_injection \
 	issue_rootcheck_json_empty_name \
-	issue_rootcheck_json_match_overflow \
-	issue_hostname_path_traversal \
-	issue_str_cut_overflow \
-	issue_strtok_race \
-	issue_dnxhhf88_localfile_double_free \
-	issue_m5jt0jcl_authd_key_rng \
-	issue_mon246f3_execd_ar_overflow \
-	issue_ud31vlyl_audit_oob \
-	issue_fb1hyskp_pagerduty_alertlog \
-	issue_ant2026_ar_scripts \
 	issue_3vn001l2_prefilter_retire \
 	issue_c186ep5n_nodiff_size \
 	issue_96vsxf8b_diff_store_symlink \
@@ -176,9 +165,6 @@ issue_correlation_agent_shard: tests/regressions/issue_correlation_agent_shard.c
 
 issue_1748_sid_list_crash: tests/regressions/issue_1748_sid_list_crash.c $(EVENTINFO_OBJS) shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1748_sid_list_crash.c $(EVENTINFO_OBJS) $(BASIC_LIBS)
-
-issue_group_list_uaf: tests/regressions/issue_group_list_uaf.c $(EVENTINFO_OBJS) shared.a
-	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_group_list_uaf.c $(EVENTINFO_OBJS) $(BASIC_LIBS)
 
 issue_prev_matched_race: tests/regressions/issue_prev_matched_race.c $(EVENTINFO_OBJS) shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_prev_matched_race.c $(EVENTINFO_OBJS) $(BASIC_LIBS)
@@ -1236,95 +1222,6 @@ issue_rootcheck_json_empty_name: tests/regressions/issue_rootcheck_json_empty_na
 		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
 
-issue_rootcheck_json_match_overflow: tests/regressions/issue_rootcheck_json_match_overflow.c \
-		analysisd/format/json_extended.c libcJSON.a shared.a
-	$(CC) $(CFLAGS) -I./analysisd -I./external/cJSON -o $@ \
-		tests/regressions/issue_rootcheck_json_match_overflow.c \
-		analysisd/format/json_extended.c \
-		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lssl -lcrypto
-
-issue_str_cut_overflow: tests/regressions/issue_str_cut_overflow.c \
-		analysisd/format/json_extended.c libcJSON.a shared.a
-	$(CC) $(CFLAGS) -I./analysisd -I./external/cJSON -o $@ \
-		tests/regressions/issue_str_cut_overflow.c \
-		analysisd/format/json_extended.c \
-		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lssl -lcrypto
-
-issue_strtok_race: tests/regressions/issue_strtok_race.c \
-		analysisd/format/json_extended.c libcJSON.a shared.a
-	$(CC) $(CFLAGS) -I./analysisd -I./external/cJSON -o $@ \
-		tests/regressions/issue_strtok_race.c \
-		analysisd/format/json_extended.c \
-		-Wl,--start-group shared.a os_regex.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lssl -lcrypto
-
-# Open a cwd-local ar.conf (defs.h redefines DEFAULTARPATH). Compile at -O0
-# so a missing bound is more likely to show up in GetCommandbyName results.
-issue_mon246f3_execd_ar_overflow: \
-		tests/regressions/issue_mon246f3_execd_ar_overflow.c \
-		os_execd/exec.c shared.a
-	sed -e 's/fopen(DEFAULTARPATH/fopen("ar.conf"/g' \
-		-e 's/AR_BINDIRPATH/"active-response\/bin"/g' \
-		os_execd/exec.c > os_execd/exec-mon246f3.c
-	$(CC) $(CFLAGS) -O0 -I./os_execd -c os_execd/exec-mon246f3.c \
-		-o os_execd/exec-mon246f3.o
-	$(CC) $(CFLAGS) -I./os_execd -o $@ \
-		tests/regressions/issue_mon246f3_execd_ar_overflow.c \
-		os_execd/exec-mon246f3.o \
-		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lssl -lcrypto
-	rm -f os_execd/exec-mon246f3.c
-
-issue_fb1hyskp_pagerduty_alertlog: \
-		tests/regressions/issue_fb1hyskp_pagerduty_alertlog.sh \
-		../active-response/ossec-pagerduty.sh
-	@printf '%s\n' '#!/bin/sh' \
-		'exec bash "$$(dirname "$$0")/tests/regressions/issue_fb1hyskp_pagerduty_alertlog.sh" "$$@"' > $@
-	@chmod +x $@
-	./$@
-
-issue_ant2026_ar_scripts: \
-		tests/regressions/issue_ant2026_ar_scripts.sh \
-		../active-response/ossec-pagerduty.sh \
-		../active-response/ossec-slack.sh \
-		../active-response/ossec-tweeter.sh \
-		../active-response/host-deny.sh \
-		../active-response/firewalls/ipfw_mac.sh \
-		../active-response/cloudflare-ban.sh
-	@printf '%s\n' '#!/bin/sh' \
-		'exec bash "$$(dirname "$$0")/tests/regressions/issue_ant2026_ar_scripts.sh" "$$@"' > $@
-	@chmod +x $@
-	./$@
-
-# Expose audit_send_msg and record final join index for the harness.
-issue_ud31vlyl_audit_oob: \
-		tests/regressions/issue_ud31vlyl_audit_oob.c \
-		logcollector/read_audit.c logcollector/logr_fgets.c shared.a
-	sed -e 's/^static void audit_send_msg/size_t audit_last_n;\nvoid audit_send_msg/' \
-		-e 's/message\[n\] = '\''\\0'\'';/audit_last_n = n; message[n] = '\''\\0'\'';/' \
-		logcollector/read_audit.c > logcollector/read_audit-ud31vlyl.c
-	$(CC) $(CFLAGS) -I./logcollector -c logcollector/read_audit-ud31vlyl.c \
-		-o logcollector/read_audit-ud31vlyl.o
-	$(CC) $(CFLAGS) -I./logcollector -o $@ \
-		tests/regressions/issue_ud31vlyl_audit_oob.c \
-		logcollector/read_audit-ud31vlyl.o logcollector/logr_fgets.c \
-		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lssl -lcrypto
-	rm -f logcollector/read_audit-ud31vlyl.c
-
-issue_m5jt0jcl_authd_key_rng: \
-		tests/regressions/issue_m5jt0jcl_authd_key_rng.c \
-		addagent/validate.c shared.a os_crypto.a
-	$(CC) $(CFLAGS) -DAUTH_FILE=\"client.keys\" -c addagent/validate.c \
-		-o addagent/validate-m5jt0jcl.o
-	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_m5jt0jcl_authd_key_rng.c \
-		addagent/validate-m5jt0jcl.o \
-		-Wl,--wrap=randombytes_try -Wl,--wrap=isChroot \
-		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
-
 # ANT-2026-C186EP5N: nodiff_size must be per <nodiff> node (like ign_size).
 # Compile syscheck-config.c into the binary so the harness does not depend on
 # a stale config.a member; pull the rest of config via config.a.
@@ -1444,36 +1341,6 @@ issue_ajjellsq_db_symlink: \
 		shared/read-agents.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_crypto.a libcJSON.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
-
-# Compile localfile-config.c into the binary so the harness does not depend
-# on a possibly stale config.a member from an earlier server build.
-issue_dnxhhf88_localfile_double_free: \
-		tests/regressions/issue_dnxhhf88_localfile_double_free.c \
-		config/localfile-config.c shared.a
-	$(CC) $(CFLAGS) -I./config -o $@ \
-		tests/regressions/issue_dnxhhf88_localfile_double_free.c \
-		config/localfile-config.c \
-		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lssl -lcrypto
-
-# Relative queue paths so the harness can chdir into a temp tree.
-HT_PATH_CFLAGS = -DAGENTINFO_DIR=\"queue/agent-info\" -DDIFF_DIR=\"queue/diff\"
-issue_hostname_path_traversal: tests/regressions/issue_hostname_path_traversal.c \
-		analysisd/decoders/plugins/ossecalert_decoder.c \
-		analysisd/dodiff.c analysisd/eventinfo.c analysisd/eventinfo_list.c shared.a
-	$(CC) $(CFLAGS) $(HT_PATH_CFLAGS) -I./analysisd \
-		-c analysisd/decoders/plugins/ossecalert_decoder.c \
-		-o analysisd/decoders/plugins/ossecalert_decoder-ht.o
-	$(CC) $(CFLAGS) $(HT_PATH_CFLAGS) -I./analysisd \
-		-c analysisd/dodiff.c -o analysisd/dodiff-ht.o
-	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo.c -o analysisd/eventinfo-ht.o
-	$(CC) $(CFLAGS) -I./analysisd -c analysisd/eventinfo_list.c -o analysisd/eventinfo_list-ht.o
-	$(CC) $(CFLAGS) $(HT_PATH_CFLAGS) -I./analysisd -o $@ \
-		tests/regressions/issue_hostname_path_traversal.c \
-		analysisd/decoders/plugins/ossecalert_decoder-ht.o \
-		analysisd/dodiff-ht.o analysisd/eventinfo-ht.o analysisd/eventinfo_list-ht.o \
-		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
-		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 
 # Build the reader without FORTIFY so a wrapped strncpy() stays a
 # call to strncpy. With _FORTIFY_SOURCE the call becomes

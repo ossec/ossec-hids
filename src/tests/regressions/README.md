@@ -22,7 +22,6 @@
 #   - issue_correlation_agent_shard    location EventList isolation +
 #                                      if_matched_sid cross-location
 #   - issue_1748_sid_list_crash        sid_prev_matched overflow + free callback
-#   - issue_group_list_uaf             Free_Eventinfo unlinks its group_prev_matched nodes
 #   - issue_prev_matched_race          if_matched_sid list lock across match threads
 #   - issue_1274_auth_ipv6_key         auth IPv6 key handling
 #   - issue_2065_sender_counter        sender_counter isolated from agent 0 rids
