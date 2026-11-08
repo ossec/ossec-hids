@@ -171,7 +171,7 @@ int main(void)
     line[line_len + 1] = '\0';
     long_len = strlen(line);
 
-    long_text = malloc(long_len * 3 + sizeof("NEXT\n"));
+    long_text = malloc(long_len * 3 + sizeof("NEXT\nTWO\nTHREE\n"));
     if (!long_text) {
         perror("malloc");
         return (1);
@@ -179,11 +179,13 @@ int main(void)
     for (i = 0; i < 3; i++) {
         memcpy(long_text + i * long_len, line, long_len);
     }
-    memcpy(long_text + long_len * 3, "NEXT\n", sizeof("NEXT\n"));
+    memcpy(long_text + long_len * 3, "NEXT\nTWO\nTHREE\n",
+           sizeof("NEXT\nTWO\nTHREE\n"));
 
     /* The third line used to pass a wrapped size to strncpy.
-     * NEXT must be queued on its own. Treating the full buffer as
-     * an unfinished line used to drain it away.
+     * linesgot is cleared after each send, so the next record is
+     * another full linecount group. Treating the full buffer as an
+     * unfinished line used to drain that group away.
      */
     if (run_reader(long_text, 2) != 0) {
         free(long_text);
@@ -195,7 +197,7 @@ int main(void)
         fprintf(stderr, "FAIL: long message was not truncated inside the buffer\n");
         return (1);
     }
-    if (strcmp(sent[1], "NEXT") != 0) {
+    if (strcmp(sent[1], "NEXT TWO THREE") != 0) {
         fprintf(stderr, "FAIL: following line is '%s'\n", sent[1]);
         return (1);
     }

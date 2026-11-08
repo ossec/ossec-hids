@@ -23,6 +23,7 @@ REGRESSION_BINS = \
 	issue_1748_sid_list_crash \
 	issue_prev_matched_race \
 	issue_1274_auth_ipv6_key \
+	issue_authd_name_traversal \
 	issue_2065_sender_counter \
 	issue_fbj3la25_rids_counter_reload \
 	issue_ja2nxew1_reject_log \
@@ -172,6 +173,13 @@ issue_1748_sid_list_crash: tests/regressions/issue_1748_sid_list_crash.c $(EVENT
 
 issue_prev_matched_race: tests/regressions/issue_prev_matched_race.c $(EVENTINFO_OBJS) shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_prev_matched_race.c $(EVENTINFO_OBJS) $(BASIC_LIBS)
+
+issue_authd_name_traversal: \
+		tests/regressions/issue_authd_name_traversal.c addagent/validate.o shared.a os_crypto.a
+	$(CC) $(CFLAGS) -I./addagent -o $@ \
+		tests/regressions/issue_authd_name_traversal.c addagent/validate.o \
+		-Wl,--start-group shared.a os_regex.a os_crypto.a os_net.a os_xml.a os_zlib.a libcJSON.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
 issue_1274_auth_ipv6_key: tests/regressions/issue_1274_auth_ipv6_key.c addagent/validate.o shared.a os_crypto.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1274_auth_ipv6_key.c addagent/validate.o \

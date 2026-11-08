@@ -448,10 +448,24 @@ int IDExist(const char *id)
 /* Validate agent name */
 int OS_IsValidName(const char *u_name)
 {
-    size_t i, uname_length = strlen(u_name);
+    size_t i, uname_length;
+
+    if (u_name == NULL) {
+        return (0);
+    }
+
+    uname_length = strlen(u_name);
 
     /* We must have something in the name */
     if (uname_length < 2 || uname_length > 128) {
+        return (0);
+    }
+
+    /* Reject path-style / hidden names (GHSA-573w-mqw4-jvmr). A leading
+     * '.' or embedded ".." can escape into parent paths when the name is
+     * used under queue/ or etc/. Dots inside a normal name (host.domain)
+     * remain allowed. */
+    if (u_name[0] == '.' || strstr(u_name, "..") != NULL) {
         return (0);
     }
 
