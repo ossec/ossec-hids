@@ -38,6 +38,7 @@ REGRESSION_BINS = \
 	issue_ch7fo833_long_path_trunc \
 	issue_fznf7ml7_diff_hash_leak \
 	issue_1611_local_ip_bind \
+	issue_addrconfig_wildcard_bind \
 	issue_1668_agent_hostname \
 	issue_1668_ossecalert_hostname \
 	unmerge_path_traversal \
@@ -312,6 +313,11 @@ issue_fznf7ml7_diff_hash_leak: \
 
 issue_1611_local_ip_bind: tests/regressions/issue_1611_local_ip_bind.c os_net.a shared.a
 	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_1611_local_ip_bind.c \
+		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
+
+issue_addrconfig_wildcard_bind: tests/regressions/issue_addrconfig_wildcard_bind.c os_net.a shared.a
+	$(CC) $(CFLAGS) -o $@ tests/regressions/issue_addrconfig_wildcard_bind.c \
 		-Wl,--start-group shared.a os_regex.a os_net.a os_xml.a os_zlib.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lz -lssl -lcrypto
 

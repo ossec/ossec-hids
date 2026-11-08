@@ -30,6 +30,7 @@
 #   - issue_ja2nxew1_reject_log        remoted pre-auth reject log burst limit
 #   - issue_739qmecr_readsecmsg_uncompress  ReadSecMSG inflate respects buffer_max
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
+#   - issue_addrconfig_wildcard_bind   ipv6=no wildcard bind without AI_ADDRCONFIG
 #   - issue_1668_agent_hostname        agent name vs device hostname split;
 #                                      accumulator scoped per agent (ZQN8MYKG)
 #   - issue_1668_ossecalert_hostname   OSSECAlert decoder vs owned hostname (double free)
