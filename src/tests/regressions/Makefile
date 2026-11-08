@@ -102,6 +102,7 @@ REGRESSION_BINS = \
 	issue_8sti0q1e_syscheck_linear_miss \
 	issue_fim_periodic_delete \
 	issue_fim_registry_delete \
+	issue_fim_registry_empty_key \
 	issue_6wl10qqz_dir_depth \
 	issue_2d3xma3w_decoder_field_leak \
 	issue_tzmhdq9m_decoder_info_race \
@@ -448,6 +449,14 @@ issue_7odkfi8f_alert_day_read: \
 		shared/file-queue-7odk.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# Antigravity Defect 8: empty registry keys are still baselined.
+issue_fim_registry_empty_key: \
+		tests/regressions/issue_fim_registry_empty_key.c shared.a os_crypto.a
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_fim_registry_empty_key.c \
+		-Wl,--start-group shared.a os_crypto.a os_regex.a -Wl,--end-group \
+		-lpcre2-8 -lm -lpthread -lssl -lcrypto -lz
 
 # Antigravity Defect 7: registry FIM emits -1 for deleted keys (Rule 597).
 issue_fim_registry_delete: \

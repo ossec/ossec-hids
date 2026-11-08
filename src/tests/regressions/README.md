@@ -62,6 +62,7 @@
 #   - issue_8sti0q1e_syscheck_linear_miss     no linear DB scan on healthy index miss
 #   - issue_fim_periodic_delete               periodic FIM reconciles missing files
 #   - issue_fim_registry_delete               registry FIM emits -1 for deleted keys
+#   - issue_fim_registry_empty_key            empty registry keys are baselined
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

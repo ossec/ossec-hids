@@ -628,10 +628,11 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch)
         free(new_key_full);
     }
 
-    /* Get values (if available) */
-    if (value_count) {
-        os_winreg_queryvalues(hKey, full_key_name, arch, value_count);
-    }
+    /* Baseline every opened key, including those with no values. An empty
+     * dump hashes to a stable sum so create/delete of empty keys is
+     * visible (Antigravity Defect 8); adding the first value then looks
+     * like a normal checksum change. */
+    os_winreg_queryvalues(hKey, full_key_name, arch, value_count);
 }
 
 /* Open the registry key */
