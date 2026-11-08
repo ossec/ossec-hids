@@ -36,6 +36,10 @@ int create_db(void);
 /* Check database for changes */
 int run_dbcheck(void);
 
+/* After a complete scan of dir, alert/delete cached paths that are gone.
+ * Do not call after an incomplete walk (offline share, open failure). */
+void syscheck_reconcile_missing(const char *dir);
+
 /* 1 if dir + optional '/' + name + NUL fits in PATH_MAX (ANT-2026-1UF4D24F).
  * needs_sep: 1 when Join will insert a separator. */
 int OS_SyscheckEntryFits(size_t dir_size, size_t name_len, int needs_sep);

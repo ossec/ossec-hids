@@ -952,9 +952,18 @@ int run_dbcheck()
 
     __counter = 0;
     while (syscheck.dir[i] != NULL) {
-        read_dir_depth = 0;
-        read_dir_depth_warned = 0;
-        read_dir(syscheck.dir[i], syscheck.opts[i], syscheck.filerestrict[i]);
+        /* Periodic walks only see names that still exist. After a complete
+         * tree pass, drop cached paths that are gone (Windows FindFirstFile
+         * and Unix readdir share this gap without realtime). An incomplete
+         * walk must not look like a mass delete. */
+        if (read_dir_complete(syscheck.dir[i], syscheck.opts[i],
+                              syscheck.filerestrict[i]) == 0) {
+            syscheck_reconcile_missing(syscheck.dir[i]);
+        } else {
+            merror("%s: WARN: syscheck scan of '%s' incomplete; "
+                   "skipping delete reconciliation.",
+                   ARGV0, syscheck.dir[i]);
+        }
         i++;
     }
 
