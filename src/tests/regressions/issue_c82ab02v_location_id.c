@@ -12,14 +12,16 @@
  * Build (from src/):
  *   make -f tests/regressions/Makefile issue_c82ab02v_location_id
  *
- * Run (from the repo root or from src/):
- *   ./issue_c82ab02v_location_id
+ * Run from the repo root, src/, or elsewhere; paths are resolved by walking
+ * parents for src/os_dbd/ assets and ossec-hids.spec (all tracked in the tree).
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
+#include <unistd.h>
 
 static int failures = 0;
 
@@ -71,16 +73,81 @@ static char *read_file(const char *path)
     return buf;
 }
 
-/* Try the repo-root path, then the src/ path. */
-static char *read_either(const char *root_path, const char *src_path)
+/* Resolve a repo-relative path from cwd or argv0, walking parents. */
+static int find_repo_file(const char *argv0, const char *rel,
+                          char *found, size_t found_sz)
 {
+    char start[PATH_MAX];
+    char dir[PATH_MAX];
+    int depth;
+    int n;
+    size_t rlen = strlen(rel);
+
+    if (access(rel, R_OK) == 0) {
+        n = snprintf(found, found_sz, "%s", rel);
+        return (n > 0 && (size_t)n < found_sz) ? 0 : -1;
+    }
+
+    start[0] = '\0';
+    if (argv0 && argv0[0]) {
+        if (argv0[0] == '/') {
+            n = snprintf(start, sizeof(start), "%s", argv0);
+        } else if (getcwd(dir, sizeof(dir))) {
+            n = snprintf(start, sizeof(start), "%s/%s", dir, argv0);
+        } else {
+            n = -1;
+        }
+        if (n > 0 && (size_t)n < sizeof(start)) {
+            char *slash = strrchr(start, '/');
+            if (slash) {
+                *slash = '\0';
+            }
+        } else {
+            start[0] = '\0';
+        }
+    }
+    if (!start[0] && !getcwd(start, sizeof(start))) {
+        return -1;
+    }
+
+    n = snprintf(dir, sizeof(dir), "%s", start);
+    if (n < 0 || (size_t)n >= sizeof(dir)) {
+        return -1;
+    }
+    for (depth = 0; depth < 8; depth++) {
+        if (strlen(dir) + 1 + rlen + 1 > found_sz) {
+            break;
+        }
+        n = snprintf(found, found_sz, "%s/%s", dir, rel);
+        if (n > 0 && (size_t)n < found_sz && access(found, R_OK) == 0) {
+            return 0;
+        }
+        {
+            char *slash = strrchr(dir, '/');
+            if (!slash || slash == dir) {
+                break;
+            }
+            *slash = '\0';
+        }
+    }
+    return -1;
+}
+
+static char *read_repo_file(const char *argv0, const char *rel_a, const char *rel_b)
+{
+    char path[PATH_MAX];
     char *buf;
 
-    buf = read_file(root_path);
-    if (buf) {
-        return buf;
+    if (find_repo_file(argv0, rel_a, path, sizeof(path)) == 0) {
+        buf = read_file(path);
+        if (buf) {
+            return buf;
+        }
     }
-    return read_file(src_path);
+    if (rel_b && find_repo_file(argv0, rel_b, path, sizeof(path)) == 0) {
+        return read_file(path);
+    }
+    return NULL;
 }
 
 /* Body of "CREATE TABLE ... <name>" through the closing paren. */
@@ -190,12 +257,13 @@ static void check_table(const char *sql, const char *table, const char *column, 
     expect(body != NULL && column_is_int_unsigned(body, end, column), msg);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     char *mysql;
     char *convert;
     char *upgrade;
     char *spec;
+    const char *argv0 = (argc > 0) ? argv[0] : NULL;
     const char *alert_alter = "ALTER TABLE alert MODIFY location_id INT UNSIGNED NOT NULL;";
     const char *loc_alter = "ALTER TABLE location MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT;";
     const char *alert_at;
@@ -203,22 +271,23 @@ int main(void)
 
     printf("MySQL location id width\n");
 
-    mysql = read_either("src/os_dbd/mysql.schema", "os_dbd/mysql.schema");
+    mysql = read_repo_file(argv0, "src/os_dbd/mysql.schema", "os_dbd/mysql.schema");
     expect(mysql != NULL, "mysql.schema is readable");
     if (mysql) {
         check_table(mysql, "location", "id", "location.id is INT UNSIGNED");
         check_table(mysql, "alert", "location_id", "alert.location_id is INT UNSIGNED");
     }
 
-    convert = read_either("src/os_dbd/convert-db-ipv6.sql", "os_dbd/convert-db-ipv6.sql");
+    convert = read_repo_file(argv0, "src/os_dbd/convert-db-ipv6.sql",
+                             "os_dbd/convert-db-ipv6.sql");
     expect(convert != NULL, "convert-db-ipv6.sql is readable");
     if (convert) {
         check_table(convert, "alert_ipv6", "location_id",
                     "alert_ipv6.location_id is INT UNSIGNED");
     }
 
-    upgrade = read_either("src/os_dbd/upgrade-location-id-mysql.sql",
-                          "os_dbd/upgrade-location-id-mysql.sql");
+    upgrade = read_repo_file(argv0, "src/os_dbd/upgrade-location-id-mysql.sql",
+                             "os_dbd/upgrade-location-id-mysql.sql");
     expect(upgrade != NULL, "upgrade script is present");
     if (upgrade) {
         alert_at = strstr(upgrade, alert_alter);
@@ -231,7 +300,7 @@ int main(void)
                "upgrade widens alert_ipv6 only when that table exists");
     }
 
-    spec = read_either("ossec-hids.spec", "../ossec-hids.spec");
+    spec = read_repo_file(argv0, "ossec-hids.spec", NULL);
     expect(spec != NULL, "ossec-hids.spec is readable");
     if (spec) {
         expect(strstr(spec, "upgrade-location-id-mysql.sql") != NULL,
