@@ -558,6 +558,21 @@ int Read_Syscheck(XML_NODE node, void *configp, __attribute__((unused)) void *ma
 #ifdef WIN32
             ExpandEnvironmentStrings(node[i]->content, dirs, sizeof(dirs) - 1);
             os_normalize_path(dirs);
+            /* 32-bit agents on 64-bit Windows redirect System32 to SysWOW64.
+             * Remap to Sysnative so configured System32 paths watch native
+             * 64-bit binaries (Antigravity Defect 9). Explicit Sysnative /
+             * SysWOW64 entries are left alone. */
+            if (os_win_is_wow64()) {
+                char remapped[OS_MAXSTR];
+
+                if (os_win_sysnative_rewrite(dirs, remapped, sizeof(remapped))) {
+                    merror("%s: INFO: WoW64 agent remapping syscheck path "
+                           "'%s' -> '%s' (native System32 via Sysnative).",
+                           __local_name, dirs, remapped);
+                    strncpy(dirs, remapped, sizeof(dirs) - 1);
+                    dirs[sizeof(dirs) - 1] = '\0';
+                }
+            }
 #else
             strncpy(dirs, node[i]->content, sizeof(dirs) - 1);
 #endif

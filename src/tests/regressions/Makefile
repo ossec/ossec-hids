@@ -103,6 +103,7 @@ REGRESSION_BINS = \
 	issue_fim_periodic_delete \
 	issue_fim_registry_delete \
 	issue_fim_registry_empty_key \
+	issue_fim_wow64_sysnative \
 	issue_6wl10qqz_dir_depth \
 	issue_2d3xma3w_decoder_field_leak \
 	issue_tzmhdq9m_decoder_info_race \
@@ -449,6 +450,12 @@ issue_7odkfi8f_alert_day_read: \
 		shared/file-queue-7odk.o \
 		-Wl,--start-group shared.a os_regex.a -Wl,--end-group \
 		-lpcre2-8 -lm -lpthread -lssl -lcrypto
+
+# Antigravity Defect 9: WoW64 System32 paths remap to Sysnative.
+issue_fim_wow64_sysnative: \
+		tests/regressions/issue_fim_wow64_sysnative.c shared/win_path.c
+	$(CC) $(CFLAGS) -o $@ \
+		tests/regressions/issue_fim_wow64_sysnative.c shared/win_path.c
 
 # Antigravity Defect 8: empty registry keys are still baselined.
 issue_fim_registry_empty_key: \
