@@ -9,11 +9,16 @@
  *
  * Build (from src/ after make TARGET=server):
  *   make -f tests/regressions/Makefile issue_7me0g28i_decoder_redos
+ *
+ * The binary may be launched from src/, the repo root, or elsewhere; path
+ * search walks up from cwd (and from argv[0]) for etc/decoder.xml.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -48,6 +53,77 @@ static char *read_file(const char *path, size_t *out_len)
         *out_len = n;
     }
     return buf;
+}
+
+/* Resolve etc/decoder.xml from cwd or argv0 dir, walking parents. */
+static char *find_decoder_xml(const char *argv0, char *found, size_t found_sz)
+{
+    static const char *rel[] = {
+        "etc/decoder.xml",
+        "../etc/decoder.xml",
+        "../../etc/decoder.xml",
+        NULL
+    };
+    char start[PATH_MAX];
+    char dir[PATH_MAX];
+    size_t i;
+    size_t dlen;
+    int depth;
+    int n;
+
+    for (i = 0; rel[i]; i++) {
+        if (access(rel[i], R_OK) == 0) {
+            n = snprintf(found, found_sz, "%s", rel[i]);
+            if (n > 0 && (size_t)n < found_sz) {
+                return found;
+            }
+        }
+    }
+
+    start[0] = '\0';
+    if (argv0 && argv0[0]) {
+        if (argv0[0] == '/') {
+            n = snprintf(start, sizeof(start), "%s", argv0);
+        } else if (getcwd(dir, sizeof(dir))) {
+            n = snprintf(start, sizeof(start), "%s/%s", dir, argv0);
+        } else {
+            n = -1;
+        }
+        if (n > 0 && (size_t)n < sizeof(start)) {
+            char *slash = strrchr(start, '/');
+            if (slash) {
+                *slash = '\0';
+            }
+        } else {
+            start[0] = '\0';
+        }
+    }
+    if (!start[0] && !getcwd(start, sizeof(start))) {
+        return NULL;
+    }
+
+    n = snprintf(dir, sizeof(dir), "%s", start);
+    if (n < 0 || (size_t)n >= sizeof(dir)) {
+        return NULL;
+    }
+    for (depth = 0; depth < 8; depth++) {
+        dlen = strlen(dir);
+        if (dlen + sizeof("/etc/decoder.xml") > found_sz) {
+            break;
+        }
+        n = snprintf(found, found_sz, "%s/etc/decoder.xml", dir);
+        if (n > 0 && (size_t)n < found_sz && access(found, R_OK) == 0) {
+            return found;
+        }
+        {
+            char *slash = strrchr(dir, '/');
+            if (!slash || slash == dir) {
+                break;
+            }
+            *slash = '\0';
+        }
+    }
+    return NULL;
 }
 
 /* Concatenate consecutive <tag>...</tag> bodies after marker, until a
@@ -229,7 +305,7 @@ static char *build_barracuda_hostile(void)
     return buf;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     int failed = 0;
     char *xml;
@@ -238,25 +314,21 @@ int main(void)
     char *bar_pre;
     char *win_hostile;
     char *bar_hostile;
-    const char *paths[] = {
-        "../etc/decoder.xml",
-        "etc/decoder.xml",
-        NULL
-    };
-    const char *path = NULL;
-    int i;
+    char found[PATH_MAX];
+    const char *path;
 
+    (void)argc;
     printf("=== ANT-2026-7ME0G28I: windows1/barracuda-svf1 ReDoS ===\n");
 
-    for (i = 0; paths[i]; i++) {
-        xml = read_file(paths[i], NULL);
-        if (xml) {
-            path = paths[i];
-            break;
-        }
+    path = find_decoder_xml(argv[0], found, sizeof(found));
+    if (!path) {
+        printf("FAIL: cannot find etc/decoder.xml "
+               "(tried cwd/argv parents; file lives at repo etc/decoder.xml)\n");
+        return 1;
     }
+    xml = read_file(path, NULL);
     if (!xml) {
-        printf("FAIL: cannot read etc/decoder.xml\n");
+        printf("FAIL: cannot read %s\n", path);
         return 1;
     }
     printf("using %s\n", path);
