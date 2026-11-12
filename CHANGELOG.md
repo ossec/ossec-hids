@@ -1,4 +1,4 @@
-**OSSEC changelog (4.5.0 — unreleased) <support@atomicorp.com>**
+**OSSEC changelog (4.5.0) <support@atomicorp.com>**
 
 **Release Maintainers**
 
@@ -10,7 +10,7 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 **Release Notes**
 
-Unrelease 4.5.0 changes
+4.5.0 changes
 
 **General**
 
