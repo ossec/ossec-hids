@@ -97,9 +97,15 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ip
         hints.ai_family = ip_family;
         hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;
     } else if (ipv6 == OS_BIND_IPV6_NO) {
-        /* No local_ip, ipv6 disabled: IPv4 wildcard only. */
+        /* No local_ip, ipv6 disabled: IPv4 wildcard only.
+         *
+         * Do not set AI_ADDRCONFIG. glibc treats loopback as unconfigured for
+         * that flag, so getaddrinfo(NULL, ...) fails with EAI_NONAME on
+         * loopback-only / early-boot / many container hosts — remoted and
+         * authd would never bind 0.0.0.0.
+         */
         hints.ai_family = AF_INET;
-        hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
+        hints.ai_flags = AI_PASSIVE;
     } else {
        /*
         * No local_ip (or a non-numeric host): dual-stack wildcard.
@@ -112,21 +118,23 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ip
         * original code for AF_INET6 was left for Linux because it works.
         *
         * d. stoddard - 4/19/2018
+        *
+        * AI_PASSIVE only (no AI_ADDRCONFIG): same loopback-only trap as above.
         */
 
 #if defined(__linux__) && !defined(NOV4MAP)
 #if defined (AI_V4MAPPED)
         hints.ai_family = AF_INET6;		/* Allow IPv4 and IPv6 */
-        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG | AI_V4MAPPED;
+        hints.ai_flags  = AI_PASSIVE | AI_V4MAPPED;
 #else
         /* handle as normal IPv4 and IPv6 multi request */
         hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
+        hints.ai_flags  = AI_PASSIVE;
 #endif /* AI_V4MAPPED */
 #else
         /* FreeBSD, OpenBSD, NetBSD, and others */
         hints.ai_family = AF_UNSPEC;	/* Allow IPv4 or IPv6 */
-        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
+        hints.ai_flags  = AI_PASSIVE;
 #endif
     }
 
@@ -152,7 +160,7 @@ OSNetInfo *OS_Bindport(char *_port, unsigned int _proto, const char *_ip, int ip
 #endif
         )) {
         hints.ai_family = AF_INET;
-        hints.ai_flags  = AI_PASSIVE | AI_ADDRCONFIG;
+        hints.ai_flags  = AI_PASSIVE;
         s = getaddrinfo(_ip, _port, &hints, &result);
     }
 

@@ -113,8 +113,9 @@ static void test_win_registry_uses_binary(void)
           "checksum temp is opened with \"wb\"");
     CHECK(source_has(src, "OS_MD5_SHA1_File(SYS_REG_TMP, mf_sum, sf_sum, OS_BINARY)"),
           "checksum temp is hashed with OS_BINARY");
-    CHECK(source_has(src, "fopen(SYS_WIN_REG, \"w+b\")"),
-          "registry DB is opened with \"w+b\"");
+    CHECK(source_has(src, "fopen(SYS_WIN_REG, \"r+b\")") ||
+          source_has(src, "fopen(SYS_WIN_REG, \"w+b\")"),
+          "registry DB is opened in binary mode (r+b or w+b)");
 }
 
 int main(void)

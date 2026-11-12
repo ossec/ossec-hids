@@ -293,6 +293,11 @@ int main(int argc, char **argv)
         agentname = lhostname;
     }
 
+    if (!OS_IsValidName(agentname)) {
+        merror("%s: ERROR: Invalid agent name: %s", ARGV0, agentname);
+        exit(1);
+    }
+
     /* Start SSL */
     ctx = os_ssl_keys(0, dir, ciphers, agent_cert, agent_key, ca_cert);
     if (!ctx) {

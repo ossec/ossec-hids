@@ -22,7 +22,6 @@
 #   - issue_correlation_agent_shard    location EventList isolation +
 #                                      if_matched_sid cross-location
 #   - issue_1748_sid_list_crash        sid_prev_matched overflow + free callback
-#   - issue_group_list_uaf             Free_Eventinfo unlinks its group_prev_matched nodes
 #   - issue_prev_matched_race          if_matched_sid list lock across match threads
 #   - issue_1274_auth_ipv6_key         auth IPv6 key handling
 #   - issue_2065_sender_counter        sender_counter isolated from agent 0 rids
@@ -30,6 +29,7 @@
 #   - issue_ja2nxew1_reject_log        remoted pre-auth reject log burst limit
 #   - issue_739qmecr_readsecmsg_uncompress  ReadSecMSG inflate respects buffer_max
 #   - issue_1611_local_ip_bind         remoted local_ip / ipv6 bind family
+#   - issue_addrconfig_wildcard_bind   ipv6=no wildcard bind without AI_ADDRCONFIG
 #   - issue_1668_agent_hostname        agent name vs device hostname split;
 #                                      accumulator scoped per agent (ZQN8MYKG)
 #   - issue_1668_ossecalert_hostname   OSSECAlert decoder vs owned hostname (double free)
@@ -60,6 +60,11 @@
 #   - issue_h2jmyhxz_maild_subject_underflow  mail subject cut no location[-1] write
 #   - issue_3wkk50ne_oshash_collisions        OSHash resists Thue-Morse key collisions
 #   - issue_8sti0q1e_syscheck_linear_miss     no linear DB scan on healthy index miss
+#   - issue_fim_periodic_delete               periodic FIM reconciles missing files
+#   - issue_fim_registry_delete               registry FIM emits -1 for deleted keys
+#   - issue_fim_registry_empty_key            empty registry keys are baselined
+#   - issue_fim_wow64_sysnative               WoW64 System32 remaps to Sysnative
+#   - issue_authd_name_traversal              OS_IsValidName rejects .. / .hidden
 #
 # Also invoked from `make regression` (own Makefiles):
 #   - src/os_maild/tests               mail list, SMS queue, shutdown gate, mail utils

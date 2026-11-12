@@ -1271,7 +1271,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                 if (id_pcre2) {
                     os_calloc(1, sizeof(OSPcre2), config_ruleinfo->id_pcre2);
                     if (!OSPcre2_Compile(id_pcre2, config_ruleinfo->id_pcre2, PCRE2_CASELESS)) {
-                        merror(REGEX_COMPILE, ARGV0, id,
+                        merror(REGEX_COMPILE, ARGV0, id_pcre2,
                                config_ruleinfo->id_pcre2->error);
                         return (-1);
                     }
@@ -1284,7 +1284,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                     os_calloc(1, sizeof(OSMatch), config_ruleinfo->srcport);
                     if (!OSMatch_Compile(srcport, config_ruleinfo->srcport, 0)) {
                         merror(REGEX_COMPILE, ARGV0, srcport,
-                               config_ruleinfo->id->error);
+                               config_ruleinfo->srcport->error);
                         return (-1);
                     }
                     free(srcport);
@@ -1294,7 +1294,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                     os_calloc(1, sizeof(OSPcre2), config_ruleinfo->srcport_pcre2);
                     if (!OSPcre2_Compile(srcport_pcre2, config_ruleinfo->srcport_pcre2, PCRE2_CASELESS)) {
                         merror(REGEX_COMPILE, ARGV0, srcport_pcre2,
-                               config_ruleinfo->id->error);
+                               config_ruleinfo->srcport_pcre2->error);
                         return (-1);
                     }
                     free(srcport_pcre2);
@@ -1306,7 +1306,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                     os_calloc(1, sizeof(OSMatch), config_ruleinfo->dstport);
                     if (!OSMatch_Compile(dstport, config_ruleinfo->dstport, 0)) {
                         merror(REGEX_COMPILE, ARGV0, dstport,
-                               config_ruleinfo->id->error);
+                               config_ruleinfo->dstport->error);
                         return (-1);
                     }
                     free(dstport);
@@ -1316,7 +1316,7 @@ int Rules_OP_ReadRules(const char *rulefile)
                     os_calloc(1, sizeof(OSPcre2), config_ruleinfo->dstport_pcre2);
                     if (!OSPcre2_Compile(dstport_pcre2, config_ruleinfo->dstport_pcre2, PCRE2_CASELESS)) {
                         merror(REGEX_COMPILE, ARGV0, dstport_pcre2,
-                               config_ruleinfo->id->error);
+                               config_ruleinfo->dstport_pcre2->error);
                         return (-1);
                     }
                     free(dstport_pcre2);

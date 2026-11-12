@@ -110,6 +110,18 @@ int w_ref_parent_folder_ex(const char *path, int win_seps);
  */
 int os_win_network_path(const char *path);
 
+/* Rewrite a System32 path component to Sysnative (WoW64 native view).
+ * Returns 1 when out was filled with a rewritten path, 0 when unchanged
+ * (already Sysnative/SysWOW64, no System32 component, or overflow).
+ * Pure string transform — callers gate on WoW64 (Antigravity Defect 9).
+ */
+int os_win_sysnative_rewrite(const char *in, char *out, size_t n);
+
+#ifdef WIN32
+/* 1 when this process is 32-bit on a 64-bit Windows host (WoW64). */
+int os_win_is_wow64(void);
+#endif
+
 void remove_control_characters(char *str);
 
 /* When preserve_nl is non-zero, '\\n' and '\\t' are kept (syscheck
