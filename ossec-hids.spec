@@ -21,7 +21,7 @@
 Summary:     An Open Source Host-based Intrusion Detection System
 Name:        ossec-hids
 Epoch: 1
-Version:     4.4.0
+Version:     4.5.0
 Release:     1%{?dist}.art
 License:     GPL
 Group:       Applications/System
@@ -788,6 +788,9 @@ fi
 
 # Changes
 %changelog
+* Thu Nov 12 2026 Support <support@atomicorp.com> - 4.5.0-1
+- Update to 4.5.0
+
 * Tue Sep 15 2026 Support <support@atomicorp.com> - 4.4.0-1
 - Update to 4.4.0
 - Honor %{_smp_mflags} for parallel make in %build
