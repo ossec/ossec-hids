@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-import ConfigParser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import subprocess
 import os
 import sys
@@ -11,13 +14,13 @@ class OssecTester(object):
         self._error = False
         self._debug = False
         self._quiet = False
-        self._ossec_conf = "/var/ossec/etc/ossec.conf"
-        self._base_dir = "/var/ossec/"
-        self._ossec_path = "/var/ossec/bin/"
+        self._base_dir = os.environ.get("OSSEC_PREFIX", "/var/ossec").rstrip("/")
+        self._ossec_conf = os.environ.get("OSSEC_CONF", os.path.join(self._base_dir, "etc/ossec.conf"))
+        self._ossec_path = os.environ.get("OSSEC_BIN", os.path.join(self._base_dir, "bin"))
         self._test_path = "./tests"
 
     def buildCmd(self, rule, alert, decoder):
-        cmd = ['%s/ossec-logtest' % (self._ossec_path), ]
+        cmd = [os.path.join(self._ossec_path, 'ossec-logtest')]
         cmd += ['-q']
         if self._ossec_conf:
             cmd += ["-c", self._ossec_conf]
@@ -29,28 +32,32 @@ class OssecTester(object):
     def runTest(self, log, rule, alert, decoder, section, name, negate=False,
                  user=None):
         #print self.buildCmd(rule, alert, decoder)
+        if isinstance(log, str):
+            log_bytes = log.encode("utf-8")
+        else:
+            log_bytes = log
         p = subprocess.Popen(
                 self.buildCmd(rule, alert, decoder),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.PIPE,
                 shell=False)
-        std_out = p.communicate(log)[0]
+        std_out = p.communicate(log_bytes)[0].decode("utf-8", errors="replace")
         if (p.returncode != 0 and not negate) or (p.returncode == 0 and negate):
             self._error = True
-            print ""
-            print "-" * 60
-            print "Failed: Exit code = %s" % (p.returncode)
-            print "        Alert     = %s" % (alert)
-            print "        Rule      = %s" % (rule)
-            print "        Decoder   = %s" % (decoder)
-            print "        Section   = %s" % (section)
-            print "        line name = %s" % (name)
-            print " "
-            print std_out
+            print("")
+            print("-" * 60)
+            print("Failed: Exit code = %s" % (p.returncode))
+            print("        Alert     = %s" % (alert))
+            print("        Rule      = %s" % (rule))
+            print("        Decoder   = %s" % (decoder))
+            print("        Section   = %s" % (section))
+            print("        line name = %s" % (name))
+            print(" ")
+            print(std_out)
         elif user and not negate:
             # Optional decoded-user check via a verbose logtest pass.
-            vcmd = ['%s/ossec-logtest' % (self._ossec_path), '-q', '-v']
+            vcmd = [os.path.join(self._ossec_path, 'ossec-logtest'), '-q', '-v']
             if self._ossec_conf:
                 vcmd += ["-c", self._ossec_conf]
             if self._base_dir:
@@ -61,7 +68,7 @@ class OssecTester(object):
                     stderr=subprocess.STDOUT,
                     stdin=subprocess.PIPE,
                     shell=False)
-            vout = vp.communicate(log)[0]
+            vout = vp.communicate(log_bytes)[0].decode("utf-8", errors="replace")
             # The header user and the Account Name user are both printed.
             # The last dstuser is the one the decoder kept.
             last = None
@@ -76,25 +83,27 @@ class OssecTester(object):
                     last = line[start:end]
             if last != user:
                 self._error = True
-                print ""
-                print "-" * 60
-                print "Failed: decoded user mismatch"
-                print "        Expected = %s" % (user,)
-                print "        Last     = %s" % (last,)
-                print "        Section  = %s" % (section,)
-                print "        line name = %s" % (name,)
-                print " "
-                print vout
+                print("")
+                print("-" * 60)
+                print("Failed: decoded user mismatch")
+                print("        Expected = %s" % (user,))
+                print("        Last     = %s" % (last,))
+                print("        Section  = %s" % (section,))
+                print("        line name = %s" % (name,))
+                print(" ")
+                print(vout)
             elif self._debug:
-                print "Exit code= %s" % (p.returncode)
-                print std_out
+                print("Exit code= %s" % (p.returncode))
+                print(std_out)
             else:
                 sys.stdout.write(".")
+                sys.stdout.flush()
         elif self._debug:
-            print "Exit code= %s" % (p.returncode)
-            print std_out
+            print("Exit code= %s" % (p.returncode))
+            print(std_out)
         else:
             sys.stdout.write(".")
+            sys.stdout.flush()
 
     def run(self, selective_test=False):
         for aFile in os.listdir(self._test_path):
@@ -102,8 +111,11 @@ class OssecTester(object):
             if aFile.endswith(".ini"):
                 if selective_test and not aFile.endswith(selective_test):
                     continue
-                print "- [ File = %s ] ---------" % (aFile)
-                tGroup = ConfigParser.ConfigParser()
+                print("- [ File = %s ] ---------" % (aFile))
+                try:
+                    tGroup = configparser.ConfigParser(interpolation=None, strict=False)
+                except TypeError:
+                    tGroup = configparser.RawConfigParser()
                 tGroup.read([aFile])
                 tSections = tGroup.sections()
                 for t in tSections:
@@ -116,16 +128,17 @@ class OssecTester(object):
                     for (name, value) in tGroup.items(t):
                         if name.startswith("log "):
                             if self._debug:
-                                print "-" * 60
+                                print("-" * 60)
                             if name.endswith("pass"):
                                 neg = False
                             elif name.endswith("fail"):
                                 neg = True
                             else:
                                 neg = False
+                            value = value.replace("%%", "%")
                             self.runTest(value, rule, alert, decoder,
                                          t, name, negate=neg, user=user)
-                print ""
+                print("")
         if self._error:
             sys.exit(1)
 

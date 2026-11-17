@@ -23,6 +23,7 @@ static void logcollector_queue_send(const char *msg, const char *locmsg);
 int loop_timeout;
 int logr_queue;
 int open_file_attempts;
+int vcheck_files = VCHECK_FILES;
 logreader *logff;
 
 
@@ -412,6 +413,11 @@ void LogCollectorStart()
              */
             if ((r = fgetc(logff[i].fp)) == EOF) {
                 clearerr(logff[i].fp);
+                if (logff[i].file && stat(logff[i].file, &tmp_stat) == 0 &&
+                    (tmp_stat.st_ino != logff[i].fd ||
+                     tmp_stat.st_size < logff[i].size)) {
+                    f_check = vcheck_files + 1;
+                }
                 continue;
             }
 
@@ -425,8 +431,15 @@ void LogCollectorStart()
 
             /* Check for error */
             if (!ferror(logff[i].fp)) {
+                long pos;
+
                 /* Clear EOF */
                 clearerr(logff[i].fp);
+
+                pos = ftell(logff[i].fp);
+                if (pos >= 0 && (off_t)pos > logff[i].size) {
+                    logff[i].size = (off_t)pos;
+                }
 
                 /* Parsing error */
                 if (r != 0) {
@@ -473,8 +486,8 @@ void LogCollectorStart()
             }
         }
 
-        /* Only check below if check > VCHECK_FILES */
-        if (f_check <= VCHECK_FILES) {
+        /* Only check below if check > vcheck_files */
+        if (f_check <= vcheck_files) {
             continue;
         }
 
@@ -603,7 +616,8 @@ void LogCollectorStart()
 #endif
 
                     logff[i].fp = NULL;
-                    handle_file(i, 1, 1);
+                    handle_file(i, 0, 1);
+                    continue;
                 }
 #ifdef WIN32
                 else {
@@ -857,7 +871,7 @@ int handle_file(int i, int do_fseek, int do_log)
     }
 
     logff[i].fd = stat_fd.st_ino;
-    logff[i].size =  stat_fd.st_size;
+    logff[i].size = (do_fseek == 1 && S_ISREG(stat_fd.st_mode)) ? stat_fd.st_size : 0;
 
 
 #else
