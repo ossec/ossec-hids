@@ -10,6 +10,7 @@
 #ifndef __MD5SHA1_OP_H
 #define __MD5SHA1_OP_H
 
+#include <stdio.h>
 #include "../md5/md5_op.h"
 #include "../sha1/sha1_op.h"
 

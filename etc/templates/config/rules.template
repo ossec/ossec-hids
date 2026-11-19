@@ -66,6 +66,7 @@
     <include>exim_rules.xml</include>
     <include>openbsd-dhcpd_rules.xml</include>
     <include>dnsmasq_rules.xml</include>
+    <include>cpanel_rules.xml</include>
     <include>nsd_rules.xml</include>
     <include>unbound_rules.xml</include>
     <include>geoip_rules.xml</include>

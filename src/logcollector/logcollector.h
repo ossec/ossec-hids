@@ -98,6 +98,7 @@ void *sd_read_journal(int pos, int *rc, int drop_it);
 extern int loop_timeout;
 extern int logr_queue;
 extern int open_file_attempts;
+extern int vcheck_files;
 extern int max_lines;
 extern logreader *logff;
 

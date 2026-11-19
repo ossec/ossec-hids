@@ -479,7 +479,7 @@ int analysisd_analyze_event(Eventinfo *lf)
                     }
                 }
 
-                if (do_ar && analysisd_execdq > 0) {
+                if (do_ar && (analysisd_execdq > 0 || analysisd_arq > 0)) {
                     OS_Exec(analysisd_execdq, analysisd_arq, lf, *rule_ar);
                 }
                 rule_ar++;
