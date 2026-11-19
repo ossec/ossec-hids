@@ -25,7 +25,7 @@ The current stable releases are available on the ossec website.
 
 ## Development ##
 
-The development version is hosted on GitHub and just a simple git clone away.
+The development version is available on GitHub:
 
 [![Build Status](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/make-multi-platform.yml)
 [![CodeQL](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml/badge.svg)](https://github.com/ossec/ossec-hids/actions/workflows/codeql.yml)
@@ -46,21 +46,17 @@ The development version is hosted on GitHub and just a simple git clone away.
 
 Join us on slack, ossec.slack.com: Invites to slack@ossec.net
 
-Join us on Discord: https://discord.gg/BXzM75Xzq7
 
 ## Credits and Thanks ##
 
-* OSSEC comes with a modified version of zlib and a small part 
-  of openssl (sha1 and blowfish libraries)
-* This product includes software developed by the OpenSSL Project
-  for use in the OpenSSL Toolkit (http://www.openssl.org/)
-* This product includes cryptographic software written by Eric 
-  Young (eay@cryptsoft.com)
-* This product include software developed by the zlib project 
-  (Jean-loup Gailly and Mark Adler)
-* This product include software developed by the cJSON project 
-  (Dave Gamble)
-* [Atomicorp](https://www.atomicorp.com) hosting the annual OSSEC conference. Presentations for the 2019 conference can be found at https://www.atomicorp.com/ossec-con2019/
+* OSSEC bundles upstream zlib, cJSON, PCRE2, and Lua, and includes cryptographic routines from OpenSSL and SSLeay.
+* This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (https://www.openssl.org/).
+* This product includes cryptographic software written by Eric Young (eay@cryptsoft.com).
+* This product includes software developed by the zlib project (Jean-loup Gailly and Mark Adler).
+* This product includes software developed by the cJSON project (Dave Gamble).
+* This product includes software developed by the PCRE2 project (Philip Hazel and contributors).
+* This product includes software developed by the Lua project (Lua.org, PUC-Rio).
+* [Atomicorp](https://www.atomicorp.com) sponsors OSSEC development and hosts the annual OSSEC Conference (OSSEC Con).
 
 ## License
 
