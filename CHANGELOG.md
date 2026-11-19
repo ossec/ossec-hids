@@ -14,123 +14,123 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 **General**
 
-- @atomicturtle - Build ``ossec-authd`` with OpenSSL 4. The certificate IP check uses the ASN.1 string accessors, and the SSL context is TLS 1.2 through ``TLS_method()`` because ``TLSv1_2_method()`` is gone
-- @atomicturtle - Keep the device hostname from agent-forwarded syslog lines for ``<hostname>`` matching; expose the OSSEC agent as ``agent_name`` / ``<agent_name>``, match log paths with ``<location>`` / ``<location_pcre2>``, and keep JSON/diff keyed on the agent identity (#1668)
-- @atomicturtle - Follow-up fixes from review of the 4.4.0 changes: Solaris ``ginstall`` is required up front, remoted reads ``notify_time`` at startup, date-based logcollector reopen honors the open-attempt limit, Windows wildcard paths stay literal, the agent-table upgrade constraint is limited to ``agent``, the Windows install ACL is reset before the allow-list, ``agent-auth`` accepts either path separator, and realtime FIM stops retrying a file that stays unreadable
-- @atomicturtle - Rotate ``ossec.log`` on the daily monitord pass into ``logs/ossec/YYYY/Mon/ossec-DD.log``, then sign and compress it with the alert logs. Drop it from logrotate so ``copytruncate`` no longer races that file (#704)
-- @atomicturtle - Ignore the Windows Application Experience ``:Win32App_1`` NTFS stream in rootcheck (#758)
-- @atomicturtle - Honor ``monitord.notify_time`` for agent_control status and remoted send eligibility, not only monitord disconnect alerts (#874, #1022)
-- @atomicturtle - Allow CDB ``<list>`` matching on decoded ``system_name`` via ``field="system_name"`` (#628)
-- @atomicturtle - Windows agent install ACL allows only SYSTEM and Administrators (#182)
-- @atomicturtle - ``ossec-regex -p`` tests a pattern as PCRE2, with the same flags as a ``<pcre2>`` rule (#1845)
-- @atomicturtle - Extract User-Agent (and action/srcport) from default IIS W3C access logs (#989)
-- @atomicturtle - Allow silent Windows agent installs to skip IIS logging and integrity checking via `/IISLogging=no` and `/IntegrityChecking=no` (#1000)
-- @atomicturtle - Optional ``<report_new_files_as_changed>`` so post-baseline FIM creates are stored as ``!+++`` and listed by ``syscheck_control -i`` (#1831)
+- @atomicturtle - [PR 2458](https://github.com/ossec/ossec-hids/pull/2458) - Build ``ossec-authd`` with OpenSSL 4. The certificate IP check uses the ASN.1 string accessors, and the SSL context is TLS 1.2 through ``TLS_method()`` because ``TLSv1_2_method()`` is gone
+- @atomicturtle - [PR 2348](https://github.com/ossec/ossec-hids/pull/2348) - Keep the device hostname from agent-forwarded syslog lines for ``<hostname>`` matching; expose the OSSEC agent as ``agent_name`` / ``<agent_name>``, match log paths with ``<location>`` / ``<location_pcre2>``, and keep JSON/diff keyed on the agent identity ([#1668](https://github.com/ossec/ossec-hids/issues/1668))
+- @atomicturtle - [PR 2343](https://github.com/ossec/ossec-hids/pull/2343) - Follow-up fixes from review of the 4.4.0 changes: Solaris ``ginstall`` is required up front, remoted reads ``notify_time`` at startup, date-based logcollector reopen honors the open-attempt limit, Windows wildcard paths stay literal, the agent-table upgrade constraint is limited to ``agent``, the Windows install ACL is reset before the allow-list, ``agent-auth`` accepts either path separator, and realtime FIM stops retrying a file that stays unreadable
+- @atomicturtle - [PR 2341](https://github.com/ossec/ossec-hids/pull/2341) - Rotate ``ossec.log`` on the daily monitord pass into ``logs/ossec/YYYY/Mon/ossec-DD.log``, then sign and compress it with the alert logs. Drop it from logrotate so ``copytruncate`` no longer races that file ([#704](https://github.com/ossec/ossec-hids/issues/704))
+- @atomicturtle - [PR 2336](https://github.com/ossec/ossec-hids/pull/2336) - Ignore the Windows Application Experience ``:Win32App_1`` NTFS stream in rootcheck ([#758](https://github.com/ossec/ossec-hids/issues/758))
+- @atomicturtle - [PR 2327](https://github.com/ossec/ossec-hids/pull/2327) - Honor ``monitord.notify_time`` for agent_control status and remoted send eligibility, not only monitord disconnect alerts ([#874](https://github.com/ossec/ossec-hids/issues/874), [#1022](https://github.com/ossec/ossec-hids/issues/1022))
+- @atomicturtle - [PR 2326](https://github.com/ossec/ossec-hids/pull/2326) - Allow CDB ``<list>`` matching on decoded ``system_name`` via ``field="system_name"`` ([#628](https://github.com/ossec/ossec-hids/issues/628))
+- @atomicturtle - [PR 2322](https://github.com/ossec/ossec-hids/pull/2322) - Windows agent install ACL allows only SYSTEM and Administrators ([#182](https://github.com/ossec/ossec-hids/issues/182))
+- @atomicturtle - [PR 2320](https://github.com/ossec/ossec-hids/pull/2320) - ``ossec-regex -p`` tests a pattern as PCRE2, with the same flags as a ``<pcre2>`` rule ([#1845](https://github.com/ossec/ossec-hids/issues/1845))
+- @atomicturtle - [PR 2318](https://github.com/ossec/ossec-hids/pull/2318) - Extract User-Agent (and action/srcport) from default IIS W3C access logs ([#989](https://github.com/ossec/ossec-hids/issues/989))
+- @atomicturtle - [PR 2324](https://github.com/ossec/ossec-hids/pull/2324) - Allow silent Windows agent installs to skip IIS logging and integrity checking via `/IISLogging=no` and `/IntegrityChecking=no` ([#1000](https://github.com/ossec/ossec-hids/issues/1000))
+- @atomicturtle - [PR 2331](https://github.com/ossec/ossec-hids/pull/2331) - Optional ``<report_new_files_as_changed>`` so post-baseline FIM creates are stored as ``!+++`` and listed by ``syscheck_control -i`` ([#1831](https://github.com/ossec/ossec-hids/issues/1831))
 
 **Security Fixes**
 
-- @atomicturtle - Keep content hashes out of the ``report_changes`` diff command line. ``seechanges_addfile()`` named its temporary links after the SHA-256 of the old and new snapshots and passed those paths to ``system("diff ...")``, so any local user could read the unsalted hash of monitored (including root-only) files from ``ps`` / ``/proc``. The links are now ``syscheck-changes-<pid>-{old,new,diff}`` (ANT-2026-FZNF7ML7)
-- @atomicturtle - Keep the full file path in Unix FIM messages. ``read_file()`` and ``realtime_checksumfile()`` formatted ``<checksums> <path>`` with a stale 916/912 ``snprintf`` limit into an ``OS_MAXSTR`` buffer, so paths longer than about 757 characters were cut and every file under such a directory reached the manager under one truncated name that ``auto_ignore`` then muted. Those calls now use ``OS_MAXSTR`` like the Windows branches (ANT-2026-CH7FO833)
-- @atomicturtle - Free realtime inotify watch paths when directories disappear. ``realtime_adddir()`` stored every watch path in ``dirtb``, but ``realtime_process()`` never removed entries for nameless ``IN_IGNORED`` events, so a local user who could ``mkdir``/``rmdir`` under ``realtime="yes"`` grew root ``ossec-syscheckd`` without bound. ``IN_IGNORED`` now deletes and frees the entry, named events skip a missing watch, and ``IN_Q_OVERFLOW`` also purges stale descriptors (ANT-2026-ODWFEHAC)
-- @atomicturtle - Rescan realtime directories when the Linux inotify queue overflows. ``realtime_process()`` ignored the kernel ``IN_Q_OVERFLOW`` marker (``wd=-1``, no name), so events dropped from the shared queue were never logged or recovered until the next scheduled scan. Overflow now logs once and reuses the deferred ``rt_overflow_schedule()`` recovery already used on Windows, keeping ``CHECK_REALTIME`` on Linux so lost subdirectory creates still get watches (ANT-2026-NCIMIJXH)
-- @atomicturtle - Hash Windows registry values in binary mode so a Ctrl-Z in a value name or string cannot hide later values. ``syscheck_sum.tmp`` was written and read in text mode, and on Windows the CRT treats ``0x1a`` as EOF, so the MD5/SHA1 stopped early and no integrity alert fired. The checksum temp and ``syscheckregistry.db`` now use binary opens; keys without Ctrl-Z keep the same digests (ANT-2026-QL3RS46Y)
+- @atomicturtle - [PR 2481](https://github.com/ossec/ossec-hids/pull/2481) - Keep content hashes out of the ``report_changes`` diff command line. ``seechanges_addfile()`` named its temporary links after the SHA-256 of the old and new snapshots and passed those paths to ``system("diff ...")``, so any local user could read the unsalted hash of monitored (including root-only) files from ``ps`` / ``/proc``. The links are now ``syscheck-changes-<pid>-{old,new,diff}`` (ANT-2026-FZNF7ML7)
+- @atomicturtle - [PR 2480](https://github.com/ossec/ossec-hids/pull/2480) - Keep the full file path in Unix FIM messages. ``read_file()`` and ``realtime_checksumfile()`` formatted ``<checksums> <path>`` with a stale 916/912 ``snprintf`` limit into an ``OS_MAXSTR`` buffer, so paths longer than about 757 characters were cut and every file under such a directory reached the manager under one truncated name that ``auto_ignore`` then muted. Those calls now use ``OS_MAXSTR`` like the Windows branches (ANT-2026-CH7FO833)
+- @atomicturtle - [PR 2479](https://github.com/ossec/ossec-hids/pull/2479) - Free realtime inotify watch paths when directories disappear. ``realtime_adddir()`` stored every watch path in ``dirtb``, but ``realtime_process()`` never removed entries for nameless ``IN_IGNORED`` events, so a local user who could ``mkdir``/``rmdir`` under ``realtime="yes"`` grew root ``ossec-syscheckd`` without bound. ``IN_IGNORED`` now deletes and frees the entry, named events skip a missing watch, and ``IN_Q_OVERFLOW`` also purges stale descriptors (ANT-2026-ODWFEHAC)
+- @atomicturtle - [PR 2478](https://github.com/ossec/ossec-hids/pull/2478) - Rescan realtime directories when the Linux inotify queue overflows. ``realtime_process()`` ignored the kernel ``IN_Q_OVERFLOW`` marker (``wd=-1``, no name), so events dropped from the shared queue were never logged or recovered until the next scheduled scan. Overflow now logs once and reuses the deferred ``rt_overflow_schedule()`` recovery already used on Windows, keeping ``CHECK_REALTIME`` on Linux so lost subdirectory creates still get watches (ANT-2026-NCIMIJXH)
+- @atomicturtle - [PR 2477](https://github.com/ossec/ossec-hids/pull/2477) - Hash Windows registry values in binary mode so a Ctrl-Z in a value name or string cannot hide later values. ``syscheck_sum.tmp`` was written and read in text mode, and on Windows the CRT treats ``0x1a`` as EOF, so the MD5/SHA1 stopped early and no integrity alert fired. The checksum temp and ``syscheckregistry.db`` now use binary opens; keys without Ctrl-Z keep the same digests (ANT-2026-QL3RS46Y)
 
-- @atomicturtle - Skip Windows registry subkeys whose path no longer fits ``MAX_KEY``. ``os_winreg_querykey()`` opened the truncated ``snprintf`` result, so when the parent path was already 2047 characters the "subkey" was the parent again and the walk recursed until the syscheck thread stack ran out. Both the open path and the ``HKEY_``-prefixed full name are checked; an over-long key is logged with ``SK_REG_LONG`` and ignored (ANT-2026-SI19UF16)
-- @atomicturtle - Keep large registry value buffers off the recursive Windows FIM stack. ``os_winreg_querykey()`` held about 38 KB of ``RegEnumValue`` buffers on every frame, so roughly 55 nested keys under a monitored ``windows_registry`` entry overflowed the 2 MB syscheck thread and killed ``ossec-agent.exe``. Value hashing now runs in a non-recursive helper, and the subkey path buffers are heap-allocated for the walk (ANT-2026-583M5XOX)
-- @atomicturtle - Keep the last known FIM hash when a scan yields the ``xxx`` placeholder (for example a symlink whose target is gone). ``fim_sum_has_real_change()`` treats any hash transition involving ``xxx`` as quiet, and callers then stored the new sum, so retargeting a monitored link through a missing path (A → ``xxx`` → B) never compared A with B and raised no rule 550. ``fim_sum_keep_hashes()`` now carries real digests over placeholders in ``c_read_file()`` and ``DB_ProcessFoundEntry()`` before compare and store (ANT-2026-YO3OMSC0)
-- @atomicturtle - Stop a crafted rootcheck path from spoofing ``SyscheckFile`` fields. ``rk_extract_hashes()`` ended the path at the first quote and took each hash from the first ``MD5``/``SHA1``/``SHA256`` label, so a directory name that embeds those tokens could replace the real path and digests in ``alerts.json``. The decoder now keeps only a complete hex triple at the end of Rootkit/Anomaly/Trojaned messages and ends the path at the fixed text in front of it; a truncated hash-less Anomaly message is marked with ``...`` so a cut path cannot fake that ending (ANT-2026-0UFTKHQJ)
-- @atomicturtle - Forward every complete line from a syslog-over-TCP ``recv()``. ``ossec-remoted`` cut at the first newline and parked the rest without scanning again, so lines that shared a segment were glued onto the next segment as one event, or dropped on close, CRLF, or a full buffer. The worker now appends into the incomplete prefix and drains every complete line before the next read (ANT-2026-2BEPXI8W)
-- @atomicturtle - Stop daily reports from leaking per alert in ``ossec-monitord``. ``os_ReportdStart()`` left the ``OS_StrBreak()`` group array and the top-entry list nodes behind; with reports running in a thread that memory stayed for the life of the daemon. The group array is freed after the loop, and each top-entry list's nodes are released with the hash table (covered with ANT-2026-AVE66YB6) (ANT-2026-M3W3LJEQ)
-- @atomicturtle - Bound every plain SMTP socket in ``ossec-maild`` and ``ossec-monitord`` to 60 seconds per reply or write. ``OS_Sendmail()`` read through a bare ``recv()`` with no timeout, so a relay that accepted and stayed silent held a sender thread forever. After ``maild.max_workers`` such threads, no further alert e-mail was sent until ``ossec-maild`` was restarted. A timed-out read fails like any other failed reply and releases the worker (ANT-2026-FR6DKH31)
-- @atomicturtle - Keep a timed-out active response listed until its ``delete`` has exited. ``ossec-execd`` forked ``delete`` and dropped the entry at once, so the next alert for that address could run ``add`` while ``delete`` was still running. A set-style target such as ``hosts.deny`` or a PF table then lost the block, and later alerts skipped the script because execd still listed the address. A request for that same script and address now waits for the in-flight ``delete`` and is then a new block. A request for a different address does not wait (ANT-2026-8WBHQ0QF)
-- @atomicturtle - Keep a backslash-escaped space inside one ``ossec-execd`` argument. ``OS_Exec()`` escaped a syscheck file name, but ``ExecdStart()`` cut the request at every space and passed the pieces to ``execv()``. A space in a monitored name became an extra argument of a root script that expects ``filename``, for example ``/etc/shadow`` or ``-f``. The name still arrives escaped (``/srv/uploads/x\ /etc/shadow``). A location that ends in a backslash is dropped, because it would join with the file name. A location that contains a backslash and a space stays one argument. Windows ``ossec-execd`` already keeps the remainder of the request as one quoted field (ANT-2026-Z12L5BYR)
-- @atomicturtle - Give ``ossec-execd`` one spelling of a literal address before it compares, stores, or runs a block. ``2001:DB8::7`` and ``2001:db8::7`` were two timeouts, so ``pf.sh`` deleted the one PF entry at the first timeout while execd still counted the other spelling as blocked. Later alerts then skipped the add. A ``::ffff:`` address is handed to the script as its IPv4 form, which is what analysisd already does. Host names, ``-``, CIDR, and a leading ``!`` are unchanged (ANT-2026-PTTDW7PW)
-- @atomicturtle - Keep the closing quote when ``ossec-dbd`` stores a long ``srcip`` or ``dstip``. ``sql_nullable_str()`` wrote the address into a 49-byte buffer, so 47 characters or more cut off the quote and both MySQL and PostgreSQL rejected the ``INSERT``. The address is now cut to the 46-character column width and the alert is stored. The full log line is unchanged (ANT-2026-SEE999RQ)
-- @atomicturtle - Widen the MySQL location id from ``SMALLINT UNSIGNED`` to ``INT UNSIGNED``. ``location.id`` stopped at 65,535, so one agent sending a new location per alert filled the counter and ``ossec-dbd`` then dropped every alert whose location was not already stored. Existing databases stay 16-bit until ``upgrade-location-id-mysql.sql`` is applied. PostgreSQL already uses ``SERIAL`` (ANT-2026-C82AB02V)
-- @atomicturtle - Do not follow a symlink when ``ossec-dbd`` reads ``queue/agent-info``. That directory belongs to ``ossecr`` and ``ossec-dbd`` runs as root, so ``stat`` and ``fopen`` copied the first line of the link target into the agent table, including a root-only file. A keepalive is stored only when it is one regular file (ANT-2026-5Z4OX04E)
-- @atomicturtle - Do not follow a symlink when ``manage_agents`` removes an agent database. ``delete_syscheck()`` and ``delete_rootcheck()`` opened fixed names under ``queue/syscheck`` and ``queue/rootcheck`` with ``fopen`` in write mode. Those directories belong to ``ossec``, and ``manage_agents`` still runs as root, so a link planted there truncated or created any file under the install, including ``etc/ossec.conf``. The cleanup now truncates only a regular file with a single link and does not create a missing name (ANT-2026-AJJELLSQ)
-- @atomicturtle - Stop one wildcard ``<location>`` from opening every match. ``logcollector.max_wildcard_files`` (default 256) keeps the first matches and logs the rest. ``ossec-logcollector`` raises its open-file limit to the number of configured files plus 128, so several wildcard blocks still leave room for later logs, commands, and ``ossec.log``. A pattern that already matches more than 256 files monitors only the first 256 until the option is raised (ANT-2026-9KNXMD94)
-- @atomicturtle - Read a date-based log to its current end before the expanded name changes. ``update_fname()`` was closing the old file at the start of the poll, so lines written in the last ``loop_timeout`` never reached ``ossec-analysisd``. The lines are read while the location is still the old name. A name that has not changed is left alone (ANT-2026-YGX1KKKT)
-- @atomicturtle - Forward the first JSON ``syslog_output`` alert written after ``alerts.json`` rotates or is truncated. ``jqueue_next()`` left ``JQUEUE_READ_FAILED`` set when the new file was still empty, and the next call parsed a good alert and deleted it. The alert stayed in ``alerts.json`` and still drove mail, the database, and active response (ANT-2026-NCEH7RB6)
-- @atomicturtle - Keep real ``syslog_output`` fields whose text happens to look like a placeholder. The default, CEF, and Splunk formatters dropped a value when a single character lined up with ``(none)``, ``(no user)``, or ``unknown``, so a user named ``anna``, a host ``inn.example.org``, or a location starting with ``(n`` never reached the receiver. Only the exact strings ``(none)`` and ``(no user)`` are left out. A user named ``unknown`` is still forwarded (ANT-2026-9Q8LR4NY)
-- @atomicturtle - Flatten CR and LF in every ``syslog_output`` alert, including UDP. TCP already replaced them with spaces so one alert stayed one frame; UDP sent the breaks, and a receiver that splits a datagram at newlines could store a line the manager never raised. UDP does not add a trailing newline. Receivers that relied on the line breaks inside a UDP ``default`` or ``splunk`` message, present since 3.4.0, now see spaces (ANT-2026-Q0UYTPGC)
-- @atomicturtle - Do not match a ``<field>`` rule when the decoder has no field table. ``OS_CheckIfRuleMatch()`` read ``fields[]`` for every such rule, and that table exists only for a decoder with ``<order>``, so one log line stopped ``ossec-analysisd``. A decoder that has the named field still matches (ANT-2026-R3ZY7CWM)
-- @atomicturtle - Decode a certificate common name to UTF-8 before ``agent-auth -v`` compares it with the manager host name. ``asn1_to_cstr()`` was copying the raw content bytes, so a BMPString or UniversalString whose bytes spelled the host name was accepted. An IA5String, PrintableString, or UTF8String host name is unchanged (ANT-2026-5BG289FD)
-- @atomicturtle - Stop the Windows event-log message-DLL cache from storing a new entry for every letter-case spelling of one installed source. ``el_getEventDLL()`` still opens the registry with the name as written, and stops storing new entries after 4096. The extra key copy in that cache and in the Vista security descriptions is no longer leaked (ANT-2026-ZNO1MXTC)
-- @atomicturtle - Update the inotify watch path when a realtime directory is renamed. The watch follows the inode, so ``realtime_adddir()`` was keeping the first name it stored and later events were built under a path that no longer exists. A stored name that still reaches the same directory, such as a symlink, is left as it is (ANT-2026-16QLZ097)
-- @atomicturtle - When realtime syscheck finds a directory where it had cached a file, report the file deleted and scan the directory. ``c_read_file()`` was reporting that directory as a changed file, so files created inside it were invisible to realtime FIM until the next scheduled scan. The ``report_changes`` snapshot for the old file is removed with that deletion, before the new directory is scanned (ANT-2026-DXPIRJGM)
-- @atomicturtle - Read a newly opened daily alerts file from the start in ``Read_FileMon()``. ``csyslogd``, ``maild``, and ``dbd`` were seeking to the end when the day changed or the file was not open yet, so alerts written in that window were never mailed, forwarded, or stored. A daemon start still tails the file (ANT-2026-7ODKFI8F)
-- @atomicturtle - Report an agent disconnect as ``(name) ip->ossec-monitord`` so an IPv6 address is not cut at its first colon. Rule 504 now fires for an agent enrolled with an IPv6 address, and the alert is attributed to that agent. The location string changes for every agent, from ``name-ip->ossec-monitord`` to ``(name) ip->ossec-monitord`` (ANT-2026-U64THXI1)
-- @atomicturtle - Skip a Windows wildcard ``<location>`` name that ``FindFirstFileA`` returns with ``*`` or ``?`` in it. The agent is built without ``UNICODE``, so a character outside the ANSI code page comes back as ``?`` and the expansion feeds that name back in as another pattern, hanging logcollector at service start. Those names cannot be opened through the ANSI API. A ``\\?\`` prefix is still not a wildcard (ANT-2026-WJND95HE)
-- @atomicturtle - NUL-terminate the CDB value copied by ``address_match_key_value`` (``calloc(vlen + 1)`` in both the exact-address and subnet lookups), so an anchored ``check_value`` is compared against the list entry and not the byte after the allocation (ANT-2026-WI6TBPFX)
-- @atomicturtle - File daily-report top entries in hash tables and sort each table once, and grow the kept-alert array geometrically, so a day of distinct locations, users, or source addresses cannot stall ``ossec-monitord`` after midnight (ANT-2026-AVE66YB6)
-- @atomicturtle - Create ``var/run`` pid files with ``O_EXCL`` and ``fchmod`` the descriptor, so a process in group ``ossec`` cannot make a root daemon append to or ``chmod`` an arbitrary file through a symlink planted in the group-writable pid directory (ANT-2026-1O4BCXPR)
-- @atomicturtle - Keep one ``report_changes`` snapshot per file and stop copying once ``queue/diff`` reaches ``syscheck.diff_quota_size`` (default 1 GiB). ``state.*`` and ``diff.*`` are removed after the alert is read, and a deleted file's snapshot is removed with it, so ``report_changes`` cannot fill the disk (ANT-2026-4T9F7XIQ)
-- @atomicturtle - Look each syscheck directory entry up on the directory that was opened (``fstatat``/``openat``/``fdopendir`` with ``O_NOFOLLOW``), and do not follow a symlink below a configured directory on the realtime path, so a local user cannot redirect the walk onto root-only files (ANT-2026-MBH20U16)
-- @atomicturtle - Stop ``ossec-syscheckd`` from hashing or fully reading a file past ``syscheck.file_max_size`` (default 1024 MB; one MD5+SHA-1+SHA-256 pass) and from copying a ``report_changes`` snapshot past ``syscheck.diff_max_size`` (default 10 MB). Rootcheck policy reads stop after 100000 lines, and ``/dev/shm`` is not read unless ``<readall>`` is set, so one sparse file cannot stall FIM and rootcheck (ANT-2026-J8XF7LCX)
-- @atomicturtle - Open ``report_changes`` snapshots and live-file hashes via a per-component ``openat(O_NOFOLLOW)`` walk (``fopen_regular_nofollow`` / ``OS_SHA256_File_nofollow``), and refuse leaf symlinks in ``seechanges_addfile``, so a local user cannot redirect diffs at a root-only file through a leaf or parent symlink (ANT-2026-2138NB95)
-- @atomicturtle - Pause rootcheck's hidden-process scan only for PIDs that do not add up (and at most ``rootcheck.sleep_after`` times per pass, default 32), so idle threads cannot stall realtime FIM for ``rootcheck.sleep`` seconds each (ANT-2026-AE2I21JQ); look up directory entries via ``fstatat``/``openat``/``fdopendir`` on the open parent so a local user cannot hang the scan with a symlink ring (ANT-2026-W5QJUUX2)
-- @atomicturtle - On manager/local installs, open rootcheck ``rootkit_files`` / ``rootkit_trojans`` / ``system_audit`` policies only when they are regular, root-owned, and not group/other-writable (``O_NOFOLLOW``); install those ``etc/shared`` texts as ``root:ossec`` ``0640`` (agents unchanged) so group ``ossec`` cannot replace a policy and read root-only files via alerts (ANT-2026-B5Y9PIU1). Existing ``ossec``-owned or group-writable custom policies are ignored until fixed.
-- @atomicturtle - Shell-quote kernel-reported interface names in rootcheck ``run_ifconfig()`` (and refuse empty / leading-``-`` names) so ``CAP_NET_ADMIN`` cannot inject commands through ``system(ifconfig …)`` (ANT-2026-9UQVLIX8); do not split ``readdir()`` paths at ``,`` in ``rk_check_dir()`` so a directory named ``,`` cannot recurse forever (ANT-2026-CDYKRRHO)
-- @atomicturtle - Drain every complete alert from ``alerts.log`` in one ``ossec-logcollector`` poll for ``<log_format>ossecalert</log_format>`` (hybrid forwarder), so a burst cannot leave unread records that are lost on day rotation; still honor ``logcollector.max_lines`` per visit (ANT-2026-1HUE1BMJ)
-- @atomicturtle - Stop ``ossec-syscheckd`` from hanging on a FIFO planted under ``report_changes`` / FIM / rootcheck paths: ``OS_SHA256_File`` / ``OS_MD5_SHA1_File`` / ``seechanges_dupfile`` / ``rk_check_file`` / ``os_string`` use ``fopen_regular()``, ``seechanges_addfile`` refuses non-regular files, and ``is_file`` / ``read_sys_file`` open with ``O_NONBLOCK`` (ANT-2026-KZAJSOET)
-- @atomicturtle - Store an agent's ``crypto_method`` in ``ReadSecMSG`` only after the datagram authenticates, so an unauthenticated ``!id!:`` / ``#AES:`` frame cannot flip manager-to-agent AES/Blowfish framing and drop AR / ``agent_control`` / ``merged.mg`` until the next keep-alive (ANT-2026-2NLM3GPL)
-- @atomicturtle - Release ``ossec-remoted`` syslog TCP workers from dead or idle clients: report EOF as 0, enable TCP keepalive (``TCP_KEEPIDLE`` = read timeout), stop retrying ``ETIMEDOUT``, and close a quiet connection only while the worker pool is exhausted so a queued sender can be served (ANT-2026-QY1SHLVV)
-- @atomicturtle - Bound ``ReadSecMSG`` zlib inflate to the room left in the receive buffer after ``!<id>!`` / ``#AES:`` prefixes (``buffer_max``), so an enrolled agent cannot write past ``ossec-remoted``'s stack ``buffer`` with an oversized compressed payload (ANT-2026-739QMECR)
-- @atomicturtle - Rate-limit ``ossec-remoted`` pre-auth rejection logging (denied IP, bad header, unknown ID, and ``ReadSecMSG`` decrypt/format failures): up to 20 lines per listener per minute plus a skipped-count summary, so an unauthenticated sender cannot fill ``logs/ossec.log`` (ANT-2026-JA2NXEW1)
-- @atomicturtle - Persist each agent's receive counter to ``queue/rids`` before ``OS_FreeKeys`` (``client.keys`` reload) and on orderly ``ossec-remoted`` shutdown, so a keyless ``!id!`` after a keys mtime change (or a restart) cannot rewind ``verify_msg_id`` and replay captured agent datagrams (ANT-2026-FBJ3LA25)
-- @atomicturtle - Escape leading dots in ``ossec-maild`` / ``ossec-monitord`` mail bodies (RFC 5321 4.5.2 for native SMTP; ``. `` for sendmail-like pipes) so a lone ``.`` log line cannot end ``DATA`` early, drop later alerts in the batch, or turn them into SMTP commands (ANT-2026-RXKNZJ1N; ``USE_CURL=yes`` already safe)
-- @atomicturtle - Keep granular ``email_alerts`` matches per alert in ``ossec-maild`` and send one grouped mail per recipient set (``OS_SplitMailBatch``), so an ``event_location``/group/level recipient no longer receives other agents' alerts that share the same grouping window. One batch can become several SMTP transactions, each counted against ``email_maxperhour`` (ANT-2026-CZG2BRKO)
-- @atomicturtle - Keep ``do_not_group`` granular recipients when ``ossec-maild`` commits a waiting batch: restore the pre-pthread clear loop so parked ``DONOTGROUP`` marks become ``FULL_FORMAT`` instead of being wiped (ANT-2026-X2IU8BSU)
-- @atomicturtle - Stop ``ossec-logcollector`` from hanging when a monitored log is replaced by a FIFO or device: rotation uses ``stat()`` by name (no throwaway ``fopen``), and non-``syslog-pipe`` opens go through ``fopen_regular()`` (``O_NONBLOCK|O_NOCTTY``, regular files only). Installations that pointed a non-pipe ``log_format`` at a FIFO must switch that entry to ``syslog-pipe`` (ANT-2026-U9RISGGM)
-- @atomicturtle - Include the user argument in ``ossec-execd``'s timeout-list duplicate check (and in the ``repeated_offenders`` key), so ``disable-account`` for one account cannot suppress lockouts for other accounts while IP is ``-`` (ANT-2026-2LGOJR12)
-- @atomicturtle - Drop incomplete active-response requests in ``ossec-execd`` before the timeout-list compare (avoid NULL ``strcmp`` on a missing IP). In ``OS_Exec``, if the 1023-byte request would clip, retry without location/filename so IP-based responses still run, and only ignore the request when the name/user/IP prefix itself cannot fit (ANT-2026-SNXGRHGA)
-- @atomicturtle - Escape ``alertid`` (and MySQL ``tld``/``srcgeoip``) in ``ossec-dbd`` ``OS_Alert_InsertDB`` like the other string columns, and bound ``alertid`` to the schema ``VARCHAR(30)``, so a forged ``** Alert`` line cannot inject SQL into the alert ``INSERT`` (ANT-2026-SINT56KO; srcip/dstip already escaped via ``sql_nullable_str``, cf. Wazuh GHSA-6j39-726h-fx6p)
-- @atomicturtle - Escape Splunk and CEF ``syslog_output`` fields in ``ossec-csyslogd``: strip ``"``, double ``\``, and turn CR/LF into spaces in Splunk ``key="value"`` values, and run ``src=``/``shost=``/``dhost=`` and hash extensions through ``cefescape()``, so logged usernames or addresses cannot inject extra SIEM key/value pairs (ANT-2026-RXUWSL9Z)
-- @atomicturtle - Skip the syscheck integrity-DB linear scan on an index miss when the per-agent hash index is complete (mark incomplete only on calloc/OSHash_Add/read failures), so one agent cannot stall analysisd by reporting new file names (ANT-2026-8STI0Q1E)
-- @atomicturtle - Hash ``OSHash`` keys over a prime field and seed the multiplier from ``randombytes``, so a seed-independent Thue-Morse collision family can no longer force every FTS (and other) key into one chain (ANT-2026-3WKK50NE)
-- @atomicturtle - Cut the maild subject host at the ``->`` separator (not ``strchr('>')-1``), so a location that starts with ``>`` cannot write one byte before the heap string and abort ``ossec-maild`` (ANT-2026-H2JMYHXZ)
-- @atomicturtle - Fix ``read_syslog`` over-long line handling: drop the always-true ``strchr(str, '\\0')`` branch from #913, detect full reads by byte count, map embedded NULs to spaces, and skip mid-line remainders across polls so a long access-log field cannot inject a forged standalone event (ANT-2026-RNCE3SO7)
-- @atomicturtle - Roll analysisd daily logs forward only (ignore a match-shard event older than the last rollover unless the clock was set back), and reopen the alerts file in ``Read_FileMon`` when its path no longer names the open inode (as ``jqueue_next`` already does for JSON), so a late pre-midnight backlog cannot unlink today's empty alerts file and leave csyslogd/maild/dbd reading a deleted inode for the rest of the day (ANT-2026-35JW8GHU)
-- @atomicturtle - Stop ``GetAlertData`` from treating event text as alert headers (whole-line reads, headers only where ``OS_Log`` writes them, no blank line inside a record, and NULL ``group`` guards in csyslogd/maild/reportd), so a long access-log line or correlation previous-output cannot forge rule/level or crash output daemons (ANT-2026-KTGCYZ58)
-- @atomicturtle - Drop the blocking reverse/forward DNS lookup from the ``is_valid_crawler`` compiled rule (31140): an unanswered PTR for a 4xx client address stalled an analysisd rule-matching thread for the resolver timeout per log line (ANT-2026-S3EU4A19)
-- @atomicturtle - Prefix analysisd accumulator keys with the OSSEC agent name (keeping the log hostname), so one agent cannot forge another agent's OpenLDAP ``srcip``/``user`` via a shared device hostname after #1668 (ANT-2026-ZQN8MYKG)
-- @atomicturtle - Make ``queue/diff`` sticky root:ossec with a root-owned ``local/``, and refuse ``report_changes`` store directories that are links or writable by others, so user ``ossec`` cannot plant symlinks that root ``ossec-syscheckd`` follows (ANT-2026-96VSXF8B)
-- @atomicturtle - Retire ``<syscheck><prefilter_cmd>`` (prelink-era hash filter): ignore the tag with a warning so upgrades keep loading, and remove the ``popen()`` sink that let a crafted file name run as root (ANT-2026-3VN001L2; supersedes ANT-2026-D7ZVXNZP)
-- @atomicturtle - Give each ``<nodiff>`` node its own append index (like ``<ignore>``), so plain and ``sregex`` entries no longer share a stale counter that could heap-overflow or silently drop rules (ANT-2026-C186EP5N)
-- @atomicturtle - Sanitize ``;`` in ossecalert-forwarded alert fields and bound ``srcip``/``user`` so a logged username cannot inject a second ``srcip:`` on the central manager (ANT-2026-8TB11KJO)
-- @atomicturtle - Bound syscheck ``read_dir()`` path joins so a near-``PATH_MAX`` directory cannot wrap the entry ``strncpy`` size and crash ``ossec-syscheckd`` (ANT-2026-1UF4D24F); skip too-long entries and compose with ``snprintf``
-- @atomicturtle - Create Unix-domain queue sockets with their final mode via umask around ``bind()`` instead of a path ``chmod()`` afterwards, so a raced symlink in a group-writable queue dir cannot make root-owned files group-writable (ANT-2026-1EAZN37N)
-- @atomicturtle - Store analysisd syscheck index checksum prefixes on the heap instead of embedding ``OS_MAXSTR`` per file so one agent cannot pin ~6 KB of manager RAM per new path (ANT-2026-VUTSB5RB / #2373)
-- @atomicturtle - Fix Windows ``w_ref_parent_folder`` so a mixed ``\..`` / ``/..name`` path cannot bypass the active-response path check (ANT-2026-1IXHWDKW / CVE-2018-19666); reject path separators and ``..`` in merged.mg entry names on merge and unmerge
-- @atomicturtle - Guard empty syscheck filename stripping in ``GetAlertData`` so a crafted ``Integrity checksum changed for: '`` line cannot underflow the heap (CVE-2026-26204)
-- @atomicturtle - Disable TLS renegotiation in the shared authd/agent-auth ``get_ssl_context`` (``SSL_OP_NO_RENEGOTIATION``, with an info-callback fallback on older OpenSSL/LibreSSL) (#2100)
+- @atomicturtle - [PR 2476](https://github.com/ossec/ossec-hids/pull/2476) - Skip Windows registry subkeys whose path no longer fits ``MAX_KEY``. ``os_winreg_querykey()`` opened the truncated ``snprintf`` result, so when the parent path was already 2047 characters the "subkey" was the parent again and the walk recursed until the syscheck thread stack ran out. Both the open path and the ``HKEY_``-prefixed full name are checked; an over-long key is logged with ``SK_REG_LONG`` and ignored (ANT-2026-SI19UF16)
+- @atomicturtle - [PR 2475](https://github.com/ossec/ossec-hids/pull/2475) - Keep large registry value buffers off the recursive Windows FIM stack. ``os_winreg_querykey()`` held about 38 KB of ``RegEnumValue`` buffers on every frame, so roughly 55 nested keys under a monitored ``windows_registry`` entry overflowed the 2 MB syscheck thread and killed ``ossec-agent.exe``. Value hashing now runs in a non-recursive helper, and the subkey path buffers are heap-allocated for the walk (ANT-2026-583M5XOX)
+- @atomicturtle - [PR 2474](https://github.com/ossec/ossec-hids/pull/2474) - Keep the last known FIM hash when a scan yields the ``xxx`` placeholder (for example a symlink whose target is gone). ``fim_sum_has_real_change()`` treats any hash transition involving ``xxx`` as quiet, and callers then stored the new sum, so retargeting a monitored link through a missing path (A → ``xxx`` → B) never compared A with B and raised no rule 550. ``fim_sum_keep_hashes()`` now carries real digests over placeholders in ``c_read_file()`` and ``DB_ProcessFoundEntry()`` before compare and store (ANT-2026-YO3OMSC0)
+- @atomicturtle - [PR 2473](https://github.com/ossec/ossec-hids/pull/2473) - Stop a crafted rootcheck path from spoofing ``SyscheckFile`` fields. ``rk_extract_hashes()`` ended the path at the first quote and took each hash from the first ``MD5``/``SHA1``/``SHA256`` label, so a directory name that embeds those tokens could replace the real path and digests in ``alerts.json``. The decoder now keeps only a complete hex triple at the end of Rootkit/Anomaly/Trojaned messages and ends the path at the fixed text in front of it; a truncated hash-less Anomaly message is marked with ``...`` so a cut path cannot fake that ending (ANT-2026-0UFTKHQJ)
+- @atomicturtle - [PR 2472](https://github.com/ossec/ossec-hids/pull/2472) - Forward every complete line from a syslog-over-TCP ``recv()``. ``ossec-remoted`` cut at the first newline and parked the rest without scanning again, so lines that shared a segment were glued onto the next segment as one event, or dropped on close, CRLF, or a full buffer. The worker now appends into the incomplete prefix and drains every complete line before the next read (ANT-2026-2BEPXI8W)
+- @atomicturtle - [PR 2471](https://github.com/ossec/ossec-hids/pull/2471) - Stop daily reports from leaking per alert in ``ossec-monitord``. ``os_ReportdStart()`` left the ``OS_StrBreak()`` group array and the top-entry list nodes behind; with reports running in a thread that memory stayed for the life of the daemon. The group array is freed after the loop, and each top-entry list's nodes are released with the hash table (covered with ANT-2026-AVE66YB6) (ANT-2026-M3W3LJEQ)
+- @atomicturtle - [PR 2470](https://github.com/ossec/ossec-hids/pull/2470) - Bound every plain SMTP socket in ``ossec-maild`` and ``ossec-monitord`` to 60 seconds per reply or write. ``OS_Sendmail()`` read through a bare ``recv()`` with no timeout, so a relay that accepted and stayed silent held a sender thread forever. After ``maild.max_workers`` such threads, no further alert e-mail was sent until ``ossec-maild`` was restarted. A timed-out read fails like any other failed reply and releases the worker (ANT-2026-FR6DKH31)
+- @atomicturtle - [PR 2469](https://github.com/ossec/ossec-hids/pull/2469) - Keep a timed-out active response listed until its ``delete`` has exited. ``ossec-execd`` forked ``delete`` and dropped the entry at once, so the next alert for that address could run ``add`` while ``delete`` was still running. A set-style target such as ``hosts.deny`` or a PF table then lost the block, and later alerts skipped the script because execd still listed the address. A request for that same script and address now waits for the in-flight ``delete`` and is then a new block. A request for a different address does not wait (ANT-2026-8WBHQ0QF)
+- @atomicturtle - [PR 2468](https://github.com/ossec/ossec-hids/pull/2468) - Keep a backslash-escaped space inside one ``ossec-execd`` argument. ``OS_Exec()`` escaped a syscheck file name, but ``ExecdStart()`` cut the request at every space and passed the pieces to ``execv()``. A space in a monitored name became an extra argument of a root script that expects ``filename``, for example ``/etc/shadow`` or ``-f``. The name still arrives escaped (``/srv/uploads/x\ /etc/shadow``). A location that ends in a backslash is dropped, because it would join with the file name. A location that contains a backslash and a space stays one argument. Windows ``ossec-execd`` already keeps the remainder of the request as one quoted field (ANT-2026-Z12L5BYR)
+- @atomicturtle - [PR 2467](https://github.com/ossec/ossec-hids/pull/2467) - Give ``ossec-execd`` one spelling of a literal address before it compares, stores, or runs a block. ``2001:DB8::7`` and ``2001:db8::7`` were two timeouts, so ``pf.sh`` deleted the one PF entry at the first timeout while execd still counted the other spelling as blocked. Later alerts then skipped the add. A ``::ffff:`` address is handed to the script as its IPv4 form, which is what analysisd already does. Host names, ``-``, CIDR, and a leading ``!`` are unchanged (ANT-2026-PTTDW7PW)
+- @atomicturtle - [PR 2466](https://github.com/ossec/ossec-hids/pull/2466) - Keep the closing quote when ``ossec-dbd`` stores a long ``srcip`` or ``dstip``. ``sql_nullable_str()`` wrote the address into a 49-byte buffer, so 47 characters or more cut off the quote and both MySQL and PostgreSQL rejected the ``INSERT``. The address is now cut to the 46-character column width and the alert is stored. The full log line is unchanged (ANT-2026-SEE999RQ)
+- @atomicturtle - [PR 2465](https://github.com/ossec/ossec-hids/pull/2465) - Widen the MySQL location id from ``SMALLINT UNSIGNED`` to ``INT UNSIGNED``. ``location.id`` stopped at 65,535, so one agent sending a new location per alert filled the counter and ``ossec-dbd`` then dropped every alert whose location was not already stored. Existing databases stay 16-bit until ``upgrade-location-id-mysql.sql`` is applied. PostgreSQL already uses ``SERIAL`` (ANT-2026-C82AB02V)
+- @atomicturtle - [PR 2464](https://github.com/ossec/ossec-hids/pull/2464) - Do not follow a symlink when ``ossec-dbd`` reads ``queue/agent-info``. That directory belongs to ``ossecr`` and ``ossec-dbd`` runs as root, so ``stat`` and ``fopen`` copied the first line of the link target into the agent table, including a root-only file. A keepalive is stored only when it is one regular file (ANT-2026-5Z4OX04E)
+- @atomicturtle - [PR 2463](https://github.com/ossec/ossec-hids/pull/2463) - Do not follow a symlink when ``manage_agents`` removes an agent database. ``delete_syscheck()`` and ``delete_rootcheck()`` opened fixed names under ``queue/syscheck`` and ``queue/rootcheck`` with ``fopen`` in write mode. Those directories belong to ``ossec``, and ``manage_agents`` still runs as root, so a link planted there truncated or created any file under the install, including ``etc/ossec.conf``. The cleanup now truncates only a regular file with a single link and does not create a missing name (ANT-2026-AJJELLSQ)
+- @atomicturtle - [PR 2462](https://github.com/ossec/ossec-hids/pull/2462) - Stop one wildcard ``<location>`` from opening every match. ``logcollector.max_wildcard_files`` (default 256) keeps the first matches and logs the rest. ``ossec-logcollector`` raises its open-file limit to the number of configured files plus 128, so several wildcard blocks still leave room for later logs, commands, and ``ossec.log``. A pattern that already matches more than 256 files monitors only the first 256 until the option is raised (ANT-2026-9KNXMD94)
+- @atomicturtle - [PR 2461](https://github.com/ossec/ossec-hids/pull/2461) - Read a date-based log to its current end before the expanded name changes. ``update_fname()`` was closing the old file at the start of the poll, so lines written in the last ``loop_timeout`` never reached ``ossec-analysisd``. The lines are read while the location is still the old name. A name that has not changed is left alone (ANT-2026-YGX1KKKT)
+- @atomicturtle - [PR 2460](https://github.com/ossec/ossec-hids/pull/2460) - Forward the first JSON ``syslog_output`` alert written after ``alerts.json`` rotates or is truncated. ``jqueue_next()`` left ``JQUEUE_READ_FAILED`` set when the new file was still empty, and the next call parsed a good alert and deleted it. The alert stayed in ``alerts.json`` and still drove mail, the database, and active response (ANT-2026-NCEH7RB6)
+- @atomicturtle - [PR 2459](https://github.com/ossec/ossec-hids/pull/2459) - Keep real ``syslog_output`` fields whose text happens to look like a placeholder. The default, CEF, and Splunk formatters dropped a value when a single character lined up with ``(none)``, ``(no user)``, or ``unknown``, so a user named ``anna``, a host ``inn.example.org``, or a location starting with ``(n`` never reached the receiver. Only the exact strings ``(none)`` and ``(no user)`` are left out. A user named ``unknown`` is still forwarded (ANT-2026-9Q8LR4NY)
+- @atomicturtle - [PR 2457](https://github.com/ossec/ossec-hids/pull/2457) - Flatten CR and LF in every ``syslog_output`` alert, including UDP. TCP already replaced them with spaces so one alert stayed one frame; UDP sent the breaks, and a receiver that splits a datagram at newlines could store a line the manager never raised. UDP does not add a trailing newline. Receivers that relied on the line breaks inside a UDP ``default`` or ``splunk`` message, present since 3.4.0, now see spaces (ANT-2026-Q0UYTPGC)
+- @atomicturtle - [PR 2456](https://github.com/ossec/ossec-hids/pull/2456) - Do not match a ``<field>`` rule when the decoder has no field table. ``OS_CheckIfRuleMatch()`` read ``fields[]`` for every such rule, and that table exists only for a decoder with ``<order>``, so one log line stopped ``ossec-analysisd``. A decoder that has the named field still matches (ANT-2026-R3ZY7CWM)
+- @atomicturtle - [PR 2455](https://github.com/ossec/ossec-hids/pull/2455) - Decode a certificate common name to UTF-8 before ``agent-auth -v`` compares it with the manager host name. ``asn1_to_cstr()`` was copying the raw content bytes, so a BMPString or UniversalString whose bytes spelled the host name was accepted. An IA5String, PrintableString, or UTF8String host name is unchanged (ANT-2026-5BG289FD)
+- @atomicturtle - [PR 2454](https://github.com/ossec/ossec-hids/pull/2454) - Stop the Windows event-log message-DLL cache from storing a new entry for every letter-case spelling of one installed source. ``el_getEventDLL()`` still opens the registry with the name as written, and stops storing new entries after 4096. The extra key copy in that cache and in the Vista security descriptions is no longer leaked (ANT-2026-ZNO1MXTC)
+- @atomicturtle - [PR 2453](https://github.com/ossec/ossec-hids/pull/2453) - Update the inotify watch path when a realtime directory is renamed. The watch follows the inode, so ``realtime_adddir()`` was keeping the first name it stored and later events were built under a path that no longer exists. A stored name that still reaches the same directory, such as a symlink, is left as it is (ANT-2026-16QLZ097)
+- @atomicturtle - [PR 2452](https://github.com/ossec/ossec-hids/pull/2452) - When realtime syscheck finds a directory where it had cached a file, report the file deleted and scan the directory. ``c_read_file()`` was reporting that directory as a changed file, so files created inside it were invisible to realtime FIM until the next scheduled scan. The ``report_changes`` snapshot for the old file is removed with that deletion, before the new directory is scanned (ANT-2026-DXPIRJGM)
+- @atomicturtle - [PR 2451](https://github.com/ossec/ossec-hids/pull/2451) - Read a newly opened daily alerts file from the start in ``Read_FileMon()``. ``csyslogd``, ``maild``, and ``dbd`` were seeking to the end when the day changed or the file was not open yet, so alerts written in that window were never mailed, forwarded, or stored. A daemon start still tails the file (ANT-2026-7ODKFI8F)
+- @atomicturtle - [PR 2450](https://github.com/ossec/ossec-hids/pull/2450) - Report an agent disconnect as ``(name) ip->ossec-monitord`` so an IPv6 address is not cut at its first colon. Rule 504 now fires for an agent enrolled with an IPv6 address, and the alert is attributed to that agent. The location string changes for every agent, from ``name-ip->ossec-monitord`` to ``(name) ip->ossec-monitord`` (ANT-2026-U64THXI1)
+- @atomicturtle - [PR 2449](https://github.com/ossec/ossec-hids/pull/2449) - Skip a Windows wildcard ``<location>`` name that ``FindFirstFileA`` returns with ``*`` or ``?`` in it. The agent is built without ``UNICODE``, so a character outside the ANSI code page comes back as ``?`` and the expansion feeds that name back in as another pattern, hanging logcollector at service start. Those names cannot be opened through the ANSI API. A ``\\?\`` prefix is still not a wildcard (ANT-2026-WJND95HE)
+- @atomicturtle - [PR 2448](https://github.com/ossec/ossec-hids/pull/2448) - NUL-terminate the CDB value copied by ``address_match_key_value`` (``calloc(vlen + 1)`` in both the exact-address and subnet lookups), so an anchored ``check_value`` is compared against the list entry and not the byte after the allocation (ANT-2026-WI6TBPFX)
+- @atomicturtle - [PR 2447](https://github.com/ossec/ossec-hids/pull/2447) - File daily-report top entries in hash tables and sort each table once, and grow the kept-alert array geometrically, so a day of distinct locations, users, or source addresses cannot stall ``ossec-monitord`` after midnight (ANT-2026-AVE66YB6)
+- @atomicturtle - [PR 2446](https://github.com/ossec/ossec-hids/pull/2446) - Create ``var/run`` pid files with ``O_EXCL`` and ``fchmod`` the descriptor, so a process in group ``ossec`` cannot make a root daemon append to or ``chmod`` an arbitrary file through a symlink planted in the group-writable pid directory (ANT-2026-1O4BCXPR)
+- @atomicturtle - [PR 2445](https://github.com/ossec/ossec-hids/pull/2445) - Keep one ``report_changes`` snapshot per file and stop copying once ``queue/diff`` reaches ``syscheck.diff_quota_size`` (default 1 GiB). ``state.*`` and ``diff.*`` are removed after the alert is read, and a deleted file's snapshot is removed with it, so ``report_changes`` cannot fill the disk (ANT-2026-4T9F7XIQ)
+- @atomicturtle - [PR 2444](https://github.com/ossec/ossec-hids/pull/2444) - Look each syscheck directory entry up on the directory that was opened (``fstatat``/``openat``/``fdopendir`` with ``O_NOFOLLOW``), and do not follow a symlink below a configured directory on the realtime path, so a local user cannot redirect the walk onto root-only files (ANT-2026-MBH20U16)
+- @atomicturtle - [PR 2443](https://github.com/ossec/ossec-hids/pull/2443) - Stop ``ossec-syscheckd`` from hashing or fully reading a file past ``syscheck.file_max_size`` (default 1024 MB; one MD5+SHA-1+SHA-256 pass) and from copying a ``report_changes`` snapshot past ``syscheck.diff_max_size`` (default 10 MB). Rootcheck policy reads stop after 100000 lines, and ``/dev/shm`` is not read unless ``<readall>`` is set, so one sparse file cannot stall FIM and rootcheck (ANT-2026-J8XF7LCX)
+- @atomicturtle - [PR 2442](https://github.com/ossec/ossec-hids/pull/2442) - Open ``report_changes`` snapshots and live-file hashes via a per-component ``openat(O_NOFOLLOW)`` walk (``fopen_regular_nofollow`` / ``OS_SHA256_File_nofollow``), and refuse leaf symlinks in ``seechanges_addfile``, so a local user cannot redirect diffs at a root-only file through a leaf or parent symlink (ANT-2026-2138NB95)
+- @atomicturtle - [PR 2441](https://github.com/ossec/ossec-hids/pull/2441) - Pause rootcheck's hidden-process scan only for PIDs that do not add up (and at most ``rootcheck.sleep_after`` times per pass, default 32), so idle threads cannot stall realtime FIM for ``rootcheck.sleep`` seconds each (ANT-2026-AE2I21JQ); look up directory entries via ``fstatat``/``openat``/``fdopendir`` on the open parent so a local user cannot hang the scan with a symlink ring (ANT-2026-W5QJUUX2)
+- @atomicturtle - [PR 2440](https://github.com/ossec/ossec-hids/pull/2440) - On manager/local installs, open rootcheck ``rootkit_files`` / ``rootkit_trojans`` / ``system_audit`` policies only when they are regular, root-owned, and not group/other-writable (``O_NOFOLLOW``); install those ``etc/shared`` texts as ``root:ossec`` ``0640`` (agents unchanged) so group ``ossec`` cannot replace a policy and read root-only files via alerts (ANT-2026-B5Y9PIU1). Existing ``ossec``-owned or group-writable custom policies are ignored until fixed.
+- @atomicturtle - [PR 2439](https://github.com/ossec/ossec-hids/pull/2439) - Shell-quote kernel-reported interface names in rootcheck ``run_ifconfig()`` (and refuse empty / leading-``-`` names) so ``CAP_NET_ADMIN`` cannot inject commands through ``system(ifconfig …)`` (ANT-2026-9UQVLIX8); do not split ``readdir()`` paths at ``,`` in ``rk_check_dir()`` so a directory named ``,`` cannot recurse forever (ANT-2026-CDYKRRHO)
+- @atomicturtle - [PR 2438](https://github.com/ossec/ossec-hids/pull/2438) - Drain every complete alert from ``alerts.log`` in one ``ossec-logcollector`` poll for ``<log_format>ossecalert</log_format>`` (hybrid forwarder), so a burst cannot leave unread records that are lost on day rotation; still honor ``logcollector.max_lines`` per visit (ANT-2026-1HUE1BMJ)
+- @atomicturtle - [PR 2437](https://github.com/ossec/ossec-hids/pull/2437) - Stop ``ossec-syscheckd`` from hanging on a FIFO planted under ``report_changes`` / FIM / rootcheck paths: ``OS_SHA256_File`` / ``OS_MD5_SHA1_File`` / ``seechanges_dupfile`` / ``rk_check_file`` / ``os_string`` use ``fopen_regular()``, ``seechanges_addfile`` refuses non-regular files, and ``is_file`` / ``read_sys_file`` open with ``O_NONBLOCK`` (ANT-2026-KZAJSOET)
+- @atomicturtle - [PR 2436](https://github.com/ossec/ossec-hids/pull/2436) - Store an agent's ``crypto_method`` in ``ReadSecMSG`` only after the datagram authenticates, so an unauthenticated ``!id!:`` / ``#AES:`` frame cannot flip manager-to-agent AES/Blowfish framing and drop AR / ``agent_control`` / ``merged.mg`` until the next keep-alive (ANT-2026-2NLM3GPL)
+- @atomicturtle - [PR 2435](https://github.com/ossec/ossec-hids/pull/2435) - Release ``ossec-remoted`` syslog TCP workers from dead or idle clients: report EOF as 0, enable TCP keepalive (``TCP_KEEPIDLE`` = read timeout), stop retrying ``ETIMEDOUT``, and close a quiet connection only while the worker pool is exhausted so a queued sender can be served (ANT-2026-QY1SHLVV)
+- @atomicturtle - [PR 2434](https://github.com/ossec/ossec-hids/pull/2434) - Bound ``ReadSecMSG`` zlib inflate to the room left in the receive buffer after ``!<id>!`` / ``#AES:`` prefixes (``buffer_max``), so an enrolled agent cannot write past ``ossec-remoted``'s stack ``buffer`` with an oversized compressed payload (ANT-2026-739QMECR)
+- @atomicturtle - [PR 2433](https://github.com/ossec/ossec-hids/pull/2433) - Rate-limit ``ossec-remoted`` pre-auth rejection logging (denied IP, bad header, unknown ID, and ``ReadSecMSG`` decrypt/format failures): up to 20 lines per listener per minute plus a skipped-count summary, so an unauthenticated sender cannot fill ``logs/ossec.log`` (ANT-2026-JA2NXEW1)
+- @atomicturtle - [PR 2432](https://github.com/ossec/ossec-hids/pull/2432) - Persist each agent's receive counter to ``queue/rids`` before ``OS_FreeKeys`` (``client.keys`` reload) and on orderly ``ossec-remoted`` shutdown, so a keyless ``!id!`` after a keys mtime change (or a restart) cannot rewind ``verify_msg_id`` and replay captured agent datagrams (ANT-2026-FBJ3LA25)
+- @atomicturtle - [PR 2431](https://github.com/ossec/ossec-hids/pull/2431) - Escape leading dots in ``ossec-maild`` / ``ossec-monitord`` mail bodies (RFC 5321 4.5.2 for native SMTP; ``. `` for sendmail-like pipes) so a lone ``.`` log line cannot end ``DATA`` early, drop later alerts in the batch, or turn them into SMTP commands (ANT-2026-RXKNZJ1N; ``USE_CURL=yes`` already safe)
+- @atomicturtle - [PR 2430](https://github.com/ossec/ossec-hids/pull/2430) - Keep granular ``email_alerts`` matches per alert in ``ossec-maild`` and send one grouped mail per recipient set (``OS_SplitMailBatch``), so an ``event_location``/group/level recipient no longer receives other agents' alerts that share the same grouping window. One batch can become several SMTP transactions, each counted against ``email_maxperhour`` (ANT-2026-CZG2BRKO)
+- @atomicturtle - [PR 2429](https://github.com/ossec/ossec-hids/pull/2429) - Keep ``do_not_group`` granular recipients when ``ossec-maild`` commits a waiting batch: restore the pre-pthread clear loop so parked ``DONOTGROUP`` marks become ``FULL_FORMAT`` instead of being wiped (ANT-2026-X2IU8BSU)
+- @atomicturtle - [PR 2428](https://github.com/ossec/ossec-hids/pull/2428) - Stop ``ossec-logcollector`` from hanging when a monitored log is replaced by a FIFO or device: rotation uses ``stat()`` by name (no throwaway ``fopen``), and non-``syslog-pipe`` opens go through ``fopen_regular()`` (``O_NONBLOCK|O_NOCTTY``, regular files only). Installations that pointed a non-pipe ``log_format`` at a FIFO must switch that entry to ``syslog-pipe`` (ANT-2026-U9RISGGM)
+- @atomicturtle - [PR 2427](https://github.com/ossec/ossec-hids/pull/2427) - Include the user argument in ``ossec-execd``'s timeout-list duplicate check (and in the ``repeated_offenders`` key), so ``disable-account`` for one account cannot suppress lockouts for other accounts while IP is ``-`` (ANT-2026-2LGOJR12)
+- @atomicturtle - [PR 2426](https://github.com/ossec/ossec-hids/pull/2426) - Drop incomplete active-response requests in ``ossec-execd`` before the timeout-list compare (avoid NULL ``strcmp`` on a missing IP). In ``OS_Exec``, if the 1023-byte request would clip, retry without location/filename so IP-based responses still run, and only ignore the request when the name/user/IP prefix itself cannot fit (ANT-2026-SNXGRHGA)
+- @atomicturtle - [PR 2425](https://github.com/ossec/ossec-hids/pull/2425) - Escape ``alertid`` (and MySQL ``tld``/``srcgeoip``) in ``ossec-dbd`` ``OS_Alert_InsertDB`` like the other string columns, and bound ``alertid`` to the schema ``VARCHAR(30)``, so a forged ``** Alert`` line cannot inject SQL into the alert ``INSERT`` (ANT-2026-SINT56KO; srcip/dstip already escaped via ``sql_nullable_str``, cf. Wazuh GHSA-6j39-726h-fx6p)
+- @atomicturtle - [PR 2424](https://github.com/ossec/ossec-hids/pull/2424) - Escape Splunk and CEF ``syslog_output`` fields in ``ossec-csyslogd``: strip ``"``, double ``\``, and turn CR/LF into spaces in Splunk ``key="value"`` values, and run ``src=``/``shost=``/``dhost=`` and hash extensions through ``cefescape()``, so logged usernames or addresses cannot inject extra SIEM key/value pairs (ANT-2026-RXUWSL9Z)
+- @atomicturtle - [PR 2401](https://github.com/ossec/ossec-hids/pull/2401) - Skip the syscheck integrity-DB linear scan on an index miss when the per-agent hash index is complete (mark incomplete only on calloc/OSHash_Add/read failures), so one agent cannot stall analysisd by reporting new file names (ANT-2026-8STI0Q1E)
+- @atomicturtle - [PR 2400](https://github.com/ossec/ossec-hids/pull/2400) - Hash ``OSHash`` keys over a prime field and seed the multiplier from ``randombytes``, so a seed-independent Thue-Morse collision family can no longer force every FTS (and other) key into one chain (ANT-2026-3WKK50NE)
+- @atomicturtle - [PR 2399](https://github.com/ossec/ossec-hids/pull/2399) - Cut the maild subject host at the ``->`` separator (not ``strchr('>')-1``), so a location that starts with ``>`` cannot write one byte before the heap string and abort ``ossec-maild`` (ANT-2026-H2JMYHXZ)
+- @atomicturtle - [PR 2398](https://github.com/ossec/ossec-hids/pull/2398) - Fix ``read_syslog`` over-long line handling: drop the always-true ``strchr(str, '\\0')`` branch from [#913](https://github.com/ossec/ossec-hids/issues/913), detect full reads by byte count, map embedded NULs to spaces, and skip mid-line remainders across polls so a long access-log field cannot inject a forged standalone event (ANT-2026-RNCE3SO7)
+- @atomicturtle - [PR 2397](https://github.com/ossec/ossec-hids/pull/2397) - Roll analysisd daily logs forward only (ignore a match-shard event older than the last rollover unless the clock was set back), and reopen the alerts file in ``Read_FileMon`` when its path no longer names the open inode (as ``jqueue_next`` already does for JSON), so a late pre-midnight backlog cannot unlink today's empty alerts file and leave csyslogd/maild/dbd reading a deleted inode for the rest of the day (ANT-2026-35JW8GHU)
+- @atomicturtle - [PR 2396](https://github.com/ossec/ossec-hids/pull/2396) - Stop ``GetAlertData`` from treating event text as alert headers (whole-line reads, headers only where ``OS_Log`` writes them, no blank line inside a record, and NULL ``group`` guards in csyslogd/maild/reportd), so a long access-log line or correlation previous-output cannot forge rule/level or crash output daemons (ANT-2026-KTGCYZ58)
+- @atomicturtle - [PR 2395](https://github.com/ossec/ossec-hids/pull/2395) - Drop the blocking reverse/forward DNS lookup from the ``is_valid_crawler`` compiled rule (31140): an unanswered PTR for a 4xx client address stalled an analysisd rule-matching thread for the resolver timeout per log line (ANT-2026-S3EU4A19)
+- @atomicturtle - [PR 2394](https://github.com/ossec/ossec-hids/pull/2394) - Prefix analysisd accumulator keys with the OSSEC agent name (keeping the log hostname), so one agent cannot forge another agent's OpenLDAP ``srcip``/``user`` via a shared device hostname after [#1668](https://github.com/ossec/ossec-hids/issues/1668) (ANT-2026-ZQN8MYKG)
+- @atomicturtle - [PR 2393](https://github.com/ossec/ossec-hids/pull/2393) - Make ``queue/diff`` sticky root:ossec with a root-owned ``local/``, and refuse ``report_changes`` store directories that are links or writable by others, so user ``ossec`` cannot plant symlinks that root ``ossec-syscheckd`` follows (ANT-2026-96VSXF8B)
+- @atomicturtle - [PR 2391](https://github.com/ossec/ossec-hids/pull/2391) - Retire ``<syscheck><prefilter_cmd>`` (prelink-era hash filter): ignore the tag with a warning so upgrades keep loading, and remove the ``popen()`` sink that let a crafted file name run as root (ANT-2026-3VN001L2; supersedes ANT-2026-D7ZVXNZP)
+- @atomicturtle - [PR 2392](https://github.com/ossec/ossec-hids/pull/2392) - Give each ``<nodiff>`` node its own append index (like ``<ignore>``), so plain and ``sregex`` entries no longer share a stale counter that could heap-overflow or silently drop rules (ANT-2026-C186EP5N)
+- @atomicturtle - [PR 2379](https://github.com/ossec/ossec-hids/pull/2379) - Sanitize ``;`` in ossecalert-forwarded alert fields and bound ``srcip``/``user`` so a logged username cannot inject a second ``srcip:`` on the central manager (ANT-2026-8TB11KJO)
+- @atomicturtle - [PR 2378](https://github.com/ossec/ossec-hids/pull/2378) - Bound syscheck ``read_dir()`` path joins so a near-``PATH_MAX`` directory cannot wrap the entry ``strncpy`` size and crash ``ossec-syscheckd`` (ANT-2026-1UF4D24F); skip too-long entries and compose with ``snprintf``
+- @atomicturtle - [PR 2377](https://github.com/ossec/ossec-hids/pull/2377) - Create Unix-domain queue sockets with their final mode via umask around ``bind()`` instead of a path ``chmod()`` afterwards, so a raced symlink in a group-writable queue dir cannot make root-owned files group-writable (ANT-2026-1EAZN37N)
+- @atomicturtle - [PR 2376](https://github.com/ossec/ossec-hids/pull/2376) - Store analysisd syscheck index checksum prefixes on the heap instead of embedding ``OS_MAXSTR`` per file so one agent cannot pin ~6 KB of manager RAM per new path (ANT-2026-VUTSB5RB / [#2373](https://github.com/ossec/ossec-hids/issues/2373))
+- @atomicturtle - [PR 2375](https://github.com/ossec/ossec-hids/pull/2375) - Fix Windows ``w_ref_parent_folder`` so a mixed ``\..`` / ``/..name`` path cannot bypass the active-response path check (ANT-2026-1IXHWDKW / CVE-2018-19666); reject path separators and ``..`` in merged.mg entry names on merge and unmerge
+- @atomicturtle - [PR 2358](https://github.com/ossec/ossec-hids/pull/2358) - Guard empty syscheck filename stripping in ``GetAlertData`` so a crafted ``Integrity checksum changed for: '`` line cannot underflow the heap (CVE-2026-26204)
+- @atomicturtle - [PR 2357](https://github.com/ossec/ossec-hids/pull/2357) - Disable TLS renegotiation in the shared authd/agent-auth ``get_ssl_context`` (``SSL_OP_NO_RENEGOTIATION``, with an info-callback fallback on older OpenSSL/LibreSSL) ([#2100](https://github.com/ossec/ossec-hids/issues/2100))
 
 **Bug Fixes**
 
-- @atomicturtle - Size analysisd auto thread pools from cgroup CPU quota and scheduler affinity (``os_get_nproc``), not host ``sysconf(_SC_NPROCESSORS_ONLN)``, so Docker/Kubernetes CPU limits do not inflate memory (#2373)
-- @atomicturtle - Refuse merged-file entry names that contain ``..`` in ``UnmergeFiles`` so a crafted ``merged.mg`` cannot write outside the agent shared directory
-- @atomicturtle - Parent SSH CRC-32 rule 5714 on the sshd group and count one prior 5713, so the compensation line alerts instead of falling through to rule 1002
-- @atomicturtle - Give each Unix-socket bind, connect, and recv its own address so remoted's active-response bind cannot collide with the analysisd queue and exit with ``Address already in use``
-- @atomicturtle - Set Windows localfile ``glob_set`` only after a successful wildcard expansion so a failed first pattern does not wrap ``pl`` and abort config read (#1954)
-- @atomicturtle - Ship an agent-only logrotate for ``ossec.log``; agents do not run monitord (#704)
-- @atomicturtle - Skip Windows Subject machine accounts (``name$``) when decoding Account Name so 4624/4625 keep the logon user (#1959)
-- @atomicturtle - Read the 4-character ``!+++`` FIM new-file marker in ``DB_ProcessFoundEntry`` and ``syscheck_control`` so create rows do not false-alert or lose the marker (#1831)
-- @atomicturtle - Stage bundled PCRE2 under ``pcre2_local/`` so macOS case-insensitive filesystems do not collide with the tarball ``INSTALL`` docs file (#1957)
-- @atomicturtle - Retry a realtime integrity check when the file is still locked or briefly missing, so emptying a file alerts without waiting for the next edit (#1386)
-- @atomicturtle - Add Windows ``<localfile>`` wildcard expansion (``*`` / ``?``, including multi-segment paths) and rotate date-based locations when the full ``strftime`` name changes so ``%H`` / ``%M`` work (#1954)
-- @atomicturtle - [PR 2333](https://github.com/ossec/ossec-hids/pull/2333) - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is prefixed ``arch64:`` (collision-free). Default view is 32-bit regardless of agent bitness; unknown ``windows_registry`` attributes are rejected (#954)
-- @atomicturtle - Take the IIS default W3C ``sc-status`` from the fields that follow it, so a referer of ``/404`` or ``200`` and a three-digit ``sc-substatus`` are not the response code (#989)
-- @atomicturtle - Reject an ossec-dbd INSERT whose base query cannot fit, and reserve the SQL buffer's terminating NUL when capping ``full_log`` (#1959)
-- @atomicturtle - Bound agent decrypt backoff so a burst of bad or empty replies sleeps once per drain and still fails over (#1944)
-- @atomicturtle - Log ``GetSecurityInfo``'s return code when a Windows FIM owner lookup fails (#1581)
-- @atomicturtle - Apply both exact and sregex ``registry_ignore`` entries so default ``\Enum$`` is not skipped (#851)
-- @atomicturtle - Scan realtime-created paths with ``read_file`` so short-lived files do not flood ossec.log with ``Error opening directory`` (#1792)
-- @atomicturtle - Extract Windows 4625 UPN Account Name (skip Subject ``-``) and budget ossec-dbd INSERT fields so oversized alerts cannot truncate mid-quote (#1959)
-- @atomicturtle - Back off when the agent cannot decrypt a server reply so a bad or missing key cannot peg a CPU core (#1944)
-- @atomicturtle - Stop truncating alert full_log / previous-output lines at 1256 bytes in alerts.log (#473)
-- @atomicturtle - Stop Windows CreateFile/GetSecurityInfo failures from becoming false syscheck size-change alerts (#1581)
-- @atomicturtle - Drop rule 31107 so search URLs no longer suppress SQLi/XSS/web-attack alerts (#1078)
+- @atomicturtle - [PR 2374](https://github.com/ossec/ossec-hids/pull/2374) - Size analysisd auto thread pools from cgroup CPU quota and scheduler affinity (``os_get_nproc``), not host ``sysconf(_SC_NPROCESSORS_ONLN)``, so Docker/Kubernetes CPU limits do not inflate memory ([#2373](https://github.com/ossec/ossec-hids/issues/2373))
+- @atomicturtle - [PR 2352](https://github.com/ossec/ossec-hids/pull/2352) - Refuse merged-file entry names that contain ``..`` in ``UnmergeFiles`` so a crafted ``merged.mg`` cannot write outside the agent shared directory
+- @atomicturtle - [PR 2351](https://github.com/ossec/ossec-hids/pull/2351) - Parent SSH CRC-32 rule 5714 on the sshd group and count one prior 5713, so the compensation line alerts instead of falling through to rule 1002
+- @atomicturtle - [PR 2350](https://github.com/ossec/ossec-hids/pull/2350) - Give each Unix-socket bind, connect, and recv its own address so remoted's active-response bind cannot collide with the analysisd queue and exit with ``Address already in use``
+- @atomicturtle - [PR 2337](https://github.com/ossec/ossec-hids/pull/2337) - Set Windows localfile ``glob_set`` only after a successful wildcard expansion so a failed first pattern does not wrap ``pl`` and abort config read ([#1954](https://github.com/ossec/ossec-hids/issues/1954))
+- @atomicturtle - [PR 2341](https://github.com/ossec/ossec-hids/pull/2341) - Ship an agent-only logrotate for ``ossec.log``; agents do not run monitord ([#704](https://github.com/ossec/ossec-hids/issues/704))
+- @atomicturtle - [PR 2328](https://github.com/ossec/ossec-hids/pull/2328) - Skip Windows Subject machine accounts (``name$``) when decoding Account Name so 4624/4625 keep the logon user ([#1959](https://github.com/ossec/ossec-hids/issues/1959))
+- @atomicturtle - [PR 2331](https://github.com/ossec/ossec-hids/pull/2331) - Read the 4-character ``!+++`` FIM new-file marker in ``DB_ProcessFoundEntry`` and ``syscheck_control`` so create rows do not false-alert or lose the marker ([#1831](https://github.com/ossec/ossec-hids/issues/1831))
+- @atomicturtle - [PR 2346](https://github.com/ossec/ossec-hids/pull/2346) - Stage bundled PCRE2 under ``pcre2_local/`` so macOS case-insensitive filesystems do not collide with the tarball ``INSTALL`` docs file ([#1957](https://github.com/ossec/ossec-hids/issues/1957))
+- @atomicturtle - [PR 2338](https://github.com/ossec/ossec-hids/pull/2338) - Retry a realtime integrity check when the file is still locked or briefly missing, so emptying a file alerts without waiting for the next edit ([#1386](https://github.com/ossec/ossec-hids/issues/1386))
+- @atomicturtle - [PR 2337](https://github.com/ossec/ossec-hids/pull/2337) - Add Windows ``<localfile>`` wildcard expansion (``*`` / ``?``, including multi-segment paths) and rotate date-based locations when the full ``strftime`` name changes so ``%H`` / ``%M`` work ([#1954](https://github.com/ossec/ossec-hids/issues/1954))
+- @atomicturtle - [PR 2333](https://github.com/ossec/ossec-hids/pull/2333) - Fix Windows registry syscheck on 64-bit hosts: ``windows_registry`` supports ``arch="32bit|64bit|both"`` with ``KEY_WOW64_*`` access; the 32-bit view keeps the legacy DB path and the 64-bit view is prefixed ``arch64:`` (collision-free). Default view is 32-bit regardless of agent bitness; unknown ``windows_registry`` attributes are rejected ([#954](https://github.com/ossec/ossec-hids/issues/954))
+- @atomicturtle - [PR 2318](https://github.com/ossec/ossec-hids/pull/2318) - Take the IIS default W3C ``sc-status`` from the fields that follow it, so a referer of ``/404`` or ``200`` and a three-digit ``sc-substatus`` are not the response code ([#989](https://github.com/ossec/ossec-hids/issues/989))
+- @atomicturtle - [PR 2328](https://github.com/ossec/ossec-hids/pull/2328) - Reject an ossec-dbd INSERT whose base query cannot fit, and reserve the SQL buffer's terminating NUL when capping ``full_log`` ([#1959](https://github.com/ossec/ossec-hids/issues/1959))
+- @atomicturtle - [PR 2325](https://github.com/ossec/ossec-hids/pull/2325) - Bound agent decrypt backoff so a burst of bad or empty replies sleeps once per drain and still fails over ([#1944](https://github.com/ossec/ossec-hids/issues/1944))
+- @atomicturtle - [PR 2321](https://github.com/ossec/ossec-hids/pull/2321) - Log ``GetSecurityInfo``'s return code when a Windows FIM owner lookup fails ([#1581](https://github.com/ossec/ossec-hids/issues/1581))
+- @atomicturtle - [PR 2330](https://github.com/ossec/ossec-hids/pull/2330) - Apply both exact and sregex ``registry_ignore`` entries so default ``\Enum$`` is not skipped ([#851](https://github.com/ossec/ossec-hids/issues/851))
+- @atomicturtle - [PR 2329](https://github.com/ossec/ossec-hids/pull/2329) - Scan realtime-created paths with ``read_file`` so short-lived files do not flood ossec.log with ``Error opening directory`` ([#1792](https://github.com/ossec/ossec-hids/issues/1792))
+- @atomicturtle - [PR 2328](https://github.com/ossec/ossec-hids/pull/2328) - Extract Windows 4625 UPN Account Name (skip Subject ``-``) and budget ossec-dbd INSERT fields so oversized alerts cannot truncate mid-quote ([#1959](https://github.com/ossec/ossec-hids/issues/1959))
+- @atomicturtle - [PR 2325](https://github.com/ossec/ossec-hids/pull/2325) - Back off when the agent cannot decrypt a server reply so a bad or missing key cannot peg a CPU core ([#1944](https://github.com/ossec/ossec-hids/issues/1944))
+- @atomicturtle - [PR 2323](https://github.com/ossec/ossec-hids/pull/2323) - Stop truncating alert full_log / previous-output lines at 1256 bytes in alerts.log ([#473](https://github.com/ossec/ossec-hids/issues/473))
+- @atomicturtle - [PR 2321](https://github.com/ossec/ossec-hids/pull/2321) - Stop Windows CreateFile/GetSecurityInfo failures from becoming false syscheck size-change alerts ([#1581](https://github.com/ossec/ossec-hids/issues/1581))
+- @atomicturtle - [PR 2319](https://github.com/ossec/ossec-hids/pull/2319) - Drop rule 31107 so search URLs no longer suppress SQLi/XSS/web-attack alerts ([#1078](https://github.com/ossec/ossec-hids/issues/1078))
 
 
 **OSSEC changelog (4.4.0) <support@atomicorp.com>**
@@ -150,25 +150,25 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 OSSEC 4.4.0 adds three main capabilities; other enhancements and fixes are listed below.
 
-- **Windows FIM attributes and ACLs** — Opt-in ``check_attrs`` for Hidden/System/attribute change alerts and ``check_acl`` for NTFS DACL/ACE matrix alerts (#1352, #2285).
-- **GeoIP via libmaxminddb** — Replaces EOL GeoIP Legacy with GeoLite2 MMDB lookups, plus ASN/country enrichment and GeoIP IDS rules (#1828, #2259).
-- **JSON syslog alerts** — ``ossec-csyslogd`` forwards analysisd JSON alerts so ``agent_name`` is a first-class field. ``jsonout`` stays on when the XML tag is omitted; alerts rotation remains with monitord (#1907, #2302).
+- **Windows FIM attributes and ACLs** — Opt-in ``check_attrs`` for Hidden/System/attribute change alerts and ``check_acl`` for NTFS DACL/ACE matrix alerts ([#1352](https://github.com/ossec/ossec-hids/issues/1352), [#2285](https://github.com/ossec/ossec-hids/issues/2285)).
+- **GeoIP via libmaxminddb** — Replaces EOL GeoIP Legacy with GeoLite2 MMDB lookups, plus ASN/country enrichment and GeoIP IDS rules ([#1828](https://github.com/ossec/ossec-hids/issues/1828), [#2259](https://github.com/ossec/ossec-hids/issues/2259)).
+- **JSON syslog alerts** — ``ossec-csyslogd`` forwards analysisd JSON alerts so ``agent_name`` is a first-class field. ``jsonout`` stays on when the XML tag is omitted; alerts rotation remains with monitord ([#1907](https://github.com/ossec/ossec-hids/issues/1907), [#2302](https://github.com/ossec/ossec-hids/issues/2302)).
 
 **General**
 
-- @atomicturtle - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts (#1352)
-- @atomicturtle - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
+- @atomicturtle - [PR 2285](https://github.com/ossec/ossec-hids/pull/2285) - Add opt-in Windows FIM ``check_attrs`` for Hidden/System/attribute change alerts ([#1352](https://github.com/ossec/ossec-hids/issues/1352))
+- @atomicturtle - [PR 2285](https://github.com/ossec/ossec-hids/pull/2285) - Add opt-in Windows FIM ``check_acl`` for NTFS DACL/ACE matrix alerts
 - @ddpbsd / @atomicturtle - [PR 1828](https://github.com/ossec/ossec-hids/pull/1828) - Replace EOL GeoIP Legacy with libmaxminddb (GeoLite2 MMDB) for analysisd GeoIP
-- @atomicturtle - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
+- @atomicturtle - [PR 2259](https://github.com/ossec/ossec-hids/pull/2259) - GeoIP IDS rules (multi-country auth, impossible-travel) plus ASN/country enrichment; SSH invalid-user dstuser extraction; feed if_matched_group when sid_prev_matched is also set
 - @atomicturtle - [PR 2302](https://github.com/ossec/ossec-hids/pull/2302) - Forward analysisd JSON alerts over syslog so agent_name is a first-class field; keep jsonout on when undeclared
 
 **Bug Fixes**
 
 - @AdUser / @atomicturtle - [PR 2106](https://github.com/ossec/ossec-hids/pull/2106) - Stop Dovecot lip= from capturing a trailing comma as dstip
 - @bearxy123 / @atomicturtle - [PR 2107](https://github.com/ossec/ossec-hids/pull/2107) - Check cdb mmap failure with MAP_FAILED instead of DJB x+1 idiom
-- @atomicturtle - [PR 2303](https://github.com/ossec/ossec-hids/pull/2303) - Stop remoted from writing the sender counter into agent 0 rids on key reload (#2065)
-- @atomicturtle - [PR 2304](https://github.com/ossec/ossec-hids/pull/2304) - Stop remoted from mapping a v4 local_ip onto a dual-stack IPv6 socket (#1611)
-- @atomicturtle - [PR 2308](https://github.com/ossec/ossec-hids/pull/2308) - Use a four-part win32ui manifest version so the Windows agent UI can start (#2307)
+- @atomicturtle - [PR 2303](https://github.com/ossec/ossec-hids/pull/2303) - Stop remoted from writing the sender counter into agent 0 rids on key reload ([#2065](https://github.com/ossec/ossec-hids/issues/2065))
+- @atomicturtle - [PR 2304](https://github.com/ossec/ossec-hids/pull/2304) - Stop remoted from mapping a v4 local_ip onto a dual-stack IPv6 socket ([#1611](https://github.com/ossec/ossec-hids/issues/1611))
+- @atomicturtle - [PR 2308](https://github.com/ossec/ossec-hids/pull/2308) - Use a four-part win32ui manifest version so the Windows agent UI can start ([#2307](https://github.com/ossec/ossec-hids/issues/2307))
 
 
 **OSSEC changelog (4.3.0) <support@atomicorp.com>**
@@ -195,52 +195,52 @@ Scott R. Shinn (https://www.atomicorp.com)
 
 OSSEC 4.3.0 adds three main capabilities; other enhancements and fixes are listed below.
 
-- **FIM maintenance mode** — Per-agent mode via ``agent_control -M`` (``enable``, ``disable``, ``status``, ``end`` with ``-u <id>``). While enabled, syscheck accepts file changes into the baseline without generating integrity alerts. ``end`` restarts syscheck/rootcheck and clears maintenance when that scan finishes (#677, #1289, #1681).
-- **TCP/TLS ``syslog_output``** — ``ossec-csyslogd`` supports TCP and optional TLS (``protocol``, ``tls``, ``tls_verify``, ``tls_ca``) in addition to UDP. Alert payloads (default/CEF/JSON/Splunk) may use up to ``OS_MAXSTR`` instead of a 2048-byte limit (#1762).
-- **ModSecurity audit logs** — Collect libmodsecurity serial audit logs with the ``modsec-audit`` localfile format, and decode nginx ModSecurity error-log events with new rules (#1390).
+- **FIM maintenance mode** — Per-agent mode via ``agent_control -M`` (``enable``, ``disable``, ``status``, ``end`` with ``-u <id>``). While enabled, syscheck accepts file changes into the baseline without generating integrity alerts. ``end`` restarts syscheck/rootcheck and clears maintenance when that scan finishes ([#677](https://github.com/ossec/ossec-hids/issues/677), [#1289](https://github.com/ossec/ossec-hids/issues/1289), [#1681](https://github.com/ossec/ossec-hids/issues/1681)).
+- **TCP/TLS ``syslog_output``** — ``ossec-csyslogd`` supports TCP and optional TLS (``protocol``, ``tls``, ``tls_verify``, ``tls_ca``) in addition to UDP. Alert payloads (default/CEF/JSON/Splunk) may use up to ``OS_MAXSTR`` instead of a 2048-byte limit ([#1762](https://github.com/ossec/ossec-hids/issues/1762)).
+- **ModSecurity audit logs** — Collect libmodsecurity serial audit logs with the ``modsec-audit`` localfile format, and decode nginx ModSecurity error-log events with new rules ([#1390](https://github.com/ossec/ossec-hids/issues/1390)).
 
 **General**
 
-- @atomicturtle - Add optional TCP and TLS to syslog_output (ossec-csyslogd) (#1762)
-- @atomicturtle - Raise csyslogd syslog/CEF/JSON alert buffer from 2048 to OS_MAXSTR (#1762)
-- @atomicturtle - Add Asterisk IPv6 denied decoder so srcip omits square brackets (#1892)
-- @atomicturtle - Allow manage_agents ``-f -`` to bulk-load agents from stdin (#459)
-- @atomicturtle - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup (#244)
-- @atomicturtle - Support ``###`` trailing comments in CDB list text files (#1527)
-- @atomicturtle - Use a dedicated OSSEC iptables chain for firewall-drop active response (#678)
-- @atomicturtle - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules (#1390)
-- @atomicturtle - Add per-agent FIM maintenance mode via agent_control (#677, #1289, #1681)
-- @atomicturtle - Detect Postfix SMTP connect aborts and escalate by source IP (#1897)
-- @atomicturtle - Match Snort [Drop] fast alerts in the snort decoder (#1926)
-- @atomicturtle - Decode named client IPs with optional BIND @cookie prefix (#1927)
-- @atomicturtle - Add muhstik to blacklisted user-agent rule 31508 (#1387)
-- @atomicturtle - Reject dangerous/ambiguous syscheck_control flag combinations such as ``-r -u`` (#462)
+- @atomicturtle - [PR 2294](https://github.com/ossec/ossec-hids/pull/2294) - Add optional TCP and TLS to syslog_output (ossec-csyslogd) ([#1762](https://github.com/ossec/ossec-hids/issues/1762))
+- @atomicturtle - [PR 2294](https://github.com/ossec/ossec-hids/pull/2294) - Raise csyslogd syslog/CEF/JSON alert buffer from 2048 to OS_MAXSTR ([#1762](https://github.com/ossec/ossec-hids/issues/1762))
+- @atomicturtle - [PR 2291](https://github.com/ossec/ossec-hids/pull/2291) - Add Asterisk IPv6 denied decoder so srcip omits square brackets ([#1892](https://github.com/ossec/ossec-hids/issues/1892))
+- @atomicturtle - [PR 2290](https://github.com/ossec/ossec-hids/pull/2290) - Allow manage_agents ``-f -`` to bulk-load agents from stdin ([#459](https://github.com/ossec/ossec-hids/issues/459))
+- @atomicturtle - [PR 2289](https://github.com/ossec/ossec-hids/pull/2289) - Ignore deleted agents in list_agents/get_agents; fix OS_RemoveAgent agent-info cleanup ([#244](https://github.com/ossec/ossec-hids/issues/244))
+- @atomicturtle - [PR 2288](https://github.com/ossec/ossec-hids/pull/2288) - Support ``###`` trailing comments in CDB list text files ([#1527](https://github.com/ossec/ossec-hids/issues/1527))
+- @atomicturtle - [PR 2274](https://github.com/ossec/ossec-hids/pull/2274) - Use a dedicated OSSEC iptables chain for firewall-drop active response ([#678](https://github.com/ossec/ossec-hids/issues/678))
+- @atomicturtle - [PR 2286](https://github.com/ossec/ossec-hids/pull/2286) - Add ModSecurity / libmodsecurity serial audit log support (``modsec-audit`` log format) plus nginx error-log ModSecurity decoders/rules ([#1390](https://github.com/ossec/ossec-hids/issues/1390))
+- @atomicturtle - [PR 2283](https://github.com/ossec/ossec-hids/pull/2283) - Add per-agent FIM maintenance mode via agent_control ([#677](https://github.com/ossec/ossec-hids/issues/677), [#1289](https://github.com/ossec/ossec-hids/issues/1289), [#1681](https://github.com/ossec/ossec-hids/issues/1681))
+- @atomicturtle - [PR 2267](https://github.com/ossec/ossec-hids/pull/2267) - Detect Postfix SMTP connect aborts and escalate by source IP ([#1897](https://github.com/ossec/ossec-hids/issues/1897))
+- @atomicturtle - [PR 2268](https://github.com/ossec/ossec-hids/pull/2268) - Match Snort [Drop] fast alerts in the snort decoder ([#1926](https://github.com/ossec/ossec-hids/issues/1926))
+- @atomicturtle - [PR 2269](https://github.com/ossec/ossec-hids/pull/2269) - Decode named client IPs with optional BIND @cookie prefix ([#1927](https://github.com/ossec/ossec-hids/issues/1927))
+- @atomicturtle - [PR 2264](https://github.com/ossec/ossec-hids/pull/2264) - Add muhstik to blacklisted user-agent rule 31508 ([#1387](https://github.com/ossec/ossec-hids/issues/1387))
+- @atomicturtle - [PR 2287](https://github.com/ossec/ossec-hids/pull/2287) - Reject dangerous/ambiguous syscheck_control flag combinations such as ``-r -u`` ([#462](https://github.com/ossec/ossec-hids/issues/462))
 - @hyn172 / @atomicturtle - [PR 504](https://github.com/ossec/ossec-hids/pull/504) - Add Windows interactive (logon type 2) success detail rule 18262
 - @awiddersheim / @atomicturtle - [PR 578](https://github.com/ossec/ossec-hids/pull/578) - Refactor Unix MQ start/send retry loops without changing wait budgets
 - @bchurchill / @atomicturtle - [PR 633](https://github.com/ossec/ossec-hids/pull/633) - Enable Linux compile/link hardening by default (PIE, FORTIFY, stack protector, full RELRO)
-- @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules; tighten postgresql_log so it does not steal cPanel logs (#1132)
+- @alex-front / @atomicturtle - [PR 1036](https://github.com/ossec/ossec-hids/pull/1036) - Add cPanel/cpsrvd decoders and rules; tighten postgresql_log so it does not steal cPanel logs ([#1132](https://github.com/ossec/ossec-hids/issues/1132))
 - @hcw2016 / @atomicturtle - [PR 1166](https://github.com/ossec/ossec-hids/pull/1166) - Backup agent state before remove/force-delete and alert on duplicated IP
 
 **Bug Fixes**
 
 - @atomicturtle - [PR 2295](https://github.com/ossec/ossec-hids/pull/2295) - Fix syscheck queue/restart races and honor FIM ``<frequency>`` under realtime
-- @atomicturtle - Make PCRE2 JIT optional (soft-fail compile, match via pcre2_match) so analysisd starts on macOS (#2040)
-- @atomicturtle - Restore ossec-lua binary names after Lua 5.4.7 upgrade (#2245)
-- @atomicturtle - Accept AR expect ``username`` (alias of ``user``), fall back to srcuser, and document fixed script argv (#2104)
-- @atomicturtle - Decode cPanel login lines from webmaild/whostmgrd/cpaneld as well as cpsrvd (#1132)
-- @atomicturtle - Avoid FIM false positives from xxx hash placeholders and checksum read failures (#1590, #1704)
-- @atomicturtle - Match web-accesslog URLs that contain spaces; do not treat POST as a simple ignored request (#914, #922)
-- @atomicturtle - Require more attack-group context and same_location for rule 40501 (#1082)
-- @atomicturtle - Stop treating MJ12bot as a malicious user agent in rule 31508 (#1317)
-- @atomicturtle - Ignore snap and /dev/loop df 100% alerts under rule 532 (#1418)
-- @atomicturtle - Label /var/ossec/logs as var_log_t for logrotate and allow logrotate_t on ossec_log_t (#1948)
-- @atomicturtle - Replace dead Honeynet Project link in rule 40601 (#2111)
-- @atomicturtle - Limit PHP CGI rule 31110 to .php and cgi-bin URLs (#1101)
-- @atomicturtle - Ignore ProFTPD sreaddir buffer growth as a false positive (#1015)
-- @atomicturtle - Pass CFLAGS/LDFLAGS into bundled ossec-lua/ossec-luac via MYCFLAGS/MYLDFLAGS (#1568)
-- @atomicturtle - Open csyslogd syslog_output sockets before chroot so hostnames work without losing OS_Connect multi-address fallback (#1744)
-- @atomicturtle - Emit a single To: plus one comma-separated Cc: for granular/extra recipients so ISPs stop rejecting duplicate To headers (#1901)
-- @atomicturtle - Strip Recv-Q/Send-Q from default netstat listen check to stop rule 533 false positives (#495, #2063)
+- @atomicturtle - [PR 2292](https://github.com/ossec/ossec-hids/pull/2292) - Make PCRE2 JIT optional (soft-fail compile, match via pcre2_match) so analysisd starts on macOS ([#2040](https://github.com/ossec/ossec-hids/issues/2040))
+- @atomicturtle - [PR 2262](https://github.com/ossec/ossec-hids/pull/2262) - Restore ossec-lua binary names after Lua 5.4.7 upgrade ([#2245](https://github.com/ossec/ossec-hids/issues/2245))
+- @atomicturtle - [PR 2281](https://github.com/ossec/ossec-hids/pull/2281) - Accept AR expect ``username`` (alias of ``user``), fall back to srcuser, and document fixed script argv ([#2104](https://github.com/ossec/ossec-hids/issues/2104))
+- @atomicturtle - [PR 2282](https://github.com/ossec/ossec-hids/pull/2282) - Decode cPanel login lines from webmaild/whostmgrd/cpaneld as well as cpsrvd ([#1132](https://github.com/ossec/ossec-hids/issues/1132))
+- @atomicturtle - [PR 2280](https://github.com/ossec/ossec-hids/pull/2280) - Avoid FIM false positives from xxx hash placeholders and checksum read failures ([#1590](https://github.com/ossec/ossec-hids/issues/1590), [#1704](https://github.com/ossec/ossec-hids/issues/1704))
+- @atomicturtle - [PR 2279](https://github.com/ossec/ossec-hids/pull/2279) - Match web-accesslog URLs that contain spaces; do not treat POST as a simple ignored request ([#914](https://github.com/ossec/ossec-hids/issues/914), [#922](https://github.com/ossec/ossec-hids/issues/922))
+- @atomicturtle - [PR 2278](https://github.com/ossec/ossec-hids/pull/2278) - Require more attack-group context and same_location for rule 40501 ([#1082](https://github.com/ossec/ossec-hids/issues/1082))
+- @atomicturtle - [PR 2277](https://github.com/ossec/ossec-hids/pull/2277) - Stop treating MJ12bot as a malicious user agent in rule 31508 ([#1317](https://github.com/ossec/ossec-hids/issues/1317))
+- @atomicturtle - [PR 2276](https://github.com/ossec/ossec-hids/pull/2276) - Ignore snap and /dev/loop df 100% alerts under rule 532 ([#1418](https://github.com/ossec/ossec-hids/issues/1418))
+- @atomicturtle - [PR 2275](https://github.com/ossec/ossec-hids/pull/2275) - Label /var/ossec/logs as var_log_t for logrotate and allow logrotate_t on ossec_log_t ([#1948](https://github.com/ossec/ossec-hids/issues/1948))
+- @atomicturtle - [PR 2263](https://github.com/ossec/ossec-hids/pull/2263) - Replace dead Honeynet Project link in rule 40601 ([#2111](https://github.com/ossec/ossec-hids/issues/2111))
+- @atomicturtle - [PR 2265](https://github.com/ossec/ossec-hids/pull/2265) - Limit PHP CGI rule 31110 to .php and cgi-bin URLs ([#1101](https://github.com/ossec/ossec-hids/issues/1101))
+- @atomicturtle - [PR 2266](https://github.com/ossec/ossec-hids/pull/2266) - Ignore ProFTPD sreaddir buffer growth as a false positive ([#1015](https://github.com/ossec/ossec-hids/issues/1015))
+- @atomicturtle - [PR 2273](https://github.com/ossec/ossec-hids/pull/2273) - Pass CFLAGS/LDFLAGS into bundled ossec-lua/ossec-luac via MYCFLAGS/MYLDFLAGS ([#1568](https://github.com/ossec/ossec-hids/issues/1568))
+- @atomicturtle - [PR 2272](https://github.com/ossec/ossec-hids/pull/2272) - Open csyslogd syslog_output sockets before chroot so hostnames work without losing OS_Connect multi-address fallback ([#1744](https://github.com/ossec/ossec-hids/issues/1744))
+- @atomicturtle - [PR 2271](https://github.com/ossec/ossec-hids/pull/2271) - Emit a single To: plus one comma-separated Cc: for granular/extra recipients so ISPs stop rejecting duplicate To headers ([#1901](https://github.com/ossec/ossec-hids/issues/1901))
+- @atomicturtle - [PR 2270](https://github.com/ossec/ossec-hids/pull/2270) - Strip Recv-Q/Send-Q from default netstat listen check to stop rule 533 false positives ([#495](https://github.com/ossec/ossec-hids/issues/495), [#2063](https://github.com/ossec/ossec-hids/issues/2063))
 - @reyjrar / @atomicturtle - [PR 235](https://github.com/ossec/ossec-hids/pull/235) - Canonicalize Windows FIM paths so realtime and scheduled scans use the same slash form
 - @lazyp / @atomicturtle - [PR 564](https://github.com/ossec/ossec-hids/pull/564) - Skip leading XML declarations (and UTF-8 BOM) in OS_ReadXML
 - @AdUser / @atomicturtle - [PR 2105](https://github.com/ossec/ossec-hids/pull/2105) - Insert SQL NULL for missing alert src_ip/dst_ip in os_dbd (not the string 'NULL')
@@ -276,27 +276,27 @@ This release focuses on analysisd scalability and broader stability. Key enhance
 - @atomicturtle - [PR 2214](https://github.com/ossec/ossec-hids/pull/2214) - Migrate manager daemons to pthreads and add shared thread pool support
 - @atomicturtle - [PR 2220](https://github.com/ossec/ossec-hids/pull/2220) - Keep ossec-maild running when SMTP is temporarily unavailable
 - @atomicturtle - [PR 2228](https://github.com/ossec/ossec-hids/pull/2228) - Validate agent keys with OS_IsValidIP for IPv6 authd -i keys
-- @atomicturtle - [PR 2232](https://github.com/ossec/ossec-hids/pull/2232) - Indicate when report_changes diffs are truncated (#455)
-- @atomicturtle - [PR 2236](https://github.com/ossec/ossec-hids/pull/2236) - Update stale IIS and Windows doc URLs in setup helpers (#1975)
+- @atomicturtle - [PR 2232](https://github.com/ossec/ossec-hids/pull/2232) - Indicate when report_changes diffs are truncated ([#455](https://github.com/ossec/ossec-hids/issues/455))
+- @atomicturtle - [PR 2236](https://github.com/ossec/ossec-hids/pull/2236) - Update stale IIS and Windows doc URLs in setup helpers ([#1975](https://github.com/ossec/ossec-hids/issues/1975))
 - @Hu6li - [PR 2244](https://github.com/ossec/ossec-hids/pull/2244) - Append MD5/SHA1/SHA256 hashes of detected rootcheck files to alerts
 - @atomicturtle - [PR 2246](https://github.com/ossec/ossec-hids/pull/2246) - Multi-threaded analysisd event pipeline for Linux servers
-- @atomicturtle - [PR 2247](https://github.com/ossec/ossec-hids/pull/2247) - Bundle MinGW/OpenSSL runtime DLLs in the Windows agent installer (#2241)
+- @atomicturtle - [PR 2247](https://github.com/ossec/ossec-hids/pull/2247) - Bundle MinGW/OpenSSL runtime DLLs in the Windows agent installer ([#2241](https://github.com/ossec/ossec-hids/issues/2241))
 
 **Bug Fixes**
 
-- @atomicturtle - [PR 2217](https://github.com/ossec/ossec-hids/pull/2217) - Fix memory leak in analysisd OS_IsValidIP path (#2108)
+- @atomicturtle - [PR 2217](https://github.com/ossec/ossec-hids/pull/2217) - Fix memory leak in analysisd OS_IsValidIP path ([#2108](https://github.com/ossec/ossec-hids/issues/2108))
 - @atomicturtle - [PR 2218](https://github.com/ossec/ossec-hids/pull/2218) - Fix agent getaddrinfo failures on RHEL 8+ by retrying with IPv4
 - @atomicturtle - [PR 2221](https://github.com/ossec/ossec-hids/pull/2221) - Fix Windows agent ignoring configured notify_time for keep-alives
 - @atomicturtle - [PR 2223](https://github.com/ossec/ossec-hids/pull/2223) - Fix logcollector memory leak when duplicate localfiles are configured
 - @atomicturtle - [PR 2225](https://github.com/ossec/ossec-hids/pull/2225) - Fix wrong CloseHandle on Windows realtime duplicate hash path
-- @atomicturtle - [PR 2226](https://github.com/ossec/ossec-hids/pull/2226) - Fix frequency rule alert context showing unrelated log lines (#1079)
-- @atomicturtle - [PR 2227](https://github.com/ossec/ossec-hids/pull/2227) - Fix incomplete syscheck baseline database population (#1248)
-- @atomicturtle - [PR 2229](https://github.com/ossec/ossec-hids/pull/2229) - Fix syscheck diff false errors and snapshot handling (#1296)
-- @atomicturtle - [PR 2230](https://github.com/ossec/ossec-hids/pull/2230) - Restore rule.group in JSON alert output (#1838)
-- @atomicturtle - [PR 2231](https://github.com/ossec/ossec-hids/pull/2231) - Fix authd graceful SIGINT/SIGTERM shutdown (#919)
-- @atomicturtle - [PR 2233](https://github.com/ossec/ossec-hids/pull/2233) - Honor localfile command frequency after logcollector restart (#1415)
-- @atomicturtle - [PR 2234](https://github.com/ossec/ossec-hids/pull/2234) - Restore linear scan fallback for syscheck db lookups (#1248)
-- @atomicturtle - [PR 2235](https://github.com/ossec/ossec-hids/pull/2235) - Poll journald continuously instead of on command frequency (#2110)
+- @atomicturtle - [PR 2226](https://github.com/ossec/ossec-hids/pull/2226) - Fix frequency rule alert context showing unrelated log lines ([#1079](https://github.com/ossec/ossec-hids/issues/1079))
+- @atomicturtle - [PR 2227](https://github.com/ossec/ossec-hids/pull/2227) - Fix incomplete syscheck baseline database population ([#1248](https://github.com/ossec/ossec-hids/issues/1248))
+- @atomicturtle - [PR 2229](https://github.com/ossec/ossec-hids/pull/2229) - Fix syscheck diff false errors and snapshot handling ([#1296](https://github.com/ossec/ossec-hids/issues/1296))
+- @atomicturtle - [PR 2230](https://github.com/ossec/ossec-hids/pull/2230) - Restore rule.group in JSON alert output ([#1838](https://github.com/ossec/ossec-hids/issues/1838))
+- @atomicturtle - [PR 2231](https://github.com/ossec/ossec-hids/pull/2231) - Fix authd graceful SIGINT/SIGTERM shutdown ([#919](https://github.com/ossec/ossec-hids/issues/919))
+- @atomicturtle - [PR 2233](https://github.com/ossec/ossec-hids/pull/2233) - Honor localfile command frequency after logcollector restart ([#1415](https://github.com/ossec/ossec-hids/issues/1415))
+- @atomicturtle - [PR 2234](https://github.com/ossec/ossec-hids/pull/2234) - Restore linear scan fallback for syscheck db lookups ([#1248](https://github.com/ossec/ossec-hids/issues/1248))
+- @atomicturtle - [PR 2235](https://github.com/ossec/ossec-hids/pull/2235) - Poll journald continuously instead of on command frequency ([#2110](https://github.com/ossec/ossec-hids/issues/2110))
 - @atomicturtle - [PR 2237](https://github.com/ossec/ossec-hids/pull/2237) - Fix false CIS apt sources alert on Ubuntu 24.04
 - @atomicturtle - [PR 2238](https://github.com/ossec/ossec-hids/pull/2238) - Fix false dpkg install alert when removing packages
 - @atomicturtle - [PR 2239](https://github.com/ossec/ossec-hids/pull/2239) - Fix msauth Enterprise Admins false positives and negatives
@@ -395,19 +395,19 @@ Major security and stability release addressing critical memory safety issues an
 
 **Security Fixes**
 
-- @atomicturtle - [PR 2178](https://github.com/ossec/ossec-hids/pull/2178) - Fix critical UAF bug in memory leak fix (Issue #1818)
-- @atomicturtle - [PR 2177](https://github.com/ossec/ossec-hids/pull/2177) - Fix Issue #1817: Heap UAF in OSSEC Alert decoder with leak-free Eventinfo refactor
-- @atomicturtle - [PR 2175](https://github.com/ossec/ossec-hids/pull/2175) - Fix uncontrolled recursion in os_xml _ReadElem (Issue #1953)
+- @atomicturtle - [PR 2178](https://github.com/ossec/ossec-hids/pull/2178) - Fix critical UAF bug in memory leak fix (Issue [#1818](https://github.com/ossec/ossec-hids/issues/1818))
+- @atomicturtle - [PR 2177](https://github.com/ossec/ossec-hids/pull/2177) - Fix Issue [#1817](https://github.com/ossec/ossec-hids/issues/1817): Heap UAF in OSSEC Alert decoder with leak-free Eventinfo refactor
+- @atomicturtle - [PR 2175](https://github.com/ossec/ossec-hids/pull/2175) - Fix uncontrolled recursion in os_xml _ReadElem (Issue [#1953](https://github.com/ossec/ossec-hids/issues/1953))
 - @atomicturtle - [PR 2167](https://github.com/ossec/ossec-hids/pull/2167) - Implement secure RNG for agent key generation using OpenSSL RAND_bytes
 
 **General**
 
 - @atomicturtle - [PR 2174](https://github.com/ossec/ossec-hids/pull/2174) - Fix help/version argument exit codes
-- @atomicturtle - [PR 2173](https://github.com/ossec/ossec-hids/pull/2173) - Fix for Issue #2056 in syscheck decoder
+- @atomicturtle - [PR 2173](https://github.com/ossec/ossec-hids/pull/2173) - Fix for Issue [#2056](https://github.com/ossec/ossec-hids/issues/2056) in syscheck decoder
 - @atomicturtle - [PR 2171](https://github.com/ossec/ossec-hids/pull/2171) - Ignore ENOENT in OS_RemoveCounter to prevent benign error messages
-- @atomicturtle - [PR 2170](https://github.com/ossec/ossec-hids/pull/2170) - Improve error message in ossec-testrule for missing rule matches (Issue #2093)
-- @atomicturtle - [PR 2169](https://github.com/ossec/ossec-hids/pull/2169) - Clean up redundant NULL checks in report filter function (Issue #2133)
-- @atomicturtle - [PR 2168](https://github.com/ossec/ossec-hids/pull/2168) - Improve logcollector crash fix to check read function pointer (Issue #2156)
+- @atomicturtle - [PR 2170](https://github.com/ossec/ossec-hids/pull/2170) - Improve error message in ossec-testrule for missing rule matches (Issue [#2093](https://github.com/ossec/ossec-hids/issues/2093))
+- @atomicturtle - [PR 2169](https://github.com/ossec/ossec-hids/pull/2169) - Clean up redundant NULL checks in report filter function (Issue [#2133](https://github.com/ossec/ossec-hids/issues/2133))
+- @atomicturtle - [PR 2168](https://github.com/ossec/ossec-hids/pull/2168) - Improve logcollector crash fix to check read function pointer (Issue [#2156](https://github.com/ossec/ossec-hids/issues/2156))
 - @atomicturtle - [PR 2166](https://github.com/ossec/ossec-hids/pull/2166) - FIM modernization: SHA-256 integration and safe buffer handling
 - @atomicturtle - [PR 2165](https://github.com/ossec/ossec-hids/pull/2165) - Update Lua to version 5.4.7
 - @atomicturtle - [PR 2164](https://github.com/ossec/ossec-hids/pull/2164) - Update zlib to version 1.3.1
@@ -448,7 +448,7 @@ Update to authd to enforce chrooting, and privilege separation. The authd daemon
 - @ddpbsd - [PR 1874](https://github.com/ossec/ossec-hids/pull/1874) - pcre2 fix for windows1 decoders
 - @g3rhard - [PR 1939](https://github.com/ossec/ossec-hids/pull/1939) - fix for AppArmor rules (added 5100 rule as parent)
 - @ngarratt - [PR 1958](https://github.com/ossec/ossec-hids/pull/1958) - Support for AIX 7
-- @ddpbsd - [PR 2062](https://github.com/ossec/ossec-hids/pull/2062) - Fix for issue #2020, False positive "Trojaned version of file '/bin/diff' detected" on Archlinux
+- @ddpbsd - [PR 2062](https://github.com/ossec/ossec-hids/pull/2062) - Fix for issue [#2020](https://github.com/ossec/ossec-hids/issues/2020), False positive "Trojaned version of file '/bin/diff' detected" on Archlinux
 - @staskysel - [PR 2064](https://github.com/ossec/ossec-hids/pull/2064) - Fix overwriting an agent counter with sender counter during updating keys
 - @pwntester - [PR 2070](https://github.com/ossec/ossec-hids/pull/2070) - Add CodeQL wofkflow
 - @1stmile-sysEngineer, @ddpbsd - [PR 2084](https://github.com/ossec/ossec-hids/pull/2084) Update for 1stmile rootkit detection
@@ -512,7 +512,7 @@ Support for Journald
 - @tonoitp [PR 1967](https://github.com/ossec/ossec-hids/pull/1967) update to agentless monitoring ssh_asa-fwsmconfig_diff
 - @ddpbsd [PR 1972](https://github.com/ossec/ossec-hids/pull/1972) Closes issue [1969](https://github.com/ossec/ossec-hids/pull/1972) missing systemd libraries in the INSTALL docs
 - @lyellread [PR 1974](https://github.com/ossec/ossec-hids/pull/1974)Updating broken documentation links
-- @atomicturtle [PR 1979] Closes issues [1970](https://github.com/ossec/ossec-hids/issues/1970) debian packaging postinst should not remove ossec users on upgrade
+- @atomicturtle [PR 1979](https://github.com/ossec/ossec-hids/pull/1979) Closes issues [1970](https://github.com/ossec/ossec-hids/issues/1970) debian packaging postinst should not remove ossec users on upgrade
 - @nfsec [PR 2017](https://github.com/ossec/ossec-hids/pull/2017) Add rootkit signatures for Jynx and Beurk
 - @ChristianBeer [PR 2029](https://github.com/ossec/ossec-hids/pull/2029) Add active response script for nftables
 
@@ -549,28 +549,28 @@ Scott R. Shinn (http://www.atomicorp.com)
  
 **General** 
 
-@ddpbsd - ossec-dbd, Add help output to dbd, https://github.com/ossec/ossec-hids/pull/1833
+@ddpbsd - ossec-dbd, Add help output to dbd, [PR 1833](https://github.com/ossec/ossec-hids/pull/1833)
 
 @NicolasCARPi - INSTALL, updating depenency list, 
-https://github.com/ossec/ossec-hids/pull/1832
+[PR 1832](https://github.com/ossec/ossec-hids/pull/1832)
 
-@cpu - PCRE2, refuse to compile empty PCRE2 patterns, fix for Issue #1811,  https://github.com/ossec/ossec-hids/pull/1826
+@cpu - PCRE2, refuse to compile empty PCRE2 patterns, fix for Issue [#1811](https://github.com/ossec/ossec-hids/issues/1811),  [PR 1826](https://github.com/ossec/ossec-hids/pull/1826)
 
-@cpu, analysisd, resolves CVE-2020-8442 Issue #1820, https://github.com/ossec/ossec-hids/pull/1825 
+@cpu, analysisd, resolves CVE-2020-8442 Issue [#1820](https://github.com/ossec/ossec-hids/issues/1820), [PR 1825](https://github.com/ossec/ossec-hids/pull/1825) 
 
-@cpu, analysisd, resolves CVE-2020-8443 Issue #1816, https://github.com/ossec/ossec-hids/pull/1824
+@cpu, analysisd, resolves CVE-2020-8443 Issue [#1816](https://github.com/ossec/ossec-hids/issues/1816), [PR 1824](https://github.com/ossec/ossec-hids/pull/1824)
 
-@cpu, analysisd, resolves CVE-2020-8448 Issue #1815, https://github.com/ossec/ossec-hids/pull/1823
+@cpu, analysisd, resolves CVE-2020-8448 Issue [#1815](https://github.com/ossec/ossec-hids/issues/1815), [PR 1823](https://github.com/ossec/ossec-hids/pull/1823)
 
-@cpu, Makefile, fix for DEBUGAD, https://github.com/ossec/ossec-hids/pull/1822
+@cpu, Makefile, fix for DEBUGAD, [PR 1822](https://github.com/ossec/ossec-hids/pull/1822)
 
-@jknockaert - dropbear rules, limit brute force rule to dropbear, https://github.com/ossec/ossec-hids/pull/1803
+@jknockaert - dropbear rules, limit brute force rule to dropbear, [PR 1803](https://github.com/ossec/ossec-hids/pull/1803)
 
-@mwidman, analysisd, Added non-standard Sophos UTM syslog timestamp format to pre-decoding. , https://github.com/ossec/ossec-hids/pull/1794
+@mwidman, analysisd, Added non-standard Sophos UTM syslog timestamp format to pre-decoding. , [PR 1794](https://github.com/ossec/ossec-hids/pull/1794)
 
-@drsjb80 - configs, Added authentication log file location for debian-based systems , https://github.com/ossec/ossec-hids/pull/1784
+@drsjb80 - configs, Added authentication log file location for debian-based systems , [PR 1784](https://github.com/ossec/ossec-hids/pull/1784)
 
-@ddpbsd - maild, Fix using a program to send mail, https://github.com/ossec/ossec-hids/pull/1783
+@ddpbsd - maild, Fix using a program to send mail, [PR 1783](https://github.com/ossec/ossec-hids/pull/1783)
 
 
 
@@ -595,19 +595,19 @@ contributing a much needed update to multi-line log analysis. Previous usage of 
 the past was limited in processing events that did not use indentiation, a fairly common modern practice
 for readability. This update adds a new type: multi-line_indented to handle this condition (Example: postgresql). 
 
-Maintenance fixes in this release also address issue #1781, which affected maild when calling an external program, and add support for Fedora 31
+Maintenance fixes in this release also address issue [#1781](https://github.com/ossec/ossec-hids/issues/1781), which affected maild when calling an external program, and add support for Fedora 31
 
 
 Whats New:
 
 (@atomicturtle) - Fedora 31 Support
-(@sempervictus) - Implement multi-line collection for indented logs #1780
-(@drsjb80) -  Added authentication log file location for debian-based systems #1784
+(@sempervictus) - Implement multi-line collection for indented logs [#1780](https://github.com/ossec/ossec-hids/issues/1780)
+(@drsjb80) -  Added authentication log file location for debian-based systems [#1784](https://github.com/ossec/ossec-hids/issues/1784)
 
 
 General
 
-(@ddpbsd) - Fix for Issue #1781, corrects issues with program sending mail
+(@ddpbsd) - Fix for Issue [#1781](https://github.com/ossec/ossec-hids/issues/1781), corrects issues with program sending mail
 
 
 
@@ -633,7 +633,7 @@ Contributors on this release
 (almirb)
 
 Release notes:
-libevent handler https://github.com/ossec/ossec-hids/pull/1698 for dialog.
+libevent handler [PR 1698](https://github.com/ossec/ossec-hids/pull/1698) for dialog.
 pcre2 rules
 
 
@@ -646,38 +646,38 @@ Big changes in this release add support for the following new platforms:
 
 Snapcraft.io universal linux packaging support (aka Snaps)  allow for a universal OSSEC package across multiple linux distributions.
 	
-Last but not least, ddpbsd has a long awaited fix for agentd/maild when ipv6 is disabled and/or hostnames are used instead of IPs in PR#1698. Thanks again to all our community contributors, and dedicated team members for their work on this release!
+Last but not least, ddpbsd has a long awaited fix for agentd/maild when ipv6 is disabled and/or hostnames are used instead of IPs in [PR#1698](https://github.com/ossec/ossec-hids/pull/1698). Thanks again to all our community contributors, and dedicated team members for their work on this release!
 
 New Rules / Decoders
 
-(aquerubin) Updated IPv4-dependent regexp in ownCloud decoders. PR#1697
-(jubois) Fix Issue #1708 (Incorrect regex match) PR#1710
-(jubois) PCRE2 rulefiles conversion PR#1711
-(jubois) PCRE2 decoders conversion PR#1712
-(aquerubin) Fix owncloud decoder PR#1724
-(iasdeoupxe) Additional ownCloud decoder fix PR#1725
-(iasdeoupxe) Second ownCloud decoder fix PR#1726
-(ddpbsd) Adjust pix decoder and a firewall rule PR#1749
-(binrush) Fixed missing same_source_ip in rule 11306 PR#1751 pureftpd
-(ddpbsd) Addition to sshd rule, new ntpd rule PR#1757, 
-(ddpbsd) Fix rule IDs PR#1760 -  openbsd_rules
+(aquerubin) Updated IPv4-dependent regexp in ownCloud decoders. [PR#1697](https://github.com/ossec/ossec-hids/pull/1697)
+(jubois) Fix Issue [#1708](https://github.com/ossec/ossec-hids/issues/1708) (Incorrect regex match) [PR#1710](https://github.com/ossec/ossec-hids/pull/1710)
+(jubois) PCRE2 rulefiles conversion [PR#1711](https://github.com/ossec/ossec-hids/pull/1711)
+(jubois) PCRE2 decoders conversion [PR#1712](https://github.com/ossec/ossec-hids/pull/1712)
+(aquerubin) Fix owncloud decoder [PR#1724](https://github.com/ossec/ossec-hids/pull/1724)
+(iasdeoupxe) Additional ownCloud decoder fix [PR#1725](https://github.com/ossec/ossec-hids/pull/1725)
+(iasdeoupxe) Second ownCloud decoder fix [PR#1726](https://github.com/ossec/ossec-hids/pull/1726)
+(ddpbsd) Adjust pix decoder and a firewall rule [PR#1749](https://github.com/ossec/ossec-hids/pull/1749)
+(binrush) Fixed missing same_source_ip in rule 11306 [PR#1751](https://github.com/ossec/ossec-hids/pull/1751) pureftpd
+(ddpbsd) Addition to sshd rule, new ntpd rule [PR#1757](https://github.com/ossec/ossec-hids/pull/1757), 
+(ddpbsd) Fix rule IDs [PR#1760](https://github.com/ossec/ossec-hids/pull/1760) -  openbsd_rules
 
 
 General
-(ddpbsd) syscheck, Try to silence the "Attempted to check FS status for" message. PR#1701
-(ddpbsd) syscheck, Add some basic error handling to syscheck_control PR#1702
-(ddpbsd) core, More unlink and fopen error handling in src/util PR#1703 
-(almirb) active-response,Added Cloudflare active-response script. PR#1709
-(Varstahl) cyslogd, csyslogd CEF – Remove duplicate parameters and fix discarded hashes PR#1713
-(atomicturtle) - docs, Updating links, using https, conference links PR#1714
+(ddpbsd) syscheck, Try to silence the "Attempted to check FS status for" message. [PR#1701](https://github.com/ossec/ossec-hids/pull/1701)
+(ddpbsd) syscheck, Add some basic error handling to syscheck_control [PR#1702](https://github.com/ossec/ossec-hids/pull/1702)
+(ddpbsd) core, More unlink and fopen error handling in src/util [PR#1703](https://github.com/ossec/ossec-hids/pull/1703) 
+(almirb) active-response,Added Cloudflare active-response script. [PR#1709](https://github.com/ossec/ossec-hids/pull/1709)
+(Varstahl) cyslogd, csyslogd CEF – Remove duplicate parameters and fix discarded hashes [PR#1713](https://github.com/ossec/ossec-hids/pull/1713)
+(atomicturtle) - docs, Updating links, using https, conference links [PR#1714](https://github.com/ossec/ossec-hids/pull/1714)
 (Varstahl) cyslogd, Fix: csyslogd – CEF escaping / multi-line syslog 
-(ddpbsd) core, Check return values for unlink(2) calls PR#1733 
-(mikeroyal) packaging, snap build support PR#1737
-(ddpbsd) core, Set PCRE2_SYSTEM to no by default. PR#1738
-(ddpbsd) logtest, Remove leading space from field names PR#1741
-(bchavet) analysisd, Verify Googlebot PR#1752 , this is a code function in generic_samples.c
-(ddpbsd) analysisd, Free the lf->fields memory. PR#1758, fixes issue #1727
-(ddpbsd) testing, Update some travis-ci bits PR#1759 - travis fixes
+(ddpbsd) core, Check return values for unlink(2) calls [PR#1733](https://github.com/ossec/ossec-hids/pull/1733) 
+(mikeroyal) packaging, snap build support [PR#1737](https://github.com/ossec/ossec-hids/pull/1737)
+(ddpbsd) core, Set PCRE2_SYSTEM to no by default. [PR#1738](https://github.com/ossec/ossec-hids/pull/1738)
+(ddpbsd) logtest, Remove leading space from field names [PR#1741](https://github.com/ossec/ossec-hids/pull/1741)
+(bchavet) analysisd, Verify Googlebot [PR#1752](https://github.com/ossec/ossec-hids/pull/1752) , this is a code function in generic_samples.c
+(ddpbsd) analysisd, Free the lf->fields memory. [PR#1758](https://github.com/ossec/ossec-hids/pull/1758), fixes issue [#1727](https://github.com/ossec/ossec-hids/issues/1727)
+(ddpbsd) testing, Update some travis-ci bits [PR#1759](https://github.com/ossec/ossec-hids/pull/1759) - travis fixes
 
 
 
@@ -725,29 +725,29 @@ Release Notes
 
 Whats New
 	
-	(jubois) - PCRE2 regular expression support - PR#1652
-	(atomicturtle) - ossec-analysisd, Dynamic decoder support. Original: Vikman Fdez-Castro  - PR#1678
-	(ddpbsd) - ossec-execd, Switch "white lists" to "allow lists" - PR#1687 - NARRATE HERE
+	(jubois) - PCRE2 regular expression support - [PR#1652](https://github.com/ossec/ossec-hids/pull/1652)
+	(atomicturtle) - ossec-analysisd, Dynamic decoder support. Original: Vikman Fdez-Castro  - [PR#1678](https://github.com/ossec/ossec-hids/pull/1678)
+	(ddpbsd) - ossec-execd, Switch "white lists" to "allow lists" - [PR#1687](https://github.com/ossec/ossec-hids/pull/1687) - NARRATE HERE
 
 New Rules / Decoders
-	(Bob-Andrews) - rootcheck, update  for NullSessionShares - PR#1669
-	(Bob-Andrews) - topleveldomainrules.xml, Shady TLD web traffic detection - PR#1671
-	(Bob-Andrews) - last_rootlogin_rules.xml, Sensitive login detection - PR#1671
-	(Bob-Andrews) - unbound_rules.xml, added rule for maybe critical TLD request - PR#1672
-	(Bob-Andrews) - rootcheck, Deleted repeating rules - PR#1674
-	(ddpbsd) - Update info links in Windows rules - PR#1675
-	(aquerubin) - Added decoder for pam_succeed_if - PR#1684
+	(Bob-Andrews) - rootcheck, update  for NullSessionShares - [PR#1669](https://github.com/ossec/ossec-hids/pull/1669)
+	(Bob-Andrews) - topleveldomainrules.xml, Shady TLD web traffic detection - [PR#1671](https://github.com/ossec/ossec-hids/pull/1671)
+	(Bob-Andrews) - last_rootlogin_rules.xml, Sensitive login detection - [PR#1671](https://github.com/ossec/ossec-hids/pull/1671)
+	(Bob-Andrews) - unbound_rules.xml, added rule for maybe critical TLD request - [PR#1672](https://github.com/ossec/ossec-hids/pull/1672)
+	(Bob-Andrews) - rootcheck, Deleted repeating rules - [PR#1674](https://github.com/ossec/ossec-hids/pull/1674)
+	(ddpbsd) - Update info links in Windows rules - [PR#1675](https://github.com/ossec/ossec-hids/pull/1675)
+	(aquerubin) - Added decoder for pam_succeed_if - [PR#1684](https://github.com/ossec/ossec-hids/pull/1684)
 
 
 General
-	(MangyCoyote) - ossec-analysisd, support Syslog ISO timestamp events with optional fraction of second - PR#1664
-	(ddpbsd) - Fix compilation with PCRE2_SYSTEM=yes - PR#1666
-	(aquerubin) - ossec-batch-manager.pl, update regexp for ipv6 addresses - PR#1667
-	(mephesto1337) - Fix part of issue#1663, compiling with PCRE2_SYSTEM=yes - PR#1677
-	(ddpbsd) - active-response, Fix for issue#1647, log disable-account.sh to the correct location - PR#1683
-	(aquerubin) - Copy resolv.conf on build event - PR#1685	
-	(almirb) - active-response, Corrected the way active-response logs are generated on windows - PR#1689
-	(atomicturtle) - ossec-execd, Expose filename variable in AR add/delete events - PR#1695
+	(MangyCoyote) - ossec-analysisd, support Syslog ISO timestamp events with optional fraction of second - [PR#1664](https://github.com/ossec/ossec-hids/pull/1664)
+	(ddpbsd) - Fix compilation with PCRE2_SYSTEM=yes - [PR#1666](https://github.com/ossec/ossec-hids/pull/1666)
+	(aquerubin) - ossec-batch-manager.pl, update regexp for ipv6 addresses - [PR#1667](https://github.com/ossec/ossec-hids/pull/1667)
+	(mephesto1337) - Fix part of issue [#1663](https://github.com/ossec/ossec-hids/issues/1663), compiling with PCRE2_SYSTEM=yes - [PR#1677](https://github.com/ossec/ossec-hids/pull/1677)
+	(ddpbsd) - active-response, Fix for issue [#1647](https://github.com/ossec/ossec-hids/issues/1647), log disable-account.sh to the correct location - [PR#1683](https://github.com/ossec/ossec-hids/pull/1683)
+	(aquerubin) - Copy resolv.conf on build event - [PR#1685](https://github.com/ossec/ossec-hids/pull/1685)	
+	(almirb) - active-response, Corrected the way active-response logs are generated on windows - [PR#1689](https://github.com/ossec/ossec-hids/pull/1689)
+	(atomicturtle) - ossec-execd, Expose filename variable in AR add/delete events - [PR#1695](https://github.com/ossec/ossec-hids/pull/1695)
 	
 
 
@@ -785,69 +785,69 @@ Release Notes
 
 Whats New
 
-	(atomicturtle) - add ossec-configure to contrib - PR#1559
-	(atomicturtle) - add <log_format>audit</log_format> for native audit.log support - PR#1589
-	(nhatking16591) - authd, Allow reuse ID and improve search algorithm finding available ID key. Fixes issue#1587, PR#1594
-	(ddpbsd) - syscheck, add <no_recurse> option to keep FIM from going down directories. Addresses Issue#1595 - PR#1597
-	(atomicturtle) - archives.json, JSON support for archives.log with <logall_json>yes</logall_json> - PR#1596, PR#1601, PR#1608
-	(atomicturtle) - agent_control, -j for JSON output - PR#1625
-	(atomicturtle) - syscheck/rootchec_control, add -j for JSON output - PR#1626
-	(atomicturtle) - manage_agents, add -j for JSON output, -a to add new agent, -a -n add new agent with declared name - PR#1627
-	(atomicturtle) - internal_options.conf, remoted.pass_empty_keyfile will toggle if remoted exits on an empty client.keys file - PR#1628 
-	(atomicturtle) - manage_agents, add -d modifier to -a (add) to remove an agent pinned to an already declared IP - PR#1632
-	(atomicturtle) - manage_agents, add -F <sec> modifier to -a (add), this will delete an agent with the same IP if it has not been seen in -F <secs> - PR#1639
-	(atomicturtle) - manage_agents, add -m flag to show the max agent limit - PR#1650
+	(atomicturtle) - add ossec-configure to contrib - [PR#1559](https://github.com/ossec/ossec-hids/pull/1559)
+	(atomicturtle) - add <log_format>audit</log_format> for native audit.log support - [PR#1589](https://github.com/ossec/ossec-hids/pull/1589)
+	(nhatking16591) - authd, Allow reuse ID and improve search algorithm finding available ID key. Fixes issue [#1587](https://github.com/ossec/ossec-hids/issues/1587), [PR#1594](https://github.com/ossec/ossec-hids/pull/1594)
+	(ddpbsd) - syscheck, add <no_recurse> option to keep FIM from going down directories. Addresses Issue [#1595](https://github.com/ossec/ossec-hids/issues/1595) - [PR#1597](https://github.com/ossec/ossec-hids/pull/1597)
+	(atomicturtle) - archives.json, JSON support for archives.log with <logall_json>yes</logall_json> - [PR#1596](https://github.com/ossec/ossec-hids/pull/1596), [PR#1601](https://github.com/ossec/ossec-hids/pull/1601), [PR#1608](https://github.com/ossec/ossec-hids/pull/1608)
+	(atomicturtle) - agent_control, -j for JSON output - [PR#1625](https://github.com/ossec/ossec-hids/pull/1625)
+	(atomicturtle) - syscheck/rootchec_control, add -j for JSON output - [PR#1626](https://github.com/ossec/ossec-hids/pull/1626)
+	(atomicturtle) - manage_agents, add -j for JSON output, -a to add new agent, -a -n add new agent with declared name - [PR#1627](https://github.com/ossec/ossec-hids/pull/1627)
+	(atomicturtle) - internal_options.conf, remoted.pass_empty_keyfile will toggle if remoted exits on an empty client.keys file - [PR#1628](https://github.com/ossec/ossec-hids/pull/1628) 
+	(atomicturtle) - manage_agents, add -d modifier to -a (add) to remove an agent pinned to an already declared IP - [PR#1632](https://github.com/ossec/ossec-hids/pull/1632)
+	(atomicturtle) - manage_agents, add -F <sec> modifier to -a (add), this will delete an agent with the same IP if it has not been seen in -F <secs> - [PR#1639](https://github.com/ossec/ossec-hids/pull/1639)
+	(atomicturtle) - manage_agents, add -m flag to show the max agent limit - [PR#1650](https://github.com/ossec/ossec-hids/pull/1650)
 
 
 New Rules / Decoders
-	(Bob-Andrews) - rootcheck, add Solaris11 CIS checks - PR#1557
-	(Bob-Andrews) - rootcheck, add password requirement checks - PR#1558, PR#1562
-	(Bob-Andrews) - Kasperskey Endpoint Security rules/decoders - PR#1573
-	(Bob-Andrews) - Cowrie / Dionaea Modern Honeypot Network rules/decoders - PR#1574
-	(Bob-Andrews) - Dionaea/Cowrie decoder, Changed IPv4 to IPv4/IPv6 - PR#1578
-	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml, add powershell rules - PR#1579
-	(jubois) - proftpd decoder: decoder simplification - PR#1657
-	(ddpbsd) - nsd rules: nsd_rules.xml, detect zone transfer attempts - PR#1598
-	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml,  dangerous commands/background activity - PR#1646
+	(Bob-Andrews) - rootcheck, add Solaris11 CIS checks - [PR#1557](https://github.com/ossec/ossec-hids/pull/1557)
+	(Bob-Andrews) - rootcheck, add password requirement checks - [PR#1558](https://github.com/ossec/ossec-hids/pull/1558), [PR#1562](https://github.com/ossec/ossec-hids/pull/1562)
+	(Bob-Andrews) - Kasperskey Endpoint Security rules/decoders - [PR#1573](https://github.com/ossec/ossec-hids/pull/1573)
+	(Bob-Andrews) - Cowrie / Dionaea Modern Honeypot Network rules/decoders - [PR#1574](https://github.com/ossec/ossec-hids/pull/1574)
+	(Bob-Andrews) - Dionaea/Cowrie decoder, Changed IPv4 to IPv4/IPv6 - [PR#1578](https://github.com/ossec/ossec-hids/pull/1578)
+	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml, add powershell rules - [PR#1579](https://github.com/ossec/ossec-hids/pull/1579)
+	(jubois) - proftpd decoder: decoder simplification - [PR#1657](https://github.com/ossec/ossec-hids/pull/1657)
+	(ddpbsd) - nsd rules: nsd_rules.xml, detect zone transfer attempts - [PR#1598](https://github.com/ossec/ossec-hids/pull/1598)
+	(Bob-Andrews) - Windows Powershell rules: ms_powershell_rules.xml,  dangerous commands/background activity - [PR#1646](https://github.com/ossec/ossec-hids/pull/1646)
 
 
 General
-	(mig5) - firewall-drop.sh, modify to support non-bash environments - PR#1572
-	(mwmahlberg) - ossec-agent.conf, remove double hyphen in comment. Fixes issue#1582 - PR#1583
-	(ddpbsd) - ossec-maild, allow permission changes to make it into email alerts. Fixes issue#1571 - PR#1593
-	(ddpbsd) - installation, addresses issue#1570, allow installation as unpriv user - PR#1599
-	(atomicturtle) - JSON output, basic json functions for agent_control - PR#1600, PR#1602
-	(ddpbsd) - ossec-authd, use IPExist to check for duplicate IP addresses - PR#1603
-	(ddpbsd) - general, default to not setting the compiler optimization level - PR#1604
-	(ddpbsd) - general, default to showing verbose compiler output - PR#1605
-	(atomicturtle) - agent_control, JSON output prep work - PR#1606
-	(atomicturtle) - JSON output, adding functions for rootcheck compliance output in JSON - PR#1607
-	(atomicturtle) - JSON output, minor optimization - PR#1609
-	(atomicturtle) - agent_control, minor fixes for JSON output - PR#1610
-	(ddpbsd) - zlib, shifting dependencies to the system zlib - PR#1612
-	(ddpbsd) - LUA, disable lua by default, shifting dependencies to the system lua - PR#1613
-	(ddpbsd) - security review, coverity fixes - PR#1616
-	(atomicturtle) - JSON output, minor update for JSON log dirs/files - PR#1617
-	(atomicturtle) - JSON output, fix lf location array from unknown syslog - PR#1618
-	(atomicturtle) - manage_agents, bugfix  when generating keys from a file - PR#1619
-	(atomicturtle) - ossec-analysisd, increase default memory size from 1024 to 8192 (dcid) - PR#1620
-	(ddpbsd) - security review, coverity fixes - PR#1621
-	(atomicturtle) - JSON output, adding more groups, and clean up formatting - PR#1622
-	(ddpbsd) - security review, coverity fixes for PR#1624 - PR#1629	
-	(ddpbsd) - manage_agents, add an error path for being unable to chmod authfile - PR#1629	
-	(pillarsdotnet) - active-response, directory traversal fix - PR#1630
-	(ddpbsd) - ossec-control, remove author tag from output - PR#1633
-	(atomicturtle) - agent management cleanup, rootcheck/syscheck data is removed on a delete event - PR#1634
-	(ddpbsd) - json output, add prototype for function/ fixing compile warnings - PR#1636
-	(ddpbsd) - json output, cleanup for unused variables - PR#1637
-	(ddpbsd) - ossec-maild, remove legacy sms output type - PR#1638
-	(ddpbsd) - agent_control, usage output update - PR#1640
-	(jubois) - dotests.sh, Improved dotests.sh output - PR#1641
-	(jubois) - Correct tests in contrib/logtesting - PR#1645
-	(atomicturtle) - ossec-analysisd, fix for analysisd segfault in overwrite rule condition - PR#1649
-	(atomicturtle) - ossec-csyslogd, fix for size returned from a tcp syslog event - PR#1653
-	(jubois) - fix compilation warnings - PR#1654
-	(knqyf263) - ossec-maild, fix for email being sent infinitely - PR#1658
+	(mig5) - firewall-drop.sh, modify to support non-bash environments - [PR#1572](https://github.com/ossec/ossec-hids/pull/1572)
+	(mwmahlberg) - ossec-agent.conf, remove double hyphen in comment. Fixes issue [#1582](https://github.com/ossec/ossec-hids/issues/1582) - [PR#1583](https://github.com/ossec/ossec-hids/pull/1583)
+	(ddpbsd) - ossec-maild, allow permission changes to make it into email alerts. Fixes issue [#1571](https://github.com/ossec/ossec-hids/issues/1571) - [PR#1593](https://github.com/ossec/ossec-hids/pull/1593)
+	(ddpbsd) - installation, addresses issue [#1570](https://github.com/ossec/ossec-hids/issues/1570), allow installation as unpriv user - [PR#1599](https://github.com/ossec/ossec-hids/pull/1599)
+	(atomicturtle) - JSON output, basic json functions for agent_control - [PR#1600](https://github.com/ossec/ossec-hids/pull/1600), [PR#1602](https://github.com/ossec/ossec-hids/pull/1602)
+	(ddpbsd) - ossec-authd, use IPExist to check for duplicate IP addresses - [PR#1603](https://github.com/ossec/ossec-hids/pull/1603)
+	(ddpbsd) - general, default to not setting the compiler optimization level - [PR#1604](https://github.com/ossec/ossec-hids/pull/1604)
+	(ddpbsd) - general, default to showing verbose compiler output - [PR#1605](https://github.com/ossec/ossec-hids/pull/1605)
+	(atomicturtle) - agent_control, JSON output prep work - [PR#1606](https://github.com/ossec/ossec-hids/pull/1606)
+	(atomicturtle) - JSON output, adding functions for rootcheck compliance output in JSON - [PR#1607](https://github.com/ossec/ossec-hids/pull/1607)
+	(atomicturtle) - JSON output, minor optimization - [PR#1609](https://github.com/ossec/ossec-hids/pull/1609)
+	(atomicturtle) - agent_control, minor fixes for JSON output - [PR#1610](https://github.com/ossec/ossec-hids/pull/1610)
+	(ddpbsd) - zlib, shifting dependencies to the system zlib - [PR#1612](https://github.com/ossec/ossec-hids/pull/1612)
+	(ddpbsd) - LUA, disable lua by default, shifting dependencies to the system lua - [PR#1613](https://github.com/ossec/ossec-hids/pull/1613)
+	(ddpbsd) - security review, coverity fixes - [PR#1616](https://github.com/ossec/ossec-hids/pull/1616)
+	(atomicturtle) - JSON output, minor update for JSON log dirs/files - [PR#1617](https://github.com/ossec/ossec-hids/pull/1617)
+	(atomicturtle) - JSON output, fix lf location array from unknown syslog - [PR#1618](https://github.com/ossec/ossec-hids/pull/1618)
+	(atomicturtle) - manage_agents, bugfix  when generating keys from a file - [PR#1619](https://github.com/ossec/ossec-hids/pull/1619)
+	(atomicturtle) - ossec-analysisd, increase default memory size from 1024 to 8192 (dcid) - [PR#1620](https://github.com/ossec/ossec-hids/pull/1620)
+	(ddpbsd) - security review, coverity fixes - [PR#1621](https://github.com/ossec/ossec-hids/pull/1621)
+	(atomicturtle) - JSON output, adding more groups, and clean up formatting - [PR#1622](https://github.com/ossec/ossec-hids/pull/1622)
+	(ddpbsd) - security review, coverity fixes for [PR#1624](https://github.com/ossec/ossec-hids/pull/1624) - [PR#1629](https://github.com/ossec/ossec-hids/pull/1629)	
+	(ddpbsd) - manage_agents, add an error path for being unable to chmod authfile - [PR#1629](https://github.com/ossec/ossec-hids/pull/1629)	
+	(pillarsdotnet) - active-response, directory traversal fix - [PR#1630](https://github.com/ossec/ossec-hids/pull/1630)
+	(ddpbsd) - ossec-control, remove author tag from output - [PR#1633](https://github.com/ossec/ossec-hids/pull/1633)
+	(atomicturtle) - agent management cleanup, rootcheck/syscheck data is removed on a delete event - [PR#1634](https://github.com/ossec/ossec-hids/pull/1634)
+	(ddpbsd) - json output, add prototype for function/ fixing compile warnings - [PR#1636](https://github.com/ossec/ossec-hids/pull/1636)
+	(ddpbsd) - json output, cleanup for unused variables - [PR#1637](https://github.com/ossec/ossec-hids/pull/1637)
+	(ddpbsd) - ossec-maild, remove legacy sms output type - [PR#1638](https://github.com/ossec/ossec-hids/pull/1638)
+	(ddpbsd) - agent_control, usage output update - [PR#1640](https://github.com/ossec/ossec-hids/pull/1640)
+	(jubois) - dotests.sh, Improved dotests.sh output - [PR#1641](https://github.com/ossec/ossec-hids/pull/1641)
+	(jubois) - Correct tests in contrib/logtesting - [PR#1645](https://github.com/ossec/ossec-hids/pull/1645)
+	(atomicturtle) - ossec-analysisd, fix for analysisd segfault in overwrite rule condition - [PR#1649](https://github.com/ossec/ossec-hids/pull/1649)
+	(atomicturtle) - ossec-csyslogd, fix for size returned from a tcp syslog event - [PR#1653](https://github.com/ossec/ossec-hids/pull/1653)
+	(jubois) - fix compilation warnings - [PR#1654](https://github.com/ossec/ossec-hids/pull/1654)
+	(knqyf263) - ossec-maild, fix for email being sent infinitely - [PR#1658](https://github.com/ossec/ossec-hids/pull/1658)
 
 
 OSSEC changelog (3.1.0) <scott@atomicorp.com>
@@ -871,54 +871,54 @@ Release Notes
 	
 
 Whats New
-	(davestoddard) Modification to Correct IP Connectivity Issues on BSD Servers PR #1412
+	(davestoddard) Modification to Correct IP Connectivity Issues on BSD Servers [PR #1412](https://github.com/ossec/ossec-hids/pull/1412)
 
 New Rules / Decoders
 	(Bob-Andrews) - linux_usbdetect_rules.xml, ms1016_usbdetect_rules.xml, ms_firewall_rules.xml
-	(Bob-Andrews) - Added ms_ipsec_rules PR #1549
-	(Bob-Andrews) - Rootchecks for Debian 7+8, cis_debianlinux7-8_L1_rcl.txt, cis_debianlinux7-8_L2_rcl.txt, cis_win10_enterprise_L1_rcl.txt, cis_win10_enterprise_L2_rcl.txt PR #1531
-	(Bob-Andrews) - acsc_office2016_rcl.txt, Added rootcheck PR #1510
-	(Bob-Andrews) - added cis_win2016_memberL1_rcl.txt, cis_win2016_memberL2_rcl.txt PR #1496
-	(Bob-Andrews) - cis_win2012r2_memberL1_rcl.txt, Added Check Description/Alert PR #1495
-	(ddpbsd) - additional sshd decoders PR #1480
-	(ddpbsd) - basic support for Dnsmasq PR #1461
+	(Bob-Andrews) - Added ms_ipsec_rules [PR #1549](https://github.com/ossec/ossec-hids/pull/1549)
+	(Bob-Andrews) - Rootchecks for Debian 7+8, cis_debianlinux7-8_L1_rcl.txt, cis_debianlinux7-8_L2_rcl.txt, cis_win10_enterprise_L1_rcl.txt, cis_win10_enterprise_L2_rcl.txt [PR #1531](https://github.com/ossec/ossec-hids/pull/1531)
+	(Bob-Andrews) - acsc_office2016_rcl.txt, Added rootcheck [PR #1510](https://github.com/ossec/ossec-hids/pull/1510)
+	(Bob-Andrews) - added cis_win2016_memberL1_rcl.txt, cis_win2016_memberL2_rcl.txt [PR #1496](https://github.com/ossec/ossec-hids/pull/1496)
+	(Bob-Andrews) - cis_win2012r2_memberL1_rcl.txt, Added Check Description/Alert [PR #1495](https://github.com/ossec/ossec-hids/pull/1495)
+	(ddpbsd) - additional sshd decoders [PR #1480](https://github.com/ossec/ossec-hids/pull/1480)
+	(ddpbsd) - basic support for Dnsmasq [PR #1461](https://github.com/ossec/ossec-hids/pull/1461)
 
 General
-	(iasdeoupxe) - host-deny.sh: Move duplicate entry check into the add action PR #1554
-	(iasdeoupxe) - host-deny.sh: Use consistent indentation PR #1553
-	(iasdeoupxe) - host-deny.sh: Remove unnecessary echo for duplicated entry PR #1552
-	(Bob-Andrews) - Added new id ranges for linux usb detection rules, ms1016 usb detection rules and ms firewall rules from PR #1543
-	(Bob-Andrews) - Corrected IDs to a non user defined range PR #1547 (psad_rules.xml, sysmon_rules.xml, unbound_rules.xml)
-	(c0r3dump3d) - Correct and expand spanish translation PR #1541
-	(ddpbsd) - Adjust the tests for sysmon rules PR #1548
-	(MangyCoyote) - install.sh - case for s-nail patch can't be applied if `mail` is not installed PR #1539
-	(atomicturtle) - ossec-authd Fix for foreground flags PR #1538
-	(atomicturtle) - ossec-authd Add -f foreground flag support PR #1537
-	(featzor) - psad signature match level 6 PR #1517
-	(Bob-Andrews) - Corrected rootcheck CIS tests for cis_win2012r2_domainL2_rcl.txt, is_win2012r2_memberL2_rcl.txt, cis_win2016_domainL2_rcl.txt PR #1521
-	(franciosi) - Updated README.md, correts small typos PR #1519
-	(ddpbsd) - Fix the subject handling. Issue submitted by Michael Starks #1370 PR #1377
-	(foygl) - ossec-slack.sh, Fix and clean up output for Slack integration PR #1508
-	(ddpbsd) - From issue #1514, a duplicate `_gsid1 == 0` -> `_gsid0 == 0` PR #1515
-	(Bob-Andrews) - cis_win2016_domainL1_rcl.txt, Corrected Check - Registry Hive PR #1511
-	(ashley-dunn) - Fix "bellow" typos in ossec-[client|local|server].sh files PR #1512
-	(ddpbsd) - Fix the log location in the ossec-slack AR script. PR #1422
-	(phamvuong) - BUGFIX: remove default value for authpass PR #1464
-	(calve) - Bump version definition in defs.h PR #1504
-	(ddpbsd) - More coverity fixes PR #1497
-	(ddpbsd) - Modify status() to not return 1 when maild is not running PR #1501
-	(ddpbsd) - Coverity fixes PR #1490
-	(Bob-Andrews) - Moved file to ossec-hids/ src/rootcheck/db/ PR #1493
-	(ddpbsd) - Make sure there's room for the full alert id in json alerts PR #1487
-	(ddpbsd) - Fix an issue in the nodiff option which could ignore files it isn't supposed to PR #1486
-	(ddpbsd) - Hard coded user/group changed to appropriate variables PR #1484
-	(ddpbsd) - Add FreeBSD's php.ini location to rootcheck db PR #1483
-	(ddpbsd) - Replace hard coded directories with the appropriate variables PR #1482
-	(ddpbsd) - When trying to bind to a local address, present the error on failure. PR #1457
-	(ddpbsd) - version_bump.sh Quick script to make version bumping easier PR #1532
-	(phamvuong)  - Call select() before checking active socket PR #1529
-	(stephengroat) - use nicer looking travis build badge PR #1460
-	(stevhsu) - Correct lua version variable PR #1459
+	(iasdeoupxe) - host-deny.sh: Move duplicate entry check into the add action [PR #1554](https://github.com/ossec/ossec-hids/pull/1554)
+	(iasdeoupxe) - host-deny.sh: Use consistent indentation [PR #1553](https://github.com/ossec/ossec-hids/pull/1553)
+	(iasdeoupxe) - host-deny.sh: Remove unnecessary echo for duplicated entry [PR #1552](https://github.com/ossec/ossec-hids/pull/1552)
+	(Bob-Andrews) - Added new id ranges for linux usb detection rules, ms1016 usb detection rules and ms firewall rules from [PR #1543](https://github.com/ossec/ossec-hids/pull/1543)
+	(Bob-Andrews) - Corrected IDs to a non user defined range [PR #1547](https://github.com/ossec/ossec-hids/pull/1547) (psad_rules.xml, sysmon_rules.xml, unbound_rules.xml)
+	(c0r3dump3d) - Correct and expand spanish translation [PR #1541](https://github.com/ossec/ossec-hids/pull/1541)
+	(ddpbsd) - Adjust the tests for sysmon rules [PR #1548](https://github.com/ossec/ossec-hids/pull/1548)
+	(MangyCoyote) - install.sh - case for s-nail patch can't be applied if `mail` is not installed [PR #1539](https://github.com/ossec/ossec-hids/pull/1539)
+	(atomicturtle) - ossec-authd Fix for foreground flags [PR #1538](https://github.com/ossec/ossec-hids/pull/1538)
+	(atomicturtle) - ossec-authd Add -f foreground flag support [PR #1537](https://github.com/ossec/ossec-hids/pull/1537)
+	(featzor) - psad signature match level 6 [PR #1517](https://github.com/ossec/ossec-hids/pull/1517)
+	(Bob-Andrews) - Corrected rootcheck CIS tests for cis_win2012r2_domainL2_rcl.txt, is_win2012r2_memberL2_rcl.txt, cis_win2016_domainL2_rcl.txt [PR #1521](https://github.com/ossec/ossec-hids/pull/1521)
+	(franciosi) - Updated README.md, correts small typos [PR #1519](https://github.com/ossec/ossec-hids/pull/1519)
+	(ddpbsd) - Fix the subject handling. Issue submitted by Michael Starks [#1370](https://github.com/ossec/ossec-hids/issues/1370) [PR #1377](https://github.com/ossec/ossec-hids/pull/1377)
+	(foygl) - ossec-slack.sh, Fix and clean up output for Slack integration [PR #1508](https://github.com/ossec/ossec-hids/pull/1508)
+	(ddpbsd) - From issue [#1514](https://github.com/ossec/ossec-hids/issues/1514), a duplicate `_gsid1 == 0` -> `_gsid0 == 0` [PR #1515](https://github.com/ossec/ossec-hids/pull/1515)
+	(Bob-Andrews) - cis_win2016_domainL1_rcl.txt, Corrected Check - Registry Hive [PR #1511](https://github.com/ossec/ossec-hids/pull/1511)
+	(ashley-dunn) - Fix "bellow" typos in ossec-[client|local|server].sh files [PR #1512](https://github.com/ossec/ossec-hids/pull/1512)
+	(ddpbsd) - Fix the log location in the ossec-slack AR script. [PR #1422](https://github.com/ossec/ossec-hids/pull/1422)
+	(phamvuong) - BUGFIX: remove default value for authpass [PR #1464](https://github.com/ossec/ossec-hids/pull/1464)
+	(calve) - Bump version definition in defs.h [PR #1504](https://github.com/ossec/ossec-hids/pull/1504)
+	(ddpbsd) - More coverity fixes [PR #1497](https://github.com/ossec/ossec-hids/pull/1497)
+	(ddpbsd) - Modify status() to not return 1 when maild is not running [PR #1501](https://github.com/ossec/ossec-hids/pull/1501)
+	(ddpbsd) - Coverity fixes [PR #1490](https://github.com/ossec/ossec-hids/pull/1490)
+	(Bob-Andrews) - Moved file to ossec-hids/ src/rootcheck/db/ [PR #1493](https://github.com/ossec/ossec-hids/pull/1493)
+	(ddpbsd) - Make sure there's room for the full alert id in json alerts [PR #1487](https://github.com/ossec/ossec-hids/pull/1487)
+	(ddpbsd) - Fix an issue in the nodiff option which could ignore files it isn't supposed to [PR #1486](https://github.com/ossec/ossec-hids/pull/1486)
+	(ddpbsd) - Hard coded user/group changed to appropriate variables [PR #1484](https://github.com/ossec/ossec-hids/pull/1484)
+	(ddpbsd) - Add FreeBSD's php.ini location to rootcheck db [PR #1483](https://github.com/ossec/ossec-hids/pull/1483)
+	(ddpbsd) - Replace hard coded directories with the appropriate variables [PR #1482](https://github.com/ossec/ossec-hids/pull/1482)
+	(ddpbsd) - When trying to bind to a local address, present the error on failure. [PR #1457](https://github.com/ossec/ossec-hids/pull/1457)
+	(ddpbsd) - version_bump.sh Quick script to make version bumping easier [PR #1532](https://github.com/ossec/ossec-hids/pull/1532)
+	(phamvuong)  - Call select() before checking active socket [PR #1529](https://github.com/ossec/ossec-hids/pull/1529)
+	(stephengroat) - use nicer looking travis build badge [PR #1460](https://github.com/ossec/ossec-hids/pull/1460)
+	(stevhsu) - Correct lua version variable [PR #1459](https://github.com/ossec/ossec-hids/pull/1459)
 
 
 
@@ -932,170 +932,170 @@ Scott R. Shinn (Atomicorp, Inc.)
 
 Whats New
 	SQLite support for syscheck
-		PR #1091 - whitelist for files in sqlite DB
-		PR #1364 - add some ifdefs for the md5 whitelist database (USE_SQLITE)
+		[PR #1091](https://github.com/ossec/ossec-hids/pull/1091) - whitelist for files in sqlite DB
+		[PR #1364](https://github.com/ossec/ossec-hids/pull/1364) - add some ifdefs for the md5 whitelist database (USE_SQLITE)
 
 	Update cJSON 1.7.0
-		PR #1351
+		[PR #1351](https://github.com/ossec/ossec-hids/pull/1351)
 
 	Add Pagerduty Active response
-		PR #1302
+		[PR #1302](https://github.com/ossec/ossec-hids/pull/1302)
 
 	OSSEC-authd 
 
-		PR #890 / #873 - Dichotomic search to add agents with authd
-		PR #1154 / #1210 - password support
-		PR #1161 - avoid IP duplication, time limit agent deletion with duplicate IP, and option for re-using an agent ID
-		PR #1190 - Exit handler for authd to delete PID file
-		PR #1208 - add cipher configuration support
+		[PR #890](https://github.com/ossec/ossec-hids/pull/890) / [#873](https://github.com/ossec/ossec-hids/issues/873) - Dichotomic search to add agents with authd
+		[PR #1154](https://github.com/ossec/ossec-hids/pull/1154) / [#1210](https://github.com/ossec/ossec-hids/issues/1210) - password support
+		[PR #1161](https://github.com/ossec/ossec-hids/pull/1161) - avoid IP duplication, time limit agent deletion with duplicate IP, and option for re-using an agent ID
+		[PR #1190](https://github.com/ossec/ossec-hids/pull/1190) - Exit handler for authd to delete PID file
+		[PR #1208](https://github.com/ossec/ossec-hids/pull/1208) - add cipher configuration support
 
 	zlib update to 1.2.11
-		PR #1198
+		[PR #1198](https://github.com/ossec/ossec-hids/pull/1198)
 
 	ossec-agent selinux module
-		PR #1193
+		[PR #1193](https://github.com/ossec/ossec-hids/pull/1193)
 
 	windows agent
-		PR #1170 - add agent-auth.exe support
+		[PR #1170](https://github.com/ossec/ossec-hids/pull/1170) - add agent-auth.exe support
 
 	add tcp support for agent communications
-		PR #1162
+		[PR #1162](https://github.com/ossec/ossec-hids/pull/1162)
 
 	GeoIP support in rules and events
-		PR #840 - Support in alerts
-		PR #927 - add geoip support to JSON output analysisd.geoip_jsonout=0
-		PR #929 - Modify rule token different_geoip rule to different_srcgeoip
-		PR #984 - fix some geoIP bugs
-		PR #1108 - decoder fixes
+		[PR #840](https://github.com/ossec/ossec-hids/pull/840) - Support in alerts
+		[PR #927](https://github.com/ossec/ossec-hids/pull/927) - add geoip support to JSON output analysisd.geoip_jsonout=0
+		[PR #929](https://github.com/ossec/ossec-hids/pull/929) - Modify rule token different_geoip rule to different_srcgeoip
+		[PR #984](https://github.com/ossec/ossec-hids/pull/984) - fix some geoIP bugs
+		[PR #1108](https://github.com/ossec/ossec-hids/pull/1108) - decoder fixes
 
 	Slack support
-		Bugfix #947 - Escape the '.' in the grep for '.ALERTLAST' #947
-		Bugfix #959 - silent curl in ossec-slack
+		Bugfix [#947](https://github.com/ossec/ossec-hids/issues/947) - Escape the '.' in the grep for '.ALERTLAST' [#947](https://github.com/ossec/ossec-hids/issues/947)
+		Bugfix [#959](https://github.com/ossec/ossec-hids/issues/959) - silent curl in ossec-slack
 
 	Decoders filename attribute
-		PR #915 - A few fixes, but most importantly the ability to set the filename attribute from a decoder. This will help create automated pipelines for FIM Verification. I currently need to compare FIM events against 1) Puppet, 2) GIT, and 3) RPM. This patch allows FIM events to be intercepted by my custom FIM Verification script, which generates logging events which OSSEC can read and turn back into an event with the filename attribute set.
+		[PR #915](https://github.com/ossec/ossec-hids/pull/915) - A few fixes, but most importantly the ability to set the filename attribute from a decoder. This will help create automated pipelines for FIM Verification. I currently need to compare FIM events against 1) Puppet, 2) GIT, and 3) RPM. This patch allows FIM events to be intercepted by my custom FIM Verification script, which generates logging events which OSSEC can read and turn back into an event with the filename attribute set.
 
 
 
 New Rules / Decoders
 
-PR #1297 / #1335 - update named rules
-PR #1324 - Bitcoin wallet scans to suspicious URLs
-PR #1356 - Openbsd DHCP rules
+[PR #1297](https://github.com/ossec/ossec-hids/pull/1297) / [#1335](https://github.com/ossec/ossec-hids/issues/1335) - update named rules
+[PR #1324](https://github.com/ossec/ossec-hids/pull/1324) - Bitcoin wallet scans to suspicious URLs
+[PR #1356](https://github.com/ossec/ossec-hids/pull/1356) - Openbsd DHCP rules
 
 
 General
 
-Bugfix #42 - Add option to use unaltered hashes with Windows syscheck 
-Bugfix #210 - Time option in rules is rejecting valid syntax. 
-Bugfix #425 - manage_agents unable to access /dev/random due to chroot 
-Bugfix #454 - Prevent manage_agents from chrooting in bulk mode
-Bugfix #780 - Compile warning (and potential segfault) after merge from calve/do_not_show_diff 
-Bugfix #829 - Segmentation fault at logcollector
-Bugfix #888 - Pull Request #840 reverts some ipv6 support
-Bugfix #869 - ossec-agentd is unable to unmerge files
-Bugfix #892 - Contrib tools need to be updated for IPv6. 
-Bugfix #911 - "any" is broken after change to sacmp for ipv4 networks #911
-Bugfix #913 - logcollector goes into loop when a NULL is in the log
-Bugfix #960 - do not attempt to start ossec-maild when it is enabled
-Bugfix #961 - fix for open file handle when rotating alerts.json
-Bugfix #976 - win32: 2 values in internal_options.conf ignored 
-Bugfix #994 - rootcheck, fix for false positive trojaned /bin/grep
-Bugfix #998 - IPv6 triggers Rule 1002 
-Bugfix #1065 - fix for negating IP/CIDR rules
-Bugfix #1084 - fix a double free 
-Bugfix #1106 - ossec-remoted, Fix for clang checks, and a potential DOS caused by a warning
-Bugfix #1142 - CEF field uniqueness fix
-Bugfix #1145 - if getaddrinfo fails with WAI_FAMILY try ipv4
-Bugfix #1165 - rpm spec files generate ossec user and group in user space
-Bugfix #1180 - Add last events (previous output) to JSON output 
-Bugfix #1205 - Avoid EOL conversion of received files in the windows receiver
-Bugfix #1227 - Fix for daily reports not being sent
-Bugfix #1237 - Custom CFLAGS/CXXFLAGS/LDFLAGS support
-Bugfix #1274 - ossec-authd, ipv6 returns an invalid key
-Bugfix #1278 - Use getent to check for users/group
-Bugfix #1366 - Update to rule ID map
-Bugfix #1370 - Bugfix for full subject handling 
+Bugfix [#42](https://github.com/ossec/ossec-hids/issues/42) - Add option to use unaltered hashes with Windows syscheck 
+Bugfix [#210](https://github.com/ossec/ossec-hids/issues/210) - Time option in rules is rejecting valid syntax. 
+Bugfix [#425](https://github.com/ossec/ossec-hids/issues/425) - manage_agents unable to access /dev/random due to chroot 
+Bugfix [#454](https://github.com/ossec/ossec-hids/issues/454) - Prevent manage_agents from chrooting in bulk mode
+Bugfix [#780](https://github.com/ossec/ossec-hids/issues/780) - Compile warning (and potential segfault) after merge from calve/do_not_show_diff 
+Bugfix [#829](https://github.com/ossec/ossec-hids/issues/829) - Segmentation fault at logcollector
+Bugfix [#888](https://github.com/ossec/ossec-hids/issues/888) - [Pull Request #840](https://github.com/ossec/ossec-hids/pull/840) reverts some ipv6 support
+Bugfix [#869](https://github.com/ossec/ossec-hids/issues/869) - ossec-agentd is unable to unmerge files
+Bugfix [#892](https://github.com/ossec/ossec-hids/issues/892) - Contrib tools need to be updated for IPv6. 
+Bugfix [#911](https://github.com/ossec/ossec-hids/issues/911) - "any" is broken after change to sacmp for ipv4 networks [#911](https://github.com/ossec/ossec-hids/issues/911)
+Bugfix [#913](https://github.com/ossec/ossec-hids/issues/913) - logcollector goes into loop when a NULL is in the log
+Bugfix [#960](https://github.com/ossec/ossec-hids/issues/960) - do not attempt to start ossec-maild when it is enabled
+Bugfix [#961](https://github.com/ossec/ossec-hids/issues/961) - fix for open file handle when rotating alerts.json
+Bugfix [#976](https://github.com/ossec/ossec-hids/issues/976) - win32: 2 values in internal_options.conf ignored 
+Bugfix [#994](https://github.com/ossec/ossec-hids/issues/994) - rootcheck, fix for false positive trojaned /bin/grep
+Bugfix [#998](https://github.com/ossec/ossec-hids/issues/998) - IPv6 triggers Rule 1002 
+Bugfix [#1065](https://github.com/ossec/ossec-hids/issues/1065) - fix for negating IP/CIDR rules
+Bugfix [#1084](https://github.com/ossec/ossec-hids/issues/1084) - fix a double free 
+Bugfix [#1106](https://github.com/ossec/ossec-hids/issues/1106) - ossec-remoted, Fix for clang checks, and a potential DOS caused by a warning
+Bugfix [#1142](https://github.com/ossec/ossec-hids/issues/1142) - CEF field uniqueness fix
+Bugfix [#1145](https://github.com/ossec/ossec-hids/issues/1145) - if getaddrinfo fails with WAI_FAMILY try ipv4
+Bugfix [#1165](https://github.com/ossec/ossec-hids/issues/1165) - rpm spec files generate ossec user and group in user space
+Bugfix [#1180](https://github.com/ossec/ossec-hids/issues/1180) - Add last events (previous output) to JSON output 
+Bugfix [#1205](https://github.com/ossec/ossec-hids/issues/1205) - Avoid EOL conversion of received files in the windows receiver
+Bugfix [#1227](https://github.com/ossec/ossec-hids/issues/1227) - Fix for daily reports not being sent
+Bugfix [#1237](https://github.com/ossec/ossec-hids/issues/1237) - Custom CFLAGS/CXXFLAGS/LDFLAGS support
+Bugfix [#1274](https://github.com/ossec/ossec-hids/issues/1274) - ossec-authd, ipv6 returns an invalid key
+Bugfix [#1278](https://github.com/ossec/ossec-hids/issues/1278) - Use getent to check for users/group
+Bugfix [#1366](https://github.com/ossec/ossec-hids/issues/1366) - Update to rule ID map
+Bugfix [#1370](https://github.com/ossec/ossec-hids/issues/1370) - Bugfix for full subject handling 
 
 
  
-PR #770 - ossec-dbd, postgresql fixes on the user colume, schema, and not null conditions
-PR #778 - syscheck, Selective opening mode to extract file hash #778
-PR #792 - Check for a null from malloc
-PR #802 - ossec-dbd, allow for longer entries in the system.information column
-PR #804 - ossec-dbd, allow for mysql/postgres format changing based on MYSQLDB/POSTGDB
-PR #806 - ossec-reportd, report fixes on IP and user fields
-PR #808 - Igngore openBSD's random seed
-PR #824 - ossec-dbd, fix for mysql/postgres insert condition
-PR #839 - JSON output, Add group field to json output
-PR #843 - Add support for CZMQ v3
-PR #848 - Fixed bug at logcollector that inhibited alerts about file reduction
-PR #849 - ossec-maild, Format string security fix 
-PR #855 - Fixed memory error on CDB lists management
-PR #859 - added utils to rename an agent or change its IP address (rename_agent.sh, renumber_agent.sh)
-PR #862 - ossec-analysisd, fixed memory leaks
-PR #864 - There is an error when running ossec-logtest to test rules with check_diff, since it doesn't change root directory and tries to create a directory at/queue/diff`.
-PR #866 - JSON output, Add timestamp for events
-PR #881 - Add debugging output to active repsonse xml config read
-PR #883 - Bugfix for agents failing to bind to a specific local IP address and the server is specified by hostname. 
-PR #887 - agent status needs to be verified before using agt->lip
-PR #893 - Prelude IDS support, Do not use absolute indexes in prelude fields
-PR #899 - manage_agents, OSSEC agent IDs can only be numbers but they are treated as strings. Because of this, it's possible to add the agent "00" and "000", or "1" and "00001" at the same time, and they can be confused on extracting keys or on deleting agents.
-PR #909 - ossec-logtest, Bugfix for decoders.d/rules.d segfault
-PR #910 - Update intcheck_op.c 
-PR #912 - update validate_op.c 
-PR #918 - ossec-logtest, add -q "quiet" flag support
-PR #920 - Bugfixes for OS_IPFound, OS_IPFoundList, OS_IsValidIP. #920
-PR #921 - JSON output, This removes the double addition of the 'action' field and adds a few other interesting fields that I need for my analysis in ELK. Most notably, the rule.group is now passed out via the zmq output.
-PR #923 - ossec-dbd, fix SQLi in al_data->location
-PR #928 - ossec-logtest, add geoip to logtest output
-PR #930 - fix memory leak in decode-xml.c
-PR #931 - Custom output, fix common realloc mistake in custom_output_search_replace.
-PR #934 - Create OSSEC users and group as system members
-PR #944 - Don't pass null variables to snprintf. 
-PR #950 - Exclude btrfs-Filesystem from searching for hidden files inside directorie
-PR #953 - Prevent manage_agents from doing invalid actions on interactive mode
-PR #964 -  Csyslogd patch for sending additional FIM event information
-PR #991 - set default AR level to 7
-PR #1003 - JSON output, bugfix for duplicated group field 
-PR #1004 - memory fixes in XML decoding, no-terminated strings, and searchAndReplace()
-PR #1016 - bugfix that prevents ossec-control from starting ossec-maild on server
-PR #1017 - ossec-remoted, fix for openbsd canary violation
-PR #1020 - Allow notify_timeout to be configured server-side. #1020
-PR #1021 - Windows Agent, fix for build related issues
-PR #1027 -Fx for the "USER_AGENT_CONFIG_PROFILE" preloaded-vars.conf file usage. This fixes that and adds a profile config line if the variable is defined. Very useful for unattended installs or binary installs.
-PR #1089 - Retire picviz support
-PR #1090 - JSON output, add "id" to the json log
-PR #1093 - pf.sh, update support FreeBSD, OpenBSD, and Darwein
-PR #1097 - ossec-batch-manager.pl, support "any" IP address
-PR #1099 - AR, prevent duplication in hosts.deny
-PR #1100 - Windows agent, Open received files in binary mode cause of cr/lf and let hashes match. 
-PR #1102 - JSON output, Fix timestamp 
-PR #1116 - ossec-remoted, systemd support
-PR #1135 - ossec-dbd, UMYSQL_DATABASE_ENABLED does not exist in the tree except this one place.
-PR #1137 - Windows agent, administrators group might not be present on non-english installs
-PR #1148 - Update for gmake to compile on Solaris 11.2
-PR #1149 - Update adduser.sh for Solaris 11.2
-PR #1158 - Update shell on ossec-hids-solaris.init Solaris 11.2
-PR #1159 - Update Makefile for Solaris
-PR #1179 - ossec-dbd, fix readme display IP as string
-PR #1235 - spelling fixes 
-PR #1238 - fix for edead oop in hash_op.c
-PR #1255 - syscheck, update windows syscheck directories
-PR #1256 - ossec-dbd, use port for postgresql connections
-PR #1257 - rootcheck, make sleep interval configurable (rootcheck.sleep)
-PR #1258 - adduser.sh, fix the useradd and groupadd script for openbsd
-PR #1262 - agentless ssh.exp, remove the P's entirely to support upper and lower case
-PR #1304 - syscheck, Don't display the errno, show the error message 
-PR #1307 - Allow alerts.log to be turned off (DOUBLE CHECK, THIS WAS REVERTED)
-PR #1322 - rootcheck, mysql/mariadb auditing checks
-PR #1336 - Disable warning on OS_PassEmptyKeyfile
-PR #1342 - remove execute flag on rules and config files
-PR #1343 - Makefile fix ar warning
-PR #1344 - add option to exclude lua and use system zlib
-PR #1345 - gitignore, Ignore zlib paths 
-PR #1347 - Fix compiler warnings: Wall, Wextra 
-PR #1374 - Bugfix for AIX building 
-PR #1382 - added rootcheck file for apache 2.2/2.4
+[PR #770](https://github.com/ossec/ossec-hids/pull/770) - ossec-dbd, postgresql fixes on the user colume, schema, and not null conditions
+[PR #778](https://github.com/ossec/ossec-hids/pull/778) - syscheck, Selective opening mode to extract file hash [#778](https://github.com/ossec/ossec-hids/issues/778)
+[PR #792](https://github.com/ossec/ossec-hids/pull/792) - Check for a null from malloc
+[PR #802](https://github.com/ossec/ossec-hids/pull/802) - ossec-dbd, allow for longer entries in the system.information column
+[PR #804](https://github.com/ossec/ossec-hids/pull/804) - ossec-dbd, allow for mysql/postgres format changing based on MYSQLDB/POSTGDB
+[PR #806](https://github.com/ossec/ossec-hids/pull/806) - ossec-reportd, report fixes on IP and user fields
+[PR #808](https://github.com/ossec/ossec-hids/pull/808) - Igngore openBSD's random seed
+[PR #824](https://github.com/ossec/ossec-hids/pull/824) - ossec-dbd, fix for mysql/postgres insert condition
+[PR #839](https://github.com/ossec/ossec-hids/pull/839) - JSON output, Add group field to json output
+[PR #843](https://github.com/ossec/ossec-hids/pull/843) - Add support for CZMQ v3
+[PR #848](https://github.com/ossec/ossec-hids/pull/848) - Fixed bug at logcollector that inhibited alerts about file reduction
+[PR #849](https://github.com/ossec/ossec-hids/pull/849) - ossec-maild, Format string security fix 
+[PR #855](https://github.com/ossec/ossec-hids/pull/855) - Fixed memory error on CDB lists management
+[PR #859](https://github.com/ossec/ossec-hids/pull/859) - added utils to rename an agent or change its IP address (rename_agent.sh, renumber_agent.sh)
+[PR #862](https://github.com/ossec/ossec-hids/pull/862) - ossec-analysisd, fixed memory leaks
+[PR #864](https://github.com/ossec/ossec-hids/pull/864) - There is an error when running ossec-logtest to test rules with check_diff, since it doesn't change root directory and tries to create a directory at/queue/diff`.
+[PR #866](https://github.com/ossec/ossec-hids/pull/866) - JSON output, Add timestamp for events
+[PR #881](https://github.com/ossec/ossec-hids/pull/881) - Add debugging output to active repsonse xml config read
+[PR #883](https://github.com/ossec/ossec-hids/pull/883) - Bugfix for agents failing to bind to a specific local IP address and the server is specified by hostname. 
+[PR #887](https://github.com/ossec/ossec-hids/pull/887) - agent status needs to be verified before using agt->lip
+[PR #893](https://github.com/ossec/ossec-hids/pull/893) - Prelude IDS support, Do not use absolute indexes in prelude fields
+[PR #899](https://github.com/ossec/ossec-hids/pull/899) - manage_agents, OSSEC agent IDs can only be numbers but they are treated as strings. Because of this, it's possible to add the agent "00" and "000", or "1" and "00001" at the same time, and they can be confused on extracting keys or on deleting agents.
+[PR #909](https://github.com/ossec/ossec-hids/pull/909) - ossec-logtest, Bugfix for decoders.d/rules.d segfault
+[PR #910](https://github.com/ossec/ossec-hids/pull/910) - Update intcheck_op.c 
+[PR #912](https://github.com/ossec/ossec-hids/pull/912) - update validate_op.c 
+[PR #918](https://github.com/ossec/ossec-hids/pull/918) - ossec-logtest, add -q "quiet" flag support
+[PR #920](https://github.com/ossec/ossec-hids/pull/920) - Bugfixes for OS_IPFound, OS_IPFoundList, OS_IsValidIP. [#920](https://github.com/ossec/ossec-hids/issues/920)
+[PR #921](https://github.com/ossec/ossec-hids/pull/921) - JSON output, This removes the double addition of the 'action' field and adds a few other interesting fields that I need for my analysis in ELK. Most notably, the rule.group is now passed out via the zmq output.
+[PR #923](https://github.com/ossec/ossec-hids/pull/923) - ossec-dbd, fix SQLi in al_data->location
+[PR #928](https://github.com/ossec/ossec-hids/pull/928) - ossec-logtest, add geoip to logtest output
+[PR #930](https://github.com/ossec/ossec-hids/pull/930) - fix memory leak in decode-xml.c
+[PR #931](https://github.com/ossec/ossec-hids/pull/931) - Custom output, fix common realloc mistake in custom_output_search_replace.
+[PR #934](https://github.com/ossec/ossec-hids/pull/934) - Create OSSEC users and group as system members
+[PR #944](https://github.com/ossec/ossec-hids/pull/944) - Don't pass null variables to snprintf. 
+[PR #950](https://github.com/ossec/ossec-hids/pull/950) - Exclude btrfs-Filesystem from searching for hidden files inside directorie
+[PR #953](https://github.com/ossec/ossec-hids/pull/953) - Prevent manage_agents from doing invalid actions on interactive mode
+[PR #964](https://github.com/ossec/ossec-hids/pull/964) -  Csyslogd patch for sending additional FIM event information
+[PR #991](https://github.com/ossec/ossec-hids/pull/991) - set default AR level to 7
+[PR #1003](https://github.com/ossec/ossec-hids/pull/1003) - JSON output, bugfix for duplicated group field 
+[PR #1004](https://github.com/ossec/ossec-hids/pull/1004) - memory fixes in XML decoding, no-terminated strings, and searchAndReplace()
+[PR #1016](https://github.com/ossec/ossec-hids/pull/1016) - bugfix that prevents ossec-control from starting ossec-maild on server
+[PR #1017](https://github.com/ossec/ossec-hids/pull/1017) - ossec-remoted, fix for openbsd canary violation
+[PR #1020](https://github.com/ossec/ossec-hids/pull/1020) - Allow notify_timeout to be configured server-side. [#1020](https://github.com/ossec/ossec-hids/issues/1020)
+[PR #1021](https://github.com/ossec/ossec-hids/pull/1021) - Windows Agent, fix for build related issues
+[PR #1027](https://github.com/ossec/ossec-hids/pull/1027) -Fx for the "USER_AGENT_CONFIG_PROFILE" preloaded-vars.conf file usage. This fixes that and adds a profile config line if the variable is defined. Very useful for unattended installs or binary installs.
+[PR #1089](https://github.com/ossec/ossec-hids/pull/1089) - Retire picviz support
+[PR #1090](https://github.com/ossec/ossec-hids/pull/1090) - JSON output, add "id" to the json log
+[PR #1093](https://github.com/ossec/ossec-hids/pull/1093) - pf.sh, update support FreeBSD, OpenBSD, and Darwein
+[PR #1097](https://github.com/ossec/ossec-hids/pull/1097) - ossec-batch-manager.pl, support "any" IP address
+[PR #1099](https://github.com/ossec/ossec-hids/pull/1099) - AR, prevent duplication in hosts.deny
+[PR #1100](https://github.com/ossec/ossec-hids/pull/1100) - Windows agent, Open received files in binary mode cause of cr/lf and let hashes match. 
+[PR #1102](https://github.com/ossec/ossec-hids/pull/1102) - JSON output, Fix timestamp 
+[PR #1116](https://github.com/ossec/ossec-hids/pull/1116) - ossec-remoted, systemd support
+[PR #1135](https://github.com/ossec/ossec-hids/pull/1135) - ossec-dbd, UMYSQL_DATABASE_ENABLED does not exist in the tree except this one place.
+[PR #1137](https://github.com/ossec/ossec-hids/pull/1137) - Windows agent, administrators group might not be present on non-english installs
+[PR #1148](https://github.com/ossec/ossec-hids/pull/1148) - Update for gmake to compile on Solaris 11.2
+[PR #1149](https://github.com/ossec/ossec-hids/pull/1149) - Update adduser.sh for Solaris 11.2
+[PR #1158](https://github.com/ossec/ossec-hids/pull/1158) - Update shell on ossec-hids-solaris.init Solaris 11.2
+[PR #1159](https://github.com/ossec/ossec-hids/pull/1159) - Update Makefile for Solaris
+[PR #1179](https://github.com/ossec/ossec-hids/pull/1179) - ossec-dbd, fix readme display IP as string
+[PR #1235](https://github.com/ossec/ossec-hids/pull/1235) - spelling fixes 
+[PR #1238](https://github.com/ossec/ossec-hids/pull/1238) - fix for edead oop in hash_op.c
+[PR #1255](https://github.com/ossec/ossec-hids/pull/1255) - syscheck, update windows syscheck directories
+[PR #1256](https://github.com/ossec/ossec-hids/pull/1256) - ossec-dbd, use port for postgresql connections
+[PR #1257](https://github.com/ossec/ossec-hids/pull/1257) - rootcheck, make sleep interval configurable (rootcheck.sleep)
+[PR #1258](https://github.com/ossec/ossec-hids/pull/1258) - adduser.sh, fix the useradd and groupadd script for openbsd
+[PR #1262](https://github.com/ossec/ossec-hids/pull/1262) - agentless ssh.exp, remove the P's entirely to support upper and lower case
+[PR #1304](https://github.com/ossec/ossec-hids/pull/1304) - syscheck, Don't display the errno, show the error message 
+[PR #1307](https://github.com/ossec/ossec-hids/pull/1307) - Allow alerts.log to be turned off (DOUBLE CHECK, THIS WAS REVERTED)
+[PR #1322](https://github.com/ossec/ossec-hids/pull/1322) - rootcheck, mysql/mariadb auditing checks
+[PR #1336](https://github.com/ossec/ossec-hids/pull/1336) - Disable warning on OS_PassEmptyKeyfile
+[PR #1342](https://github.com/ossec/ossec-hids/pull/1342) - remove execute flag on rules and config files
+[PR #1343](https://github.com/ossec/ossec-hids/pull/1343) - Makefile fix ar warning
+[PR #1344](https://github.com/ossec/ossec-hids/pull/1344) - add option to exclude lua and use system zlib
+[PR #1345](https://github.com/ossec/ossec-hids/pull/1345) - gitignore, Ignore zlib paths 
+[PR #1347](https://github.com/ossec/ossec-hids/pull/1347) - Fix compiler warnings: Wall, Wextra 
+[PR #1374](https://github.com/ossec/ossec-hids/pull/1374) - Bugfix for AIX building 
+[PR #1382](https://github.com/ossec/ossec-hids/pull/1382) - added rootcheck file for apache 2.2/2.4
 
 
